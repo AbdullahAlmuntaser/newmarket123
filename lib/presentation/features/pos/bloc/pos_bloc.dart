@@ -1,0 +1,251 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:drift/drift.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:supermarket/presentation/features/pos/bloc/pos_event.dart';
+import 'package:supermarket/presentation/features/pos/bloc/pos_state.dart';
+import 'dart:convert';
+import 'package:uuid/uuid.dart';
+
+class PosBloc extends Bloc<PosEvent, PosState> {
+  final AppDatabase db;
+
+  PosBloc(this.db) : super(const PosLoaded()) {
+    on<AddProductBySku>(_onAddProduct);
+    on<UpdateCartItemQuantity>(_onUpdateQuantity);
+    on<RemoveCartItem>(_onRemoveItem);
+    on<UpdateDiscount>((event, emit) {
+      if (state is PosLoaded) {
+        emit((state as PosLoaded).copyWith(discount: event.discount));
+      }
+    });
+    on<UpdateTaxRate>((event, emit) {
+      if (state is PosLoaded) {
+        emit((state as PosLoaded).copyWith(taxRate: event.taxRate));
+      }
+    });
+    on<ToggleWholesaleMode>(_onToggleWholesale);
+    on<CheckoutEvent>(_onCheckout);
+    on<ClearCart>((event, emit) => emit(const PosLoaded()));
+  }
+
+  Future<void> _onAddProduct(
+    AddProductBySku event,
+    Emitter<PosState> emit,
+  ) async {
+    if (state is! PosLoaded) return;
+    final currentState = state as PosLoaded;
+
+    try {
+      final product = await (db.select(
+        db.products,
+      )..where((t) => t.sku.equals(event.sku))).getSingleOrNull();
+
+      if (product == null) {
+        emit(PosError("Product with SKU ${event.sku} not found"));
+        emit(currentState);
+        return;
+      }
+
+      final existingIndex = currentState.cart.indexWhere(
+        (item) => item.product.id == product.id,
+      );
+
+      List<CartItem> newCart = List.from(currentState.cart);
+      if (existingIndex >= 0) {
+        newCart[existingIndex] = newCart[existingIndex].copyWith(
+          quantity: newCart[existingIndex].quantity + 1,
+        );
+      } else {
+        newCart.add(
+          CartItem(product: product, isWholesale: currentState.isWholesaleMode),
+        );
+      }
+
+      emit(currentState.copyWith(cart: newCart));
+    } catch (e) {
+      emit(PosError(e.toString()));
+      emit(currentState);
+    }
+  }
+
+  void _onUpdateQuantity(UpdateCartItemQuantity event, Emitter<PosState> emit) {
+    if (state is! PosLoaded) return;
+    final currentState = state as PosLoaded;
+    final newCart = currentState.cart.map((item) {
+      if (item.product.id == event.productId) {
+        return item.copyWith(quantity: event.quantity);
+      }
+      return item;
+    }).toList();
+    emit(currentState.copyWith(cart: newCart));
+  }
+
+  void _onRemoveItem(RemoveCartItem event, Emitter<PosState> emit) {
+    if (state is! PosLoaded) return;
+    final currentState = state as PosLoaded;
+    final newCart = currentState.cart
+        .where((item) => item.product.id != event.productId)
+        .toList();
+    emit(currentState.copyWith(cart: newCart));
+  }
+
+  void _onToggleWholesale(ToggleWholesaleMode event, Emitter<PosState> emit) {
+    if (state is! PosLoaded) return;
+    final currentState = state as PosLoaded;
+    final newCart = currentState.cart
+        .map((item) => item.copyWith(isWholesale: event.isWholesale))
+        .toList();
+    emit(
+      currentState.copyWith(cart: newCart, isWholesaleMode: event.isWholesale),
+    );
+  }
+
+  Future<void> _onCheckout(CheckoutEvent event, Emitter<PosState> emit) async {
+    if (state is! PosLoaded) return;
+    final currentState = state as PosLoaded;
+    if (currentState.cart.isEmpty) return;
+
+    try {
+      final total = currentState.total;
+      final discount = currentState.discount;
+      final tax = currentState.taxAmount;
+
+      emit(PosLoading());
+
+      await db.transaction(() async {
+        final saleId = const Uuid().v4();
+
+        // 1. Create Sale
+        await db
+            .into(db.sales)
+            .insert(
+              SalesCompanion.insert(
+                id: Value(saleId),
+                customerId: Value(event.customerId),
+                total: total,
+                discount: Value(discount),
+                tax: Value(tax),
+                paymentMethod: event.paymentMethod,
+                isCredit: Value(event.paymentMethod == 'credit'),
+                syncStatus: const Value(1),
+              ),
+            );
+
+        List<SaleItem> saleItemsForAccounting = [];
+
+        // 2. Create SaleItems and Update Stock
+        for (var item in currentState.cart) {
+          await db
+              .into(db.saleItems)
+              .insert(
+                SaleItemsCompanion.insert(
+                  saleId: saleId,
+                  productId: item.product.id,
+                  quantity: item.quantity.toDouble(),
+                  price: item.unitPrice,
+                  syncStatus: const Value(1),
+                ),
+              );
+
+          // UPDATE STOCK
+          final product = await (db.select(
+            db.products,
+          )..where((t) => t.id.equals(item.product.id))).getSingle();
+          await (db.update(
+            db.products,
+          )..where((t) => t.id.equals(item.product.id))).write(
+            ProductsCompanion(stock: Value(product.stock - item.quantity)),
+          );
+
+          // Prepare item for accounting (we need to construct it manually as insert doesn't return the full object easily here)
+          saleItemsForAccounting.add(
+            SaleItem(
+              id: const Uuid().v4(), // Placeholder, not used in accounting
+              saleId: saleId,
+              productId: item.product.id,
+              quantity: item.quantity.toDouble(),
+              price: item.unitPrice,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+              syncStatus: 1,
+              deviceId: null,
+            ),
+          );
+        }
+
+        // 3. Update Customer Balance if Credit
+        if (event.paymentMethod == 'credit' && event.customerId != null) {
+          final customer = await (db.select(
+            db.customers,
+          )..where((t) => t.id.equals(event.customerId!))).getSingle();
+          await (db.update(
+            db.customers,
+          )..where((t) => t.id.equals(event.customerId!))).write(
+            CustomersCompanion(balance: Value(customer.balance + total)),
+          );
+        }
+
+        // 4. Add to SyncQueue
+        final salePayload = {
+          'id': saleId,
+          'total': total,
+          'discount': discount,
+          'tax': tax,
+          'paymentMethod': event.paymentMethod,
+          'items': currentState.cart
+              .map(
+                (i) => {
+                  'productId': i.product.id,
+                  'qty': i.quantity,
+                  'price': i.unitPrice,
+                },
+              )
+              .toList(),
+        };
+
+        await db
+            .into(db.syncQueue)
+            .insert(
+              SyncQueueCompanion.insert(
+                entityTable: 'sales',
+                entityId: saleId,
+                operation: 'create',
+                payload: jsonEncode(salePayload),
+              ),
+            );
+
+        // 5. Accounting
+        final saleObj = Sale(
+          id: saleId,
+          customerId: event.customerId,
+          total: total,
+          discount: discount,
+          tax: tax,
+          paymentMethod: event.paymentMethod,
+          isCredit: event.paymentMethod == 'credit',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          syncStatus: 1,
+          deviceId: null,
+        );
+
+        final accounting = AccountingService(db);
+        await accounting.seedDefaultAccounts(); // Ensure accounts exist
+        await accounting.postSale(saleObj, saleItemsForAccounting);
+
+        // Emit Checkout Success
+        emit(
+          PosCheckoutSuccess(
+            saleObj,
+            saleItemsForAccounting,
+            currentState.cart.map((i) => i.product).toList(),
+          ),
+        );
+      });
+    } catch (e) {
+      emit(PosError("Checkout failed: $e"));
+      emit(currentState);
+    }
+  }
+}

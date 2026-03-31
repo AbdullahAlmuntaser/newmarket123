@@ -1,122 +1,248 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:supermarket/core/auth/auth_provider.dart';
+import 'package:supermarket/core/theme/app_theme.dart';
+import 'package:supermarket/core/theme/theme_provider.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/injection_container.dart' as di;
+import 'package:supermarket/l10n/app_localizations.dart';
+import 'package:supermarket/presentation/features/auth/login_page.dart';
+import 'package:supermarket/presentation/features/auth/staff_management_page.dart';
+import 'package:supermarket/presentation/features/home/home_page.dart';
+import 'package:supermarket/presentation/features/home/low_stock_products_page.dart';
+import 'package:supermarket/presentation/features/pos/pos_page.dart';
+import 'package:supermarket/presentation/features/sales/sales_history_page.dart';
+import 'package:supermarket/presentation/features/products/products_page.dart';
+import 'package:supermarket/presentation/features/products/categories_page.dart';
+import 'package:supermarket/presentation/features/purchases/purchases_page.dart';
+import 'package:supermarket/presentation/features/purchases/add_purchase_page.dart';
+import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
+import 'package:supermarket/presentation/features/accounting/trial_balance_page.dart';
+import 'package:supermarket/presentation/features/accounting/cash_flow_page.dart';
+import 'package:supermarket/presentation/features/accounting/chart_of_accounts_page.dart';
+import 'package:supermarket/presentation/features/accounting/general_ledger_page.dart';
+import 'package:supermarket/presentation/features/accounting/expenses_page.dart';
+import 'package:supermarket/presentation/features/accounting/manual_journal_entry_page.dart';
+import 'package:supermarket/presentation/features/accounting/reconciliation_page.dart';
+import 'package:supermarket/presentation/features/accounting/shifts_page.dart';
+import 'package:supermarket/presentation/features/reports/inventory_reports_screen.dart';
+import 'package:supermarket/presentation/features/reports/vat_report_page.dart';
+import 'package:supermarket/presentation/features/reports/audit_log_page.dart';
+import 'package:supermarket/presentation/features/reports/printer_settings_page.dart';
+import 'package:supermarket/presentation/features/returns/returns_page.dart';
+import 'package:supermarket/presentation/features/returns/create_return_page.dart';
+import 'package:supermarket/presentation/features/sync/sync_page.dart';
+import 'package:supermarket/core/network/sync_service.dart';
+import 'package:supermarket/presentation/features/settings/backup_page.dart';
+import 'package:supermarket/presentation/features/customers/customers_page.dart';
+import 'package:supermarket/presentation/features/suppliers/suppliers_page.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+    
+    // Initialize Firebase with error handling
+    try {
+      await Firebase.initializeApp();
+    } catch (e) {
+      debugPrint("Firebase initialization failed: $e");
+      // Continue even if Firebase fails to avoid total white screen
+    }
+
+    // Initialize Dependency Injection
+    di.init();
+    
+    runApp(const MyApp());
+  } catch (e, stack) {
+    debugPrint("Critical startup error: $e");
+    debugPrint(stack.toString());
+    runApp(MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Text("Error starting app: $e\nPlease restart."),
+        ),
+      ),
+    ));
+  }
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+    return MultiProvider(
+      providers: [
+        Provider<AppDatabase>.value(value: di.sl<AppDatabase>()),
+        ChangeNotifierProvider(create: (_) => di.sl<ThemeProvider>()),
+        ChangeNotifierProvider(create: (_) => di.sl<AuthProvider>()),
+        ChangeNotifierProvider(
+          create: (_) => AccountingProvider(di.sl<AppDatabase>()),
+        ),
+        Provider<SyncService>(
+          create: (_) => SyncService(di.sl<AppDatabase>()),
+        ),
+      ],
+      child: Builder(builder: (context) {
+        final themeProvider = Provider.of<ThemeProvider>(context);
+        final router = _createRouter(context);
+        return MaterialApp.router(
+          title: 'Accounting App',
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeProvider.themeMode,
+          routerConfig: router,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('ar'),
+        );
+      }),
     );
   }
-}
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+  GoRouter _createRouter(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    return GoRouter(
+      initialLocation: '/',
+      refreshListenable: authProvider,
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const HomePage(),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+        GoRoute(
+          path: '/login',
+          builder: (context, state) => const LoginPage(),
+        ),
+        GoRoute(
+          path: '/users',
+          builder: (context, state) => const StaffManagementPage(),
+        ),
+        GoRoute(
+          path: '/pos',
+          builder: (context, state) => const PosPage(),
+        ),
+        GoRoute(
+          path: '/sales',
+          builder: (context, state) => const SalesHistoryPage(),
+        ),
+        GoRoute(
+          path: '/products',
+          builder: (context, state) => const ProductsPage(),
+        ),
+        GoRoute(
+          path: '/categories',
+          builder: (context, state) => const CategoriesPage(),
+        ),
+        GoRoute(
+          path: '/customers',
+          builder: (context, state) => const CustomersPage(),
+        ),
+        GoRoute(
+          path: '/suppliers',
+          builder: (context, state) => const SuppliersPage(),
+        ),
+        GoRoute(
+          path: '/purchases',
+          builder: (context, state) => const PurchasesPage(),
+        ),
+        GoRoute(
+          path: '/purchases/new',
+          builder: (context, state) => const AddPurchasePage(),
+        ),
+        GoRoute(
+          path: '/low-stock',
+          builder: (context, state) => const LowStockProductsPage(),
+        ),
+        GoRoute(
+          path: '/returns',
+          builder: (context, state) => const ReturnsPage(),
+        ),
+        GoRoute(
+          path: '/returns/new',
+          builder: (context, state) => const CreateReturnPage(type: ReturnType.sale),
+        ),
+        GoRoute(
+          path: '/sync',
+          builder: (context, state) => const SyncPage(),
+        ),
+        // Reports Routes
+        GoRoute(
+          path: '/reports',
+          builder: (context, state) => const InventoryReportsScreen(),
+        ),
+        GoRoute(
+          path: '/reports/vat',
+          builder: (context, state) => const VatReportPage(),
+        ),
+        GoRoute(
+          path: '/reports/audit',
+          builder: (context, state) => const AuditLogPage(),
+        ),
+        GoRoute(
+          path: '/settings/printer',
+          builder: (context, state) => const PrinterSettingsPage(),
+        ),
+        GoRoute(
+          path: '/settings/backup',
+          builder: (context, state) => const BackupPage(),
+        ),
+        // Accounting Routes
+        GoRoute(
+          path: '/accounting/trial-balance',
+          builder: (context, state) => const TrialBalancePage(),
+        ),
+        GoRoute(
+          path: '/accounting/cash-flow',
+          builder: (context, state) => const CashFlowPage(),
+        ),
+        GoRoute(
+          path: '/accounting/coa',
+          builder: (context, state) => const ChartOfAccountsPage(),
+        ),
+        GoRoute(
+          path: '/accounting/general-ledger',
+          builder: (context, state) => const GeneralLedgerPage(),
+        ),
+        GoRoute(
+          path: '/accounting/expenses',
+          builder: (context, state) => const ExpensesPage(),
+        ),
+        GoRoute(
+          path: '/accounting/manual-entry',
+          builder: (context, state) => const ManualJournalEntryPage(),
+        ),
+        GoRoute(
+          path: '/accounting/reconciliation',
+          builder: (context, state) => const ReconciliationPage(),
+        ),
+        GoRoute(
+          path: '/accounting/shifts',
+          builder: (context, state) => const ShiftsPage(),
+        ),
+      ],
+      redirect: (context, state) {
+        final isAuthenticated = authProvider.isAuthenticated;
+        final isLoggingIn = state.matchedLocation == '/login';
+
+        if (!isAuthenticated && !isLoggingIn) {
+          return '/login';
+        }
+
+        if (isAuthenticated && isLoggingIn) {
+          return '/';
+        }
+
+        return null;
+      },
     );
   }
 }

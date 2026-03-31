@@ -1,0 +1,48 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'accounting_dao.dart';
+
+// ignore_for_file: type=lint
+mixin _$AccountingDaoMixin on DatabaseAccessor<AppDatabase> {
+  $GLAccountsTable get gLAccounts => attachedDatabase.gLAccounts;
+  $GLEntriesTable get gLEntries => attachedDatabase.gLEntries;
+  $GLLinesTable get gLLines => attachedDatabase.gLLines;
+  $ReconciliationsTable get reconciliations => attachedDatabase.reconciliations;
+  AccountingDaoManager get managers => AccountingDaoManager(this);
+}
+
+class AccountingDaoManager {
+  final _$AccountingDaoMixin _db;
+  AccountingDaoManager(this._db);
+  $$GLAccountsTableTableManager get gLAccounts =>
+      $$GLAccountsTableTableManager(_db.attachedDatabase, _db.gLAccounts);
+  $$GLEntriesTableTableManager get gLEntries =>
+      $$GLEntriesTableTableManager(_db.attachedDatabase, _db.gLEntries);
+  $$GLLinesTableTableManager get gLLines =>
+      $$GLLinesTableTableManager(_db.attachedDatabase, _db.gLLines);
+  $$ReconciliationsTableTableManager get reconciliations =>
+      $$ReconciliationsTableTableManager(
+        _db.attachedDatabase,
+        _db.reconciliations,
+      );
+}
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+TrialBalanceItem _$TrialBalanceItemFromJson(Map<String, dynamic> json) =>
+    TrialBalanceItem(
+      const GLAccountConverter().fromJson(
+        json['account'] as Map<String, dynamic>,
+      ),
+      (json['totalDebit'] as num).toDouble(),
+      (json['totalCredit'] as num).toDouble(),
+    );
+
+Map<String, dynamic> _$TrialBalanceItemToJson(TrialBalanceItem instance) =>
+    <String, dynamic>{
+      'account': const GLAccountConverter().toJson(instance.account),
+      'totalDebit': instance.totalDebit,
+      'totalCredit': instance.totalCredit,
+    };
