@@ -15,7 +15,53 @@ class HomePage extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.home)),
+      appBar: AppBar(
+        title: Text(l10n.home),
+        actions: [
+          StreamBuilder<int>(
+            stream: db.productsDao.watchLowStockCount(),
+            builder: (context, snapshot) {
+              final count = snapshot.data ?? 0;
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications),
+                    onPressed: () => context.push('/low-stock'),
+                    tooltip: l10n.lowStockItems,
+                  ),
+                  if (count > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          '$count',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       drawer: const MainDrawer(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -36,7 +82,6 @@ class HomePage extends StatelessWidget {
             const SizedBox(height: 16),
             _buildQuickActions(context, db, l10n),
             const SizedBox(height: 24),
-            // We will add more sections here in the future
           ],
         ),
       ),
@@ -73,7 +118,7 @@ class HomePage extends StatelessWidget {
               title: l10n.lowStockItems,
               value: '$count ${l10n.items}',
               color: count > 0 ? Colors.orange : Colors.blueGrey,
-              onTap: () => context.go('/low-stock'),
+              onTap: () => context.push('/low-stock'),
             );
           },
         ),
@@ -109,25 +154,24 @@ class HomePage extends StatelessWidget {
       runSpacing: 16,
       children: [
         ElevatedButton.icon(
-          onPressed: () => context.go('/pos'),
+          onPressed: () => context.push('/pos'),
           icon: const Icon(Icons.point_of_sale),
           label: Text(l10n.newSale),
           style: ElevatedButton.styleFrom(minimumSize: const Size(150, 50)),
         ),
         ElevatedButton.icon(
-          onPressed: () => context.go('/purchases/new'),
+          onPressed: () => context.push('/purchases/new'),
           icon: const Icon(Icons.add_shopping_cart),
           label: Text(l10n.newPurchaseInvoice),
           style: ElevatedButton.styleFrom(minimumSize: const Size(150, 50)),
         ),
         ElevatedButton.icon(
-          onPressed: () => context.go('/products'),
+          onPressed: () => context.push('/products'),
           icon: const Icon(Icons.inventory_2),
           label: Text(l10n.products),
           style: ElevatedButton.styleFrom(minimumSize: const Size(150, 50)),
         ),
-        // Example of a developer-only feature
-        if (true) // Replace with a proper developer mode check
+        if (true)
           ElevatedButton.icon(
             onPressed: () async {
               await db.seedData();

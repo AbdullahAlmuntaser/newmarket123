@@ -31,8 +31,8 @@ class AuditLogPage extends StatelessWidget {
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Center(
-              child: Text(l10n.noSalesFound),
-            ); // Use a generic "no data" message
+              child: Text(l10n.noDataAvailable),
+            );
           }
 
           final logs = snapshot.data!;

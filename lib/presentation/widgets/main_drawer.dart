@@ -53,49 +53,76 @@ class MainDrawer extends StatelessWidget {
                 ListTile(
                   leading: const Icon(Icons.dashboard),
                   title: Text(l10n.dashboard),
-                  onTap: () => context.go('/'),
+                  onTap: () {
+                    context.go('/');
+                    Navigator.pop(context); // Close drawer
+                  },
                 ),
                 ListTile(
                   leading: const Icon(Icons.point_of_sale),
                   title: Text(l10n.pos),
-                  onTap: () => context.go('/pos'),
+                  onTap: () {
+                    context.push('/pos');
+                    Navigator.pop(context); // Close drawer
+                  },
                 ),
                 ListTile(
                   leading: const Icon(Icons.history),
                   title: Text(l10n.sales),
-                  onTap: () => context.go('/sales'),
+                  onTap: () {
+                    context.push('/sales');
+                    Navigator.pop(context); // Close drawer
+                  },
                 ),
                 ListTile(
                   leading: const Icon(Icons.assignment_return),
                   title: Text(l10n.returns),
-                  onTap: () => context.go('/returns'),
+                  onTap: () {
+                    context.push('/returns');
+                    Navigator.pop(context); // Close drawer
+                  },
                 ),
                 const Divider(),
                 ListTile(
                   leading: const Icon(Icons.inventory_2),
                   title: Text(l10n.products),
-                  onTap: () => context.go('/products'),
+                  onTap: () {
+                    context.push('/products');
+                    Navigator.pop(context); // Close drawer
+                  },
                 ),
                 ListTile(
                   leading: const Icon(Icons.category),
                   title: Text(l10n.categories),
-                  onTap: () => context.go('/categories'),
+                  onTap: () {
+                    context.push('/categories');
+                    Navigator.pop(context); // Close drawer
+                  },
                 ),
                 const Divider(),
                 ListTile(
                   leading: const Icon(Icons.shopping_cart),
                   title: Text(l10n.purchases),
-                  onTap: () => context.go('/purchases'),
+                  onTap: () {
+                    context.push('/purchases');
+                    Navigator.pop(context); // Close drawer
+                  },
                 ),
                 ListTile(
                   leading: const Icon(Icons.people),
                   title: Text(l10n.customers),
-                  onTap: () => context.go('/customers'),
+                  onTap: () {
+                    context.push('/customers');
+                    Navigator.pop(context); // Close drawer
+                  },
                 ),
                 ListTile(
                   leading: const Icon(Icons.local_shipping),
                   title: Text(l10n.suppliers),
-                  onTap: () => context.go('/suppliers'),
+                  onTap: () {
+                    context.push('/suppliers');
+                    Navigator.pop(context); // Close drawer
+                  },
                 ),
                 const Divider(),
                 ExpansionTile(
@@ -105,42 +132,66 @@ class MainDrawer extends StatelessWidget {
                     ListTile(
                       leading: const Icon(Icons.account_tree),
                       title: Text(l10n.chartOfAccounts),
-                      onTap: () => context.go('/accounting/coa'),
+                      onTap: () {
+                        context.push('/accounting/coa');
+                        Navigator.pop(context); // Close drawer
+                      },
                     ),
                     ListTile(
                       leading: const Icon(Icons.list_alt),
                       title: Text(l10n.generalLedger),
-                      onTap: () => context.go('/accounting/general-ledger'),
+                      onTap: () {
+                        context.push('/accounting/general-ledger');
+                        Navigator.pop(context); // Close drawer
+                      },
                     ),
                     ListTile(
                       leading: const Icon(Icons.balance),
                       title: Text(l10n.trialBalance),
-                      onTap: () => context.go('/accounting/trial-balance'),
+                      onTap: () {
+                        context.push('/accounting/trial-balance');
+                        Navigator.pop(context); // Close drawer
+                      },
                     ),
                     ListTile(
                       leading: const Icon(Icons.money_off),
                       title: Text(l10n.expenses),
-                      onTap: () => context.go('/accounting/expenses'),
+                      onTap: () {
+                        context.push('/accounting/expenses');
+                        Navigator.pop(context); // Close drawer
+                      },
                     ),
                     ListTile(
                       leading: const Icon(Icons.edit_note),
                       title: Text(l10n.manualJournalEntries),
-                      onTap: () => context.go('/accounting/manual-entry'),
+                      onTap: () {
+                        context.push('/accounting/manual-entry');
+                        Navigator.pop(context); // Close drawer
+                      },
                     ),
                     ListTile(
                       leading: const Icon(Icons.account_balance_wallet),
                       title: Text(l10n.reconciliation),
-                      onTap: () => context.go('/accounting/reconciliation'),
+                      onTap: () {
+                        context.push('/accounting/reconciliation');
+                        Navigator.pop(context); // Close drawer
+                      },
                     ),
                     ListTile(
                       leading: const Icon(Icons.access_time),
                       title: Text(l10n.shiftManagement),
-                      onTap: () => context.go('/accounting/shifts'),
+                      onTap: () {
+                        context.push('/accounting/shifts');
+                        Navigator.pop(context); // Close drawer
+                      },
                     ),
                     ListTile(
                       leading: const Icon(Icons.payments),
                       title: Text(l10n.cashFlow),
-                      onTap: () => context.go('/accounting/cash-flow'),
+                      onTap: () {
+                        context.push('/accounting/cash-flow');
+                        Navigator.pop(context); // Close drawer
+                      },
                     ),
                   ],
                 ),
@@ -151,35 +202,53 @@ class MainDrawer extends StatelessWidget {
                     ListTile(
                       leading: const Icon(Icons.inventory),
                       title: Text(l10n.inventoryReports),
-                      onTap: () => context.go('/reports'),
+                      onTap: () {
+                        context.push('/reports');
+                        Navigator.pop(context); // Close drawer
+                      },
                     ),
                     ListTile(
                       leading: const Icon(Icons.receipt),
                       title: Text(l10n.vatReturn),
-                      onTap: () => context.go('/reports/vat'),
+                      onTap: () {
+                        context.push('/reports/vat');
+                        Navigator.pop(context); // Close drawer
+                      },
                     ),
                     ListTile(
                       leading: const Icon(Icons.history_edu),
                       title: Text(l10n.auditLog),
-                      onTap: () => context.go('/reports/audit'),
+                      onTap: () {
+                        context.push('/reports/audit');
+                        Navigator.pop(context); // Close drawer
+                      },
                     ),
                   ],
                 ),
                 ListTile(
                   leading: const Icon(Icons.print),
                   title: Text(l10n.thermalPrinting),
-                  onTap: () => context.go('/settings/printer'),
+                  onTap: () {
+                    context.push('/settings/printer');
+                    Navigator.pop(context); // Close drawer
+                  },
                 ),
                 ListTile(
                   leading: const Icon(Icons.backup),
                   title: const Text('النسخ الاحتياطي'),
-                  onTap: () => context.go('/settings/backup'),
+                  onTap: () {
+                    context.push('/settings/backup');
+                    Navigator.pop(context); // Close drawer
+                  },
                 ),
                 if (isAdmin)
                   ListTile(
                     leading: const Icon(Icons.manage_accounts),
                     title: const Text('إدارة المستخدمين'),
-                    onTap: () => context.go('/users'),
+                    onTap: () {
+                      context.push('/users');
+                      Navigator.pop(context); // Close drawer
+                    },
                   ),
                 const Divider(),
                 ListTile(

@@ -234,7 +234,7 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: line.accountId,
+                            initialValue: line.accountId,
                             decoration: const InputDecoration(
                               labelText: 'الحساب',
                               isDense: true,
