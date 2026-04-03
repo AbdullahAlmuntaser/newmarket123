@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
-import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart' as dao;
+import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart'
+    as dao;
 import 'package:supermarket/domain/entities/account.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 

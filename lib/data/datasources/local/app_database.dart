@@ -85,6 +85,10 @@ class Purchases extends Table with SyncableTable {
   TextColumn get invoiceNumber => text().nullable()();
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
   BoolColumn get isCredit => boolean().withDefault(const Constant(false))();
+  TextColumn get status => text().withDefault(
+    const Constant('RECEIVED'),
+  )(); // DRAFT, ORDERED, RECEIVED, CANCELLED
+  TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
 }
 
 class PurchaseItems extends Table with SyncableTable {
@@ -92,6 +96,24 @@ class PurchaseItems extends Table with SyncableTable {
   TextColumn get productId => text().references(Products, #id)();
   RealColumn get quantity => real()();
   RealColumn get price => real()();
+  TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
+}
+
+class Warehouses extends Table with SyncableTable {
+  TextColumn get name => text()();
+  TextColumn get location => text().nullable()();
+  BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
+}
+
+@DataClassName('ProductBatch')
+class ProductBatches extends Table with SyncableTable {
+  TextColumn get productId => text().references(Products, #id)();
+  TextColumn get warehouseId => text().references(Warehouses, #id)();
+  TextColumn get batchNumber => text()();
+  DateTimeColumn get expiryDate => dateTime().nullable()();
+  RealColumn get quantity => real().withDefault(const Constant(0.0))();
+  RealColumn get initialQuantity => real().withDefault(const Constant(0.0))();
+  RealColumn get costPrice => real().withDefault(const Constant(0.0))();
 }
 
 class SalesReturns extends Table with SyncableTable {
@@ -225,6 +247,50 @@ class AuditLogs extends Table with SyncableTable {
   DateTimeColumn get timestamp => dateTime().withDefault(currentDateAndTime)();
 }
 
+class StockTransfers extends Table with SyncableTable {
+  TextColumn get fromWarehouseId => text().references(Warehouses, #id)();
+  TextColumn get toWarehouseId => text().references(Warehouses, #id)();
+  DateTimeColumn get transferDate =>
+      dateTime().withDefault(currentDateAndTime)();
+  TextColumn get note => text().nullable()();
+  TextColumn get status => text().withDefault(const Constant('COMPLETED'))(); // PENDING, COMPLETED, CANCELLED
+}
+
+class StockTransferItems extends Table with SyncableTable {
+  TextColumn get transferId => text().references(StockTransfers, #id)();
+  TextColumn get productId => text().references(Products, #id)();
+  TextColumn get batchId => text().references(ProductBatches, #id)();
+  RealColumn get quantity => real()();
+}
+
+class Employees extends Table with SyncableTable {
+  TextColumn get name => text()();
+  TextColumn get employeeCode => text().unique()();
+  TextColumn get jobTitle => text().nullable()();
+  RealColumn get basicSalary => real().withDefault(const Constant(0.0))();
+  DateTimeColumn get hireDate => dateTime().nullable()();
+  TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+}
+
+class PayrollEntries extends Table with SyncableTable {
+  IntColumn get month => integer()(); // 1-12
+  IntColumn get year => integer()();
+  DateTimeColumn get generationDate =>
+      dateTime().withDefault(currentDateAndTime)();
+  TextColumn get status => text().withDefault(const Constant('DRAFT'))(); // DRAFT, APPROVED, PAID
+  TextColumn get note => text().nullable()();
+}
+
+class PayrollLines extends Table with SyncableTable {
+  TextColumn get payrollEntryId => text().references(PayrollEntries, #id)();
+  TextColumn get employeeId => text().references(Employees, #id)();
+  RealColumn get basicSalary => real()();
+  RealColumn get allowances => real().withDefault(const Constant(0.0))();
+  RealColumn get deductions => real().withDefault(const Constant(0.0))();
+  RealColumn get netSalary => real()();
+}
+
 @DriftDatabase(
   tables: [
     Users,
@@ -252,6 +318,13 @@ class AuditLogs extends Table with SyncableTable {
     Shifts,
     Reconciliations,
     AuditLogs,
+    Warehouses,
+    ProductBatches,
+    StockTransfers,
+    StockTransferItems,
+    Employees,
+    PayrollEntries,
+    PayrollLines,
   ],
   daos: [ProductsDao, SalesDao, CustomersDao, AccountingDao, UsersDao],
 )
@@ -262,7 +335,7 @@ class AppDatabase extends _$AppDatabase {
       (select(syncQueue)).get().then((v) => v.length);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -288,6 +361,22 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 6) {
         await m.createTable(auditLogs);
+      }
+      if (from < 7) {
+        await m.createTable(warehouses);
+        await m.createTable(productBatches);
+        await m.addColumn(purchases, purchases.status);
+        await m.addColumn(purchases, purchases.warehouseId);
+        await m.addColumn(purchaseItems, purchaseItems.batchId);
+      }
+      if (from < 8) {
+        await m.createTable(stockTransfers);
+        await m.createTable(stockTransferItems);
+      }
+      if (from < 9) {
+        await m.createTable(employees);
+        await m.createTable(payrollEntries);
+        await m.createTable(payrollLines);
       }
     },
   );

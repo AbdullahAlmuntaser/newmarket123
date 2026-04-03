@@ -156,6 +156,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectCustomerError => 'Please select a customer for credit sale';
 
   @override
+  String get customerNameHint => 'Start typing to search or add new customer';
+
+  @override
+  String get addCustomerForCredit => 'Add New Customer for Credit Sale';
+
+  @override
   String get searchProducts => 'Search products...';
 
   @override
@@ -930,4 +936,70 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fullName => 'Full Name';
+
+  @override
+  String get status => 'Status';
+
+  @override
+  String get warehouse => 'Warehouse';
+
+  @override
+  String get batchNumber => 'Batch Number';
+
+  @override
+  String get expiryDate => 'Expiry Date';
+
+  @override
+  String get draft => 'Draft';
+
+  @override
+  String get ordered => 'Ordered';
+
+  @override
+  String get received => 'Received';
+
+  @override
+  String get cancelled => 'Cancelled';
+
+  @override
+  String get selectWarehouse => 'Select Warehouse';
+
+  @override
+  String get noWarehousesFound => 'No warehouses found';
+
+  @override
+  String get addWarehouse => 'Add Warehouse';
+
+  @override
+  String get warehouseName => 'Warehouse Name';
+
+  @override
+  String get errorLoadingData => 'Error loading data';
+
+  @override
+  String get from => 'From';
+
+  @override
+  String get to => 'To';
+
+  @override
+  String get whatWouldYouLikeToDo => 'What would you like to do?';
+
+  @override
+  String get downloadPdfInvoice => 'Download PDF Invoice';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get vatReport => 'VAT Report';
+
+  @override
+  String get vatSummary => 'VAT Summary';
+
+  @override
+  String get totalOutputVat => 'Total Output VAT';
+
+  @override
+  String get totalInputVat => 'Total Input VAT';
 }

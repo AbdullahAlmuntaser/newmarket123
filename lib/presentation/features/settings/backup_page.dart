@@ -85,9 +85,9 @@ class _BackupPageState extends State<BackupPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في استعادة البيانات: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('خطأ في استعادة البيانات: $e')));
       }
     } finally {
       if (mounted) {
@@ -99,9 +99,7 @@ class _BackupPageState extends State<BackupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('النسخ الاحتياطي والاستعادة'),
-      ),
+      appBar: AppBar(title: const Text('النسخ الاحتياطي والاستعادة')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -111,7 +109,9 @@ class _BackupPageState extends State<BackupPage> {
                   child: ListTile(
                     leading: const Icon(Icons.save, color: Colors.blue),
                     title: const Text('إنشاء نسخة احتياطية محلية'),
-                    subtitle: const Text('حفظ جميع البيانات في ملف JSON على الجهاز'),
+                    subtitle: const Text(
+                      'حفظ جميع البيانات في ملف JSON على الجهاز',
+                    ),
                     onTap: _createBackup,
                   ),
                 ),
@@ -129,7 +129,9 @@ class _BackupPageState extends State<BackupPage> {
                   child: ListTile(
                     leading: const Icon(Icons.restore, color: Colors.orange),
                     title: const Text('استعادة من ملف محلي'),
-                    subtitle: const Text('اختر ملف نسخة احتياطية لاستعادة البيانات'),
+                    subtitle: const Text(
+                      'اختر ملف نسخة احتياطية لاستعادة البيانات',
+                    ),
                     onTap: _restoreBackup,
                   ),
                 ),

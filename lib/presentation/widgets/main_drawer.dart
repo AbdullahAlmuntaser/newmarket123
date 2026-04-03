@@ -10,312 +10,293 @@ class MainDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final authProvider = Provider.of<AuthProvider>(context);
-    final syncService = Provider.of<SyncService>(context);
+    // ألوان داكنة ثابتة لضمان الظهور في كل الوضعيات
+    const Color drawerBgColor = Color(0xFF1E1E26); 
+    const Color dividerColor = Color(0xFF3E3E4A);
+
+    // استخدام Safe Provider Access لمنع أي خطأ مفاجئ
+    AuthProvider authProvider;
+    SyncService syncService;
+    AppLocalizations? l10n;
+
+    try {
+      authProvider = Provider.of<AuthProvider>(context);
+      syncService = Provider.of<SyncService>(context);
+      l10n = AppLocalizations.of(context);
+    } catch (e) {
+      // في حال حدوث خطأ نادر في الـ Providers، نعرض قائمة فارغة بسيطة للحفاظ على استقرار التطبيق
+      return Drawer(
+        backgroundColor: drawerBgColor,
+        child: const Center(
+          child: Icon(Icons.error_outline, color: Colors.white24, size: 40),
+        ),
+      );
+    }
+
     final isAdmin = authProvider.currentUser?.role == 'admin';
 
     return Drawer(
+      width: 280, // تحديد عرض صريح لضمان الظهور
+      backgroundColor: drawerBgColor,
+      surfaceTintColor: Colors.transparent, 
       child: Column(
         children: [
+          _buildHeader(context, authProvider, drawerBgColor),
+          
+          const Divider(color: dividerColor, height: 1),
+
+          // استخدام Expanded مع ListView هو الطريقة الصحيحة
+          // لكننا سنتأكد من أن الـ ListView لا تحتوي على Padding زائد
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                DrawerHeader(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.white,
-                        child: Icon(Icons.person, size: 40, color: Colors.blue),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        authProvider.currentUser?.fullName ?? 'User',
-                        style:
-                            const TextStyle(color: Colors.white, fontSize: 18),
-                      ),
-                      Text(
-                        authProvider.currentUser?.role ?? '',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.grid_view_rounded,
+                  title: l10n?.dashboard ?? 'لوحة التحكم',
+                  onTap: () => context.go('/'),
                 ),
-                ListTile(
-                  leading: const Icon(Icons.dashboard),
-                  title: Text(l10n.dashboard),
-                  onTap: () {
-                    context.go('/');
-                    Navigator.pop(context); // Close drawer
-                  },
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.point_of_sale_rounded,
+                  title: l10n?.pos ?? 'نقطة البيع',
+                  onTap: () => context.push('/pos'),
                 ),
-                ListTile(
-                  leading: const Icon(Icons.point_of_sale),
-                  title: Text(l10n.pos),
-                  onTap: () {
-                    context.push('/pos');
-                    Navigator.pop(context); // Close drawer
-                  },
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.history_rounded,
+                  title: l10n?.sales ?? 'سجل المبيعات',
+                  onTap: () => context.push('/sales'),
                 ),
-                ListTile(
-                  leading: const Icon(Icons.history),
-                  title: Text(l10n.sales),
-                  onTap: () {
-                    context.push('/sales');
-                    Navigator.pop(context); // Close drawer
-                  },
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.assignment_return_rounded,
+                  title: l10n?.returns ?? 'المرتجعات',
+                  onTap: () => context.push('/returns'),
                 ),
-                ListTile(
-                  leading: const Icon(Icons.assignment_return),
-                  title: Text(l10n.returns),
-                  onTap: () {
-                    context.push('/returns');
-                    Navigator.pop(context); // Close drawer
-                  },
+                
+                const Divider(color: dividerColor, height: 20, thickness: 1, indent: 15, endIndent: 15),
+
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.inventory_2_rounded,
+                  title: l10n?.products ?? 'المنتجات',
+                  onTap: () => context.push('/products'),
                 ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.inventory_2),
-                  title: Text(l10n.products),
-                  onTap: () {
-                    context.push('/products');
-                    Navigator.pop(context); // Close drawer
-                  },
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.swap_horiz_rounded,
+                  title: 'التحويل المخزني',
+                  onTap: () => context.push('/inventory/transfer'),
                 ),
-                ListTile(
-                  leading: const Icon(Icons.category),
-                  title: Text(l10n.categories),
-                  onTap: () {
-                    context.push('/categories');
-                    Navigator.pop(context); // Close drawer
-                  },
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.category_rounded,
+                  title: l10n?.categories ?? 'الفئات',
+                  onTap: () => context.push('/categories'),
                 ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.shopping_cart),
-                  title: Text(l10n.purchases),
-                  onTap: () {
-                    context.push('/purchases');
-                    Navigator.pop(context); // Close drawer
-                  },
+
+                const Divider(color: dividerColor, height: 20, thickness: 1, indent: 15, endIndent: 15),
+
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.shopping_cart_rounded,
+                  title: l10n?.purchases ?? 'المشتريات',
+                  onTap: () => context.push('/purchases'),
                 ),
-                ListTile(
-                  leading: const Icon(Icons.people),
-                  title: Text(l10n.customers),
-                  onTap: () {
-                    context.push('/customers');
-                    Navigator.pop(context); // Close drawer
-                  },
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.people_alt_rounded,
+                  title: l10n?.customers ?? 'العملاء',
+                  onTap: () => context.push('/customers'),
                 ),
-                ListTile(
-                  leading: const Icon(Icons.local_shipping),
-                  title: Text(l10n.suppliers),
-                  onTap: () {
-                    context.push('/suppliers');
-                    Navigator.pop(context); // Close drawer
-                  },
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.local_shipping_rounded,
+                  title: l10n?.suppliers ?? 'الموردين',
+                  onTap: () => context.push('/suppliers'),
                 ),
-                const Divider(),
-                ExpansionTile(
-                  leading: const Icon(Icons.account_balance),
-                  title: Text(l10n.accounting),
+
+                const Divider(color: dividerColor, height: 20, thickness: 1, indent: 15, endIndent: 15),
+
+                _buildExpansionGroup(
+                  context,
+                  icon: Icons.badge_rounded,
+                  title: 'الموارد البشرية',
                   children: [
-                    ListTile(
-                      leading: const Icon(Icons.account_tree),
-                      title: Text(l10n.chartOfAccounts),
-                      onTap: () {
-                        context.push('/accounting/coa');
-                        Navigator.pop(context); // Close drawer
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.list_alt),
-                      title: Text(l10n.generalLedger),
-                      onTap: () {
-                        context.push('/accounting/general-ledger');
-                        Navigator.pop(context); // Close drawer
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.balance),
-                      title: Text(l10n.trialBalance),
-                      onTap: () {
-                        context.push('/accounting/trial-balance');
-                        Navigator.pop(context); // Close drawer
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.money_off),
-                      title: Text(l10n.expenses),
-                      onTap: () {
-                        context.push('/accounting/expenses');
-                        Navigator.pop(context); // Close drawer
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.edit_note),
-                      title: Text(l10n.manualJournalEntries),
-                      onTap: () {
-                        context.push('/accounting/manual-entry');
-                        Navigator.pop(context); // Close drawer
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.account_balance_wallet),
-                      title: Text(l10n.reconciliation),
-                      onTap: () {
-                        context.push('/accounting/reconciliation');
-                        Navigator.pop(context); // Close drawer
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.access_time),
-                      title: Text(l10n.shiftManagement),
-                      onTap: () {
-                        context.push('/accounting/shifts');
-                        Navigator.pop(context); // Close drawer
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.payments),
-                      title: Text(l10n.cashFlow),
-                      onTap: () {
-                        context.push('/accounting/cash-flow');
-                        Navigator.pop(context); // Close drawer
-                      },
-                    ),
+                    _buildSubItem(context, 'إدارة الموظفين', '/hr/employees'),
+                    _buildSubItem(context, 'مسيرات الرواتب', '/hr/payroll'),
                   ],
                 ),
-                ExpansionTile(
-                  leading: const Icon(Icons.bar_chart),
-                  title: Text(l10n.reports),
+
+                _buildExpansionGroup(
+                  context,
+                  icon: Icons.account_balance_rounded,
+                  title: l10n?.accounting ?? 'المحاسبة',
                   children: [
-                    ListTile(
-                      leading: const Icon(Icons.inventory),
-                      title: Text(l10n.inventoryReports),
-                      onTap: () {
-                        context.push('/reports');
-                        Navigator.pop(context); // Close drawer
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.receipt),
-                      title: Text(l10n.vatReturn),
-                      onTap: () {
-                        context.push('/reports/vat');
-                        Navigator.pop(context); // Close drawer
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.history_edu),
-                      title: Text(l10n.auditLog),
-                      onTap: () {
-                        context.push('/reports/audit');
-                        Navigator.pop(context); // Close drawer
-                      },
-                    ),
+                    _buildSubItem(context, l10n?.chartOfAccounts ?? 'شجرة الحسابات', '/accounting/coa'),
+                    _buildSubItem(context, l10n?.generalLedger ?? 'دفتر الأستاذ', '/accounting/general-ledger'),
+                    _buildSubItem(context, l10n?.balanceSheet ?? 'الميزانية العمومية', '/accounting/balance-sheet'),
                   ],
                 ),
-                ListTile(
-                  leading: const Icon(Icons.print),
-                  title: Text(l10n.thermalPrinting),
-                  onTap: () {
-                    context.push('/settings/printer');
-                    Navigator.pop(context); // Close drawer
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.backup),
-                  title: const Text('النسخ الاحتياطي'),
-                  onTap: () {
-                    context.push('/settings/backup');
-                    Navigator.pop(context); // Close drawer
-                  },
-                ),
+                
                 if (isAdmin)
-                  ListTile(
-                    leading: const Icon(Icons.manage_accounts),
-                    title: const Text('إدارة المستخدمين'),
-                    onTap: () {
-                      context.push('/users');
-                      Navigator.pop(context); // Close drawer
-                    },
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.manage_accounts_rounded,
+                    title: 'إدارة المستخدمين',
+                    onTap: () => context.push('/users'),
                   ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.logout, color: Colors.red),
-                  title: Text(
-                    l10n.logout,
-                    style: const TextStyle(color: Colors.red),
-                  ),
+
+                const SizedBox(height: 20),
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.logout_rounded,
+                  title: l10n?.logout ?? 'تسجيل الخروج',
                   onTap: () {
                     authProvider.logout();
                     context.go('/login');
                   },
+                  isDestructive: true,
                 ),
               ],
             ),
           ),
+          
           _buildSyncStatus(context, syncService),
         ],
       ),
     );
   }
 
-  Widget _buildSyncStatus(BuildContext context, SyncService syncService) {
+  Widget _buildHeader(BuildContext context, AuthProvider authProvider, Color bgColor) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.grey.withAlpha(13),
-        border: const Border(top: BorderSide(color: Colors.grey, width: 0.2)),
+      width: double.infinity,
+      padding: const EdgeInsets.only(top: 50, bottom: 20, left: 20, right: 20),
+      color: bgColor,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start, // التصحيح للعربي: Start هو اليمين
+        children: [
+          const CircleAvatar(
+            radius: 35,
+            backgroundColor: Colors.white,
+            child: Icon(Icons.person_rounded, size: 45, color: Color(0xFF2196F3)),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            authProvider.currentUser?.fullName ?? 'System Admin',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            authProvider.currentUser?.role ?? 'admin',
+            style: const TextStyle(
+              color: Colors.white54,
+              fontSize: 13,
+            ),
+          ),
+        ],
       ),
-      child: ValueListenableBuilder<bool>(
-        valueListenable: syncService.isSyncing,
-        builder: (context, isSyncing, child) {
-          return Row(
+    );
+  }
+
+  Widget _buildDrawerItem(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    bool isDestructive = false,
+  }) {
+    return ListTile(
+      onTap: () {
+        Navigator.pop(context);
+        onTap();
+      },
+      leading: Icon(
+        icon,
+        color: isDestructive ? Colors.redAccent : Colors.white70,
+        size: 24,
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: isDestructive ? Colors.redAccent : Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+        ),
+      ),
+      visualDensity: const VisualDensity(vertical: -1),
+    );
+  }
+
+  Widget _buildExpansionGroup(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required List<Widget> children,
+  }) {
+    return Theme(
+      data: Theme.of(context).copyWith(
+        dividerColor: Colors.transparent,
+      ),
+      child: ExpansionTile(
+        leading: Icon(icon, color: Colors.white70, size: 24),
+        title: Text(
+          title,
+          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w400),
+        ),
+        iconColor: Colors.white,
+        collapsedIconColor: Colors.white70,
+        children: children,
+      ),
+    );
+  }
+
+  Widget _buildSubItem(BuildContext context, String title, String route) {
+    return ListTile(
+      contentPadding: const EdgeInsets.only(right: 55),
+      title: Text(
+        title,
+        style: const TextStyle(color: Colors.white60, fontSize: 14),
+      ),
+      onTap: () {
+        Navigator.pop(context);
+        context.push(route);
+      },
+    );
+  }
+
+  Widget _buildSyncStatus(BuildContext context, SyncService? syncService) {
+    if (syncService == null) return const SizedBox.shrink();
+    
+    return ValueListenableBuilder<bool>(
+      valueListenable: syncService.isSyncing,
+      builder: (context, isSyncing, child) {
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+          color: Colors.black12,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Icon(
-                Icons.sync,
-                size: 16,
-                color: isSyncing ? Colors.blue : Colors.green,
-              ),
-              const SizedBox(width: 8),
               Text(
                 isSyncing ? 'جاري المزامنة...' : 'تمت المزامنة',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isSyncing ? Colors.blue : Colors.green,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: const TextStyle(color: Colors.white38, fontSize: 10),
               ),
-              const Spacer(),
-              if (!isSyncing)
-                IconButton(
-                  icon: const Icon(Icons.refresh, size: 16),
-                  onPressed: () => syncService.syncAll(),
-                  constraints: const BoxConstraints(),
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
-                ),
-              if (isSyncing)
-                const SizedBox(
-                  width: 12,
-                  height: 12,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
+              const SizedBox(width: 8),
+              Icon(
+                isSyncing ? Icons.sync : Icons.cloud_done,
+                color: isSyncing ? Colors.blue : Colors.green,
+                size: 12,
+              ),
             ],
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

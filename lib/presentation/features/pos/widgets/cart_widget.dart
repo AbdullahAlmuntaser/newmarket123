@@ -36,10 +36,9 @@ class CartWidget extends StatelessWidget {
                       return ListTile(
                         title: Text(item.product.name),
                         subtitle: Text(
-                            '${item.quantity} x ${item.unitPrice.toStringAsFixed(2)}'),
-                        trailing: Text(
-                          item.total.toStringAsFixed(2),
+                          '${item.quantity} x ${item.unitPrice.toStringAsFixed(2)}',
                         ),
+                        trailing: Text(item.total.toStringAsFixed(2)),
                       );
                     },
                   ),
@@ -59,10 +58,7 @@ class CartWidget extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {},
-                  child: Text(l10n.checkout),
-                ),
+                ElevatedButton(onPressed: () {}, child: Text(l10n.checkout)),
               ],
             );
           },

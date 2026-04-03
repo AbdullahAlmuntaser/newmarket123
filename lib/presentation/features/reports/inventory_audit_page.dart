@@ -17,6 +17,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final Map<String, double> _actualStockValues = {};
+  Warehouse? _selectedWarehouse;
   bool _isSaving = false;
 
   @override
@@ -28,6 +29,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final db = context.read<AppDatabase>();
 
     return Scaffold(
       appBar: AppBar(
@@ -43,75 +45,121 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildNewAuditTab(context, l10n),
-          _buildAuditHistoryTab(context, l10n),
+          _buildNewAuditTab(context, db, l10n),
+          _buildAuditHistoryTab(context, db, l10n),
         ],
       ),
     );
   }
 
-  Widget _buildNewAuditTab(BuildContext context, AppLocalizations l10n) {
-    final db = context.read<AppDatabase>();
+  Widget _buildNewAuditTab(
+    BuildContext context,
+    AppDatabase db,
+    AppLocalizations l10n,
+  ) {
     return Column(
       children: [
-        Expanded(
-          child: StreamBuilder<List<Product>>(
-            stream: db.select(db.products).watch(),
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: StreamBuilder<List<Warehouse>>(
+            stream: db.select(db.warehouses).watch(),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final products = snapshot.data ?? [];
+              final warehouses = snapshot.data ?? [];
+              if (warehouses.isEmpty) return Text(l10n.noWarehousesFound);
 
-              return ListView.builder(
-                padding: const EdgeInsets.all(8),
-                itemCount: products.length,
-                itemBuilder: (context, index) {
-                  final product = products[index];
-                  return Card(
-                    child: ListTile(
-                      title: Text(
-                        product.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(
-                        '${l10n.skuLabel}: ${product.sku} | ${l10n.stockLabel}: ${product.stock}',
-                      ),
-                      trailing: SizedBox(
-                        width: 80,
-                        child: TextField(
-                          keyboardType: TextInputType.number,
-                          textAlign: TextAlign.center,
-                          decoration: InputDecoration(
-                            hintText: product.stock.toString(),
-                            isDense: true,
-                            border: const OutlineInputBorder(),
-                          ),
-                          onChanged: (value) {
-                            final val = double.tryParse(value);
-                            if (val != null) {
-                              _actualStockValues[product.id] = val;
-                            } else {
-                              _actualStockValues.remove(product.id);
-                            }
-                            setState(
-                              () {},
-                            ); // To show/hide save button or status
-                          },
-                        ),
-                      ),
-                    ),
-                  );
-                },
+              if (_selectedWarehouse == null && warehouses.isNotEmpty) {
+                _selectedWarehouse = warehouses.firstWhere(
+                  (w) => w.isDefault,
+                  orElse: () => warehouses.first,
+                );
+              }
+
+              return DropdownButtonFormField<Warehouse>(
+                initialValue: _selectedWarehouse,
+                decoration: InputDecoration(
+                  labelText: l10n.warehouse,
+                  border: const OutlineInputBorder(),
+                ),
+                items: warehouses
+                    .map((w) => DropdownMenuItem(value: w, child: Text(w.name)))
+                    .toList(),
+                onChanged: (value) => setState(() {
+                  _selectedWarehouse = value;
+                  _actualStockValues.clear();
+                }),
               );
             },
           ),
+        ),
+        Expanded(
+          child: _selectedWarehouse == null
+              ? const Center(child: CircularProgressIndicator())
+              : StreamBuilder<List<ProductWithStock>>(
+                  stream: _watchProductsWithWarehouseStock(
+                    db,
+                    _selectedWarehouse!.id,
+                  ),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    final products = snapshot.data ?? [];
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(8),
+                      itemCount: products.length,
+                      itemBuilder: (context, index) {
+                        final item = products[index];
+                        final product = item.product;
+                        final warehouseStock = item.warehouseStock;
+
+                        return Card(
+                          child: ListTile(
+                            title: Text(
+                              product.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '${l10n.skuLabel}: ${product.sku} | ${l10n.warehouse}: $warehouseStock',
+                            ),
+                            trailing: SizedBox(
+                              width: 80,
+                              child: TextField(
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.center,
+                                decoration: InputDecoration(
+                                  hintText: warehouseStock.toString(),
+                                  isDense: true,
+                                  border: const OutlineInputBorder(),
+                                ),
+                                onChanged: (value) {
+                                  final val = double.tryParse(value);
+                                  if (val != null) {
+                                    _actualStockValues[product.id] = val;
+                                  } else {
+                                    _actualStockValues.remove(product.id);
+                                  }
+                                  setState(() {});
+                                },
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
         ),
         Container(
           padding: const EdgeInsets.all(16),
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: (_actualStockValues.isEmpty || _isSaving)
+            onPressed:
+                (_actualStockValues.isEmpty ||
+                    _isSaving ||
+                    _selectedWarehouse == null)
                 ? null
                 : () => _saveAudit(context),
             icon: _isSaving
@@ -131,8 +179,33 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
     );
   }
 
-  Widget _buildAuditHistoryTab(BuildContext context, AppLocalizations l10n) {
-    final db = context.read<AppDatabase>();
+  Stream<List<ProductWithStock>> _watchProductsWithWarehouseStock(
+    AppDatabase db,
+    String warehouseId,
+  ) {
+    return db.select(db.products).watch().asyncMap((productsList) async {
+      List<ProductWithStock> results = [];
+      for (var product in productsList) {
+        final batches =
+            await (db.select(db.productBatches)
+                  ..where((b) => b.productId.equals(product.id))
+                  ..where((b) => b.warehouseId.equals(warehouseId)))
+                .get();
+
+        final warehouseStock = batches.fold(0.0, (sum, b) => sum + b.quantity);
+        results.add(
+          ProductWithStock(product: product, warehouseStock: warehouseStock),
+        );
+      }
+      return results;
+    });
+  }
+
+  Widget _buildAuditHistoryTab(
+    BuildContext context,
+    AppDatabase db,
+    AppLocalizations l10n,
+  ) {
     return StreamBuilder<List<InventoryAudit>>(
       stream: (db.select(
         db.inventoryAudits,
@@ -238,7 +311,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
               InventoryAuditsCompanion.insert(
                 id: Value(auditId),
                 auditDate: Value(DateTime.now()),
-                note: const Value('Manual Audit'),
+                note: Value('Audit for Warehouse: ${_selectedWarehouse?.name}'),
               ),
             );
 
@@ -249,7 +322,17 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
           final product = await (db.select(
             db.products,
           )..where((p) => p.id.equals(productId))).getSingle();
-          final difference = actualStock - product.stock;
+
+          final batches =
+              await (db.select(db.productBatches)
+                    ..where((b) => b.productId.equals(productId))
+                    ..where(
+                      (b) => b.warehouseId.equals(_selectedWarehouse!.id),
+                    ))
+                  .get();
+
+          final systemStock = batches.fold(0.0, (sum, b) => sum + b.quantity);
+          final difference = actualStock - systemStock;
 
           await db
               .into(db.inventoryAuditItems)
@@ -257,15 +340,54 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
                 InventoryAuditItemsCompanion.insert(
                   auditId: auditId,
                   productId: productId,
-                  systemStock: product.stock,
+                  systemStock: systemStock,
                   actualStock: actualStock,
                   difference: difference,
                 ),
               );
 
-          // Update product stock
+          // Adjust batches
+          if (difference < 0) {
+            // Loss: Reduce from batches (FIFO-like)
+            double remainingToReduce = -difference;
+            for (var batch in batches) {
+              if (remainingToReduce <= 0) break;
+              double reduction = remainingToReduce > batch.quantity
+                  ? batch.quantity
+                  : remainingToReduce;
+              await (db.update(
+                db.productBatches,
+              )..where((b) => b.id.equals(batch.id))).write(
+                ProductBatchesCompanion(
+                  quantity: Value(batch.quantity - reduction),
+                ),
+              );
+              remainingToReduce -= reduction;
+            }
+          } else if (difference > 0) {
+            // Gain: Add to a new adjustment batch
+            await db
+                .into(db.productBatches)
+                .insert(
+                  ProductBatchesCompanion.insert(
+                    id: Value(const Uuid().v4()),
+                    productId: productId,
+                    warehouseId: _selectedWarehouse!.id,
+                    batchNumber: 'ADJ-${DateTime.now().millisecondsSinceEpoch}',
+                    quantity: Value(difference),
+                    initialQuantity: Value(difference),
+                    costPrice: Value(product.buyPrice),
+                  ),
+                );
+          }
+
+          // Update product total aggregate stock
+          final allBatches = await (db.select(
+            db.productBatches,
+          )..where((b) => b.productId.equals(productId))).get();
+          final totalStock = allBatches.fold(0.0, (sum, b) => sum + b.quantity);
           await (db.update(db.products)..where((p) => p.id.equals(productId)))
-              .write(ProductsCompanion(stock: Value(actualStock)));
+              .write(ProductsCompanion(stock: Value(totalStock)));
         }
       });
 
@@ -286,4 +408,10 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
       setState(() => _isSaving = false);
     }
   }
+}
+
+class ProductWithStock {
+  final Product product;
+  final double warehouseStock;
+  ProductWithStock({required this.product, required this.warehouseStock});
 }

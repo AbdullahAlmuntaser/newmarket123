@@ -15,6 +15,7 @@
     extensions = [
       "Dart-Code.flutter"
       "Dart-Code.dart-code"
+      "Firebase.firebase-vscode"
     ];
     workspace = {
       # Runs when a workspace is first created with this `dev.nix` file

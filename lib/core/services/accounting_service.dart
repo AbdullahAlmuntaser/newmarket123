@@ -130,7 +130,7 @@ class AccountingService {
     final taxAccount = await dao.getAccountByCode(codeOutputVAT);
 
     if (debitAccount == null || revenueAccount == null || taxAccount == null) {
-      return;
+      throw Exception('Missing one or more required GL accounts for sale.');
     }
 
     final entry = GLEntriesCompanion.insert(
@@ -163,47 +163,165 @@ class AccountingService {
     ];
 
     await dao.createEntry(entry, lines);
+    await _auditService.logCreate(
+      'GLEntry',
+      entryId,
+      details: 'Revenue entry for Sale #${sale.id.substring(0, 8)}',
+    );
 
-    // 2. COGS Entry
+    // 2. COGS Entry (applying FIFO)
     double totalCost = 0.0;
+    List<Future<void>> stockUpdates = [];
+
     for (var item in items) {
-      final product = await (db.select(
-        db.products,
-      )..where((p) => p.id.equals(item.productId))).getSingle();
-      totalCost += product.buyPrice * item.quantity;
+      double remainingQuantity = item.quantity;
+
+      // Get product batches, ordered by expiry date (FIFO for nearing expiry first, then oldest received)
+      final batches = await (db.select(db.productBatches)
+            ..where((b) => b.productId.equals(item.productId))
+            ..orderBy([
+              (b) => OrderingTerm(expression: b.expiryDate, mode: OrderingMode.asc),
+              (b) => OrderingTerm(expression: b.createdAt, mode: OrderingMode.asc),
+            ]))
+          .get();
+
+      for (var batch in batches) {
+        if (remainingQuantity <= 0) break;
+
+        double quantityToDeduct = 0;
+        if (batch.quantity >= remainingQuantity) {
+          quantityToDeduct = remainingQuantity;
+          remainingQuantity = 0;
+        } else {
+          quantityToDeduct = batch.quantity;
+          remainingQuantity -= batch.quantity;
+        }
+
+        totalCost += quantityToDeduct * batch.costPrice;
+
+        // Update batch quantity
+        stockUpdates.add(
+          (db.update(db.productBatches)..where((b) => b.id.equals(batch.id)))
+              .write(ProductBatchesCompanion(
+            quantity: Value(batch.quantity - quantityToDeduct),
+          )),
+        );
+      }
+
+      if (remainingQuantity > 0) {
+        // Handle case where there isn't enough stock in batches
+        // This might indicate an inventory discrepancy or an invalid sale
+        // For now, we'll log an error and assume 0 cost for remaining quantity to allow sale to proceed
+        // In a real system, this might prevent the sale or flag for review
+        await _auditService.log(
+          action: 'INVENTORY_DISCREPANCY',
+          targetEntity: 'ProductBatches',
+          entityId: item.productId,
+          details:
+              'Not enough stock in batches for product ${item.productId}. Remaining: $remainingQuantity',
+          userId: null, // Assuming no user context here, could be added later
+        );
+      }
     }
+
+    // Execute all batch updates
+    await Future.wait(stockUpdates);
 
     if (totalCost > 0) {
       final cogsEntryId = const Uuid().v4();
       final cogsAccount = await dao.getAccountByCode(codeCOGS);
       final inventoryAccount = await dao.getAccountByCode(codeInventory);
 
-      if (cogsAccount != null && inventoryAccount != null) {
-        final cogsEntry = GLEntriesCompanion.insert(
-          id: Value(cogsEntryId),
-          description: 'COGS for Sale #${sale.id.substring(0, 8)}',
-          date: Value(sale.createdAt),
-          referenceType: const Value('COGS'),
-          referenceId: Value(sale.id),
-        );
-
-        final cogsLines = [
-          GLLinesCompanion.insert(
-            entryId: cogsEntryId,
-            accountId: cogsAccount.id,
-            debit: Value(totalCost),
-            credit: const Value(0.0),
-          ),
-          GLLinesCompanion.insert(
-            entryId: cogsEntryId,
-            accountId: inventoryAccount.id,
-            debit: const Value(0.0),
-            credit: Value(totalCost),
-          ),
-        ];
-        await dao.createEntry(cogsEntry, cogsLines);
+      if (cogsAccount == null || inventoryAccount == null) {
+        throw Exception('Missing COGS or Inventory GL accounts.');
       }
+
+      final cogsEntry = GLEntriesCompanion.insert(
+        id: Value(cogsEntryId),
+        description: 'COGS for Sale #${sale.id.substring(0, 8)}',
+        date: Value(sale.createdAt),
+        referenceType: const Value('COGS'),
+        referenceId: Value(sale.id),
+      );
+
+      final cogsLines = [
+        GLLinesCompanion.insert(
+          entryId: cogsEntryId,
+          accountId: cogsAccount.id,
+          debit: Value(totalCost),
+          credit: const Value(0.0),
+        ),
+        GLLinesCompanion.insert(
+          entryId: cogsEntryId,
+          accountId: inventoryAccount.id,
+          debit: const Value(0.0),
+          credit: Value(totalCost),
+        ),
+      ];
+      await dao.createEntry(cogsEntry, cogsLines);
+      await _auditService.logCreate(
+        'GLEntry',
+        cogsEntryId,
+        details: 'COGS entry for Sale #${sale.id.substring(0, 8)}. Cost: $totalCost',
+      );
     }
+  }
+
+  Future<VatReportData> getVatReport({DateTime? startDate, DateTime? endDate}) async {
+    final dao = db.accountingDao;
+    final reportStartDate = startDate ?? DateTime(2000);
+    final reportEndDate = endDate ?? DateTime.now();
+
+    final outputVatAccount = await dao.getAccountByCode(codeOutputVAT);
+    final inputVatAccount = await dao.getAccountByCode(codeInputVAT);
+
+    if (outputVatAccount == null || inputVatAccount == null) {
+      throw Exception('Output VAT or Input VAT accounts not found.');
+    }
+
+    // Calculate total output VAT (sales tax collected)
+    final outputVatLines = await (
+      db.select(db.gLLines)
+        .join([
+          innerJoin(db.gLEntries, db.gLEntries.id.equalsExp(db.gLLines.entryId)),
+        ])
+        ..where(
+          db.gLLines.accountId.equals(outputVatAccount.id) &
+          db.gLEntries.date.isBetweenValues(reportStartDate, reportEndDate),
+        )
+    ).get();
+
+    double totalOutputVat = 0.0;
+    for (final line in outputVatLines) {
+      totalOutputVat += (line.read(db.gLLines.credit) ?? 0) - (line.read(db.gLLines.debit) ?? 0); // VAT is a credit on sales
+    }
+
+    // Calculate total input VAT (purchase tax paid)
+    final inputVatLines = await (
+      db.select(db.gLLines)
+        .join([
+          innerJoin(db.gLEntries, db.gLEntries.id.equalsExp(db.gLLines.entryId)),
+        ])
+        ..where(
+          db.gLLines.accountId.equals(inputVatAccount.id) &
+          db.gLEntries.date.isBetweenValues(reportStartDate, reportEndDate),
+        )
+    ).get();
+
+    double totalInputVat = 0.0;
+    for (final line in inputVatLines) {
+      totalInputVat += (line.read(db.gLLines.debit) ?? 0) - (line.read(db.gLLines.credit) ?? 0); // Input VAT is a debit on purchases
+    }
+
+    final netVatPayable = totalOutputVat - totalInputVat;
+
+    return VatReportData(
+      totalOutputVat: totalOutputVat,
+      totalInputVat: totalInputVat,
+      netVatPayable: netVatPayable,
+      startDate: reportStartDate,
+      endDate: reportEndDate,
+    );
   }
 
   Future<void> closeFinancialYear(DateTime endDate) async {
@@ -604,7 +722,9 @@ class AccountingService {
     }
 
     // Top Selling Products
-    final topProductsFromDao = await db.salesDao.getTopSellingProducts(limit: 5);
+    final topProductsFromDao = await db.salesDao.getTopSellingProducts(
+      limit: 5,
+    );
     final topSellingProducts = topProductsFromDao
         .map((p) => DashboardTopProduct(p.product.name, p.totalQuantity))
         .toList();
@@ -622,6 +742,27 @@ class AccountingService {
       topSellingProducts: topSellingProducts,
     );
   }
+}
+
+@JsonSerializable()
+class VatReportData {
+  final double totalOutputVat;
+  final double totalInputVat;
+  final double netVatPayable;
+  final DateTime startDate;
+  final DateTime endDate;
+
+  VatReportData({
+    required this.totalOutputVat,
+    required this.totalInputVat,
+    required this.netVatPayable,
+    required this.startDate,
+    required this.endDate,
+  });
+
+  factory VatReportData.fromJson(Map<String, dynamic> json) =>
+      _$VatReportDataFromJson(json);
+  Map<String, dynamic> toJson() => _$VatReportDataToJson(this);
 }
 
 @JsonSerializable(explicitToJson: true)

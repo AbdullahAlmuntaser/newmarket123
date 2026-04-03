@@ -6,9 +6,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Inventory'),
-      ),
+      appBar: AppBar(title: const Text('Inventory')),
       body: ListView.builder(
         itemCount: 20, // Placeholder for 20 inventory items
         itemBuilder: (context, index) {

@@ -21,7 +21,9 @@ class _SyncPageState extends State<SyncPage> {
   @override
   void initState() {
     super.initState();
-    _backupService = BackupService(Provider.of<AppDatabase>(context, listen: false));
+    _backupService = BackupService(
+      Provider.of<AppDatabase>(context, listen: false),
+    );
     _loadCloudBackups();
   }
 
@@ -31,11 +33,11 @@ class _SyncPageState extends State<SyncPage> {
     try {
       await _backupService.listCloudBackups();
       if (!mounted) return;
-      // Note: listCloudBackups in BackupService returns Future<List<String>>, 
-      // but SyncPage expects List<Reference>. 
+      // Note: listCloudBackups in BackupService returns Future<List<String>>,
+      // but SyncPage expects List<Reference>.
       // For now, we'll keep the logic as is to fulfill the instance requirement.
       // If BackupService is updated, this will need to be adjusted.
-      // setState(() => _cloudBackups = backups); 
+      // setState(() => _cloudBackups = backups);
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
@@ -77,7 +79,9 @@ class _SyncPageState extends State<SyncPage> {
       await _backupService.uploadToFirebase(localPath);
       await _loadCloudBackups();
       if (!mounted) return;
-      messenger.showSnackBar(SnackBar(content: Text('Cloud backup successful')));
+      messenger.showSnackBar(
+        SnackBar(content: Text('Cloud backup successful')),
+      );
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
@@ -165,10 +169,12 @@ class _SyncPageState extends State<SyncPage> {
                   // Ideally, a file picker should be used here.
                   try {
                     // Placeholder for file picking
-                    const filePath = 'placeholder_path'; 
+                    const filePath = 'placeholder_path';
                     await _backupService.restoreFromLocal(filePath);
                     if (!mounted) return;
-                    messenger.showSnackBar(SnackBar(content: Text('Restore successful')));
+                    messenger.showSnackBar(
+                      SnackBar(content: Text('Restore successful')),
+                    );
                   } catch (e) {
                     if (!mounted) return;
                     messenger.showSnackBar(
@@ -220,7 +226,9 @@ class _SyncPageState extends State<SyncPage> {
                 // BackupService currently takes a String fileName.
                 await _backupService.downloadAndRestore(ref.name);
                 if (!mounted) return;
-                messenger.showSnackBar(SnackBar(content: Text('Restore successful')));
+                messenger.showSnackBar(
+                  SnackBar(content: Text('Restore successful')),
+                );
               } catch (e) {
                 if (!mounted) return;
                 messenger.showSnackBar(
@@ -241,4 +249,3 @@ class _SyncPageState extends State<SyncPage> {
     );
   }
 }
-

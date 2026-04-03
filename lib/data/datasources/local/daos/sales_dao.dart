@@ -35,9 +35,9 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
 
   Future<List<TopProduct>> getTopSellingProducts({int limit = 5}) async {
     final quantity = saleItems.quantity.sum();
-    final query = select(saleItems).join([
-      innerJoin(products, products.id.equalsExp(saleItems.productId)),
-    ]);
+    final query = select(
+      saleItems,
+    ).join([innerJoin(products, products.id.equalsExp(saleItems.productId))]);
 
     query.addColumns([quantity]);
     query.groupBy([saleItems.productId]);

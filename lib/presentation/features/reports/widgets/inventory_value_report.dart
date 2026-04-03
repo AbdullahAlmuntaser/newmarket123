@@ -29,9 +29,7 @@ class InventoryValueReport extends StatelessWidget {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  return Text(
-                    'Error: ${snapshot.error}',
-                  );
+                  return Text('Error: ${snapshot.error}');
                 }
                 final totalValue = snapshot.data ?? 0.0;
                 return Row(

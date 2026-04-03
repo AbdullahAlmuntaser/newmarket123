@@ -6,6 +6,24 @@ part of 'accounting_service.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+VatReportData _$VatReportDataFromJson(Map<String, dynamic> json) =>
+    VatReportData(
+      totalOutputVat: (json['totalOutputVat'] as num).toDouble(),
+      totalInputVat: (json['totalInputVat'] as num).toDouble(),
+      netVatPayable: (json['netVatPayable'] as num).toDouble(),
+      startDate: DateTime.parse(json['startDate'] as String),
+      endDate: DateTime.parse(json['endDate'] as String),
+    );
+
+Map<String, dynamic> _$VatReportDataToJson(VatReportData instance) =>
+    <String, dynamic>{
+      'totalOutputVat': instance.totalOutputVat,
+      'totalInputVat': instance.totalInputVat,
+      'netVatPayable': instance.netVatPayable,
+      'startDate': instance.startDate.toIso8601String(),
+      'endDate': instance.endDate.toIso8601String(),
+    };
+
 IncomeStatementData _$IncomeStatementDataFromJson(Map<String, dynamic> json) =>
     IncomeStatementData(
       revenues: (json['revenues'] as List<dynamic>)

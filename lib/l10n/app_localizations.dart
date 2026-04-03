@@ -389,6 +389,18 @@ abstract class AppLocalizations {
   /// **'Please select a customer for credit sale'**
   String get selectCustomerError;
 
+  /// No description provided for @customerNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Start typing to search or add new customer'**
+  String get customerNameHint;
+
+  /// No description provided for @addCustomerForCredit.
+  ///
+  /// In en, this message translates to:
+  /// **'Add New Customer for Credit Sale'**
+  String get addCustomerForCredit;
+
   /// No description provided for @searchProducts.
   ///
   /// In en, this message translates to:
@@ -1876,6 +1888,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Full Name'**
   String get fullName;
+
+  /// No description provided for @status.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get status;
+
+  /// No description provided for @warehouse.
+  ///
+  /// In en, this message translates to:
+  /// **'Warehouse'**
+  String get warehouse;
+
+  /// No description provided for @batchNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Batch Number'**
+  String get batchNumber;
+
+  /// No description provided for @expiryDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Expiry Date'**
+  String get expiryDate;
+
+  /// No description provided for @draft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get draft;
+
+  /// No description provided for @ordered.
+  ///
+  /// In en, this message translates to:
+  /// **'Ordered'**
+  String get ordered;
+
+  /// No description provided for @received.
+  ///
+  /// In en, this message translates to:
+  /// **'Received'**
+  String get received;
+
+  /// No description provided for @cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get cancelled;
+
+  /// No description provided for @selectWarehouse.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Warehouse'**
+  String get selectWarehouse;
+
+  /// No description provided for @noWarehousesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No warehouses found'**
+  String get noWarehousesFound;
+
+  /// No description provided for @addWarehouse.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Warehouse'**
+  String get addWarehouse;
+
+  /// No description provided for @warehouseName.
+  ///
+  /// In en, this message translates to:
+  /// **'Warehouse Name'**
+  String get warehouseName;
+
+  /// No description provided for @errorLoadingData.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading data'**
+  String get errorLoadingData;
+
+  /// No description provided for @from.
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get from;
+
+  /// No description provided for @to.
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get to;
+
+  /// No description provided for @whatWouldYouLikeToDo.
+  ///
+  /// In en, this message translates to:
+  /// **'What would you like to do?'**
+  String get whatWouldYouLikeToDo;
+
+  /// No description provided for @downloadPdfInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Download PDF Invoice'**
+  String get downloadPdfInvoice;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
+  /// No description provided for @vatReport.
+  ///
+  /// In en, this message translates to:
+  /// **'VAT Report'**
+  String get vatReport;
+
+  /// No description provided for @vatSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'VAT Summary'**
+  String get vatSummary;
+
+  /// No description provided for @totalOutputVat.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Output VAT'**
+  String get totalOutputVat;
+
+  /// No description provided for @totalInputVat.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Input VAT'**
+  String get totalInputVat;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

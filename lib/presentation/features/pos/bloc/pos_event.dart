@@ -6,6 +6,15 @@ abstract class PosEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+class LoadCategories extends PosEvent {}
+
+class SelectCategory extends PosEvent {
+  final String? categoryId;
+  const SelectCategory(this.categoryId);
+  @override
+  List<Object?> get props => [categoryId];
+}
+
 class AddProductBySku extends PosEvent {
   final String sku;
   const AddProductBySku(this.sku);
@@ -43,6 +52,13 @@ class CheckoutEvent extends PosEvent {
   final String paymentMethod;
   final String? customerId;
   const CheckoutEvent(this.paymentMethod, {this.customerId});
+}
+
+class SearchProducts extends PosEvent {
+  final String query;
+  const SearchProducts(this.query);
+  @override
+  List<Object?> get props => [query];
 }
 
 class ClearCart extends PosEvent {}

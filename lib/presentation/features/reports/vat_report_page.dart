@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:drift/drift.dart' as drift;
-import 'package:intl/intl.dart' as intl;
-import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/l10n/app_localizations.dart';
+import 'package:supermarket/core/services/accounting_service.dart';
 import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
+import 'package:supermarket/l10n/app_localizations.dart';
+import 'package:intl/intl.dart';
 
 class VatReportPage extends StatefulWidget {
   const VatReportPage({super.key});
@@ -14,220 +13,132 @@ class VatReportPage extends StatefulWidget {
 }
 
 class _VatReportPageState extends State<VatReportPage> {
-  DateTimeRange? _dateRange;
-  Future<Map<String, double>>? _reportFuture;
+  DateTime? _startDate;
+  DateTime? _endDate;
 
   @override
   void initState() {
     super.initState();
-    _dateRange = DateTimeRange(
-      start: DateTime(DateTime.now().year, DateTime.now().month, 1),
-      end: DateTime.now(),
+    _endDate = DateTime.now();
+    _startDate = DateTime(_endDate!.year, _endDate!.month, 1); // Default to start of current month
+  }
+
+  Future<void> _selectDateRange(BuildContext context) async {
+    final initialDateRange = DateTimeRange(
+      start: _startDate ?? DateTime.now(),
+      end: _endDate ?? DateTime.now(),
     );
-    _generateReport();
-  }
-
-  void _generateReport() {
-    final db = context.read<AccountingProvider>().db;
-    setState(() {
-      _reportFuture = _calculateVat(db, _dateRange!);
-    });
-  }
-
-  Future<void> _selectDateRange() async {
-    final l10n = AppLocalizations.of(context)!;
     final picked = await showDateRangePicker(
       context: context,
-      helpText: l10n.selectDateRange,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-      initialDateRange: _dateRange,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+      initialDateRange: initialDateRange,
     );
-    if (picked != null && picked != _dateRange) {
+
+    if (picked != null && picked != initialDateRange) {
       setState(() {
-        _dateRange = picked;
+        _startDate = picked.start;
+        _endDate = picked.end;
       });
-      _generateReport();
     }
-  }
-
-  Future<Map<String, double>> _calculateVat(
-    AppDatabase db,
-    DateTimeRange range,
-  ) async {
-    final dao = db.accountingDao;
-
-    // 1. Output VAT (Tax on Sales - Code 2020)
-    final outputVatAccount = await dao.getAccountByCode('2020');
-    double totalSalesVat = 0.0;
-    if (outputVatAccount != null) {
-      totalSalesVat = await dao.getAccountBalanceInRange(
-        outputVatAccount.id,
-        range.start,
-        range.end,
-      );
-    } else {
-      // Fallback to simplified calculation if account doesn't exist yet
-      final salesQuery = db.select(db.sales)
-        ..where((t) => t.createdAt.isBetweenValues(range.start, range.end));
-      final sales = await salesQuery.get();
-      totalSalesVat = sales.fold<double>(0.0, (sum, sale) => sum + sale.tax);
-    }
-
-    // 2. Input VAT (Tax on Purchases - Code 1050)
-    final inputVatAccount = await dao.getAccountByCode('1050');
-    double totalPurchasesVat = 0.0;
-    if (inputVatAccount != null) {
-      totalPurchasesVat = await dao.getAccountBalanceInRange(
-        inputVatAccount.id,
-        range.start,
-        range.end,
-      );
-    } else {
-      // Fallback to simplified calculation if account doesn't exist yet
-      final purchasesQuery = db.select(db.purchases)
-        ..where((t) => t.date.isBetweenValues(range.start, range.end));
-      final purchases = await purchasesQuery.get();
-      totalPurchasesVat = purchases.fold<double>(
-        0.0,
-        (sum, p) => sum + (p.total - (p.total / 1.15)),
-      );
-    }
-
-    return {
-      'salesVat': totalSalesVat,
-      'purchasesVat': totalPurchasesVat,
-      'netVat': totalSalesVat - totalPurchasesVat,
-    };
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final dateFormat = intl.DateFormat.yMMMd();
+    final provider = context.watch<AccountingProvider>();
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.vatReturn),
+        title: Text(l10n.vatReport),
         actions: [
           IconButton(
-            icon: const Icon(Icons.date_range),
-            onPressed: _selectDateRange,
+            icon: const Icon(Icons.calendar_today),
+            onPressed: () => _selectDateRange(context),
             tooltip: l10n.selectDateRange,
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24.0),
-            color: HSLColor.fromColor(Theme.of(context).primaryColor).withAlpha(0.05).toColor(),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+      body: FutureBuilder<VatReportData>( // Assuming VatReportData will be created
+        future: provider.getVatReport(startDate: _startDate, endDate: _endDate), // Assuming getVatReport will be added to AccountingProvider
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('${l10n.errorLoadingData}: ${snapshot.error}'));
+          }
+          final data = snapshot.data;
+          if (data == null) return Center(child: Text(l10n.noDataAvailable));
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.calendar_today, size: 20),
-                const SizedBox(width: 12),
-                Text(
-                  '${dateFormat.format(_dateRange!.start)} - ${dateFormat.format(_dateRange!.end)}',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                ),
+                _buildDateRangeDisplay(l10n),
+                const SizedBox(height: 16),
+                _buildSummaryCard(l10n, data), // Will create this widget
+                const SizedBox(height: 24),
+                // Here we will list detailed transactions
+                Text(l10n.vatOnSales, style: Theme.of(context).textTheme.titleMedium),
+                // Example: ListView for sales with VAT
+                // ...
               ],
             ),
-          ),
-          Expanded(
-            child: FutureBuilder<Map<String, double>>(
-              future: _reportFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-                if (!snapshot.hasData) {
-                  return Center(child: Text(l10n.noDataAvailable));
-                }
-
-                final data = snapshot.data!;
-                final salesVat = data['salesVat']!;
-                final purchasesVat = data['purchasesVat']!;
-                final netVat = data['netVat']!;
-
-                return ListView(
-                  padding: const EdgeInsets.all(20.0),
-                  children: [
-                    _buildReportCard(
-                      title: l10n.vatOnSales,
-                      amount: salesVat,
-                      color: Colors.green,
-                      icon: Icons.trending_up,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildReportCard(
-                      title: l10n.vatOnPurchases,
-                      amount: purchasesVat,
-                      color: Colors.orange,
-                      icon: Icons.trending_down,
-                    ),
-                    const Divider(height: 48, thickness: 2),
-                    _buildReportCard(
-                      title: l10n.netVatPayable,
-                      amount: netVat,
-                      color: netVat >= 0 ? Colors.blue : Colors.red,
-                      isBold: true,
-                      icon: Icons.account_balance,
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildReportCard({
-    required String title,
-    required double amount,
-    required Color color,
-    required IconData icon,
-    bool isBold = false,
-  }) {
+  Widget _buildDateRangeDisplay(AppLocalizations l10n) {
+    final formatter = DateFormat('dd-MM-yyyy');
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      elevation: 2,
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(12.0),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            CircleAvatar(
-              backgroundColor: HSLColor.fromColor(color).withAlpha(0.1).toColor(),
-              child: Icon(icon, color: color),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
-                ),
-              ),
-            ),
-            Text(
-              amount.toStringAsFixed(2),
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
+            Text('${l10n.from}: ${formatter.format(_startDate ?? DateTime.now())}'),
+            Text('${l10n.to}: ${formatter.format(_endDate ?? DateTime.now())}'),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(AppLocalizations l10n, VatReportData data) {
+    return Card(
+      elevation: 4,
+      color: Theme.of(context).colorScheme.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.vatSummary, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+            const Divider(),
+            _buildSummaryRow(l10n.totalOutputVat, data.totalOutputVat),
+            _buildSummaryRow(l10n.totalInputVat, data.totalInputVat), // Assuming Input VAT from purchases later
+            const Divider(),
+            _buildSummaryRow(l10n.netVatPayable, data.netVatPayable, isBold: true),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, double amount, {bool isBold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: isBold ? const TextStyle(fontWeight: FontWeight.bold) : null),
+          Text(amount.toStringAsFixed(2), style: isBold ? const TextStyle(fontWeight: FontWeight.bold) : null),
+        ],
       ),
     );
   }

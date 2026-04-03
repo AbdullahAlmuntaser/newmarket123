@@ -1,211 +1,225 @@
-import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/material.dart';
+import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:path_provider/path_provider.dart';
-import 'package:barcode/barcode.dart';
-import 'package:intl/intl.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/l10n/app_localizations.dart';
+import 'package:intl/intl.dart';
+import 'package:barcode/barcode.dart';
 
 class InvoiceService {
-  static Future<File> generateInvoice(
-    BuildContext context, {
+  Future<Uint8List> generateInvoice({
     required Sale sale,
-    required List<SaleItemWithProduct> items,
-    required String companyName,
-    required String vatNumber,
+    required List<SaleItem> items,
+    required List<Product> products,
+    String? customerName,
+    String? companyName,
+    String? companyAddress,
+    String? companyVatNumber,
   }) async {
-    final localizations = AppLocalizations.of(context)!;
     final pdf = pw.Document();
-    final dateStr = DateFormat('yyyy-MM-dd HH:mm').format(sale.createdAt);
 
-    // ZATCA-compliant QR code
-    final qrCodeData = _generateZatcaQrCode(
-      companyName: companyName,
-      vatNumber: vatNumber,
-      invoiceDate: sale.createdAt,
-      total: sale.total,
-      tax: sale.tax,
+    final qrCodeSvg = _generateZatcaQr(
+      companyName ?? 'My Supermarket',
+      companyVatNumber ?? '1234567890',
+      sale.createdAt,
+      sale.total,
+      sale.tax,
     );
 
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        build: (context) {
+        build: (pw.Context context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        companyName,
-                        style: pw.TextStyle(
-                          fontSize: 24,
-                          fontWeight: pw.FontWeight.bold,
-                        ),
-                      ),
-                      pw.Text(localizations.vatNumber(vatNumber)),
-                    ],
-                  ),
-                  pw.BarcodeWidget(
-                    barcode: Barcode.qrCode(),
-                    data: qrCodeData,
-                    width: 80,
-                    height: 80,
-                  ),
-                ],
-              ),
+              // Header
+              _buildHeader(companyName, companyAddress, companyVatNumber, qrCodeSvg),
               pw.SizedBox(height: 20),
-              pw.Divider(),
-              pw.SizedBox(height: 10),
-              pw.Text(
-                localizations.simplifiedTaxInvoice,
-                style: pw.TextStyle(
-                  fontSize: 18,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-              pw.Text(localizations.invoiceNumber(sale.id.substring(0, 8))),
-              pw.Text(localizations.dateLabel(dateStr)),
-              pw.Text(localizations.paymentMethod(sale.paymentMethod)),
+
+              // Invoice Info
+              _buildInvoiceInfo(sale, customerName),
               pw.SizedBox(height: 20),
-              pw.Table(
-                border: pw.TableBorder.all(),
-                children: [
-                  pw.TableRow(
-                    children: [
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(5),
-                        child: pw.Text(
-                          localizations.productLabel,
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                        ),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(5),
-                        child: pw.Text(
-                          localizations.quantityLabel,
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                        ),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(5),
-                        child: pw.Text(
-                          localizations.price,
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                        ),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(5),
-                        child: pw.Text(
-                          localizations.total,
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
-                  ...items.map((item) {
-                    final subtotal = item.quantity * item.price;
-                    return pw.TableRow(
-                      children: [
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(5),
-                          child: pw.Text(item.product.name),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(5),
-                          child: pw.Text(item.quantity.toString()),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(5),
-                          child: pw.Text(item.price.toStringAsFixed(2)),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(5),
-                          child: pw.Text(subtotal.toStringAsFixed(2)),
-                        ),
-                      ],
-                    );
-                  }),
-                ],
-              ),
+
+              // Items Table
+              _buildItemsTable(items, products),
               pw.SizedBox(height: 20),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.end,
-                children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Text(
-                        '${localizations.subtotal}: ${(sale.total - sale.tax).toStringAsFixed(2)}',
-                      ),
-                      pw.Text('${localizations.tax}: ${sale.tax.toStringAsFixed(2)}'),
-                      pw.Text(
-                        '${localizations.total}: ${sale.total.toStringAsFixed(2)}',
-                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+
+              // Totals
+              _buildTotals(sale),
               pw.Spacer(),
-              pw.Center(
-                child: pw.Text(
-                  localizations.thankYou,
-                  style: pw.TextStyle(fontSize: 14),
-                ),
-              ),
+
+              // Footer
+              _buildFooter(),
             ],
           );
         },
       ),
     );
 
-    final output = await getTemporaryDirectory();
-    final file = File("${output.path}/invoice_${sale.id}.pdf");
-    await file.writeAsBytes(await pdf.save());
-    return file;
+    return pdf.save();
   }
 
-  static String _generateZatcaQrCode({
-    required String companyName,
-    required String vatNumber,
-    required DateTime invoiceDate,
-    required double total,
-    required double tax,
-  }) {
-    final sellerName = _getTlv(1, companyName);
-    final vatNumberTlv = _getTlv(2, vatNumber);
-    final timestamp = _getTlv(3, DateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(invoiceDate.toUtc()));
-    final totalTlv = _getTlv(4, total.toStringAsFixed(2));
-    final taxTlv = _getTlv(5, tax.toStringAsFixed(2));
-
-    final qrData = utf8.encode(sellerName + vatNumberTlv + timestamp + totalTlv + taxTlv);
-    return base64.encode(qrData);
+  String _generateZatcaQr(String seller, String vatNo, DateTime date, double total, double tax) {
+    // Basic QR code for now. For full ZATCA compliance, TLV encoding is required.
+    final qrData = 'Seller: $seller\nVAT: $vatNo\nDate: ${date.toIso8601String()}\nTotal: $total\nTax: $tax';
+    final bc = Barcode.qrCode();
+    return bc.toSvg(qrData, width: 100, height: 100);
   }
 
-  static String _getTlv(int tag, String value) {
-    final tagHex = tag.toRadixString(16).padLeft(2, '0');
-    final lengthHex = value.length.toRadixString(16).padLeft(2, '0');
-    final valueHex = utf8.encode(value).map((e) => e.toRadixString(16).padLeft(2, '0')).join();
-    return tagHex + lengthHex + valueHex;
+  pw.Widget _buildHeader(
+      String? companyName, String? companyAddress, String? companyVatNumber, String qrSvg) {
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      children: [
+        pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Text(companyName ?? 'My Supermarket',
+                style:
+                    pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 24)),
+            pw.Text(companyAddress ?? '123 Market St, City, Country'),
+            pw.Text('VAT Number: ${companyVatNumber ?? 'N/A'}'),
+          ],
+        ),
+        pw.Container(
+          width: 80,
+          height: 80,
+          child: pw.SvgImage(svg: qrSvg),
+        ),
+      ],
+    );
   }
-}
 
-class SaleItemWithProduct {
-  final Product product;
-  final double quantity;
-  final double price;
+  pw.Widget _buildInvoiceInfo(Sale sale, String? customerName) {
+    final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(10),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.grey300),
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('Bill To:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+              pw.Text(customerName ?? 'Walk-in Customer'),
+              pw.Text('Payment Method: ${sale.paymentMethod.toUpperCase()}'),
+            ],
+          ),
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: [
+              pw.Text('Invoice #: ${sale.id.substring(0, 8).toUpperCase()}',
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+              pw.Text('Date: ${dateFormat.format(sale.createdAt)}'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
-  SaleItemWithProduct({
-    required this.product,
-    required this.quantity,
-    required this.price,
-  });
+  pw.Widget _buildItemsTable(List<SaleItem> items, List<Product> products) {
+    final headers = ['Item', 'Qty', 'Unit Price', 'Total'];
+
+    final data = items.map((item) {
+      final product = products.firstWhere((p) => p.id == item.productId);
+      return [
+        product.name,
+        item.quantity.toStringAsFixed(0),
+        item.price.toStringAsFixed(2),
+        (item.quantity * item.price).toStringAsFixed(2)
+      ];
+    }).toList();
+
+    return pw.TableHelper.fromTextArray(
+      headers: headers,
+      data: data,
+      border: null,
+      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
+      cellHeight: 30,
+      cellAlignments: {
+        0: pw.Alignment.centerLeft,
+        1: pw.Alignment.center,
+        2: pw.Alignment.centerRight,
+        3: pw.Alignment.centerRight,
+      },
+    );
+  }
+
+  pw.Widget _buildTotals(Sale sale) {
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.end,
+      children: [
+        pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.end,
+          children: [
+            _totalRow('Subtotal', (sale.total - sale.tax + sale.discount).toStringAsFixed(2)),
+            _totalRow('Discount', sale.discount.toStringAsFixed(2)),
+            _totalRow('VAT (15%)', sale.tax.toStringAsFixed(2)),
+            pw.Divider(color: PdfColors.grey),
+            _totalRow('Total Amount', sale.total.toStringAsFixed(2), isBold: true, fontSize: 16),
+          ],
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _totalRow(String title, String value,
+      {bool isBold = false, double fontSize = 12}) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 2),
+      child: pw.Row(
+        mainAxisSize: pw.MainAxisSize.min,
+        children: [
+          pw.Text(title,
+              style: pw.TextStyle(
+                  fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+                  fontSize: fontSize)),
+          pw.SizedBox(width: 40),
+          pw.Text(value,
+              style: pw.TextStyle(
+                  fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+                  fontSize: fontSize)),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildFooter() {
+    return pw.Column(
+      children: [
+        pw.Divider(),
+        pw.Center(
+          child: pw.Text('Thank you for your business!',
+              style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
+        ),
+      ],
+    );
+  }
+
+  // Support for direct Pdf Invoice generation as used in POS
+  Future<Uint8List> generatePdfInvoice({
+    required Sale sale,
+    required List<SaleItem> items,
+    required List<Product> products,
+    String? customerName,
+    String? companyName,
+    String? companyAddress,
+    String? companyVatNumber,
+  }) async {
+    return await generateInvoice(
+      sale: sale,
+      items: items,
+      products: products,
+      customerName: customerName,
+      companyAddress: companyAddress,
+      companyVatNumber: companyVatNumber,
+      companyName: companyName,
+    );
+  }
 }

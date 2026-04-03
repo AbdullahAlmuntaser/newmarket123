@@ -29,103 +29,128 @@ class CategoriesPage extends StatelessWidget {
           if (categories.isEmpty) {
             return Center(child: Text(l10n.noCategoriesFound));
           }
-          return ListView.builder(
+          
+          return GridView.builder(
+            padding: const EdgeInsets.all(16),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 1.2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+            ),
             itemCount: categories.length,
             itemBuilder: (context, index) {
               final category = categories[index];
-              return ListTile(
-                title: Text(category.name),
-                subtitle: category.code != null
-                    ? Text('${l10n.categoryCode}: ${category.code!}')
-                    : null,
-                trailing: isAdmin
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: () =>
-                                _showAddEditDialog(context, db, category),
+              final color = Colors.primaries[category.name.hashCode % Colors.primaries.length];
+              
+              return Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: InkWell(
+                  onTap: isAdmin ? () => _showAddEditDialog(context, db, category) : null,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      gradient: LinearGradient(
+                        colors: [color.withValues(alpha: 0.7), color],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.category, size: 40, color: Colors.white),
+                        const SizedBox(height: 12),
+                        Text(
+                          category.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () =>
-                                _deleteCategory(context, db, category),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (category.code != null)
+                          Text(
+                            category.code!,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontSize: 12,
+                            ),
                           ),
-                        ],
-                      )
-                    : null,
+                        if (isAdmin)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.white, size: 20),
+                                onPressed: () => _showAddEditDialog(context, db, category),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.white, size: 20),
+                                onPressed: () => _deleteCategory(context, db, category),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
               );
             },
           );
         },
       ),
       floatingActionButton: isAdmin
-          ? FloatingActionButton(
+          ? FloatingActionButton.extended(
               onPressed: () => _showAddEditDialog(context, db, null),
-              tooltip: l10n.addCategory,
-              child: const Icon(Icons.add),
+              label: Text(l10n.addCategory),
+              icon: const Icon(Icons.add),
             )
           : null,
     );
   }
 
-  void _showAddEditDialog(
-    BuildContext context,
-    AppDatabase db,
-    Category? category,
-  ) {
+  void _showAddEditDialog(BuildContext context, AppDatabase db, Category? category) {
     showDialog(
       context: context,
       builder: (context) => AddEditCategoryDialog(db: db, category: category),
     );
   }
 
-  void _deleteCategory(
-    BuildContext context,
-    AppDatabase db,
-    Category category,
-  ) {
+  void _deleteCategory(BuildContext context, AppDatabase db, Category category) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: Text(
-            '${AppLocalizations.of(dialogContext)!.delete} ${category.name}',
-          ),
-          content: Text(
-            'Are you sure you want to delete this category?',
-          ), // Add to l10n
+          title: Text('${l10n.delete} ${category.name}'),
+          content: const Text('هل أنت متأكد من حذف هذه الفئة؟ سيؤدي ذلك لمنع الوصول للمنتجات التابعة لها.'),
           actions: <Widget>[
             TextButton(
-              child: Text(AppLocalizations.of(dialogContext)!.cancel),
+              child: Text(l10n.cancel),
               onPressed: () => Navigator.of(dialogContext).pop(),
             ),
-            TextButton(
-              child: Text(
-                AppLocalizations.of(dialogContext)!.delete,
-                style: const TextStyle(color: Colors.red),
-              ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+              child: Text(l10n.delete),
               onPressed: () async {
-                // Before deleting, check if any product is using this category
-                final products = await (db.select(
-                  db.products,
-                )..where((p) => p.categoryId.equals(category.id))).get();
+                final products = await (db.select(db.products)..where((p) => p.categoryId.equals(category.id))).get();
                 if (!context.mounted) return;
                 if (products.isNotEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Cannot delete category, it is being used by some products.',
-                      ),
-                    ), // Add to l10n
+                    const SnackBar(content: Text('لا يمكن حذف الفئة لأنها مرتبطة بمنتجات موجودة.')),
                   );
                   Navigator.of(dialogContext).pop();
                   return;
                 }
                 await db.delete(db.categories).delete(category);
-                if (!context.mounted) return;
-                Navigator.of(dialogContext).pop();
+                if (context.mounted) Navigator.of(dialogContext).pop();
               },
             ),
           ],

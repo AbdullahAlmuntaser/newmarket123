@@ -156,6 +156,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get selectCustomerError => 'يرجى اختيار عميل للبيع الآجل';
 
   @override
+  String get customerNameHint => 'ابدأ الكتابة للبحث أو إضافة عميل جديد';
+
+  @override
+  String get addCustomerForCredit => 'إضافة عميل جديد للبيع الآجل';
+
+  @override
   String get searchProducts => 'البحث عن منتجات...';
 
   @override
@@ -800,7 +806,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get walkInSupplier => 'مورد نقدي';
 
   @override
-  String get currencySymbol => 'SAR';
+  String get currencySymbol => 'ر.س';
 
   @override
   String get backupAndSync => 'النسخ الاحتياطي والمزامنة';
@@ -929,5 +935,71 @@ class AppLocalizationsAr extends AppLocalizations {
   String get name => 'الاسم';
 
   @override
-  String get fullName => 'Full Name';
+  String get fullName => 'الاسم الكامل';
+
+  @override
+  String get status => 'الحالة';
+
+  @override
+  String get warehouse => 'المستودع';
+
+  @override
+  String get batchNumber => 'رقم الدفعة';
+
+  @override
+  String get expiryDate => 'تاريخ الانتهاء';
+
+  @override
+  String get draft => 'مسودة';
+
+  @override
+  String get ordered => 'مطلوب';
+
+  @override
+  String get received => 'مستلم';
+
+  @override
+  String get cancelled => 'ملغي';
+
+  @override
+  String get selectWarehouse => 'اختر المستودع';
+
+  @override
+  String get noWarehousesFound => 'لم يتم العثور على مستودعات';
+
+  @override
+  String get addWarehouse => 'إضافة مستودع';
+
+  @override
+  String get warehouseName => 'اسم المستودع';
+
+  @override
+  String get errorLoadingData => 'خطأ في تحميل البيانات';
+
+  @override
+  String get from => 'من';
+
+  @override
+  String get to => 'إلى';
+
+  @override
+  String get whatWouldYouLikeToDo => 'ماذا تود أن تفعل؟';
+
+  @override
+  String get downloadPdfInvoice => 'تحميل الفاتورة PDF';
+
+  @override
+  String get done => 'تم';
+
+  @override
+  String get vatReport => 'تقرير ضريبة القيمة المضافة';
+
+  @override
+  String get vatSummary => 'ملخص الضريبة';
+
+  @override
+  String get totalOutputVat => 'إجمالي ضريبة المخرجات';
+
+  @override
+  String get totalInputVat => 'إجمالي ضريبة المدخلات';
 }

@@ -1,7 +1,1 @@
-enum AccountType {
-  asset,
-  liability,
-  equity,
-  revenue,
-  expense,
-}
+enum AccountType { asset, liability, equity, revenue, expense }

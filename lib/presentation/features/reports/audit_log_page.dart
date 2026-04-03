@@ -30,9 +30,7 @@ class AuditLogPage extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
-              child: Text(l10n.noDataAvailable),
-            );
+            return Center(child: Text(l10n.noDataAvailable));
           }
 
           final logs = snapshot.data!;

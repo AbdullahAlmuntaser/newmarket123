@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:drift/drift.dart' as drift;
+import 'package:go_router/go_router.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/customers/widgets/add_edit_customer_dialog.dart';
-import 'package:supermarket/presentation/features/customers/customer_statement_page.dart';
 import 'package:supermarket/presentation/widgets/main_drawer.dart';
 
 class CustomersPage extends StatefulWidget {
@@ -42,7 +42,7 @@ class _CustomersPageState extends State<CustomersPage> {
         ),
       ),
       drawer: const MainDrawer(),
-      body: StreamBuilder<List<Customer>> (
+      body: StreamBuilder<List<Customer>>(
         stream:
             (db.select(db.customers)..where(
                   (t) =>
@@ -106,13 +106,7 @@ class _CustomersPageState extends State<CustomersPage> {
                     IconButton(
                       icon: const Icon(Icons.receipt_long, color: Colors.blue),
                       tooltip: 'كشف حساب',
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              CustomerStatementPage(customer: customer),
-                        ),
-                      ),
+                      onPressed: () => context.push('/customers/statement/${customer.id}'),
                     ),
                   ],
                 ),

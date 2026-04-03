@@ -43,12 +43,20 @@ class PosLoaded extends PosState {
   final double discount;
   final double taxRate; // e.g. 0.15 for 15%
   final bool isWholesaleMode;
+  final List<Product> searchResults;
+  final List<Category> categories;
+  final String? selectedCategoryId;
+  final List<Product> filteredProducts;
 
   const PosLoaded({
     this.cart = const [],
     this.discount = 0,
     this.taxRate = 0,
     this.isWholesaleMode = false,
+    this.searchResults = const [],
+    this.categories = const [],
+    this.selectedCategoryId,
+    this.filteredProducts = const [],
   });
 
   double get subtotal => cart.fold(0.0, (sum, item) => sum + item.total);
@@ -60,17 +68,34 @@ class PosLoaded extends PosState {
     double? discount,
     double? taxRate,
     bool? isWholesaleMode,
+    List<Product>? searchResults,
+    List<Category>? categories,
+    String? selectedCategoryId,
+    List<Product>? filteredProducts,
   }) {
     return PosLoaded(
       cart: cart ?? this.cart,
       discount: discount ?? this.discount,
       taxRate: taxRate ?? this.taxRate,
       isWholesaleMode: isWholesaleMode ?? this.isWholesaleMode,
+      searchResults: searchResults ?? this.searchResults,
+      categories: categories ?? this.categories,
+      selectedCategoryId: selectedCategoryId ?? this.selectedCategoryId,
+      filteredProducts: filteredProducts ?? this.filteredProducts,
     );
   }
 
   @override
-  List<Object?> get props => [cart, discount, taxRate, isWholesaleMode];
+  List<Object?> get props => [
+        cart,
+        discount,
+        taxRate,
+        isWholesaleMode,
+        searchResults,
+        categories,
+        selectedCategoryId,
+        filteredProducts
+      ];
 }
 
 class PosError extends PosState {

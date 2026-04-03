@@ -12,9 +12,12 @@ class CategoryRepositoryImpl implements CategoryRepository {
 
   @override
   Future<Either<Failure, Unit>> addCategory(
-      domain_category.Category category) async {
+    domain_category.Category category,
+  ) async {
     try {
-      await appDatabase.into(appDatabase.categories).insert(
+      await appDatabase
+          .into(appDatabase.categories)
+          .insert(
             CategoriesCompanion.insert(
               name: category.name,
               code: Value(category.code),
@@ -29,9 +32,9 @@ class CategoryRepositoryImpl implements CategoryRepository {
   @override
   Future<Either<Failure, Unit>> deleteCategory(String id) async {
     try {
-      await (appDatabase.delete(appDatabase.categories)
-            ..where((tbl) => tbl.id.equals(id)))
-          .go();
+      await (appDatabase.delete(
+        appDatabase.categories,
+      )..where((tbl) => tbl.id.equals(id))).go();
       return const Right(unit);
     } catch (e) {
       return Left(CacheFailure());
@@ -39,16 +42,14 @@ class CategoryRepositoryImpl implements CategoryRepository {
   }
 
   @override
-  Future<Either<Failure, List<domain_category.Category>>> getCategories() async {
+  Future<Either<Failure, List<domain_category.Category>>>
+  getCategories() async {
     try {
       final categories = await appDatabase.select(appDatabase.categories).get();
       final domainCategories = categories
           .map(
-            (c) => domain_category.Category(
-              id: c.id,
-              name: c.name,
-              code: c.code,
-            ),
+            (c) =>
+                domain_category.Category(id: c.id, name: c.name, code: c.code),
           )
           .toList();
       return Right(domainCategories);
@@ -59,11 +60,12 @@ class CategoryRepositoryImpl implements CategoryRepository {
 
   @override
   Future<Either<Failure, Unit>> updateCategory(
-      domain_category.Category category) async {
+    domain_category.Category category,
+  ) async {
     try {
-      await (appDatabase.update(appDatabase.categories)
-            ..where((tbl) => tbl.id.equals(category.id)))
-          .write(
+      await (appDatabase.update(
+        appDatabase.categories,
+      )..where((tbl) => tbl.id.equals(category.id))).write(
         CategoriesCompanion(
           name: Value(category.name),
           code: Value(category.code),

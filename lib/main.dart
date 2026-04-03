@@ -27,6 +27,8 @@ import 'package:supermarket/presentation/features/accounting/expenses_page.dart'
 import 'package:supermarket/presentation/features/accounting/manual_journal_entry_page.dart';
 import 'package:supermarket/presentation/features/accounting/reconciliation_page.dart';
 import 'package:supermarket/presentation/features/accounting/shifts_page.dart';
+import 'package:supermarket/presentation/features/accounting/income_statement_page.dart';
+import 'package:supermarket/presentation/features/accounting/balance_sheet_page.dart';
 import 'package:supermarket/presentation/features/reports/inventory_reports_screen.dart';
 import 'package:supermarket/presentation/features/reports/vat_report_page.dart';
 import 'package:supermarket/presentation/features/reports/audit_log_page.dart';
@@ -37,35 +39,54 @@ import 'package:supermarket/presentation/features/sync/sync_page.dart';
 import 'package:supermarket/core/network/sync_service.dart';
 import 'package:supermarket/presentation/features/settings/backup_page.dart';
 import 'package:supermarket/presentation/features/customers/customers_page.dart';
+import 'package:supermarket/presentation/features/customers/customer_statement_page.dart';
+import 'package:supermarket/presentation/features/customers/customer_statement_provider.dart';
 import 'package:supermarket/presentation/features/suppliers/suppliers_page.dart';
+import 'package:supermarket/presentation/features/inventory/stock_transfer_page.dart';
+import 'package:supermarket/presentation/features/hr/employees_page.dart';
+import 'package:supermarket/presentation/features/hr/payroll_page.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+
+// Services & Providers Imports
+import 'package:supermarket/core/services/shift_service.dart';
+import 'package:supermarket/core/services/hr_service.dart';
+import 'package:supermarket/core/services/stock_transfer_service.dart';
+import 'package:supermarket/core/services/asset_service.dart';
+import 'package:supermarket/presentation/features/accounting/shifts_provider.dart';
+import 'package:supermarket/presentation/features/accounting/asset_provider.dart';
+import 'package:supermarket/presentation/features/hr/hr_provider.dart';
+import 'package:supermarket/presentation/features/hr/payroll_provider.dart';
+import 'package:supermarket/presentation/features/inventory/stock_transfer_provider.dart';
 
 void main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
-    
+
     // Initialize Firebase with error handling
     try {
       await Firebase.initializeApp();
     } catch (e) {
       debugPrint("Firebase initialization failed: $e");
-      // Continue even if Firebase fails to avoid total white screen
     }
 
     // Initialize Dependency Injection
     di.init();
-    
+
+    // Seed default admin user
+    final authProvider = di.sl<AuthProvider>();
+    await authProvider.seedAdmin();
+
     runApp(const MyApp());
   } catch (e, stack) {
     debugPrint("Critical startup error: $e");
     debugPrint(stack.toString());
-    runApp(MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text("Error starting app: $e\nPlease restart."),
+    runApp(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(child: Text("Error starting app: $e\nPlease restart.")),
         ),
       ),
-    ));
+    );
   }
 }
 
@@ -74,37 +95,42 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final db = di.sl<AppDatabase>();
     return MultiProvider(
       providers: [
-        Provider<AppDatabase>.value(value: di.sl<AppDatabase>()),
+        Provider<AppDatabase>.value(value: db),
         ChangeNotifierProvider(create: (_) => di.sl<ThemeProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<AuthProvider>()),
-        ChangeNotifierProvider(
-          create: (_) => AccountingProvider(di.sl<AppDatabase>()),
-        ),
-        Provider<SyncService>(
-          create: (_) => SyncService(di.sl<AppDatabase>()),
-        ),
+        ChangeNotifierProvider(create: (_) => AccountingProvider(db)),
+        ChangeNotifierProvider(create: (_) => ShiftProvider(ShiftService(db))),
+        ChangeNotifierProvider(create: (_) => HRProvider(HRService(db))),
+        ChangeNotifierProvider(create: (_) => PayrollProvider(HRService(db))),
+        ChangeNotifierProvider(create: (_) => StockTransferProvider(StockTransferService(db))),
+        ChangeNotifierProvider(create: (_) => AssetProvider(AssetService(db))),
+        ChangeNotifierProvider(create: (_) => CustomerStatementProvider()),
+        Provider<SyncService>(create: (_) => SyncService(db)),
       ],
-      child: Builder(builder: (context) {
-        final themeProvider = Provider.of<ThemeProvider>(context);
-        final router = _createRouter(context);
-        return MaterialApp.router(
-          title: 'Accounting App',
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: themeProvider.themeMode,
-          routerConfig: router,
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: AppLocalizations.supportedLocales,
-          locale: const Locale('ar'),
-        );
-      }),
+      child: Builder(
+        builder: (context) {
+          final themeProvider = Provider.of<ThemeProvider>(context);
+          final router = _createRouter(context);
+          return MaterialApp.router(
+            title: 'Supermarket ERP',
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeProvider.themeMode,
+            routerConfig: router,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('ar'),
+          );
+        },
+      ),
     );
   }
 
@@ -114,22 +140,13 @@ class MyApp extends StatelessWidget {
       initialLocation: '/',
       refreshListenable: authProvider,
       routes: [
-        GoRoute(
-          path: '/',
-          builder: (context, state) => const HomePage(),
-        ),
-        GoRoute(
-          path: '/login',
-          builder: (context, state) => const LoginPage(),
-        ),
+        GoRoute(path: '/', builder: (context, state) => const HomePage()),
+        GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
         GoRoute(
           path: '/users',
           builder: (context, state) => const StaffManagementPage(),
         ),
-        GoRoute(
-          path: '/pos',
-          builder: (context, state) => const PosPage(),
-        ),
+        GoRoute(path: '/pos', builder: (context, state) => const PosPage()),
         GoRoute(
           path: '/sales',
           builder: (context, state) => const SalesHistoryPage(),
@@ -145,6 +162,12 @@ class MyApp extends StatelessWidget {
         GoRoute(
           path: '/customers',
           builder: (context, state) => const CustomersPage(),
+        ),
+        GoRoute(
+          path: '/customers/statement/:id',
+          builder: (context, state) => CustomerStatementPage(
+            customerId: state.pathParameters['id']!,
+          ),
         ),
         GoRoute(
           path: '/suppliers',
@@ -168,12 +191,10 @@ class MyApp extends StatelessWidget {
         ),
         GoRoute(
           path: '/returns/new',
-          builder: (context, state) => const CreateReturnPage(type: ReturnType.sale),
+          builder: (context, state) =>
+              const CreateReturnPage(type: ReturnType.sale),
         ),
-        GoRoute(
-          path: '/sync',
-          builder: (context, state) => const SyncPage(),
-        ),
+        GoRoute(path: '/sync', builder: (context, state) => const SyncPage()),
         // Reports Routes
         GoRoute(
           path: '/reports',
@@ -194,6 +215,20 @@ class MyApp extends StatelessWidget {
         GoRoute(
           path: '/settings/backup',
           builder: (context, state) => const BackupPage(),
+        ),
+        // Inventory Routes
+        GoRoute(
+          path: '/inventory/transfer',
+          builder: (context, state) => const StockTransferPage(),
+        ),
+        // HR Routes
+        GoRoute(
+          path: '/hr/employees',
+          builder: (context, state) => const EmployeesPage(),
+        ),
+        GoRoute(
+          path: '/hr/payroll',
+          builder: (context, state) => const PayrollPage(),
         ),
         // Accounting Routes
         GoRoute(
@@ -227,6 +262,14 @@ class MyApp extends StatelessWidget {
         GoRoute(
           path: '/accounting/shifts',
           builder: (context, state) => const ShiftsPage(),
+        ),
+        GoRoute(
+          path: '/accounting/income-statement',
+          builder: (context, state) => const IncomeStatementPage(),
+        ),
+        GoRoute(
+          path: '/accounting/balance-sheet',
+          builder: (context, state) => const BalanceSheetPage(),
         ),
       ],
       redirect: (context, state) {

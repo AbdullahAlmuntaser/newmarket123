@@ -7,15 +7,31 @@ import 'dart:convert';
 
 class SyncService {
   final AppDatabase db;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final ValueNotifier<bool> isSyncing = ValueNotifier<bool>(false);
   final ValueNotifier<String?> lastError = ValueNotifier<String?>(null);
 
   SyncService(this.db);
 
+  // Getter آمن للوصول لـ Firestore فقط إذا كان Firebase مهيأ
+  FirebaseFirestore get _firestore {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (e) {
+      throw 'Firebase not initialized. Sync unavailable.';
+    }
+  }
+
   static const String _lastSyncKey = 'last_sync_timestamp';
 
   Future<void> syncAll() async {
+    try {
+      // التحقق من وجود Firebase قبل البدء
+      FirebaseFirestore.instance; 
+    } catch (e) {
+      lastError.value = "المزامنة السحابية غير مفعلة";
+      return;
+    }
+
     if (isSyncing.value) return;
     isSyncing.value = true;
     lastError.value = null;
@@ -91,12 +107,14 @@ class SyncService {
 
             // Handle timestamps - convert to ISO8601 strings for drift fromJson
             if (data['updatedAt'] is Timestamp) {
-              data['updatedAt'] =
-                  (data['updatedAt'] as Timestamp).toDate().toIso8601String();
+              data['updatedAt'] = (data['updatedAt'] as Timestamp)
+                  .toDate()
+                  .toIso8601String();
             }
             if (data['createdAt'] is Timestamp) {
-              data['createdAt'] =
-                  (data['createdAt'] as Timestamp).toDate().toIso8601String();
+              data['createdAt'] = (data['createdAt'] as Timestamp)
+                  .toDate()
+                  .toIso8601String();
             }
 
             // Conflict Resolution: Only update if server version is newer than local
@@ -115,10 +133,10 @@ class SyncService {
     String table,
     Map<String, dynamic> data,
   ) async {
-    // This is a simplified version. For full conflict resolution, 
+    // This is a simplified version. For full conflict resolution,
     // we would check the local updatedAt before overriding.
     // Drift's insertOrReplace is already doing most of the work for simple cases.
-    
+
     await db.batch((batch) {
       _applyChange(batch, table, data);
     });

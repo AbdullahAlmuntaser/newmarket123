@@ -10,10 +10,126 @@ class ProductWithCategory {
   ProductWithCategory({required this.product, this.category});
 }
 
-@DriftAccessor(tables: [Products, Categories])
+class TransferItemData {
+  final String productId;
+  final String batchId;
+  final double quantity;
+
+  TransferItemData({
+    required this.productId,
+    required this.batchId,
+    required this.quantity,
+  });
+}
+
+@DriftAccessor(tables: [
+  Products,
+  Categories,
+  Warehouses,
+  ProductBatches,
+  StockTransfers,
+  StockTransferItems,
+])
 class ProductsDao extends DatabaseAccessor<AppDatabase>
     with _$ProductsDaoMixin {
   ProductsDao(super.db);
+
+  // Warehouse & Batch Management
+  Stream<List<Warehouse>> watchWarehouses() {
+    return select(warehouses).watch();
+  }
+
+  Future<int> addWarehouse(WarehousesCompanion entry) {
+    return into(warehouses).insert(entry);
+  }
+
+  Future<List<ProductBatch>> getProductBatches(String productId, String warehouseId) {
+    return (select(productBatches)
+          ..where((b) => b.productId.equals(productId) & b.warehouseId.equals(warehouseId) & b.quantity.isBiggerThanValue(0)))
+        .get();
+  }
+
+  /// تنفيذ عملية تحويل مخزني بين مستودعين
+  Future<void> transferStock({
+    required String fromWarehouseId,
+    required String toWarehouseId,
+    required List<TransferItemData> items,
+    String? note,
+  }) async {
+    await transaction(() async {
+      // 1. إنشاء رأس التحويل
+      final transfer = await into(stockTransfers).insertReturning(
+        StockTransfersCompanion.insert(
+          fromWarehouseId: fromWarehouseId,
+          toWarehouseId: toWarehouseId,
+          note: Value(note),
+          transferDate: Value(DateTime.now()),
+        ),
+      );
+
+      final transferId = transfer.id;
+
+      for (var item in items) {
+        // 2. جلب الدفعة المصدر
+        final sourceBatch = await (select(productBatches)
+              ..where((b) => b.id.equals(item.batchId)))
+            .getSingle();
+
+        if (sourceBatch.quantity < item.quantity) {
+          throw Exception('الكمية المطلوبة غير متوفرة في الدفعة المحددة');
+        }
+
+        // 3. خصم الكمية من الدفعة المصدر
+        await (update(productBatches)..where((b) => b.id.equals(item.batchId)))
+            .write(ProductBatchesCompanion(
+          quantity: Value(sourceBatch.quantity - item.quantity),
+        ));
+
+        // 4. إضافة الكمية للدفعة الهدف (أو إنشاء واحدة جديدة)
+        // نبحث عن دفعة بنفس رقم الدفعة وتاريخ الانتهاء في المستودع الهدف
+        final targetBatch = await (select(productBatches)
+              ..where((b) =>
+                  b.productId.equals(item.productId) &
+                  b.warehouseId.equals(toWarehouseId) &
+                  b.batchNumber.equals(sourceBatch.batchNumber)))
+            .getSingleOrNull();
+
+        if (targetBatch != null) {
+          await (update(productBatches)..where((b) => b.id.equals(targetBatch.id)))
+              .write(ProductBatchesCompanion(
+            quantity: Value(targetBatch.quantity + item.quantity),
+          ));
+        } else {
+          await into(productBatches).insert(
+            ProductBatchesCompanion.insert(
+              productId: item.productId,
+              warehouseId: toWarehouseId,
+              batchNumber: sourceBatch.batchNumber,
+              expiryDate: Value(sourceBatch.expiryDate),
+              quantity: Value(item.quantity),
+              initialQuantity: Value(item.quantity),
+              costPrice: Value(sourceBatch.costPrice),
+            ),
+          );
+        }
+
+        // 5. تحديث إجمالي المخزون في جدول المنتجات (إذا كان المخزون يمثل الإجمالي)
+        // ملاحظة: في أنظمة ERP المتقدمة، يتم حساب المخزون من الدفعات مباشرة
+        // ولكن للتوافق مع الكود الحالي سنقوم بتحديث حقل stock
+        // (لا حاجة هنا لأن الإجمالي العام للمنتج لم يتغير، فقط توزيعه بين المستودعات)
+
+        // 6. تسجيل الصنف في تفاصيل التحويل
+        await into(stockTransferItems).insert(
+          StockTransferItemsCompanion.insert(
+            transferId: transferId,
+            productId: item.productId,
+            batchId: item.batchId,
+            quantity: item.quantity,
+          ),
+        );
+      }
+    });
+  }
 
   Stream<List<ProductWithCategory>> watchProducts({
     String? searchQuery,

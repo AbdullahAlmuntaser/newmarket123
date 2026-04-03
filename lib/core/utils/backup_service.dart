@@ -24,7 +24,8 @@ class BackupService {
     final jsonString = jsonEncode(backupData);
     final directory = await getApplicationDocumentsDirectory();
     final file = File(
-        '${directory.path}/supermarket_backup_${DateTime.now().toIso8601String()}.json');
+      '${directory.path}/supermarket_backup_${DateTime.now().toIso8601String()}.json',
+    );
     await file.writeAsString(jsonString);
     return file.path;
   }
@@ -42,9 +43,10 @@ class BackupService {
 
           final tableData = backupData[tableName] as List;
           for (final row in tableData) {
-            await db.into(table).insert(
-                  (table as dynamic)
-                      .fromData(row as Map<String, dynamic>),
+            await db
+                .into(table)
+                .insert(
+                  (table as dynamic).fromData(row as Map<String, dynamic>),
                 );
           }
         }
@@ -53,8 +55,12 @@ class BackupService {
   }
 
   Future<void> shareBackup(String filePath) async {
-    // Corrected according to the latest SharePlus documentation
-    await Share.shareXFiles([XFile(filePath)], text: 'Supermarket Database Backup');
+    await SharePlus.instance.share(
+      ShareParams(
+        text: 'Supermarket Database Backup',
+        files: [XFile(filePath)],
+      ),
+    );
   }
 
   Future<List<String>> listCloudBackups() async {

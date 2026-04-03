@@ -20,7 +20,9 @@ class SalesHistoryPage extends StatelessWidget {
       appBar: AppBar(title: Text(l10n.sales)),
       drawer: const MainDrawer(),
       body: StreamBuilder<List<Sale>>(
-        stream: (db.select(db.sales)..orderBy([(t) => drift.OrderingTerm.desc(t.createdAt)])).watch(),
+        stream: (db.select(
+          db.sales,
+        )..orderBy([(t) => drift.OrderingTerm.desc(t.createdAt)])).watch(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -40,8 +42,12 @@ class SalesHistoryPage extends StatelessWidget {
                       ? Colors.green.withAlpha(26)
                       : Colors.blue.withAlpha(26),
                   child: Icon(
-                    sale.paymentMethod == 'cash' ? Icons.money : Icons.credit_card,
-                    color: sale.paymentMethod == 'cash' ? Colors.green : Colors.blue,
+                    sale.paymentMethod == 'cash'
+                        ? Icons.money
+                        : Icons.credit_card,
+                    color: sale.paymentMethod == 'cash'
+                        ? Colors.green
+                        : Colors.blue,
                   ),
                 ),
                 title: Text(l10n.saleIdLabel(sale.id.substring(0, 8))),
@@ -63,7 +69,9 @@ class SalesHistoryPage extends StatelessWidget {
                       sale.syncStatus == 0 ? l10n.synced : l10n.pending,
                       style: TextStyle(
                         fontSize: 10,
-                        color: sale.syncStatus == 0 ? Colors.green : Colors.orange,
+                        color: sale.syncStatus == 0
+                            ? Colors.green
+                            : Colors.orange,
                       ),
                     ),
                   ],
@@ -92,7 +100,9 @@ class SalesHistoryPage extends StatelessWidget {
         maxChildSize: 0.9,
         expand: false,
         builder: (context, scrollController) => FutureBuilder<List<SaleItem>>(
-          future: (db.select(db.saleItems)..where((t) => t.saleId.equals(sale.id))).get(),
+          future: (db.select(
+            db.saleItems,
+          )..where((t) => t.saleId.equals(sale.id))).get(),
           builder: (context, snapshot) {
             final items = snapshot.data ?? [];
             return Column(
@@ -110,7 +120,7 @@ class SalesHistoryPage extends StatelessWidget {
                         icon: const Icon(Icons.picture_as_pdf),
                         tooltip: 'View Invoice',
                         onPressed: () => _viewInvoice(context, db, sale, items),
-                      )
+                      ),
                     ],
                   ),
                 ),
@@ -121,7 +131,10 @@ class SalesHistoryPage extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final item = items[index];
                       return FutureBuilder<Product?>(
-                        future: (db.select(db.products)..where((t) => t.id.equals(item.productId))).getSingleOrNull(),
+                        future:
+                            (db.select(db.products)
+                                  ..where((t) => t.id.equals(item.productId)))
+                                .getSingleOrNull(),
                         builder: (context, pSnapshot) {
                           final product = pSnapshot.data;
                           return ListTile(
@@ -180,30 +193,22 @@ class SalesHistoryPage extends StatelessWidget {
     List<SaleItem> items,
   ) async {
     try {
-      final products = await (db.select(db.products)..where((p) => p.id.isIn(items.map((i) => i.productId).toList()))).get();
+      final products = await (db.select(
+        db.products,
+      )..where((p) => p.id.isIn(items.map((i) => i.productId).toList()))).get();
 
       if (!context.mounted) return;
 
-      final itemsWithProduct = items.map((item) {
-        final product = products.firstWhere((p) => p.id == item.productId);
-        return SaleItemWithProduct(
-          product: product,
-          quantity: item.quantity,
-          price: item.price,
-        );
-      }).toList();
-
-      final file = await InvoiceService.generateInvoice(
-        context,
+      final invoiceService = InvoiceService();
+      final pdfData = await invoiceService.generateInvoice(
         sale: sale,
-        items: itemsWithProduct,
+        items: items,
+        products: products,
         companyName: 'My Supermarket',
-        vatNumber: '1234567890',
+        companyVatNumber: '1234567890',
       );
 
-      await Printing.layoutPdf(
-        onLayout: (format) => file.readAsBytes(),
-      );
+      await Printing.layoutPdf(onLayout: (format) => pdfData);
     } catch (e) {
       debugPrint("Invoice generation error: $e");
     }

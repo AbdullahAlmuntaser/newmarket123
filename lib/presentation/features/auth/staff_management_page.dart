@@ -59,7 +59,9 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
     final isEditing = user != null;
 
     final nameController = TextEditingController(text: user?.fullName ?? '');
-    final usernameController = TextEditingController(text: user?.username ?? '');
+    final usernameController = TextEditingController(
+      text: user?.username ?? '',
+    );
     final passwordController = TextEditingController();
     String selectedRole = user?.role ?? 'user';
 
@@ -91,7 +93,10 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
                 DropdownButtonFormField<String>(
                   initialValue: selectedRole,
                   items: ['admin', 'user']
-                      .map((role) => DropdownMenuItem(value: role, child: Text(role)))
+                      .map(
+                        (role) =>
+                            DropdownMenuItem(value: role, child: Text(role)),
+                      )
                       .toList(),
                   onChanged: (value) {
                     if (value != null) {
@@ -127,7 +132,9 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
                     final newUser = UsersCompanion(
                       fullName: drift.Value(fullName),
                       username: drift.Value(username),
-                      password: drift.Value(password), // Passwords should be hashed
+                      password: drift.Value(
+                        password,
+                      ), // Passwords should be hashed
                       role: drift.Value(selectedRole),
                     );
                     await db.usersDao.addUser(newUser);

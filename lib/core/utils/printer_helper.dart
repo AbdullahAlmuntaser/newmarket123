@@ -22,6 +22,7 @@ class PrinterHelper {
     Sale sale,
     List<SaleItem> items,
     List<Product> products,
+    {String? customerName,}
   ) async {
     // Printing disabled temporarily
   }
@@ -31,6 +32,7 @@ class PrinterHelper {
     Sale sale,
     List<SaleItem> items,
     List<Product> products,
+    {String? customerName,}
   ) async {
     final profile = await CapabilityProfile.load();
     final generator = Generator(PaperSize.mm80, profile);
@@ -53,6 +55,12 @@ class PrinterHelper {
       'Sale ID: ${sale.id.substring(0, 8)}',
       styles: const PosStyles(align: PosAlign.center),
     );
+    if (customerName != null) {
+      bytes += generator.text(
+        'Customer: $customerName',
+        styles: const PosStyles(align: PosAlign.center),
+      );
+    }
     bytes += generator.hr();
 
     bytes += generator.row([

@@ -11,6 +11,8 @@ class PosBloc extends Bloc<PosEvent, PosState> {
   final AppDatabase db;
 
   PosBloc(this.db) : super(const PosLoaded()) {
+    on<LoadCategories>(_onLoadCategories);
+    on<SelectCategory>(_onSelectCategory);
     on<AddProductBySku>(_onAddProduct);
     on<UpdateCartItemQuantity>(_onUpdateQuantity);
     on<RemoveCartItem>(_onRemoveItem);
@@ -25,8 +27,93 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       }
     });
     on<ToggleWholesaleMode>(_onToggleWholesale);
+    on<SearchProducts>(_onSearchProducts);
     on<CheckoutEvent>(_onCheckout);
-    on<ClearCart>((event, emit) => emit(const PosLoaded()));
+    on<ClearCart>((event, emit) {
+      if (state is PosLoaded) {
+        final currentState = state as PosLoaded;
+        emit(PosLoaded(
+          categories: currentState.categories,
+          selectedCategoryId: currentState.selectedCategoryId,
+          filteredProducts: currentState.filteredProducts,
+          taxRate: currentState.taxRate,
+        ));
+      } else {
+        emit(const PosLoaded());
+      }
+    });
+
+    // Load initial data
+    add(LoadCategories());
+  }
+
+  Future<void> _onLoadCategories(
+    LoadCategories event,
+    Emitter<PosState> emit,
+  ) async {
+    final categories = await (db.select(db.categories)).get();
+    if (state is PosLoaded) {
+      final currentState = state as PosLoaded;
+      emit(currentState.copyWith(categories: categories));
+      // Select first category by default if available
+      if (categories.isNotEmpty && currentState.selectedCategoryId == null) {
+        add(SelectCategory(categories.first.id));
+      }
+    } else {
+      emit(PosLoaded(categories: categories));
+    }
+  }
+
+  Future<void> _onSelectCategory(
+    SelectCategory event,
+    Emitter<PosState> emit,
+  ) async {
+    if (state is! PosLoaded) return;
+    final currentState = state as PosLoaded;
+
+    try {
+      final products = await (db.select(db.products)
+            ..where((t) => event.categoryId != null
+                ? t.categoryId.equals(event.categoryId!)
+                : const Constant(true)))
+          .get();
+
+      emit(currentState.copyWith(
+        selectedCategoryId: event.categoryId,
+        filteredProducts: products,
+      ));
+    } catch (e) {
+      emit(PosError("Failed to filter products: $e"));
+    }
+  }
+
+  Future<void> _onSearchProducts(
+    SearchProducts event,
+    Emitter<PosState> emit,
+  ) async {
+    if (state is! PosLoaded) return;
+    final currentState = state as PosLoaded;
+
+    if (event.query.isEmpty) {
+      emit(currentState.copyWith(searchResults: []));
+      return;
+    }
+
+    try {
+      final results = await (db.select(db.products)
+            ..where(
+              (t) =>
+                  t.name.like('%${event.query}%') |
+                  t.sku.like('%${event.query}%'),
+            )
+            ..limit(10))
+          .get();
+
+      emit(currentState.copyWith(searchResults: results));
+    } catch (e) {
+      emit(PosError("Search failed: $e"));
+      emit(currentState);
+    }
   }
 
   Future<void> _onAddProduct(
@@ -158,10 +245,10 @@ class PosBloc extends Bloc<PosEvent, PosState> {
             ProductsCompanion(stock: Value(product.stock - item.quantity)),
           );
 
-          // Prepare item for accounting (we need to construct it manually as insert doesn't return the full object easily here)
+          // Prepare item for accounting
           saleItemsForAccounting.add(
             SaleItem(
-              id: const Uuid().v4(), // Placeholder, not used in accounting
+              id: const Uuid().v4(),
               saleId: saleId,
               productId: item.product.id,
               quantity: item.quantity.toDouble(),
@@ -231,7 +318,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         );
 
         final accounting = AccountingService(db);
-        await accounting.seedDefaultAccounts(); // Ensure accounts exist
+        await accounting.seedDefaultAccounts();
         await accounting.postSale(saleObj, saleItemsForAccounting);
 
         // Emit Checkout Success
@@ -245,7 +332,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       });
     } catch (e) {
       emit(PosError("Checkout failed: $e"));
-      emit(currentState);
+      emit(currentState.copyWith());
     }
   }
 }
