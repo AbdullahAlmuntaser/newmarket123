@@ -83,35 +83,41 @@ class PurchasesPage extends StatelessWidget {
     String status,
     AppLocalizations l10n,
   ) {
-    Color color;
+    Color chipColor;
+    Color textColor = Colors.white;
     String label;
     switch (status) {
       case 'DRAFT':
-        color = Colors.grey;
+        chipColor = Theme.of(context).colorScheme.onSurfaceVariant;
+        textColor = Theme.of(context).colorScheme.onPrimary;
         label = l10n.draft;
         break;
       case 'ORDERED':
-        color = Colors.blue;
+        chipColor = Theme.of(context).colorScheme.primary;
+        textColor = Theme.of(context).colorScheme.onPrimary;
         label = l10n.ordered;
         break;
       case 'RECEIVED':
-        color = Colors.green;
+        chipColor = Theme.of(context).colorScheme.tertiary;
+        textColor = Theme.of(context).colorScheme.onTertiary;
         label = l10n.received;
         break;
       case 'CANCELLED':
-        color = Colors.red;
+        chipColor = Theme.of(context).colorScheme.error;
+        textColor = Theme.of(context).colorScheme.onError;
         label = l10n.cancelled;
         break;
       default:
-        color = Colors.black;
+        chipColor = Theme.of(context).colorScheme.onSurface;
+        textColor = Theme.of(context).colorScheme.onPrimary;
         label = status;
     }
     return Chip(
       label: Text(
         label,
-        style: const TextStyle(color: Colors.white, fontSize: 10),
+        style: TextStyle(color: textColor, fontSize: 10),
       ),
-      backgroundColor: color,
+      backgroundColor: chipColor,
       padding: EdgeInsets.zero,
       visualDensity: VisualDensity.compact,
     );
@@ -148,7 +154,7 @@ class PurchasesWithSupplierAndWarehouse {
   final Supplier? supplier;
   final Warehouse? warehouse;
 
-  PurchasesWithSupplierAndWarehouse({
+  const PurchasesWithSupplierAndWarehouse({
     required this.purchase,
     this.supplier,
     this.warehouse,

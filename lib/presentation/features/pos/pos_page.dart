@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:printing/printing.dart';
 import 'package:drift/drift.dart' show Value;
+import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:supermarket/core/services/invoice_service.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/utils/printer_helper.dart';
@@ -358,6 +359,8 @@ class _PosPageState extends State<PosPage> {
 
   void _showCheckoutDialog(BuildContext context, AppLocalizations l10n) {
     final db = context.read<AppDatabase>();
+    final authProvider = context.read<AuthProvider>();
+    final userId = authProvider.currentUser?.id;
     final posState = context.read<PosBloc>().state as PosLoaded;
     Customer? selectedCustomer;
     final TextEditingController customerNameController = TextEditingController();
@@ -465,7 +468,7 @@ class _PosPageState extends State<PosPage> {
                   leading: const Icon(Icons.money, color: Colors.green),
                   title: Text(l10n.cashPayment),
                   onTap: () {
-                    context.read<PosBloc>().add(CheckoutEvent('cash', customerId: selectedCustomer?.id));
+                    context.read<PosBloc>().add(CheckoutEvent('cash', customerId: selectedCustomer?.id, userId: userId));
                     Navigator.pop(context);
                   },
                 ),
@@ -493,7 +496,7 @@ class _PosPageState extends State<PosPage> {
                       return;
                     }
                     if (context.mounted) {
-                      context.read<PosBloc>().add(CheckoutEvent('credit', customerId: customerId));
+                      context.read<PosBloc>().add(CheckoutEvent('credit', customerId: customerId, userId: userId));
                       Navigator.pop(context);
                     }
                   },

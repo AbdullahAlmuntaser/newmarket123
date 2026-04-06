@@ -14,10 +14,14 @@ import 'package:supermarket/presentation/features/home/home_page.dart';
 import 'package:supermarket/presentation/features/home/low_stock_products_page.dart';
 import 'package:supermarket/presentation/features/pos/pos_page.dart';
 import 'package:supermarket/presentation/features/sales/sales_history_page.dart';
+import 'package:supermarket/presentation/features/sales/sales_return_page.dart';
+import 'package:supermarket/presentation/features/sales/add_sales_return_page.dart';
 import 'package:supermarket/presentation/features/products/products_page.dart';
 import 'package:supermarket/presentation/features/products/categories_page.dart';
 import 'package:supermarket/presentation/features/purchases/purchases_page.dart';
 import 'package:supermarket/presentation/features/purchases/add_purchase_page.dart';
+import 'package:supermarket/presentation/features/purchases/purchase_return_page.dart';
+import 'package:supermarket/presentation/features/purchases/add_purchase_return_page.dart';
 import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
 import 'package:supermarket/presentation/features/accounting/trial_balance_page.dart';
 import 'package:supermarket/presentation/features/accounting/cash_flow_page.dart';
@@ -152,6 +156,14 @@ class MyApp extends StatelessWidget {
           builder: (context, state) => const SalesHistoryPage(),
         ),
         GoRoute(
+          path: '/sales/returns',
+          builder: (context, state) => const SalesReturnPage(),
+        ),
+        GoRoute(
+          path: '/sales/returns/new',
+          builder: (context, state) => const AddSalesReturnPage(),
+        ),
+        GoRoute(
           path: '/products',
           builder: (context, state) => const ProductsPage(),
         ),
@@ -180,6 +192,14 @@ class MyApp extends StatelessWidget {
         GoRoute(
           path: '/purchases/new',
           builder: (context, state) => const AddPurchasePage(),
+        ),
+        GoRoute(
+          path: '/purchases/returns',
+          builder: (context, state) => const PurchaseReturnPage(),
+        ),
+        GoRoute(
+          path: '/purchases/returns/new',
+          builder: (context, state) => const AddPurchaseReturnPage(),
         ),
         GoRoute(
           path: '/low-stock',

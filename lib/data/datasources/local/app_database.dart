@@ -9,6 +9,8 @@ import 'daos/sales_dao.dart';
 import 'daos/customers_dao.dart';
 import 'daos/accounting_dao.dart';
 import 'daos/users_dao.dart';
+import 'daos/suppliers_dao.dart';
+import 'daos/purchases_dao.dart';
 import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 
 part 'app_database.g.dart';
@@ -82,6 +84,7 @@ class SaleItems extends Table with SyncableTable {
 class Purchases extends Table with SyncableTable {
   TextColumn get supplierId => text().nullable().references(Suppliers, #id)();
   RealColumn get total => real()();
+  RealColumn get tax => real().withDefault(const Constant(0.0))(); // Added tax column
   TextColumn get invoiceNumber => text().nullable()();
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
   BoolColumn get isCredit => boolean().withDefault(const Constant(false))();
@@ -291,6 +294,25 @@ class PayrollLines extends Table with SyncableTable {
   RealColumn get netSalary => real()();
 }
 
+class Permissions extends Table with SyncableTable {
+  TextColumn get code => text().unique()(); // e.g., 'sales.create', 'products.delete'
+  TextColumn get description => text().nullable()();
+}
+
+class RolePermissions extends Table with SyncableTable {
+  TextColumn get role => text()(); // e.g., 'ADMIN', 'CASHIER'
+  TextColumn get permissionCode => text().references(Permissions, #code)();
+}
+
+class CashboxTransactions extends Table with SyncableTable {
+  RealColumn get amount => real()();
+  TextColumn get type => text()(); // IN, OUT
+  TextColumn get category => text()(); // SALES, PURCHASE_PAYMENT, EXPENSE, MANUAL
+  TextColumn get referenceId => text().nullable()();
+  TextColumn get note => text().nullable()();
+  TextColumn get userId => text().references(Users, #id)();
+}
+
 @DriftDatabase(
   tables: [
     Users,
@@ -325,17 +347,38 @@ class PayrollLines extends Table with SyncableTable {
     Employees,
     PayrollEntries,
     PayrollLines,
+    Permissions,
+    RolePermissions,
+    CashboxTransactions,
   ],
-  daos: [ProductsDao, SalesDao, CustomersDao, AccountingDao, UsersDao],
+  daos: [
+    ProductsDao,
+    SalesDao,
+    CustomersDao,
+    AccountingDao,
+    UsersDao,
+    SuppliersDao,
+    PurchasesDao
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
+
+  // Performance Indices
+  List<TableIndex> get indices => [
+    TableIndex(name: 'products_sku_idx', columns: {products.sku}),
+    TableIndex(name: 'sales_customer_idx', columns: {sales.customerId}),
+    TableIndex(name: 'sale_items_sale_idx', columns: {saleItems.saleId}),
+    TableIndex(name: 'purchases_supplier_idx', columns: {purchases.supplierId}),
+    TableIndex(name: 'gl_lines_entry_idx', columns: {gLLines.entryId}),
+    TableIndex(name: 'gl_lines_account_idx', columns: {gLLines.accountId}),
+  ];
 
   Future<int> getUnsyncedCount() async =>
       (select(syncQueue)).get().then((v) => v.length);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 13; // Incremented schema version
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -377,6 +420,19 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(employees);
         await m.createTable(payrollEntries);
         await m.createTable(payrollLines);
+      }
+      if (from < 10) {
+        await m.createTable(permissions);
+        await m.createTable(rolePermissions);
+      }
+      if (from < 11) {
+        await m.createTable(cashboxTransactions);
+      }
+       if (from < 12) {
+        await m.addColumn(purchases, purchases.tax);
+      }
+      if (from < 13) {
+        await m.createTable(auditLogs);
       }
     },
   );

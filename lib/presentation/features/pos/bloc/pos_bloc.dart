@@ -1,10 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/core/services/accounting_service.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_event.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_state.dart';
-import 'dart:convert';
 import 'package:uuid/uuid.dart';
 
 class PosBloc extends Bloc<PosEvent, PosState> {
@@ -200,136 +198,48 @@ class PosBloc extends Bloc<PosEvent, PosState> {
 
       emit(PosLoading());
 
-      await db.transaction(() async {
-        final saleId = const Uuid().v4();
+      final saleId = const Uuid().v4();
 
-        // 1. Create Sale
-        await db
-            .into(db.sales)
-            .insert(
-              SalesCompanion.insert(
-                id: Value(saleId),
-                customerId: Value(event.customerId),
-                total: total,
-                discount: Value(discount),
-                tax: Value(tax),
-                paymentMethod: event.paymentMethod,
-                isCredit: Value(event.paymentMethod == 'credit'),
-                syncStatus: const Value(1),
-              ),
-            );
+      // 1. Prepare Companions
+      final saleCompanion = SalesCompanion.insert(
+        id: Value(saleId),
+        customerId: Value(event.customerId),
+        total: total,
+        discount: Value(discount),
+        tax: Value(tax),
+        paymentMethod: event.paymentMethod,
+        isCredit: Value(event.paymentMethod == 'credit'),
+        syncStatus: const Value(1),
+      );
 
-        List<SaleItem> saleItemsForAccounting = [];
-
-        // 2. Create SaleItems and Update Stock
-        for (var item in currentState.cart) {
-          await db
-              .into(db.saleItems)
-              .insert(
-                SaleItemsCompanion.insert(
-                  saleId: saleId,
-                  productId: item.product.id,
-                  quantity: item.quantity.toDouble(),
-                  price: item.unitPrice,
-                  syncStatus: const Value(1),
-                ),
-              );
-
-          // UPDATE STOCK
-          final product = await (db.select(
-            db.products,
-          )..where((t) => t.id.equals(item.product.id))).getSingle();
-          await (db.update(
-            db.products,
-          )..where((t) => t.id.equals(item.product.id))).write(
-            ProductsCompanion(stock: Value(product.stock - item.quantity)),
-          );
-
-          // Prepare item for accounting
-          saleItemsForAccounting.add(
-            SaleItem(
-              id: const Uuid().v4(),
-              saleId: saleId,
-              productId: item.product.id,
-              quantity: item.quantity.toDouble(),
-              price: item.unitPrice,
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-              syncStatus: 1,
-              deviceId: null,
-            ),
-          );
-        }
-
-        // 3. Update Customer Balance if Credit
-        if (event.paymentMethod == 'credit' && event.customerId != null) {
-          final customer = await (db.select(
-            db.customers,
-          )..where((t) => t.id.equals(event.customerId!))).getSingle();
-          await (db.update(
-            db.customers,
-          )..where((t) => t.id.equals(event.customerId!))).write(
-            CustomersCompanion(balance: Value(customer.balance + total)),
-          );
-        }
-
-        // 4. Add to SyncQueue
-        final salePayload = {
-          'id': saleId,
-          'total': total,
-          'discount': discount,
-          'tax': tax,
-          'paymentMethod': event.paymentMethod,
-          'items': currentState.cart
-              .map(
-                (i) => {
-                  'productId': i.product.id,
-                  'qty': i.quantity,
-                  'price': i.unitPrice,
-                },
-              )
-              .toList(),
-        };
-
-        await db
-            .into(db.syncQueue)
-            .insert(
-              SyncQueueCompanion.insert(
-                entityTable: 'sales',
-                entityId: saleId,
-                operation: 'create',
-                payload: jsonEncode(salePayload),
-              ),
-            );
-
-        // 5. Accounting
-        final saleObj = Sale(
-          id: saleId,
-          customerId: event.customerId,
-          total: total,
-          discount: discount,
-          tax: tax,
-          paymentMethod: event.paymentMethod,
-          isCredit: event.paymentMethod == 'credit',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          syncStatus: 1,
-          deviceId: null,
+      final itemsCompanions = currentState.cart.map((item) {
+        return SaleItemsCompanion.insert(
+          saleId: saleId,
+          productId: item.product.id,
+          quantity: item.quantity.toDouble(),
+          price: item.unitPrice,
+          syncStatus: const Value(1),
         );
+      }).toList();
 
-        final accounting = AccountingService(db);
-        await accounting.seedDefaultAccounts();
-        await accounting.postSale(saleObj, saleItemsForAccounting);
+      // 2. Execute via DAO
+      await db.salesDao.createSale(
+        saleCompanion: saleCompanion,
+        itemsCompanions: itemsCompanions,
+        userId: event.userId,
+      );
 
-        // Emit Checkout Success
-        emit(
-          PosCheckoutSuccess(
-            saleObj,
-            saleItemsForAccounting,
-            currentState.cart.map((i) => i.product).toList(),
-          ),
-        );
-      });
+      // 3. Fetch final objects for success emission
+      final saleObj = await (db.select(db.sales)..where((s) => s.id.equals(saleId))).getSingle();
+      final saleItemsForAccounting = await (db.select(db.saleItems)..where((si) => si.saleId.equals(saleId))).get();
+
+      emit(
+        PosCheckoutSuccess(
+          saleObj,
+          saleItemsForAccounting,
+          currentState.cart.map((i) => i.product).toList(),
+        ),
+      );
     } catch (e) {
       emit(PosError("Checkout failed: $e"));
       emit(currentState.copyWith());

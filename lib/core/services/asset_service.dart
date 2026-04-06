@@ -8,11 +8,12 @@ class AssetService {
 
   AssetService(this.db);
 
-  Future<void> addAsset(FixedAssetsCompanion asset) async {
+  Future<void> addAsset(Insertable<FixedAsset> asset) async {
     await db.into(db.fixedAssets).insert(asset);
-    
-    // Optional: Auto-generate accounting entry for purchase
-    // Debit: Asset Account, Credit: Cash/Bank
+  }
+
+  Future<void> updateAsset(Insertable<FixedAsset> asset) async {
+    await db.update(db.fixedAssets).replace(asset);
   }
 
   Future<List<FixedAsset>> getAllAssets() async {
@@ -29,14 +30,14 @@ class AssetService {
       for (var asset in assets) {
         // Simple Monthly Straight-line Depreciation
         double monthlyDepreciation = (asset.cost - asset.salvageValue) / (asset.usefulLifeYears * 12);
-        
-        if (asset.accumulatedDepreciation + monthlyDepreciation > asset.cost) {
-          monthlyDepreciation = asset.cost - asset.accumulatedDepreciation;
+
+        if (asset.accumulatedDepreciation + monthlyDepreciation > asset.cost - asset.salvageValue) {
+          monthlyDepreciation = (asset.cost - asset.salvageValue) - asset.accumulatedDepreciation;
         }
 
         if (monthlyDepreciation > 0) {
           totalDepreciation += monthlyDepreciation;
-          
+
           await (db.update(db.fixedAssets)..where((t) => t.id.equals(asset.id))).write(
             FixedAssetsCompanion(
               accumulatedDepreciation: Value(asset.accumulatedDepreciation + monthlyDepreciation),
@@ -50,30 +51,32 @@ class AssetService {
         // Debit: Depreciation Expense, Credit: Accumulated Depreciation (Contra-Asset)
         final entry = GLEntriesCompanion.insert(
           id: Value(entryId),
-          description: 'Monthly Depreciation - ${DateTime.now().month}/${DateTime.now().year}',
+          description: 'إهلاك شهري - ${DateTime.now().month}/${DateTime.now().year}',
           date: Value(DateTime.now()),
           referenceType: const Value('DEPRECIATION'),
         );
 
-        final expenseAcc = await dao.getAccountByCode(AccountingService.codeExpenses);
-        final assetAcc = await dao.getAccountByCode(AccountingService.codeFixedAssets);
+        // We need the specific expense and contra-asset accounts
+        final expenseAccount = await dao.getAccountByCode(AccountingService.codeDepreciationExpense);
+        final contraAssetAccount = await dao.getAccountByCode(AccountingService.codeAccumulatedDepreciation);
 
-        if (expenseAcc != null && assetAcc != null) {
+        if (expenseAccount != null && contraAssetAccount != null) {
           final lines = [
             GLLinesCompanion.insert(
               entryId: entryId,
-              accountId: expenseAcc.id,
+              accountId: expenseAccount.id,
               debit: Value(totalDepreciation),
-              credit: const Value(0.0),
             ),
             GLLinesCompanion.insert(
               entryId: entryId,
-              accountId: assetAcc.id,
-              debit: const Value(0.0),
+              accountId: contraAssetAccount.id,
               credit: Value(totalDepreciation),
             ),
           ];
           await dao.createEntry(entry, lines);
+        } else {
+          // This is a critical setup issue. We should throw an exception to rollback the transaction.
+          throw Exception('حسابات الإهلاك غير معرفة. الرجاء إعداد حساب المصروف (6001) وحساب الإهلاك المتراكم (1201) في شجرة الحسابات.');
         }
       }
     });

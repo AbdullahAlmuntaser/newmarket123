@@ -740,7 +740,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeAdmin => 'Welcome Admin';
 
   @override
-  String get adminDashboardDescription => 'Manage your supermarket operations with ease.';
+  String get adminDashboardDescription =>
+      'Manage your supermarket operations with ease.';
 
   @override
   String get manageStaff => 'Manage Staff';
@@ -839,7 +840,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmRestore => 'Confirm Restore';
 
   @override
-  String get restoreWarning => 'Restoring will overwrite current data. Are you sure?';
+  String get restoreWarning =>
+      'Restoring will overwrite current data. Are you sure?';
 
   @override
   String get simplifiedTaxInvoice => 'Simplified Tax Invoice';
@@ -1002,4 +1004,71 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get totalInputVat => 'Total Input VAT';
+
+  @override
+  String get noItemsFound => 'No items found';
+
+  @override
+  String get unknownProduct => 'Unknown Product';
+
+  @override
+  String get viewInvoice => 'View Invoice';
+
+  @override
+  String get confirmDeleteCategory =>
+      'Are you sure you want to delete this category? This will prevent access to associated products.';
+
+  @override
+  String get categoryHasProductsError =>
+      'Cannot delete category as it is linked to existing products.';
+
+  @override
+  String get deleteCategory => 'Delete Category';
+
+  @override
+  String get customerStatementTooltip => 'View Statement';
+
+  @override
+  String get newPurchaseReturn => 'New Purchase Return';
+
+  @override
+  String get selectPurchase => 'Select Purchase';
+
+  @override
+  String get selectAPurchaseToContinue => 'Select a purchase to continue';
+
+  @override
+  String get processReturn => 'Process Return';
+
+  @override
+  String get returnProcessedSuccessfully => 'Return processed successfully';
+
+  @override
+  String get noReturnsYet => 'No returns yet';
+
+  @override
+  String get newSalesReturn => 'New Sales Return';
+
+  @override
+  String get selectSale => 'Select Sale';
+
+  @override
+  String get failedToSaveProduct => 'Failed to save product';
+
+  @override
+  String get failedToSaveCategory => 'Failed to save category';
+
+  @override
+  String get failedToDeleteProduct => 'Failed to delete product';
+
+  @override
+  String deleteProductConfirmation(Object productName) {
+    return 'Are you sure you want to delete $productName?';
+  }
+
+  @override
+  String get failedToSavePurchase => 'Failed to save purchase';
+
+  @override
+  String get selectASaleToContinue => 'Select a sale to continue';
 }

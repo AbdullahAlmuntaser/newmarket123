@@ -212,4 +212,28 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
   Future<int> deleteCategory(Category entry) {
     return delete(categories).delete(entry);
   }
+
+  Stream<List<ProductBatch>> watchExpiringBatches({int daysThreshold = 30}) {
+    final thresholdDate = DateTime.now().add(Duration(days: daysThreshold));
+    return (select(productBatches)
+          ..where((b) =>
+              b.expiryDate.isSmallerOrEqualValue(thresholdDate) &
+              b.quantity.isBiggerThanValue(0))
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.expiryDate, mode: OrderingMode.asc)
+          ]))
+        .watch();
+  }
+
+  Future<List<ProductBatch>> getExpiringBatches({int daysThreshold = 30}) async {
+    final thresholdDate = DateTime.now().add(Duration(days: daysThreshold));
+    return (select(productBatches)
+          ..where((b) =>
+              b.expiryDate.isSmallerOrEqualValue(thresholdDate) &
+              b.quantity.isBiggerThanValue(0))
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.expiryDate, mode: OrderingMode.asc)
+          ]))
+        .get();
+  }
 }

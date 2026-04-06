@@ -120,6 +120,8 @@ AccountingDashboardData _$AccountingDashboardDataFromJson(
   topSellingProducts: (json['topSellingProducts'] as List<dynamic>)
       .map((e) => DashboardTopProduct.fromJson(e as Map<String, dynamic>))
       .toList(),
+  expiringBatchesCount: (json['expiringBatchesCount'] as num?)?.toInt() ?? 0,
+  ratios: FinancialRatiosData.fromJson(json['ratios'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$AccountingDashboardDataToJson(
@@ -139,6 +141,8 @@ Map<String, dynamic> _$AccountingDashboardDataToJson(
   'topSellingProducts': instance.topSellingProducts
       .map((e) => e.toJson())
       .toList(),
+  'expiringBatchesCount': instance.expiringBatchesCount,
+  'ratios': instance.ratios.toJson(),
 };
 
 DashboardTopProduct _$DashboardTopProductFromJson(Map<String, dynamic> json) =>
@@ -189,3 +193,18 @@ Map<String, dynamic> _$CashFlowDataToJson(CashFlowData instance) =>
       'startDate': instance.startDate?.toIso8601String(),
       'endDate': instance.endDate.toIso8601String(),
     };
+
+FinancialRatiosData _$FinancialRatiosDataFromJson(Map<String, dynamic> json) =>
+    FinancialRatiosData(
+      grossProfitMargin: (json['grossProfitMargin'] as num).toDouble(),
+      netProfitMargin: (json['netProfitMargin'] as num).toDouble(),
+      currentRatio: (json['currentRatio'] as num).toDouble(),
+    );
+
+Map<String, dynamic> _$FinancialRatiosDataToJson(
+  FinancialRatiosData instance,
+) => <String, dynamic>{
+  'grossProfitMargin': instance.grossProfitMargin,
+  'netProfitMargin': instance.netProfitMargin,
+  'currentRatio': instance.currentRatio,
+};

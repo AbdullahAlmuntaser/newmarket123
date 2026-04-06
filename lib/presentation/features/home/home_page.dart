@@ -109,6 +109,15 @@ class HomePage extends StatelessWidget {
             color: Colors.green,
           ),
         ),
+        StreamBuilder<double>(
+          stream: db.salesDao.watchTotalProfitToday(),
+          builder: (context, snapshot) => HomeCard(
+            icon: Icons.account_balance_wallet,
+            title: 'أرباح اليوم',
+            value: '${(snapshot.data ?? 0).toStringAsFixed(2)} SAR',
+            color: Colors.teal,
+          ),
+        ),
         StreamBuilder<int>(
           stream: db.productsDao.watchLowStockCount(),
           builder: (context, snapshot) {
@@ -121,15 +130,6 @@ class HomePage extends StatelessWidget {
               onTap: () => context.push('/low-stock'),
             );
           },
-        ),
-        StreamBuilder<int>(
-          stream: db.salesDao.watchTotalSalesToday(),
-          builder: (context, snapshot) => HomeCard(
-            icon: Icons.receipt_long,
-            title: l10n.totalSales,
-            value: '${snapshot.data ?? 0}',
-            color: Colors.blue,
-          ),
         ),
         StreamBuilder<int>(
           stream: db.customersDao.watchTotalCustomers(),
@@ -163,6 +163,18 @@ class HomePage extends StatelessWidget {
           onPressed: () => context.push('/purchases/new'),
           icon: const Icon(Icons.add_shopping_cart),
           label: Text(l10n.newPurchaseInvoice),
+          style: ElevatedButton.styleFrom(minimumSize: const Size(150, 50)),
+        ),
+        ElevatedButton.icon(
+          onPressed: () => context.push('/sales/returns'),
+          icon: const Icon(Icons.assignment_return),
+          label: Text(l10n.salesReturns),
+          style: ElevatedButton.styleFrom(minimumSize: const Size(150, 50)),
+        ),
+        ElevatedButton.icon(
+          onPressed: () => context.push('/purchases/returns'),
+          icon: const Icon(Icons.assignment_return_outlined),
+          label: Text(l10n.purchaseReturns),
           style: ElevatedButton.styleFrom(minimumSize: const Size(150, 50)),
         ),
         ElevatedButton.icon(

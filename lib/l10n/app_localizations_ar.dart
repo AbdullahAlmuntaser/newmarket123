@@ -740,7 +740,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeAdmin => 'مرحباً بك أيها المشرف';
 
   @override
-  String get adminDashboardDescription => 'إدارة عمليات السوبر ماركت الخاصة بك بكل سهولة.';
+  String get adminDashboardDescription =>
+      'إدارة عمليات السوبر ماركت الخاصة بك بكل سهولة.';
 
   @override
   String get manageStaff => 'إدارة الموظفين';
@@ -839,7 +840,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get confirmRestore => 'تأكيد الاستعادة';
 
   @override
-  String get restoreWarning => 'الاستعادة ستؤدي إلى مسح البيانات الحالية. هل أنت متأكد؟';
+  String get restoreWarning =>
+      'الاستعادة ستؤدي إلى مسح البيانات الحالية. هل أنت متأكد؟';
 
   @override
   String get simplifiedTaxInvoice => 'فاتورة ضريبية مبسطة';
@@ -1002,4 +1004,71 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get totalInputVat => 'إجمالي ضريبة المدخلات';
+
+  @override
+  String get noItemsFound => 'لم يتم العثور على أصناف';
+
+  @override
+  String get unknownProduct => 'منتج غير معروف';
+
+  @override
+  String get viewInvoice => 'عرض الفاتورة';
+
+  @override
+  String get confirmDeleteCategory =>
+      'هل أنت متأكد من حذف هذه الفئة؟ سيؤدي هذا إلى منع الوصول إلى المنتجات المرتبطة بها.';
+
+  @override
+  String get categoryHasProductsError =>
+      'لا يمكن حذف الفئة لأنها مرتبطة بمنتجات موجودة.';
+
+  @override
+  String get deleteCategory => 'حذف فئة';
+
+  @override
+  String get customerStatementTooltip => 'كشف حساب';
+
+  @override
+  String get newPurchaseReturn => 'مرتجع مشتريات جديد';
+
+  @override
+  String get selectPurchase => 'اختر مشتريات';
+
+  @override
+  String get selectAPurchaseToContinue => 'اختر مشتريات للمتابعة';
+
+  @override
+  String get processReturn => 'إتمام المرتجع';
+
+  @override
+  String get returnProcessedSuccessfully => 'تم إتمام المرتجع بنجاح';
+
+  @override
+  String get noReturnsYet => 'لا يوجد مرتجعات بعد';
+
+  @override
+  String get newSalesReturn => 'مرتجع مبيعات جديد';
+
+  @override
+  String get selectSale => 'اختر بيعة';
+
+  @override
+  String get failedToSaveProduct => 'فشل حفظ المنتج';
+
+  @override
+  String get failedToSaveCategory => 'فشل حفظ الفئة';
+
+  @override
+  String get failedToDeleteProduct => 'فشل حذف المنتج';
+
+  @override
+  String deleteProductConfirmation(Object productName) {
+    return 'هل أنت متأكد أنك تريد حذف $productName؟';
+  }
+
+  @override
+  String get failedToSavePurchase => 'فشل حفظ المشتريات';
+
+  @override
+  String get selectASaleToContinue => 'اختر بيعة للمتابعة';
 }

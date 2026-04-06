@@ -46,8 +46,14 @@ class AdminDashboardPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildWelcomeCard(context, auth, l10n),
+                if (data.expiringBatchesCount > 0) ...[
+                  const SizedBox(height: 16),
+                  _buildExpiryAlert(context, data.expiringBatchesCount),
+                ],
                 const SizedBox(height: 24),
                 _buildSummaryKPIs(context, data, l10n),
+                const SizedBox(height: 24),
+                _buildFinancialRatios(context, data.ratios),
                 const SizedBox(height: 24),
                 _buildProfitLineChart(context, data, l10n),
                 const SizedBox(height: 24),
@@ -67,6 +73,118 @@ class AdminDashboardPage extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildFinancialRatios(BuildContext context, FinancialRatiosData ratios) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'المؤشرات المالية الذكية',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildRatioIndicator(
+                  context,
+                  'هامش الربح الإجمالي',
+                  ratios.grossProfitMargin,
+                  isPercentage: true,
+                  color: ratios.grossProfitMargin > 0.2 ? Colors.green : Colors.orange,
+                ),
+                _buildRatioIndicator(
+                  context,
+                  'هامش الربح الصافي',
+                  ratios.netProfitMargin,
+                  isPercentage: true,
+                  color: ratios.netProfitMargin > 0.1 ? Colors.blue : Colors.redAccent,
+                ),
+                _buildRatioIndicator(
+                  context,
+                  'نسبة السيولة',
+                  ratios.currentRatio,
+                  isPercentage: false,
+                  color: ratios.currentRatio >= 1.5 ? Colors.teal : Colors.deepOrange,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRatioIndicator(BuildContext context, String label, double value, {required bool isPercentage, required Color color}) {
+    final displayValue = isPercentage ? '${(value * 100).toStringAsFixed(1)}%' : value.toStringAsFixed(2);
+    final progress = isPercentage ? value.clamp(0.0, 1.0) : (value / 3.0).clamp(0.0, 1.0);
+
+    return Column(
+      children: [
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            SizedBox(
+              width: 70,
+              height: 70,
+              child: CircularProgressIndicator(
+                value: progress,
+                strokeWidth: 8,
+                backgroundColor: color.withValues(alpha: 0.1),
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+              ),
+            ),
+            Text(
+              displayValue,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: 80,
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildExpiryAlert(BuildContext context, int count) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              'تنبيه: يوجد $count شحنات/دفعات ستنتهي صلاحيتها خلال 30 يوماً.',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          TextButton(
+            onPressed: () => context.push('/products'),
+            child: const Text('عرض'),
+          ),
+        ],
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -69,36 +70,53 @@ class _AddEditCategoryDialogState extends State<AddEditCategoryDialog> {
   void _saveCategory() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
+      final l10n = AppLocalizations.of(context)!;
 
-      if (widget.category == null) {
-        // Add new category
-        await widget.db
-            .into(widget.db.categories)
-            .insert(
-              CategoriesCompanion.insert(name: _name, code: Value(_code)),
+      try {
+        if (widget.category == null) {
+          // Add new category
+          await widget.db
+              .into(widget.db.categories)
+              .insert(
+                CategoriesCompanion.insert(name: _name, code: Value(_code)),
+              );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(l10n.categoryAdded),
+              ),
             );
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.categoryAdded),
-            ),
-          );
+          }
+        } else {
+          // Update existing category
+          await (widget.db.update(widget.db.categories)
+                ..where((c) => c.id.equals(widget.category!.id)))
+              .write(CategoriesCompanion(name: Value(_name), code: Value(_code)));
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(l10n.categoryUpdated),
+              ),
+            );
+          }
         }
-      } else {
-        // Update existing category
-        await (widget.db.update(widget.db.categories)
-              ..where((c) => c.id.equals(widget.category!.id)))
-            .write(CategoriesCompanion(name: Value(_name), code: Value(_code)));
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.categoryUpdated),
-            ),
-          );
+          Navigator.of(context).pop();
         }
-      }
-      if (mounted) {
-        Navigator.of(context).pop();
+      } catch (e, s) {
+        developer.log(
+          'Failed to save category',
+          name: 'add_edit_category_dialog',
+          error: e,
+          stackTrace: s,
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.failedToSaveCategory}: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
       }
     }
   }

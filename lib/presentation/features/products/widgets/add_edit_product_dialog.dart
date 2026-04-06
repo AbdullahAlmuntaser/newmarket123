@@ -1,11 +1,12 @@
+import 'dart:developer' as developer;
+import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/products/products_provider.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:drift/drift.dart' hide Column;
 
 class AddEditProductDialog extends StatefulWidget {
   final Product? product;
@@ -192,43 +193,57 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       final productsProvider = context.read<ProductsProvider>();
       final l10n = AppLocalizations.of(context)!;
 
-      if (widget.product == null) {
-        await productsProvider.addProduct(
-          ProductsCompanion.insert(
-            name: _name,
-            sku: _skuController.text,
-            categoryId: Value(_categoryId),
-            buyPrice: Value(_buyPrice),
-            sellPrice: Value(_sellPrice),
-            wholesalePrice: Value(_wholesalePrice),
-            stock: Value(_stock),
-            alertLimit: Value(_alertLimit),
-          ),
+      try {
+        if (widget.product == null) {
+          await productsProvider.addProduct(
+            ProductsCompanion.insert(
+              name: _name,
+              sku: _skuController.text,
+              categoryId: Value(_categoryId),
+              buyPrice: Value(_buyPrice),
+              sellPrice: Value(_sellPrice),
+              wholesalePrice: Value(_wholesalePrice),
+              stock: Value(_stock),
+              alertLimit: Value(_alertLimit),
+            ),
+          );
+          if (!mounted) return;
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(l10n.productAdded)));
+        } else {
+          await productsProvider.updateProduct(
+            widget.product!.copyWith(
+              name: _name,
+              sku: _skuController.text,
+              categoryId: Value(_categoryId),
+              buyPrice: _buyPrice,
+              sellPrice: _sellPrice,
+              wholesalePrice: _wholesalePrice,
+              stock: _stock,
+              alertLimit: _alertLimit,
+            ),
+          );
+          if (!mounted) return;
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(l10n.productUpdated)));
+        }
+        if (!mounted) return;
+        Navigator.of(context).pop();
+      } catch (e, s) {
+        developer.log(
+          'Failed to save product',
+          name: 'add_edit_product_dialog',
+          error: e,
+          stackTrace: s,
         );
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.productAdded)));
-      } else {
-        await productsProvider.updateProduct(
-          widget.product!.copyWith(
-            name: _name,
-            sku: _skuController.text,
-            categoryId: Value(_categoryId),
-            buyPrice: _buyPrice,
-            sellPrice: _sellPrice,
-            wholesalePrice: _wholesalePrice,
-            stock: _stock,
-            alertLimit: _alertLimit,
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.failedToSaveProduct}: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
-        if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.productUpdated)));
       }
-      if (!mounted) return;
-      Navigator.of(context).pop();
     }
   }
 
@@ -240,7 +255,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.delete),
-        content: Text('${l10n.delete} ${widget.product!.name}?'),
+        content: Text(l10n.deleteProductConfirmation(widget.product!.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -255,9 +270,25 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     );
 
     if (confirmed == true) {
-      await productsProvider.deleteProduct(widget.product!);
-      if (!mounted) return;
-      Navigator.of(context).pop();
+      try {
+        await productsProvider.deleteProduct(widget.product!);
+        if (!mounted) return;
+        Navigator.of(context).pop();
+      } catch (e, s) {
+        developer.log(
+          'Failed to delete product',
+          name: 'add_edit_product_dialog',
+          error: e,
+          stackTrace: s,
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.failedToDeleteProduct}: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     }
   }
 }

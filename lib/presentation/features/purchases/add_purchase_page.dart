@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'dart:developer' as developer;
 import 'package:drift/drift.dart' as drift;
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:uuid/uuid.dart';
-import 'dart:convert';
+import 'package:provider/provider.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:uuid/uuid.dart';
 
 class AddPurchasePage extends StatefulWidget {
   const AddPurchasePage({super.key});
@@ -20,16 +21,27 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   String _selectedStatus = 'RECEIVED';
   final List<_PurchaseLineItem> _items = [];
   final TextEditingController _invoiceController = TextEditingController();
+  final TextEditingController _taxController = TextEditingController();
   bool _isSaving = false;
   bool _isCreditPurchase = true;
 
-  double get _total =>
+  double get _subtotal =>
       _items.fold(0, (sum, item) => sum + (item.quantity * item.price));
+  double get _taxAmount => double.tryParse(_taxController.text) ?? 0.0;
+  double get _total => _subtotal + _taxAmount;
 
   @override
   void initState() {
     super.initState();
     _ensureDefaultWarehouse();
+    _taxController.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _invoiceController.dispose();
+    _taxController.dispose();
+    super.dispose();
   }
 
   Future<void> _ensureDefaultWarehouse() async {
@@ -37,24 +49,18 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
     final warehouses = await db.select(db.warehouses).get();
     if (warehouses.isEmpty) {
       final id = const Uuid().v4();
-      await db
-          .into(db.warehouses)
-          .insert(
-            WarehousesCompanion.insert(
-              id: drift.Value(id),
-              name: 'Main Warehouse',
-              isDefault: const drift.Value(true),
-            ),
-          );
+      await db.into(db.warehouses).insert(WarehousesCompanion.insert(
+            id: drift.Value(id),
+            name: 'Main Warehouse',
+            isDefault: const drift.Value(true),
+          ));
       final updated = await db.select(db.warehouses).get();
       setState(() => _selectedWarehouse = updated.first);
     } else {
-      setState(
-        () => _selectedWarehouse = warehouses.firstWhere(
+      setState(() => _selectedWarehouse = warehouses.firstWhere(
           (w) => w.isDefault,
           orElse: () => warehouses.first,
-        ),
-      );
+        ));
     }
   }
 
@@ -249,6 +255,33 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              Text('${l10n.subtotal}:', style: const TextStyle(fontSize: 16)),
+              Text('$_subtotal', style: const TextStyle(fontSize: 16)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('${l10n.tax}:', style: const TextStyle(fontSize: 16)),
+              SizedBox(
+                width: 100,
+                child: TextField(
+                  controller: _taxController,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.end,
+                  decoration: InputDecoration(
+                    isDense: true,
+                    hintText: l10n.tax,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
               Text(
                 '${l10n.total}:',
                 style: const TextStyle(
@@ -281,8 +314,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
-              onPressed:
-                  (_items.isEmpty ||
+              onPressed: (_items.isEmpty ||
                       _selectedSupplier == null ||
                       _selectedWarehouse == null ||
                       _isSaving)
@@ -317,42 +349,39 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
 
   Future<void> _savePurchase(AppDatabase db) async {
     final l10n = AppLocalizations.of(context)!;
+    final accountingService = Provider.of<AccountingService>(context, listen: false);
     setState(() => _isSaving = true);
     final purchaseId = const Uuid().v4();
 
+    final purchaseCompanion = PurchasesCompanion.insert(
+      id: drift.Value(purchaseId),
+      supplierId: drift.Value(_selectedSupplier!.id),
+      total: _total,
+      tax: drift.Value(_taxAmount),
+      invoiceNumber: drift.Value(_invoiceController.text),
+      isCredit: drift.Value(_isCreditPurchase),
+      status: drift.Value(_selectedStatus),
+      warehouseId: drift.Value(_selectedWarehouse?.id),
+      syncStatus: const drift.Value(1),
+    );
+
     try {
       await db.transaction(() async {
-        // 1. Create Purchase
-        await db
-            .into(db.purchases)
-            .insert(
-              PurchasesCompanion.insert(
-                id: drift.Value(purchaseId),
-                supplierId: drift.Value(_selectedSupplier!.id),
-                total: _total,
-                invoiceNumber: drift.Value(_invoiceController.text),
-                isCredit: drift.Value(_isCreditPurchase),
-                status: drift.Value(_selectedStatus),
-                warehouseId: drift.Value(_selectedWarehouse?.id),
-                syncStatus: const drift.Value(1),
-              ),
-            );
+        // 1. Create Purchase record
+        final savedPurchase = await db.into(db.purchases).insertReturning(purchaseCompanion);
 
         // 2. Create Items and Update Stock if RECEIVED
+        List<PurchaseItemsCompanion> purchaseItemsList = [];
         for (var item in _items) {
           String? batchId;
           if (_selectedStatus == 'RECEIVED') {
             batchId = const Uuid().v4();
-            await db
-                .into(db.productBatches)
-                .insert(
+            await db.into(db.productBatches).insert(
                   ProductBatchesCompanion.insert(
                     id: drift.Value(batchId),
                     productId: item.product.id,
                     warehouseId: _selectedWarehouse!.id,
-                    batchNumber:
-                        item.batchNumber ??
-                        'AUTO-${DateTime.now().millisecondsSinceEpoch}',
+                    batchNumber: item.batchNumber ?? 'AUTO-${DateTime.now().millisecondsSinceEpoch}',
                     expiryDate: drift.Value(item.expiryDate),
                     quantity: drift.Value(item.quantity),
                     initialQuantity: drift.Value(item.quantity),
@@ -362,81 +391,51 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
 
             // Update product aggregate stock and price
             final newStock = item.product.stock + item.quantity;
-            await (db.update(
-              db.products,
-            )..where((t) => t.id.equals(item.product.id))).write(
-              ProductsCompanion(
-                stock: drift.Value(newStock),
-                buyPrice: drift.Value(item.price), // Update last buy price
-              ),
-            );
+            await (db.update(db.products)..where((t) => t.id.equals(item.product.id)))
+                .write(ProductsCompanion(
+              stock: drift.Value(newStock),
+              buyPrice: drift.Value(item.price), // Update last buy price
+            ));
           }
 
-          await db
-              .into(db.purchaseItems)
-              .insert(
-                PurchaseItemsCompanion.insert(
-                  purchaseId: purchaseId,
-                  productId: item.product.id,
-                  quantity: item.quantity,
-                  price: item.price,
-                  batchId: drift.Value(batchId),
-                  syncStatus: const drift.Value(1),
-                ),
-              );
+          purchaseItemsList.add(
+            PurchaseItemsCompanion.insert(
+              purchaseId: purchaseId,
+              productId: item.product.id,
+              quantity: item.quantity,
+              price: item.price,
+              batchId: drift.Value(batchId),
+              syncStatus: const drift.Value(1),
+            ),
+          );
         }
+        await db.batch((batch) {
+          batch.insertAll(db.purchaseItems, purchaseItemsList);
+        });
 
-        // 3. Update Supplier Balance if it's a credit purchase and RECEIVED
-        if (_isCreditPurchase && _selectedStatus == 'RECEIVED') {
-          final newBalance = _selectedSupplier!.balance + _total;
-          await (db.update(db.suppliers)
-                ..where((t) => t.id.equals(_selectedSupplier!.id)))
-              .write(SuppliersCompanion(balance: drift.Value(newBalance)));
+        // 3. Post to General Ledger if RECEIVED
+        if (_selectedStatus == 'RECEIVED') {
+            final itemsForService = await (db.select(db.purchaseItems)..where((t) => t.purchaseId.equals(purchaseId))).get();
+            await accountingService.postPurchase(savedPurchase, itemsForService);
         }
-
-        // 4. Add to Sync Queue
-        final payload = {
-          'id': purchaseId,
-          'supplierId': _selectedSupplier!.id,
-          'total': _total,
-          'isCredit': _isCreditPurchase,
-          'status': _selectedStatus,
-          'warehouseId': _selectedWarehouse?.id,
-          'items': _items
-              .map(
-                (i) => {
-                  'productId': i.product.id,
-                  'qty': i.quantity,
-                  'price': i.price,
-                  'batchNumber': i.batchNumber,
-                  'expiryDate': i.expiryDate?.toIso8601String(),
-                },
-              )
-              .toList(),
-        };
-        await db
-            .into(db.syncQueue)
-            .insert(
-              SyncQueueCompanion.insert(
-                entityTable: 'purchases',
-                entityId: purchaseId,
-                operation: 'create',
-                payload: jsonEncode(payload),
-              ),
-            );
       });
 
       if (mounted) {
         context.pop();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.purchaseSaved)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.purchaseSaved)));
       }
-    } catch (e) {
+    } catch (e, s) {
+      developer.log(
+        'Failed to save purchase',
+        name: 'add_purchase_page',
+        error: e,
+        stackTrace: s,
+      );
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('${l10n.failedToSavePurchase}: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);

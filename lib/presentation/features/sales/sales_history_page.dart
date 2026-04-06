@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:drift/drift.dart' as drift;
-import 'package:printing/printing.dart';
+import 'package:intl/intl.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:intl/intl.dart';
 import 'package:supermarket/presentation/widgets/main_drawer.dart';
-import 'package:supermarket/core/services/invoice_service.dart';
+import 'package:supermarket/presentation/features/sales/widgets/sale_details_bottom_sheet.dart'; // Import the new widget
 
 class SalesHistoryPage extends StatelessWidget {
   const SalesHistoryPage({super.key});
@@ -38,16 +37,12 @@ class SalesHistoryPage extends StatelessWidget {
               final sale = sales[index];
               return ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: sale.paymentMethod == 'cash'
-                      ? Colors.green.withAlpha(26)
-                      : Colors.blue.withAlpha(26),
+                  backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                   child: Icon(
                     sale.paymentMethod == 'cash'
                         ? Icons.money
                         : Icons.credit_card,
-                    color: sale.paymentMethod == 'cash'
-                        ? Colors.green
-                        : Colors.blue,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 title: Text(l10n.saleIdLabel(sale.id.substring(0, 8))),
@@ -59,7 +54,7 @@ class SalesHistoryPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '${sale.total}',
+                      sale.total.toStringAsFixed(2),
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -94,123 +89,11 @@ class SalesHistoryPage extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.4,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (context, scrollController) => FutureBuilder<List<SaleItem>>(
-          future: (db.select(
-            db.saleItems,
-          )..where((t) => t.saleId.equals(sale.id))).get(),
-          builder: (context, snapshot) {
-            final items = snapshot.data ?? [];
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        l10n.saleDetails,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.picture_as_pdf),
-                        tooltip: 'View Invoice',
-                        onPressed: () => _viewInvoice(context, db, sale, items),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    controller: scrollController,
-                    itemCount: items.length,
-                    itemBuilder: (context, index) {
-                      final item = items[index];
-                      return FutureBuilder<Product?>(
-                        future:
-                            (db.select(db.products)
-                                  ..where((t) => t.id.equals(item.productId)))
-                                .getSingleOrNull(),
-                        builder: (context, pSnapshot) {
-                          final product = pSnapshot.data;
-                          return ListTile(
-                            title: Text(product?.name ?? l10n.loading),
-                            subtitle: Text(
-                              l10n.qtyAtPrice(
-                                item.quantity.toString(),
-                                item.price.toString(),
-                              ),
-                            ),
-                            trailing: Text(
-                              (item.quantity * item.price).toStringAsFixed(2),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-                const Divider(),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        l10n.total,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
-                      Text(
-                        sale.total.toStringAsFixed(2),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: Colors.teal,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
+      builder: (context) => SaleDetailsBottomSheet(
+        sale: sale,
+        db: db,
+        l10n: l10n,
       ),
     );
-  }
-
-  Future<void> _viewInvoice(
-    BuildContext context,
-    AppDatabase db,
-    Sale sale,
-    List<SaleItem> items,
-  ) async {
-    try {
-      final products = await (db.select(
-        db.products,
-      )..where((p) => p.id.isIn(items.map((i) => i.productId).toList()))).get();
-
-      if (!context.mounted) return;
-
-      final invoiceService = InvoiceService();
-      final pdfData = await invoiceService.generateInvoice(
-        sale: sale,
-        items: items,
-        products: products,
-        companyName: 'My Supermarket',
-        companyVatNumber: '1234567890',
-      );
-
-      await Printing.layoutPdf(onLayout: (format) => pdfData);
-    } catch (e) {
-      debugPrint("Invoice generation error: $e");
-    }
   }
 }

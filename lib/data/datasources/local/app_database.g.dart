@@ -4759,6 +4759,16 @@ class $PurchasesTable extends Purchases
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _taxMeta = const VerificationMeta('tax');
+  @override
+  late final GeneratedColumn<double> tax = GeneratedColumn<double>(
+    'tax',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
   static const VerificationMeta _invoiceNumberMeta = const VerificationMeta(
     'invoiceNumber',
   );
@@ -4828,6 +4838,7 @@ class $PurchasesTable extends Purchases
     syncStatus,
     supplierId,
     total,
+    tax,
     invoiceNumber,
     date,
     isCredit,
@@ -4886,6 +4897,12 @@ class $PurchasesTable extends Purchases
       );
     } else if (isInserting) {
       context.missing(_totalMeta);
+    }
+    if (data.containsKey('tax')) {
+      context.handle(
+        _taxMeta,
+        tax.isAcceptableOrUnknown(data['tax']!, _taxMeta),
+      );
     }
     if (data.containsKey('invoice_number')) {
       context.handle(
@@ -4960,6 +4977,10 @@ class $PurchasesTable extends Purchases
         DriftSqlType.double,
         data['${effectivePrefix}total'],
       )!,
+      tax: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}tax'],
+      )!,
       invoiceNumber: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}invoice_number'],
@@ -4997,6 +5018,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
   final int syncStatus;
   final String? supplierId;
   final double total;
+  final double tax;
   final String? invoiceNumber;
   final DateTime date;
   final bool isCredit;
@@ -5010,6 +5032,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
     required this.syncStatus,
     this.supplierId,
     required this.total,
+    required this.tax,
     this.invoiceNumber,
     required this.date,
     required this.isCredit,
@@ -5030,6 +5053,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
       map['supplier_id'] = Variable<String>(supplierId);
     }
     map['total'] = Variable<double>(total);
+    map['tax'] = Variable<double>(tax);
     if (!nullToAbsent || invoiceNumber != null) {
       map['invoice_number'] = Variable<String>(invoiceNumber);
     }
@@ -5055,6 +5079,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
           ? const Value.absent()
           : Value(supplierId),
       total: Value(total),
+      tax: Value(tax),
       invoiceNumber: invoiceNumber == null && nullToAbsent
           ? const Value.absent()
           : Value(invoiceNumber),
@@ -5080,6 +5105,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
       syncStatus: serializer.fromJson<int>(json['syncStatus']),
       supplierId: serializer.fromJson<String?>(json['supplierId']),
       total: serializer.fromJson<double>(json['total']),
+      tax: serializer.fromJson<double>(json['tax']),
       invoiceNumber: serializer.fromJson<String?>(json['invoiceNumber']),
       date: serializer.fromJson<DateTime>(json['date']),
       isCredit: serializer.fromJson<bool>(json['isCredit']),
@@ -5098,6 +5124,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
       'syncStatus': serializer.toJson<int>(syncStatus),
       'supplierId': serializer.toJson<String?>(supplierId),
       'total': serializer.toJson<double>(total),
+      'tax': serializer.toJson<double>(tax),
       'invoiceNumber': serializer.toJson<String?>(invoiceNumber),
       'date': serializer.toJson<DateTime>(date),
       'isCredit': serializer.toJson<bool>(isCredit),
@@ -5114,6 +5141,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
     int? syncStatus,
     Value<String?> supplierId = const Value.absent(),
     double? total,
+    double? tax,
     Value<String?> invoiceNumber = const Value.absent(),
     DateTime? date,
     bool? isCredit,
@@ -5127,6 +5155,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
     syncStatus: syncStatus ?? this.syncStatus,
     supplierId: supplierId.present ? supplierId.value : this.supplierId,
     total: total ?? this.total,
+    tax: tax ?? this.tax,
     invoiceNumber: invoiceNumber.present
         ? invoiceNumber.value
         : this.invoiceNumber,
@@ -5148,6 +5177,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
           ? data.supplierId.value
           : this.supplierId,
       total: data.total.present ? data.total.value : this.total,
+      tax: data.tax.present ? data.tax.value : this.tax,
       invoiceNumber: data.invoiceNumber.present
           ? data.invoiceNumber.value
           : this.invoiceNumber,
@@ -5170,6 +5200,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
           ..write('syncStatus: $syncStatus, ')
           ..write('supplierId: $supplierId, ')
           ..write('total: $total, ')
+          ..write('tax: $tax, ')
           ..write('invoiceNumber: $invoiceNumber, ')
           ..write('date: $date, ')
           ..write('isCredit: $isCredit, ')
@@ -5188,6 +5219,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
     syncStatus,
     supplierId,
     total,
+    tax,
     invoiceNumber,
     date,
     isCredit,
@@ -5205,6 +5237,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
           other.syncStatus == this.syncStatus &&
           other.supplierId == this.supplierId &&
           other.total == this.total &&
+          other.tax == this.tax &&
           other.invoiceNumber == this.invoiceNumber &&
           other.date == this.date &&
           other.isCredit == this.isCredit &&
@@ -5220,6 +5253,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
   final Value<int> syncStatus;
   final Value<String?> supplierId;
   final Value<double> total;
+  final Value<double> tax;
   final Value<String?> invoiceNumber;
   final Value<DateTime> date;
   final Value<bool> isCredit;
@@ -5234,6 +5268,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
     this.syncStatus = const Value.absent(),
     this.supplierId = const Value.absent(),
     this.total = const Value.absent(),
+    this.tax = const Value.absent(),
     this.invoiceNumber = const Value.absent(),
     this.date = const Value.absent(),
     this.isCredit = const Value.absent(),
@@ -5249,6 +5284,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
     this.syncStatus = const Value.absent(),
     this.supplierId = const Value.absent(),
     required double total,
+    this.tax = const Value.absent(),
     this.invoiceNumber = const Value.absent(),
     this.date = const Value.absent(),
     this.isCredit = const Value.absent(),
@@ -5264,6 +5300,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
     Expression<int>? syncStatus,
     Expression<String>? supplierId,
     Expression<double>? total,
+    Expression<double>? tax,
     Expression<String>? invoiceNumber,
     Expression<DateTime>? date,
     Expression<bool>? isCredit,
@@ -5279,6 +5316,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
       if (syncStatus != null) 'sync_status': syncStatus,
       if (supplierId != null) 'supplier_id': supplierId,
       if (total != null) 'total': total,
+      if (tax != null) 'tax': tax,
       if (invoiceNumber != null) 'invoice_number': invoiceNumber,
       if (date != null) 'date': date,
       if (isCredit != null) 'is_credit': isCredit,
@@ -5296,6 +5334,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
     Value<int>? syncStatus,
     Value<String?>? supplierId,
     Value<double>? total,
+    Value<double>? tax,
     Value<String?>? invoiceNumber,
     Value<DateTime>? date,
     Value<bool>? isCredit,
@@ -5311,6 +5350,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
       syncStatus: syncStatus ?? this.syncStatus,
       supplierId: supplierId ?? this.supplierId,
       total: total ?? this.total,
+      tax: tax ?? this.tax,
       invoiceNumber: invoiceNumber ?? this.invoiceNumber,
       date: date ?? this.date,
       isCredit: isCredit ?? this.isCredit,
@@ -5344,6 +5384,9 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
     if (total.present) {
       map['total'] = Variable<double>(total.value);
     }
+    if (tax.present) {
+      map['tax'] = Variable<double>(tax.value);
+    }
     if (invoiceNumber.present) {
       map['invoice_number'] = Variable<String>(invoiceNumber.value);
     }
@@ -5375,6 +5418,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
           ..write('syncStatus: $syncStatus, ')
           ..write('supplierId: $supplierId, ')
           ..write('total: $total, ')
+          ..write('tax: $tax, ')
           ..write('invoiceNumber: $invoiceNumber, ')
           ..write('date: $date, ')
           ..write('isCredit: $isCredit, ')
@@ -19338,6 +19382,1587 @@ class PayrollLinesCompanion extends UpdateCompanion<PayrollLine> {
   }
 }
 
+class $PermissionsTable extends Permissions
+    with TableInfo<$PermissionsTable, Permission> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PermissionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const Uuid().v4(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<int> syncStatus = GeneratedColumn<int>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  @override
+  late final GeneratedColumn<String> code = GeneratedColumn<String>(
+    'code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    deviceId,
+    syncStatus,
+    code,
+    description,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'permissions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Permission> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    if (data.containsKey('code')) {
+      context.handle(
+        _codeMeta,
+        code.isAcceptableOrUnknown(data['code']!, _codeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_codeMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Permission map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Permission(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      ),
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sync_status'],
+      )!,
+      code: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}code'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+    );
+  }
+
+  @override
+  $PermissionsTable createAlias(String alias) {
+    return $PermissionsTable(attachedDatabase, alias);
+  }
+}
+
+class Permission extends DataClass implements Insertable<Permission> {
+  final String id;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? deviceId;
+  final int syncStatus;
+  final String code;
+  final String? description;
+  const Permission({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deviceId,
+    required this.syncStatus,
+    required this.code,
+    this.description,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
+    map['sync_status'] = Variable<int>(syncStatus);
+    map['code'] = Variable<String>(code);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    return map;
+  }
+
+  PermissionsCompanion toCompanion(bool nullToAbsent) {
+    return PermissionsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
+      syncStatus: Value(syncStatus),
+      code: Value(code),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+    );
+  }
+
+  factory Permission.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Permission(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
+      syncStatus: serializer.fromJson<int>(json['syncStatus']),
+      code: serializer.fromJson<String>(json['code']),
+      description: serializer.fromJson<String?>(json['description']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deviceId': serializer.toJson<String?>(deviceId),
+      'syncStatus': serializer.toJson<int>(syncStatus),
+      'code': serializer.toJson<String>(code),
+      'description': serializer.toJson<String?>(description),
+    };
+  }
+
+  Permission copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<String?> deviceId = const Value.absent(),
+    int? syncStatus,
+    String? code,
+    Value<String?> description = const Value.absent(),
+  }) => Permission(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deviceId: deviceId.present ? deviceId.value : this.deviceId,
+    syncStatus: syncStatus ?? this.syncStatus,
+    code: code ?? this.code,
+    description: description.present ? description.value : this.description,
+  );
+  Permission copyWithCompanion(PermissionsCompanion data) {
+    return Permission(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+      code: data.code.present ? data.code.value : this.code,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Permission(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('code: $code, ')
+          ..write('description: $description')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    deviceId,
+    syncStatus,
+    code,
+    description,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Permission &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deviceId == this.deviceId &&
+          other.syncStatus == this.syncStatus &&
+          other.code == this.code &&
+          other.description == this.description);
+}
+
+class PermissionsCompanion extends UpdateCompanion<Permission> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String?> deviceId;
+  final Value<int> syncStatus;
+  final Value<String> code;
+  final Value<String?> description;
+  final Value<int> rowid;
+  const PermissionsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.code = const Value.absent(),
+    this.description = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PermissionsCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    required String code,
+    this.description = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : code = Value(code);
+  static Insertable<Permission> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? deviceId,
+    Expression<int>? syncStatus,
+    Expression<String>? code,
+    Expression<String>? description,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deviceId != null) 'device_id': deviceId,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (code != null) 'code': code,
+      if (description != null) 'description': description,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PermissionsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String?>? deviceId,
+    Value<int>? syncStatus,
+    Value<String>? code,
+    Value<String?>? description,
+    Value<int>? rowid,
+  }) {
+    return PermissionsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deviceId: deviceId ?? this.deviceId,
+      syncStatus: syncStatus ?? this.syncStatus,
+      code: code ?? this.code,
+      description: description ?? this.description,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<int>(syncStatus.value);
+    }
+    if (code.present) {
+      map['code'] = Variable<String>(code.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PermissionsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('code: $code, ')
+          ..write('description: $description, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RolePermissionsTable extends RolePermissions
+    with TableInfo<$RolePermissionsTable, RolePermission> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RolePermissionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const Uuid().v4(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<int> syncStatus = GeneratedColumn<int>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _roleMeta = const VerificationMeta('role');
+  @override
+  late final GeneratedColumn<String> role = GeneratedColumn<String>(
+    'role',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _permissionCodeMeta = const VerificationMeta(
+    'permissionCode',
+  );
+  @override
+  late final GeneratedColumn<String> permissionCode = GeneratedColumn<String>(
+    'permission_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES permissions (code)',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    deviceId,
+    syncStatus,
+    role,
+    permissionCode,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'role_permissions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RolePermission> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    if (data.containsKey('role')) {
+      context.handle(
+        _roleMeta,
+        role.isAcceptableOrUnknown(data['role']!, _roleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_roleMeta);
+    }
+    if (data.containsKey('permission_code')) {
+      context.handle(
+        _permissionCodeMeta,
+        permissionCode.isAcceptableOrUnknown(
+          data['permission_code']!,
+          _permissionCodeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_permissionCodeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RolePermission map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RolePermission(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      ),
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sync_status'],
+      )!,
+      role: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}role'],
+      )!,
+      permissionCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}permission_code'],
+      )!,
+    );
+  }
+
+  @override
+  $RolePermissionsTable createAlias(String alias) {
+    return $RolePermissionsTable(attachedDatabase, alias);
+  }
+}
+
+class RolePermission extends DataClass implements Insertable<RolePermission> {
+  final String id;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? deviceId;
+  final int syncStatus;
+  final String role;
+  final String permissionCode;
+  const RolePermission({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deviceId,
+    required this.syncStatus,
+    required this.role,
+    required this.permissionCode,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
+    map['sync_status'] = Variable<int>(syncStatus);
+    map['role'] = Variable<String>(role);
+    map['permission_code'] = Variable<String>(permissionCode);
+    return map;
+  }
+
+  RolePermissionsCompanion toCompanion(bool nullToAbsent) {
+    return RolePermissionsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
+      syncStatus: Value(syncStatus),
+      role: Value(role),
+      permissionCode: Value(permissionCode),
+    );
+  }
+
+  factory RolePermission.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RolePermission(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
+      syncStatus: serializer.fromJson<int>(json['syncStatus']),
+      role: serializer.fromJson<String>(json['role']),
+      permissionCode: serializer.fromJson<String>(json['permissionCode']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deviceId': serializer.toJson<String?>(deviceId),
+      'syncStatus': serializer.toJson<int>(syncStatus),
+      'role': serializer.toJson<String>(role),
+      'permissionCode': serializer.toJson<String>(permissionCode),
+    };
+  }
+
+  RolePermission copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<String?> deviceId = const Value.absent(),
+    int? syncStatus,
+    String? role,
+    String? permissionCode,
+  }) => RolePermission(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deviceId: deviceId.present ? deviceId.value : this.deviceId,
+    syncStatus: syncStatus ?? this.syncStatus,
+    role: role ?? this.role,
+    permissionCode: permissionCode ?? this.permissionCode,
+  );
+  RolePermission copyWithCompanion(RolePermissionsCompanion data) {
+    return RolePermission(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+      role: data.role.present ? data.role.value : this.role,
+      permissionCode: data.permissionCode.present
+          ? data.permissionCode.value
+          : this.permissionCode,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RolePermission(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('role: $role, ')
+          ..write('permissionCode: $permissionCode')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    deviceId,
+    syncStatus,
+    role,
+    permissionCode,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RolePermission &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deviceId == this.deviceId &&
+          other.syncStatus == this.syncStatus &&
+          other.role == this.role &&
+          other.permissionCode == this.permissionCode);
+}
+
+class RolePermissionsCompanion extends UpdateCompanion<RolePermission> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String?> deviceId;
+  final Value<int> syncStatus;
+  final Value<String> role;
+  final Value<String> permissionCode;
+  final Value<int> rowid;
+  const RolePermissionsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.role = const Value.absent(),
+    this.permissionCode = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RolePermissionsCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    required String role,
+    required String permissionCode,
+    this.rowid = const Value.absent(),
+  }) : role = Value(role),
+       permissionCode = Value(permissionCode);
+  static Insertable<RolePermission> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? deviceId,
+    Expression<int>? syncStatus,
+    Expression<String>? role,
+    Expression<String>? permissionCode,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deviceId != null) 'device_id': deviceId,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (role != null) 'role': role,
+      if (permissionCode != null) 'permission_code': permissionCode,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RolePermissionsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String?>? deviceId,
+    Value<int>? syncStatus,
+    Value<String>? role,
+    Value<String>? permissionCode,
+    Value<int>? rowid,
+  }) {
+    return RolePermissionsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deviceId: deviceId ?? this.deviceId,
+      syncStatus: syncStatus ?? this.syncStatus,
+      role: role ?? this.role,
+      permissionCode: permissionCode ?? this.permissionCode,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<int>(syncStatus.value);
+    }
+    if (role.present) {
+      map['role'] = Variable<String>(role.value);
+    }
+    if (permissionCode.present) {
+      map['permission_code'] = Variable<String>(permissionCode.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RolePermissionsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('role: $role, ')
+          ..write('permissionCode: $permissionCode, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CashboxTransactionsTable extends CashboxTransactions
+    with TableInfo<$CashboxTransactionsTable, CashboxTransaction> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CashboxTransactionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const Uuid().v4(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<int> syncStatus = GeneratedColumn<int>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
+  @override
+  late final GeneratedColumn<double> amount = GeneratedColumn<double>(
+    'amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _categoryMeta = const VerificationMeta(
+    'category',
+  );
+  @override
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+    'category',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _referenceIdMeta = const VerificationMeta(
+    'referenceId',
+  );
+  @override
+  late final GeneratedColumn<String> referenceId = GeneratedColumn<String>(
+    'reference_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES users (id)',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    deviceId,
+    syncStatus,
+    amount,
+    type,
+    category,
+    referenceId,
+    note,
+    userId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cashbox_transactions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CashboxTransaction> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    if (data.containsKey('amount')) {
+      context.handle(
+        _amountMeta,
+        amount.isAcceptableOrUnknown(data['amount']!, _amountMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('category')) {
+      context.handle(
+        _categoryMeta,
+        category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_categoryMeta);
+    }
+    if (data.containsKey('reference_id')) {
+      context.handle(
+        _referenceIdMeta,
+        referenceId.isAcceptableOrUnknown(
+          data['reference_id']!,
+          _referenceIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CashboxTransaction map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CashboxTransaction(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      ),
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sync_status'],
+      )!,
+      amount: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}amount'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      category: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category'],
+      )!,
+      referenceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reference_id'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+    );
+  }
+
+  @override
+  $CashboxTransactionsTable createAlias(String alias) {
+    return $CashboxTransactionsTable(attachedDatabase, alias);
+  }
+}
+
+class CashboxTransaction extends DataClass
+    implements Insertable<CashboxTransaction> {
+  final String id;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? deviceId;
+  final int syncStatus;
+  final double amount;
+  final String type;
+  final String category;
+  final String? referenceId;
+  final String? note;
+  final String userId;
+  const CashboxTransaction({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deviceId,
+    required this.syncStatus,
+    required this.amount,
+    required this.type,
+    required this.category,
+    this.referenceId,
+    this.note,
+    required this.userId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
+    map['sync_status'] = Variable<int>(syncStatus);
+    map['amount'] = Variable<double>(amount);
+    map['type'] = Variable<String>(type);
+    map['category'] = Variable<String>(category);
+    if (!nullToAbsent || referenceId != null) {
+      map['reference_id'] = Variable<String>(referenceId);
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['user_id'] = Variable<String>(userId);
+    return map;
+  }
+
+  CashboxTransactionsCompanion toCompanion(bool nullToAbsent) {
+    return CashboxTransactionsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
+      syncStatus: Value(syncStatus),
+      amount: Value(amount),
+      type: Value(type),
+      category: Value(category),
+      referenceId: referenceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(referenceId),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      userId: Value(userId),
+    );
+  }
+
+  factory CashboxTransaction.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CashboxTransaction(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
+      syncStatus: serializer.fromJson<int>(json['syncStatus']),
+      amount: serializer.fromJson<double>(json['amount']),
+      type: serializer.fromJson<String>(json['type']),
+      category: serializer.fromJson<String>(json['category']),
+      referenceId: serializer.fromJson<String?>(json['referenceId']),
+      note: serializer.fromJson<String?>(json['note']),
+      userId: serializer.fromJson<String>(json['userId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deviceId': serializer.toJson<String?>(deviceId),
+      'syncStatus': serializer.toJson<int>(syncStatus),
+      'amount': serializer.toJson<double>(amount),
+      'type': serializer.toJson<String>(type),
+      'category': serializer.toJson<String>(category),
+      'referenceId': serializer.toJson<String?>(referenceId),
+      'note': serializer.toJson<String?>(note),
+      'userId': serializer.toJson<String>(userId),
+    };
+  }
+
+  CashboxTransaction copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<String?> deviceId = const Value.absent(),
+    int? syncStatus,
+    double? amount,
+    String? type,
+    String? category,
+    Value<String?> referenceId = const Value.absent(),
+    Value<String?> note = const Value.absent(),
+    String? userId,
+  }) => CashboxTransaction(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deviceId: deviceId.present ? deviceId.value : this.deviceId,
+    syncStatus: syncStatus ?? this.syncStatus,
+    amount: amount ?? this.amount,
+    type: type ?? this.type,
+    category: category ?? this.category,
+    referenceId: referenceId.present ? referenceId.value : this.referenceId,
+    note: note.present ? note.value : this.note,
+    userId: userId ?? this.userId,
+  );
+  CashboxTransaction copyWithCompanion(CashboxTransactionsCompanion data) {
+    return CashboxTransaction(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+      amount: data.amount.present ? data.amount.value : this.amount,
+      type: data.type.present ? data.type.value : this.type,
+      category: data.category.present ? data.category.value : this.category,
+      referenceId: data.referenceId.present
+          ? data.referenceId.value
+          : this.referenceId,
+      note: data.note.present ? data.note.value : this.note,
+      userId: data.userId.present ? data.userId.value : this.userId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CashboxTransaction(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('amount: $amount, ')
+          ..write('type: $type, ')
+          ..write('category: $category, ')
+          ..write('referenceId: $referenceId, ')
+          ..write('note: $note, ')
+          ..write('userId: $userId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    deviceId,
+    syncStatus,
+    amount,
+    type,
+    category,
+    referenceId,
+    note,
+    userId,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CashboxTransaction &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deviceId == this.deviceId &&
+          other.syncStatus == this.syncStatus &&
+          other.amount == this.amount &&
+          other.type == this.type &&
+          other.category == this.category &&
+          other.referenceId == this.referenceId &&
+          other.note == this.note &&
+          other.userId == this.userId);
+}
+
+class CashboxTransactionsCompanion extends UpdateCompanion<CashboxTransaction> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String?> deviceId;
+  final Value<int> syncStatus;
+  final Value<double> amount;
+  final Value<String> type;
+  final Value<String> category;
+  final Value<String?> referenceId;
+  final Value<String?> note;
+  final Value<String> userId;
+  final Value<int> rowid;
+  const CashboxTransactionsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.amount = const Value.absent(),
+    this.type = const Value.absent(),
+    this.category = const Value.absent(),
+    this.referenceId = const Value.absent(),
+    this.note = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CashboxTransactionsCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    required double amount,
+    required String type,
+    required String category,
+    this.referenceId = const Value.absent(),
+    this.note = const Value.absent(),
+    required String userId,
+    this.rowid = const Value.absent(),
+  }) : amount = Value(amount),
+       type = Value(type),
+       category = Value(category),
+       userId = Value(userId);
+  static Insertable<CashboxTransaction> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? deviceId,
+    Expression<int>? syncStatus,
+    Expression<double>? amount,
+    Expression<String>? type,
+    Expression<String>? category,
+    Expression<String>? referenceId,
+    Expression<String>? note,
+    Expression<String>? userId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deviceId != null) 'device_id': deviceId,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (amount != null) 'amount': amount,
+      if (type != null) 'type': type,
+      if (category != null) 'category': category,
+      if (referenceId != null) 'reference_id': referenceId,
+      if (note != null) 'note': note,
+      if (userId != null) 'user_id': userId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CashboxTransactionsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String?>? deviceId,
+    Value<int>? syncStatus,
+    Value<double>? amount,
+    Value<String>? type,
+    Value<String>? category,
+    Value<String?>? referenceId,
+    Value<String?>? note,
+    Value<String>? userId,
+    Value<int>? rowid,
+  }) {
+    return CashboxTransactionsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deviceId: deviceId ?? this.deviceId,
+      syncStatus: syncStatus ?? this.syncStatus,
+      amount: amount ?? this.amount,
+      type: type ?? this.type,
+      category: category ?? this.category,
+      referenceId: referenceId ?? this.referenceId,
+      note: note ?? this.note,
+      userId: userId ?? this.userId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<int>(syncStatus.value);
+    }
+    if (amount.present) {
+      map['amount'] = Variable<double>(amount.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
+    if (referenceId.present) {
+      map['reference_id'] = Variable<String>(referenceId.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CashboxTransactionsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('amount: $amount, ')
+          ..write('type: $type, ')
+          ..write('category: $category, ')
+          ..write('referenceId: $referenceId, ')
+          ..write('note: $note, ')
+          ..write('userId: $userId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -19388,11 +21013,19 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $EmployeesTable employees = $EmployeesTable(this);
   late final $PayrollEntriesTable payrollEntries = $PayrollEntriesTable(this);
   late final $PayrollLinesTable payrollLines = $PayrollLinesTable(this);
+  late final $PermissionsTable permissions = $PermissionsTable(this);
+  late final $RolePermissionsTable rolePermissions = $RolePermissionsTable(
+    this,
+  );
+  late final $CashboxTransactionsTable cashboxTransactions =
+      $CashboxTransactionsTable(this);
   late final ProductsDao productsDao = ProductsDao(this as AppDatabase);
   late final SalesDao salesDao = SalesDao(this as AppDatabase);
   late final CustomersDao customersDao = CustomersDao(this as AppDatabase);
   late final AccountingDao accountingDao = AccountingDao(this as AppDatabase);
   late final UsersDao usersDao = UsersDao(this as AppDatabase);
+  late final SuppliersDao suppliersDao = SuppliersDao(this as AppDatabase);
+  late final PurchasesDao purchasesDao = PurchasesDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -19430,6 +21063,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     employees,
     payrollEntries,
     payrollLines,
+    permissions,
+    rolePermissions,
+    cashboxTransactions,
   ];
 }
 
@@ -19478,6 +21114,33 @@ final class $$UsersTableReferences
     ).filter((f) => f.userId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_shiftsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $CashboxTransactionsTable,
+    List<CashboxTransaction>
+  >
+  _cashboxTransactionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.cashboxTransactions,
+        aliasName: $_aliasNameGenerator(
+          db.users.id,
+          db.cashboxTransactions.userId,
+        ),
+      );
+
+  $$CashboxTransactionsTableProcessedTableManager get cashboxTransactionsRefs {
+    final manager = $$CashboxTransactionsTableTableManager(
+      $_db,
+      $_db.cashboxTransactions,
+    ).filter((f) => f.userId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _cashboxTransactionsRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -19553,6 +21216,31 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
           }) => $$ShiftsTableFilterComposer(
             $db: $db,
             $table: $db.shifts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> cashboxTransactionsRefs(
+    Expression<bool> Function($$CashboxTransactionsTableFilterComposer f) f,
+  ) {
+    final $$CashboxTransactionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.cashboxTransactions,
+      getReferencedColumn: (t) => t.userId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CashboxTransactionsTableFilterComposer(
+            $db: $db,
+            $table: $db.cashboxTransactions,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -19680,6 +21368,32 @@ class $$UsersTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> cashboxTransactionsRefs<T extends Object>(
+    Expression<T> Function($$CashboxTransactionsTableAnnotationComposer a) f,
+  ) {
+    final $$CashboxTransactionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.cashboxTransactions,
+          getReferencedColumn: (t) => t.userId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$CashboxTransactionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.cashboxTransactions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$UsersTableTableManager
@@ -19695,7 +21409,10 @@ class $$UsersTableTableManager
           $$UsersTableUpdateCompanionBuilder,
           (User, $$UsersTableReferences),
           User,
-          PrefetchHooks Function({bool shiftsRefs})
+          PrefetchHooks Function({
+            bool shiftsRefs,
+            bool cashboxTransactionsRefs,
+          })
         > {
   $$UsersTableTableManager(_$AppDatabase db, $UsersTable table)
     : super(
@@ -19762,29 +21479,55 @@ class $$UsersTableTableManager
                     (e.readTable(table), $$UsersTableReferences(db, table, e)),
               )
               .toList(),
-          prefetchHooksCallback: ({shiftsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (shiftsRefs) db.shifts],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (shiftsRefs)
-                    await $_getPrefetchedData<User, $UsersTable, Shift>(
-                      currentTable: table,
-                      referencedTable: $$UsersTableReferences._shiftsRefsTable(
-                        db,
-                      ),
-                      managerFromTypedResult: (p0) =>
-                          $$UsersTableReferences(db, table, p0).shiftsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.userId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({shiftsRefs = false, cashboxTransactionsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (shiftsRefs) db.shifts,
+                    if (cashboxTransactionsRefs) db.cashboxTransactions,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (shiftsRefs)
+                        await $_getPrefetchedData<User, $UsersTable, Shift>(
+                          currentTable: table,
+                          referencedTable: $$UsersTableReferences
+                              ._shiftsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UsersTableReferences(db, table, p0).shiftsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.userId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (cashboxTransactionsRefs)
+                        await $_getPrefetchedData<
+                          User,
+                          $UsersTable,
+                          CashboxTransaction
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UsersTableReferences
+                              ._cashboxTransactionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UsersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).cashboxTransactionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.userId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -19801,7 +21544,7 @@ typedef $$UsersTableProcessedTableManager =
       $$UsersTableUpdateCompanionBuilder,
       (User, $$UsersTableReferences),
       User,
-      PrefetchHooks Function({bool shiftsRefs})
+      PrefetchHooks Function({bool shiftsRefs, bool cashboxTransactionsRefs})
     >;
 typedef $$CategoriesTableCreateCompanionBuilder =
     CategoriesCompanion Function({
@@ -23999,6 +25742,7 @@ typedef $$PurchasesTableCreateCompanionBuilder =
       Value<int> syncStatus,
       Value<String?> supplierId,
       required double total,
+      Value<double> tax,
       Value<String?> invoiceNumber,
       Value<DateTime> date,
       Value<bool> isCredit,
@@ -24015,6 +25759,7 @@ typedef $$PurchasesTableUpdateCompanionBuilder =
       Value<int> syncStatus,
       Value<String?> supplierId,
       Value<double> total,
+      Value<double> tax,
       Value<String?> invoiceNumber,
       Value<DateTime> date,
       Value<bool> isCredit,
@@ -24146,6 +25891,11 @@ class $$PurchasesTableFilterComposer
 
   ColumnFilters<double> get total => $composableBuilder(
     column: $table.total,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get tax => $composableBuilder(
+    column: $table.tax,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -24305,6 +26055,11 @@ class $$PurchasesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get tax => $composableBuilder(
+    column: $table.tax,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get invoiceNumber => $composableBuilder(
     column: $table.invoiceNumber,
     builder: (column) => ColumnOrderings(column),
@@ -24400,6 +26155,9 @@ class $$PurchasesTableAnnotationComposer
 
   GeneratedColumn<double> get total =>
       $composableBuilder(column: $table.total, builder: (column) => column);
+
+  GeneratedColumn<double> get tax =>
+      $composableBuilder(column: $table.tax, builder: (column) => column);
 
   GeneratedColumn<String> get invoiceNumber => $composableBuilder(
     column: $table.invoiceNumber,
@@ -24552,6 +26310,7 @@ class $$PurchasesTableTableManager
                 Value<int> syncStatus = const Value.absent(),
                 Value<String?> supplierId = const Value.absent(),
                 Value<double> total = const Value.absent(),
+                Value<double> tax = const Value.absent(),
                 Value<String?> invoiceNumber = const Value.absent(),
                 Value<DateTime> date = const Value.absent(),
                 Value<bool> isCredit = const Value.absent(),
@@ -24566,6 +26325,7 @@ class $$PurchasesTableTableManager
                 syncStatus: syncStatus,
                 supplierId: supplierId,
                 total: total,
+                tax: tax,
                 invoiceNumber: invoiceNumber,
                 date: date,
                 isCredit: isCredit,
@@ -24582,6 +26342,7 @@ class $$PurchasesTableTableManager
                 Value<int> syncStatus = const Value.absent(),
                 Value<String?> supplierId = const Value.absent(),
                 required double total,
+                Value<double> tax = const Value.absent(),
                 Value<String?> invoiceNumber = const Value.absent(),
                 Value<DateTime> date = const Value.absent(),
                 Value<bool> isCredit = const Value.absent(),
@@ -24596,6 +26357,7 @@ class $$PurchasesTableTableManager
                 syncStatus: syncStatus,
                 supplierId: supplierId,
                 total: total,
+                tax: tax,
                 invoiceNumber: invoiceNumber,
                 date: date,
                 isCredit: isCredit,
@@ -35896,6 +37658,1184 @@ typedef $$PayrollLinesTableProcessedTableManager =
       PayrollLine,
       PrefetchHooks Function({bool payrollEntryId, bool employeeId})
     >;
+typedef $$PermissionsTableCreateCompanionBuilder =
+    PermissionsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String?> deviceId,
+      Value<int> syncStatus,
+      required String code,
+      Value<String?> description,
+      Value<int> rowid,
+    });
+typedef $$PermissionsTableUpdateCompanionBuilder =
+    PermissionsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String?> deviceId,
+      Value<int> syncStatus,
+      Value<String> code,
+      Value<String?> description,
+      Value<int> rowid,
+    });
+
+final class $$PermissionsTableReferences
+    extends BaseReferences<_$AppDatabase, $PermissionsTable, Permission> {
+  $$PermissionsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$RolePermissionsTable, List<RolePermission>>
+  _rolePermissionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.rolePermissions,
+    aliasName: $_aliasNameGenerator(
+      db.permissions.code,
+      db.rolePermissions.permissionCode,
+    ),
+  );
+
+  $$RolePermissionsTableProcessedTableManager get rolePermissionsRefs {
+    final manager =
+        $$RolePermissionsTableTableManager($_db, $_db.rolePermissions).filter(
+          (f) => f.permissionCode.code.sqlEquals($_itemColumn<String>('code')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _rolePermissionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$PermissionsTableFilterComposer
+    extends Composer<_$AppDatabase, $PermissionsTable> {
+  $$PermissionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> rolePermissionsRefs(
+    Expression<bool> Function($$RolePermissionsTableFilterComposer f) f,
+  ) {
+    final $$RolePermissionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.code,
+      referencedTable: $db.rolePermissions,
+      getReferencedColumn: (t) => t.permissionCode,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RolePermissionsTableFilterComposer(
+            $db: $db,
+            $table: $db.rolePermissions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$PermissionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PermissionsTable> {
+  $$PermissionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PermissionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PermissionsTable> {
+  $$PermissionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  Expression<T> rolePermissionsRefs<T extends Object>(
+    Expression<T> Function($$RolePermissionsTableAnnotationComposer a) f,
+  ) {
+    final $$RolePermissionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.code,
+      referencedTable: $db.rolePermissions,
+      getReferencedColumn: (t) => t.permissionCode,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RolePermissionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.rolePermissions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$PermissionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PermissionsTable,
+          Permission,
+          $$PermissionsTableFilterComposer,
+          $$PermissionsTableOrderingComposer,
+          $$PermissionsTableAnnotationComposer,
+          $$PermissionsTableCreateCompanionBuilder,
+          $$PermissionsTableUpdateCompanionBuilder,
+          (Permission, $$PermissionsTableReferences),
+          Permission,
+          PrefetchHooks Function({bool rolePermissionsRefs})
+        > {
+  $$PermissionsTableTableManager(_$AppDatabase db, $PermissionsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PermissionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PermissionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PermissionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> deviceId = const Value.absent(),
+                Value<int> syncStatus = const Value.absent(),
+                Value<String> code = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PermissionsCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deviceId: deviceId,
+                syncStatus: syncStatus,
+                code: code,
+                description: description,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> deviceId = const Value.absent(),
+                Value<int> syncStatus = const Value.absent(),
+                required String code,
+                Value<String?> description = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PermissionsCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deviceId: deviceId,
+                syncStatus: syncStatus,
+                code: code,
+                description: description,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PermissionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({rolePermissionsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (rolePermissionsRefs) db.rolePermissions,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (rolePermissionsRefs)
+                    await $_getPrefetchedData<
+                      Permission,
+                      $PermissionsTable,
+                      RolePermission
+                    >(
+                      currentTable: table,
+                      referencedTable: $$PermissionsTableReferences
+                          ._rolePermissionsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$PermissionsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).rolePermissionsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where(
+                            (e) => e.permissionCode == item.code,
+                          ),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PermissionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PermissionsTable,
+      Permission,
+      $$PermissionsTableFilterComposer,
+      $$PermissionsTableOrderingComposer,
+      $$PermissionsTableAnnotationComposer,
+      $$PermissionsTableCreateCompanionBuilder,
+      $$PermissionsTableUpdateCompanionBuilder,
+      (Permission, $$PermissionsTableReferences),
+      Permission,
+      PrefetchHooks Function({bool rolePermissionsRefs})
+    >;
+typedef $$RolePermissionsTableCreateCompanionBuilder =
+    RolePermissionsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String?> deviceId,
+      Value<int> syncStatus,
+      required String role,
+      required String permissionCode,
+      Value<int> rowid,
+    });
+typedef $$RolePermissionsTableUpdateCompanionBuilder =
+    RolePermissionsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String?> deviceId,
+      Value<int> syncStatus,
+      Value<String> role,
+      Value<String> permissionCode,
+      Value<int> rowid,
+    });
+
+final class $$RolePermissionsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $RolePermissionsTable, RolePermission> {
+  $$RolePermissionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $PermissionsTable _permissionCodeTable(_$AppDatabase db) =>
+      db.permissions.createAlias(
+        $_aliasNameGenerator(
+          db.rolePermissions.permissionCode,
+          db.permissions.code,
+        ),
+      );
+
+  $$PermissionsTableProcessedTableManager get permissionCode {
+    final $_column = $_itemColumn<String>('permission_code')!;
+
+    final manager = $$PermissionsTableTableManager(
+      $_db,
+      $_db.permissions,
+    ).filter((f) => f.code.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_permissionCodeTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$RolePermissionsTableFilterComposer
+    extends Composer<_$AppDatabase, $RolePermissionsTable> {
+  $$RolePermissionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PermissionsTableFilterComposer get permissionCode {
+    final $$PermissionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.permissionCode,
+      referencedTable: $db.permissions,
+      getReferencedColumn: (t) => t.code,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PermissionsTableFilterComposer(
+            $db: $db,
+            $table: $db.permissions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RolePermissionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $RolePermissionsTable> {
+  $$RolePermissionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PermissionsTableOrderingComposer get permissionCode {
+    final $$PermissionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.permissionCode,
+      referencedTable: $db.permissions,
+      getReferencedColumn: (t) => t.code,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PermissionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.permissions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RolePermissionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RolePermissionsTable> {
+  $$RolePermissionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get role =>
+      $composableBuilder(column: $table.role, builder: (column) => column);
+
+  $$PermissionsTableAnnotationComposer get permissionCode {
+    final $$PermissionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.permissionCode,
+      referencedTable: $db.permissions,
+      getReferencedColumn: (t) => t.code,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PermissionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.permissions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RolePermissionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RolePermissionsTable,
+          RolePermission,
+          $$RolePermissionsTableFilterComposer,
+          $$RolePermissionsTableOrderingComposer,
+          $$RolePermissionsTableAnnotationComposer,
+          $$RolePermissionsTableCreateCompanionBuilder,
+          $$RolePermissionsTableUpdateCompanionBuilder,
+          (RolePermission, $$RolePermissionsTableReferences),
+          RolePermission,
+          PrefetchHooks Function({bool permissionCode})
+        > {
+  $$RolePermissionsTableTableManager(
+    _$AppDatabase db,
+    $RolePermissionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RolePermissionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RolePermissionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RolePermissionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> deviceId = const Value.absent(),
+                Value<int> syncStatus = const Value.absent(),
+                Value<String> role = const Value.absent(),
+                Value<String> permissionCode = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RolePermissionsCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deviceId: deviceId,
+                syncStatus: syncStatus,
+                role: role,
+                permissionCode: permissionCode,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> deviceId = const Value.absent(),
+                Value<int> syncStatus = const Value.absent(),
+                required String role,
+                required String permissionCode,
+                Value<int> rowid = const Value.absent(),
+              }) => RolePermissionsCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deviceId: deviceId,
+                syncStatus: syncStatus,
+                role: role,
+                permissionCode: permissionCode,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$RolePermissionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({permissionCode = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (permissionCode) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.permissionCode,
+                                referencedTable:
+                                    $$RolePermissionsTableReferences
+                                        ._permissionCodeTable(db),
+                                referencedColumn:
+                                    $$RolePermissionsTableReferences
+                                        ._permissionCodeTable(db)
+                                        .code,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$RolePermissionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RolePermissionsTable,
+      RolePermission,
+      $$RolePermissionsTableFilterComposer,
+      $$RolePermissionsTableOrderingComposer,
+      $$RolePermissionsTableAnnotationComposer,
+      $$RolePermissionsTableCreateCompanionBuilder,
+      $$RolePermissionsTableUpdateCompanionBuilder,
+      (RolePermission, $$RolePermissionsTableReferences),
+      RolePermission,
+      PrefetchHooks Function({bool permissionCode})
+    >;
+typedef $$CashboxTransactionsTableCreateCompanionBuilder =
+    CashboxTransactionsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String?> deviceId,
+      Value<int> syncStatus,
+      required double amount,
+      required String type,
+      required String category,
+      Value<String?> referenceId,
+      Value<String?> note,
+      required String userId,
+      Value<int> rowid,
+    });
+typedef $$CashboxTransactionsTableUpdateCompanionBuilder =
+    CashboxTransactionsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String?> deviceId,
+      Value<int> syncStatus,
+      Value<double> amount,
+      Value<String> type,
+      Value<String> category,
+      Value<String?> referenceId,
+      Value<String?> note,
+      Value<String> userId,
+      Value<int> rowid,
+    });
+
+final class $$CashboxTransactionsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $CashboxTransactionsTable,
+          CashboxTransaction
+        > {
+  $$CashboxTransactionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $UsersTable _userIdTable(_$AppDatabase db) => db.users.createAlias(
+    $_aliasNameGenerator(db.cashboxTransactions.userId, db.users.id),
+  );
+
+  $$UsersTableProcessedTableManager get userId {
+    final $_column = $_itemColumn<String>('user_id')!;
+
+    final manager = $$UsersTableTableManager(
+      $_db,
+      $_db.users,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_userIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$CashboxTransactionsTableFilterComposer
+    extends Composer<_$AppDatabase, $CashboxTransactionsTable> {
+  $$CashboxTransactionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get referenceId => $composableBuilder(
+    column: $table.referenceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$UsersTableFilterComposer get userId {
+    final $$UsersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableFilterComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CashboxTransactionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CashboxTransactionsTable> {
+  $$CashboxTransactionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get referenceId => $composableBuilder(
+    column: $table.referenceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$UsersTableOrderingComposer get userId {
+    final $$UsersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableOrderingComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CashboxTransactionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CashboxTransactionsTable> {
+  $$CashboxTransactionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get amount =>
+      $composableBuilder(column: $table.amount, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<String> get referenceId => $composableBuilder(
+    column: $table.referenceId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  $$UsersTableAnnotationComposer get userId {
+    final $$UsersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CashboxTransactionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CashboxTransactionsTable,
+          CashboxTransaction,
+          $$CashboxTransactionsTableFilterComposer,
+          $$CashboxTransactionsTableOrderingComposer,
+          $$CashboxTransactionsTableAnnotationComposer,
+          $$CashboxTransactionsTableCreateCompanionBuilder,
+          $$CashboxTransactionsTableUpdateCompanionBuilder,
+          (CashboxTransaction, $$CashboxTransactionsTableReferences),
+          CashboxTransaction,
+          PrefetchHooks Function({bool userId})
+        > {
+  $$CashboxTransactionsTableTableManager(
+    _$AppDatabase db,
+    $CashboxTransactionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CashboxTransactionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CashboxTransactionsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$CashboxTransactionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> deviceId = const Value.absent(),
+                Value<int> syncStatus = const Value.absent(),
+                Value<double> amount = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<String> category = const Value.absent(),
+                Value<String?> referenceId = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CashboxTransactionsCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deviceId: deviceId,
+                syncStatus: syncStatus,
+                amount: amount,
+                type: type,
+                category: category,
+                referenceId: referenceId,
+                note: note,
+                userId: userId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> deviceId = const Value.absent(),
+                Value<int> syncStatus = const Value.absent(),
+                required double amount,
+                required String type,
+                required String category,
+                Value<String?> referenceId = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                required String userId,
+                Value<int> rowid = const Value.absent(),
+              }) => CashboxTransactionsCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deviceId: deviceId,
+                syncStatus: syncStatus,
+                amount: amount,
+                type: type,
+                category: category,
+                referenceId: referenceId,
+                note: note,
+                userId: userId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$CashboxTransactionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({userId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (userId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.userId,
+                                referencedTable:
+                                    $$CashboxTransactionsTableReferences
+                                        ._userIdTable(db),
+                                referencedColumn:
+                                    $$CashboxTransactionsTableReferences
+                                        ._userIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$CashboxTransactionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CashboxTransactionsTable,
+      CashboxTransaction,
+      $$CashboxTransactionsTableFilterComposer,
+      $$CashboxTransactionsTableOrderingComposer,
+      $$CashboxTransactionsTableAnnotationComposer,
+      $$CashboxTransactionsTableCreateCompanionBuilder,
+      $$CashboxTransactionsTableUpdateCompanionBuilder,
+      (CashboxTransaction, $$CashboxTransactionsTableReferences),
+      CashboxTransaction,
+      PrefetchHooks Function({bool userId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -35964,4 +38904,10 @@ class $AppDatabaseManager {
       $$PayrollEntriesTableTableManager(_db, _db.payrollEntries);
   $$PayrollLinesTableTableManager get payrollLines =>
       $$PayrollLinesTableTableManager(_db, _db.payrollLines);
+  $$PermissionsTableTableManager get permissions =>
+      $$PermissionsTableTableManager(_db, _db.permissions);
+  $$RolePermissionsTableTableManager get rolePermissions =>
+      $$RolePermissionsTableTableManager(_db, _db.rolePermissions);
+  $$CashboxTransactionsTableTableManager get cashboxTransactions =>
+      $$CashboxTransactionsTableTableManager(_db, _db.cashboxTransactions);
 }

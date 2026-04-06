@@ -16,6 +16,19 @@ class CategoriesPage extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final isAdmin = authProvider.currentUser?.role == 'admin';
 
+    // Define a list of beautiful colors to cycle through for category cards
+    final List<Color> categoryColors = [
+      Theme.of(context).colorScheme.primaryContainer,
+      Theme.of(context).colorScheme.tertiaryContainer,
+      Theme.of(context).colorScheme.secondaryContainer,
+      Theme.of(context).colorScheme.errorContainer,
+      // Add more colors from your theme.colorScheme if desired
+      Colors.deepPurple.shade100,
+      Colors.lightBlue.shade100,
+      Colors.teal.shade100,
+      Colors.orange.shade100,
+    ];
+
     return Scaffold(
       appBar: AppBar(title: Text(l10n.categories)),
       drawer: const MainDrawer(),
@@ -41,8 +54,11 @@ class CategoriesPage extends StatelessWidget {
             itemCount: categories.length,
             itemBuilder: (context, index) {
               final category = categories[index];
-              final color = Colors.primaries[category.name.hashCode % Colors.primaries.length];
-              
+              // Cycle through predefined colors
+              final color = categoryColors[index % categoryColors.length];
+              // Determine text/icon color based on the luminosity of the background color
+              final textColor = color.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+
               return Card(
                 elevation: 4,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -62,12 +78,12 @@ class CategoriesPage extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.category, size: 40, color: Colors.white),
+                        Icon(Icons.category, size: 40, color: textColor),
                         const SizedBox(height: 12),
                         Text(
                           category.name,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: textColor,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -79,7 +95,7 @@ class CategoriesPage extends StatelessWidget {
                           Text(
                             category.code!,
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.8),
+                              color: textColor.withValues(alpha: 0.8),
                               fontSize: 12,
                             ),
                           ),
@@ -88,12 +104,12 @@ class CategoriesPage extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.white, size: 20),
+                                icon: Icon(Icons.edit, color: textColor, size: 20),
                                 onPressed: () => _showAddEditDialog(context, db, category),
                               ),
                               IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.white, size: 20),
-                                onPressed: () => _deleteCategory(context, db, category),
+                                icon: Icon(Icons.delete, color: textColor, size: 20),
+                                onPressed: () => _deleteCategory(context, db, category, l10n),
                               ),
                             ],
                           ),
@@ -123,28 +139,26 @@ class CategoriesPage extends StatelessWidget {
     );
   }
 
-  void _deleteCategory(BuildContext context, AppDatabase db, Category category) {
-    final l10n = AppLocalizations.of(context)!;
+  void _deleteCategory(BuildContext context, AppDatabase db, Category category, AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: Text('${l10n.delete} ${category.name}'),
-          content: const Text('هل أنت متأكد من حذف هذه الفئة؟ سيؤدي ذلك لمنع الوصول للمنتجات التابعة لها.'),
+          title: Text(l10n.deleteCategory),
+          content: Text(l10n.confirmDeleteCategory),
           actions: <Widget>[
             TextButton(
-              child: Text(l10n.cancel),
               onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(l10n.cancel),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-              child: Text(l10n.delete),
+              style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error, foregroundColor: Theme.of(context).colorScheme.onError),
               onPressed: () async {
                 final products = await (db.select(db.products)..where((p) => p.categoryId.equals(category.id))).get();
                 if (!context.mounted) return;
                 if (products.isNotEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('لا يمكن حذف الفئة لأنها مرتبطة بمنتجات موجودة.')),
+                    SnackBar(content: Text(l10n.categoryHasProductsError)),
                   );
                   Navigator.of(dialogContext).pop();
                   return;
@@ -152,6 +166,7 @@ class CategoriesPage extends StatelessWidget {
                 await db.delete(db.categories).delete(category);
                 if (context.mounted) Navigator.of(dialogContext).pop();
               },
+              child: Text(l10n.delete),
             ),
           ],
         );

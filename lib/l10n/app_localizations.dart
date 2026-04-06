@@ -62,7 +62,8 @@ import 'app_localizations_en.dart';
 /// be consistent with the languages listed in the AppLocalizations.supportedLocales
 /// property.
 abstract class AppLocalizations {
-  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -70,7 +71,8 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -82,17 +84,18 @@ abstract class AppLocalizations {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('ar'),
-    Locale('en')
+    Locale('en'),
   ];
 
   /// No description provided for @appTitle.
@@ -2020,9 +2023,136 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Total Input VAT'**
   String get totalInputVat;
+
+  /// No description provided for @noItemsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No items found'**
+  String get noItemsFound;
+
+  /// No description provided for @unknownProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown Product'**
+  String get unknownProduct;
+
+  /// No description provided for @viewInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'View Invoice'**
+  String get viewInvoice;
+
+  /// No description provided for @confirmDeleteCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this category? This will prevent access to associated products.'**
+  String get confirmDeleteCategory;
+
+  /// No description provided for @categoryHasProductsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot delete category as it is linked to existing products.'**
+  String get categoryHasProductsError;
+
+  /// No description provided for @deleteCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Category'**
+  String get deleteCategory;
+
+  /// No description provided for @customerStatementTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'View Statement'**
+  String get customerStatementTooltip;
+
+  /// No description provided for @newPurchaseReturn.
+  ///
+  /// In en, this message translates to:
+  /// **'New Purchase Return'**
+  String get newPurchaseReturn;
+
+  /// No description provided for @selectPurchase.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Purchase'**
+  String get selectPurchase;
+
+  /// No description provided for @selectAPurchaseToContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a purchase to continue'**
+  String get selectAPurchaseToContinue;
+
+  /// No description provided for @processReturn.
+  ///
+  /// In en, this message translates to:
+  /// **'Process Return'**
+  String get processReturn;
+
+  /// No description provided for @returnProcessedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Return processed successfully'**
+  String get returnProcessedSuccessfully;
+
+  /// No description provided for @noReturnsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No returns yet'**
+  String get noReturnsYet;
+
+  /// No description provided for @newSalesReturn.
+  ///
+  /// In en, this message translates to:
+  /// **'New Sales Return'**
+  String get newSalesReturn;
+
+  /// No description provided for @selectSale.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Sale'**
+  String get selectSale;
+
+  /// No description provided for @failedToSaveProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save product'**
+  String get failedToSaveProduct;
+
+  /// No description provided for @failedToSaveCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save category'**
+  String get failedToSaveCategory;
+
+  /// No description provided for @failedToDeleteProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete product'**
+  String get failedToDeleteProduct;
+
+  /// No description provided for @deleteProductConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete {productName}?'**
+  String deleteProductConfirmation(Object productName);
+
+  /// No description provided for @failedToSavePurchase.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save purchase'**
+  String get failedToSavePurchase;
+
+  /// No description provided for @selectASaleToContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a sale to continue'**
+  String get selectASaleToContinue;
 }
 
-class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -2031,25 +2161,26 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['ar', 'en'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>['ar', 'en'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
-
-
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'ar': return AppLocalizationsAr();
-    case 'en': return AppLocalizationsEn();
+    case 'ar':
+      return AppLocalizationsAr();
+    case 'en':
+      return AppLocalizationsEn();
   }
 
   throw FlutterError(
     'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.'
+    'that was used.',
   );
 }

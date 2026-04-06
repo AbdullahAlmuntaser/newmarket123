@@ -51,7 +51,8 @@ class ToggleWholesaleMode extends PosEvent {
 class CheckoutEvent extends PosEvent {
   final String paymentMethod;
   final String? customerId;
-  const CheckoutEvent(this.paymentMethod, {this.customerId});
+  final String? userId;
+  const CheckoutEvent(this.paymentMethod, {this.customerId, this.userId});
 }
 
 class SearchProducts extends PosEvent {

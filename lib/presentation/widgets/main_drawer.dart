@@ -33,7 +33,10 @@ class MainDrawer extends StatelessWidget {
       );
     }
 
-    final isAdmin = authProvider.currentUser?.role == 'admin';
+    final role = authProvider.currentUser?.role.toLowerCase() ?? 'cashier';
+    final isAdmin = role == 'admin';
+    final isManager = role == 'manager' || isAdmin;
+    final isCashier = role == 'cashier' || isManager;
 
     return Drawer(
       width: 280, // تحديد عرض صريح لضمان الظهور
@@ -45,8 +48,6 @@ class MainDrawer extends StatelessWidget {
           
           const Divider(color: dividerColor, height: 1),
 
-          // استخدام Expanded مع ListView هو الطريقة الصحيحة
-          // لكننا سنتأكد من أن الـ ListView لا تحتوي على Padding زائد
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
@@ -63,91 +64,104 @@ class MainDrawer extends StatelessWidget {
                   title: l10n?.pos ?? 'نقطة البيع',
                   onTap: () => context.push('/pos'),
                 ),
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.history_rounded,
-                  title: l10n?.sales ?? 'سجل المبيعات',
-                  onTap: () => context.push('/sales'),
-                ),
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.assignment_return_rounded,
-                  title: l10n?.returns ?? 'المرتجعات',
-                  onTap: () => context.push('/returns'),
-                ),
+                if (isCashier) ...[
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.history_rounded,
+                    title: l10n?.sales ?? 'سجل المبيعات',
+                    onTap: () => context.push('/sales'),
+                  ),
+                  _buildExpansionGroup(
+                    context,
+                    icon: Icons.assignment_return_rounded,
+                    title: l10n?.returns ?? 'المرتجعات',
+                    children: [
+                      _buildSubItem(context, l10n?.salesReturns ?? 'مرتجعات المبيعات', '/sales/returns'),
+                      _buildSubItem(context, l10n?.purchaseReturns ?? 'مرتجعات المشتريات', '/purchases/returns'),
+                    ],
+                  ),
+                ],
                 
+                if (isManager) ...[
+                  const Divider(color: dividerColor, height: 20, thickness: 1, indent: 15, endIndent: 15),
+
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.inventory_2_rounded,
+                    title: l10n?.products ?? 'المنتجات',
+                    onTap: () => context.push('/products'),
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.swap_horiz_rounded,
+                    title: 'التحويل المخزني',
+                    onTap: () => context.push('/inventory/transfer'),
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.category_rounded,
+                    title: l10n?.categories ?? 'الفئات',
+                    onTap: () => context.push('/categories'),
+                  ),
+                ],
+
                 const Divider(color: dividerColor, height: 20, thickness: 1, indent: 15, endIndent: 15),
 
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.inventory_2_rounded,
-                  title: l10n?.products ?? 'المنتجات',
-                  onTap: () => context.push('/products'),
-                ),
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.swap_horiz_rounded,
-                  title: 'التحويل المخزني',
-                  onTap: () => context.push('/inventory/transfer'),
-                ),
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.category_rounded,
-                  title: l10n?.categories ?? 'الفئات',
-                  onTap: () => context.push('/categories'),
-                ),
-
-                const Divider(color: dividerColor, height: 20, thickness: 1, indent: 15, endIndent: 15),
-
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.shopping_cart_rounded,
-                  title: l10n?.purchases ?? 'المشتريات',
-                  onTap: () => context.push('/purchases'),
-                ),
                 _buildDrawerItem(
                   context,
                   icon: Icons.people_alt_rounded,
                   title: l10n?.customers ?? 'العملاء',
                   onTap: () => context.push('/customers'),
                 ),
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.local_shipping_rounded,
-                  title: l10n?.suppliers ?? 'الموردين',
-                  onTap: () => context.push('/suppliers'),
-                ),
 
-                const Divider(color: dividerColor, height: 20, thickness: 1, indent: 15, endIndent: 15),
+                if (isManager) ...[
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.shopping_cart_rounded,
+                    title: l10n?.purchases ?? 'المشتريات',
+                    onTap: () => context.push('/purchases'),
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.local_shipping_rounded,
+                    title: l10n?.suppliers ?? 'الموردين',
+                    onTap: () => context.push('/suppliers'),
+                  ),
+                ],
 
-                _buildExpansionGroup(
-                  context,
-                  icon: Icons.badge_rounded,
-                  title: 'الموارد البشرية',
-                  children: [
-                    _buildSubItem(context, 'إدارة الموظفين', '/hr/employees'),
-                    _buildSubItem(context, 'مسيرات الرواتب', '/hr/payroll'),
-                  ],
-                ),
+                if (isManager) ...[
+                  const Divider(color: dividerColor, height: 20, thickness: 1, indent: 15, endIndent: 15),
 
-                _buildExpansionGroup(
-                  context,
-                  icon: Icons.account_balance_rounded,
-                  title: l10n?.accounting ?? 'المحاسبة',
-                  children: [
-                    _buildSubItem(context, l10n?.chartOfAccounts ?? 'شجرة الحسابات', '/accounting/coa'),
-                    _buildSubItem(context, l10n?.generalLedger ?? 'دفتر الأستاذ', '/accounting/general-ledger'),
-                    _buildSubItem(context, l10n?.balanceSheet ?? 'الميزانية العمومية', '/accounting/balance-sheet'),
-                  ],
-                ),
-                
-                if (isAdmin)
+                  _buildExpansionGroup(
+                    context,
+                    icon: Icons.badge_rounded,
+                    title: 'الموارد البشرية',
+                    children: [
+                      _buildSubItem(context, 'إدارة الموظفين', '/hr/employees'),
+                      _buildSubItem(context, 'مسيرات الرواتب', '/hr/payroll'),
+                    ],
+                  ),
+                ],
+
+                if (isAdmin) ...[
+                  _buildExpansionGroup(
+                    context,
+                    icon: Icons.account_balance_rounded,
+                    title: l10n?.accounting ?? 'المحاسبة',
+                    children: [
+                      _buildSubItem(context, l10n?.chartOfAccounts ?? 'شجرة الحسابات', '/accounting/coa'),
+                      _buildSubItem(context, l10n?.generalLedger ?? 'دفتر الأستاذ', '/accounting/general-ledger'),
+                      _buildSubItem(context, l10n?.balanceSheet ?? 'الميزانية العمومية', '/accounting/balance-sheet'),
+                    ],
+                  ),
+                  
                   _buildDrawerItem(
                     context,
                     icon: Icons.manage_accounts_rounded,
                     title: 'إدارة المستخدمين',
                     onTap: () => context.push('/users'),
                   ),
+                ],
 
                 const SizedBox(height: 20),
                 _buildDrawerItem(

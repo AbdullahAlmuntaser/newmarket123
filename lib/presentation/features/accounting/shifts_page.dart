@@ -165,9 +165,11 @@ class _ShiftsPageState extends State<ShiftsPage> {
 
     try {
       await context.read<ShiftProvider>().openShift(userId, cash, note: _noteController.text);
+      if (!context.mounted) return;
       _cashController.clear();
       _noteController.clear();
     } catch (e) {
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
