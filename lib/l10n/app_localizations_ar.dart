@@ -566,7 +566,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get debit => 'مدين';
 
   @override
-  String get credit => 'دائن';
+  String get credit => 'آجل';
 
   @override
   String get asset => 'أصل';
@@ -857,9 +857,31 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String paymentMethod(Object paymentMethod) {
-    return 'طريقة الدفع: $paymentMethod';
-  }
+  String get paymentMethod => 'طريقة الدفع';
+
+  @override
+  String get date => 'التاريخ';
+
+  @override
+  String get supplier => 'المورد';
+
+  @override
+  String get cash => 'نقدي';
+
+  @override
+  String get sale => 'بيعة';
+
+  @override
+  String get purchase => 'مشتريات';
+
+  @override
+  String get purchaseId => 'رقم المشتريات';
+
+  @override
+  String get totalReturnAmount => 'إجمالي مبلغ المرتجع';
+
+  @override
+  String get purchaseNotFound => 'المشتريات غير موجودة';
 
   @override
   String get thankYou => 'شكراً لتعاملكم معنا!';
@@ -901,9 +923,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get noTransactionsFound => 'لم يتم العثور على عمليات';
-
-  @override
-  String get sale => 'بيعة';
 
   @override
   String get payment => 'دفعة';
@@ -1071,4 +1090,19 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get selectASaleToContinue => 'اختر بيعة للمتابعة';
+
+  @override
+  String get unit => 'الوحدة';
+
+  @override
+  String get cartonUnit => 'وحدة الكرتون';
+
+  @override
+  String get piecesPerCarton => 'عدد القطع في الكرتون';
+
+  @override
+  String get baseUnit => 'الوحدة الأساسية';
+
+  @override
+  String get isCarton => 'كرتون؟';
 }

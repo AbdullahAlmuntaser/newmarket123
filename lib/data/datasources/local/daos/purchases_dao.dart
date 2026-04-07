@@ -1,11 +1,11 @@
-import 'dart:convert';
 import 'package:drift/drift.dart';
 import '../app_database.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:uuid/uuid.dart';
 
 part 'purchases_dao.g.dart';
 
-@DriftAccessor(tables: [Purchases, PurchaseItems, Products, Suppliers, SyncQueue, AuditLogs, ProductBatches])
+@DriftAccessor(tables: [Purchases, PurchaseItems, Products, Suppliers, SyncQueue, AuditLogs, ProductBatches, PurchaseReturns, PurchaseReturnItems])
 class PurchasesDao extends DatabaseAccessor<AppDatabase> with _$PurchasesDaoMixin {
   PurchasesDao(super.db);
 
@@ -19,6 +19,14 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase> with _$PurchasesDaoMixi
     return (select(purchases)..where((p) => p.id.equals(id))).getSingleOrNull();
   }
 
+  Stream<List<PurchaseReturn>> watchAllPurchaseReturns() {
+    return (select(purchaseReturns)..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)])).watch();
+  }
+
+  Stream<List<PurchaseReturnItem>> watchPurchaseReturnItems(String returnId) {
+    return (select(purchaseReturnItems)..where((pi) => pi.purchaseReturnId.equals(returnId))).watch();
+  }
+
   Future<void> createPurchase({
     required PurchasesCompanion purchaseCompanion,
     required List<PurchaseItemsCompanion> itemsCompanions,
@@ -26,76 +34,104 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase> with _$PurchasesDaoMixi
   }) async {
     return transaction(() async {
       // 1. Insert Purchase
-      final purchaseId = await into(purchases).insert(purchaseCompanion);
+      await into(purchases).insert(purchaseCompanion);
 
       // 2. Process Items
       for (var item in itemsCompanions) {
-        await into(purchaseItems).insert(item.copyWith(purchaseId: Value(purchaseId as String)));
+        await into(purchaseItems).insert(item);
 
-        // Update Stock and Buy Price
-        final product = await (select(products)..where((p) => p.id.equals(item.productId.value))).getSingle();
-        
-        // Update product buy price and stock
-        await (update(products)..where((p) => p.id.equals(item.productId.value))).write(
-          ProductsCompanion(
-            stock: Value(product.stock + item.quantity.value),
-            buyPrice: Value(item.price.value), // Update last buy price
-          ),
-        );
+        // Update Stock (Increase) if status is RECEIVED
+        if (purchaseCompanion.status.value == 'RECEIVED') {
+          final product = await (select(products)..where((p) => p.id.equals(item.productId.value))).getSingle();
+          await (update(products)..where((p) => p.id.equals(item.productId.value))).write(
+            ProductsCompanion(
+              stock: Value(product.stock + item.quantity.value),
+              buyPrice: Value(item.price.value), // Update buy price to latest
+            ),
+          );
 
-        // Handle Batches if warehouseId is provided
-        if (purchaseCompanion.warehouseId.value != null) {
-           await into(productBatches).insert(ProductBatchesCompanion.insert(
+          // Create Product Batch
+          await into(productBatches).insert(ProductBatchesCompanion.insert(
+            id: Value(const Uuid().v4()),
             productId: item.productId.value,
-            warehouseId: purchaseCompanion.warehouseId.value!,
-            batchNumber: 'PUR-${purchaseId.toString().substring(0, 8)}',
+            warehouseId: purchaseCompanion.warehouseId.value ?? '',
+            batchNumber: 'BATCH-${DateTime.now().millisecondsSinceEpoch}',
             quantity: Value(item.quantity.value),
             initialQuantity: Value(item.quantity.value),
             costPrice: Value(item.price.value),
+            syncStatus: const Value(1),
           ));
-        }      }
+        }
+      }
 
       // 3. Update Supplier Balance if Credit
-      if (purchaseCompanion.isCredit.value == true && purchaseCompanion.supplierId.value != null) {
+      if (purchaseCompanion.isCredit.value && purchaseCompanion.supplierId.value != null) {
         final supplier = await (select(suppliers)..where((s) => s.id.equals(purchaseCompanion.supplierId.value!))).getSingle();
         await (update(suppliers)..where((s) => s.id.equals(purchaseCompanion.supplierId.value!))).write(
           SuppliersCompanion(balance: Value(supplier.balance + purchaseCompanion.total.value)),
         );
       }
 
-      // 4. Sync Queue
-      final payload = {
-        'id': purchaseId,
-        'total': purchaseCompanion.total.value,
-        'items': itemsCompanions.map((i) => {
-          'productId': i.productId.value,
-          'qty': i.quantity.value,
-          'price': i.price.value,
-        }).toList(),
-      };
-      await into(syncQueue).insert(SyncQueueCompanion.insert(
-        entityTable: 'purchases',
-        entityId: purchaseId as String,
-        operation: 'create',
-        payload: jsonEncode(payload),
-      ));
-
-      // 5. Accounting
-      final purchaseObj = await (select(purchases)..where((p) => p.id.equals(purchaseId as String))).getSingle();
+      // 4. Accounting
+      final purchaseObj = await (select(purchases)..where((p) => p.id.equals(purchaseCompanion.id.value))).getSingle();
       final accounting = AccountingService(db);
-      await accounting.seedDefaultAccounts();
-      
-      // Get inserted items
-      final insertedItems = await (select(purchaseItems)..where((pi) => pi.purchaseId.equals(purchaseId as String))).get();
+      final insertedItems = await (select(purchaseItems)..where((pi) => pi.purchaseId.equals(purchaseCompanion.id.value))).get();
       await accounting.postPurchase(purchaseObj, insertedItems);
 
-      // 6. Audit Log
+      // 5. Audit Log
       await into(auditLogs).insert(AuditLogsCompanion.insert(
         userId: Value(userId),
         action: 'CREATE',
         targetEntity: 'PURCHASES',
-        entityId: purchaseId as String,
-        details: Value('Created purchase: $purchaseId, Total: ${purchaseCompanion.total.value}'),
+        entityId: purchaseCompanion.id.value,
+        details: Value('Created purchase: ${purchaseCompanion.id.value}'),
+      ));
+    });
+  }
+
+  Future<void> createPurchaseReturn({
+    required PurchaseReturnsCompanion returnCompanion,
+    required List<PurchaseReturnItemsCompanion> itemsCompanions,
+    required String? userId,
+  }) async {
+    return transaction(() async {
+      // 1. Insert Purchase Return
+      final returnId = returnCompanion.id.value;
+      await into(purchaseReturns).insert(returnCompanion);
+
+      // 2. Process Items
+      for (var item in itemsCompanions) {
+        await into(purchaseReturnItems).insert(item);
+
+        // Update Stock (Decrease)
+        final product = await (select(products)..where((p) => p.id.equals(item.productId.value))).getSingle();
+        await (update(products)..where((p) => p.id.equals(item.productId.value))).write(
+          ProductsCompanion(stock: Value(product.stock - item.quantity.value)),
+        );
+      }
+
+      // 3. Update Supplier Balance if Credit
+      final originalPurchase = await (select(purchases)..where((p) => p.id.equals(returnCompanion.purchaseId.value))).getSingle();
+      if (originalPurchase.isCredit && originalPurchase.supplierId != null) {
+        final supplier = await (select(suppliers)..where((s) => s.id.equals(originalPurchase.supplierId!))).getSingle();
+        await (update(suppliers)..where((s) => s.id.equals(originalPurchase.supplierId!))).write(
+          SuppliersCompanion(balance: Value(supplier.balance - returnCompanion.amountReturned.value)),
+        );
+      }
+
+      // 4. Accounting
+      final returnObj = await (select(purchaseReturns)..where((p) => p.id.equals(returnId))).getSingle();
+      final accounting = AccountingService(db);
+      final insertedItems = await (select(purchaseReturnItems)..where((pi) => pi.purchaseReturnId.equals(returnId))).get();
+      await accounting.postPurchaseReturn(returnObj, insertedItems);
+
+      // 5. Audit Log
+      await into(auditLogs).insert(AuditLogsCompanion.insert(
+        userId: Value(userId),
+        action: 'CREATE',
+        targetEntity: 'PURCHASE_RETURNS',
+        entityId: returnId,
+        details: Value('Created purchase return: $returnId for purchase: ${returnCompanion.purchaseId.value}'),
       ));
     });
   }

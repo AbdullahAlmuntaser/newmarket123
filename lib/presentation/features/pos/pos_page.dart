@@ -213,22 +213,53 @@ class _PosPageState extends State<PosPage> {
                     return ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                       title: Text(item.product.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Row(
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _quantityButton(
-                            Icons.remove,
-                            () => context.read<PosBloc>().add(UpdateCartItemQuantity(item.product.id, item.quantity - 1)),
+                          Row(
+                            children: [
+                              _quantityButton(
+                                Icons.remove,
+                                () => context.read<PosBloc>().add(UpdateCartItemQuantity(item.product.id, item.quantity - 1)),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                child: Text('${item.quantity}', style: const TextStyle(fontSize: 16)),
+                              ),
+                              _quantityButton(
+                                Icons.add,
+                                () => context.read<PosBloc>().add(UpdateCartItemQuantity(item.product.id, item.quantity + 1)),
+                              ),
+                              const Spacer(),
+                              Text('${item.unitPrice.toStringAsFixed(2)} x'),
+                            ],
                           ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                            child: Text('${item.quantity}', style: const TextStyle(fontSize: 16)),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              ChoiceChip(
+                                label: Text(item.product.unit),
+                                selected: !item.isCarton,
+                                onSelected: (selected) {
+                                  if (selected) {
+                                    context.read<PosBloc>().add(ToggleCartItemUnit(item.product.id, false));
+                                  }
+                                },
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              const SizedBox(width: 8),
+                              ChoiceChip(
+                                label: Text(item.product.cartonUnit),
+                                selected: item.isCarton,
+                                onSelected: (selected) {
+                                  if (selected) {
+                                    context.read<PosBloc>().add(ToggleCartItemUnit(item.product.id, true));
+                                  }
+                                },
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ],
                           ),
-                          _quantityButton(
-                            Icons.add,
-                            () => context.read<PosBloc>().add(UpdateCartItemQuantity(item.product.id, item.quantity + 1)),
-                          ),
-                          const Spacer(),
-                          Text('${item.unitPrice} x'),
                         ],
                       ),
                       trailing: Column(
@@ -487,13 +518,6 @@ class _PosPageState extends State<PosPage> {
                             ),
                           );
                       customerId = newCustomer.id;
-                    }
-
-                    if (customerId == null) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء اختيار عميل للبيع الآجل')));
-                      }
-                      return;
                     }
                     if (context.mounted) {
                       context.read<PosBloc>().add(CheckoutEvent('credit', customerId: customerId, userId: userId));

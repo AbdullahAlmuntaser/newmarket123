@@ -5,27 +5,36 @@ class CartItem extends Equatable {
   final Product product;
   final int quantity;
   final bool isWholesale;
+  final bool isCarton;
 
   const CartItem({
     required this.product,
     this.quantity = 1,
     this.isWholesale = false,
+    this.isCarton = false,
   });
 
-  double get unitPrice =>
-      isWholesale ? product.wholesalePrice : product.sellPrice;
+  double get unitPrice {
+    double basePrice = isWholesale ? product.wholesalePrice : product.sellPrice;
+    if (isCarton) {
+      return basePrice * product.piecesPerCarton;
+    }
+    return basePrice;
+  }
+
   double get total => unitPrice * quantity;
 
-  CartItem copyWith({int? quantity, bool? isWholesale}) {
+  CartItem copyWith({int? quantity, bool? isWholesale, bool? isCarton}) {
     return CartItem(
       product: product,
       quantity: quantity ?? this.quantity,
       isWholesale: isWholesale ?? this.isWholesale,
+      isCarton: isCarton ?? this.isCarton,
     );
   }
 
   @override
-  List<Object?> get props => [product, quantity, isWholesale];
+  List<Object?> get props => [product, quantity, isWholesale, isCarton];
 }
 
 abstract class PosState extends Equatable {

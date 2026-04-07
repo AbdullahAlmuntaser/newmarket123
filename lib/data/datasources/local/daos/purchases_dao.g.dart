@@ -13,6 +13,9 @@ mixin _$PurchasesDaoMixin on DatabaseAccessor<AppDatabase> {
   $PurchaseItemsTable get purchaseItems => attachedDatabase.purchaseItems;
   $SyncQueueTable get syncQueue => attachedDatabase.syncQueue;
   $AuditLogsTable get auditLogs => attachedDatabase.auditLogs;
+  $PurchaseReturnsTable get purchaseReturns => attachedDatabase.purchaseReturns;
+  $PurchaseReturnItemsTable get purchaseReturnItems =>
+      attachedDatabase.purchaseReturnItems;
   PurchasesDaoManager get managers => PurchasesDaoManager(this);
 }
 
@@ -40,4 +43,14 @@ class PurchasesDaoManager {
       $$SyncQueueTableTableManager(_db.attachedDatabase, _db.syncQueue);
   $$AuditLogsTableTableManager get auditLogs =>
       $$AuditLogsTableTableManager(_db.attachedDatabase, _db.auditLogs);
+  $$PurchaseReturnsTableTableManager get purchaseReturns =>
+      $$PurchaseReturnsTableTableManager(
+        _db.attachedDatabase,
+        _db.purchaseReturns,
+      );
+  $$PurchaseReturnItemsTableTableManager get purchaseReturnItems =>
+      $$PurchaseReturnItemsTableTableManager(
+        _db.attachedDatabase,
+        _db.purchaseReturnItems,
+      );
 }

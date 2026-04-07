@@ -1,11 +1,10 @@
-import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
 
 part 'sales_dao.g.dart';
 
-@DriftAccessor(tables: [Sales, SaleItems, Products, Customers, SyncQueue, AuditLogs])
+@DriftAccessor(tables: [Sales, SaleItems, Products, Customers, SyncQueue, AuditLogs, SalesReturns, SalesReturnItems])
 class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
   SalesDao(super.db);
 
@@ -72,61 +71,92 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
   }) async {
     return transaction(() async {
       // 1. Insert Sale
-      final saleId = await into(sales).insert(saleCompanion);
+      await into(sales).insert(saleCompanion);
 
       // 2. Process Items
       for (var item in itemsCompanions) {
-        await into(saleItems).insert(item.copyWith(saleId: Value(saleId as String)));
+        await into(saleItems).insert(item);
 
-        // Update Stock
+        // Update Stock (Decrease)
         final product = await (select(products)..where((p) => p.id.equals(item.productId.value))).getSingle();
+        
+        double quantityToDecrease = item.quantity.value;
+        if (item.isCarton.value) {
+          quantityToDecrease *= product.piecesPerCarton;
+        }
+
         await (update(products)..where((p) => p.id.equals(item.productId.value))).write(
-          ProductsCompanion(stock: Value(product.stock - item.quantity.value)),
+          ProductsCompanion(stock: Value(product.stock - quantityToDecrease)),
         );
       }
 
       // 3. Update Customer Balance if Credit
-      if (saleCompanion.isCredit.value == true && saleCompanion.customerId.value != null) {
+      if (saleCompanion.isCredit.value && saleCompanion.customerId.value != null) {
         final customer = await (select(customers)..where((c) => c.id.equals(saleCompanion.customerId.value!))).getSingle();
         await (update(customers)..where((c) => c.id.equals(saleCompanion.customerId.value!))).write(
           CustomersCompanion(balance: Value(customer.balance + saleCompanion.total.value)),
         );
       }
 
-      // 4. Sync Queue
-      final payload = {
-        'id': saleId,
-        'total': saleCompanion.total.value,
-        'items': itemsCompanions.map((i) => {
-          'productId': i.productId.value,
-          'qty': i.quantity.value,
-          'price': i.price.value,
-        }).toList(),
-      };
-      await into(syncQueue).insert(SyncQueueCompanion.insert(
-        entityTable: 'sales',
-        entityId: saleId as String,
-        operation: 'create',
-        payload: jsonEncode(payload),
-      ));
-
-      // 5. Accounting
-      final saleObj = await (select(sales)..where((s) => s.id.equals(saleId as String))).getSingle();
+      // 4. Accounting
+      final saleObj = await (select(sales)..where((s) => s.id.equals(saleCompanion.id.value))).getSingle();
       final accounting = AccountingService(db);
-      // Ensure accounts exist (optional here, usually done at startup)
-      await accounting.seedDefaultAccounts();
-      
-      // Get the inserted sale items as objects for accounting service
-      final insertedItems = await (select(saleItems)..where((si) => si.saleId.equals(saleId as String))).get();
+      final insertedItems = await (select(saleItems)..where((si) => si.saleId.equals(saleCompanion.id.value))).get();
       await accounting.postSale(saleObj, insertedItems);
 
-      // 6. Audit Log
+      // 5. Audit Log
       await into(auditLogs).insert(AuditLogsCompanion.insert(
         userId: Value(userId),
         action: 'CREATE',
         targetEntity: 'SALES',
-        entityId: saleId as String,
-        details: Value('Created sale: $saleId, Total: ${saleCompanion.total.value}'),
+        entityId: saleCompanion.id.value,
+        details: Value('Created sale: ${saleCompanion.id.value}'),
+      ));
+    });
+  }
+
+  Future<void> createSaleReturn({
+    required SalesReturnsCompanion returnCompanion,
+    required List<SalesReturnItemsCompanion> itemsCompanions,
+    required String? userId,
+  }) async {
+    return transaction(() async {
+      // 1. Insert Sales Return
+      final returnId = await into(salesReturns).insert(returnCompanion);
+
+      // 2. Process Items
+      for (var item in itemsCompanions) {
+        await into(salesReturnItems).insert(item.copyWith(salesReturnId: Value(returnId as String)));
+
+        // Update Stock (Increase)
+        final product = await (select(products)..where((p) => p.id.equals(item.productId.value))).getSingle();
+        await (update(products)..where((p) => p.id.equals(item.productId.value))).write(
+          ProductsCompanion(stock: Value(product.stock + item.quantity.value)),
+        );
+      }
+
+      // 3. Update Customer Balance if Credit
+      final originalSale = await (select(sales)..where((s) => s.id.equals(returnCompanion.saleId.value))).getSingle();
+      if (originalSale.isCredit && originalSale.customerId != null) {
+        final customer = await (select(customers)..where((c) => c.id.equals(originalSale.customerId!))).getSingle();
+        await (update(customers)..where((c) => c.id.equals(originalSale.customerId!))).write(
+          CustomersCompanion(balance: Value(customer.balance - returnCompanion.amountReturned.value)),
+        );
+      }
+
+      // 4. Accounting
+      final returnObj = await (select(salesReturns)..where((s) => s.id.equals(returnId as String))).getSingle();
+      final accounting = AccountingService(db);
+      final insertedItems = await (select(salesReturnItems)..where((si) => si.salesReturnId.equals(returnId as String))).get();
+      await accounting.postSaleReturn(returnObj, insertedItems);
+
+      // 5. Audit Log
+      await into(auditLogs).insert(AuditLogsCompanion.insert(
+        userId: Value(userId),
+        action: 'CREATE',
+        targetEntity: 'SALES_RETURNS',
+        entityId: returnId as String,
+        details: Value('Created sales return: $returnId for sale: ${returnCompanion.saleId.value}'),
       ));
     });
   }

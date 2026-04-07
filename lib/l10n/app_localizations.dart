@@ -1745,8 +1745,56 @@ abstract class AppLocalizations {
   /// No description provided for @paymentMethod.
   ///
   /// In en, this message translates to:
-  /// **'Payment Method: {paymentMethod}'**
-  String paymentMethod(Object paymentMethod);
+  /// **'Payment Method'**
+  String get paymentMethod;
+
+  /// No description provided for @date.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get date;
+
+  /// No description provided for @supplier.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier'**
+  String get supplier;
+
+  /// No description provided for @cash.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash'**
+  String get cash;
+
+  /// No description provided for @sale.
+  ///
+  /// In en, this message translates to:
+  /// **'Sale'**
+  String get sale;
+
+  /// No description provided for @purchase.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase'**
+  String get purchase;
+
+  /// No description provided for @purchaseId.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase ID'**
+  String get purchaseId;
+
+  /// No description provided for @totalReturnAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Return Amount'**
+  String get totalReturnAmount;
+
+  /// No description provided for @purchaseNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase not found'**
+  String get purchaseNotFound;
 
   /// No description provided for @thankYou.
   ///
@@ -1811,7 +1859,7 @@ abstract class AppLocalizations {
   /// No description provided for @role.
   ///
   /// In en, this message translates to:
-  /// **'Role'**
+  /// **'Role/Permission'**
   String get role;
 
   /// No description provided for @customerStatement.
@@ -1825,12 +1873,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No transactions found'**
   String get noTransactionsFound;
-
-  /// No description provided for @sale.
-  ///
-  /// In en, this message translates to:
-  /// **'Sale'**
-  String get sale;
 
   /// No description provided for @payment.
   ///
@@ -2051,7 +2093,7 @@ abstract class AppLocalizations {
   /// No description provided for @categoryHasProductsError.
   ///
   /// In en, this message translates to:
-  /// **'Cannot delete category as it is linked to existing products.'**
+  /// **'Cannot delete category because it is associated with existing products.'**
   String get categoryHasProductsError;
 
   /// No description provided for @deleteCategory.
@@ -2063,7 +2105,7 @@ abstract class AppLocalizations {
   /// No description provided for @customerStatementTooltip.
   ///
   /// In en, this message translates to:
-  /// **'View Statement'**
+  /// **'Account Statement'**
   String get customerStatementTooltip;
 
   /// No description provided for @newPurchaseReturn.
@@ -2149,6 +2191,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select a sale to continue'**
   String get selectASaleToContinue;
+
+  /// No description provided for @unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit'**
+  String get unit;
+
+  /// No description provided for @cartonUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Carton Unit'**
+  String get cartonUnit;
+
+  /// No description provided for @piecesPerCarton.
+  ///
+  /// In en, this message translates to:
+  /// **'Pieces per Carton'**
+  String get piecesPerCarton;
+
+  /// No description provided for @baseUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Base Unit'**
+  String get baseUnit;
+
+  /// No description provided for @isCarton.
+  ///
+  /// In en, this message translates to:
+  /// **'Is Carton?'**
+  String get isCarton;
 }
 
 class _AppLocalizationsDelegate

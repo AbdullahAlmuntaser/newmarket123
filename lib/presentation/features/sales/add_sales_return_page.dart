@@ -1,8 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Column;
+import 'package:flutter/material.dart' show Column;
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
+import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:drift/drift.dart' hide JsonKey, Column;
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
@@ -15,7 +18,8 @@ class AddSalesReturnPage extends StatefulWidget {
 
 class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
   Sale? _selectedSale;
-  final List<SalesReturnItem> _itemsToReturn = [];
+  final Map<String, double> _returnedQuantities = {};
+  final Map<String, SaleItem> _saleItemsMap = {};
 
   @override
   Widget build(BuildContext context) {
@@ -27,32 +31,103 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(16.0),
             child: StreamBuilder<List<Sale>>(
               stream: db.salesDao.watchAllSales(),
               builder: (context, snapshot) {
-                final sales = snapshot.data ?? [];
+                final salesList = snapshot.data ?? [];
+                if (salesList.isEmpty) {
+                  return Text(l10n.noSalesFound);
+                }
                 return DropdownButtonFormField<Sale>(
-                  decoration: InputDecoration(labelText: l10n.selectSale),
-                  items: sales
-                      .map((s) => DropdownMenuItem(value: s, child: Text(s.id)))
+                  decoration: InputDecoration(
+                    labelText: l10n.selectSale,
+                    border: const OutlineInputBorder(),
+                  ),
+                  initialValue: _selectedSale,
+                  items: salesList
+                      .map((s) => DropdownMenuItem(
+                            value: s,
+                            child: Text(
+                                '${l10n.sale} #${s.id.substring(0, 8)} - ${s.total.toStringAsFixed(2)}'),
+                          ))
                       .toList(),
-                  onChanged: (value) => setState(() => _selectedSale = value),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedSale = value;
+                      _returnedQuantities.clear();
+                      _saleItemsMap.clear();
+                    });
+                  },
                 );
               },
             ),
           ),
+          const Divider(),
           Expanded(
             child: _selectedSale == null
-                ? Center(child: Text(l10n.selectASaleToContinue))
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.receipt_long_outlined,
+                            size: 64, color: Colors.grey),
+                        const SizedBox(height: 16),
+                        Text(l10n.selectASaleToContinue,
+                            style: const TextStyle(color: Colors.grey)),
+                      ],
+                    ),
+                  )
                 : _buildSaleItems(db),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _itemsToReturn.isNotEmpty ? _processReturn : null,
-        tooltip: l10n.processReturn,
-        child: const Icon(Icons.save),
+      bottomNavigationBar: _selectedSale != null ? _buildSummary(l10n) : null,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _returnedQuantities.values.any((q) => q > 0)
+            ? _processReturn
+            : null,
+        label: Text(l10n.processReturn),
+        icon: const Icon(Icons.check),
+        backgroundColor:
+            _returnedQuantities.values.any((q) => q > 0) ? null : Colors.grey,
+      ),
+    );
+  }
+
+  Widget _buildSummary(AppLocalizations l10n) {
+    double totalAmount = 0;
+    _returnedQuantities.forEach((productId, qty) {
+      final item = _saleItemsMap[productId];
+      if (item != null) {
+        totalAmount += qty * item.price;
+      }
+    });
+
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(12), // Replaced withOpacity
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(l10n.totalReturnAmount,
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          Text(totalAmount.toStringAsFixed(2),
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Theme.of(context).colorScheme.primary)),
+        ],
       ),
     );
   }
@@ -61,36 +136,77 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
     return StreamBuilder<List<SaleItem>>(
       stream: db.salesDao.watchSaleItems(_selectedSale!.id),
       builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
         final saleItems = snapshot.data ?? [];
-        return ListView.builder(
+        for (var item in saleItems) {
+          _saleItemsMap[item.productId] = item;
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.all(8),
           itemCount: saleItems.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 8),
           itemBuilder: (context, index) {
             final item = saleItems[index];
-            final isSelected = _itemsToReturn.any((i) => i.productId == item.productId);
-            return CheckboxListTile(
-              title: Text('Product ID: ${item.productId}'), // Replace with product name later
-              subtitle: Text('Quantity: ${item.quantity}'),
-              value: isSelected,
-              onChanged: (selected) {
-                setState(() {
-                  if (selected == true) {
-                    final now = DateTime.now();
-                    _itemsToReturn.add(
-                      SalesReturnItem(
-                        id: const Uuid().v4(),
-                        salesReturnId: '', // Will be updated in _processReturn
-                        productId: item.productId,
-                        quantity: item.quantity,
-                        price: item.price,
-                        createdAt: now,
-                        updatedAt: now,
-                        syncStatus: 1,
-                      ),
-                    );
-                  } else {
-                    _itemsToReturn.removeWhere((i) => i.productId == item.productId);
-                  }
-                });
+            final returnedQty = _returnedQuantities[item.productId] ?? 0.0;
+
+            return FutureBuilder<Product?>(
+              future: db.productsDao.getProductById(item.productId),
+              builder: (context, productSnapshot) {
+                final product = productSnapshot.data;
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(product?.name ?? item.productId,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16)),
+                              Text(
+                                  '${AppLocalizations.of(context)!.price}: ${item.price.toStringAsFixed(2)}'),
+                              Text(
+                                  '${AppLocalizations.of(context)!.quantityLabel}: ${item.quantity}'),
+                            ],
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.remove_circle_outline),
+                              onPressed: returnedQty > 0
+                                  ? () => setState(() => _returnedQuantities[
+                                      item.productId] = returnedQty - 1)
+                                  : null,
+                            ),
+                            SizedBox(
+                              width: 40,
+                              child: Text(
+                                returnedQty.toStringAsFixed(0),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.add_circle_outline),
+                              onPressed: returnedQty < item.quantity
+                                  ? () => setState(() => _returnedQuantities[
+                                      item.productId] = returnedQty + 1)
+                                  : null,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
               },
             );
           },
@@ -100,29 +216,112 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
   }
 
   Future<void> _processReturn() async {
-    final accountingService = Provider.of<AccountingService>(context, listen: false);
+    final db = Provider.of<AppDatabase>(context, listen: false);
+    final accountingService =
+        Provider.of<AccountingService>(context, listen: false);
     final l10n = AppLocalizations.of(context)!;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    final totalReturnedAmount = _itemsToReturn.fold(0.0, (sum, item) => sum + (item.quantity * item.price));
 
-    final now = DateTime.now();
-    final newSalesReturn = SalesReturn(
-      id: const Uuid().v4(),
+    if (_selectedSale == null) return;
+
+    double totalReturnedAmount = 0;
+    final List<SalesReturnItemsCompanion> itemCompanions = [];
+    final returnId = const Uuid().v4();
+
+    _returnedQuantities.forEach((productId, qty) {
+      if (qty > 0) {
+        final item = _saleItemsMap[productId]!;
+        totalReturnedAmount += qty * item.price;
+        itemCompanions.add(SalesReturnItemsCompanion.insert(
+          id: Value(const Uuid().v4()),
+          salesReturnId: returnId,
+          productId: productId,
+          quantity: qty,
+          price: item.price,
+        ));
+      }
+    });
+
+    final returnCompanion = SalesReturnsCompanion.insert(
+      id: Value(returnId),
       saleId: _selectedSale!.id,
       amountReturned: totalReturnedAmount,
-      createdAt: now,
-      updatedAt: now,
-      syncStatus: 1,
+      createdAt: Value(DateTime.now()),
+      updatedAt: Value(DateTime.now()),
+      syncStatus: const Value(1),
     );
 
     try {
-      await accountingService.postSaleReturn(newSalesReturn, _itemsToReturn);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.returnProcessedSuccessfully)));
-      context.pop();
+      await db.transaction(() async {
+        // 1. Insert Sales Return
+        await db.into(db.salesReturns).insert(returnCompanion);
+
+        // 2. Process Items
+        for (var item in itemCompanions) {
+          await db.into(db.salesReturnItems).insert(item);
+
+          // Update Stock (Increase)
+          final product = await (db.select(db.products)
+                ..where((p) => p.id.equals(item.productId.value)))
+              .getSingle();
+          await (db.update(db.products)
+                ..where((p) => p.id.equals(item.productId.value)))
+              .write(
+            ProductsCompanion(stock: Value(product.stock + item.quantity.value)),
+          );
+        }
+
+        // 3. Update Customer Balance if Credit
+        final originalSale = _selectedSale!;
+        if (originalSale.isCredit && originalSale.customerId != null) {
+          final customer = await (db.select(db.customers)
+                ..where((c) => c.id.equals(originalSale.customerId!)))
+              .getSingle();
+          await (db.update(db.customers)
+                ..where((c) => c.id.equals(originalSale.customerId!)))
+              .write(
+            CustomersCompanion(
+                balance: Value(customer.balance - totalReturnedAmount)),
+          );
+        }
+
+        // 4. Accounting
+        final createdReturn = await (db.select(db.salesReturns)
+              ..where((t) => t.id.equals(returnId)))
+            .getSingle();
+        final createdItems = await (db.select(db.salesReturnItems)
+              ..where((t) => t.salesReturnId.equals(returnId)))
+            .get();
+
+        await accountingService.postSaleReturn(createdReturn, createdItems);
+        
+        // 5. Audit Log
+         await db.into(db.auditLogs).insert(AuditLogsCompanion.insert(
+              userId: Value(authProvider.currentUser?.id),
+              action: 'CREATE',
+              targetEntity: 'SALES_RETURNS',
+              entityId: returnId,
+              details:
+                  Value('Created sales return: $returnId for sale: ${returnCompanion.saleId.value}'),
+            ));
+
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(l10n.returnProcessedSuccessfully),
+          backgroundColor: Colors.green,
+        ));
+        context.pop();
+      }
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.red,
+        ));
+      }
     }
   }
 }

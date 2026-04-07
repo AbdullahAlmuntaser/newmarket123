@@ -66,6 +66,7 @@ void main() {
         productId: productId,
         quantity: 1.0,
         price: 100.0,
+        isCarton: false,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         syncStatus: 1,

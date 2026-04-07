@@ -25,6 +25,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       }
     });
     on<ToggleWholesaleMode>(_onToggleWholesale);
+    on<ToggleCartItemUnit>(_onToggleUnit);
     on<SearchProducts>(_onSearchProducts);
     on<CheckoutEvent>(_onCheckout);
     on<ClearCart>((event, emit) {
@@ -186,6 +187,18 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     );
   }
 
+  void _onToggleUnit(ToggleCartItemUnit event, Emitter<PosState> emit) {
+    if (state is! PosLoaded) return;
+    final currentState = state as PosLoaded;
+    final newCart = currentState.cart.map((item) {
+      if (item.product.id == event.productId) {
+        return item.copyWith(isCarton: event.isCarton);
+      }
+      return item;
+    }).toList();
+    emit(currentState.copyWith(cart: newCart));
+  }
+
   Future<void> _onCheckout(CheckoutEvent event, Emitter<PosState> emit) async {
     if (state is! PosLoaded) return;
     final currentState = state as PosLoaded;
@@ -218,6 +231,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
           productId: item.product.id,
           quantity: item.quantity.toDouble(),
           price: item.unitPrice,
+          isCarton: Value(item.isCarton),
           syncStatus: const Value(1),
         );
       }).toList();

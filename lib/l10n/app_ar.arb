@@ -343,5 +343,21 @@
   "failedToDeleteProduct": "فشل حذف المنتج",
   "deleteProductConfirmation": "هل أنت متأكد أنك تريد حذف {productName}؟",
   "failedToSavePurchase": "فشل حفظ المشتريات",
-  "selectASaleToContinue": "اختر بيعة للمتابعة"
+  "selectASaleToContinue": "اختر بيعة للمتابعة",
+  "unit": "الوحدة",
+  "cartonUnit": "وحدة الكرتون",
+  "piecesPerCarton": "عدد القطع في الكرتون",
+  "baseUnit": "الوحدة الأساسية",
+  "isCarton": "كرتون؟",
+  "totalReturnAmount": "إجمالي مبلغ المرتجع",
+  "quantityLabel": "الكمية",
+  "purchaseNotFound": "المشتريات غير موجودة",
+  "purchaseId": "رقم المشتريات",
+  "date": "التاريخ",
+  "supplier": "المورد",
+  "credit": "آجل",
+  "cash": "نقدي",
+  "sale": "بيعة",
+  "purchase": "مشتريات",
+  "paymentMethod": "طريقة الدفع"
 }

@@ -538,21 +538,17 @@ class AccountingService {
     );
 
     final lines = [
-      // Debit A/P or Cash
+      // Debit A/P or Cash (Decrease liability or Increase cash)
       GLLinesCompanion.insert( entryId: entryId, accountId: debitAccount.id, debit: Value(totalReturned), credit: const Value(0.0)),
       // Credit Purchase Returns (Contra-Expense)
       GLLinesCompanion.insert( entryId: entryId, accountId: purchaseReturnAccount.id, debit: const Value(0.0), credit: Value(purchasePortion)),
       // Credit Input VAT (to reverse the tax asset)
-      GLLinesCompanion.insert( entryId: entryId, accountId: taxAccount.id, debit: const Value(0.0), credit: Value(taxPortion)),
+      if (taxPortion > 0)
+        GLLinesCompanion.insert( entryId: entryId, accountId: taxAccount.id, debit: const Value(0.0), credit: Value(taxPortion)),
     ];
 
     await dao.createEntry(entry, lines);
-
-    // 2. Update Inventory (Decrease stock)
-    for (var _ in items) {
-      // Here you would decrease inventory stock.
-      // This might involve finding the specific batch and reducing its quantity.
-    }
+    await _auditService.logCreate('GLEntry', entryId, details: 'Purchase Return Entry for ${purchaseReturn.id}');
   }
 
 

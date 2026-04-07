@@ -20,8 +20,9 @@ import 'package:supermarket/presentation/features/products/products_page.dart';
 import 'package:supermarket/presentation/features/products/categories_page.dart';
 import 'package:supermarket/presentation/features/purchases/purchases_page.dart';
 import 'package:supermarket/presentation/features/purchases/add_purchase_page.dart';
-import 'package:supermarket/presentation/features/purchases/purchase_return_page.dart';
 import 'package:supermarket/presentation/features/purchases/add_purchase_return_page.dart';
+import 'package:supermarket/presentation/features/purchases/purchase_return_page.dart';
+import 'package:supermarket/presentation/features/purchases/purchase_details_page.dart';
 import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
 import 'package:supermarket/presentation/features/accounting/trial_balance_page.dart';
 import 'package:supermarket/presentation/features/accounting/cash_flow_page.dart';
@@ -56,11 +57,13 @@ import 'package:supermarket/core/services/shift_service.dart';
 import 'package:supermarket/core/services/hr_service.dart';
 import 'package:supermarket/core/services/stock_transfer_service.dart';
 import 'package:supermarket/core/services/asset_service.dart';
+import 'package:supermarket/core/services/accounting_service.dart';
 import 'package:supermarket/presentation/features/accounting/shifts_provider.dart';
 import 'package:supermarket/presentation/features/accounting/asset_provider.dart';
 import 'package:supermarket/presentation/features/hr/hr_provider.dart';
 import 'package:supermarket/presentation/features/hr/payroll_provider.dart';
 import 'package:supermarket/presentation/features/inventory/stock_transfer_provider.dart';
+import 'package:supermarket/presentation/features/products/products_provider.dart';
 
 void main() async {
   try {
@@ -79,6 +82,10 @@ void main() async {
     // Seed default admin user
     final authProvider = di.sl<AuthProvider>();
     await authProvider.seedAdmin();
+
+    // Seed default accounting accounts
+    final accountingService = di.sl<AccountingService>();
+    await accountingService.seedDefaultAccounts();
 
     runApp(const MyApp());
   } catch (e, stack) {
@@ -103,9 +110,11 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         Provider<AppDatabase>.value(value: db),
+        Provider<AccountingService>.value(value: di.sl<AccountingService>()),
         ChangeNotifierProvider(create: (_) => di.sl<ThemeProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<AuthProvider>()),
         ChangeNotifierProvider(create: (_) => AccountingProvider(db)),
+        ChangeNotifierProvider(create: (_) => di.sl<ProductsProvider>()),
         ChangeNotifierProvider(create: (_) => ShiftProvider(ShiftService(db))),
         ChangeNotifierProvider(create: (_) => HRProvider(HRService(db))),
         ChangeNotifierProvider(create: (_) => PayrollProvider(HRService(db))),
@@ -192,6 +201,12 @@ class MyApp extends StatelessWidget {
         GoRoute(
           path: '/purchases/new',
           builder: (context, state) => const AddPurchasePage(),
+        ),
+        GoRoute(
+          path: '/purchases/:id',
+          builder: (context, state) => PurchaseDetailsPage(
+            purchaseId: state.pathParameters['id']!,
+          ),
         ),
         GoRoute(
           path: '/purchases/returns',

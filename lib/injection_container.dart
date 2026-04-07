@@ -9,13 +9,23 @@ import 'package:supermarket/domain/usecases/delete_category.dart';
 import 'package:supermarket/domain/usecases/get_categories.dart';
 import 'package:supermarket/domain/usecases/update_category.dart';
 import 'package:supermarket/presentation/blocs/category/category_bloc.dart';
+import 'package:supermarket/presentation/features/products/products_provider.dart';
+import 'package:supermarket/core/services/accounting_service.dart';
 
 final sl = GetIt.instance;
 
 void init() {
+  // Data sources
+  final db = AppDatabase();
+  sl.registerLazySingleton(() => db);
+
+  // Services
+  sl.registerLazySingleton(() => AccountingService(sl()));
+
   // Providers
   sl.registerLazySingleton(() => AuthProvider(sl()));
   sl.registerLazySingleton(() => ThemeProvider());
+  sl.registerFactory(() => ProductsProvider(sl()));
 
   // Blocs
   sl.registerFactory(
@@ -37,7 +47,4 @@ void init() {
   sl.registerLazySingleton<CategoryRepository>(
     () => CategoryRepositoryImpl(appDatabase: sl()),
   );
-
-  // Data sources
-  sl.registerLazySingleton(() => AppDatabase());
 }

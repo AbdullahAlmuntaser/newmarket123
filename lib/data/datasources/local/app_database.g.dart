@@ -1110,6 +1110,30 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     requiredDuringInsert: false,
     defaultValue: const Constant('pcs'),
   );
+  static const VerificationMeta _cartonUnitMeta = const VerificationMeta(
+    'cartonUnit',
+  );
+  @override
+  late final GeneratedColumn<String> cartonUnit = GeneratedColumn<String>(
+    'carton_unit',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('carton'),
+  );
+  static const VerificationMeta _piecesPerCartonMeta = const VerificationMeta(
+    'piecesPerCarton',
+  );
+  @override
+  late final GeneratedColumn<int> piecesPerCarton = GeneratedColumn<int>(
+    'pieces_per_carton',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   static const VerificationMeta _buyPriceMeta = const VerificationMeta(
     'buyPrice',
   );
@@ -1190,6 +1214,8 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     sku,
     categoryId,
     unit,
+    cartonUnit,
+    piecesPerCarton,
     buyPrice,
     sellPrice,
     wholesalePrice,
@@ -1262,6 +1288,21 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
       context.handle(
         _unitMeta,
         unit.isAcceptableOrUnknown(data['unit']!, _unitMeta),
+      );
+    }
+    if (data.containsKey('carton_unit')) {
+      context.handle(
+        _cartonUnitMeta,
+        cartonUnit.isAcceptableOrUnknown(data['carton_unit']!, _cartonUnitMeta),
+      );
+    }
+    if (data.containsKey('pieces_per_carton')) {
+      context.handle(
+        _piecesPerCartonMeta,
+        piecesPerCarton.isAcceptableOrUnknown(
+          data['pieces_per_carton']!,
+          _piecesPerCartonMeta,
+        ),
       );
     }
     if (data.containsKey('buy_price')) {
@@ -1348,6 +1389,14 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         DriftSqlType.string,
         data['${effectivePrefix}unit'],
       )!,
+      cartonUnit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}carton_unit'],
+      )!,
+      piecesPerCarton: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pieces_per_carton'],
+      )!,
       buyPrice: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}buy_price'],
@@ -1391,6 +1440,8 @@ class Product extends DataClass implements Insertable<Product> {
   final String sku;
   final String? categoryId;
   final String unit;
+  final String cartonUnit;
+  final int piecesPerCarton;
   final double buyPrice;
   final double sellPrice;
   final double wholesalePrice;
@@ -1407,6 +1458,8 @@ class Product extends DataClass implements Insertable<Product> {
     required this.sku,
     this.categoryId,
     required this.unit,
+    required this.cartonUnit,
+    required this.piecesPerCarton,
     required this.buyPrice,
     required this.sellPrice,
     required this.wholesalePrice,
@@ -1430,6 +1483,8 @@ class Product extends DataClass implements Insertable<Product> {
       map['category_id'] = Variable<String>(categoryId);
     }
     map['unit'] = Variable<String>(unit);
+    map['carton_unit'] = Variable<String>(cartonUnit);
+    map['pieces_per_carton'] = Variable<int>(piecesPerCarton);
     map['buy_price'] = Variable<double>(buyPrice);
     map['sell_price'] = Variable<double>(sellPrice);
     map['wholesale_price'] = Variable<double>(wholesalePrice);
@@ -1456,6 +1511,8 @@ class Product extends DataClass implements Insertable<Product> {
           ? const Value.absent()
           : Value(categoryId),
       unit: Value(unit),
+      cartonUnit: Value(cartonUnit),
+      piecesPerCarton: Value(piecesPerCarton),
       buyPrice: Value(buyPrice),
       sellPrice: Value(sellPrice),
       wholesalePrice: Value(wholesalePrice),
@@ -1482,6 +1539,8 @@ class Product extends DataClass implements Insertable<Product> {
       sku: serializer.fromJson<String>(json['sku']),
       categoryId: serializer.fromJson<String?>(json['categoryId']),
       unit: serializer.fromJson<String>(json['unit']),
+      cartonUnit: serializer.fromJson<String>(json['cartonUnit']),
+      piecesPerCarton: serializer.fromJson<int>(json['piecesPerCarton']),
       buyPrice: serializer.fromJson<double>(json['buyPrice']),
       sellPrice: serializer.fromJson<double>(json['sellPrice']),
       wholesalePrice: serializer.fromJson<double>(json['wholesalePrice']),
@@ -1503,6 +1562,8 @@ class Product extends DataClass implements Insertable<Product> {
       'sku': serializer.toJson<String>(sku),
       'categoryId': serializer.toJson<String?>(categoryId),
       'unit': serializer.toJson<String>(unit),
+      'cartonUnit': serializer.toJson<String>(cartonUnit),
+      'piecesPerCarton': serializer.toJson<int>(piecesPerCarton),
       'buyPrice': serializer.toJson<double>(buyPrice),
       'sellPrice': serializer.toJson<double>(sellPrice),
       'wholesalePrice': serializer.toJson<double>(wholesalePrice),
@@ -1522,6 +1583,8 @@ class Product extends DataClass implements Insertable<Product> {
     String? sku,
     Value<String?> categoryId = const Value.absent(),
     String? unit,
+    String? cartonUnit,
+    int? piecesPerCarton,
     double? buyPrice,
     double? sellPrice,
     double? wholesalePrice,
@@ -1538,6 +1601,8 @@ class Product extends DataClass implements Insertable<Product> {
     sku: sku ?? this.sku,
     categoryId: categoryId.present ? categoryId.value : this.categoryId,
     unit: unit ?? this.unit,
+    cartonUnit: cartonUnit ?? this.cartonUnit,
+    piecesPerCarton: piecesPerCarton ?? this.piecesPerCarton,
     buyPrice: buyPrice ?? this.buyPrice,
     sellPrice: sellPrice ?? this.sellPrice,
     wholesalePrice: wholesalePrice ?? this.wholesalePrice,
@@ -1560,6 +1625,12 @@ class Product extends DataClass implements Insertable<Product> {
           ? data.categoryId.value
           : this.categoryId,
       unit: data.unit.present ? data.unit.value : this.unit,
+      cartonUnit: data.cartonUnit.present
+          ? data.cartonUnit.value
+          : this.cartonUnit,
+      piecesPerCarton: data.piecesPerCarton.present
+          ? data.piecesPerCarton.value
+          : this.piecesPerCarton,
       buyPrice: data.buyPrice.present ? data.buyPrice.value : this.buyPrice,
       sellPrice: data.sellPrice.present ? data.sellPrice.value : this.sellPrice,
       wholesalePrice: data.wholesalePrice.present
@@ -1587,6 +1658,8 @@ class Product extends DataClass implements Insertable<Product> {
           ..write('sku: $sku, ')
           ..write('categoryId: $categoryId, ')
           ..write('unit: $unit, ')
+          ..write('cartonUnit: $cartonUnit, ')
+          ..write('piecesPerCarton: $piecesPerCarton, ')
           ..write('buyPrice: $buyPrice, ')
           ..write('sellPrice: $sellPrice, ')
           ..write('wholesalePrice: $wholesalePrice, ')
@@ -1608,6 +1681,8 @@ class Product extends DataClass implements Insertable<Product> {
     sku,
     categoryId,
     unit,
+    cartonUnit,
+    piecesPerCarton,
     buyPrice,
     sellPrice,
     wholesalePrice,
@@ -1628,6 +1703,8 @@ class Product extends DataClass implements Insertable<Product> {
           other.sku == this.sku &&
           other.categoryId == this.categoryId &&
           other.unit == this.unit &&
+          other.cartonUnit == this.cartonUnit &&
+          other.piecesPerCarton == this.piecesPerCarton &&
           other.buyPrice == this.buyPrice &&
           other.sellPrice == this.sellPrice &&
           other.wholesalePrice == this.wholesalePrice &&
@@ -1646,6 +1723,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   final Value<String> sku;
   final Value<String?> categoryId;
   final Value<String> unit;
+  final Value<String> cartonUnit;
+  final Value<int> piecesPerCarton;
   final Value<double> buyPrice;
   final Value<double> sellPrice;
   final Value<double> wholesalePrice;
@@ -1663,6 +1742,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.sku = const Value.absent(),
     this.categoryId = const Value.absent(),
     this.unit = const Value.absent(),
+    this.cartonUnit = const Value.absent(),
+    this.piecesPerCarton = const Value.absent(),
     this.buyPrice = const Value.absent(),
     this.sellPrice = const Value.absent(),
     this.wholesalePrice = const Value.absent(),
@@ -1681,6 +1762,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     required String sku,
     this.categoryId = const Value.absent(),
     this.unit = const Value.absent(),
+    this.cartonUnit = const Value.absent(),
+    this.piecesPerCarton = const Value.absent(),
     this.buyPrice = const Value.absent(),
     this.sellPrice = const Value.absent(),
     this.wholesalePrice = const Value.absent(),
@@ -1700,6 +1783,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Expression<String>? sku,
     Expression<String>? categoryId,
     Expression<String>? unit,
+    Expression<String>? cartonUnit,
+    Expression<int>? piecesPerCarton,
     Expression<double>? buyPrice,
     Expression<double>? sellPrice,
     Expression<double>? wholesalePrice,
@@ -1718,6 +1803,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       if (sku != null) 'sku': sku,
       if (categoryId != null) 'category_id': categoryId,
       if (unit != null) 'unit': unit,
+      if (cartonUnit != null) 'carton_unit': cartonUnit,
+      if (piecesPerCarton != null) 'pieces_per_carton': piecesPerCarton,
       if (buyPrice != null) 'buy_price': buyPrice,
       if (sellPrice != null) 'sell_price': sellPrice,
       if (wholesalePrice != null) 'wholesale_price': wholesalePrice,
@@ -1738,6 +1825,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Value<String>? sku,
     Value<String?>? categoryId,
     Value<String>? unit,
+    Value<String>? cartonUnit,
+    Value<int>? piecesPerCarton,
     Value<double>? buyPrice,
     Value<double>? sellPrice,
     Value<double>? wholesalePrice,
@@ -1756,6 +1845,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       sku: sku ?? this.sku,
       categoryId: categoryId ?? this.categoryId,
       unit: unit ?? this.unit,
+      cartonUnit: cartonUnit ?? this.cartonUnit,
+      piecesPerCarton: piecesPerCarton ?? this.piecesPerCarton,
       buyPrice: buyPrice ?? this.buyPrice,
       sellPrice: sellPrice ?? this.sellPrice,
       wholesalePrice: wholesalePrice ?? this.wholesalePrice,
@@ -1796,6 +1887,12 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     if (unit.present) {
       map['unit'] = Variable<String>(unit.value);
     }
+    if (cartonUnit.present) {
+      map['carton_unit'] = Variable<String>(cartonUnit.value);
+    }
+    if (piecesPerCarton.present) {
+      map['pieces_per_carton'] = Variable<int>(piecesPerCarton.value);
+    }
     if (buyPrice.present) {
       map['buy_price'] = Variable<double>(buyPrice.value);
     }
@@ -1832,6 +1929,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
           ..write('sku: $sku, ')
           ..write('categoryId: $categoryId, ')
           ..write('unit: $unit, ')
+          ..write('cartonUnit: $cartonUnit, ')
+          ..write('piecesPerCarton: $piecesPerCarton, ')
           ..write('buyPrice: $buyPrice, ')
           ..write('sellPrice: $sellPrice, ')
           ..write('wholesalePrice: $wholesalePrice, ')
@@ -3718,6 +3817,21 @@ class $SaleItemsTable extends SaleItems
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _isCartonMeta = const VerificationMeta(
+    'isCarton',
+  );
+  @override
+  late final GeneratedColumn<bool> isCarton = GeneratedColumn<bool>(
+    'is_carton',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_carton" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3729,6 +3843,7 @@ class $SaleItemsTable extends SaleItems
     productId,
     quantity,
     price,
+    isCarton,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3801,6 +3916,12 @@ class $SaleItemsTable extends SaleItems
     } else if (isInserting) {
       context.missing(_priceMeta);
     }
+    if (data.containsKey('is_carton')) {
+      context.handle(
+        _isCartonMeta,
+        isCarton.isAcceptableOrUnknown(data['is_carton']!, _isCartonMeta),
+      );
+    }
     return context;
   }
 
@@ -3846,6 +3967,10 @@ class $SaleItemsTable extends SaleItems
         DriftSqlType.double,
         data['${effectivePrefix}price'],
       )!,
+      isCarton: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_carton'],
+      )!,
     );
   }
 
@@ -3865,6 +3990,7 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
   final String productId;
   final double quantity;
   final double price;
+  final bool isCarton;
   const SaleItem({
     required this.id,
     required this.createdAt,
@@ -3875,6 +4001,7 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
     required this.productId,
     required this.quantity,
     required this.price,
+    required this.isCarton,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3890,6 +4017,7 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
     map['product_id'] = Variable<String>(productId);
     map['quantity'] = Variable<double>(quantity);
     map['price'] = Variable<double>(price);
+    map['is_carton'] = Variable<bool>(isCarton);
     return map;
   }
 
@@ -3906,6 +4034,7 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       productId: Value(productId),
       quantity: Value(quantity),
       price: Value(price),
+      isCarton: Value(isCarton),
     );
   }
 
@@ -3924,6 +4053,7 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       productId: serializer.fromJson<String>(json['productId']),
       quantity: serializer.fromJson<double>(json['quantity']),
       price: serializer.fromJson<double>(json['price']),
+      isCarton: serializer.fromJson<bool>(json['isCarton']),
     );
   }
   @override
@@ -3939,6 +4069,7 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       'productId': serializer.toJson<String>(productId),
       'quantity': serializer.toJson<double>(quantity),
       'price': serializer.toJson<double>(price),
+      'isCarton': serializer.toJson<bool>(isCarton),
     };
   }
 
@@ -3952,6 +4083,7 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
     String? productId,
     double? quantity,
     double? price,
+    bool? isCarton,
   }) => SaleItem(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -3962,6 +4094,7 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
     productId: productId ?? this.productId,
     quantity: quantity ?? this.quantity,
     price: price ?? this.price,
+    isCarton: isCarton ?? this.isCarton,
   );
   SaleItem copyWithCompanion(SaleItemsCompanion data) {
     return SaleItem(
@@ -3976,6 +4109,7 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       productId: data.productId.present ? data.productId.value : this.productId,
       quantity: data.quantity.present ? data.quantity.value : this.quantity,
       price: data.price.present ? data.price.value : this.price,
+      isCarton: data.isCarton.present ? data.isCarton.value : this.isCarton,
     );
   }
 
@@ -3990,7 +4124,8 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
           ..write('saleId: $saleId, ')
           ..write('productId: $productId, ')
           ..write('quantity: $quantity, ')
-          ..write('price: $price')
+          ..write('price: $price, ')
+          ..write('isCarton: $isCarton')
           ..write(')'))
         .toString();
   }
@@ -4006,6 +4141,7 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
     productId,
     quantity,
     price,
+    isCarton,
   );
   @override
   bool operator ==(Object other) =>
@@ -4019,7 +4155,8 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
           other.saleId == this.saleId &&
           other.productId == this.productId &&
           other.quantity == this.quantity &&
-          other.price == this.price);
+          other.price == this.price &&
+          other.isCarton == this.isCarton);
 }
 
 class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
@@ -4032,6 +4169,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
   final Value<String> productId;
   final Value<double> quantity;
   final Value<double> price;
+  final Value<bool> isCarton;
   final Value<int> rowid;
   const SaleItemsCompanion({
     this.id = const Value.absent(),
@@ -4043,6 +4181,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     this.productId = const Value.absent(),
     this.quantity = const Value.absent(),
     this.price = const Value.absent(),
+    this.isCarton = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SaleItemsCompanion.insert({
@@ -4055,6 +4194,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     required String productId,
     required double quantity,
     required double price,
+    this.isCarton = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : saleId = Value(saleId),
        productId = Value(productId),
@@ -4070,6 +4210,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     Expression<String>? productId,
     Expression<double>? quantity,
     Expression<double>? price,
+    Expression<bool>? isCarton,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -4082,6 +4223,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
       if (productId != null) 'product_id': productId,
       if (quantity != null) 'quantity': quantity,
       if (price != null) 'price': price,
+      if (isCarton != null) 'is_carton': isCarton,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -4096,6 +4238,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     Value<String>? productId,
     Value<double>? quantity,
     Value<double>? price,
+    Value<bool>? isCarton,
     Value<int>? rowid,
   }) {
     return SaleItemsCompanion(
@@ -4108,6 +4251,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
       productId: productId ?? this.productId,
       quantity: quantity ?? this.quantity,
       price: price ?? this.price,
+      isCarton: isCarton ?? this.isCarton,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -4142,6 +4286,9 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     if (price.present) {
       map['price'] = Variable<double>(price.value);
     }
+    if (isCarton.present) {
+      map['is_carton'] = Variable<bool>(isCarton.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -4160,6 +4307,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
           ..write('productId: $productId, ')
           ..write('quantity: $quantity, ')
           ..write('price: $price, ')
+          ..write('isCarton: $isCarton, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -6272,6 +6420,21 @@ class $PurchaseItemsTable extends PurchaseItems
       'REFERENCES product_batches (id)',
     ),
   );
+  static const VerificationMeta _isCartonMeta = const VerificationMeta(
+    'isCarton',
+  );
+  @override
+  late final GeneratedColumn<bool> isCarton = GeneratedColumn<bool>(
+    'is_carton',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_carton" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -6284,6 +6447,7 @@ class $PurchaseItemsTable extends PurchaseItems
     quantity,
     price,
     batchId,
+    isCarton,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -6362,6 +6526,12 @@ class $PurchaseItemsTable extends PurchaseItems
         batchId.isAcceptableOrUnknown(data['batch_id']!, _batchIdMeta),
       );
     }
+    if (data.containsKey('is_carton')) {
+      context.handle(
+        _isCartonMeta,
+        isCarton.isAcceptableOrUnknown(data['is_carton']!, _isCartonMeta),
+      );
+    }
     return context;
   }
 
@@ -6411,6 +6581,10 @@ class $PurchaseItemsTable extends PurchaseItems
         DriftSqlType.string,
         data['${effectivePrefix}batch_id'],
       ),
+      isCarton: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_carton'],
+      )!,
     );
   }
 
@@ -6431,6 +6605,7 @@ class PurchaseItem extends DataClass implements Insertable<PurchaseItem> {
   final double quantity;
   final double price;
   final String? batchId;
+  final bool isCarton;
   const PurchaseItem({
     required this.id,
     required this.createdAt,
@@ -6442,6 +6617,7 @@ class PurchaseItem extends DataClass implements Insertable<PurchaseItem> {
     required this.quantity,
     required this.price,
     this.batchId,
+    required this.isCarton,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -6460,6 +6636,7 @@ class PurchaseItem extends DataClass implements Insertable<PurchaseItem> {
     if (!nullToAbsent || batchId != null) {
       map['batch_id'] = Variable<String>(batchId);
     }
+    map['is_carton'] = Variable<bool>(isCarton);
     return map;
   }
 
@@ -6479,6 +6656,7 @@ class PurchaseItem extends DataClass implements Insertable<PurchaseItem> {
       batchId: batchId == null && nullToAbsent
           ? const Value.absent()
           : Value(batchId),
+      isCarton: Value(isCarton),
     );
   }
 
@@ -6498,6 +6676,7 @@ class PurchaseItem extends DataClass implements Insertable<PurchaseItem> {
       quantity: serializer.fromJson<double>(json['quantity']),
       price: serializer.fromJson<double>(json['price']),
       batchId: serializer.fromJson<String?>(json['batchId']),
+      isCarton: serializer.fromJson<bool>(json['isCarton']),
     );
   }
   @override
@@ -6514,6 +6693,7 @@ class PurchaseItem extends DataClass implements Insertable<PurchaseItem> {
       'quantity': serializer.toJson<double>(quantity),
       'price': serializer.toJson<double>(price),
       'batchId': serializer.toJson<String?>(batchId),
+      'isCarton': serializer.toJson<bool>(isCarton),
     };
   }
 
@@ -6528,6 +6708,7 @@ class PurchaseItem extends DataClass implements Insertable<PurchaseItem> {
     double? quantity,
     double? price,
     Value<String?> batchId = const Value.absent(),
+    bool? isCarton,
   }) => PurchaseItem(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -6539,6 +6720,7 @@ class PurchaseItem extends DataClass implements Insertable<PurchaseItem> {
     quantity: quantity ?? this.quantity,
     price: price ?? this.price,
     batchId: batchId.present ? batchId.value : this.batchId,
+    isCarton: isCarton ?? this.isCarton,
   );
   PurchaseItem copyWithCompanion(PurchaseItemsCompanion data) {
     return PurchaseItem(
@@ -6556,6 +6738,7 @@ class PurchaseItem extends DataClass implements Insertable<PurchaseItem> {
       quantity: data.quantity.present ? data.quantity.value : this.quantity,
       price: data.price.present ? data.price.value : this.price,
       batchId: data.batchId.present ? data.batchId.value : this.batchId,
+      isCarton: data.isCarton.present ? data.isCarton.value : this.isCarton,
     );
   }
 
@@ -6571,7 +6754,8 @@ class PurchaseItem extends DataClass implements Insertable<PurchaseItem> {
           ..write('productId: $productId, ')
           ..write('quantity: $quantity, ')
           ..write('price: $price, ')
-          ..write('batchId: $batchId')
+          ..write('batchId: $batchId, ')
+          ..write('isCarton: $isCarton')
           ..write(')'))
         .toString();
   }
@@ -6588,6 +6772,7 @@ class PurchaseItem extends DataClass implements Insertable<PurchaseItem> {
     quantity,
     price,
     batchId,
+    isCarton,
   );
   @override
   bool operator ==(Object other) =>
@@ -6602,7 +6787,8 @@ class PurchaseItem extends DataClass implements Insertable<PurchaseItem> {
           other.productId == this.productId &&
           other.quantity == this.quantity &&
           other.price == this.price &&
-          other.batchId == this.batchId);
+          other.batchId == this.batchId &&
+          other.isCarton == this.isCarton);
 }
 
 class PurchaseItemsCompanion extends UpdateCompanion<PurchaseItem> {
@@ -6616,6 +6802,7 @@ class PurchaseItemsCompanion extends UpdateCompanion<PurchaseItem> {
   final Value<double> quantity;
   final Value<double> price;
   final Value<String?> batchId;
+  final Value<bool> isCarton;
   final Value<int> rowid;
   const PurchaseItemsCompanion({
     this.id = const Value.absent(),
@@ -6628,6 +6815,7 @@ class PurchaseItemsCompanion extends UpdateCompanion<PurchaseItem> {
     this.quantity = const Value.absent(),
     this.price = const Value.absent(),
     this.batchId = const Value.absent(),
+    this.isCarton = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PurchaseItemsCompanion.insert({
@@ -6641,6 +6829,7 @@ class PurchaseItemsCompanion extends UpdateCompanion<PurchaseItem> {
     required double quantity,
     required double price,
     this.batchId = const Value.absent(),
+    this.isCarton = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : purchaseId = Value(purchaseId),
        productId = Value(productId),
@@ -6657,6 +6846,7 @@ class PurchaseItemsCompanion extends UpdateCompanion<PurchaseItem> {
     Expression<double>? quantity,
     Expression<double>? price,
     Expression<String>? batchId,
+    Expression<bool>? isCarton,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -6670,6 +6860,7 @@ class PurchaseItemsCompanion extends UpdateCompanion<PurchaseItem> {
       if (quantity != null) 'quantity': quantity,
       if (price != null) 'price': price,
       if (batchId != null) 'batch_id': batchId,
+      if (isCarton != null) 'is_carton': isCarton,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -6685,6 +6876,7 @@ class PurchaseItemsCompanion extends UpdateCompanion<PurchaseItem> {
     Value<double>? quantity,
     Value<double>? price,
     Value<String?>? batchId,
+    Value<bool>? isCarton,
     Value<int>? rowid,
   }) {
     return PurchaseItemsCompanion(
@@ -6698,6 +6890,7 @@ class PurchaseItemsCompanion extends UpdateCompanion<PurchaseItem> {
       quantity: quantity ?? this.quantity,
       price: price ?? this.price,
       batchId: batchId ?? this.batchId,
+      isCarton: isCarton ?? this.isCarton,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -6735,6 +6928,9 @@ class PurchaseItemsCompanion extends UpdateCompanion<PurchaseItem> {
     if (batchId.present) {
       map['batch_id'] = Variable<String>(batchId.value);
     }
+    if (isCarton.present) {
+      map['is_carton'] = Variable<bool>(isCarton.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -6754,6 +6950,7 @@ class PurchaseItemsCompanion extends UpdateCompanion<PurchaseItem> {
           ..write('quantity: $quantity, ')
           ..write('price: $price, ')
           ..write('batchId: $batchId, ')
+          ..write('isCarton: $isCarton, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -21899,6 +22096,8 @@ typedef $$ProductsTableCreateCompanionBuilder =
       required String sku,
       Value<String?> categoryId,
       Value<String> unit,
+      Value<String> cartonUnit,
+      Value<int> piecesPerCarton,
       Value<double> buyPrice,
       Value<double> sellPrice,
       Value<double> wholesalePrice,
@@ -21918,6 +22117,8 @@ typedef $$ProductsTableUpdateCompanionBuilder =
       Value<String> sku,
       Value<String?> categoryId,
       Value<String> unit,
+      Value<String> cartonUnit,
+      Value<int> piecesPerCarton,
       Value<double> buyPrice,
       Value<double> sellPrice,
       Value<double> wholesalePrice,
@@ -22155,6 +22356,16 @@ class $$ProductsTableFilterComposer
 
   ColumnFilters<String> get unit => $composableBuilder(
     column: $table.unit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cartonUnit => $composableBuilder(
+    column: $table.cartonUnit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get piecesPerCarton => $composableBuilder(
+    column: $table.piecesPerCarton,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -22436,6 +22647,16 @@ class $$ProductsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get cartonUnit => $composableBuilder(
+    column: $table.cartonUnit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get piecesPerCarton => $composableBuilder(
+    column: $table.piecesPerCarton,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get buyPrice => $composableBuilder(
     column: $table.buyPrice,
     builder: (column) => ColumnOrderings(column),
@@ -22524,6 +22745,16 @@ class $$ProductsTableAnnotationComposer
 
   GeneratedColumn<String> get unit =>
       $composableBuilder(column: $table.unit, builder: (column) => column);
+
+  GeneratedColumn<String> get cartonUnit => $composableBuilder(
+    column: $table.cartonUnit,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get piecesPerCarton => $composableBuilder(
+    column: $table.piecesPerCarton,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<double> get buyPrice =>
       $composableBuilder(column: $table.buyPrice, builder: (column) => column);
@@ -22797,6 +23028,8 @@ class $$ProductsTableTableManager
                 Value<String> sku = const Value.absent(),
                 Value<String?> categoryId = const Value.absent(),
                 Value<String> unit = const Value.absent(),
+                Value<String> cartonUnit = const Value.absent(),
+                Value<int> piecesPerCarton = const Value.absent(),
                 Value<double> buyPrice = const Value.absent(),
                 Value<double> sellPrice = const Value.absent(),
                 Value<double> wholesalePrice = const Value.absent(),
@@ -22814,6 +23047,8 @@ class $$ProductsTableTableManager
                 sku: sku,
                 categoryId: categoryId,
                 unit: unit,
+                cartonUnit: cartonUnit,
+                piecesPerCarton: piecesPerCarton,
                 buyPrice: buyPrice,
                 sellPrice: sellPrice,
                 wholesalePrice: wholesalePrice,
@@ -22833,6 +23068,8 @@ class $$ProductsTableTableManager
                 required String sku,
                 Value<String?> categoryId = const Value.absent(),
                 Value<String> unit = const Value.absent(),
+                Value<String> cartonUnit = const Value.absent(),
+                Value<int> piecesPerCarton = const Value.absent(),
                 Value<double> buyPrice = const Value.absent(),
                 Value<double> sellPrice = const Value.absent(),
                 Value<double> wholesalePrice = const Value.absent(),
@@ -22850,6 +23087,8 @@ class $$ProductsTableTableManager
                 sku: sku,
                 categoryId: categoryId,
                 unit: unit,
+                cartonUnit: cartonUnit,
+                piecesPerCarton: piecesPerCarton,
                 buyPrice: buyPrice,
                 sellPrice: sellPrice,
                 wholesalePrice: wholesalePrice,
@@ -24700,6 +24939,7 @@ typedef $$SaleItemsTableCreateCompanionBuilder =
       required String productId,
       required double quantity,
       required double price,
+      Value<bool> isCarton,
       Value<int> rowid,
     });
 typedef $$SaleItemsTableUpdateCompanionBuilder =
@@ -24713,6 +24953,7 @@ typedef $$SaleItemsTableUpdateCompanionBuilder =
       Value<String> productId,
       Value<double> quantity,
       Value<double> price,
+      Value<bool> isCarton,
       Value<int> rowid,
     });
 
@@ -24799,6 +25040,11 @@ class $$SaleItemsTableFilterComposer
 
   ColumnFilters<double> get price => $composableBuilder(
     column: $table.price,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isCarton => $composableBuilder(
+    column: $table.isCarton,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -24893,6 +25139,11 @@ class $$SaleItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isCarton => $composableBuilder(
+    column: $table.isCarton,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$SalesTableOrderingComposer get saleId {
     final $$SalesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -24971,6 +25222,9 @@ class $$SaleItemsTableAnnotationComposer
 
   GeneratedColumn<double> get price =>
       $composableBuilder(column: $table.price, builder: (column) => column);
+
+  GeneratedColumn<bool> get isCarton =>
+      $composableBuilder(column: $table.isCarton, builder: (column) => column);
 
   $$SalesTableAnnotationComposer get saleId {
     final $$SalesTableAnnotationComposer composer = $composerBuilder(
@@ -25056,6 +25310,7 @@ class $$SaleItemsTableTableManager
                 Value<String> productId = const Value.absent(),
                 Value<double> quantity = const Value.absent(),
                 Value<double> price = const Value.absent(),
+                Value<bool> isCarton = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SaleItemsCompanion(
                 id: id,
@@ -25067,6 +25322,7 @@ class $$SaleItemsTableTableManager
                 productId: productId,
                 quantity: quantity,
                 price: price,
+                isCarton: isCarton,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -25080,6 +25336,7 @@ class $$SaleItemsTableTableManager
                 required String productId,
                 required double quantity,
                 required double price,
+                Value<bool> isCarton = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SaleItemsCompanion.insert(
                 id: id,
@@ -25091,6 +25348,7 @@ class $$SaleItemsTableTableManager
                 productId: productId,
                 quantity: quantity,
                 price: price,
+                isCarton: isCarton,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -27280,6 +27538,7 @@ typedef $$PurchaseItemsTableCreateCompanionBuilder =
       required double quantity,
       required double price,
       Value<String?> batchId,
+      Value<bool> isCarton,
       Value<int> rowid,
     });
 typedef $$PurchaseItemsTableUpdateCompanionBuilder =
@@ -27294,6 +27553,7 @@ typedef $$PurchaseItemsTableUpdateCompanionBuilder =
       Value<double> quantity,
       Value<double> price,
       Value<String?> batchId,
+      Value<bool> isCarton,
       Value<int> rowid,
     });
 
@@ -27404,6 +27664,11 @@ class $$PurchaseItemsTableFilterComposer
 
   ColumnFilters<double> get price => $composableBuilder(
     column: $table.price,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isCarton => $composableBuilder(
+    column: $table.isCarton,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -27521,6 +27786,11 @@ class $$PurchaseItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isCarton => $composableBuilder(
+    column: $table.isCarton,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$PurchasesTableOrderingComposer get purchaseId {
     final $$PurchasesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -27622,6 +27892,9 @@ class $$PurchaseItemsTableAnnotationComposer
 
   GeneratedColumn<double> get price =>
       $composableBuilder(column: $table.price, builder: (column) => column);
+
+  GeneratedColumn<bool> get isCarton =>
+      $composableBuilder(column: $table.isCarton, builder: (column) => column);
 
   $$PurchasesTableAnnotationComposer get purchaseId {
     final $$PurchasesTableAnnotationComposer composer = $composerBuilder(
@@ -27735,6 +28008,7 @@ class $$PurchaseItemsTableTableManager
                 Value<double> quantity = const Value.absent(),
                 Value<double> price = const Value.absent(),
                 Value<String?> batchId = const Value.absent(),
+                Value<bool> isCarton = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PurchaseItemsCompanion(
                 id: id,
@@ -27747,6 +28021,7 @@ class $$PurchaseItemsTableTableManager
                 quantity: quantity,
                 price: price,
                 batchId: batchId,
+                isCarton: isCarton,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -27761,6 +28036,7 @@ class $$PurchaseItemsTableTableManager
                 required double quantity,
                 required double price,
                 Value<String?> batchId = const Value.absent(),
+                Value<bool> isCarton = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PurchaseItemsCompanion.insert(
                 id: id,
@@ -27773,6 +28049,7 @@ class $$PurchaseItemsTableTableManager
                 quantity: quantity,
                 price: price,
                 batchId: batchId,
+                isCarton: isCarton,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

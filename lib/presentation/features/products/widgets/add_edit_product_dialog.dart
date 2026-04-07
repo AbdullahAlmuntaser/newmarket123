@@ -27,6 +27,9 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   late double _wholesalePrice;
   late double _stock;
   late double _alertLimit;
+  late String _unit;
+  late String _cartonUnit;
+  late int _piecesPerCarton;
   final MobileScannerController _scannerController = MobileScannerController();
 
   @override
@@ -40,6 +43,9 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     _wholesalePrice = widget.product?.wholesalePrice ?? 0.0;
     _stock = widget.product?.stock ?? 0.0;
     _alertLimit = widget.product?.alertLimit ?? 10.0;
+    _unit = widget.product?.unit ?? 'pcs';
+    _cartonUnit = widget.product?.cartonUnit ?? 'carton';
+    _piecesPerCarton = widget.product?.piecesPerCarton ?? 1;
   }
 
   @override
@@ -168,6 +174,24 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 onSaved: (value) =>
                     _alertLimit = double.tryParse(value!) ?? 10.0,
               ),
+              const Divider(),
+              TextFormField(
+                initialValue: _unit,
+                decoration: InputDecoration(labelText: l10n.unit),
+                onSaved: (value) => _unit = value ?? 'pcs',
+              ),
+              TextFormField(
+                initialValue: _cartonUnit,
+                decoration: InputDecoration(labelText: l10n.cartonUnit),
+                onSaved: (value) => _cartonUnit = value ?? 'carton',
+              ),
+              TextFormField(
+                initialValue: _piecesPerCarton.toString(),
+                decoration: InputDecoration(labelText: l10n.piecesPerCarton),
+                keyboardType: TextInputType.number,
+                onSaved: (value) =>
+                    _piecesPerCarton = int.tryParse(value!) ?? 1,
+              ),
             ],
           ),
         ),
@@ -205,6 +229,9 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
               wholesalePrice: Value(_wholesalePrice),
               stock: Value(_stock),
               alertLimit: Value(_alertLimit),
+              unit: Value(_unit),
+              cartonUnit: Value(_cartonUnit),
+              piecesPerCarton: Value(_piecesPerCarton),
             ),
           );
           if (!mounted) return;
@@ -221,6 +248,9 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
               wholesalePrice: _wholesalePrice,
               stock: _stock,
               alertLimit: _alertLimit,
+              unit: _unit,
+              cartonUnit: _cartonUnit,
+              piecesPerCarton: _piecesPerCarton,
             ),
           );
           if (!mounted) return;

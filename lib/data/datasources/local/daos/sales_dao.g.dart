@@ -11,6 +11,9 @@ mixin _$SalesDaoMixin on DatabaseAccessor<AppDatabase> {
   $SaleItemsTable get saleItems => attachedDatabase.saleItems;
   $SyncQueueTable get syncQueue => attachedDatabase.syncQueue;
   $AuditLogsTable get auditLogs => attachedDatabase.auditLogs;
+  $SalesReturnsTable get salesReturns => attachedDatabase.salesReturns;
+  $SalesReturnItemsTable get salesReturnItems =>
+      attachedDatabase.salesReturnItems;
   SalesDaoManager get managers => SalesDaoManager(this);
 }
 
@@ -31,4 +34,11 @@ class SalesDaoManager {
       $$SyncQueueTableTableManager(_db.attachedDatabase, _db.syncQueue);
   $$AuditLogsTableTableManager get auditLogs =>
       $$AuditLogsTableTableManager(_db.attachedDatabase, _db.auditLogs);
+  $$SalesReturnsTableTableManager get salesReturns =>
+      $$SalesReturnsTableTableManager(_db.attachedDatabase, _db.salesReturns);
+  $$SalesReturnItemsTableTableManager get salesReturnItems =>
+      $$SalesReturnItemsTableTableManager(
+        _db.attachedDatabase,
+        _db.salesReturnItems,
+      );
 }

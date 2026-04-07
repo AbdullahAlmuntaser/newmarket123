@@ -857,9 +857,31 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String paymentMethod(Object paymentMethod) {
-    return 'Payment Method: $paymentMethod';
-  }
+  String get paymentMethod => 'Payment Method';
+
+  @override
+  String get date => 'Date';
+
+  @override
+  String get supplier => 'Supplier';
+
+  @override
+  String get cash => 'Cash';
+
+  @override
+  String get sale => 'Sale';
+
+  @override
+  String get purchase => 'Purchase';
+
+  @override
+  String get purchaseId => 'Purchase ID';
+
+  @override
+  String get totalReturnAmount => 'Total Return Amount';
+
+  @override
+  String get purchaseNotFound => 'Purchase not found';
 
   @override
   String get thankYou => 'Thank you for your business!';
@@ -894,16 +916,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get leaveEmptyToKeep => 'Leave empty to keep current password';
 
   @override
-  String get role => 'Role';
+  String get role => 'Role/Permission';
 
   @override
   String get customerStatement => 'Customer Statement';
 
   @override
   String get noTransactionsFound => 'No transactions found';
-
-  @override
-  String get sale => 'Sale';
 
   @override
   String get payment => 'Payment';
@@ -1020,13 +1039,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get categoryHasProductsError =>
-      'Cannot delete category as it is linked to existing products.';
+      'Cannot delete category because it is associated with existing products.';
 
   @override
   String get deleteCategory => 'Delete Category';
 
   @override
-  String get customerStatementTooltip => 'View Statement';
+  String get customerStatementTooltip => 'Account Statement';
 
   @override
   String get newPurchaseReturn => 'New Purchase Return';
@@ -1071,4 +1090,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectASaleToContinue => 'Select a sale to continue';
+
+  @override
+  String get unit => 'Unit';
+
+  @override
+  String get cartonUnit => 'Carton Unit';
+
+  @override
+  String get piecesPerCarton => 'Pieces per Carton';
+
+  @override
+  String get baseUnit => 'Base Unit';
+
+  @override
+  String get isCarton => 'Is Carton?';
 }

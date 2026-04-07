@@ -43,6 +43,8 @@ class Products extends Table with SyncableTable {
   TextColumn get sku => text().unique()();
   TextColumn get categoryId => text().nullable().references(Categories, #id)();
   TextColumn get unit => text().withDefault(const Constant('pcs'))();
+  TextColumn get cartonUnit => text().withDefault(const Constant('carton'))();
+  IntColumn get piecesPerCarton => integer().withDefault(const Constant(1))();
   RealColumn get buyPrice => real().withDefault(const Constant(0.0))();
   RealColumn get sellPrice => real().withDefault(const Constant(0.0))();
   RealColumn get wholesalePrice => real().withDefault(const Constant(0.0))();
@@ -79,6 +81,7 @@ class SaleItems extends Table with SyncableTable {
   TextColumn get productId => text().references(Products, #id)();
   RealColumn get quantity => real()();
   RealColumn get price => real()();
+  BoolColumn get isCarton => boolean().withDefault(const Constant(false))();
 }
 
 class Purchases extends Table with SyncableTable {
@@ -100,6 +103,7 @@ class PurchaseItems extends Table with SyncableTable {
   RealColumn get quantity => real()();
   RealColumn get price => real()();
   TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
+  BoolColumn get isCarton => boolean().withDefault(const Constant(false))();
 }
 
 class Warehouses extends Table with SyncableTable {
@@ -378,7 +382,7 @@ class AppDatabase extends _$AppDatabase {
       (select(syncQueue)).get().then((v) => v.length);
 
   @override
-  int get schemaVersion => 13; // Incremented schema version
+  int get schemaVersion => 14; // Incremented schema version
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -428,11 +432,14 @@ class AppDatabase extends _$AppDatabase {
       if (from < 11) {
         await m.createTable(cashboxTransactions);
       }
-       if (from < 12) {
+      if (from < 12) {
         await m.addColumn(purchases, purchases.tax);
       }
-      if (from < 13) {
-        await m.createTable(auditLogs);
+      if (from < 14) {
+        await m.addColumn(products, products.piecesPerCarton);
+        await m.addColumn(products, products.cartonUnit);
+        await m.addColumn(saleItems, saleItems.isCarton);
+        await m.addColumn(purchaseItems, purchaseItems.isCarton);
       }
     },
   );

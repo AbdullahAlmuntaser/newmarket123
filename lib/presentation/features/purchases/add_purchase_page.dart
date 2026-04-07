@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:uuid/uuid.dart';
 
 class AddPurchasePage extends StatefulWidget {
@@ -349,7 +349,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
 
   Future<void> _savePurchase(AppDatabase db) async {
     final l10n = AppLocalizations.of(context)!;
-    final accountingService = Provider.of<AccountingService>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     setState(() => _isSaving = true);
     final purchaseId = const Uuid().v4();
 
@@ -365,60 +365,20 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
       syncStatus: const drift.Value(1),
     );
 
+    final itemsCompanions = _items.map((item) => PurchaseItemsCompanion.insert(
+      purchaseId: purchaseId,
+      productId: item.product.id,
+      quantity: item.quantity,
+      price: item.price,
+      syncStatus: const drift.Value(1),
+    )).toList();
+
     try {
-      await db.transaction(() async {
-        // 1. Create Purchase record
-        final savedPurchase = await db.into(db.purchases).insertReturning(purchaseCompanion);
-
-        // 2. Create Items and Update Stock if RECEIVED
-        List<PurchaseItemsCompanion> purchaseItemsList = [];
-        for (var item in _items) {
-          String? batchId;
-          if (_selectedStatus == 'RECEIVED') {
-            batchId = const Uuid().v4();
-            await db.into(db.productBatches).insert(
-                  ProductBatchesCompanion.insert(
-                    id: drift.Value(batchId),
-                    productId: item.product.id,
-                    warehouseId: _selectedWarehouse!.id,
-                    batchNumber: item.batchNumber ?? 'AUTO-${DateTime.now().millisecondsSinceEpoch}',
-                    expiryDate: drift.Value(item.expiryDate),
-                    quantity: drift.Value(item.quantity),
-                    initialQuantity: drift.Value(item.quantity),
-                    costPrice: drift.Value(item.price),
-                  ),
-                );
-
-            // Update product aggregate stock and price
-            final newStock = item.product.stock + item.quantity;
-            await (db.update(db.products)..where((t) => t.id.equals(item.product.id)))
-                .write(ProductsCompanion(
-              stock: drift.Value(newStock),
-              buyPrice: drift.Value(item.price), // Update last buy price
-            ));
-          }
-
-          purchaseItemsList.add(
-            PurchaseItemsCompanion.insert(
-              purchaseId: purchaseId,
-              productId: item.product.id,
-              quantity: item.quantity,
-              price: item.price,
-              batchId: drift.Value(batchId),
-              syncStatus: const drift.Value(1),
-            ),
-          );
-        }
-        await db.batch((batch) {
-          batch.insertAll(db.purchaseItems, purchaseItemsList);
-        });
-
-        // 3. Post to General Ledger if RECEIVED
-        if (_selectedStatus == 'RECEIVED') {
-            final itemsForService = await (db.select(db.purchaseItems)..where((t) => t.purchaseId.equals(purchaseId))).get();
-            await accountingService.postPurchase(savedPurchase, itemsForService);
-        }
-      });
+      await db.purchasesDao.createPurchase(
+        purchaseCompanion: purchaseCompanion,
+        itemsCompanions: itemsCompanions,
+        userId: authProvider.currentUser?.id,
+      );
 
       if (mounted) {
         context.pop();
