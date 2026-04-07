@@ -27,7 +27,7 @@ void main() {
       AccountingService.codeCash,
     );
     expect(cashAccount, isNotNull);
-    expect(cashAccount!.name, 'Cash');
+    expect(cashAccount!.name, 'الصندوق');
   });
 
   test('postSale creates correct GL entries', () async {
@@ -58,6 +58,32 @@ void main() {
             stock: const Value(10.0),
           ),
         );
+        
+    // MUST insert a batch for COGS calculation to work (AccountingService uses batches)
+    final warehouseId = const Uuid().v4();
+    await db.into(db.warehouses).insert(
+      WarehousesCompanion.insert(
+        id: Value(warehouseId),
+        name: 'Main Warehouse',
+        createdAt: Value(DateTime.now()),
+        updatedAt: Value(DateTime.now()),
+        syncStatus: const Value(1),
+      ),
+    );
+
+    await db.into(db.productBatches).insert(
+      ProductBatchesCompanion.insert(
+        id: Value(const Uuid().v4()),
+        productId: productId,
+        warehouseId: warehouseId,
+        batchNumber: 'BATCH-001',
+        quantity: const Value(10.0),
+        costPrice: const Value(50.0),
+        createdAt: Value(DateTime.now()),
+        updatedAt: Value(DateTime.now()),
+        syncStatus: const Value(1),
+      ),
+    );
 
     final saleItems = [
       SaleItem(
