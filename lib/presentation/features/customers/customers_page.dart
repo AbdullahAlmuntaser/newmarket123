@@ -94,7 +94,7 @@ class _CustomersPageState extends State<CustomersPage> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+        color: colorScheme.primaryContainer.withAlpha(77), // Replaced withOpacity(0.3)
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
@@ -180,7 +180,7 @@ class _CustomersPageState extends State<CustomersPage> {
                 children: [
                   CircleAvatar(
                     radius: 28,
-                    backgroundColor: _getTypeColor(customer.customerType).withValues(alpha: 0.1),
+                    backgroundColor: _getTypeColor(customer.customerType).withAlpha(26),
                     child: Text(
                       customer.name[0].toUpperCase(),
                       style: TextStyle(color: _getTypeColor(customer.customerType), fontWeight: FontWeight.bold, fontSize: 20),
@@ -237,9 +237,9 @@ class _CustomersPageState extends State<CustomersPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: _getTypeColor(type).withValues(alpha: 0.1),
+        color: _getTypeColor(type).withAlpha(26),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: _getTypeColor(type).withValues(alpha: 0.5)),
+        border: Border.all(color: _getTypeColor(type).withAlpha(128)),
       ),
       child: Text(
         _getTypeLabel(type),
@@ -281,38 +281,35 @@ class _CustomersPageState extends State<CustomersPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("تصفية العملاء"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _filterOption("الكل", "ALL"),
-            _filterOption("تجزئة", "RETAIL"),
-            _filterOption("جملة", "WHOLESALE"),
-            _filterOption("VIP", "VIP"),
-          ],
+        content: RadioGroup<String>(
+          groupValue: _selectedType,
+          onChanged: (val) {
+            if (val != null) {
+              setState(() => _selectedType = val);
+              Navigator.pop(context);
+            }
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _filterOption("الكل", "ALL"),
+              _filterOption("تجزئة", "RETAIL"),
+              _filterOption("جملة", "WHOLESALE"),
+              _filterOption("VIP", "VIP"),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _filterOption(String title, String value) {
-    return ListTile(
+    return RadioListTile<String>(
       title: Text(title),
-      leading: Radio<String>(
-        value: value,
-        groupValue: _selectedType,
-        onChanged: (val) {
-          setState(() => _selectedType = val!);
-          Navigator.pop(context);
-        },
-      ),
-      onTap: () {
-        setState(() => _selectedType = value);
-        Navigator.pop(context);
-      },
+      value: value,
     );
   }
 
-  // Same logic for payment and add/edit
   Future<void> _showPayAmountDialog(AppDatabase db, Customer customer) async {
     final l10n = AppLocalizations.of(context)!;
     final accountingService = Provider.of<AccountingService>(context, listen: false);
@@ -373,8 +370,7 @@ class _CustomersPageState extends State<CustomersPage> {
 
   Future<void> _addCustomer(AppDatabase db) async {
     final l10n = AppLocalizations.of(context)!;
-    final accountingService = Provider.of<AccountingService>(context, listen: false);
-
+    
     final companion = await showDialog<CustomersCompanion>(
       context: context,
       builder: (context) => const AddEditCustomerDialog(),
@@ -382,14 +378,18 @@ class _CustomersPageState extends State<CustomersPage> {
 
     if (companion != null) {
       try {
-        await db.transaction(() async {
-          final accountId = await accountingService.createCustomerAccount(companion.name.value);
-          final finalCompanion = companion.copyWith(accountId: drift.Value(accountId));
-          await db.into(db.customers).insert(finalCompanion);
-        });
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.customerAdded)));
+        await db.customersDao.insertCustomerWithAccount(companion);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.customerAdded)),
+          );
+        }
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e')),
+          );
+        }
       }
     }
   }

@@ -1,6 +1,6 @@
 
 
-🌟 برومبت Gemini Ultimate: ERP متكامل مع إدارة العملاء، المبيعات، المشتريات، والمنتجات
+🌟 برومبت Gemini Ultimate: ERP 
 
 Instruction:
 أنت مساعد ذكي لتطوير أنظمة ERP باستخدام Flutter وSQLite (Drift). مهمتك: تحويل النظام المحاسبي الحالي إلى ERP كامل (Enterprise Level) مع التركيز على إدارة العملاء، المبيعات، المشتريات، المنتجات، المخزون، والصلاحيات.  والتقارير الماليه والمحاسبيه ولناتبع هذه الخطة خطوة خطوة، مع ترتيب الأولويات وتوضيح الجداول والحقول المطلوبة لكل مرحلة. ااريدك تنفيذ الكود البرمجي مع الواجهات بشكل احترافي ودقيق ومتناسق. لكل من الاتي 
@@ -14,7 +14,7 @@ Instruction:
 
 1. إنشاء جدول Customers يحتوي على:
 
-customerId, name, contactInfo, creditLimit, accountId
+customerId, name, contactInfo, creditLimit, accountId 
 
 
 

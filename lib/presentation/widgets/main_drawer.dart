@@ -10,21 +10,18 @@ class MainDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ألوان داكنة ثابتة لضمان الظهور في كل الوضعيات
     const Color drawerBgColor = Color(0xFF1E1E26);
     const Color dividerColor = Color(0xFF3E3E4A);
 
-    // استخدام Safe Provider Access لمنع أي خطأ مفاجئ
     AuthProvider authProvider;
     SyncService syncService;
     AppLocalizations? l10n;
 
     try {
-      authProvider = Provider.of<AuthProvider>(context);
-      syncService = Provider.of<SyncService>(context);
+      authProvider = Provider.of<AuthProvider>(context, listen: false);
+      syncService = Provider.of<SyncService>(context, listen: false);
       l10n = AppLocalizations.of(context);
     } catch (e) {
-      // في حال حدوث خطأ نادر في الـ Providers، نعرض قائمة فارغة بسيطة للحفاظ على استقرار التطبيق
       return Drawer(
         backgroundColor: drawerBgColor,
         child: const Center(
@@ -39,15 +36,13 @@ class MainDrawer extends StatelessWidget {
     final isCashier = role == 'cashier' || isManager;
 
     return Drawer(
-      width: 280, // تحديد عرض صريح لضمان الظهور
+      width: 280,
       backgroundColor: drawerBgColor,
       surfaceTintColor: Colors.transparent,
       child: Column(
         children: [
           _buildHeader(context, authProvider, drawerBgColor),
-
           const Divider(color: dividerColor, height: 1),
-
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
@@ -76,34 +71,31 @@ class MainDrawer extends StatelessWidget {
                     icon: Icons.assignment_return_rounded,
                     title: l10n?.returns ?? 'المرتجعات',
                     children: [
-                      _buildSubItem(
-                        context,
-                        l10n?.salesReturns ?? 'مرتجعات المبيعات',
-                        '/sales/returns',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.purchaseReturns ?? 'مرتجعات المشتريات',
-                        '/purchases/returns',
-                      ),
+                      _buildSubItem(context, l10n?.salesReturns ?? 'مرتجعات المبيعات', '/sales/returns'),
+                      _buildSubItem(context, l10n?.purchaseReturns ?? 'مرتجعات المشتريات', '/purchases/returns'),
                     ],
                   ),
                 ],
-
                 if (isManager) ...[
-                  const Divider(
-                    color: dividerColor,
-                    height: 20,
-                    thickness: 1,
-                    indent: 15,
-                    endIndent: 15,
-                  ),
-
-                  _buildDrawerItem(
+                  const _DrawerDivider(),
+                  _buildExpansionGroup(
                     context,
                     icon: Icons.inventory_2_rounded,
                     title: l10n?.products ?? 'المنتجات',
-                    onTap: () => context.push('/products'),
+                    children: [
+                      _buildSubItem(context, 'قائمة المنتجات', '/products'),
+                      _buildSubItem(context, l10n?.categories ?? 'الفئات', '/categories'),
+                      _buildSubItem(context, 'المنتجات أوشكت على النفاد', '/low-stock'),
+                    ],
+                  ),
+                  _buildExpansionGroup(
+                    context,
+                    icon: Icons.shopping_cart_rounded,
+                    title: l10n?.purchases ?? 'المشتريات',
+                    children: [
+                       _buildSubItem(context, 'قائمة المشتريات', '/purchases'),
+                       _buildSubItem(context, 'إضافة عملية شراء', '/purchases/add'),
+                    ]
                   ),
                   _buildDrawerItem(
                     context,
@@ -111,53 +103,33 @@ class MainDrawer extends StatelessWidget {
                     title: 'التحويل المخزني',
                     onTap: () => context.push('/inventory/transfer'),
                   ),
-                  _buildDrawerItem(
-                    context,
-                    icon: Icons.category_rounded,
-                    title: l10n?.categories ?? 'الفئات',
-                    onTap: () => context.push('/categories'),
-                  ),
                 ],
 
-                const Divider(
-                  color: dividerColor,
-                  height: 20,
-                  thickness: 1,
-                  indent: 15,
-                  endIndent: 15,
-                ),
+                const _DrawerDivider(),
 
-                _buildDrawerItem(
+                _buildExpansionGroup(
                   context,
                   icon: Icons.people_alt_rounded,
                   title: l10n?.customers ?? 'العملاء',
-                  onTap: () => context.push('/customers'),
+                  children: [
+                    _buildSubItem(context, 'قائمة العملاء', '/customers'),
+                    _buildSubItem(context, 'كشوفات حساب العملاء', '/customers/statements'),
+                  ]
                 ),
 
                 if (isManager) ...[
-                  _buildDrawerItem(
-                    context,
-                    icon: Icons.shopping_cart_rounded,
-                    title: l10n?.purchases ?? 'المشتريات',
-                    onTap: () => context.push('/purchases'),
-                  ),
-                  _buildDrawerItem(
+                   _buildExpansionGroup(
                     context,
                     icon: Icons.local_shipping_rounded,
                     title: l10n?.suppliers ?? 'الموردين',
-                    onTap: () => context.push('/suppliers'),
+                    children: [
+                      _buildSubItem(context, 'قائمة الموردين', '/suppliers'),
+                      _buildSubItem(context, 'كشوفات حساب الموردين', '/suppliers/statements'),
+                    ]
                   ),
                 ],
-
                 if (isManager) ...[
-                  const Divider(
-                    color: dividerColor,
-                    height: 20,
-                    thickness: 1,
-                    indent: 15,
-                    endIndent: 15,
-                  ),
-
+                  const _DrawerDivider(),
                   _buildExpansionGroup(
                     context,
                     icon: Icons.badge_rounded,
@@ -167,38 +139,48 @@ class MainDrawer extends StatelessWidget {
                       _buildSubItem(context, 'مسيرات الرواتب', '/hr/payroll'),
                     ],
                   ),
+                  _buildExpansionGroup(
+                    context,
+                    icon: Icons.assessment_rounded,
+                    title: 'التقارير',
+                    children: [
+                      _buildSubItem(context, 'تقارير المبيعات', '/reports/sales'),
+                      _buildSubItem(context, 'تقارير المخزون', '/reports/inventory'),
+                      _buildSubItem(context, 'تقرير ضريبة القيمة المضافة', '/reports/vat'),
+                      _buildSubItem(context, 'سجل التدقيق', '/reports/audit'),
+                    ],
+                  ),
                 ],
-
                 if (isAdmin) ...[
+                  const _DrawerDivider(),
                   _buildExpansionGroup(
                     context,
                     icon: Icons.account_balance_rounded,
                     title: l10n?.accounting ?? 'المحاسبة',
                     children: [
-                      _buildSubItem(
-                        context,
-                        l10n?.chartOfAccounts ?? 'شجرة الحسابات',
-                        '/accounting/coa',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.generalLedger ?? 'دفتر الأستاذ',
-                        '/accounting/general-ledger',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.balanceSheet ?? 'الميزانية العمومية',
-                        '/accounting/balance-sheet',
-                      ),
+                      _buildSubItem(context, l10n?.chartOfAccounts ?? 'شجرة الحسابات', '/accounting/coa'),
+                      _buildSubItem(context, l10n?.generalLedger ?? 'دفتر الأستاذ', '/accounting/general-ledger'),
+                      _buildSubItem(context, 'الميزانية العمومية', '/accounting/balance-sheet'),
+                      _buildSubItem(context, 'قائمة الدخل', '/accounting/income-statement'),
+                      _buildSubItem(context, 'ميزان المراجعة', '/accounting/trial-balance'),
+                       _buildSubItem(context, 'المصروفات', '/accounting/expenses'),
+                       _buildSubItem(context, 'الأصول الثابتة', '/accounting/fixed-assets'),
+                       _buildSubItem(context, 'قيود يدوية', '/accounting/manual-journal'),
+                       _buildSubItem(context, 'التسويات', '/accounting/reconciliation'),
+                       _buildSubItem(context, 'ورديات الكاشير', '/accounting/shifts'),
                     ],
                   ),
-
-                  _buildDrawerItem(
-                    context,
-                    icon: Icons.manage_accounts_rounded,
-                    title: 'إدارة المستخدمين',
-                    onTap: () => context.push('/users'),
-                  ),
+                   _buildExpansionGroup(
+                     context,
+                     icon: Icons.settings_rounded,
+                     title: 'الإعدادات',
+                     children: [
+                       _buildSubItem(context, 'إدارة المستخدمين', '/users'),
+                       _buildSubItem(context, 'النسخ الاحتياطي', '/settings/backup'),
+                       _buildSubItem(context, 'المزامنة', '/sync'),
+                       _buildSubItem(context, 'إعدادات الطابعة', '/settings/printer'),
+                     ]
+                   )
                 ],
 
                 const SizedBox(height: 20),
@@ -215,7 +197,6 @@ class MainDrawer extends StatelessWidget {
               ],
             ),
           ),
-
           _buildSyncStatus(context, syncService),
         ],
       ),
@@ -232,8 +213,7 @@ class MainDrawer extends StatelessWidget {
       padding: const EdgeInsets.only(top: 50, bottom: 20, left: 20, right: 20),
       color: bgColor,
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start, // التصحيح للعربي: Start هو اليمين
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const CircleAvatar(
             radius: 35,
@@ -318,7 +298,7 @@ class MainDrawer extends StatelessWidget {
 
   Widget _buildSubItem(BuildContext context, String title, String route) {
     return ListTile(
-      contentPadding: const EdgeInsets.only(right: 55),
+      contentPadding: const EdgeInsets.only(right: 55, left: 16),
       title: Text(
         title,
         style: const TextStyle(color: Colors.white60, fontSize: 14),
@@ -357,6 +337,21 @@ class MainDrawer extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _DrawerDivider extends StatelessWidget {
+  const _DrawerDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Divider(
+      color: Color(0xFF3E3E4A),
+      height: 20,
+      thickness: 1,
+      indent: 15,
+      endIndent: 15,
     );
   }
 }

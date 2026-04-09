@@ -60,9 +60,9 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
       await into(gLAccounts).insert(
         GLAccountsCompanion.insert(
           id: Value(accountId),
-          code: Value('2010-${supplierId.substring(0, 5)}'),
-          name: Value('مورد: ${entry.name.value}'),
-          type: AccountType.liability,
+          code: '2010-${supplierId.substring(0, 5)}',
+          name: 'مورد: ${entry.name.value}',
+          type: AccountType.liability, // Removed .name as AccountType.liability is already a String
           parentId: Value(parentAccount?.id),
           isHeader: const Value(false),
           balance: const Value(0.0),

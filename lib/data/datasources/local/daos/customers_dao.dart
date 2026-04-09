@@ -65,12 +65,12 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
       await into(gLAccounts).insert(
         GLAccountsCompanion.insert(
           id: Value(accountId),
-          code: Value('1201-${customerId.substring(0, 5)}'),
-          name: Value('عميل: ${entry.name.value}'),
-          type: AccountType.asset,
-          parentId: Value(parentAccount?.id),
-          isHeader: const Value(false),
-          balance: const Value(0.0),
+          code: '1201-${customerId.substring(0, 5)}',
+          name: 'عميل: ${entry.name.value}',
+          type: AccountType.asset, // Corrected to use the static String constant
+          parentId: parentAccount?.id != null ? Value(parentAccount!.id) : const Value.absent(),
+          isHeader: Value(false),
+          balance: Value(0.0),
         ),
       );
 
