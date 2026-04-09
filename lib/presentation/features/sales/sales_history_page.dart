@@ -37,7 +37,9 @@ class SalesHistoryPage extends StatelessWidget {
               final sale = sales[index];
               return ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.1),
                   child: Icon(
                     sale.paymentMethod == 'cash'
                         ? Icons.money
@@ -89,11 +91,8 @@ class SalesHistoryPage extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => SaleDetailsBottomSheet(
-        sale: sale,
-        db: db,
-        l10n: l10n,
-      ),
+      builder: (context) =>
+          SaleDetailsBottomSheet(sale: sale, db: db, l10n: l10n),
     );
   }
 }

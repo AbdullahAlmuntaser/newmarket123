@@ -48,7 +48,10 @@ class _StockTransferPageState extends State<StockTransferPage> {
     );
   }
 
-  Widget _buildWarehouseSelectors(StockTransferProvider provider, AppLocalizations l10n) {
+  Widget _buildWarehouseSelectors(
+    StockTransferProvider provider,
+    AppLocalizations l10n,
+  ) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -86,10 +89,11 @@ class _StockTransferPageState extends State<StockTransferPage> {
         final item = provider.transferItems[index];
         return ListTile(
           title: FutureBuilder<Product?>(
-            future: (context.read<AppDatabase>().select(context.read<AppDatabase>().products)
-                  ..where((t) => t.id.equals(item.productId)))
-                .getSingleOrNull(),
-            builder: (context, snapshot) => Text(snapshot.data?.name ?? 'Loading...'),
+            future: (context.read<AppDatabase>().select(
+              context.read<AppDatabase>().products,
+            )..where((t) => t.id.equals(item.productId))).getSingleOrNull(),
+            builder: (context, snapshot) =>
+                Text(snapshot.data?.name ?? 'Loading...'),
           ),
           subtitle: Text('الكمية: ${item.quantity}'),
           trailing: IconButton(
@@ -101,7 +105,10 @@ class _StockTransferPageState extends State<StockTransferPage> {
     );
   }
 
-  Widget _buildBottomActions(StockTransferProvider provider, AppLocalizations l10n) {
+  Widget _buildBottomActions(
+    StockTransferProvider provider,
+    AppLocalizations l10n,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -111,14 +118,19 @@ class _StockTransferPageState extends State<StockTransferPage> {
         children: [
           TextField(
             controller: _noteController,
-            decoration: const InputDecoration(labelText: 'ملاحظات', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'ملاحظات',
+              border: OutlineInputBorder(),
+            ),
           ),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
-              onPressed: provider.transferItems.isEmpty || provider.selectedToWarehouseId == null
+              onPressed:
+                  provider.transferItems.isEmpty ||
+                      provider.selectedToWarehouseId == null
                   ? null
                   : () async {
                       final messenger = ScaffoldMessenger.of(context);
@@ -142,7 +154,10 @@ class _StockTransferPageState extends State<StockTransferPage> {
     );
   }
 
-  void _showAddItemDialog(BuildContext context, StockTransferProvider provider) {
+  void _showAddItemDialog(
+    BuildContext context,
+    StockTransferProvider provider,
+  ) {
     final db = context.read<AppDatabase>();
     final quantityController = TextEditingController();
     ProductBatch? selectedBatch;
@@ -157,13 +172,20 @@ class _StockTransferPageState extends State<StockTransferPage> {
             children: [
               DropdownButtonFormField<ProductBatch>(
                 initialValue: selectedBatch,
-                decoration: const InputDecoration(labelText: 'اختر الدفعة/المنتج'),
+                decoration: const InputDecoration(
+                  labelText: 'اختر الدفعة/المنتج',
+                ),
                 items: provider.availableBatches.map((b) {
                   return DropdownMenuItem(
                     value: b,
                     child: FutureBuilder<Product?>(
-                      future: (db.select(db.products)..where((t) => t.id.equals(b.productId))).getSingleOrNull(),
-                      builder: (context, snapshot) => Text('${snapshot.data?.name} (Batch: ${b.batchNumber}, Qty: ${b.quantity})'),
+                      future:
+                          (db.select(db.products)
+                                ..where((t) => t.id.equals(b.productId)))
+                              .getSingleOrNull(),
+                      builder: (context, snapshot) => Text(
+                        '${snapshot.data?.name} (Batch: ${b.batchNumber}, Qty: ${b.quantity})',
+                      ),
                     ),
                   );
                 }).toList(),
@@ -178,7 +200,10 @@ class _StockTransferPageState extends State<StockTransferPage> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('إلغاء'),
+            ),
             ElevatedButton(
               onPressed: () {
                 final qty = double.tryParse(quantityController.text);

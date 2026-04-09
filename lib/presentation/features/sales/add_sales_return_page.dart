@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
-import 'package:supermarket/core/services/accounting_service.dart';
 import 'package:drift/drift.dart' hide JsonKey, Column;
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
@@ -46,11 +45,14 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
                   ),
                   initialValue: _selectedSale,
                   items: salesList
-                      .map((s) => DropdownMenuItem(
-                            value: s,
-                            child: Text(
-                                '${l10n.sale} #${s.id.substring(0, 8)} - ${s.total.toStringAsFixed(2)}'),
-                          ))
+                      .map(
+                        (s) => DropdownMenuItem(
+                          value: s,
+                          child: Text(
+                            '${l10n.sale} #${s.id.substring(0, 8)} - ${s.total.toStringAsFixed(2)}',
+                          ),
+                        ),
+                      )
                       .toList(),
                   onChanged: (value) {
                     setState(() {
@@ -70,11 +72,16 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.receipt_long_outlined,
-                            size: 64, color: Colors.grey),
+                        const Icon(
+                          Icons.receipt_long_outlined,
+                          size: 64,
+                          color: Colors.grey,
+                        ),
                         const SizedBox(height: 16),
-                        Text(l10n.selectASaleToContinue,
-                            style: const TextStyle(color: Colors.grey)),
+                        Text(
+                          l10n.selectASaleToContinue,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
                       ],
                     ),
                   )
@@ -89,8 +96,9 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
             : null,
         label: Text(l10n.processReturn),
         icon: const Icon(Icons.check),
-        backgroundColor:
-            _returnedQuantities.values.any((q) => q > 0) ? null : Colors.grey,
+        backgroundColor: _returnedQuantities.values.any((q) => q > 0)
+            ? null
+            : Colors.grey,
       ),
     );
   }
@@ -119,14 +127,18 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(l10n.totalReturnAmount,
-              style:
-                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          Text(totalAmount.toStringAsFixed(2),
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Theme.of(context).colorScheme.primary)),
+          Text(
+            l10n.totalReturnAmount,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          Text(
+            totalAmount.toStringAsFixed(2),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
         ],
       ),
     );
@@ -165,14 +177,19 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(product?.name ?? item.productId,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16)),
                               Text(
-                                  '${AppLocalizations.of(context)!.price}: ${item.price.toStringAsFixed(2)}'),
+                                product?.name ?? item.productId,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
                               Text(
-                                  '${AppLocalizations.of(context)!.quantityLabel}: ${item.quantity}'),
+                                '${AppLocalizations.of(context)!.price}: ${item.price.toStringAsFixed(2)}',
+                              ),
+                              Text(
+                                '${AppLocalizations.of(context)!.quantityLabel}: ${item.quantity}',
+                              ),
                             ],
                           ),
                         ),
@@ -181,8 +198,11 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
                             IconButton(
                               icon: const Icon(Icons.remove_circle_outline),
                               onPressed: returnedQty > 0
-                                  ? () => setState(() => _returnedQuantities[
-                                      item.productId] = returnedQty - 1)
+                                  ? () => setState(
+                                      () =>
+                                          _returnedQuantities[item.productId] =
+                                              returnedQty - 1,
+                                    )
                                   : null,
                             ),
                             SizedBox(
@@ -191,14 +211,19 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
                                 returnedQty.toStringAsFixed(0),
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             IconButton(
                               icon: const Icon(Icons.add_circle_outline),
                               onPressed: returnedQty < item.quantity
-                                  ? () => setState(() => _returnedQuantities[
-                                      item.productId] = returnedQty + 1)
+                                  ? () => setState(
+                                      () =>
+                                          _returnedQuantities[item.productId] =
+                                              returnedQty + 1,
+                                    )
                                   : null,
                             ),
                           ],
@@ -217,11 +242,8 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
 
   Future<void> _processReturn() async {
     final db = Provider.of<AppDatabase>(context, listen: false);
-    final accountingService =
-        Provider.of<AccountingService>(context, listen: false);
     final l10n = AppLocalizations.of(context)!;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
 
     if (_selectedSale == null) return;
 
@@ -233,13 +255,16 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
       if (qty > 0) {
         final item = _saleItemsMap[productId]!;
         totalReturnedAmount += qty * item.price;
-        itemCompanions.add(SalesReturnItemsCompanion.insert(
-          id: Value(const Uuid().v4()),
-          salesReturnId: returnId,
-          productId: productId,
-          quantity: qty,
-          price: item.price,
-        ));
+        itemCompanions.add(
+          SalesReturnItemsCompanion.insert(
+            id: Value(const Uuid().v4()),
+            salesReturnId: returnId,
+            productId: productId,
+            quantity: qty,
+            price: item.price,
+            syncStatus: const Value(1),
+          ),
+        );
       }
     });
 
@@ -253,74 +278,26 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
     );
 
     try {
-      await db.transaction(() async {
-        // 1. Insert Sales Return
-        await db.into(db.salesReturns).insert(returnCompanion);
-
-        // 2. Process Items
-        for (var item in itemCompanions) {
-          await db.into(db.salesReturnItems).insert(item);
-
-          // Update Stock (Increase)
-          final product = await (db.select(db.products)
-                ..where((p) => p.id.equals(item.productId.value)))
-              .getSingle();
-          await (db.update(db.products)
-                ..where((p) => p.id.equals(item.productId.value)))
-              .write(
-            ProductsCompanion(stock: Value(product.stock + item.quantity.value)),
-          );
-        }
-
-        // 3. Update Customer Balance if Credit
-        final originalSale = _selectedSale!;
-        if (originalSale.isCredit && originalSale.customerId != null) {
-          final customer = await (db.select(db.customers)
-                ..where((c) => c.id.equals(originalSale.customerId!)))
-              .getSingle();
-          await (db.update(db.customers)
-                ..where((c) => c.id.equals(originalSale.customerId!)))
-              .write(
-            CustomersCompanion(
-                balance: Value(customer.balance - totalReturnedAmount)),
-          );
-        }
-
-        // 4. Accounting
-        final createdReturn = await (db.select(db.salesReturns)
-              ..where((t) => t.id.equals(returnId)))
-            .getSingle();
-        final createdItems = await (db.select(db.salesReturnItems)
-              ..where((t) => t.salesReturnId.equals(returnId)))
-            .get();
-
-        await accountingService.postSaleReturn(createdReturn, createdItems);
-        
-        // 5. Audit Log
-         await db.into(db.auditLogs).insert(AuditLogsCompanion.insert(
-              userId: Value(authProvider.currentUser?.id),
-              action: 'CREATE',
-              targetEntity: 'SALES_RETURNS',
-              entityId: returnId,
-              details:
-                  Value('Created sales return: $returnId for sale: ${returnCompanion.saleId.value}'),
-            ));
-
-      });
+      await db.salesDao.createSaleReturn(
+        returnCompanion: returnCompanion,
+        itemsCompanions: itemCompanions,
+        userId: authProvider.currentUser?.id,
+      );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(l10n.returnProcessedSuccessfully),
-          backgroundColor: Colors.green,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.returnProcessedSuccessfully),
+            backgroundColor: Colors.green,
+          ),
+        );
         context.pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: Colors.red,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
       }
     }
   }

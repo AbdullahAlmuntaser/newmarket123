@@ -4,6 +4,7 @@ part of 'sales_dao.dart';
 
 // ignore_for_file: type=lint
 mixin _$SalesDaoMixin on DatabaseAccessor<AppDatabase> {
+  $GLAccountsTable get gLAccounts => attachedDatabase.gLAccounts;
   $CustomersTable get customers => attachedDatabase.customers;
   $SalesTable get sales => attachedDatabase.sales;
   $CategoriesTable get categories => attachedDatabase.categories;
@@ -14,12 +15,16 @@ mixin _$SalesDaoMixin on DatabaseAccessor<AppDatabase> {
   $SalesReturnsTable get salesReturns => attachedDatabase.salesReturns;
   $SalesReturnItemsTable get salesReturnItems =>
       attachedDatabase.salesReturnItems;
+  $WarehousesTable get warehouses => attachedDatabase.warehouses;
+  $ProductBatchesTable get productBatches => attachedDatabase.productBatches;
   SalesDaoManager get managers => SalesDaoManager(this);
 }
 
 class SalesDaoManager {
   final _$SalesDaoMixin _db;
   SalesDaoManager(this._db);
+  $$GLAccountsTableTableManager get gLAccounts =>
+      $$GLAccountsTableTableManager(_db.attachedDatabase, _db.gLAccounts);
   $$CustomersTableTableManager get customers =>
       $$CustomersTableTableManager(_db.attachedDatabase, _db.customers);
   $$SalesTableTableManager get sales =>
@@ -40,5 +45,12 @@ class SalesDaoManager {
       $$SalesReturnItemsTableTableManager(
         _db.attachedDatabase,
         _db.salesReturnItems,
+      );
+  $$WarehousesTableTableManager get warehouses =>
+      $$WarehousesTableTableManager(_db.attachedDatabase, _db.warehouses);
+  $$ProductBatchesTableTableManager get productBatches =>
+      $$ProductBatchesTableTableManager(
+        _db.attachedDatabase,
+        _db.productBatches,
       );
 }

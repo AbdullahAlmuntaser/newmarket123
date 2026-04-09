@@ -36,13 +36,16 @@ class _EmployeesPageState extends State<EmployeesPage> {
                 return ListTile(
                   leading: const CircleAvatar(child: Icon(Icons.person)),
                   title: Text(emp.name),
-                  subtitle: Text('${emp.jobTitle ?? 'بدون مسمى'} - راتب: ${emp.basicSalary}'),
+                  subtitle: Text(
+                    '${emp.jobTitle ?? 'بدون مسمى'} - راتب: ${emp.basicSalary}',
+                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
                         icon: const Icon(Icons.edit),
-                        onPressed: () => _showAddEditDialog(context, provider, emp),
+                        onPressed: () =>
+                            _showAddEditDialog(context, provider, emp),
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
@@ -60,11 +63,17 @@ class _EmployeesPageState extends State<EmployeesPage> {
     );
   }
 
-  void _showAddEditDialog(BuildContext context, HRProvider provider, Employee? employee) {
+  void _showAddEditDialog(
+    BuildContext context,
+    HRProvider provider,
+    Employee? employee,
+  ) {
     final nameController = TextEditingController(text: employee?.name);
     final codeController = TextEditingController(text: employee?.employeeCode);
     final jobTitleController = TextEditingController(text: employee?.jobTitle);
-    final salaryController = TextEditingController(text: employee?.basicSalary.toString());
+    final salaryController = TextEditingController(
+      text: employee?.basicSalary.toString(),
+    );
 
     showDialog(
       context: context,
@@ -74,9 +83,18 @@ class _EmployeesPageState extends State<EmployeesPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم')),
-              TextField(controller: codeController, decoration: const InputDecoration(labelText: 'كود الموظف')),
-              TextField(controller: jobTitleController, decoration: const InputDecoration(labelText: 'المسمى الوظيفي')),
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'الاسم'),
+              ),
+              TextField(
+                controller: codeController,
+                decoration: const InputDecoration(labelText: 'كود الموظف'),
+              ),
+              TextField(
+                controller: jobTitleController,
+                decoration: const InputDecoration(labelText: 'المسمى الوظيفي'),
+              ),
               TextField(
                 controller: salaryController,
                 decoration: const InputDecoration(labelText: 'الراتب الأساسي'),
@@ -86,25 +104,34 @@ class _EmployeesPageState extends State<EmployeesPage> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
           ElevatedButton(
             onPressed: () {
               if (employee == null) {
-                provider.addEmployee(EmployeesCompanion.insert(
-                  id: Value(const Uuid().v4()),
-                  name: nameController.text,
-                  employeeCode: codeController.text,
-                  jobTitle: Value(jobTitleController.text),
-                  basicSalary: Value(double.tryParse(salaryController.text) ?? 0.0),
-                  isActive: const Value(true),
-                ));
+                provider.addEmployee(
+                  EmployeesCompanion.insert(
+                    id: Value(const Uuid().v4()),
+                    name: nameController.text,
+                    employeeCode: codeController.text,
+                    jobTitle: Value(jobTitleController.text),
+                    basicSalary: Value(
+                      double.tryParse(salaryController.text) ?? 0.0,
+                    ),
+                    isActive: const Value(true),
+                  ),
+                );
               } else {
-                provider.updateEmployee(employee.copyWith(
-                  name: nameController.text,
-                  employeeCode: codeController.text,
-                  jobTitle: Value(jobTitleController.text),
-                  basicSalary: double.tryParse(salaryController.text) ?? 0.0,
-                ));
+                provider.updateEmployee(
+                  employee.copyWith(
+                    name: nameController.text,
+                    employeeCode: codeController.text,
+                    jobTitle: Value(jobTitleController.text),
+                    basicSalary: double.tryParse(salaryController.text) ?? 0.0,
+                  ),
+                );
               }
               Navigator.pop(context);
             },

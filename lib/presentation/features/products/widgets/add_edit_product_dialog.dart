@@ -235,8 +235,9 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
             ),
           );
           if (!mounted) return;
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(l10n.productAdded)));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.productAdded)));
         } else {
           await productsProvider.updateProduct(
             widget.product!.copyWith(
@@ -254,8 +255,9 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
             ),
           );
           if (!mounted) return;
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(l10n.productUpdated)));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.productUpdated)));
         }
         if (!mounted) return;
         Navigator.of(context).pop();

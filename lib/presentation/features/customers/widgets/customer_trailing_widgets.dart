@@ -31,7 +31,9 @@ class CustomerTrailingWidgets extends StatelessWidget {
             Text(
               l10n.balanceLabel(customer.balance.toStringAsFixed(2)),
               style: TextStyle(
-                color: customer.balance > 0 ? colorScheme.error : colorScheme.tertiary, // Themed colors
+                color: customer.balance > 0
+                    ? colorScheme.error
+                    : colorScheme.tertiary, // Themed colors
                 fontWeight: FontWeight.bold,
               ),
             ),

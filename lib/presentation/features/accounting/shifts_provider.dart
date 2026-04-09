@@ -21,7 +21,11 @@ class ShiftProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> openShift(String userId, double openingCash, {String? note}) async {
+  Future<void> openShift(
+    String userId,
+    double openingCash, {
+    String? note,
+  }) async {
     _isLoading = true;
     notifyListeners();
     await _shiftService.openShift(userId, openingCash, note: note);

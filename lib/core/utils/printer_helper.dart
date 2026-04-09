@@ -21,9 +21,9 @@ class PrinterHelper {
   static Future<void> printReceipt(
     Sale sale,
     List<SaleItem> items,
-    List<Product> products,
-    {String? customerName,}
-  ) async {
+    List<Product> products, {
+    String? customerName,
+  }) async {
     // Printing disabled temporarily
   }
 
@@ -31,9 +31,9 @@ class PrinterHelper {
   static Future<List<int>> generateSaleReceipt(
     Sale sale,
     List<SaleItem> items,
-    List<Product> products,
-    {String? customerName,}
-  ) async {
+    List<Product> products, {
+    String? customerName,
+  }) async {
     final profile = await CapabilityProfile.load();
     final generator = Generator(PaperSize.mm80, profile);
     List<int> bytes = [];

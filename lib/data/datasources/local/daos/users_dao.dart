@@ -13,17 +13,11 @@ class UsersDao extends DatabaseAccessor<AppDatabase> with _$UsersDaoMixin {
   Future<bool> updateUser(User user) => update(users).replace(user);
   Future<int> deleteUser(User user) => delete(users).delete(user);
 
-  // Auth
-  Future<User?> authenticate(String username, String password) async {
-    return (select(users)
-          ..where((u) => u.username.equals(username) & u.password.equals(password)))
-        .getSingleOrNull();
-  }
-
   // Permission Checks
   Future<bool> hasPermission(String username, String permissionCode) async {
-    final user = await (select(users)..where((u) => u.username.equals(username)))
-        .getSingleOrNull();
+    final user = await (select(
+      users,
+    )..where((u) => u.username.equals(username))).getSingleOrNull();
     if (user == null) return false;
     if (user.role == 'ADMIN') return true; // Admin has all permissions
 
@@ -56,12 +50,10 @@ class UsersDao extends DatabaseAccessor<AppDatabase> with _$UsersDaoMixin {
   }
 
   Future<void> removePermissionFromRole(String role, String permissionCode) {
-    return (delete(rolePermissions)
-          ..where(
-            (rp) =>
-                rp.role.equals(role) &
-                rp.permissionCode.equals(permissionCode),
-          ))
+    return (delete(rolePermissions)..where(
+          (rp) =>
+              rp.role.equals(role) & rp.permissionCode.equals(permissionCode),
+        ))
         .go();
   }
 }

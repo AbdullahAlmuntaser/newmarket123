@@ -27,7 +27,9 @@ class ReturnService {
       }
 
       // 1. Record Return
-      await db.into(db.salesReturns).insert(
+      await db
+          .into(db.salesReturns)
+          .insert(
             SalesReturnsCompanion.insert(
               id: Value(returnId),
               saleId: saleId,
@@ -40,7 +42,9 @@ class ReturnService {
 
       for (var item in items) {
         // 2. Record Return Items
-        await db.into(db.salesReturnItems).insert(
+        await db
+            .into(db.salesReturnItems)
+            .insert(
               SalesReturnItemsCompanion.insert(
                 id: Value(const Uuid().v4()),
                 salesReturnId: returnId,
@@ -51,33 +55,42 @@ class ReturnService {
             );
 
         // 3. Update Stock
-        final product = await (db.select(db.products)
-              ..where((t) => t.id.equals(item.productId)))
-            .getSingle();
-        await (db.update(db.products)..where((t) => t.id.equals(item.productId))).write(
+        final product = await (db.select(
+          db.products,
+        )..where((t) => t.id.equals(item.productId))).getSingle();
+        await (db.update(
+          db.products,
+        )..where((t) => t.id.equals(item.productId))).write(
           ProductsCompanion(stock: Value(product.stock + item.quantity)),
         );
 
         // 4. Return to Batch (FIFO logic reverse)
         // Find latest batch affected or add to newest batch
-        final latestBatch = await (db.select(db.productBatches)
-              ..where((t) => t.productId.equals(item.productId))
-              ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
-              ..limit(1))
-            .getSingleOrNull();
+        final latestBatch =
+            await (db.select(db.productBatches)
+                  ..where((t) => t.productId.equals(item.productId))
+                  ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+                  ..limit(1))
+                .getSingleOrNull();
 
         if (latestBatch != null) {
-          await (db.update(db.productBatches)..where((t) => t.id.equals(latestBatch.id))).write(
-            ProductBatchesCompanion(quantity: Value(latestBatch.quantity + item.quantity)),
+          await (db.update(
+            db.productBatches,
+          )..where((t) => t.id.equals(latestBatch.id))).write(
+            ProductBatchesCompanion(
+              quantity: Value(latestBatch.quantity + item.quantity),
+            ),
           );
           totalCogsToReverse += item.quantity * latestBatch.costPrice;
         }
       }
 
       // 5. Accounting Entries
-      final sale = await (db.select(db.sales)..where((t) => t.id.equals(saleId))).getSingle();
+      final sale = await (db.select(
+        db.sales,
+      )..where((t) => t.id.equals(saleId))).getSingle();
       final dao = db.accountingDao;
-      
+
       // A. Revenue Reversal
       final entryId = const Uuid().v4();
       final entry = GLEntriesCompanion.insert(
@@ -88,8 +101,12 @@ class ReturnService {
         referenceId: Value(returnId),
       );
 
-      final salesRevenueAcc = await dao.getAccountByCode(AccountingService.codeSalesRevenue);
-      final creditAccCode = sale.isCredit ? AccountingService.codeAccountsReceivable : AccountingService.codeCash;
+      final salesRevenueAcc = await dao.getAccountByCode(
+        AccountingService.codeSalesRevenue,
+      );
+      final creditAccCode = sale.isCredit
+          ? AccountingService.codeAccountsReceivable
+          : AccountingService.codeCash;
       final creditAcc = await dao.getAccountByCode(creditAccCode);
 
       if (salesRevenueAcc != null && creditAcc != null) {
@@ -114,7 +131,9 @@ class ReturnService {
       if (totalCogsToReverse > 0) {
         final cogsEntryId = const Uuid().v4();
         final cogsAcc = await dao.getAccountByCode(AccountingService.codeCOGS);
-        final inventoryAcc = await dao.getAccountByCode(AccountingService.codeInventory);
+        final inventoryAcc = await dao.getAccountByCode(
+          AccountingService.codeInventory,
+        );
 
         if (cogsAcc != null && inventoryAcc != null) {
           final cogsEntry = GLEntriesCompanion.insert(
@@ -169,7 +188,9 @@ class ReturnService {
       }
 
       // 1. Record Return
-      await db.into(db.purchaseReturns).insert(
+      await db
+          .into(db.purchaseReturns)
+          .insert(
             PurchaseReturnsCompanion.insert(
               id: Value(returnId),
               purchaseId: purchaseId,
@@ -180,7 +201,9 @@ class ReturnService {
 
       for (var item in items) {
         // 2. Record Return Items
-        await db.into(db.purchaseReturnItems).insert(
+        await db
+            .into(db.purchaseReturnItems)
+            .insert(
               PurchaseReturnItemsCompanion.insert(
                 id: Value(const Uuid().v4()),
                 purchaseReturnId: returnId,
@@ -191,24 +214,35 @@ class ReturnService {
             );
 
         // 3. Update Stock
-        final product = await (db.select(db.products)
-              ..where((t) => t.id.equals(item.productId)))
-            .getSingle();
-        await (db.update(db.products)..where((t) => t.id.equals(item.productId))).write(
+        final product = await (db.select(
+          db.products,
+        )..where((t) => t.id.equals(item.productId))).getSingle();
+        await (db.update(
+          db.products,
+        )..where((t) => t.id.equals(item.productId))).write(
           ProductsCompanion(stock: Value(product.stock - item.quantity)),
         );
 
         // 4. Update Batches (Decrease newest batches first)
         double remainingToDeduct = item.quantity;
-        final batches = await (db.select(db.productBatches)
-              ..where((t) => t.productId.equals(item.productId) & t.quantity.isBiggerThanValue(0))
-              ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
-            .get();
+        final batches =
+            await (db.select(db.productBatches)
+                  ..where(
+                    (t) =>
+                        t.productId.equals(item.productId) &
+                        t.quantity.isBiggerThanValue(0),
+                  )
+                  ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+                .get();
 
         for (var batch in batches) {
           if (remainingToDeduct <= 0) break;
-          double deduct = batch.quantity >= remainingToDeduct ? remainingToDeduct : batch.quantity;
-          await (db.update(db.productBatches)..where((t) => t.id.equals(batch.id))).write(
+          double deduct = batch.quantity >= remainingToDeduct
+              ? remainingToDeduct
+              : batch.quantity;
+          await (db.update(
+            db.productBatches,
+          )..where((t) => t.id.equals(batch.id))).write(
             ProductBatchesCompanion(quantity: Value(batch.quantity - deduct)),
           );
           remainingToDeduct -= deduct;
@@ -216,20 +250,27 @@ class ReturnService {
       }
 
       // 5. Accounting Entries
-      final purchase = await (db.select(db.purchases)..where((t) => t.id.equals(purchaseId))).getSingle();
+      final purchase = await (db.select(
+        db.purchases,
+      )..where((t) => t.id.equals(purchaseId))).getSingle();
       final dao = db.accountingDao;
       final entryId = const Uuid().v4();
 
       final entry = GLEntriesCompanion.insert(
         id: Value(entryId),
-        description: 'Purchase Return for Purchase #${purchaseId.substring(0, 8)}',
+        description:
+            'Purchase Return for Purchase #${purchaseId.substring(0, 8)}',
         date: Value(DateTime.now()),
         referenceType: const Value('PURCHASE_RETURN'),
         referenceId: Value(returnId),
       );
 
-      final inventoryAcc = await dao.getAccountByCode(AccountingService.codeInventory);
-      final debtAccCode = purchase.isCredit ? AccountingService.codeAccountsPayable : AccountingService.codeCash;
+      final inventoryAcc = await dao.getAccountByCode(
+        AccountingService.codeInventory,
+      );
+      final debtAccCode = purchase.isCredit
+          ? AccountingService.codeAccountsPayable
+          : AccountingService.codeCash;
       final debtAcc = await dao.getAccountByCode(debtAccCode);
 
       if (inventoryAcc != null && debtAcc != null) {
@@ -256,7 +297,8 @@ class ReturnService {
         targetEntity: 'PurchaseReturns',
         entityId: returnId,
         userId: userId,
-        details: 'Processed purchase return for purchase $purchaseId. Total: $totalAmount',
+        details:
+            'Processed purchase return for purchase $purchaseId. Total: $totalAmount',
       );
     });
   }

@@ -49,18 +49,24 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
     final warehouses = await db.select(db.warehouses).get();
     if (warehouses.isEmpty) {
       final id = const Uuid().v4();
-      await db.into(db.warehouses).insert(WarehousesCompanion.insert(
-            id: drift.Value(id),
-            name: 'Main Warehouse',
-            isDefault: const drift.Value(true),
-          ));
+      await db
+          .into(db.warehouses)
+          .insert(
+            WarehousesCompanion.insert(
+              id: drift.Value(id),
+              name: 'Main Warehouse',
+              isDefault: const drift.Value(true),
+            ),
+          );
       final updated = await db.select(db.warehouses).get();
       setState(() => _selectedWarehouse = updated.first);
     } else {
-      setState(() => _selectedWarehouse = warehouses.firstWhere(
+      setState(
+        () => _selectedWarehouse = warehouses.firstWhere(
           (w) => w.isDefault,
           orElse: () => warehouses.first,
-        ));
+        ),
+      );
     }
   }
 
@@ -314,7 +320,8 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
-              onPressed: (_items.isEmpty ||
+              onPressed:
+                  (_items.isEmpty ||
                       _selectedSupplier == null ||
                       _selectedWarehouse == null ||
                       _isSaving)
@@ -365,13 +372,17 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
       syncStatus: const drift.Value(1),
     );
 
-    final itemsCompanions = _items.map((item) => PurchaseItemsCompanion.insert(
-      purchaseId: purchaseId,
-      productId: item.product.id,
-      quantity: item.quantity,
-      price: item.price,
-      syncStatus: const drift.Value(1),
-    )).toList();
+    final itemsCompanions = _items
+        .map(
+          (item) => PurchaseItemsCompanion.insert(
+            purchaseId: purchaseId,
+            productId: item.product.id,
+            quantity: item.quantity,
+            price: item.price,
+            syncStatus: const drift.Value(1),
+          ),
+        )
+        .toList();
 
     try {
       await db.purchasesDao.createPurchase(
@@ -382,7 +393,9 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
 
       if (mounted) {
         context.pop();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.purchaseSaved)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.purchaseSaved)));
       }
     } catch (e, s) {
       developer.log(
@@ -392,10 +405,12 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         stackTrace: s,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('${l10n.failedToSavePurchase}: $e'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.failedToSavePurchase}: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);

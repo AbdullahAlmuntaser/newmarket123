@@ -42,7 +42,7 @@ class CategoriesPage extends StatelessWidget {
           if (categories.isEmpty) {
             return Center(child: Text(l10n.noCategoriesFound));
           }
-          
+
           return GridView.builder(
             padding: const EdgeInsets.all(16),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -57,13 +57,19 @@ class CategoriesPage extends StatelessWidget {
               // Cycle through predefined colors
               final color = categoryColors[index % categoryColors.length];
               // Determine text/icon color based on the luminosity of the background color
-              final textColor = color.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+              final textColor = color.computeLuminance() > 0.5
+                  ? Colors.black
+                  : Colors.white;
 
               return Card(
                 elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: InkWell(
-                  onTap: isAdmin ? () => _showAddEditDialog(context, db, category) : null,
+                  onTap: isAdmin
+                      ? () => _showAddEditDialog(context, db, category)
+                      : null,
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
                     padding: const EdgeInsets.all(16),
@@ -104,12 +110,26 @@ class CategoriesPage extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               IconButton(
-                                icon: Icon(Icons.edit, color: textColor, size: 20),
-                                onPressed: () => _showAddEditDialog(context, db, category),
+                                icon: Icon(
+                                  Icons.edit,
+                                  color: textColor,
+                                  size: 20,
+                                ),
+                                onPressed: () =>
+                                    _showAddEditDialog(context, db, category),
                               ),
                               IconButton(
-                                icon: Icon(Icons.delete, color: textColor, size: 20),
-                                onPressed: () => _deleteCategory(context, db, category, l10n),
+                                icon: Icon(
+                                  Icons.delete,
+                                  color: textColor,
+                                  size: 20,
+                                ),
+                                onPressed: () => _deleteCategory(
+                                  context,
+                                  db,
+                                  category,
+                                  l10n,
+                                ),
                               ),
                             ],
                           ),
@@ -132,14 +152,23 @@ class CategoriesPage extends StatelessWidget {
     );
   }
 
-  void _showAddEditDialog(BuildContext context, AppDatabase db, Category? category) {
+  void _showAddEditDialog(
+    BuildContext context,
+    AppDatabase db,
+    Category? category,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AddEditCategoryDialog(db: db, category: category),
     );
   }
 
-  void _deleteCategory(BuildContext context, AppDatabase db, Category category, AppLocalizations l10n) {
+  void _deleteCategory(
+    BuildContext context,
+    AppDatabase db,
+    Category category,
+    AppLocalizations l10n,
+  ) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -152,9 +181,14 @@ class CategoriesPage extends StatelessWidget {
               child: Text(l10n.cancel),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error, foregroundColor: Theme.of(context).colorScheme.onError),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+                foregroundColor: Theme.of(context).colorScheme.onError,
+              ),
               onPressed: () async {
-                final products = await (db.select(db.products)..where((p) => p.categoryId.equals(category.id))).get();
+                final products = await (db.select(
+                  db.products,
+                )..where((p) => p.categoryId.equals(category.id))).get();
                 if (!context.mounted) return;
                 if (products.isNotEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(

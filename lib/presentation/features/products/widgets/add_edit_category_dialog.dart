@@ -81,23 +81,21 @@ class _AddEditCategoryDialogState extends State<AddEditCategoryDialog> {
                 CategoriesCompanion.insert(name: _name, code: Value(_code)),
               );
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(l10n.categoryAdded),
-              ),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(l10n.categoryAdded)));
           }
         } else {
           // Update existing category
-          await (widget.db.update(widget.db.categories)
-                ..where((c) => c.id.equals(widget.category!.id)))
-              .write(CategoriesCompanion(name: Value(_name), code: Value(_code)));
+          await (widget.db.update(
+            widget.db.categories,
+          )..where((c) => c.id.equals(widget.category!.id))).write(
+            CategoriesCompanion(name: Value(_name), code: Value(_code)),
+          );
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(l10n.categoryUpdated),
-              ),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(l10n.categoryUpdated)));
           }
         }
         if (mounted) {

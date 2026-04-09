@@ -22,14 +22,16 @@ class TransferItemData {
   });
 }
 
-@DriftAccessor(tables: [
-  Products,
-  Categories,
-  Warehouses,
-  ProductBatches,
-  StockTransfers,
-  StockTransferItems,
-])
+@DriftAccessor(
+  tables: [
+    Products,
+    Categories,
+    Warehouses,
+    ProductBatches,
+    StockTransfers,
+    StockTransferItems,
+  ],
+)
 class ProductsDao extends DatabaseAccessor<AppDatabase>
     with _$ProductsDaoMixin {
   ProductsDao(super.db);
@@ -43,9 +45,16 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
     return into(warehouses).insert(entry);
   }
 
-  Future<List<ProductBatch>> getProductBatches(String productId, String warehouseId) {
-    return (select(productBatches)
-          ..where((b) => b.productId.equals(productId) & b.warehouseId.equals(warehouseId) & b.quantity.isBiggerThanValue(0)))
+  Future<List<ProductBatch>> getProductBatches(
+    String productId,
+    String warehouseId,
+  ) {
+    return (select(productBatches)..where(
+          (b) =>
+              b.productId.equals(productId) &
+              b.warehouseId.equals(warehouseId) &
+              b.quantity.isBiggerThanValue(0),
+        ))
         .get();
   }
 
@@ -71,34 +80,42 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
 
       for (var item in items) {
         // 2. جلب الدفعة المصدر
-        final sourceBatch = await (select(productBatches)
-              ..where((b) => b.id.equals(item.batchId)))
-            .getSingle();
+        final sourceBatch = await (select(
+          productBatches,
+        )..where((b) => b.id.equals(item.batchId))).getSingle();
 
         if (sourceBatch.quantity < item.quantity) {
           throw Exception('الكمية المطلوبة غير متوفرة في الدفعة المحددة');
         }
 
         // 3. خصم الكمية من الدفعة المصدر
-        await (update(productBatches)..where((b) => b.id.equals(item.batchId)))
-            .write(ProductBatchesCompanion(
-          quantity: Value(sourceBatch.quantity - item.quantity),
-        ));
+        await (update(
+          productBatches,
+        )..where((b) => b.id.equals(item.batchId))).write(
+          ProductBatchesCompanion(
+            quantity: Value(sourceBatch.quantity - item.quantity),
+          ),
+        );
 
         // 4. إضافة الكمية للدفعة الهدف (أو إنشاء واحدة جديدة)
         // نبحث عن دفعة بنفس رقم الدفعة وتاريخ الانتهاء في المستودع الهدف
-        final targetBatch = await (select(productBatches)
-              ..where((b) =>
-                  b.productId.equals(item.productId) &
-                  b.warehouseId.equals(toWarehouseId) &
-                  b.batchNumber.equals(sourceBatch.batchNumber)))
-            .getSingleOrNull();
+        final targetBatch =
+            await (select(productBatches)..where(
+                  (b) =>
+                      b.productId.equals(item.productId) &
+                      b.warehouseId.equals(toWarehouseId) &
+                      b.batchNumber.equals(sourceBatch.batchNumber),
+                ))
+                .getSingleOrNull();
 
         if (targetBatch != null) {
-          await (update(productBatches)..where((b) => b.id.equals(targetBatch.id)))
-              .write(ProductBatchesCompanion(
-            quantity: Value(targetBatch.quantity + item.quantity),
-          ));
+          await (update(
+            productBatches,
+          )..where((b) => b.id.equals(targetBatch.id))).write(
+            ProductBatchesCompanion(
+              quantity: Value(targetBatch.quantity + item.quantity),
+            ),
+          );
         } else {
           await into(productBatches).insert(
             ProductBatchesCompanion.insert(
@@ -216,23 +233,31 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
   Stream<List<ProductBatch>> watchExpiringBatches({int daysThreshold = 30}) {
     final thresholdDate = DateTime.now().add(Duration(days: daysThreshold));
     return (select(productBatches)
-          ..where((b) =>
-              b.expiryDate.isSmallerOrEqualValue(thresholdDate) &
-              b.quantity.isBiggerThanValue(0))
+          ..where(
+            (b) =>
+                b.expiryDate.isSmallerOrEqualValue(thresholdDate) &
+                b.quantity.isBiggerThanValue(0),
+          )
           ..orderBy([
-            (t) => OrderingTerm(expression: t.expiryDate, mode: OrderingMode.asc)
+            (t) =>
+                OrderingTerm(expression: t.expiryDate, mode: OrderingMode.asc),
           ]))
         .watch();
   }
 
-  Future<List<ProductBatch>> getExpiringBatches({int daysThreshold = 30}) async {
+  Future<List<ProductBatch>> getExpiringBatches({
+    int daysThreshold = 30,
+  }) async {
     final thresholdDate = DateTime.now().add(Duration(days: daysThreshold));
     return (select(productBatches)
-          ..where((b) =>
-              b.expiryDate.isSmallerOrEqualValue(thresholdDate) &
-              b.quantity.isBiggerThanValue(0))
+          ..where(
+            (b) =>
+                b.expiryDate.isSmallerOrEqualValue(thresholdDate) &
+                b.quantity.isBiggerThanValue(0),
+          )
           ..orderBy([
-            (t) => OrderingTerm(expression: t.expiryDate, mode: OrderingMode.asc)
+            (t) =>
+                OrderingTerm(expression: t.expiryDate, mode: OrderingMode.asc),
           ]))
         .get();
   }

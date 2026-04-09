@@ -6,35 +6,41 @@ class CartItem extends Equatable {
   final int quantity;
   final bool isWholesale;
   final bool isCarton;
+  final double unitPrice;
 
   const CartItem({
     required this.product,
     this.quantity = 1,
     this.isWholesale = false,
     this.isCarton = false,
+    this.unitPrice = 0.0,
   });
-
-  double get unitPrice {
-    double basePrice = isWholesale ? product.wholesalePrice : product.sellPrice;
-    if (isCarton) {
-      return basePrice * product.piecesPerCarton;
-    }
-    return basePrice;
-  }
 
   double get total => unitPrice * quantity;
 
-  CartItem copyWith({int? quantity, bool? isWholesale, bool? isCarton}) {
+  CartItem copyWith({
+    int? quantity,
+    bool? isWholesale,
+    bool? isCarton,
+    double? unitPrice,
+  }) {
     return CartItem(
       product: product,
       quantity: quantity ?? this.quantity,
       isWholesale: isWholesale ?? this.isWholesale,
       isCarton: isCarton ?? this.isCarton,
+      unitPrice: unitPrice ?? this.unitPrice,
     );
   }
 
   @override
-  List<Object?> get props => [product, quantity, isWholesale, isCarton];
+  List<Object?> get props => [
+    product,
+    quantity,
+    isWholesale,
+    isCarton,
+    unitPrice,
+  ];
 }
 
 abstract class PosState extends Equatable {
@@ -56,6 +62,7 @@ class PosLoaded extends PosState {
   final List<Category> categories;
   final String? selectedCategoryId;
   final List<Product> filteredProducts;
+  final String? activePriceListId; // New field
 
   const PosLoaded({
     this.cart = const [],
@@ -66,6 +73,7 @@ class PosLoaded extends PosState {
     this.categories = const [],
     this.selectedCategoryId,
     this.filteredProducts = const [],
+    this.activePriceListId,
   });
 
   double get subtotal => cart.fold(0.0, (sum, item) => sum + item.total);
@@ -81,6 +89,7 @@ class PosLoaded extends PosState {
     List<Category>? categories,
     String? selectedCategoryId,
     List<Product>? filteredProducts,
+    String? activePriceListId,
   }) {
     return PosLoaded(
       cart: cart ?? this.cart,
@@ -91,20 +100,22 @@ class PosLoaded extends PosState {
       categories: categories ?? this.categories,
       selectedCategoryId: selectedCategoryId ?? this.selectedCategoryId,
       filteredProducts: filteredProducts ?? this.filteredProducts,
+      activePriceListId: activePriceListId ?? this.activePriceListId,
     );
   }
 
   @override
   List<Object?> get props => [
-        cart,
-        discount,
-        taxRate,
-        isWholesaleMode,
-        searchResults,
-        categories,
-        selectedCategoryId,
-        filteredProducts
-      ];
+    cart,
+    discount,
+    taxRate,
+    isWholesaleMode,
+    searchResults,
+    categories,
+    selectedCategoryId,
+    filteredProducts,
+    activePriceListId,
+  ];
 }
 
 class PosError extends PosState {

@@ -44,10 +44,14 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
                   ),
                   initialValue: _selectedPurchase,
                   items: purchases
-                      .map((p) => DropdownMenuItem(
-                            value: p,
-                            child: Text('${l10n.purchase} #${p.id.substring(0, 8)} - ${p.total.toStringAsFixed(2)}'),
-                          ))
+                      .map(
+                        (p) => DropdownMenuItem(
+                          value: p,
+                          child: Text(
+                            '${l10n.purchase} #${p.id.substring(0, 8)} - ${p.total.toStringAsFixed(2)}',
+                          ),
+                        ),
+                      )
                       .toList(),
                   onChanged: (value) {
                     setState(() {
@@ -67,9 +71,16 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.grey),
+                        const Icon(
+                          Icons.shopping_cart_outlined,
+                          size: 64,
+                          color: Colors.grey,
+                        ),
                         const SizedBox(height: 16),
-                        Text(l10n.selectAPurchaseToContinue, style: const TextStyle(color: Colors.grey)),
+                        Text(
+                          l10n.selectAPurchaseToContinue,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
                       ],
                     ),
                   )
@@ -77,9 +88,13 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
           ),
         ],
       ),
-      bottomNavigationBar: _selectedPurchase != null ? _buildSummary(l10n) : null,
+      bottomNavigationBar: _selectedPurchase != null
+          ? _buildSummary(l10n)
+          : null,
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _returnedQuantities.values.any((q) => q > 0) ? () => _processReturn() : null,
+        onPressed: _returnedQuantities.values.any((q) => q > 0)
+            ? () => _processReturn()
+            : null,
         label: Text(l10n.processReturn),
         icon: const Icon(Icons.check),
       ),
@@ -110,8 +125,18 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(l10n.totalReturnAmount, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          Text(totalAmount.toStringAsFixed(2), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Theme.of(context).colorScheme.primary)),
+          Text(
+            l10n.totalReturnAmount,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          Text(
+            totalAmount.toStringAsFixed(2),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
         ],
       ),
     );
@@ -136,7 +161,7 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
           itemBuilder: (context, index) {
             final item = purchaseItems[index];
             final returnedQty = _returnedQuantities[item.productId] ?? 0.0;
-            
+
             return FutureBuilder<Product?>(
               future: db.productsDao.getProductById(item.productId),
               builder: (context, productSnapshot) {
@@ -150,9 +175,19 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(product?.name ?? item.productId, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                              Text('${AppLocalizations.of(context)!.price}: ${item.price.toStringAsFixed(2)}'),
-                              Text('${AppLocalizations.of(context)!.quantityLabel}: ${item.quantity}'),
+                              Text(
+                                product?.name ?? item.productId,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text(
+                                '${AppLocalizations.of(context)!.price}: ${item.price.toStringAsFixed(2)}',
+                              ),
+                              Text(
+                                '${AppLocalizations.of(context)!.quantityLabel}: ${item.quantity}',
+                              ),
                             ],
                           ),
                         ),
@@ -160,23 +195,34 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
                           children: [
                             IconButton(
                               icon: const Icon(Icons.remove_circle_outline),
-                              onPressed: returnedQty > 0 
-                                ? () => setState(() => _returnedQuantities[item.productId] = returnedQty - 1)
-                                : null,
+                              onPressed: returnedQty > 0
+                                  ? () => setState(
+                                      () =>
+                                          _returnedQuantities[item.productId] =
+                                              returnedQty - 1,
+                                    )
+                                  : null,
                             ),
                             SizedBox(
                               width: 40,
                               child: Text(
                                 returnedQty.toStringAsFixed(0),
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             IconButton(
                               icon: const Icon(Icons.add_circle_outline),
-                              onPressed: returnedQty < item.quantity 
-                                ? () => setState(() => _returnedQuantities[item.productId] = returnedQty + 1)
-                                : null,
+                              onPressed: returnedQty < item.quantity
+                                  ? () => setState(
+                                      () =>
+                                          _returnedQuantities[item.productId] =
+                                              returnedQty + 1,
+                                    )
+                                  : null,
                             ),
                           ],
                         ),
@@ -205,14 +251,16 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
       if (qty > 0) {
         final item = _purchaseItemsMap[productId]!;
         totalReturnedAmount += qty * item.price;
-        itemCompanions.add(PurchaseReturnItemsCompanion.insert(
-          id: Value(const Uuid().v4()),
-          purchaseReturnId: returnId,
-          productId: productId,
-          quantity: qty,
-          price: item.price,
-          syncStatus: const Value(1),
-        ));
+        itemCompanions.add(
+          PurchaseReturnItemsCompanion.insert(
+            id: Value(const Uuid().v4()),
+            purchaseReturnId: returnId,
+            productId: productId,
+            quantity: qty,
+            price: item.price,
+            syncStatus: const Value(1),
+          ),
+        );
       }
     });
 
@@ -235,18 +283,19 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(l10n.returnProcessedSuccessfully),
-          backgroundColor: Colors.green,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.returnProcessedSuccessfully),
+            backgroundColor: Colors.green,
+          ),
+        );
         context.pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: Colors.red,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
       }
     }
   }

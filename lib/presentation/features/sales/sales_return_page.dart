@@ -10,9 +10,7 @@ class SalesReturnPage extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.salesReturns)),
-      body: Center(
-        child: Text(l10n.noReturnsYet),
-      ),
+      body: Center(child: Text(l10n.noReturnsYet)),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           context.go('/sales/returns/new');

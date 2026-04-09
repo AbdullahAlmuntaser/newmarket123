@@ -20,7 +20,11 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
   void initState() {
     super.initState();
     _endDate = DateTime.now();
-    _startDate = DateTime(_endDate!.year, _endDate!.month, 1); // Default to start of current month
+    _startDate = DateTime(
+      _endDate!.year,
+      _endDate!.month,
+      1,
+    ); // Default to start of current month
   }
 
   Future<void> _selectDateRange(BuildContext context) async {
@@ -60,13 +64,18 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
         ],
       ),
       body: FutureBuilder<IncomeStatementData>(
-        future: provider.getIncomeStatement(startDate: _startDate, endDate: _endDate),
+        future: provider.getIncomeStatement(
+          startDate: _startDate,
+          endDate: _endDate,
+        ),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('${l10n.errorLoadingData}: ${snapshot.error}'));
+            return Center(
+              child: Text('${l10n.errorLoadingData}: ${snapshot.error}'),
+            );
           }
           final data = snapshot.data;
           if (data == null) return Center(child: Text(l10n.noDataAvailable));
@@ -112,7 +121,9 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('${l10n.from}: ${formatter.format(_startDate ?? DateTime.now())}'),
+            Text(
+              '${l10n.from}: ${formatter.format(_startDate ?? DateTime.now())}',
+            ),
             Text('${l10n.to}: ${formatter.format(_endDate ?? DateTime.now())}'),
           ],
         ),
@@ -126,9 +137,9 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
       child: Text(
         title.toUpperCase(),
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.primary,
-            ),
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).colorScheme.primary,
+        ),
       ),
     );
   }

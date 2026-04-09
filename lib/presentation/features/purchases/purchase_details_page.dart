@@ -38,7 +38,9 @@ class PurchaseDetailsPage extends StatelessWidget {
                 const SizedBox(height: 24),
                 Text(
                   l10n.items,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 _buildItemsList(db, l10n),
@@ -52,7 +54,12 @@ class PurchaseDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoCard(BuildContext context, Purchase purchase, Supplier? supplier, AppLocalizations l10n) {
+  Widget _buildInfoCard(
+    BuildContext context,
+    Purchase purchase,
+    Supplier? supplier,
+    AppLocalizations l10n,
+  ) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -63,9 +70,15 @@ class PurchaseDetailsPage extends StatelessWidget {
             _buildInfoRow(l10n.purchaseId, purchase.id.substring(0, 8)),
             _buildInfoRow(l10n.date, DateFormat.yMMMd().format(purchase.date)),
             _buildInfoRow(l10n.supplier, supplier?.name ?? l10n.unknown),
-            _buildInfoRow(l10n.invoiceNumberLabel, purchase.invoiceNumber ?? '-'),
+            _buildInfoRow(
+              l10n.invoiceNumberLabel,
+              purchase.invoiceNumber ?? '-',
+            ),
             _buildInfoRow(l10n.status, purchase.status),
-            _buildInfoRow(l10n.paymentMethod, purchase.isCredit ? l10n.credit : l10n.cash),
+            _buildInfoRow(
+              l10n.paymentMethod,
+              purchase.isCredit ? l10n.credit : l10n.cash,
+            ),
           ],
         ),
       ),
@@ -100,7 +113,9 @@ class PurchaseDetailsPage extends StatelessWidget {
             return ListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(item.product?.name ?? item.item.productId),
-              subtitle: Text('${item.item.quantity} x ${item.item.price.toStringAsFixed(2)}'),
+              subtitle: Text(
+                '${item.item.quantity} x ${item.item.price.toStringAsFixed(2)}',
+              ),
               trailing: Text(
                 (item.item.quantity * item.item.price).toStringAsFixed(2),
                 style: const TextStyle(fontWeight: FontWeight.bold),
@@ -112,7 +127,11 @@ class PurchaseDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildTotals(BuildContext context, Purchase purchase, AppLocalizations l10n) {
+  Widget _buildTotals(
+    BuildContext context,
+    Purchase purchase,
+    AppLocalizations l10n,
+  ) {
     final subtotal = purchase.total - purchase.tax;
     return Container(
       padding: const EdgeInsets.all(16),
@@ -132,20 +151,30 @@ class PurchaseDetailsPage extends StatelessWidget {
   }
 
   Future<PurchaseWithSupplier?> _getPurchaseDetails(AppDatabase db) async {
-    final purchase = await (db.select(db.purchases)..where((t) => t.id.equals(purchaseId))).getSingleOrNull();
+    final purchase = await (db.select(
+      db.purchases,
+    )..where((t) => t.id.equals(purchaseId))).getSingleOrNull();
     if (purchase == null) return null;
     Supplier? supplier;
     if (purchase.supplierId != null) {
-      supplier = await (db.select(db.suppliers)..where((t) => t.id.equals(purchase.supplierId!))).getSingleOrNull();
+      supplier = await (db.select(
+        db.suppliers,
+      )..where((t) => t.id.equals(purchase.supplierId!))).getSingleOrNull();
     }
     return PurchaseWithSupplier(purchase, supplier);
   }
 
-  Future<List<PurchaseItemWithProduct>> _getPurchaseItems(AppDatabase db) async {
-    final items = await (db.select(db.purchaseItems)..where((t) => t.purchaseId.equals(purchaseId))).get();
+  Future<List<PurchaseItemWithProduct>> _getPurchaseItems(
+    AppDatabase db,
+  ) async {
+    final items = await (db.select(
+      db.purchaseItems,
+    )..where((t) => t.purchaseId.equals(purchaseId))).get();
     final List<PurchaseItemWithProduct> result = [];
     for (var item in items) {
-      final product = await (db.select(db.products)..where((t) => t.id.equals(item.productId))).getSingleOrNull();
+      final product = await (db.select(
+        db.products,
+      )..where((t) => t.id.equals(item.productId))).getSingleOrNull();
       result.add(PurchaseItemWithProduct(item, product));
     }
     return result;

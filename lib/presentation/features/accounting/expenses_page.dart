@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:supermarket/core/services/event_bus_service.dart';
 import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart'
     as dao;
 import 'package:supermarket/domain/entities/account.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
+import 'package:supermarket/injection_container.dart';
 
 class ExpensesPage extends StatefulWidget {
   const ExpensesPage({super.key});
@@ -79,7 +81,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
   void _showAddExpenseDialog(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
     final db = context.read<AppDatabase>();
-    final accountingService = AccountingService(db);
+    final accountingService = AccountingService(db, sl<EventBusService>());
 
     final allAccounts = await db.accountingDao.getAllAccounts();
     final expenseAccounts = allAccounts

@@ -36,8 +36,16 @@ class PurchaseReturnPage extends StatelessWidget {
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(l10n.amountReturnedLabel(ret.amountReturned.toStringAsFixed(2))),
-                      Text(l10n.dateLabel(DateFormat('yyyy-MM-dd HH:mm').format(ret.createdAt))),
+                      Text(
+                        l10n.amountReturnedLabel(
+                          ret.amountReturned.toStringAsFixed(2),
+                        ),
+                      ),
+                      Text(
+                        l10n.dateLabel(
+                          DateFormat('yyyy-MM-dd HH:mm').format(ret.createdAt),
+                        ),
+                      ),
                     ],
                   ),
                   trailing: const Icon(Icons.chevron_right),

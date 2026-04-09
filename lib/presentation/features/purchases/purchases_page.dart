@@ -54,10 +54,10 @@ class PurchasesPage extends StatelessWidget {
                     ],
                   ),
                   trailing: Text(
-                    NumberFormat.currency(
-                      symbol: l10n.currencySymbol,
+                    '${NumberFormat.currency(
+                      symbol: '', // سنعرض العملة بجانب الرقم يدوياً
                       decimalDigits: 2,
-                    ).format(purchase.total),
+                    ).format(purchase.total)} ${purchase.currencyId ?? 'USD'}',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -113,10 +113,7 @@ class PurchasesPage extends StatelessWidget {
         label = status;
     }
     return Chip(
-      label: Text(
-        label,
-        style: TextStyle(color: textColor, fontSize: 10),
-      ),
+      label: Text(label, style: TextStyle(color: textColor, fontSize: 10)),
       backgroundColor: chipColor,
       padding: EdgeInsets.zero,
       visualDensity: VisualDensity.compact,

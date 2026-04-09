@@ -6,16 +6,12 @@ class PosProductCard extends StatelessWidget {
   final Product product;
   final VoidCallback onTap;
 
-  const PosProductCard({
-    super.key,
-    required this.product,
-    required this.onTap,
-  });
+  const PosProductCard({super.key, required this.product, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return InkWell(
       onTap: onTap,
       child: Card(
@@ -31,7 +27,9 @@ class PosProductCard extends StatelessWidget {
                   child: Icon(
                     Icons.inventory_2,
                     size: 40,
-                    color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.5),
                   ),
                 ),
               ),
@@ -53,9 +51,14 @@ class PosProductCard extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
-                      color: product.stock > 0 ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+                      color: product.stock > 0
+                          ? Colors.green.withValues(alpha: 0.1)
+                          : Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(

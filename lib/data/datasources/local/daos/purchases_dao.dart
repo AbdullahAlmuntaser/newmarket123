@@ -1,18 +1,37 @@
 import 'package:drift/drift.dart';
 import '../app_database.dart';
-import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:supermarket/core/events/app_events.dart';
+import 'package:supermarket/core/services/event_bus_service.dart';
+import 'package:supermarket/injection_container.dart';
 import 'package:uuid/uuid.dart';
 
 part 'purchases_dao.g.dart';
 
-@DriftAccessor(tables: [Purchases, PurchaseItems, Products, Suppliers, SyncQueue, AuditLogs, ProductBatches, PurchaseReturns, PurchaseReturnItems])
-class PurchasesDao extends DatabaseAccessor<AppDatabase> with _$PurchasesDaoMixin {
+@DriftAccessor(
+  tables: [
+    Purchases,
+    PurchaseItems,
+    Products,
+    Suppliers,
+    SyncQueue,
+    AuditLogs,
+    ProductBatches,
+    PurchaseReturns,
+    PurchaseReturnItems,
+  ],
+)
+class PurchasesDao extends DatabaseAccessor<AppDatabase>
+    with _$PurchasesDaoMixin {
   PurchasesDao(super.db);
+
+  EventBusService get _eventBus => sl<EventBusService>();
 
   Stream<List<Purchase>> watchAllPurchases() => select(purchases).watch();
 
   Stream<List<PurchaseItem>> watchPurchaseItems(String purchaseId) {
-    return (select(purchaseItems)..where((pi) => pi.purchaseId.equals(purchaseId))).watch();
+    return (select(
+      purchaseItems,
+    )..where((pi) => pi.purchaseId.equals(purchaseId))).watch();
   }
 
   Future<Purchase?> getPurchaseById(String id) {
@@ -20,11 +39,16 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase> with _$PurchasesDaoMixi
   }
 
   Stream<List<PurchaseReturn>> watchAllPurchaseReturns() {
-    return (select(purchaseReturns)..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)])).watch();
+    return (select(purchaseReturns)..orderBy([
+          (t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc),
+        ]))
+        .watch();
   }
 
   Stream<List<PurchaseReturnItem>> watchPurchaseReturnItems(String returnId) {
-    return (select(purchaseReturnItems)..where((pi) => pi.purchaseReturnId.equals(returnId))).watch();
+    return (select(
+      purchaseReturnItems,
+    )..where((pi) => pi.purchaseReturnId.equals(returnId))).watch();
   }
 
   Future<void> createPurchase({
@@ -32,60 +56,110 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase> with _$PurchasesDaoMixi
     required List<PurchaseItemsCompanion> itemsCompanions,
     required String? userId,
   }) async {
+    if (itemsCompanions.isEmpty) {
+      throw Exception('لا يمكن إنشاء فاتورة مشتريات بدون أصناف.');
+    }
+
     return transaction(() async {
+      // Recalculate Totals
+      double calculatedSubtotal = 0.0;
+      for (var item in itemsCompanions) {
+        calculatedSubtotal += item.quantity.value * item.price.value;
+      }
+      final tax = purchaseCompanion.tax.value;
+      final calculatedTotal = calculatedSubtotal + tax;
+
+      final finalPurchaseCompanion = purchaseCompanion.copyWith(
+        total: Value(calculatedTotal),
+      );
+
       // 1. Insert Purchase
-      await into(purchases).insert(purchaseCompanion);
+      await into(purchases).insert(finalPurchaseCompanion);
 
       // 2. Process Items
       for (var item in itemsCompanions) {
         await into(purchaseItems).insert(item);
 
         // Update Stock (Increase) if status is RECEIVED
-        if (purchaseCompanion.status.value == 'RECEIVED') {
-          final product = await (select(products)..where((p) => p.id.equals(item.productId.value))).getSingle();
-          await (update(products)..where((p) => p.id.equals(item.productId.value))).write(
+        if (finalPurchaseCompanion.status.value == 'RECEIVED') {
+          final product = await (select(
+            products,
+          )..where((p) => p.id.equals(item.productId.value))).getSingle();
+
+          double quantityToAdd = item.quantity.value;
+          if (item.isCarton.value) {
+            quantityToAdd *= product.piecesPerCarton;
+          }
+
+          await (update(
+            products,
+          )..where((p) => p.id.equals(item.productId.value))).write(
             ProductsCompanion(
-              stock: Value(product.stock + item.quantity.value),
+              stock: Value(product.stock + quantityToAdd),
               buyPrice: Value(item.price.value), // Update buy price to latest
             ),
           );
 
           // Create Product Batch
-          await into(productBatches).insert(ProductBatchesCompanion.insert(
-            id: Value(const Uuid().v4()),
-            productId: item.productId.value,
-            warehouseId: purchaseCompanion.warehouseId.value ?? '',
-            batchNumber: 'BATCH-${DateTime.now().millisecondsSinceEpoch}',
-            quantity: Value(item.quantity.value),
-            initialQuantity: Value(item.quantity.value),
-            costPrice: Value(item.price.value),
-            syncStatus: const Value(1),
-          ));
+          await into(productBatches).insert(
+            ProductBatchesCompanion.insert(
+              id: Value(const Uuid().v4()),
+              productId: item.productId.value,
+              warehouseId: finalPurchaseCompanion.warehouseId.value ?? '',
+              batchNumber: 'PUR-${DateTime.now().millisecondsSinceEpoch}',
+              quantity: Value(quantityToAdd),
+              initialQuantity: Value(quantityToAdd),
+              costPrice: Value(item.price.value),
+              syncStatus: const Value(1),
+            ),
+          );
         }
       }
 
       // 3. Update Supplier Balance if Credit
-      if (purchaseCompanion.isCredit.value && purchaseCompanion.supplierId.value != null) {
-        final supplier = await (select(suppliers)..where((s) => s.id.equals(purchaseCompanion.supplierId.value!))).getSingle();
-        await (update(suppliers)..where((s) => s.id.equals(purchaseCompanion.supplierId.value!))).write(
-          SuppliersCompanion(balance: Value(supplier.balance + purchaseCompanion.total.value)),
-        );
+      if (finalPurchaseCompanion.isCredit.value &&
+          finalPurchaseCompanion.supplierId.value != null) {
+        final supplier =
+            await (select(suppliers)..where(
+                  (s) => s.id.equals(finalPurchaseCompanion.supplierId.value!),
+                ))
+                .getSingle();
+        await (update(suppliers)..where(
+              (s) => s.id.equals(finalPurchaseCompanion.supplierId.value!),
+            ))
+            .write(
+              SuppliersCompanion(
+                balance: Value(
+                  supplier.balance + finalPurchaseCompanion.total.value,
+                ),
+              ),
+            );
       }
 
-      // 4. Accounting
-      final purchaseObj = await (select(purchases)..where((p) => p.id.equals(purchaseCompanion.id.value))).getSingle();
-      final accounting = AccountingService(db);
-      final insertedItems = await (select(purchaseItems)..where((pi) => pi.purchaseId.equals(purchaseCompanion.id.value))).get();
-      await accounting.postPurchase(purchaseObj, insertedItems);
+      // 4. Accounting (via Event Bus)
+      final purchaseObj =
+          await (select(purchases)
+                ..where((p) => p.id.equals(finalPurchaseCompanion.id.value)))
+              .getSingle();
+      final insertedItems =
+          await (select(purchaseItems)..where(
+                (pi) => pi.purchaseId.equals(finalPurchaseCompanion.id.value),
+              ))
+              .get();
+      _eventBus.fire(
+        PurchaseCreatedEvent(purchaseObj, insertedItems, userId: userId),
+      );
 
       // 5. Audit Log
-      await into(auditLogs).insert(AuditLogsCompanion.insert(
-        userId: Value(userId),
-        action: 'CREATE',
-        targetEntity: 'PURCHASES',
-        entityId: purchaseCompanion.id.value,
-        details: Value('Created purchase: ${purchaseCompanion.id.value}'),
-      ));
+      await into(auditLogs).insert(
+        AuditLogsCompanion.insert(
+          userId: Value(userId),
+          action: 'CREATE',
+          targetEntity: 'PURCHASES',
+          entityId: purchaseCompanion.id.value,
+          details: Value('Created purchase: ${purchaseCompanion.id.value}'),
+        ),
+      );
     });
   }
 
@@ -104,35 +178,59 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase> with _$PurchasesDaoMixi
         await into(purchaseReturnItems).insert(item);
 
         // Update Stock (Decrease)
-        final product = await (select(products)..where((p) => p.id.equals(item.productId.value))).getSingle();
-        await (update(products)..where((p) => p.id.equals(item.productId.value))).write(
+        final product = await (select(
+          products,
+        )..where((p) => p.id.equals(item.productId.value))).getSingle();
+        await (update(
+          products,
+        )..where((p) => p.id.equals(item.productId.value))).write(
           ProductsCompanion(stock: Value(product.stock - item.quantity.value)),
         );
       }
 
       // 3. Update Supplier Balance if Credit
-      final originalPurchase = await (select(purchases)..where((p) => p.id.equals(returnCompanion.purchaseId.value))).getSingle();
+      final originalPurchase =
+          await (select(purchases)
+                ..where((p) => p.id.equals(returnCompanion.purchaseId.value)))
+              .getSingle();
       if (originalPurchase.isCredit && originalPurchase.supplierId != null) {
-        final supplier = await (select(suppliers)..where((s) => s.id.equals(originalPurchase.supplierId!))).getSingle();
-        await (update(suppliers)..where((s) => s.id.equals(originalPurchase.supplierId!))).write(
-          SuppliersCompanion(balance: Value(supplier.balance - returnCompanion.amountReturned.value)),
+        final supplier = await (select(
+          suppliers,
+        )..where((s) => s.id.equals(originalPurchase.supplierId!))).getSingle();
+        await (update(
+          suppliers,
+        )..where((s) => s.id.equals(originalPurchase.supplierId!))).write(
+          SuppliersCompanion(
+            balance: Value(
+              supplier.balance - returnCompanion.amountReturned.value,
+            ),
+          ),
         );
       }
 
-      // 4. Accounting
-      final returnObj = await (select(purchaseReturns)..where((p) => p.id.equals(returnId))).getSingle();
-      final accounting = AccountingService(db);
-      final insertedItems = await (select(purchaseReturnItems)..where((pi) => pi.purchaseReturnId.equals(returnId))).get();
-      await accounting.postPurchaseReturn(returnObj, insertedItems);
+      // 4. Accounting (via Event Bus)
+      final returnObj = await (select(
+        purchaseReturns,
+      )..where((p) => p.id.equals(returnId))).getSingle();
+      final insertedItems = await (select(
+        purchaseReturnItems,
+      )..where((pi) => pi.purchaseReturnId.equals(returnId))).get();
+      _eventBus.fire(
+        PurchaseReturnCreatedEvent(returnObj, insertedItems, userId: userId),
+      );
 
       // 5. Audit Log
-      await into(auditLogs).insert(AuditLogsCompanion.insert(
-        userId: Value(userId),
-        action: 'CREATE',
-        targetEntity: 'PURCHASE_RETURNS',
-        entityId: returnId,
-        details: Value('Created purchase return: $returnId for purchase: ${returnCompanion.purchaseId.value}'),
-      ));
+      await into(auditLogs).insert(
+        AuditLogsCompanion.insert(
+          userId: Value(userId),
+          action: 'CREATE',
+          targetEntity: 'PURCHASE_RETURNS',
+          entityId: returnId,
+          details: Value(
+            'Created purchase return: $returnId for purchase: ${returnCompanion.purchaseId.value}',
+          ),
+        ),
+      );
     });
   }
 }

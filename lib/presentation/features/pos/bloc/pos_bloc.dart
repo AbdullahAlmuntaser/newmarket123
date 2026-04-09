@@ -1,14 +1,16 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/services/pricing_service.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_event.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_state.dart';
 import 'package:uuid/uuid.dart';
 
 class PosBloc extends Bloc<PosEvent, PosState> {
   final AppDatabase db;
+  final PricingService pricingService;
 
-  PosBloc(this.db) : super(const PosLoaded()) {
+  PosBloc(this.db, this.pricingService) : super(const PosLoaded()) {
     on<LoadCategories>(_onLoadCategories);
     on<SelectCategory>(_onSelectCategory);
     on<AddProductBySku>(_onAddProduct);
@@ -27,16 +29,19 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     on<ToggleWholesaleMode>(_onToggleWholesale);
     on<ToggleCartItemUnit>(_onToggleUnit);
     on<SearchProducts>(_onSearchProducts);
+    on<SelectPriceList>(_onSelectPriceList);
     on<CheckoutEvent>(_onCheckout);
     on<ClearCart>((event, emit) {
       if (state is PosLoaded) {
         final currentState = state as PosLoaded;
-        emit(PosLoaded(
-          categories: currentState.categories,
-          selectedCategoryId: currentState.selectedCategoryId,
-          filteredProducts: currentState.filteredProducts,
-          taxRate: currentState.taxRate,
-        ));
+        emit(
+          PosLoaded(
+            categories: currentState.categories,
+            selectedCategoryId: currentState.selectedCategoryId,
+            filteredProducts: currentState.filteredProducts,
+            taxRate: currentState.taxRate,
+          ),
+        );
       } else {
         emit(const PosLoaded());
       }
@@ -44,6 +49,39 @@ class PosBloc extends Bloc<PosEvent, PosState> {
 
     // Load initial data
     add(LoadCategories());
+  }
+
+  Future<void> _onSelectPriceList(
+    SelectPriceList event,
+    Emitter<PosState> emit,
+  ) async {
+    if (state is! PosLoaded) return;
+    final currentState = state as PosLoaded;
+
+    // تحديث القائمة السعرية وإعادة حساب الأسعار في السلة
+    final updatedCart = <CartItem>[];
+    for (final item in currentState.cart) {
+      final basePrice = await pricingService.getPriceForProduct(
+        item.product.id,
+        event.priceListId,
+        item.quantity.toDouble(),
+      );
+
+      final finalPrice = await pricingService.applyPromotions(
+        item.product.id,
+        basePrice,
+        item.quantity.toDouble(),
+      );
+
+      updatedCart.add(item.copyWith(unitPrice: finalPrice.toDouble()));
+    }
+
+    emit(
+      currentState.copyWith(
+        activePriceListId: event.priceListId,
+        cart: updatedCart,
+      ),
+    );
   }
 
   Future<void> _onLoadCategories(
@@ -71,16 +109,20 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     final currentState = state as PosLoaded;
 
     try {
-      final products = await (db.select(db.products)
-            ..where((t) => event.categoryId != null
-                ? t.categoryId.equals(event.categoryId!)
-                : const Constant(true)))
-          .get();
+      final products =
+          await (db.select(db.products)..where(
+                (t) => event.categoryId != null
+                    ? t.categoryId.equals(event.categoryId!)
+                    : const Constant(true),
+              ))
+              .get();
 
-      emit(currentState.copyWith(
-        selectedCategoryId: event.categoryId,
-        filteredProducts: products,
-      ));
+      emit(
+        currentState.copyWith(
+          selectedCategoryId: event.categoryId,
+          filteredProducts: products,
+        ),
+      );
     } catch (e) {
       emit(PosError("Failed to filter products: $e"));
     }
@@ -99,14 +141,15 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     }
 
     try {
-      final results = await (db.select(db.products)
-            ..where(
-              (t) =>
-                  t.name.like('%${event.query}%') |
-                  t.sku.like('%${event.query}%'),
-            )
-            ..limit(10))
-          .get();
+      final results =
+          await (db.select(db.products)
+                ..where(
+                  (t) =>
+                      t.name.like('%${event.query}%') |
+                      t.sku.like('%${event.query}%'),
+                )
+                ..limit(10))
+              .get();
 
       emit(currentState.copyWith(searchResults: results));
     } catch (e) {
@@ -133,6 +176,18 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         return;
       }
 
+      // Calculate price using PricingService
+      final basePrice = await pricingService.getPriceForProduct(
+        product.id,
+        null, // Can be improved to support active PriceLists
+        1.0,
+      );
+      final finalPrice = await pricingService.applyPromotions(
+        product.id,
+        basePrice,
+        1.0,
+      );
+
       final existingIndex = currentState.cart.indexWhere(
         (item) => item.product.id == product.id,
       );
@@ -144,7 +199,11 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         );
       } else {
         newCart.add(
-          CartItem(product: product, isWholesale: currentState.isWholesaleMode),
+          CartItem(
+            product: product,
+            isWholesale: currentState.isWholesaleMode,
+            unitPrice: finalPrice, // Set the calculated price
+          ),
         );
       }
 
@@ -155,16 +214,42 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     }
   }
 
-  void _onUpdateQuantity(UpdateCartItemQuantity event, Emitter<PosState> emit) {
+  Future<void> _onUpdateQuantity(
+    UpdateCartItemQuantity event,
+    Emitter<PosState> emit,
+  ) async {
     if (state is! PosLoaded) return;
     final currentState = state as PosLoaded;
-    final newCart = currentState.cart.map((item) {
+
+    final updatedCart = <CartItem>[];
+    for (final item in currentState.cart) {
       if (item.product.id == event.productId) {
-        return item.copyWith(quantity: event.quantity);
+        final newQuantity = event.quantity;
+
+        // Recalculate price based on new quantity
+        final basePrice = await pricingService.getPriceForProduct(
+          item.product.id,
+          currentState.activePriceListId,
+          newQuantity.toDouble(),
+        );
+
+        final finalPrice = await pricingService.applyPromotions(
+          item.product.id,
+          basePrice,
+          newQuantity.toDouble(),
+        );
+
+        updatedCart.add(
+          item.copyWith(
+            quantity: newQuantity,
+            unitPrice: finalPrice.toDouble(),
+          ),
+        );
+      } else {
+        updatedCart.add(item);
       }
-      return item;
-    }).toList();
-    emit(currentState.copyWith(cart: newCart));
+    }
+    emit(currentState.copyWith(cart: updatedCart));
   }
 
   void _onRemoveItem(RemoveCartItem event, Emitter<PosState> emit) {
@@ -223,6 +308,8 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         paymentMethod: event.paymentMethod,
         isCredit: Value(event.paymentMethod == 'credit'),
         syncStatus: const Value(1),
+        currencyId: const Value('USD'), // Placeholder
+        exchangeRate: const Value(1.0), // Placeholder
       );
 
       final itemsCompanions = currentState.cart.map((item) {
@@ -244,8 +331,12 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       );
 
       // 3. Fetch final objects for success emission
-      final saleObj = await (db.select(db.sales)..where((s) => s.id.equals(saleId))).getSingle();
-      final saleItemsForAccounting = await (db.select(db.saleItems)..where((si) => si.saleId.equals(saleId))).get();
+      final saleObj = await (db.select(
+        db.sales,
+      )..where((s) => s.id.equals(saleId))).getSingle();
+      final saleItemsForAccounting = await (db.select(
+        db.saleItems,
+      )..where((si) => si.saleId.equals(saleId))).get();
 
       emit(
         PosCheckoutSuccess(

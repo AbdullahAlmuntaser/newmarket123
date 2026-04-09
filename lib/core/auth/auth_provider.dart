@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:bcrypt/bcrypt.dart';
 import '../../data/datasources/local/app_database.dart';
-import 'package:drift/drift.dart' as drift;
 
 class AuthProvider with ChangeNotifier {
   final AppDatabase db;
@@ -13,14 +13,11 @@ class AuthProvider with ChangeNotifier {
   bool get isAdmin => _currentUser?.role == 'admin';
 
   Future<bool> login(String username, String password) async {
-    // In a real app, use password hashing (e.g. BCrypt)
-    final user =
-        await (db.select(db.users)..where(
-              (u) => u.username.equals(username) & u.password.equals(password),
-            ))
-            .getSingleOrNull();
+    final user = await (db.select(
+      db.users,
+    )..where((u) => u.username.equals(username))).getSingleOrNull();
 
-    if (user != null) {
+    if (user != null && BCrypt.checkpw(password, user.password)) {
       _currentUser = user;
       notifyListeners();
       return true;
@@ -37,12 +34,13 @@ class AuthProvider with ChangeNotifier {
   Future<void> seedAdmin() async {
     final count = await db.select(db.users).get();
     if (count.isEmpty) {
+      final hashedPassword = BCrypt.hashpw('123', BCrypt.gensalt());
       await db
           .into(db.users)
           .insert(
             UsersCompanion.insert(
               username: 'admin',
-              password: '123', // Demo password
+              password: hashedPassword,
               role: 'admin',
               fullName: 'System Admin',
             ),

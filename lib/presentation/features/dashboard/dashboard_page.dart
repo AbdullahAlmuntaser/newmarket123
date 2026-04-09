@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:go_router/go_router.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 
@@ -50,6 +51,13 @@ class DashboardPage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 32),
+            Text(
+              'نظرة عامة على المبيعات (آخر 7 أيام)',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            _buildSalesChart(db),
+            const SizedBox(height: 32),
             Text(l10n.overview, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             _buildStatsGrid(db, l10n),
@@ -58,6 +66,56 @@ class DashboardPage extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildSalesChart(AppDatabase db) {
+    return SizedBox(
+      height: 250,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: StreamBuilder<List<Sale>>(
+            stream: db.select(db.sales).watch(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              // Logic to group sales by date and map to FlSpot
+              final sales = snapshot.data!;
+              final spots = <FlSpot>[];
+              for (int i = 0; i < 7; i++) {
+                final date = DateTime.now().subtract(Duration(days: 6 - i));
+                final dailyTotal = sales
+                    .where(
+                      (s) =>
+                          s.createdAt.day == date.day &&
+                          s.createdAt.month == date.month,
+                    )
+                    .fold(0.0, (sum, s) => sum + s.total);
+                spots.add(FlSpot(i.toDouble(), dailyTotal));
+              }
+
+              return LineChart(
+                LineChartData(
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: spots,
+                      isCurved: true,
+                      color: Theme.of(context).colorScheme.primary,
+                      barWidth: 3,
+                      dotData: const FlDotData(show: true),
+                    ),
+                  ],
+                  titlesData: const FlTitlesData(show: true),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+  // ... بقية الميثودات (_buildActionCard, _buildStatsGrid, etc) تبقى كما هي
 
   Widget _buildActionCard(
     BuildContext context,

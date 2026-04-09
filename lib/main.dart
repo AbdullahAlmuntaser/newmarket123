@@ -118,7 +118,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ShiftProvider(ShiftService(db))),
         ChangeNotifierProvider(create: (_) => HRProvider(HRService(db))),
         ChangeNotifierProvider(create: (_) => PayrollProvider(HRService(db))),
-        ChangeNotifierProvider(create: (_) => StockTransferProvider(StockTransferService(db))),
+        ChangeNotifierProvider(
+          create: (_) => StockTransferProvider(StockTransferService(db)),
+        ),
         ChangeNotifierProvider(create: (_) => AssetProvider(AssetService(db))),
         ChangeNotifierProvider(create: (_) => CustomerStatementProvider()),
         Provider<SyncService>(create: (_) => SyncService(db)),
@@ -186,9 +188,8 @@ class MyApp extends StatelessWidget {
         ),
         GoRoute(
           path: '/customers/statement/:id',
-          builder: (context, state) => CustomerStatementPage(
-            customerId: state.pathParameters['id']!,
-          ),
+          builder: (context, state) =>
+              CustomerStatementPage(customerId: state.pathParameters['id']!),
         ),
         GoRoute(
           path: '/suppliers',
@@ -204,9 +205,8 @@ class MyApp extends StatelessWidget {
         ),
         GoRoute(
           path: '/purchases/:id',
-          builder: (context, state) => PurchaseDetailsPage(
-            purchaseId: state.pathParameters['id']!,
-          ),
+          builder: (context, state) =>
+              PurchaseDetailsPage(purchaseId: state.pathParameters['id']!),
         ),
         GoRoute(
           path: '/purchases/returns',

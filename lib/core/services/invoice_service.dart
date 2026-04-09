@@ -33,7 +33,12 @@ class InvoiceService {
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               // Header
-              _buildHeader(companyName, companyAddress, companyVatNumber, qrCodeSvg),
+              _buildHeader(
+                companyName,
+                companyAddress,
+                companyVatNumber,
+                qrCodeSvg,
+              ),
               pw.SizedBox(height: 20),
 
               // Invoice Info
@@ -59,33 +64,41 @@ class InvoiceService {
     return pdf.save();
   }
 
-  String _generateZatcaQr(String seller, String vatNo, DateTime date, double total, double tax) {
+  String _generateZatcaQr(
+    String seller,
+    String vatNo,
+    DateTime date,
+    double total,
+    double tax,
+  ) {
     // Basic QR code for now. For full ZATCA compliance, TLV encoding is required.
-    final qrData = 'Seller: $seller\nVAT: $vatNo\nDate: ${date.toIso8601String()}\nTotal: $total\nTax: $tax';
+    final qrData =
+        'Seller: $seller\nVAT: $vatNo\nDate: ${date.toIso8601String()}\nTotal: $total\nTax: $tax';
     final bc = Barcode.qrCode();
     return bc.toSvg(qrData, width: 100, height: 100);
   }
 
   pw.Widget _buildHeader(
-      String? companyName, String? companyAddress, String? companyVatNumber, String qrSvg) {
+    String? companyName,
+    String? companyAddress,
+    String? companyVatNumber,
+    String qrSvg,
+  ) {
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
         pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            pw.Text(companyName ?? 'My Supermarket',
-                style:
-                    pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 24)),
+            pw.Text(
+              companyName ?? 'My Supermarket',
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 24),
+            ),
             pw.Text(companyAddress ?? '123 Market St, City, Country'),
             pw.Text('VAT Number: ${companyVatNumber ?? 'N/A'}'),
           ],
         ),
-        pw.Container(
-          width: 80,
-          height: 80,
-          child: pw.SvgImage(svg: qrSvg),
-        ),
+        pw.Container(width: 80, height: 80, child: pw.SvgImage(svg: qrSvg)),
       ],
     );
   }
@@ -104,7 +117,10 @@ class InvoiceService {
           pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Text('Bill To:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+              pw.Text(
+                'Bill To:',
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              ),
               pw.Text(customerName ?? 'Walk-in Customer'),
               pw.Text('Payment Method: ${sale.paymentMethod.toUpperCase()}'),
             ],
@@ -112,8 +128,10 @@ class InvoiceService {
           pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
-              pw.Text('Invoice #: ${sale.id.substring(0, 8).toUpperCase()}',
-                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+              pw.Text(
+                'Invoice #: ${sale.id.substring(0, 8).toUpperCase()}',
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              ),
               pw.Text('Date: ${dateFormat.format(sale.createdAt)}'),
             ],
           ),
@@ -131,7 +149,7 @@ class InvoiceService {
         product.name,
         item.quantity.toStringAsFixed(0),
         item.price.toStringAsFixed(2),
-        (item.quantity * item.price).toStringAsFixed(2)
+        (item.quantity * item.price).toStringAsFixed(2),
       ];
     }).toList();
 
@@ -139,7 +157,10 @@ class InvoiceService {
       headers: headers,
       data: data,
       border: null,
-      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+      headerStyle: pw.TextStyle(
+        fontWeight: pw.FontWeight.bold,
+        color: PdfColors.white,
+      ),
       headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
       cellHeight: 30,
       cellAlignments: {
@@ -158,33 +179,51 @@ class InvoiceService {
         pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.end,
           children: [
-            _totalRow('Subtotal', (sale.total - sale.tax + sale.discount).toStringAsFixed(2)),
+            _totalRow(
+              'Subtotal',
+              (sale.total - sale.tax + sale.discount).toStringAsFixed(2),
+            ),
             _totalRow('Discount', sale.discount.toStringAsFixed(2)),
             _totalRow('VAT (15%)', sale.tax.toStringAsFixed(2)),
             pw.Divider(color: PdfColors.grey),
-            _totalRow('Total Amount', sale.total.toStringAsFixed(2), isBold: true, fontSize: 16),
+            _totalRow(
+              'Total Amount',
+              sale.total.toStringAsFixed(2),
+              isBold: true,
+              fontSize: 16,
+            ),
           ],
         ),
       ],
     );
   }
 
-  pw.Widget _totalRow(String title, String value,
-      {bool isBold = false, double fontSize = 12}) {
+  pw.Widget _totalRow(
+    String title,
+    String value, {
+    bool isBold = false,
+    double fontSize = 12,
+  }) {
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(vertical: 2),
       child: pw.Row(
         mainAxisSize: pw.MainAxisSize.min,
         children: [
-          pw.Text(title,
-              style: pw.TextStyle(
-                  fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
-                  fontSize: fontSize)),
+          pw.Text(
+            title,
+            style: pw.TextStyle(
+              fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+              fontSize: fontSize,
+            ),
+          ),
           pw.SizedBox(width: 40),
-          pw.Text(value,
-              style: pw.TextStyle(
-                  fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
-                  fontSize: fontSize)),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+              fontSize: fontSize,
+            ),
+          ),
         ],
       ),
     );
@@ -195,8 +234,10 @@ class InvoiceService {
       children: [
         pw.Divider(),
         pw.Center(
-          child: pw.Text('Thank you for your business!',
-              style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
+          child: pw.Text(
+            'Thank you for your business!',
+            style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey),
+          ),
         ),
       ],
     );

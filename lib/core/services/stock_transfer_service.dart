@@ -21,7 +21,9 @@ class StockTransferService {
       final transferId = const Uuid().v4();
 
       // 1. Record Transfer Header
-      await db.into(db.stockTransfers).insert(
+      await db
+          .into(db.stockTransfers)
+          .insert(
             StockTransfersCompanion.insert(
               id: Value(transferId),
               fromWarehouseId: fromWarehouseId,
@@ -34,16 +36,20 @@ class StockTransferService {
 
       for (var item in items) {
         // 2. Get Source Batch
-        final sourceBatch = await (db.select(db.productBatches)
-              ..where((t) => t.id.equals(item.batchId)))
-            .getSingle();
+        final sourceBatch = await (db.select(
+          db.productBatches,
+        )..where((t) => t.id.equals(item.batchId))).getSingle();
 
         if (sourceBatch.quantity < item.quantity) {
-          throw Exception('Insufficient stock in batch ${sourceBatch.batchNumber} for product ${item.productId}');
+          throw Exception(
+            'Insufficient stock in batch ${sourceBatch.batchNumber} for product ${item.productId}',
+          );
         }
 
         // 3. Update Source Batch (Deduct)
-        await (db.update(db.productBatches)..where((t) => t.id.equals(sourceBatch.id))).write(
+        await (db.update(
+          db.productBatches,
+        )..where((t) => t.id.equals(sourceBatch.id))).write(
           ProductBatchesCompanion(
             quantity: Value(sourceBatch.quantity - item.quantity),
           ),
@@ -51,22 +57,29 @@ class StockTransferService {
 
         // 4. Create or Update Destination Batch
         // Check if a batch with same number and expiry exists in destination warehouse
-        final existingDestBatch = await (db.select(db.productBatches)
-              ..where((t) =>
-                  t.productId.equals(item.productId) &
-                  t.warehouseId.equals(toWarehouseId) &
-                  t.batchNumber.equals(sourceBatch.batchNumber))
-              ..limit(1))
-            .getSingleOrNull();
+        final existingDestBatch =
+            await (db.select(db.productBatches)
+                  ..where(
+                    (t) =>
+                        t.productId.equals(item.productId) &
+                        t.warehouseId.equals(toWarehouseId) &
+                        t.batchNumber.equals(sourceBatch.batchNumber),
+                  )
+                  ..limit(1))
+                .getSingleOrNull();
 
         if (existingDestBatch != null) {
-          await (db.update(db.productBatches)..where((t) => t.id.equals(existingDestBatch.id))).write(
+          await (db.update(
+            db.productBatches,
+          )..where((t) => t.id.equals(existingDestBatch.id))).write(
             ProductBatchesCompanion(
               quantity: Value(existingDestBatch.quantity + item.quantity),
             ),
           );
         } else {
-          await db.into(db.productBatches).insert(
+          await db
+              .into(db.productBatches)
+              .insert(
                 ProductBatchesCompanion.insert(
                   id: Value(const Uuid().v4()),
                   productId: item.productId,
@@ -81,7 +94,9 @@ class StockTransferService {
         }
 
         // 5. Record Transfer Item
-        await db.into(db.stockTransferItems).insert(
+        await db
+            .into(db.stockTransferItems)
+            .insert(
               StockTransferItemsCompanion.insert(
                 id: Value(const Uuid().v4()),
                 transferId: transferId,
@@ -99,7 +114,12 @@ class StockTransferService {
   }
 
   Future<List<ProductBatch>> getBatchesForWarehouse(String warehouseId) async {
-    return await (db.select(db.productBatches)..where((t) => t.warehouseId.equals(warehouseId) & t.quantity.isBiggerThanValue(0))).get();
+    return await (db.select(db.productBatches)..where(
+          (t) =>
+              t.warehouseId.equals(warehouseId) &
+              t.quantity.isBiggerThanValue(0),
+        ))
+        .get();
   }
 }
 

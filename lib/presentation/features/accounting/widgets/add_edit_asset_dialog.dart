@@ -9,7 +9,11 @@ class AddEditAssetDialog extends StatefulWidget {
   final AssetProvider assetProvider;
   final FixedAsset? asset; // Pass asset for editing
 
-  const AddEditAssetDialog({super.key, required this.assetProvider, this.asset});
+  const AddEditAssetDialog({
+    super.key,
+    required this.assetProvider,
+    this.asset,
+  });
 
   @override
   State<AddEditAssetDialog> createState() => _AddEditAssetDialogState();
@@ -31,8 +35,12 @@ class _AddEditAssetDialogState extends State<AddEditAssetDialog> {
     final asset = widget.asset;
     _nameController = TextEditingController(text: asset?.name ?? '');
     _costController = TextEditingController(text: asset?.cost.toString() ?? '');
-    _lifeController = TextEditingController(text: asset?.usefulLifeYears.toString() ?? '');
-    _salvageController = TextEditingController(text: asset?.salvageValue.toString() ?? '');
+    _lifeController = TextEditingController(
+      text: asset?.usefulLifeYears.toString() ?? '',
+    );
+    _salvageController = TextEditingController(
+      text: asset?.salvageValue.toString() ?? '',
+    );
     _purchaseDate = asset?.purchaseDate ?? DateTime.now();
   }
 
@@ -69,7 +77,9 @@ class _AddEditAssetDialogState extends State<AddEditAssetDialog> {
         salvageValue: Value(double.tryParse(_salvageController.text) ?? 0.0),
         purchaseDate: Value(_purchaseDate),
         // Reset depreciation if cost or date changes, handled in provider
-        accumulatedDepreciation: _isEditing ? const Value.absent() : const Value(0.0),
+        accumulatedDepreciation: _isEditing
+            ? const Value.absent()
+            : const Value(0.0),
       );
 
       if (_isEditing) {
@@ -93,39 +103,62 @@ class _AddEditAssetDialogState extends State<AddEditAssetDialog> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'اسم الأصل', border: OutlineInputBorder()),
-                validator: (value) => (value?.isEmpty ?? true) ? 'هذا الحقل مطلوب' : null,
+                decoration: const InputDecoration(
+                  labelText: 'اسم الأصل',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) =>
+                    (value?.isEmpty ?? true) ? 'هذا الحقل مطلوب' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _costController,
-                decoration: const InputDecoration(labelText: 'التكلفة', prefixIcon: Icon(Icons.monetization_on)),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'التكلفة',
+                  prefixIcon: Icon(Icons.monetization_on),
+                ),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'هذا الحقل مطلوب';
-                  if (double.tryParse(value) == null) return 'الرجاء إدخال رقم صحيح';
+                  if (double.tryParse(value) == null) {
+                    return 'الرجاء إدخال رقم صحيح';
+                  }
                   return null;
                 },
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _lifeController,
-                decoration: const InputDecoration(labelText: 'العمر الافتراضي (سنوات)', prefixIcon: Icon(Icons.hourglass_bottom)),
+                decoration: const InputDecoration(
+                  labelText: 'العمر الافتراضي (سنوات)',
+                  prefixIcon: Icon(Icons.hourglass_bottom),
+                ),
                 keyboardType: TextInputType.number,
                 validator: (value) {
-                   if (value == null || value.isEmpty) return 'هذا الحقل مطلوب';
-                  if (int.tryParse(value) == null) return 'الرجاء إدخال رقم صحيح';
+                  if (value == null || value.isEmpty) return 'هذا الحقل مطلوب';
+                  if (int.tryParse(value) == null) {
+                    return 'الرجاء إدخال رقم صحيح';
+                  }
                   return null;
                 },
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _salvageController,
-                decoration: const InputDecoration(labelText: 'قيمة الخردة', prefixIcon: Icon(Icons.recycling)),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                 validator: (value) {
+                decoration: const InputDecoration(
+                  labelText: 'قيمة الخردة',
+                  prefixIcon: Icon(Icons.recycling),
+                ),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                validator: (value) {
                   if (value == null || value.isEmpty) return 'هذا الحقل مطلوب';
-                  if (double.tryParse(value) == null) return 'الرجاء إدخال رقم صحيح';
+                  if (double.tryParse(value) == null) {
+                    return 'الرجاء إدخال رقم صحيح';
+                  }
                   return null;
                 },
               ),
@@ -134,18 +167,26 @@ class _AddEditAssetDialogState extends State<AddEditAssetDialog> {
                 children: [
                   const Icon(Icons.calendar_today, color: Colors.grey),
                   const SizedBox(width: 12),
-                  Text('تاريخ الشراء: ${DateFormat('yyyy-MM-dd').format(_purchaseDate)}'),
+                  Text(
+                    'تاريخ الشراء: ${DateFormat('yyyy-MM-dd').format(_purchaseDate)}',
+                  ),
                   const Spacer(),
                   TextButton(onPressed: _pickDate, child: const Text('تغيير')),
                 ],
-              )
+              ),
             ],
           ),
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('إلغاء')),
-        ElevatedButton(onPressed: _submit, child: Text(_isEditing ? 'حفظ التعديلات' : 'إضافة')),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('إلغاء'),
+        ),
+        ElevatedButton(
+          onPressed: _submit,
+          child: Text(_isEditing ? 'حفظ التعديلات' : 'إضافة'),
+        ),
       ],
     );
   }

@@ -70,4 +70,11 @@ class SearchProducts extends PosEvent {
   List<Object?> get props => [query];
 }
 
+class SelectPriceList extends PosEvent {
+  final String? priceListId;
+  const SelectPriceList(this.priceListId);
+  @override
+  List<Object?> get props => [priceListId];
+}
+
 class ClearCart extends PosEvent {}

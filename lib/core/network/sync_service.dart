@@ -26,7 +26,7 @@ class SyncService {
   Future<void> syncAll() async {
     try {
       // التحقق من وجود Firebase قبل البدء
-      FirebaseFirestore.instance; 
+      FirebaseFirestore.instance;
     } catch (e) {
       lastError.value = "المزامنة السحابية غير مفعلة";
       return;
@@ -148,10 +148,10 @@ class SyncService {
   ) async {
     final id = data['id'];
     final serverUpdatedAtStr = data['updatedAt'];
-    
+
     if (id != null && serverUpdatedAtStr != null) {
       // final serverUpdatedAt = DateTime.parse(serverUpdatedAtStr);
-      
+
       // Attempt to get local version to compare timestamps
       bool shouldUpdate = true;
       try {
@@ -174,67 +174,151 @@ class SyncService {
   void _applyChange(Batch batch, String table, Map<String, dynamic> data) {
     switch (table) {
       case 'products':
-        batch.insert(db.products, Product.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.products,
+          Product.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
       case 'customers':
-        batch.insert(db.customers, Customer.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.customers,
+          Customer.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
       case 'suppliers':
-        batch.insert(db.suppliers, Supplier.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.suppliers,
+          Supplier.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
       case 'sales':
-        batch.insert(db.sales, Sale.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.sales,
+          Sale.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
       case 'saleItems':
-        batch.insert(db.saleItems, SaleItem.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.saleItems,
+          SaleItem.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
       case 'purchases':
-        batch.insert(db.purchases, Purchase.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.purchases,
+          Purchase.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
       case 'purchaseItems':
-        batch.insert(db.purchaseItems, PurchaseItem.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.purchaseItems,
+          PurchaseItem.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
       case 'productBatches':
-        batch.insert(db.productBatches, ProductBatch.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.productBatches,
+          ProductBatch.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
       case 'warehouses':
-        batch.insert(db.warehouses, Warehouse.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.warehouses,
+          Warehouse.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
       case 'gLAccounts':
-        batch.insert(db.gLAccounts, GLAccount.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.gLAccounts,
+          GLAccount.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
       case 'gLEntries':
-        batch.insert(db.gLEntries, GLEntry.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.gLEntries,
+          GLEntry.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
       case 'gLLines':
-        batch.insert(db.gLLines, GLLine.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.gLLines,
+          GLLine.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
       case 'fixedAssets':
-        batch.insert(db.fixedAssets, FixedAsset.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.fixedAssets,
+          FixedAsset.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
       case 'inventoryAudits':
-        batch.insert(db.inventoryAudits, InventoryAudit.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.inventoryAudits,
+          InventoryAudit.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
       case 'inventoryAuditItems':
-        batch.insert(db.inventoryAuditItems, InventoryAuditItem.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.inventoryAuditItems,
+          InventoryAuditItem.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
       case 'shifts':
-        batch.insert(db.shifts, Shift.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.shifts,
+          Shift.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
       case 'reconciliations':
-        batch.insert(db.reconciliations, Reconciliation.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.reconciliations,
+          Reconciliation.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
       case 'employees':
-        batch.insert(db.employees, Employee.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.employees,
+          Employee.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
       case 'payrollEntries':
-        batch.insert(db.payrollEntries, PayrollEntry.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.payrollEntries,
+          PayrollEntry.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
       case 'payrollLines':
-        batch.insert(db.payrollLines, PayrollLine.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.payrollLines,
+          PayrollLine.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
       case 'cashboxTransactions':
-        batch.insert(db.cashboxTransactions, CashboxTransaction.fromJson(data), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          db.cashboxTransactions,
+          CashboxTransaction.fromJson(data),
+          mode: InsertMode.insertOrReplace,
+        );
         break;
     }
   }

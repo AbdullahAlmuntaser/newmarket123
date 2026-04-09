@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:drift/drift.dart' as drift;
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
@@ -9,13 +12,58 @@ import 'package:supermarket/l10n/app_localizations.dart';
 class AuditLogPage extends StatelessWidget {
   const AuditLogPage({super.key});
 
+  Future<void> _exportToCsv(BuildContext context, List<AuditLog> logs) async {
+    final directory = await getTemporaryDirectory();
+    final file = File(
+      '${directory.path}/audit_log_${DateTime.now().millisecondsSinceEpoch}.csv',
+    );
+
+    StringBuffer buffer = StringBuffer();
+    buffer.writeln('Action,Target,Details,User,Timestamp');
+
+    for (var log in logs) {
+      buffer.writeln(
+        '${log.action},${log.targetEntity},"${log.details?.replaceAll('"', '""') ?? ''}",${log.userId ?? 'System'},${log.timestamp.toIso8601String()}',
+      );
+    }
+
+    await file.writeAsString(buffer.toString());
+
+    if (context.mounted) {
+      // ignore: deprecated_member_use
+      await Share.shareXFiles([XFile(file.path)], text: 'Audit Log Export');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final provider = context.watch<AccountingProvider>();
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.auditLog)),
+      appBar: AppBar(
+        title: Text(l10n.auditLog),
+        actions: [
+          StreamBuilder<List<AuditLog>>(
+            stream:
+                (provider.db.select(provider.db.auditLogs)..orderBy([
+                      (t) => drift.OrderingTerm(
+                        expression: t.timestamp,
+                        mode: drift.OrderingMode.desc,
+                      ),
+                    ]))
+                    .watch(),
+            builder: (context, snapshot) {
+              return IconButton(
+                icon: const Icon(Icons.share),
+                onPressed: snapshot.hasData
+                    ? () => _exportToCsv(context, snapshot.data!)
+                    : null,
+              );
+            },
+          ),
+        ],
+      ),
       body: StreamBuilder<List<AuditLog>>(
         stream:
             (provider.db.select(provider.db.auditLogs)..orderBy([

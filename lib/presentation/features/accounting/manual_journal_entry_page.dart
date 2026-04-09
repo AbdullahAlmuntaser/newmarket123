@@ -19,7 +19,8 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
 
   double get _totalDebit => _lines.fold(0, (sum, l) => sum + l.debit);
   double get _totalCredit => _lines.fold(0, (sum, l) => sum + l.credit);
-  bool get _isBalanced => (_totalDebit - _totalCredit).abs() < 0.001 && _totalDebit > 0;
+  bool get _isBalanced =>
+      (_totalDebit - _totalCredit).abs() < 0.001 && _totalDebit > 0;
 
   @override
   Widget build(BuildContext context) {
@@ -49,13 +50,21 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            TextField(controller: _descriptionController, decoration: const InputDecoration(labelText: 'وصف القيد')),
+            TextField(
+              controller: _descriptionController,
+              decoration: const InputDecoration(labelText: 'وصف القيد'),
+            ),
             const SizedBox(height: 16),
             ListTile(
               title: const Text('التاريخ'),
               trailing: Text(DateFormat('yyyy-MM-dd').format(_selectedDate)),
               onTap: () async {
-                final date = await showDatePicker(context: context, initialDate: _selectedDate, firstDate: DateTime(2000), lastDate: DateTime(2100));
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: _selectedDate,
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2100),
+                );
                 if (date != null) setState(() => _selectedDate = date);
               },
             ),
@@ -69,10 +78,14 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
     return StreamBuilder<List<GLAccount>>(
       stream: provider.watchAccounts(),
       builder: (context, snapshot) {
-        final accounts = (snapshot.data ?? []).where((a) => !a.isHeader).toList();
+        final accounts = (snapshot.data ?? [])
+            .where((a) => !a.isHeader)
+            .toList();
         return Column(
           children: [
-            ..._lines.asMap().entries.map((entry) => _buildLineRow(entry.key, entry.value, accounts)),
+            ..._lines.asMap().entries.map(
+              (entry) => _buildLineRow(entry.key, entry.value, accounts),
+            ),
             TextButton.icon(
               onPressed: () => setState(() => _lines.add(ManualLine())),
               icon: const Icon(Icons.add),
@@ -97,7 +110,14 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
                 value: line.accountId,
                 hint: const Text('اختر الحساب'),
                 isExpanded: true,
-                items: accounts.map((a) => DropdownMenuItem(value: a.id, child: Text('${a.code} - ${a.name}'))).toList(),
+                items: accounts
+                    .map(
+                      (a) => DropdownMenuItem(
+                        value: a.id,
+                        child: Text('${a.code} - ${a.name}'),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (val) => setState(() => line.accountId = val),
               ),
             ),
@@ -106,7 +126,8 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
               child: TextField(
                 decoration: const InputDecoration(labelText: 'مدين'),
                 keyboardType: TextInputType.number,
-                onChanged: (val) => setState(() => line.debit = double.tryParse(val) ?? 0),
+                onChanged: (val) =>
+                    setState(() => line.debit = double.tryParse(val) ?? 0),
               ),
             ),
             const SizedBox(width: 8),
@@ -114,7 +135,8 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
               child: TextField(
                 decoration: const InputDecoration(labelText: 'دائن'),
                 keyboardType: TextInputType.number,
-                onChanged: (val) => setState(() => line.credit = double.tryParse(val) ?? 0),
+                onChanged: (val) =>
+                    setState(() => line.credit = double.tryParse(val) ?? 0),
               ),
             ),
             IconButton(
@@ -130,12 +152,37 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
   Widget _buildFooter() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          Column(children: [const Text('إجمالي المدين'), Text(_totalDebit.toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18))]),
-          Column(children: [const Text('إجمالي الدائن'), Text(_totalCredit.toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18))]),
+          Column(
+            children: [
+              const Text('إجمالي المدين'),
+              Text(
+                _totalDebit.toStringAsFixed(2),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+            ],
+          ),
+          Column(
+            children: [
+              const Text('إجمالي الدائن'),
+              Text(
+                _totalCredit.toStringAsFixed(2),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -152,7 +199,10 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
           ),
-          child: const Text('حفظ القيد', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          child: const Text(
+            'حفظ القيد',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
         ),
       ),
     );
@@ -162,12 +212,17 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     try {
-      final lines = _lines.where((l) => l.accountId != null).map((l) => GLLinesCompanion.insert(
-        entryId: '', // Placeholder, will be updated in provider
-        accountId: l.accountId!,
-        debit: Value(l.debit),
-        credit: Value(l.credit),
-      )).toList();
+      final lines = _lines
+          .where((l) => l.accountId != null)
+          .map(
+            (l) => GLLinesCompanion.insert(
+              entryId: '', // Placeholder, will be updated in provider
+              accountId: l.accountId!,
+              debit: Value(l.debit),
+              credit: Value(l.credit),
+            ),
+          )
+          .toList();
 
       await provider.createManualEntry(
         description: _descriptionController.text,
@@ -175,7 +230,9 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
         lines: lines,
       );
 
-      messenger.showSnackBar(const SnackBar(content: Text('تم حفظ القيد بنجاح')));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('تم حفظ القيد بنجاح')),
+      );
       navigator.pop();
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.toString())));

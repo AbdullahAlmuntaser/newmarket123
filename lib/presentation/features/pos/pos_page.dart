@@ -40,15 +40,19 @@ class _PosPageState extends State<PosPage> {
       appBar: AppBar(
         title: Text(l10n.pos),
         actions: [
+          _buildPriceListSelector(context),
           BlocBuilder<PosBloc, PosState>(
             builder: (context, state) {
-              final isWholesale = state is PosLoaded ? state.isWholesaleMode : false;
+              final isWholesale = state is PosLoaded
+                  ? state.isWholesaleMode
+                  : false;
               return Row(
                 children: [
                   Text(l10n.wholesale),
                   Switch(
                     value: isWholesale,
-                    onChanged: (val) => context.read<PosBloc>().add(ToggleWholesaleMode(val)),
+                    onChanged: (val) =>
+                        context.read<PosBloc>().add(ToggleWholesaleMode(val)),
                   ),
                 ],
               );
@@ -71,15 +75,44 @@ class _PosPageState extends State<PosPage> {
               children: [
                 const Expanded(flex: 2, child: ProductGrid()),
                 const VerticalDivider(width: 1),
-                Expanded(
-                  flex: 1,
-                  child: _buildCartSection(context, l10n),
-                ),
+                Expanded(flex: 1, child: _buildCartSection(context, l10n)),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPriceListSelector(BuildContext context) {
+    final db = context.read<AppDatabase>();
+    return FutureBuilder<List<PriceList>>(
+      future: db.select(db.priceLists).get(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+        final lists = snapshot.data!;
+
+        return BlocBuilder<PosBloc, PosState>(
+          builder: (context, state) {
+            final activeId = state is PosLoaded
+                ? state.activePriceListId
+                : null;
+            return DropdownButton<String?>(
+              value: activeId,
+              hint: const Text('القائمة السعرية'),
+              items: [
+                const DropdownMenuItem(value: null, child: Text('الافتراضي')),
+                ...lists.map(
+                  (l) => DropdownMenuItem(value: l.id, child: Text(l.name)),
+                ),
+              ],
+              onChanged: (val) {
+                context.read<PosBloc>().add(SelectPriceList(val));
+              },
+            );
+          },
+        );
+      },
     );
   }
 
@@ -91,7 +124,9 @@ class _PosPageState extends State<PosPage> {
         return Container(
           height: 60,
           padding: const EdgeInsets.symmetric(vertical: 8),
-          color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(0x4D),
+          color: Theme.of(
+            context,
+          ).colorScheme.surfaceContainerHighest.withAlpha(0x4D),
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -99,8 +134,8 @@ class _PosPageState extends State<PosPage> {
             itemBuilder: (context, index) {
               final isAll = index == 0;
               final category = isAll ? null : state.categories[index - 1];
-              final isSelected = isAll 
-                  ? state.selectedCategoryId == null 
+              final isSelected = isAll
+                  ? state.selectedCategoryId == null
                   : state.selectedCategoryId == category?.id;
 
               return Padding(
@@ -116,7 +151,9 @@ class _PosPageState extends State<PosPage> {
                   selectedColor: Theme.of(context).colorScheme.primary,
                   labelStyle: TextStyle(
                     color: isSelected ? Colors.white : Colors.black87,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
               );
@@ -164,15 +201,21 @@ class _PosPageState extends State<PosPage> {
               suggestionsBuilder: (context, controller) {
                 final state = context.read<PosBloc>().state;
                 if (state is PosLoaded) {
-                  return state.searchResults.map((product) => ListTile(
-                        title: Text(product.name),
-                        subtitle: Text('SKU: ${product.sku} | السعر: ${product.sellPrice}'),
-                        onTap: () {
-                          context.read<PosBloc>().add(AddProductBySku(product.sku));
-                          _searchController.clear();
-                          _searchFocusNode.requestFocus();
-                        },
-                      ));
+                  return state.searchResults.map(
+                    (product) => ListTile(
+                      title: Text(product.name),
+                      subtitle: Text(
+                        'SKU: ${product.sku} | السعر: ${product.sellPrice}',
+                      ),
+                      onTap: () {
+                        context.read<PosBloc>().add(
+                          AddProductBySku(product.sku),
+                        );
+                        _searchController.clear();
+                        _searchFocusNode.requestFocus();
+                      },
+                    ),
+                  );
                 }
                 return [];
               },
@@ -190,7 +233,9 @@ class _PosPageState extends State<PosPage> {
           child: BlocConsumer<PosBloc, PosState>(
             listener: (context, state) {
               if (state is PosError) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.message)));
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(state.message)));
               }
               if (state is PosCheckoutSuccess) {
                 _showPrintDialog(context, state);
@@ -212,7 +257,10 @@ class _PosPageState extends State<PosPage> {
                     final item = state.cart[index];
                     return ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-                      title: Text(item.product.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      title: Text(
+                        item.product.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -220,15 +268,30 @@ class _PosPageState extends State<PosPage> {
                             children: [
                               _quantityButton(
                                 Icons.remove,
-                                () => context.read<PosBloc>().add(UpdateCartItemQuantity(item.product.id, item.quantity - 1)),
+                                () => context.read<PosBloc>().add(
+                                  UpdateCartItemQuantity(
+                                    item.product.id,
+                                    item.quantity - 1,
+                                  ),
+                                ),
                               ),
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                                child: Text('${item.quantity}', style: const TextStyle(fontSize: 16)),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0,
+                                ),
+                                child: Text(
+                                  '${item.quantity}',
+                                  style: const TextStyle(fontSize: 16),
+                                ),
                               ),
                               _quantityButton(
                                 Icons.add,
-                                () => context.read<PosBloc>().add(UpdateCartItemQuantity(item.product.id, item.quantity + 1)),
+                                () => context.read<PosBloc>().add(
+                                  UpdateCartItemQuantity(
+                                    item.product.id,
+                                    item.quantity + 1,
+                                  ),
+                                ),
                               ),
                               const Spacer(),
                               Text('${item.unitPrice.toStringAsFixed(2)} x'),
@@ -242,7 +305,12 @@ class _PosPageState extends State<PosPage> {
                                 selected: !item.isCarton,
                                 onSelected: (selected) {
                                   if (selected) {
-                                    context.read<PosBloc>().add(ToggleCartItemUnit(item.product.id, false));
+                                    context.read<PosBloc>().add(
+                                      ToggleCartItemUnit(
+                                        item.product.id,
+                                        false,
+                                      ),
+                                    );
                                   }
                                 },
                                 visualDensity: VisualDensity.compact,
@@ -253,7 +321,9 @@ class _PosPageState extends State<PosPage> {
                                 selected: item.isCarton,
                                 onSelected: (selected) {
                                   if (selected) {
-                                    context.read<PosBloc>().add(ToggleCartItemUnit(item.product.id, true));
+                                    context.read<PosBloc>().add(
+                                      ToggleCartItemUnit(item.product.id, true),
+                                    );
                                   }
                                 },
                                 visualDensity: VisualDensity.compact,
@@ -266,10 +336,21 @@ class _PosPageState extends State<PosPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(item.total.toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text(
+                            item.total.toStringAsFixed(2),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                           InkWell(
-                            onTap: () => context.read<PosBloc>().add(RemoveCartItem(item.product.id)),
-                            child: const Text('حذف', style: TextStyle(color: Colors.red, fontSize: 12)),
+                            onTap: () => context.read<PosBloc>().add(
+                              RemoveCartItem(item.product.id),
+                            ),
+                            child: const Text(
+                              'حذف',
+                              style: TextStyle(color: Colors.red, fontSize: 12),
+                            ),
                           ),
                         ],
                       ),
@@ -321,7 +402,10 @@ class _PosPageState extends State<PosPage> {
 
           return Column(
             children: [
-              _buildSummaryRow(l10n.subtotal, state.subtotal.toStringAsFixed(2)),
+              _buildSummaryRow(
+                l10n.subtotal,
+                state.subtotal.toStringAsFixed(2),
+              ),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -336,7 +420,9 @@ class _PosPageState extends State<PosPage> {
                         contentPadding: EdgeInsets.symmetric(horizontal: 8),
                       ),
                       keyboardType: TextInputType.number,
-                      onChanged: (val) => context.read<PosBloc>().add(UpdateDiscount(double.tryParse(val) ?? 0)),
+                      onChanged: (val) => context.read<PosBloc>().add(
+                        UpdateDiscount(double.tryParse(val) ?? 0),
+                      ),
                     ),
                   ),
                 ],
@@ -347,13 +433,16 @@ class _PosPageState extends State<PosPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(l10n.total, style: Theme.of(context).textTheme.titleLarge),
+                  Text(
+                    l10n.total,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                   Text(
                     state.total.toStringAsFixed(2),
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
@@ -362,13 +451,23 @@ class _PosPageState extends State<PosPage> {
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
-                  onPressed: state.cart.isEmpty ? null : () => _showCheckoutDialog(context, l10n),
+                  onPressed: state.cart.isEmpty
+                      ? null
+                      : () => _showCheckoutDialog(context, l10n),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: Text(l10n.proceedToCheckout, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    l10n.proceedToCheckout,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -394,8 +493,10 @@ class _PosPageState extends State<PosPage> {
     final userId = authProvider.currentUser?.id;
     final posState = context.read<PosBloc>().state as PosLoaded;
     Customer? selectedCustomer;
-    final TextEditingController customerNameController = TextEditingController();
-    final TextEditingController customerPhoneController = TextEditingController();
+    final TextEditingController customerNameController =
+        TextEditingController();
+    final TextEditingController customerPhoneController =
+        TextEditingController();
     final TextEditingController amountPaidController = TextEditingController();
     double change = 0;
 
@@ -421,7 +522,10 @@ class _PosPageState extends State<PosPage> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text('المبلغ المطلوب:'),
-                          Text(posState.total.toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.bold)),
+                          Text(
+                            posState.total.toStringAsFixed(2),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -445,9 +549,14 @@ class _PosPageState extends State<PosPage> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text('المتبقي للعميل:'),
-                          Text(change > 0 ? change.toStringAsFixed(2) : "0.00",
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold, color: change >= 0 ? Colors.green : Colors.red, fontSize: 18)),
+                          Text(
+                            change > 0 ? change.toStringAsFixed(2) : "0.00",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: change >= 0 ? Colors.green : Colors.red,
+                              fontSize: 18,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -461,8 +570,14 @@ class _PosPageState extends State<PosPage> {
                     return Autocomplete<Customer>(
                       displayStringForOption: (customer) => customer.name,
                       optionsBuilder: (TextEditingValue textEditingValue) {
-                        if (textEditingValue.text == '') return const Iterable<Customer>.empty();
-                        return customers.where((c) => c.name.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+                        if (textEditingValue.text == '') {
+                          return const Iterable<Customer>.empty();
+                        }
+                        return customers.where(
+                          (c) => c.name.toLowerCase().contains(
+                            textEditingValue.text.toLowerCase(),
+                          ),
+                        );
                       },
                       onSelected: (Customer selection) {
                         setState(() {
@@ -471,26 +586,32 @@ class _PosPageState extends State<PosPage> {
                           customerPhoneController.text = selection.phone ?? '';
                         });
                       },
-                      fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
-                        return TextField(
-                          controller: textEditingController,
-                          focusNode: focusNode,
-                          decoration: InputDecoration(
-                            labelText: l10n.selectCustomer,
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                setState(() {
-                                  selectedCustomer = null;
-                                  customerNameController.clear();
-                                  customerPhoneController.clear();
-                                  textEditingController.clear();
-                                });
-                              },
-                            ),
-                          ),
-                        );
-                      },
+                      fieldViewBuilder:
+                          (
+                            context,
+                            textEditingController,
+                            focusNode,
+                            onFieldSubmitted,
+                          ) {
+                            return TextField(
+                              controller: textEditingController,
+                              focusNode: focusNode,
+                              decoration: InputDecoration(
+                                labelText: l10n.selectCustomer,
+                                suffixIcon: IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    setState(() {
+                                      selectedCustomer = null;
+                                      customerNameController.clear();
+                                      customerPhoneController.clear();
+                                      textEditingController.clear();
+                                    });
+                                  },
+                                ),
+                              ),
+                            );
+                          },
                     );
                   },
                 ),
@@ -499,7 +620,13 @@ class _PosPageState extends State<PosPage> {
                   leading: const Icon(Icons.money, color: Colors.green),
                   title: Text(l10n.cashPayment),
                   onTap: () {
-                    context.read<PosBloc>().add(CheckoutEvent('cash', customerId: selectedCustomer?.id, userId: userId));
+                    context.read<PosBloc>().add(
+                      CheckoutEvent(
+                        'cash',
+                        customerId: selectedCustomer?.id,
+                        userId: userId,
+                      ),
+                    );
                     Navigator.pop(context);
                   },
                 ),
@@ -508,11 +635,18 @@ class _PosPageState extends State<PosPage> {
                   title: Text(l10n.creditSale),
                   onTap: () async {
                     String? customerId = selectedCustomer?.id;
-                    if (selectedCustomer == null && customerNameController.text.isNotEmpty) {
-                      final newCustomer = await db.into(db.customers).insertReturning(
+                    if (selectedCustomer == null &&
+                        customerNameController.text.isNotEmpty) {
+                      final newCustomer = await db
+                          .into(db.customers)
+                          .insertReturning(
                             CustomersCompanion.insert(
                               name: customerNameController.text,
-                              phone: Value(customerPhoneController.text.isEmpty ? null : customerPhoneController.text),
+                              phone: Value(
+                                customerPhoneController.text.isEmpty
+                                    ? null
+                                    : customerPhoneController.text,
+                              ),
                               creditLimit: const Value(0.0),
                               balance: const Value(0.0),
                             ),
@@ -520,7 +654,13 @@ class _PosPageState extends State<PosPage> {
                       customerId = newCustomer.id;
                     }
                     if (context.mounted) {
-                      context.read<PosBloc>().add(CheckoutEvent('credit', customerId: customerId, userId: userId));
+                      context.read<PosBloc>().add(
+                        CheckoutEvent(
+                          'credit',
+                          customerId: customerId,
+                          userId: userId,
+                        ),
+                      );
                       Navigator.pop(context);
                     }
                   },
@@ -529,7 +669,10 @@ class _PosPageState extends State<PosPage> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.cancel),
+            ),
           ],
         ),
       ),
@@ -553,78 +696,81 @@ class _PosPageState extends State<PosPage> {
               icon: const Icon(Icons.picture_as_pdf),
               label: Text(l10n.downloadPdfInvoice),
               onPressed: () async {
-              final messenger = ScaffoldMessenger.of(ctx);
-              try {
-                final db = context.read<AppDatabase>();
-                String? customerName;
-                if (state.sale.customerId != null) {
-                  final customer = await db.customersDao.getCustomerById(state.sale.customerId!);
-                  customerName = customer?.name;
-                }
+                final messenger = ScaffoldMessenger.of(ctx);
+                try {
+                  final db = context.read<AppDatabase>();
+                  String? customerName;
+                  if (state.sale.customerId != null) {
+                    final customer = await db.customersDao.getCustomerById(
+                      state.sale.customerId!,
+                    );
+                    customerName = customer?.name;
+                  }
 
-                final invoiceService = InvoiceService();
-                final Uint8List pdfData = await invoiceService.generatePdfInvoice(
-                  sale: state.sale,
-                  items: state.items,
-                  products: state.products,
-                  customerName: customerName,
-                  companyName: 'My Supermarket Inc.',
-                  companyAddress: '123 Business Avenue, Metro City',
-                  companyVatNumber: 'VAT123456789',
-                );
+                  final invoiceService = InvoiceService();
+                  final Uint8List pdfData = await invoiceService
+                      .generatePdfInvoice(
+                        sale: state.sale,
+                        items: state.items,
+                        products: state.products,
+                        customerName: customerName,
+                        companyName: 'My Supermarket Inc.',
+                        companyAddress: '123 Business Avenue, Metro City',
+                        companyVatNumber: 'VAT123456789',
+                      );
 
-                await Printing.sharePdf(
-                  bytes: pdfData,
-                  filename: 'invoice_${state.sale.id.substring(0, 8)}.pdf',
-                );
-
-              } catch (e) {
-                debugPrint("PDF Generation Error: $e");
-                if (ctx.mounted) {
-                  messenger.showSnackBar(
-                    SnackBar(content: Text('Failed to generate PDF: $e')),
+                  await Printing.sharePdf(
+                    bytes: pdfData,
+                    filename: 'invoice_${state.sale.id.substring(0, 8)}.pdf',
                   );
+                } catch (e) {
+                  debugPrint("PDF Generation Error: $e");
+                  if (ctx.mounted) {
+                    messenger.showSnackBar(
+                      SnackBar(content: Text('Failed to generate PDF: $e')),
+                    );
+                  }
                 }
-              }
               },
-              ),
-              const SizedBox(height: 10),
-              // Thermal Receipt Button
-              ElevatedButton.icon(
+            ),
+            const SizedBox(height: 10),
+            // Thermal Receipt Button
+            ElevatedButton.icon(
               icon: const Icon(Icons.print_outlined),
               label: Text(l10n.printReceipt),
               onPressed: () async {
-              final messenger = ScaffoldMessenger.of(ctx);
-              try {
-                final db = context.read<AppDatabase>();
-                String? customerName;
-                if (state.sale.customerId != null) {
-                  final customer = await db.customersDao.getCustomerById(state.sale.customerId!);
-                  customerName = customer?.name;
-                }
+                final messenger = ScaffoldMessenger.of(ctx);
+                try {
+                  final db = context.read<AppDatabase>();
+                  String? customerName;
+                  if (state.sale.customerId != null) {
+                    final customer = await db.customersDao.getCustomerById(
+                      state.sale.customerId!,
+                    );
+                    customerName = customer?.name;
+                  }
 
-                final List<int> receiptData = await PrinterHelper.generateSaleReceipt(
-                  state.sale,
-                  state.items,
-                  state.products,
-                  customerName: customerName,
-                );
+                  final List<int> receiptData =
+                      await PrinterHelper.generateSaleReceipt(
+                        state.sale,
+                        state.items,
+                        state.products,
+                        customerName: customerName,
+                      );
 
-                // Use printing package for a print preview
-                await Printing.layoutPdf(
-                  onLayout: (format) async => Uint8List.fromList(receiptData),
-                );
-
-              } catch (e) {
-                debugPrint("Printing error: $e");
-                 if (ctx.mounted) {
-                  messenger.showSnackBar(
-                    SnackBar(content: Text('Failed to generate receipt: $e')),
+                  // Use printing package for a print preview
+                  await Printing.layoutPdf(
+                    onLayout: (format) async => Uint8List.fromList(receiptData),
                   );
+                } catch (e) {
+                  debugPrint("Printing error: $e");
+                  if (ctx.mounted) {
+                    messenger.showSnackBar(
+                      SnackBar(content: Text('Failed to generate receipt: $e')),
+                    );
+                  }
                 }
-              }
               },
-
             ),
           ],
         ),

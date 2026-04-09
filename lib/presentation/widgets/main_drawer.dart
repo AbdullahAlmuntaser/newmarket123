@@ -11,7 +11,7 @@ class MainDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // ألوان داكنة ثابتة لضمان الظهور في كل الوضعيات
-    const Color drawerBgColor = Color(0xFF1E1E26); 
+    const Color drawerBgColor = Color(0xFF1E1E26);
     const Color dividerColor = Color(0xFF3E3E4A);
 
     // استخدام Safe Provider Access لمنع أي خطأ مفاجئ
@@ -41,11 +41,11 @@ class MainDrawer extends StatelessWidget {
     return Drawer(
       width: 280, // تحديد عرض صريح لضمان الظهور
       backgroundColor: drawerBgColor,
-      surfaceTintColor: Colors.transparent, 
+      surfaceTintColor: Colors.transparent,
       child: Column(
         children: [
           _buildHeader(context, authProvider, drawerBgColor),
-          
+
           const Divider(color: dividerColor, height: 1),
 
           Expanded(
@@ -76,14 +76,28 @@ class MainDrawer extends StatelessWidget {
                     icon: Icons.assignment_return_rounded,
                     title: l10n?.returns ?? 'المرتجعات',
                     children: [
-                      _buildSubItem(context, l10n?.salesReturns ?? 'مرتجعات المبيعات', '/sales/returns'),
-                      _buildSubItem(context, l10n?.purchaseReturns ?? 'مرتجعات المشتريات', '/purchases/returns'),
+                      _buildSubItem(
+                        context,
+                        l10n?.salesReturns ?? 'مرتجعات المبيعات',
+                        '/sales/returns',
+                      ),
+                      _buildSubItem(
+                        context,
+                        l10n?.purchaseReturns ?? 'مرتجعات المشتريات',
+                        '/purchases/returns',
+                      ),
                     ],
                   ),
                 ],
-                
+
                 if (isManager) ...[
-                  const Divider(color: dividerColor, height: 20, thickness: 1, indent: 15, endIndent: 15),
+                  const Divider(
+                    color: dividerColor,
+                    height: 20,
+                    thickness: 1,
+                    indent: 15,
+                    endIndent: 15,
+                  ),
 
                   _buildDrawerItem(
                     context,
@@ -105,7 +119,13 @@ class MainDrawer extends StatelessWidget {
                   ),
                 ],
 
-                const Divider(color: dividerColor, height: 20, thickness: 1, indent: 15, endIndent: 15),
+                const Divider(
+                  color: dividerColor,
+                  height: 20,
+                  thickness: 1,
+                  indent: 15,
+                  endIndent: 15,
+                ),
 
                 _buildDrawerItem(
                   context,
@@ -130,7 +150,13 @@ class MainDrawer extends StatelessWidget {
                 ],
 
                 if (isManager) ...[
-                  const Divider(color: dividerColor, height: 20, thickness: 1, indent: 15, endIndent: 15),
+                  const Divider(
+                    color: dividerColor,
+                    height: 20,
+                    thickness: 1,
+                    indent: 15,
+                    endIndent: 15,
+                  ),
 
                   _buildExpansionGroup(
                     context,
@@ -149,12 +175,24 @@ class MainDrawer extends StatelessWidget {
                     icon: Icons.account_balance_rounded,
                     title: l10n?.accounting ?? 'المحاسبة',
                     children: [
-                      _buildSubItem(context, l10n?.chartOfAccounts ?? 'شجرة الحسابات', '/accounting/coa'),
-                      _buildSubItem(context, l10n?.generalLedger ?? 'دفتر الأستاذ', '/accounting/general-ledger'),
-                      _buildSubItem(context, l10n?.balanceSheet ?? 'الميزانية العمومية', '/accounting/balance-sheet'),
+                      _buildSubItem(
+                        context,
+                        l10n?.chartOfAccounts ?? 'شجرة الحسابات',
+                        '/accounting/coa',
+                      ),
+                      _buildSubItem(
+                        context,
+                        l10n?.generalLedger ?? 'دفتر الأستاذ',
+                        '/accounting/general-ledger',
+                      ),
+                      _buildSubItem(
+                        context,
+                        l10n?.balanceSheet ?? 'الميزانية العمومية',
+                        '/accounting/balance-sheet',
+                      ),
                     ],
                   ),
-                  
+
                   _buildDrawerItem(
                     context,
                     icon: Icons.manage_accounts_rounded,
@@ -177,25 +215,34 @@ class MainDrawer extends StatelessWidget {
               ],
             ),
           ),
-          
+
           _buildSyncStatus(context, syncService),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, AuthProvider authProvider, Color bgColor) {
+  Widget _buildHeader(
+    BuildContext context,
+    AuthProvider authProvider,
+    Color bgColor,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.only(top: 50, bottom: 20, left: 20, right: 20),
       color: bgColor,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start, // التصحيح للعربي: Start هو اليمين
+        crossAxisAlignment:
+            CrossAxisAlignment.start, // التصحيح للعربي: Start هو اليمين
         children: [
           const CircleAvatar(
             radius: 35,
             backgroundColor: Colors.white,
-            child: Icon(Icons.person_rounded, size: 45, color: Color(0xFF2196F3)),
+            child: Icon(
+              Icons.person_rounded,
+              size: 45,
+              color: Color(0xFF2196F3),
+            ),
           ),
           const SizedBox(height: 12),
           Text(
@@ -208,10 +255,7 @@ class MainDrawer extends StatelessWidget {
           ),
           Text(
             authProvider.currentUser?.role ?? 'admin',
-            style: const TextStyle(
-              color: Colors.white54,
-              fontSize: 13,
-            ),
+            style: const TextStyle(color: Colors.white54, fontSize: 13),
           ),
         ],
       ),
@@ -254,14 +298,16 @@ class MainDrawer extends StatelessWidget {
     required List<Widget> children,
   }) {
     return Theme(
-      data: Theme.of(context).copyWith(
-        dividerColor: Colors.transparent,
-      ),
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
       child: ExpansionTile(
         leading: Icon(icon, color: Colors.white70, size: 24),
         title: Text(
           title,
-          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w400),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+          ),
         ),
         iconColor: Colors.white,
         collapsedIconColor: Colors.white70,
@@ -286,7 +332,7 @@ class MainDrawer extends StatelessWidget {
 
   Widget _buildSyncStatus(BuildContext context, SyncService? syncService) {
     if (syncService == null) return const SizedBox.shrink();
-    
+
     return ValueListenableBuilder<bool>(
       valueListenable: syncService.isSyncing,
       builder: (context, isSyncing, child) {

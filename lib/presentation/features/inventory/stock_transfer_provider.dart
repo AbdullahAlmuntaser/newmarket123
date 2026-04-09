@@ -4,7 +4,7 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class StockTransferProvider with ChangeNotifier {
   final StockTransferService _service;
-  
+
   List<Warehouse> _warehouses = [];
   List<ProductBatch> _availableBatches = [];
   String? _selectedFromWarehouseId;
@@ -46,7 +46,9 @@ class StockTransferProvider with ChangeNotifier {
   }
 
   void addTransferItem(ProductBatch batch, double quantity) {
-    final existingIndex = _transferItems.indexWhere((item) => item.batchId == batch.id);
+    final existingIndex = _transferItems.indexWhere(
+      (item) => item.batchId == batch.id,
+    );
     if (existingIndex >= 0) {
       _transferItems[existingIndex] = TransferItemData(
         productId: batch.productId,
@@ -54,11 +56,13 @@ class StockTransferProvider with ChangeNotifier {
         quantity: _transferItems[existingIndex].quantity + quantity,
       );
     } else {
-      _transferItems.add(TransferItemData(
-        productId: batch.productId,
-        batchId: batch.id,
-        quantity: quantity,
-      ));
+      _transferItems.add(
+        TransferItemData(
+          productId: batch.productId,
+          batchId: batch.id,
+          quantity: quantity,
+        ),
+      );
     }
     notifyListeners();
   }
@@ -69,7 +73,9 @@ class StockTransferProvider with ChangeNotifier {
   }
 
   Future<void> submitTransfer(String? note) async {
-    if (_selectedFromWarehouseId == null || _selectedToWarehouseId == null || _transferItems.isEmpty) {
+    if (_selectedFromWarehouseId == null ||
+        _selectedToWarehouseId == null ||
+        _transferItems.isEmpty) {
       throw Exception('Please fill all required fields and add items.');
     }
 
@@ -84,7 +90,9 @@ class StockTransferProvider with ChangeNotifier {
       );
       _transferItems = [];
       // Refresh batches
-      _availableBatches = await _service.getBatchesForWarehouse(_selectedFromWarehouseId!);
+      _availableBatches = await _service.getBatchesForWarehouse(
+        _selectedFromWarehouseId!,
+      );
     } finally {
       _isLoading = false;
       notifyListeners();

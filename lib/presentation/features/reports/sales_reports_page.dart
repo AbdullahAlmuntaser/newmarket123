@@ -42,7 +42,10 @@ class _SalesReportsPageState extends State<SalesReportsPage> {
             const SizedBox(height: 16),
             _buildSalesChart(db),
             const SizedBox(height: 24),
-            Text('المنتجات الأكثر مبيعاً', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              'المنتجات الأكثر مبيعاً',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: 16),
             _buildTopProductsList(db),
           ],
@@ -68,9 +71,9 @@ class _SalesReportsPageState extends State<SalesReportsPage> {
 
   Widget _buildSummaryCards(AppDatabase db, AppLocalizations l10n) {
     return FutureBuilder<List<Sale>>(
-      future: (db.select(db.sales)
-            ..where((t) => t.createdAt.isBetweenValues(_startDate, _endDate)))
-          .get(),
+      future: (db.select(
+        db.sales,
+      )..where((t) => t.createdAt.isBetweenValues(_startDate, _endDate))).get(),
       builder: (context, snapshot) {
         final sales = snapshot.data ?? [];
         final totalRevenue = sales.fold(0.0, (sum, sale) => sum + sale.total);
@@ -111,9 +114,15 @@ class _SalesReportsPageState extends State<SalesReportsPage> {
           children: [
             Icon(icon, color: color, size: 32),
             const SizedBox(height: 8),
-            Text(title, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            ),
             const SizedBox(height: 4),
-            Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            Text(
+              value,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
       ),
@@ -124,12 +133,14 @@ class _SalesReportsPageState extends State<SalesReportsPage> {
     return SizedBox(
       height: 250,
       child: FutureBuilder<List<Sale>>(
-        future: (db.select(db.sales)
-              ..where((t) => t.createdAt.isBetweenValues(_startDate, _endDate)))
-            .get(),
+        future:
+            (db.select(db.sales)..where(
+                  (t) => t.createdAt.isBetweenValues(_startDate, _endDate),
+                ))
+                .get(),
         builder: (context, snapshot) {
           final sales = snapshot.data ?? [];
-          
+
           // Group sales by day
           Map<int, double> dailyTotals = {};
           for (var sale in sales) {
@@ -158,7 +169,12 @@ class _SalesReportsPageState extends State<SalesReportsPage> {
                   color: Theme.of(context).primaryColor,
                   barWidth: 4,
                   dotData: const FlDotData(show: true),
-                  belowBarData: BarAreaData(show: true, color: Theme.of(context).primaryColor.withValues(alpha: 0.1)),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.1),
+                  ),
                 ),
               ],
             ),
@@ -170,9 +186,15 @@ class _SalesReportsPageState extends State<SalesReportsPage> {
 
   Widget _buildTopProductsList(AppDatabase db) {
     return FutureBuilder<List<DashboardTopProduct>>(
-      future: db.salesDao.getTopSellingProducts(limit: 5).then((list) => 
-        list.map((p) => DashboardTopProduct(p.product.name, p.totalQuantity)).toList()
-      ),
+      future: db.salesDao
+          .getTopSellingProducts(limit: 5)
+          .then(
+            (list) => list
+                .map(
+                  (p) => DashboardTopProduct(p.product.name, p.totalQuantity),
+                )
+                .toList(),
+          ),
       builder: (context, snapshot) {
         final products = snapshot.data ?? [];
         return ListView.builder(

@@ -18,8 +18,7 @@ class _BackupPageState extends State<BackupPage> {
   Future<void> _createBackup() async {
     setState(() => _isLoading = true);
     try {
-      if (!mounted) return;
-      final db = Provider.of<AppDatabase>(context, listen: false);
+      final db = context.read<AppDatabase>();
       final backupService = BackupService(db);
       final path = await backupService.createLocalBackup();
       if (mounted) {
@@ -51,8 +50,7 @@ class _BackupPageState extends State<BackupPage> {
       return;
     }
     try {
-      if (!mounted) return;
-      final db = Provider.of<AppDatabase>(context, listen: false);
+      final db = context.read<AppDatabase>();
       final backupService = BackupService(db);
       await backupService.shareBackup(_lastBackupPath!);
     } catch (e) {
@@ -68,18 +66,47 @@ class _BackupPageState extends State<BackupPage> {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['json'],
+        allowedExtensions: ['sqlite'],
       );
 
       if (result != null) {
         if (!mounted) return;
+
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('تحذير'),
+            content: const Text(
+              'استعادة النسخة الاحتياطية ستقوم بحذف البيانات الحالية. هل أنت متأكد؟',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('إلغاء'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('استعادة'),
+              ),
+            ],
+          ),
+        );
+
+        if (confirmed != true) return;
+
         setState(() => _isLoading = true);
-        final db = Provider.of<AppDatabase>(context, listen: false);
+        if (!mounted) return;
+        final db = context.read<AppDatabase>();
         final backupService = BackupService(db);
         await backupService.restoreFromLocal(result.files.single.path!);
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم استعادة البيانات بنجاح')),
+            const SnackBar(
+              content: Text(
+                'تم استعادة البيانات بنجاح، سيتم إعادة تشغيل التطبيق.',
+              ),
+            ),
           );
         }
       }
@@ -109,9 +136,7 @@ class _BackupPageState extends State<BackupPage> {
                   child: ListTile(
                     leading: const Icon(Icons.save, color: Colors.blue),
                     title: const Text('إنشاء نسخة احتياطية محلية'),
-                    subtitle: const Text(
-                      'حفظ جميع البيانات في ملف JSON على الجهاز',
-                    ),
+                    subtitle: const Text('حفظ جميع البيانات في ملف على الجهاز'),
                     onTap: _createBackup,
                   ),
                 ),
@@ -133,19 +158,6 @@ class _BackupPageState extends State<BackupPage> {
                       'اختر ملف نسخة احتياطية لاستعادة البيانات',
                     ),
                     onTap: _restoreBackup,
-                  ),
-                ),
-                const Divider(height: 32),
-                const Text(
-                  'النسخ الاحتياطي السحابي (قريباً)',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                Card(
-                  child: ListTile(
-                    enabled: false,
-                    leading: const Icon(Icons.cloud_upload, color: Colors.grey),
-                    title: const Text('رفع إلى Firebase Storage'),
-                    onTap: () {},
                   ),
                 ),
               ],

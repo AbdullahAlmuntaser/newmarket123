@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/auth/auth_provider.dart';
+import 'package:uuid/uuid.dart';
 import 'dart:math';
 
 enum ReturnType { sale, purchase }
@@ -99,18 +101,14 @@ class _CreateReturnPageState extends State<CreateReturnPage> {
     List<dynamic> items = [];
 
     if (widget.type == ReturnType.sale) {
-      transaction = await (db.select(
-        db.sales,
-      )..where((t) => t.id.equals(id))).getSingleOrNull();
+      transaction = await db.salesDao.getSaleById(id);
       if (transaction != null) {
         items = await (db.select(
           db.saleItems,
         )..where((t) => t.saleId.equals(id))).get();
       }
     } else {
-      transaction = await (db.select(
-        db.purchases,
-      )..where((t) => t.id.equals(id))).getSingleOrNull();
+      transaction = await db.purchasesDao.getPurchaseById(id);
       if (transaction != null) {
         items = await (db.select(
           db.purchaseItems,
@@ -134,7 +132,7 @@ class _CreateReturnPageState extends State<CreateReturnPage> {
   Widget _buildTransactionDetails(AppLocalizations l10n) {
     final txDate = widget.type == ReturnType.sale
         ? (_selectedTransaction as Sale).createdAt
-        : (_selectedTransaction as Purchase).createdAt;
+        : (_selectedTransaction as Purchase).date;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -181,8 +179,8 @@ class _CreateReturnPageState extends State<CreateReturnPage> {
                         IconButton(
                           onPressed: () => setState(
                             () => _returnQuantities[item.productId] = max(
-                              0,
-                              (_returnQuantities[item.productId] ?? 0) - 1,
+                              0.0,
+                              (_returnQuantities[item.productId] ?? 0.0) - 1.0,
                             ),
                           ),
                           icon: const Icon(Icons.remove),
@@ -214,137 +212,113 @@ class _CreateReturnPageState extends State<CreateReturnPage> {
 
   Future<void> _processReturn() async {
     final db = Provider.of<AppDatabase>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final l10n = AppLocalizations.of(context)!;
 
-    await db.transaction(() async {
+    try {
       if (widget.type == ReturnType.sale) {
-        await _handleSaleReturn(db);
+        await _handleSaleReturn(db, authProvider.currentUser?.id);
       } else {
-        await _handlePurchaseReturn(db);
+        await _handlePurchaseReturn(db, authProvider.currentUser?.id);
       }
-    });
 
-    if (mounted) Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.returnProcessedSuccessfully),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
-  Future<void> _handleSaleReturn(AppDatabase db) async {
+  Future<void> _handleSaleReturn(AppDatabase db, String? userId) async {
     final sale = _selectedTransaction as Sale;
     double totalReturnedAmount = 0;
+    final List<SalesReturnItemsCompanion> itemCompanions = [];
+    final returnId = const Uuid().v4();
 
     for (var item in _transactionItems) {
       final returnedQty = _returnQuantities[item.productId] ?? 0;
       if (returnedQty > 0) {
         totalReturnedAmount += returnedQty * item.price;
+        itemCompanions.add(
+          SalesReturnItemsCompanion.insert(
+            id: drift.Value(const Uuid().v4()),
+            salesReturnId: returnId,
+            productId: item.productId,
+            quantity: returnedQty,
+            price: item.price,
+            syncStatus: const drift.Value(1),
+          ),
+        );
       }
     }
+
     if (totalReturnedAmount == 0) return;
 
     final returnCompanion = SalesReturnsCompanion.insert(
+      id: drift.Value(returnId),
       saleId: sale.id,
       amountReturned: totalReturnedAmount,
+      createdAt: drift.Value(DateTime.now()),
+      updatedAt: drift.Value(DateTime.now()),
       syncStatus: const drift.Value(1),
     );
-    final newReturn = await db
-        .into(db.salesReturns)
-        .insertReturning(returnCompanion);
 
-    for (var item in _transactionItems) {
-      final returnedQty = _returnQuantities[item.productId] ?? 0;
-      if (returnedQty > 0) {
-        await db
-            .into(db.salesReturnItems)
-            .insert(
-              SalesReturnItemsCompanion.insert(
-                salesReturnId: newReturn.id,
-                productId: item.productId,
-                quantity: returnedQty,
-                price: item.price,
-                syncStatus: const drift.Value(1),
-              ),
-            );
-
-        final product = await (db.select(
-          db.products,
-        )..where((p) => p.id.equals(item.productId))).getSingle();
-        await (db.update(
-          db.products,
-        )..where((p) => p.id.equals(item.productId))).write(
-          ProductsCompanion(stock: drift.Value(product.stock + returnedQty)),
-        );
-      }
-    }
-
-    if (sale.isCredit && sale.customerId != null) {
-      final customer = await (db.select(
-        db.customers,
-      )..where((c) => c.id.equals(sale.customerId!))).getSingle();
-      await (db.update(
-        db.customers,
-      )..where((c) => c.id.equals(sale.customerId!))).write(
-        CustomersCompanion(
-          balance: drift.Value(customer.balance - totalReturnedAmount),
-        ),
-      );
-    }
+    await db.salesDao.createSaleReturn(
+      returnCompanion: returnCompanion,
+      itemsCompanions: itemCompanions,
+      userId: userId,
+    );
   }
 
-  Future<void> _handlePurchaseReturn(AppDatabase db) async {
+  Future<void> _handlePurchaseReturn(AppDatabase db, String? userId) async {
     final purchase = _selectedTransaction as Purchase;
     double totalReturnedAmount = 0;
+    final List<PurchaseReturnItemsCompanion> itemCompanions = [];
+    final returnId = const Uuid().v4();
 
     for (var item in _transactionItems) {
       final returnedQty = _returnQuantities[item.productId] ?? 0;
       if (returnedQty > 0) {
         totalReturnedAmount += returnedQty * item.price;
-      }
-    }
-    if (totalReturnedAmount == 0) return;
-
-    final returnCompanion = PurchaseReturnsCompanion.insert(
-      purchaseId: purchase.id,
-      amountReturned: totalReturnedAmount,
-      syncStatus: const drift.Value(1),
-    );
-    final newReturn = await db
-        .into(db.purchaseReturns)
-        .insertReturning(returnCompanion);
-
-    for (var item in _transactionItems) {
-      final returnedQty = _returnQuantities[item.productId] ?? 0;
-      if (returnedQty > 0) {
-        await db
-            .into(db.purchaseReturnItems)
-            .insert(
-              PurchaseReturnItemsCompanion.insert(
-                purchaseReturnId: newReturn.id,
-                productId: item.productId,
-                quantity: returnedQty,
-                price: item.price,
-                syncStatus: const drift.Value(1),
-              ),
-            );
-
-        final product = await (db.select(
-          db.products,
-        )..where((p) => p.id.equals(item.productId))).getSingle();
-        await (db.update(
-          db.products,
-        )..where((p) => p.id.equals(item.productId))).write(
-          ProductsCompanion(stock: drift.Value(product.stock - returnedQty)),
+        itemCompanions.add(
+          PurchaseReturnItemsCompanion.insert(
+            id: drift.Value(const Uuid().v4()),
+            purchaseReturnId: returnId,
+            productId: item.productId,
+            quantity: returnedQty,
+            price: item.price,
+            syncStatus: const drift.Value(1),
+          ),
         );
       }
     }
 
-    if (purchase.supplierId != null) {
-      final supplier = await (db.select(
-        db.suppliers,
-      )..where((s) => s.id.equals(purchase.supplierId!))).getSingle();
-      await (db.update(
-        db.suppliers,
-      )..where((s) => s.id.equals(purchase.supplierId!))).write(
-        SuppliersCompanion(
-          balance: drift.Value(supplier.balance - totalReturnedAmount),
-        ),
-      );
-    }
+    if (totalReturnedAmount == 0) return;
+
+    final returnCompanion = PurchaseReturnsCompanion.insert(
+      id: drift.Value(returnId),
+      purchaseId: purchase.id,
+      amountReturned: totalReturnedAmount,
+      createdAt: drift.Value(DateTime.now()),
+      updatedAt: drift.Value(DateTime.now()),
+      syncStatus: const drift.Value(1),
+    );
+
+    await db.purchasesDao.createPurchaseReturn(
+      returnCompanion: returnCompanion,
+      itemsCompanions: itemCompanions,
+      userId: userId,
+    );
   }
 }

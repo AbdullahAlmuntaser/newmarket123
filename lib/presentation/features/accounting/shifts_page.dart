@@ -63,10 +63,19 @@ class _ShiftsPageState extends State<ShiftsPage> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                Text(l10n.currentShift, style: Theme.of(context).textTheme.headlineSmall),
+                Text(
+                  l10n.currentShift,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
                 const Divider(),
-                _infoRow(l10n.openShift, DateFormat('yyyy-MM-dd HH:mm').format(shift.startTime)),
-                _infoRow(l10n.openingCash, shift.openingCash.toStringAsFixed(2)),
+                _infoRow(
+                  l10n.openShift,
+                  DateFormat('yyyy-MM-dd HH:mm').format(shift.startTime),
+                ),
+                _infoRow(
+                  l10n.openingCash,
+                  shift.openingCash.toStringAsFixed(2),
+                ),
               ],
             ),
           ),
@@ -108,7 +117,11 @@ class _ShiftsPageState extends State<ShiftsPage> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.lock_open, size: 100, color: Theme.of(context).primaryColor.withValues(alpha: 0.2)),
+        Icon(
+          Icons.lock_open,
+          size: 100,
+          color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+        ),
         const SizedBox(height: 24),
         Text(l10n.noOpenShift, style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 32),
@@ -135,7 +148,9 @@ class _ShiftsPageState extends State<ShiftsPage> {
           width: double.infinity,
           height: 55,
           child: ElevatedButton(
-            onPressed: userId == null ? null : () => _handleOpenShift(context, userId),
+            onPressed: userId == null
+                ? null
+                : () => _handleOpenShift(context, userId),
             child: Text(l10n.openShift, style: const TextStyle(fontSize: 18)),
           ),
         ),
@@ -159,25 +174,35 @@ class _ShiftsPageState extends State<ShiftsPage> {
   Future<void> _handleOpenShift(BuildContext context, String userId) async {
     final cash = double.tryParse(_cashController.text);
     if (cash == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter valid cash amount')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter valid cash amount')),
+      );
       return;
     }
 
     try {
-      await context.read<ShiftProvider>().openShift(userId, cash, note: _noteController.text);
+      await context.read<ShiftProvider>().openShift(
+        userId,
+        cash,
+        note: _noteController.text,
+      );
       if (!context.mounted) return;
       _cashController.clear();
       _noteController.clear();
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
   Future<void> _handleCloseShift(BuildContext context) async {
     final cash = double.tryParse(_cashController.text);
     if (cash == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter valid cash amount')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter valid cash amount')),
+      );
       return;
     }
 
@@ -201,12 +226,18 @@ class _ShiftsPageState extends State<ShiftsPage> {
             if (diff != 0)
               Text(
                 diff > 0 ? 'Cash Surplus' : 'Cash Shortage',
-                style: TextStyle(color: diff > 0 ? Colors.green : Colors.red, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: diff > 0 ? Colors.green : Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
+          ),
           ElevatedButton(
             onPressed: () async {
               final navigator = Navigator.of(context);

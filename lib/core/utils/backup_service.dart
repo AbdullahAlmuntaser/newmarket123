@@ -21,13 +21,18 @@ class BackupService {
       throw Exception('Database file not found');
     }
 
-    final backupDir = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
+    final backupDir =
+        await getExternalStorageDirectory() ??
+        await getApplicationDocumentsDirectory();
     final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
-    final backupPath = p.join(backupDir.path, 'supermarket_backup_$timestamp.sqlite');
+    final backupPath = p.join(
+      backupDir.path,
+      'supermarket_backup_$timestamp.sqlite',
+    );
 
     // نسخ الملف
     await dbFile.copy(backupPath);
-    
+
     return backupPath;
   }
 
@@ -49,8 +54,8 @@ class BackupService {
   }
 
   Future<void> shareBackup(String filePath) async {
-     // ignore: deprecated_member_use
-     await Share.shareXFiles([XFile(filePath)], text: 'ERP Database Backup');
+    // ignore: deprecated_member_use
+    await Share.shareXFiles([XFile(filePath)], text: 'ERP Database Backup');
   }
 
   // دعم النسخ الاحتياطي التلقائي (يومي)

@@ -20,7 +20,11 @@ class _VatReportPageState extends State<VatReportPage> {
   void initState() {
     super.initState();
     _endDate = DateTime.now();
-    _startDate = DateTime(_endDate!.year, _endDate!.month, 1); // Default to start of current month
+    _startDate = DateTime(
+      _endDate!.year,
+      _endDate!.month,
+      1,
+    ); // Default to start of current month
   }
 
   Future<void> _selectDateRange(BuildContext context) async {
@@ -59,14 +63,20 @@ class _VatReportPageState extends State<VatReportPage> {
           ),
         ],
       ),
-      body: FutureBuilder<VatReportData>( // Assuming VatReportData will be created
-        future: provider.getVatReport(startDate: _startDate, endDate: _endDate), // Assuming getVatReport will be added to AccountingProvider
+      body: FutureBuilder<VatReportData>(
+        // Assuming VatReportData will be created
+        future: provider.getVatReport(
+          startDate: _startDate,
+          endDate: _endDate,
+        ), // Assuming getVatReport will be added to AccountingProvider
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('${l10n.errorLoadingData}: ${snapshot.error}'));
+            return Center(
+              child: Text('${l10n.errorLoadingData}: ${snapshot.error}'),
+            );
           }
           final data = snapshot.data;
           if (data == null) return Center(child: Text(l10n.noDataAvailable));
@@ -81,7 +91,10 @@ class _VatReportPageState extends State<VatReportPage> {
                 _buildSummaryCard(l10n, data), // Will create this widget
                 const SizedBox(height: 24),
                 // Here we will list detailed transactions
-                Text(l10n.vatOnSales, style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  l10n.vatOnSales,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 // Example: ListView for sales with VAT
                 // ...
               ],
@@ -101,7 +114,9 @@ class _VatReportPageState extends State<VatReportPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('${l10n.from}: ${formatter.format(_startDate ?? DateTime.now())}'),
+            Text(
+              '${l10n.from}: ${formatter.format(_startDate ?? DateTime.now())}',
+            ),
             Text('${l10n.to}: ${formatter.format(_endDate ?? DateTime.now())}'),
           ],
         ),
@@ -118,12 +133,24 @@ class _VatReportPageState extends State<VatReportPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l10n.vatSummary, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+            Text(
+              l10n.vatSummary,
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
             const Divider(),
             _buildSummaryRow(l10n.totalOutputVat, data.totalOutputVat),
-            _buildSummaryRow(l10n.totalInputVat, data.totalInputVat), // Assuming Input VAT from purchases later
+            _buildSummaryRow(
+              l10n.totalInputVat,
+              data.totalInputVat,
+            ), // Assuming Input VAT from purchases later
             const Divider(),
-            _buildSummaryRow(l10n.netVatPayable, data.netVatPayable, isBold: true),
+            _buildSummaryRow(
+              l10n.netVatPayable,
+              data.netVatPayable,
+              isBold: true,
+            ),
           ],
         ),
       ),
@@ -136,8 +163,14 @@ class _VatReportPageState extends State<VatReportPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: isBold ? const TextStyle(fontWeight: FontWeight.bold) : null),
-          Text(amount.toStringAsFixed(2), style: isBold ? const TextStyle(fontWeight: FontWeight.bold) : null),
+          Text(
+            label,
+            style: isBold ? const TextStyle(fontWeight: FontWeight.bold) : null,
+          ),
+          Text(
+            amount.toStringAsFixed(2),
+            style: isBold ? const TextStyle(fontWeight: FontWeight.bold) : null,
+          ),
         ],
       ),
     );

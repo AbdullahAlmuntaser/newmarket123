@@ -11,6 +11,8 @@ import 'package:supermarket/domain/usecases/update_category.dart';
 import 'package:supermarket/presentation/blocs/category/category_bloc.dart';
 import 'package:supermarket/presentation/features/products/products_provider.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:supermarket/core/services/event_bus_service.dart';
+import 'package:supermarket/core/services/pricing_service.dart';
 
 final sl = GetIt.instance;
 
@@ -20,7 +22,9 @@ void init() {
   sl.registerLazySingleton(() => db);
 
   // Services
-  sl.registerLazySingleton(() => AccountingService(sl()));
+  sl.registerLazySingleton(() => EventBusService());
+  sl.registerLazySingleton(() => AccountingService(sl(), sl()));
+  sl.registerLazySingleton(() => PricingService(sl()));
 
   // Providers
   sl.registerLazySingleton(() => AuthProvider(sl()));

@@ -51,20 +51,36 @@ class Products extends Table with SyncableTable {
   RealColumn get stock => real().withDefault(const Constant(0.0))();
   RealColumn get alertLimit => real().withDefault(const Constant(10.0))();
   DateTimeColumn get expiryDate => dateTime().nullable()();
+  RealColumn get taxRate =>
+      real().withDefault(const Constant(0.0))(); // New: Tax rate for ERP
 }
 
 class Customers extends Table with SyncableTable {
   TextColumn get name => text()();
   TextColumn get phone => text().nullable()();
+  TextColumn get taxNumber => text().nullable()(); // New: Tax Number for ERP
+  TextColumn get address => text().nullable()(); // New: Detailed Address
+  TextColumn get email => text().nullable()(); // New: Email
+  TextColumn get customerType => text().withDefault(const Constant('RETAIL'))(); // New: RETAIL, WHOLESALE, VIP
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))(); // New: Status
   RealColumn get creditLimit => real().withDefault(const Constant(0.0))();
   RealColumn get balance => real().withDefault(const Constant(0.0))();
+  TextColumn get accountId =>
+      text().nullable().references(GLAccounts, #id)(); // New: Linked to GL
 }
 
 class Suppliers extends Table with SyncableTable {
   TextColumn get name => text()();
   TextColumn get phone => text().nullable()();
   TextColumn get contactPerson => text().nullable()();
+  TextColumn get taxNumber => text().nullable()(); // New: Tax Number
+  TextColumn get address => text().nullable()(); // New: Address
+  TextColumn get email => text().nullable()(); // New: Email
+  TextColumn get supplierType => text().withDefault(const Constant('LOCAL'))(); // New: LOCAL, INTERNATIONAL
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))(); // New: Status
   RealColumn get balance => real().withDefault(const Constant(0.0))();
+  TextColumn get accountId =>
+      text().nullable().references(GLAccounts, #id)(); // New: Linked to GL
 }
 
 class Sales extends Table with SyncableTable {
@@ -74,6 +90,11 @@ class Sales extends Table with SyncableTable {
   RealColumn get tax => real().withDefault(const Constant(0.0))();
   TextColumn get paymentMethod => text()();
   BoolColumn get isCredit => boolean().withDefault(const Constant(false))();
+  TextColumn get status => text().withDefault(
+    const Constant('POSTED'),
+  )(); // New: DRAFT, POSTED, CANCELLED
+  TextColumn get currencyId => text().nullable()();
+  RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
 }
 
 class SaleItems extends Table with SyncableTable {
@@ -87,7 +108,7 @@ class SaleItems extends Table with SyncableTable {
 class Purchases extends Table with SyncableTable {
   TextColumn get supplierId => text().nullable().references(Suppliers, #id)();
   RealColumn get total => real()();
-  RealColumn get tax => real().withDefault(const Constant(0.0))(); // Added tax column
+  RealColumn get tax => real().withDefault(const Constant(0.0))();
   TextColumn get invoiceNumber => text().nullable()();
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
   BoolColumn get isCredit => boolean().withDefault(const Constant(false))();
@@ -95,6 +116,8 @@ class Purchases extends Table with SyncableTable {
     const Constant('RECEIVED'),
   )(); // DRAFT, ORDERED, RECEIVED, CANCELLED
   TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
+  TextColumn get currencyId => text().nullable()();
+  RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
 }
 
 class PurchaseItems extends Table with SyncableTable {
@@ -133,7 +156,7 @@ class SalesReturnItems extends Table with SyncableTable {
   TextColumn get salesReturnId => text().references(SalesReturns, #id)();
   TextColumn get productId => text().references(Products, #id)();
   RealColumn get quantity => real()();
-  RealColumn get price => real()(); // Price at the time of return
+  RealColumn get price => real()();
 }
 
 class PurchaseReturns extends Table with SyncableTable {
@@ -146,7 +169,7 @@ class PurchaseReturnItems extends Table with SyncableTable {
   TextColumn get purchaseReturnId => text().references(PurchaseReturns, #id)();
   TextColumn get productId => text().references(Products, #id)();
   RealColumn get quantity => real()();
-  RealColumn get price => real()(); // Price at the time of return
+  RealColumn get price => real()();
 }
 
 class CustomerPayments extends Table with SyncableTable {
@@ -180,6 +203,13 @@ class GLEntries extends Table with SyncableTable {
   TextColumn get referenceType =>
       text().nullable()(); // Sale, Purchase, Manual, Expense
   TextColumn get referenceId => text().nullable()();
+  TextColumn get status => text().withDefault(
+    const Constant('DRAFT'),
+  )(); // New: DRAFT, POSTED, CANCELLED
+  DateTimeColumn get postedAt => dateTime().nullable()(); // New
+  TextColumn get postedBy => text().nullable()(); // New
+  TextColumn get currencyId => text().nullable()();
+  RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
 }
 
 class GLLines extends Table with SyncableTable {
@@ -188,6 +218,13 @@ class GLLines extends Table with SyncableTable {
   RealColumn get debit => real().withDefault(const Constant(0.0))();
   RealColumn get credit => real().withDefault(const Constant(0.0))();
   TextColumn get memo => text().nullable()();
+}
+
+class AccountingPeriods extends Table with SyncableTable {
+  TextColumn get name => text()();
+  DateTimeColumn get startDate => dateTime()();
+  DateTimeColumn get endDate => dateTime()();
+  BoolColumn get isClosed => boolean().withDefault(const Constant(false))();
 }
 
 class FixedAssets extends Table with SyncableTable {
@@ -250,7 +287,7 @@ class AuditLogs extends Table with SyncableTable {
   TextColumn get action => text()(); // CREATE, UPDATE, DELETE
   TextColumn get targetEntity => text()(); // Products, Sales, etc.
   TextColumn get entityId => text()();
-  TextColumn get details => text().nullable()(); // JSON or description
+  TextColumn get details => text().nullable()();
   DateTimeColumn get timestamp => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -260,7 +297,7 @@ class StockTransfers extends Table with SyncableTable {
   DateTimeColumn get transferDate =>
       dateTime().withDefault(currentDateAndTime)();
   TextColumn get note => text().nullable()();
-  TextColumn get status => text().withDefault(const Constant('COMPLETED'))(); // PENDING, COMPLETED, CANCELLED
+  TextColumn get status => text().withDefault(const Constant('COMPLETED'))();
 }
 
 class StockTransferItems extends Table with SyncableTable {
@@ -281,11 +318,11 @@ class Employees extends Table with SyncableTable {
 }
 
 class PayrollEntries extends Table with SyncableTable {
-  IntColumn get month => integer()(); // 1-12
+  IntColumn get month => integer()();
   IntColumn get year => integer()();
   DateTimeColumn get generationDate =>
       dateTime().withDefault(currentDateAndTime)();
-  TextColumn get status => text().withDefault(const Constant('DRAFT'))(); // DRAFT, APPROVED, PAID
+  TextColumn get status => text().withDefault(const Constant('DRAFT'))();
   TextColumn get note => text().nullable()();
 }
 
@@ -299,22 +336,61 @@ class PayrollLines extends Table with SyncableTable {
 }
 
 class Permissions extends Table with SyncableTable {
-  TextColumn get code => text().unique()(); // e.g., 'sales.create', 'products.delete'
+  TextColumn get code => text().unique()();
   TextColumn get description => text().nullable()();
 }
 
 class RolePermissions extends Table with SyncableTable {
-  TextColumn get role => text()(); // e.g., 'ADMIN', 'CASHIER'
+  TextColumn get role => text()();
   TextColumn get permissionCode => text().references(Permissions, #code)();
 }
 
 class CashboxTransactions extends Table with SyncableTable {
   RealColumn get amount => real()();
-  TextColumn get type => text()(); // IN, OUT
-  TextColumn get category => text()(); // SALES, PURCHASE_PAYMENT, EXPENSE, MANUAL
+  TextColumn get type => text()();
+  TextColumn get category => text()();
   TextColumn get referenceId => text().nullable()();
   TextColumn get note => text().nullable()();
   TextColumn get userId => text().references(Users, #id)();
+}
+
+class PriceLists extends Table with SyncableTable {
+  TextColumn get name => text()();
+  TextColumn get currency => text().withDefault(const Constant('USD'))();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  TextColumn get description => text().nullable()();
+}
+
+class PriceListItems extends Table with SyncableTable {
+  TextColumn get priceListId => text().references(PriceLists, #id)();
+  TextColumn get productId => text().references(Products, #id)();
+  RealColumn get price => real()();
+  RealColumn get minQuantity => real().withDefault(const Constant(0.0))();
+}
+
+class Promotions extends Table with SyncableTable {
+  TextColumn get name => text()();
+  TextColumn get type =>
+      text()(); // PERCENTAGE_DISCOUNT, FIXED_DISCOUNT, BOGO (Buy One Get One)
+  RealColumn get value => real()(); // Discount amount or percentage
+  DateTimeColumn get startDate => dateTime()();
+  DateTimeColumn get endDate => dateTime()();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  TextColumn get categoryId => text().nullable().references(
+    Categories,
+    #id,
+  )(); // Optional category constraint
+  TextColumn get productId => text().nullable().references(
+    Products,
+    #id,
+  )(); // Optional product constraint
+  RealColumn get minPurchaseAmount => real().withDefault(const Constant(0.0))();
+}
+
+class Currencies extends Table with SyncableTable {
+  TextColumn get code => text().unique()(); // e.g., USD, SAR
+  TextColumn get name => text()();
+  RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
 }
 
 @DriftDatabase(
@@ -338,6 +414,7 @@ class CashboxTransactions extends Table with SyncableTable {
     GLAccounts,
     GLEntries,
     GLLines,
+    AccountingPeriods,
     FixedAssets,
     InventoryAudits,
     InventoryAuditItems,
@@ -354,6 +431,10 @@ class CashboxTransactions extends Table with SyncableTable {
     Permissions,
     RolePermissions,
     CashboxTransactions,
+    PriceLists,
+    PriceListItems,
+    Promotions,
+    Currencies,
   ],
   daos: [
     ProductsDao,
@@ -362,13 +443,12 @@ class CashboxTransactions extends Table with SyncableTable {
     AccountingDao,
     UsersDao,
     SuppliersDao,
-    PurchasesDao
+    PurchasesDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
-  // Performance Indices
   List<TableIndex> get indices => [
     TableIndex(name: 'products_sku_idx', columns: {products.sku}),
     TableIndex(name: 'sales_customer_idx', columns: {sales.customerId}),
@@ -382,7 +462,7 @@ class AppDatabase extends _$AppDatabase {
       (select(syncQueue)).get().then((v) => v.length);
 
   @override
-  int get schemaVersion => 14; // Incremented schema version
+  int get schemaVersion => 20; // Incremented to 20
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -441,6 +521,46 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(saleItems, saleItems.isCarton);
         await m.addColumn(purchaseItems, purchaseItems.isCarton);
       }
+      if (from < 15) {
+        await m.createTable(accountingPeriods);
+        await m.addColumn(gLEntries, gLEntries.status);
+        await m.addColumn(gLEntries, gLEntries.postedAt);
+        await m.addColumn(gLEntries, gLEntries.postedBy);
+        await m.addColumn(customers, customers.accountId);
+        await m.addColumn(suppliers, suppliers.accountId);
+        await m.addColumn(products, products.taxRate);
+        await m.addColumn(sales, sales.status);
+      }
+      if (from < 16) {
+        await m.createTable(priceLists);
+        await m.createTable(priceListItems);
+        await m.createTable(promotions);
+      }
+      if (from < 17) {
+        await m.createTable(currencies);
+      }
+      if (from < 18) {
+        await m.addColumn(sales, sales.currencyId);
+        await m.addColumn(sales, sales.exchangeRate);
+        await m.addColumn(purchases, purchases.currencyId);
+        await m.addColumn(purchases, purchases.exchangeRate);
+        await m.addColumn(gLEntries, gLEntries.currencyId);
+        await m.addColumn(gLEntries, gLEntries.exchangeRate);
+      }
+      if (from < 19) {
+        await m.addColumn(customers, customers.taxNumber);
+        await m.addColumn(customers, customers.address);
+        await m.addColumn(customers, customers.email);
+        await m.addColumn(customers, customers.customerType);
+        await m.addColumn(customers, customers.isActive);
+      }
+      if (from < 20) {
+        await m.addColumn(suppliers, suppliers.taxNumber);
+        await m.addColumn(suppliers, suppliers.address);
+        await m.addColumn(suppliers, suppliers.email);
+        await m.addColumn(suppliers, suppliers.supplierType);
+        await m.addColumn(suppliers, suppliers.isActive);
+      }
     },
   );
 
@@ -474,7 +594,6 @@ LazyDatabase _openConnection() {
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, 'app_db.sqlite'));
 
-    // This is required for Android to pass the encryption key correctly.
     await applyWorkaroundToOpenSqlite3OnOldAndroidVersions();
 
     return NativeDatabase(

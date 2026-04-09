@@ -34,7 +34,9 @@ class _PayrollPageState extends State<PayrollPage> {
                 return ListTile(
                   leading: const Icon(Icons.payments),
                   title: Text('شهر ${entry.month} - سنة ${entry.year}'),
-                  subtitle: Text('الحالة: ${entry.status} - ${entry.note ?? ''}'),
+                  subtitle: Text(
+                    'الحالة: ${entry.status} - ${entry.note ?? ''}',
+                  ),
                   onTap: () => _showPayrollDetails(context, provider, entry),
                 );
               },
@@ -47,8 +49,12 @@ class _PayrollPageState extends State<PayrollPage> {
   }
 
   void _showGenerateDialog(BuildContext context, PayrollProvider provider) {
-    final monthController = TextEditingController(text: DateTime.now().month.toString());
-    final yearController = TextEditingController(text: DateTime.now().year.toString());
+    final monthController = TextEditingController(
+      text: DateTime.now().month.toString(),
+    );
+    final yearController = TextEditingController(
+      text: DateTime.now().year.toString(),
+    );
     final noteController = TextEditingController();
 
     showDialog(
@@ -58,13 +64,27 @@ class _PayrollPageState extends State<PayrollPage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: monthController, decoration: const InputDecoration(labelText: 'الشهر'), keyboardType: TextInputType.number),
-            TextField(controller: yearController, decoration: const InputDecoration(labelText: 'السنة'), keyboardType: TextInputType.number),
-            TextField(controller: noteController, decoration: const InputDecoration(labelText: 'ملاحظات')),
+            TextField(
+              controller: monthController,
+              decoration: const InputDecoration(labelText: 'الشهر'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: yearController,
+              decoration: const InputDecoration(labelText: 'السنة'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: noteController,
+              decoration: const InputDecoration(labelText: 'ملاحظات'),
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
           ElevatedButton(
             onPressed: () {
               provider.generatePayroll(
@@ -81,7 +101,11 @@ class _PayrollPageState extends State<PayrollPage> {
     );
   }
 
-  void _showPayrollDetails(BuildContext context, PayrollProvider provider, PayrollEntry entry) async {
+  void _showPayrollDetails(
+    BuildContext context,
+    PayrollProvider provider,
+    PayrollEntry entry,
+  ) async {
     final lines = await provider.getPayrollLines(entry.id);
     if (!context.mounted) return;
 
@@ -97,7 +121,10 @@ class _PayrollPageState extends State<PayrollPage> {
           children: [
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Text('تفاصيل رواتب شهر ${entry.month}/${entry.year}', style: Theme.of(context).textTheme.titleLarge),
+              child: Text(
+                'تفاصيل رواتب شهر ${entry.month}/${entry.year}',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
             ),
             Expanded(
               child: ListView.builder(
@@ -108,11 +135,20 @@ class _PayrollPageState extends State<PayrollPage> {
                   final db = context.read<AppDatabase>();
                   return ListTile(
                     title: FutureBuilder<Employee?>(
-                      future: (db.select(db.employees)..where((t) => t.id.equals(line.employeeId))).getSingleOrNull(),
-                      builder: (context, snapshot) => Text(snapshot.data?.name ?? 'تحميل...'),
+                      future:
+                          (db.select(db.employees)
+                                ..where((t) => t.id.equals(line.employeeId)))
+                              .getSingleOrNull(),
+                      builder: (context, snapshot) =>
+                          Text(snapshot.data?.name ?? 'تحميل...'),
                     ),
-                    subtitle: Text('الأساسي: ${line.basicSalary} | البدلات: ${line.allowances} | الخصومات: ${line.deductions}'),
-                    trailing: Text(line.netSalary.toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(
+                      'الأساسي: ${line.basicSalary} | البدلات: ${line.allowances} | الخصومات: ${line.deductions}',
+                    ),
+                    trailing: Text(
+                      line.netSalary.toStringAsFixed(2),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   );
                 },
               ),

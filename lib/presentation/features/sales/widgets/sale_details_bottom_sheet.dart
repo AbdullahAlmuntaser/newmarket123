@@ -24,25 +24,35 @@ class SaleDetailsBottomSheet extends StatelessWidget {
       maxChildSize: 0.9,
       expand: false,
       builder: (context, scrollController) => FutureBuilder<List<SaleItem>>(
-        future: (db.select(db.saleItems)..where((t) => t.saleId.equals(sale.id))).get(),
+        future: (db.select(
+          db.saleItems,
+        )..where((t) => t.saleId.equals(sale.id))).get(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
           final items = snapshot.data ?? [];
           if (items.isEmpty) {
-            return Center(child: Text(l10n.noItemsFound)); // Assuming you have this localization
+            return Center(
+              child: Text(l10n.noItemsFound),
+            ); // Assuming you have this localization
           }
 
           // Optimized product fetching: Fetch all products related to sale items in one go
           return FutureBuilder<List<Product>>(
-            future: (db.select(db.products)..where((p) => p.id.isIn(items.map((i) => i.productId).toList()))).get(),
+            future:
+                (db.select(db.products)..where(
+                      (p) => p.id.isIn(items.map((i) => i.productId).toList()),
+                    ))
+                    .get(),
             builder: (context, productSnapshot) {
               if (productSnapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
               final products = productSnapshot.data ?? [];
-              final Map<String, Product> productMap = {for (var p in products) p.id: p};
+              final Map<String, Product> productMap = {
+                for (var p in products) p.id: p,
+              };
 
               return Column(
                 children: [
@@ -58,7 +68,13 @@ class SaleDetailsBottomSheet extends StatelessWidget {
                         IconButton(
                           icon: const Icon(Icons.picture_as_pdf),
                           tooltip: l10n.viewInvoice,
-                          onPressed: () => _viewInvoice(context, db, sale, items, productMap),
+                          onPressed: () => _viewInvoice(
+                            context,
+                            db,
+                            sale,
+                            items,
+                            productMap,
+                          ),
                         ),
                       ],
                     ),
@@ -71,7 +87,9 @@ class SaleDetailsBottomSheet extends StatelessWidget {
                         final item = items[index];
                         final product = productMap[item.productId];
                         return ListTile(
-                          title: Text(product?.name ?? l10n.unknownProduct), // Assuming unknownProduct localization
+                          title: Text(
+                            product?.name ?? l10n.unknownProduct,
+                          ), // Assuming unknownProduct localization
                           subtitle: Text(
                             l10n.qtyAtPrice(
                               item.quantity.toString(),

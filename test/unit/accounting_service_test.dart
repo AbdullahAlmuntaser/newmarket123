@@ -3,20 +3,24 @@ import 'package:drift/native.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:supermarket/core/services/event_bus_service.dart';
 import 'package:uuid/uuid.dart';
 
 void main() {
   late AppDatabase db;
   late AccountingService service;
+  late EventBusService eventBus;
 
   setUp(() async {
     db = AppDatabase(NativeDatabase.memory());
-    service = AccountingService(db);
+    eventBus = EventBusService();
+    service = AccountingService(db, eventBus);
     await service.seedDefaultAccounts();
   });
 
   tearDown(() async {
     await db.close();
+    eventBus.dispose();
   });
 
   test('AccountingService seeds default accounts', () async {
@@ -39,9 +43,12 @@ void main() {
       discount: 0.0,
       paymentMethod: 'Cash',
       isCredit: false,
+      status: 'POSTED',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
       syncStatus: 1,
+      currencyId: 'USD',
+      exchangeRate: 1.0,
     );
 
     // Mock products for COGS
@@ -58,32 +65,36 @@ void main() {
             stock: const Value(10.0),
           ),
         );
-        
+
     // MUST insert a batch for COGS calculation to work (AccountingService uses batches)
     final warehouseId = const Uuid().v4();
-    await db.into(db.warehouses).insert(
-      WarehousesCompanion.insert(
-        id: Value(warehouseId),
-        name: 'Main Warehouse',
-        createdAt: Value(DateTime.now()),
-        updatedAt: Value(DateTime.now()),
-        syncStatus: const Value(1),
-      ),
-    );
+    await db
+        .into(db.warehouses)
+        .insert(
+          WarehousesCompanion.insert(
+            id: Value(warehouseId),
+            name: 'Main Warehouse',
+            createdAt: Value(DateTime.now()),
+            updatedAt: Value(DateTime.now()),
+            syncStatus: const Value(1),
+          ),
+        );
 
-    await db.into(db.productBatches).insert(
-      ProductBatchesCompanion.insert(
-        id: Value(const Uuid().v4()),
-        productId: productId,
-        warehouseId: warehouseId,
-        batchNumber: 'BATCH-001',
-        quantity: const Value(10.0),
-        costPrice: const Value(50.0),
-        createdAt: Value(DateTime.now()),
-        updatedAt: Value(DateTime.now()),
-        syncStatus: const Value(1),
-      ),
-    );
+    await db
+        .into(db.productBatches)
+        .insert(
+          ProductBatchesCompanion.insert(
+            id: Value(const Uuid().v4()),
+            productId: productId,
+            warehouseId: warehouseId,
+            batchNumber: 'BATCH-001',
+            quantity: const Value(10.0),
+            costPrice: const Value(50.0),
+            createdAt: Value(DateTime.now()),
+            updatedAt: Value(DateTime.now()),
+            syncStatus: const Value(1),
+          ),
+        );
 
     final saleItems = [
       SaleItem(

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:supermarket/core/services/event_bus_service.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart';
+import 'package:supermarket/injection_container.dart';
 import 'package:uuid/uuid.dart';
 
 class AccountingProvider with ChangeNotifier {
@@ -10,7 +12,7 @@ class AccountingProvider with ChangeNotifier {
   late final AccountingService service;
 
   AccountingProvider(this.db) {
-    service = AccountingService(db);
+    service = AccountingService(db, sl<EventBusService>());
   }
 
   void refresh() {
@@ -101,7 +103,9 @@ class AccountingProvider with ChangeNotifier {
     }
 
     if ((totalDebit - totalCredit).abs() > 0.001) {
-      throw Exception('القيد غير متوازن. المدين: $totalDebit, الدائن: $totalCredit');
+      throw Exception(
+        'القيد غير متوازن. المدين: $totalDebit, الدائن: $totalCredit',
+      );
     }
 
     final entryId = const Uuid().v4();
@@ -113,7 +117,9 @@ class AccountingProvider with ChangeNotifier {
     );
 
     // Update lines with entryId
-    final updatedLines = lines.map((l) => l.copyWith(entryId: Value(entryId))).toList();
+    final updatedLines = lines
+        .map((l) => l.copyWith(entryId: Value(entryId)))
+        .toList();
 
     await db.accountingDao.createEntry(entry, updatedLines);
     notifyListeners();

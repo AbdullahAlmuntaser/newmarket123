@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:drift/drift.dart' as drift;
+import 'package:bcrypt/bcrypt.dart';
 
 class StaffManagementPage extends StatefulWidget {
   const StaffManagementPage({super.key});
@@ -100,7 +101,9 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
                       .toList(),
                   onChanged: (value) {
                     if (value != null) {
-                      selectedRole = value;
+                      setState(() {
+                        selectedRole = value;
+                      });
                     }
                   },
                   decoration: InputDecoration(labelText: l10n.role),
@@ -121,20 +124,27 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
 
                 if (fullName.isNotEmpty && username.isNotEmpty) {
                   if (isEditing) {
+                    String finalPassword = user.password;
+                    if (password.isNotEmpty) {
+                      finalPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+                    }
                     final updatedUser = user.copyWith(
                       fullName: fullName,
                       username: username,
                       role: selectedRole,
-                      password: password.isNotEmpty ? password : user.password,
+                      password: finalPassword,
                     );
                     await db.usersDao.updateUser(updatedUser);
                   } else {
+                    if (password.isEmpty) return; // Simple validation
+                    final hashedPassword = BCrypt.hashpw(
+                      password,
+                      BCrypt.gensalt(),
+                    );
                     final newUser = UsersCompanion(
                       fullName: drift.Value(fullName),
                       username: drift.Value(username),
-                      password: drift.Value(
-                        password,
-                      ), // Passwords should be hashed
+                      password: drift.Value(hashedPassword),
                       role: drift.Value(selectedRole),
                     );
                     await db.usersDao.addUser(newUser);

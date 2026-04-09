@@ -14,7 +14,9 @@ class HRService {
 
   // Employee Management
   Future<List<Employee>> getAllEmployees() async {
-    return await (db.select(db.employees)..where((t) => t.isActive.equals(true))).get();
+    return await (db.select(
+      db.employees,
+    )..where((t) => t.isActive.equals(true))).get();
   }
 
   Future<void> addEmployee(EmployeesCompanion employee) async {
@@ -37,7 +39,9 @@ class HRService {
     final entryId = const Uuid().v4();
 
     await db.transaction(() async {
-      await db.into(db.payrollEntries).insert(
+      await db
+          .into(db.payrollEntries)
+          .insert(
             PayrollEntriesCompanion.insert(
               id: Value(entryId),
               month: month,
@@ -48,7 +52,9 @@ class HRService {
           );
 
       for (var emp in employees) {
-        await db.into(db.payrollLines).insert(
+        await db
+            .into(db.payrollLines)
+            .insert(
               PayrollLinesCompanion.insert(
                 id: Value(const Uuid().v4()),
                 payrollEntryId: entryId,
@@ -67,23 +73,27 @@ class HRService {
   Future<void> approveAndPostPayroll(String entryId, {String? userId}) async {
     await db.transaction(() async {
       // 1. جلب الكشف والتأكد من حالته
-      final entry = await (db.select(db.payrollEntries)..where((t) => t.id.equals(entryId))).getSingle();
+      final entry = await (db.select(
+        db.payrollEntries,
+      )..where((t) => t.id.equals(entryId))).getSingle();
       if (entry.status != 'DRAFT') {
         throw Exception('كشف الرواتب معتمد بالفعل أو مدفوع');
       }
 
       // 2. جلب التفاصيل لحساب الإجمالي
       final lines = await getPayrollLines(entryId);
-      double totalNetSalary = lines.fold(0, (sum, line) => sum + line.netSalary);
+      double totalNetSalary = lines.fold(
+        0,
+        (sum, line) => sum + line.netSalary,
+      );
 
       if (totalNetSalary <= 0) {
         throw Exception('لا يمكن اعتماد كشف رواتب بإجمالي صفر أو سالب');
       }
 
       // 3. تحديث حالة الكشف
-      await (db.update(db.payrollEntries)..where((t) => t.id.equals(entryId))).write(
-        const PayrollEntriesCompanion(status: Value('PAID')),
-      );
+      await (db.update(db.payrollEntries)..where((t) => t.id.equals(entryId)))
+          .write(const PayrollEntriesCompanion(status: Value('PAID')));
 
       // 4. إنشاء القيد المحاسبي
       await _postPayrollToAccounting(totalNetSalary, entry);
@@ -94,21 +104,29 @@ class HRService {
         targetEntity: 'PayrollEntries',
         entityId: entryId,
         userId: userId,
-        details: 'Approved payroll for ${entry.month}/${entry.year}. Total: $totalNetSalary',
+        details:
+            'Approved payroll for ${entry.month}/${entry.year}. Total: $totalNetSalary',
       );
     });
   }
 
-  Future<void> _postPayrollToAccounting(double amount, PayrollEntry entry) async {
+  Future<void> _postPayrollToAccounting(
+    double amount,
+    PayrollEntry entry,
+  ) async {
     final dao = db.accountingDao;
     final journalEntryId = const Uuid().v4();
 
     // نحتاج لحساب المصاريف (الرواتب) وحساب النقدية
-    final expenseAccount = await dao.getAccountByCode(AccountingService.codeOperatingExpenses);
+    final expenseAccount = await dao.getAccountByCode(
+      AccountingService.codeOperatingExpenses,
+    );
     final cashAccount = await dao.getAccountByCode(AccountingService.codeCash);
 
     if (expenseAccount == null || cashAccount == null) {
-      throw Exception('Missing GL accounts for payroll posting (Salaries Expense or Cash).');
+      throw Exception(
+        'Missing GL accounts for payroll posting (Salaries Expense or Cash).',
+      );
     }
 
     final journalEntry = GLEntriesCompanion.insert(
@@ -142,10 +160,16 @@ class HRService {
   }
 
   Future<List<PayrollEntry>> getAllPayrollEntries() async {
-    return await (db.select(db.payrollEntries)..orderBy([(t) => OrderingTerm.desc(t.year), (t) => OrderingTerm.desc(t.month)])).get();
+    return await (db.select(db.payrollEntries)..orderBy([
+          (t) => OrderingTerm.desc(t.year),
+          (t) => OrderingTerm.desc(t.month),
+        ]))
+        .get();
   }
 
   Future<List<PayrollLine>> getPayrollLines(String entryId) async {
-    return await (db.select(db.payrollLines)..where((t) => t.payrollEntryId.equals(entryId))).get();
+    return await (db.select(
+      db.payrollLines,
+    )..where((t) => t.payrollEntryId.equals(entryId))).get();
   }
 }

@@ -6,6 +6,7 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'widgets/add_edit_supplier_dialog.dart';
 import 'supplier_statement_page.dart';
 import 'package:supermarket/presentation/widgets/main_drawer.dart';
+import 'package:supermarket/core/services/accounting_service.dart';
 
 class SuppliersPage extends StatefulWidget {
   const SuppliersPage({super.key});
@@ -183,17 +184,40 @@ class _SuppliersPageState extends State<SuppliersPage> {
 
   Future<void> _addSupplier(AppDatabase db) async {
     final l10n = AppLocalizations.of(context)!;
+    final accountingService = Provider.of<AccountingService>(
+      context,
+      listen: false,
+    );
+
     final companion = await showDialog<SuppliersCompanion>(
       context: context,
       builder: (context) => const AddEditSupplierDialog(),
     );
 
     if (companion != null) {
-      await db.into(db.suppliers).insert(companion);
-      if (mounted) {
+      try {
+        await db.transaction(() async {
+          // 1. Create GL Account for the supplier
+          final accountId = await accountingService.createSupplierAccount(
+            companion.name.value,
+          );
+
+          // 2. Insert supplier with the new accountId
+          final finalCompanion = companion.copyWith(
+            accountId: drift.Value(accountId),
+          );
+          await db.into(db.suppliers).insert(finalCompanion);
+        });
+
+        if (!mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(l10n.supplierAdded)));
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }

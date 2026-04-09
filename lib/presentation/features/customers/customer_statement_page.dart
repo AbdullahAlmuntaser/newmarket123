@@ -17,7 +17,9 @@ class _CustomerStatementPageState extends State<CustomerStatementPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CustomerStatementProvider>().loadStatement(widget.customerId);
+      context.read<CustomerStatementProvider>().loadStatement(
+        widget.customerId,
+      );
     });
   }
 
@@ -57,7 +59,10 @@ class _CustomerStatementPageState extends State<CustomerStatementPage> {
     );
   }
 
-  Widget _buildSummaryHeader(BuildContext context, CustomerStatementProvider provider) {
+  Widget _buildSummaryHeader(
+    BuildContext context,
+    CustomerStatementProvider provider,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16.0),
       color: Theme.of(context).colorScheme.surfaceContainerLow,
@@ -65,15 +70,32 @@ class _CustomerStatementPageState extends State<CustomerStatementPage> {
         children: [
           Text(
             provider.customer!.name,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildSummaryItem(context, 'إجمالي المبيعات', provider.totalDebit, Colors.red),
-              _buildSummaryItem(context, 'إجمالي المدفوعات', provider.totalCredit, Colors.green),
-              _buildSummaryItem(context, 'الرصيد المتبقي', provider.balance, Theme.of(context).colorScheme.primary),
+              _buildSummaryItem(
+                context,
+                'إجمالي المبيعات',
+                provider.totalDebit,
+                Colors.red,
+              ),
+              _buildSummaryItem(
+                context,
+                'إجمالي المدفوعات',
+                provider.totalCredit,
+                Colors.green,
+              ),
+              _buildSummaryItem(
+                context,
+                'الرصيد المتبقي',
+                provider.balance,
+                Theme.of(context).colorScheme.primary,
+              ),
             ],
           ),
         ],
@@ -81,7 +103,12 @@ class _CustomerStatementPageState extends State<CustomerStatementPage> {
     );
   }
 
-  Widget _buildSummaryItem(BuildContext context, String label, double value, Color color) {
+  Widget _buildSummaryItem(
+    BuildContext context,
+    String label,
+    double value,
+    Color color,
+  ) {
     final currency = intl.NumberFormat.currency(symbol: '');
     return Column(
       children: [
@@ -89,15 +116,23 @@ class _CustomerStatementPageState extends State<CustomerStatementPage> {
         const SizedBox(height: 4),
         Text(
           currency.format(value),
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: color),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildTransactionsList(BuildContext context, CustomerStatementProvider provider) {
+  Widget _buildTransactionsList(
+    BuildContext context,
+    CustomerStatementProvider provider,
+  ) {
     if (provider.transactions.isEmpty) {
-      return const Expanded(child: Center(child: Text('لا توجد حركات مالية لهذا العميل')));
+      return const Expanded(
+        child: Center(child: Text('لا توجد حركات مالية لهذا العميل')),
+      );
     }
 
     double runningBalance = 0;
@@ -116,16 +151,24 @@ class _CustomerStatementPageState extends State<CustomerStatementPage> {
             ],
             rows: provider.transactions.map((t) {
               runningBalance += (t.debit - t.credit);
-              return DataRow(cells: [
-                DataCell(Text(intl.DateFormat('yyyy/MM/dd').format(t.date))),
-                DataCell(Text(t.description)),
-                DataCell(Text(t.debit > 0 ? t.debit.toStringAsFixed(2) : '-')),
-                DataCell(Text(t.credit > 0 ? t.credit.toStringAsFixed(2) : '-')),
-                DataCell(Text(
-                  runningBalance.toStringAsFixed(2),
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                )),
-              ]);
+              return DataRow(
+                cells: [
+                  DataCell(Text(intl.DateFormat('yyyy/MM/dd').format(t.date))),
+                  DataCell(Text(t.description)),
+                  DataCell(
+                    Text(t.debit > 0 ? t.debit.toStringAsFixed(2) : '-'),
+                  ),
+                  DataCell(
+                    Text(t.credit > 0 ? t.credit.toStringAsFixed(2) : '-'),
+                  ),
+                  DataCell(
+                    Text(
+                      runningBalance.toStringAsFixed(2),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              );
             }).toList(),
           ),
         ),
