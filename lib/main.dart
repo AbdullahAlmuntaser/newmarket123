@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
@@ -73,8 +72,6 @@ void main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
 
-    await Firebase.initializeApp();
-    
     di.init();
 
     final authProvider = di.sl<AuthProvider>();

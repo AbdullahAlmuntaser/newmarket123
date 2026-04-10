@@ -2,13 +2,11 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/utils/logger.dart';
 
 class BackupService {
   final AppDatabase db;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   BackupService(this.db);
 
@@ -63,45 +61,22 @@ class BackupService {
     try {
       final path = await createLocalBackup();
       AppLogger.info('Auto backup created at: $path');
-      await uploadToFirebase(path);
+      // Cloud upload disabled
     } catch (e) {
       AppLogger.error('Auto backup failed', error: e);
     }
   }
 
   Future<List<String>> listCloudBackups() async {
-    try {
-      final ListResult result = await _storage.ref('backups').listAll();
-      return result.items.map((ref) => ref.name).toList();
-    } catch (e) {
-      AppLogger.error('Failed to list cloud backups', error: e);
-      return [];
-    }
+    // Disabled as Firebase is removed
+    return [];
   }
 
   Future<void> uploadToFirebase(String filePath) async {
-    try {
-      final file = File(filePath);
-      final fileName = p.basename(filePath);
-      await _storage.ref('backups/$fileName').putFile(file);
-      AppLogger.info('Backup uploaded to cloud: $fileName');
-    } catch (e) {
-      AppLogger.error('Cloud upload failed', error: e);
-    }
+    // Disabled
   }
 
   Future<void> downloadAndRestore(String fileName) async {
-    try {
-      final dbFolder = await getApplicationDocumentsDirectory();
-      final downloadPath = p.join(dbFolder.path, 'downloaded_$fileName');
-      final file = File(downloadPath);
-
-      await _storage.ref('backups/$fileName').writeToFile(file);
-      await restoreFromLocal(downloadPath);
-      AppLogger.info('Backup downloaded and restored: $fileName');
-    } catch (e) {
-      AppLogger.error('Cloud restore failed', error: e);
-      rethrow;
-    }
+    // Disabled
   }
 }

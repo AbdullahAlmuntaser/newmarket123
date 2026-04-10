@@ -1,0 +1,28 @@
+{
+  "general": {
+    "enableAutoUpdate": false,
+    "enablePromptCompletion": true
+  },
+  "model": {
+    "name": "gemini-3-flash-preview"
+  },
+  "experimental": {
+    "codebaseInvestigatorSettings": {
+      "model": ""
+    }
+  },
+  "modelConfigs": {
+    "customAliases": {
+      "new-alias": {
+        "extends": "chat-base-2.5",
+        "modelConfig": {
+          "model": "gemini-3-pro-preview",
+          "generateContentConfig": {
+            "temperature": 1,
+            "topP": 1
+          }
+        }
+      }
+    }
+  }
+}
