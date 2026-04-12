@@ -5,6 +5,7 @@ part of 'accounting_dao.dart';
 // ignore_for_file: type=lint
 mixin _$AccountingDaoMixin on DatabaseAccessor<AppDatabase> {
   $GLAccountsTable get gLAccounts => attachedDatabase.gLAccounts;
+  $CostCentersTable get costCenters => attachedDatabase.costCenters;
   $GLEntriesTable get gLEntries => attachedDatabase.gLEntries;
   $CurrenciesTable get currencies => attachedDatabase.currencies;
   $GLLinesTable get gLLines => attachedDatabase.gLLines;
@@ -17,6 +18,8 @@ class AccountingDaoManager {
   AccountingDaoManager(this._db);
   $$GLAccountsTableTableManager get gLAccounts =>
       $$GLAccountsTableTableManager(_db.attachedDatabase, _db.gLAccounts);
+  $$CostCentersTableTableManager get costCenters =>
+      $$CostCentersTableTableManager(_db.attachedDatabase, _db.costCenters);
   $$GLEntriesTableTableManager get gLEntries =>
       $$GLEntriesTableTableManager(_db.attachedDatabase, _db.gLEntries);
   $$CurrenciesTableTableManager get currencies =>

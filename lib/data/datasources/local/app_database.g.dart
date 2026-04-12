@@ -5168,6 +5168,35 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
     requiredDuringInsert: false,
     defaultValue: const Constant(1.0),
   );
+  static const VerificationMeta _qrCodeMeta = const VerificationMeta('qrCode');
+  @override
+  late final GeneratedColumn<String> qrCode = GeneratedColumn<String>(
+    'qr_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hashMeta = const VerificationMeta('hash');
+  @override
+  late final GeneratedColumn<String> hash = GeneratedColumn<String>(
+    'hash',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _signatureMeta = const VerificationMeta(
+    'signature',
+  );
+  @override
+  late final GeneratedColumn<String> signature = GeneratedColumn<String>(
+    'signature',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -5184,6 +5213,9 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
     status,
     currencyId,
     exchangeRate,
+    qrCode,
+    hash,
+    signature,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5288,6 +5320,24 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
         ),
       );
     }
+    if (data.containsKey('qr_code')) {
+      context.handle(
+        _qrCodeMeta,
+        qrCode.isAcceptableOrUnknown(data['qr_code']!, _qrCodeMeta),
+      );
+    }
+    if (data.containsKey('hash')) {
+      context.handle(
+        _hashMeta,
+        hash.isAcceptableOrUnknown(data['hash']!, _hashMeta),
+      );
+    }
+    if (data.containsKey('signature')) {
+      context.handle(
+        _signatureMeta,
+        signature.isAcceptableOrUnknown(data['signature']!, _signatureMeta),
+      );
+    }
     return context;
   }
 
@@ -5353,6 +5403,18 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
         DriftSqlType.double,
         data['${effectivePrefix}exchange_rate'],
       )!,
+      qrCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}qr_code'],
+      ),
+      hash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hash'],
+      ),
+      signature: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}signature'],
+      ),
     );
   }
 
@@ -5377,6 +5439,9 @@ class Sale extends DataClass implements Insertable<Sale> {
   final String status;
   final String? currencyId;
   final double exchangeRate;
+  final String? qrCode;
+  final String? hash;
+  final String? signature;
   const Sale({
     required this.id,
     required this.createdAt,
@@ -5392,6 +5457,9 @@ class Sale extends DataClass implements Insertable<Sale> {
     required this.status,
     this.currencyId,
     required this.exchangeRate,
+    this.qrCode,
+    this.hash,
+    this.signature,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5416,6 +5484,15 @@ class Sale extends DataClass implements Insertable<Sale> {
       map['currency_id'] = Variable<String>(currencyId);
     }
     map['exchange_rate'] = Variable<double>(exchangeRate);
+    if (!nullToAbsent || qrCode != null) {
+      map['qr_code'] = Variable<String>(qrCode);
+    }
+    if (!nullToAbsent || hash != null) {
+      map['hash'] = Variable<String>(hash);
+    }
+    if (!nullToAbsent || signature != null) {
+      map['signature'] = Variable<String>(signature);
+    }
     return map;
   }
 
@@ -5441,6 +5518,13 @@ class Sale extends DataClass implements Insertable<Sale> {
           ? const Value.absent()
           : Value(currencyId),
       exchangeRate: Value(exchangeRate),
+      qrCode: qrCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(qrCode),
+      hash: hash == null && nullToAbsent ? const Value.absent() : Value(hash),
+      signature: signature == null && nullToAbsent
+          ? const Value.absent()
+          : Value(signature),
     );
   }
 
@@ -5464,6 +5548,9 @@ class Sale extends DataClass implements Insertable<Sale> {
       status: serializer.fromJson<String>(json['status']),
       currencyId: serializer.fromJson<String?>(json['currencyId']),
       exchangeRate: serializer.fromJson<double>(json['exchangeRate']),
+      qrCode: serializer.fromJson<String?>(json['qrCode']),
+      hash: serializer.fromJson<String?>(json['hash']),
+      signature: serializer.fromJson<String?>(json['signature']),
     );
   }
   @override
@@ -5484,6 +5571,9 @@ class Sale extends DataClass implements Insertable<Sale> {
       'status': serializer.toJson<String>(status),
       'currencyId': serializer.toJson<String?>(currencyId),
       'exchangeRate': serializer.toJson<double>(exchangeRate),
+      'qrCode': serializer.toJson<String?>(qrCode),
+      'hash': serializer.toJson<String?>(hash),
+      'signature': serializer.toJson<String?>(signature),
     };
   }
 
@@ -5502,6 +5592,9 @@ class Sale extends DataClass implements Insertable<Sale> {
     String? status,
     Value<String?> currencyId = const Value.absent(),
     double? exchangeRate,
+    Value<String?> qrCode = const Value.absent(),
+    Value<String?> hash = const Value.absent(),
+    Value<String?> signature = const Value.absent(),
   }) => Sale(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -5517,6 +5610,9 @@ class Sale extends DataClass implements Insertable<Sale> {
     status: status ?? this.status,
     currencyId: currencyId.present ? currencyId.value : this.currencyId,
     exchangeRate: exchangeRate ?? this.exchangeRate,
+    qrCode: qrCode.present ? qrCode.value : this.qrCode,
+    hash: hash.present ? hash.value : this.hash,
+    signature: signature.present ? signature.value : this.signature,
   );
   Sale copyWithCompanion(SalesCompanion data) {
     return Sale(
@@ -5544,6 +5640,9 @@ class Sale extends DataClass implements Insertable<Sale> {
       exchangeRate: data.exchangeRate.present
           ? data.exchangeRate.value
           : this.exchangeRate,
+      qrCode: data.qrCode.present ? data.qrCode.value : this.qrCode,
+      hash: data.hash.present ? data.hash.value : this.hash,
+      signature: data.signature.present ? data.signature.value : this.signature,
     );
   }
 
@@ -5563,7 +5662,10 @@ class Sale extends DataClass implements Insertable<Sale> {
           ..write('isCredit: $isCredit, ')
           ..write('status: $status, ')
           ..write('currencyId: $currencyId, ')
-          ..write('exchangeRate: $exchangeRate')
+          ..write('exchangeRate: $exchangeRate, ')
+          ..write('qrCode: $qrCode, ')
+          ..write('hash: $hash, ')
+          ..write('signature: $signature')
           ..write(')'))
         .toString();
   }
@@ -5584,6 +5686,9 @@ class Sale extends DataClass implements Insertable<Sale> {
     status,
     currencyId,
     exchangeRate,
+    qrCode,
+    hash,
+    signature,
   );
   @override
   bool operator ==(Object other) =>
@@ -5602,7 +5707,10 @@ class Sale extends DataClass implements Insertable<Sale> {
           other.isCredit == this.isCredit &&
           other.status == this.status &&
           other.currencyId == this.currencyId &&
-          other.exchangeRate == this.exchangeRate);
+          other.exchangeRate == this.exchangeRate &&
+          other.qrCode == this.qrCode &&
+          other.hash == this.hash &&
+          other.signature == this.signature);
 }
 
 class SalesCompanion extends UpdateCompanion<Sale> {
@@ -5620,6 +5728,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
   final Value<String> status;
   final Value<String?> currencyId;
   final Value<double> exchangeRate;
+  final Value<String?> qrCode;
+  final Value<String?> hash;
+  final Value<String?> signature;
   final Value<int> rowid;
   const SalesCompanion({
     this.id = const Value.absent(),
@@ -5636,6 +5747,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     this.status = const Value.absent(),
     this.currencyId = const Value.absent(),
     this.exchangeRate = const Value.absent(),
+    this.qrCode = const Value.absent(),
+    this.hash = const Value.absent(),
+    this.signature = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SalesCompanion.insert({
@@ -5653,6 +5767,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     this.status = const Value.absent(),
     this.currencyId = const Value.absent(),
     this.exchangeRate = const Value.absent(),
+    this.qrCode = const Value.absent(),
+    this.hash = const Value.absent(),
+    this.signature = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : total = Value(total),
        paymentMethod = Value(paymentMethod);
@@ -5671,6 +5788,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     Expression<String>? status,
     Expression<String>? currencyId,
     Expression<double>? exchangeRate,
+    Expression<String>? qrCode,
+    Expression<String>? hash,
+    Expression<String>? signature,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -5688,6 +5808,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       if (status != null) 'status': status,
       if (currencyId != null) 'currency_id': currencyId,
       if (exchangeRate != null) 'exchange_rate': exchangeRate,
+      if (qrCode != null) 'qr_code': qrCode,
+      if (hash != null) 'hash': hash,
+      if (signature != null) 'signature': signature,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -5707,6 +5830,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     Value<String>? status,
     Value<String?>? currencyId,
     Value<double>? exchangeRate,
+    Value<String?>? qrCode,
+    Value<String?>? hash,
+    Value<String?>? signature,
     Value<int>? rowid,
   }) {
     return SalesCompanion(
@@ -5724,6 +5850,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       status: status ?? this.status,
       currencyId: currencyId ?? this.currencyId,
       exchangeRate: exchangeRate ?? this.exchangeRate,
+      qrCode: qrCode ?? this.qrCode,
+      hash: hash ?? this.hash,
+      signature: signature ?? this.signature,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -5773,6 +5902,15 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     if (exchangeRate.present) {
       map['exchange_rate'] = Variable<double>(exchangeRate.value);
     }
+    if (qrCode.present) {
+      map['qr_code'] = Variable<String>(qrCode.value);
+    }
+    if (hash.present) {
+      map['hash'] = Variable<String>(hash.value);
+    }
+    if (signature.present) {
+      map['signature'] = Variable<String>(signature.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -5796,6 +5934,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
           ..write('status: $status, ')
           ..write('currencyId: $currencyId, ')
           ..write('exchangeRate: $exchangeRate, ')
+          ..write('qrCode: $qrCode, ')
+          ..write('hash: $hash, ')
+          ..write('signature: $signature, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -7056,6 +7197,18 @@ class $PurchasesTable extends Purchases
     requiredDuringInsert: false,
     defaultValue: const Constant(0.0),
   );
+  static const VerificationMeta _landedCostsMeta = const VerificationMeta(
+    'landedCosts',
+  );
+  @override
+  late final GeneratedColumn<double> landedCosts = GeneratedColumn<double>(
+    'landed_costs',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
   static const VerificationMeta _invoiceNumberMeta = const VerificationMeta(
     'invoiceNumber',
   );
@@ -7149,6 +7302,7 @@ class $PurchasesTable extends Purchases
     supplierId,
     total,
     tax,
+    landedCosts,
     invoiceNumber,
     date,
     isCredit,
@@ -7214,6 +7368,15 @@ class $PurchasesTable extends Purchases
       context.handle(
         _taxMeta,
         tax.isAcceptableOrUnknown(data['tax']!, _taxMeta),
+      );
+    }
+    if (data.containsKey('landed_costs')) {
+      context.handle(
+        _landedCostsMeta,
+        landedCosts.isAcceptableOrUnknown(
+          data['landed_costs']!,
+          _landedCostsMeta,
+        ),
       );
     }
     if (data.containsKey('invoice_number')) {
@@ -7308,6 +7471,10 @@ class $PurchasesTable extends Purchases
         DriftSqlType.double,
         data['${effectivePrefix}tax'],
       )!,
+      landedCosts: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}landed_costs'],
+      )!,
       invoiceNumber: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}invoice_number'],
@@ -7354,6 +7521,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
   final String? supplierId;
   final double total;
   final double tax;
+  final double landedCosts;
   final String? invoiceNumber;
   final DateTime date;
   final bool isCredit;
@@ -7370,6 +7538,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
     this.supplierId,
     required this.total,
     required this.tax,
+    required this.landedCosts,
     this.invoiceNumber,
     required this.date,
     required this.isCredit,
@@ -7393,6 +7562,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
     }
     map['total'] = Variable<double>(total);
     map['tax'] = Variable<double>(tax);
+    map['landed_costs'] = Variable<double>(landedCosts);
     if (!nullToAbsent || invoiceNumber != null) {
       map['invoice_number'] = Variable<String>(invoiceNumber);
     }
@@ -7423,6 +7593,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
           : Value(supplierId),
       total: Value(total),
       tax: Value(tax),
+      landedCosts: Value(landedCosts),
       invoiceNumber: invoiceNumber == null && nullToAbsent
           ? const Value.absent()
           : Value(invoiceNumber),
@@ -7453,6 +7624,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
       supplierId: serializer.fromJson<String?>(json['supplierId']),
       total: serializer.fromJson<double>(json['total']),
       tax: serializer.fromJson<double>(json['tax']),
+      landedCosts: serializer.fromJson<double>(json['landedCosts']),
       invoiceNumber: serializer.fromJson<String?>(json['invoiceNumber']),
       date: serializer.fromJson<DateTime>(json['date']),
       isCredit: serializer.fromJson<bool>(json['isCredit']),
@@ -7474,6 +7646,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
       'supplierId': serializer.toJson<String?>(supplierId),
       'total': serializer.toJson<double>(total),
       'tax': serializer.toJson<double>(tax),
+      'landedCosts': serializer.toJson<double>(landedCosts),
       'invoiceNumber': serializer.toJson<String?>(invoiceNumber),
       'date': serializer.toJson<DateTime>(date),
       'isCredit': serializer.toJson<bool>(isCredit),
@@ -7493,6 +7666,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
     Value<String?> supplierId = const Value.absent(),
     double? total,
     double? tax,
+    double? landedCosts,
     Value<String?> invoiceNumber = const Value.absent(),
     DateTime? date,
     bool? isCredit,
@@ -7509,6 +7683,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
     supplierId: supplierId.present ? supplierId.value : this.supplierId,
     total: total ?? this.total,
     tax: tax ?? this.tax,
+    landedCosts: landedCosts ?? this.landedCosts,
     invoiceNumber: invoiceNumber.present
         ? invoiceNumber.value
         : this.invoiceNumber,
@@ -7533,6 +7708,9 @@ class Purchase extends DataClass implements Insertable<Purchase> {
           : this.supplierId,
       total: data.total.present ? data.total.value : this.total,
       tax: data.tax.present ? data.tax.value : this.tax,
+      landedCosts: data.landedCosts.present
+          ? data.landedCosts.value
+          : this.landedCosts,
       invoiceNumber: data.invoiceNumber.present
           ? data.invoiceNumber.value
           : this.invoiceNumber,
@@ -7562,6 +7740,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
           ..write('supplierId: $supplierId, ')
           ..write('total: $total, ')
           ..write('tax: $tax, ')
+          ..write('landedCosts: $landedCosts, ')
           ..write('invoiceNumber: $invoiceNumber, ')
           ..write('date: $date, ')
           ..write('isCredit: $isCredit, ')
@@ -7583,6 +7762,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
     supplierId,
     total,
     tax,
+    landedCosts,
     invoiceNumber,
     date,
     isCredit,
@@ -7603,6 +7783,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
           other.supplierId == this.supplierId &&
           other.total == this.total &&
           other.tax == this.tax &&
+          other.landedCosts == this.landedCosts &&
           other.invoiceNumber == this.invoiceNumber &&
           other.date == this.date &&
           other.isCredit == this.isCredit &&
@@ -7621,6 +7802,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
   final Value<String?> supplierId;
   final Value<double> total;
   final Value<double> tax;
+  final Value<double> landedCosts;
   final Value<String?> invoiceNumber;
   final Value<DateTime> date;
   final Value<bool> isCredit;
@@ -7638,6 +7820,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
     this.supplierId = const Value.absent(),
     this.total = const Value.absent(),
     this.tax = const Value.absent(),
+    this.landedCosts = const Value.absent(),
     this.invoiceNumber = const Value.absent(),
     this.date = const Value.absent(),
     this.isCredit = const Value.absent(),
@@ -7656,6 +7839,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
     this.supplierId = const Value.absent(),
     required double total,
     this.tax = const Value.absent(),
+    this.landedCosts = const Value.absent(),
     this.invoiceNumber = const Value.absent(),
     this.date = const Value.absent(),
     this.isCredit = const Value.absent(),
@@ -7674,6 +7858,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
     Expression<String>? supplierId,
     Expression<double>? total,
     Expression<double>? tax,
+    Expression<double>? landedCosts,
     Expression<String>? invoiceNumber,
     Expression<DateTime>? date,
     Expression<bool>? isCredit,
@@ -7692,6 +7877,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
       if (supplierId != null) 'supplier_id': supplierId,
       if (total != null) 'total': total,
       if (tax != null) 'tax': tax,
+      if (landedCosts != null) 'landed_costs': landedCosts,
       if (invoiceNumber != null) 'invoice_number': invoiceNumber,
       if (date != null) 'date': date,
       if (isCredit != null) 'is_credit': isCredit,
@@ -7712,6 +7898,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
     Value<String?>? supplierId,
     Value<double>? total,
     Value<double>? tax,
+    Value<double>? landedCosts,
     Value<String?>? invoiceNumber,
     Value<DateTime>? date,
     Value<bool>? isCredit,
@@ -7730,6 +7917,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
       supplierId: supplierId ?? this.supplierId,
       total: total ?? this.total,
       tax: tax ?? this.tax,
+      landedCosts: landedCosts ?? this.landedCosts,
       invoiceNumber: invoiceNumber ?? this.invoiceNumber,
       date: date ?? this.date,
       isCredit: isCredit ?? this.isCredit,
@@ -7767,6 +7955,9 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
     }
     if (tax.present) {
       map['tax'] = Variable<double>(tax.value);
+    }
+    if (landedCosts.present) {
+      map['landed_costs'] = Variable<double>(landedCosts.value);
     }
     if (invoiceNumber.present) {
       map['invoice_number'] = Variable<String>(invoiceNumber.value);
@@ -7806,6 +7997,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
           ..write('supplierId: $supplierId, ')
           ..write('total: $total, ')
           ..write('tax: $tax, ')
+          ..write('landedCosts: $landedCosts, ')
           ..write('invoiceNumber: $invoiceNumber, ')
           ..write('date: $date, ')
           ..write('isCredit: $isCredit, ')
@@ -12973,6 +13165,511 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
   }
 }
 
+class $CostCentersTable extends CostCenters
+    with TableInfo<$CostCentersTable, CostCenter> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CostCentersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const Uuid().v4(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<int> syncStatus = GeneratedColumn<int>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  @override
+  late final GeneratedColumn<String> code = GeneratedColumn<String>(
+    'code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    deviceId,
+    syncStatus,
+    code,
+    name,
+    isActive,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cost_centers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CostCenter> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    if (data.containsKey('code')) {
+      context.handle(
+        _codeMeta,
+        code.isAcceptableOrUnknown(data['code']!, _codeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_codeMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CostCenter map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CostCenter(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      ),
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sync_status'],
+      )!,
+      code: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}code'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+    );
+  }
+
+  @override
+  $CostCentersTable createAlias(String alias) {
+    return $CostCentersTable(attachedDatabase, alias);
+  }
+}
+
+class CostCenter extends DataClass implements Insertable<CostCenter> {
+  final String id;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? deviceId;
+  final int syncStatus;
+  final String code;
+  final String name;
+  final bool isActive;
+  const CostCenter({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deviceId,
+    required this.syncStatus,
+    required this.code,
+    required this.name,
+    required this.isActive,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
+    map['sync_status'] = Variable<int>(syncStatus);
+    map['code'] = Variable<String>(code);
+    map['name'] = Variable<String>(name);
+    map['is_active'] = Variable<bool>(isActive);
+    return map;
+  }
+
+  CostCentersCompanion toCompanion(bool nullToAbsent) {
+    return CostCentersCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
+      syncStatus: Value(syncStatus),
+      code: Value(code),
+      name: Value(name),
+      isActive: Value(isActive),
+    );
+  }
+
+  factory CostCenter.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CostCenter(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
+      syncStatus: serializer.fromJson<int>(json['syncStatus']),
+      code: serializer.fromJson<String>(json['code']),
+      name: serializer.fromJson<String>(json['name']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deviceId': serializer.toJson<String?>(deviceId),
+      'syncStatus': serializer.toJson<int>(syncStatus),
+      'code': serializer.toJson<String>(code),
+      'name': serializer.toJson<String>(name),
+      'isActive': serializer.toJson<bool>(isActive),
+    };
+  }
+
+  CostCenter copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<String?> deviceId = const Value.absent(),
+    int? syncStatus,
+    String? code,
+    String? name,
+    bool? isActive,
+  }) => CostCenter(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deviceId: deviceId.present ? deviceId.value : this.deviceId,
+    syncStatus: syncStatus ?? this.syncStatus,
+    code: code ?? this.code,
+    name: name ?? this.name,
+    isActive: isActive ?? this.isActive,
+  );
+  CostCenter copyWithCompanion(CostCentersCompanion data) {
+    return CostCenter(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+      code: data.code.present ? data.code.value : this.code,
+      name: data.name.present ? data.name.value : this.name,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CostCenter(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('code: $code, ')
+          ..write('name: $name, ')
+          ..write('isActive: $isActive')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    deviceId,
+    syncStatus,
+    code,
+    name,
+    isActive,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CostCenter &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deviceId == this.deviceId &&
+          other.syncStatus == this.syncStatus &&
+          other.code == this.code &&
+          other.name == this.name &&
+          other.isActive == this.isActive);
+}
+
+class CostCentersCompanion extends UpdateCompanion<CostCenter> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String?> deviceId;
+  final Value<int> syncStatus;
+  final Value<String> code;
+  final Value<String> name;
+  final Value<bool> isActive;
+  final Value<int> rowid;
+  const CostCentersCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.code = const Value.absent(),
+    this.name = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CostCentersCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    required String code,
+    required String name,
+    this.isActive = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : code = Value(code),
+       name = Value(name);
+  static Insertable<CostCenter> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? deviceId,
+    Expression<int>? syncStatus,
+    Expression<String>? code,
+    Expression<String>? name,
+    Expression<bool>? isActive,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deviceId != null) 'device_id': deviceId,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (code != null) 'code': code,
+      if (name != null) 'name': name,
+      if (isActive != null) 'is_active': isActive,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CostCentersCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String?>? deviceId,
+    Value<int>? syncStatus,
+    Value<String>? code,
+    Value<String>? name,
+    Value<bool>? isActive,
+    Value<int>? rowid,
+  }) {
+    return CostCentersCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deviceId: deviceId ?? this.deviceId,
+      syncStatus: syncStatus ?? this.syncStatus,
+      code: code ?? this.code,
+      name: name ?? this.name,
+      isActive: isActive ?? this.isActive,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<int>(syncStatus.value);
+    }
+    if (code.present) {
+      map['code'] = Variable<String>(code.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CostCentersCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('code: $code, ')
+          ..write('name: $name, ')
+          ..write('isActive: $isActive, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $GLEntriesTable extends GLEntries
     with TableInfo<$GLEntriesTable, GLEntry> {
   @override
@@ -13877,6 +14574,20 @@ class $GLLinesTable extends GLLines with TableInfo<$GLLinesTable, GLLine> {
       'REFERENCES g_l_accounts (id)',
     ),
   );
+  static const VerificationMeta _costCenterIdMeta = const VerificationMeta(
+    'costCenterId',
+  );
+  @override
+  late final GeneratedColumn<String> costCenterId = GeneratedColumn<String>(
+    'cost_center_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES cost_centers (id)',
+    ),
+  );
   static const VerificationMeta _debitMeta = const VerificationMeta('debit');
   @override
   late final GeneratedColumn<double> debit = GeneratedColumn<double>(
@@ -13941,6 +14652,7 @@ class $GLLinesTable extends GLLines with TableInfo<$GLLinesTable, GLLine> {
     syncStatus,
     entryId,
     accountId,
+    costCenterId,
     debit,
     credit,
     currencyId,
@@ -14001,6 +14713,15 @@ class $GLLinesTable extends GLLines with TableInfo<$GLLinesTable, GLLine> {
       );
     } else if (isInserting) {
       context.missing(_accountIdMeta);
+    }
+    if (data.containsKey('cost_center_id')) {
+      context.handle(
+        _costCenterIdMeta,
+        costCenterId.isAcceptableOrUnknown(
+          data['cost_center_id']!,
+          _costCenterIdMeta,
+        ),
+      );
     }
     if (data.containsKey('debit')) {
       context.handle(
@@ -14072,6 +14793,10 @@ class $GLLinesTable extends GLLines with TableInfo<$GLLinesTable, GLLine> {
         DriftSqlType.string,
         data['${effectivePrefix}account_id'],
       )!,
+      costCenterId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cost_center_id'],
+      ),
       debit: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}debit'],
@@ -14109,6 +14834,7 @@ class GLLine extends DataClass implements Insertable<GLLine> {
   final int syncStatus;
   final String entryId;
   final String accountId;
+  final String? costCenterId;
   final double debit;
   final double credit;
   final String? currencyId;
@@ -14122,6 +14848,7 @@ class GLLine extends DataClass implements Insertable<GLLine> {
     required this.syncStatus,
     required this.entryId,
     required this.accountId,
+    this.costCenterId,
     required this.debit,
     required this.credit,
     this.currencyId,
@@ -14140,6 +14867,9 @@ class GLLine extends DataClass implements Insertable<GLLine> {
     map['sync_status'] = Variable<int>(syncStatus);
     map['entry_id'] = Variable<String>(entryId);
     map['account_id'] = Variable<String>(accountId);
+    if (!nullToAbsent || costCenterId != null) {
+      map['cost_center_id'] = Variable<String>(costCenterId);
+    }
     map['debit'] = Variable<double>(debit);
     map['credit'] = Variable<double>(credit);
     if (!nullToAbsent || currencyId != null) {
@@ -14163,6 +14893,9 @@ class GLLine extends DataClass implements Insertable<GLLine> {
       syncStatus: Value(syncStatus),
       entryId: Value(entryId),
       accountId: Value(accountId),
+      costCenterId: costCenterId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(costCenterId),
       debit: Value(debit),
       credit: Value(credit),
       currencyId: currencyId == null && nullToAbsent
@@ -14186,6 +14919,7 @@ class GLLine extends DataClass implements Insertable<GLLine> {
       syncStatus: serializer.fromJson<int>(json['syncStatus']),
       entryId: serializer.fromJson<String>(json['entryId']),
       accountId: serializer.fromJson<String>(json['accountId']),
+      costCenterId: serializer.fromJson<String?>(json['costCenterId']),
       debit: serializer.fromJson<double>(json['debit']),
       credit: serializer.fromJson<double>(json['credit']),
       currencyId: serializer.fromJson<String?>(json['currencyId']),
@@ -14204,6 +14938,7 @@ class GLLine extends DataClass implements Insertable<GLLine> {
       'syncStatus': serializer.toJson<int>(syncStatus),
       'entryId': serializer.toJson<String>(entryId),
       'accountId': serializer.toJson<String>(accountId),
+      'costCenterId': serializer.toJson<String?>(costCenterId),
       'debit': serializer.toJson<double>(debit),
       'credit': serializer.toJson<double>(credit),
       'currencyId': serializer.toJson<String?>(currencyId),
@@ -14220,6 +14955,7 @@ class GLLine extends DataClass implements Insertable<GLLine> {
     int? syncStatus,
     String? entryId,
     String? accountId,
+    Value<String?> costCenterId = const Value.absent(),
     double? debit,
     double? credit,
     Value<String?> currencyId = const Value.absent(),
@@ -14233,6 +14969,7 @@ class GLLine extends DataClass implements Insertable<GLLine> {
     syncStatus: syncStatus ?? this.syncStatus,
     entryId: entryId ?? this.entryId,
     accountId: accountId ?? this.accountId,
+    costCenterId: costCenterId.present ? costCenterId.value : this.costCenterId,
     debit: debit ?? this.debit,
     credit: credit ?? this.credit,
     currencyId: currencyId.present ? currencyId.value : this.currencyId,
@@ -14250,6 +14987,9 @@ class GLLine extends DataClass implements Insertable<GLLine> {
           : this.syncStatus,
       entryId: data.entryId.present ? data.entryId.value : this.entryId,
       accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      costCenterId: data.costCenterId.present
+          ? data.costCenterId.value
+          : this.costCenterId,
       debit: data.debit.present ? data.debit.value : this.debit,
       credit: data.credit.present ? data.credit.value : this.credit,
       currencyId: data.currencyId.present
@@ -14272,6 +15012,7 @@ class GLLine extends DataClass implements Insertable<GLLine> {
           ..write('syncStatus: $syncStatus, ')
           ..write('entryId: $entryId, ')
           ..write('accountId: $accountId, ')
+          ..write('costCenterId: $costCenterId, ')
           ..write('debit: $debit, ')
           ..write('credit: $credit, ')
           ..write('currencyId: $currencyId, ')
@@ -14290,6 +15031,7 @@ class GLLine extends DataClass implements Insertable<GLLine> {
     syncStatus,
     entryId,
     accountId,
+    costCenterId,
     debit,
     credit,
     currencyId,
@@ -14307,6 +15049,7 @@ class GLLine extends DataClass implements Insertable<GLLine> {
           other.syncStatus == this.syncStatus &&
           other.entryId == this.entryId &&
           other.accountId == this.accountId &&
+          other.costCenterId == this.costCenterId &&
           other.debit == this.debit &&
           other.credit == this.credit &&
           other.currencyId == this.currencyId &&
@@ -14322,6 +15065,7 @@ class GLLinesCompanion extends UpdateCompanion<GLLine> {
   final Value<int> syncStatus;
   final Value<String> entryId;
   final Value<String> accountId;
+  final Value<String?> costCenterId;
   final Value<double> debit;
   final Value<double> credit;
   final Value<String?> currencyId;
@@ -14336,6 +15080,7 @@ class GLLinesCompanion extends UpdateCompanion<GLLine> {
     this.syncStatus = const Value.absent(),
     this.entryId = const Value.absent(),
     this.accountId = const Value.absent(),
+    this.costCenterId = const Value.absent(),
     this.debit = const Value.absent(),
     this.credit = const Value.absent(),
     this.currencyId = const Value.absent(),
@@ -14351,6 +15096,7 @@ class GLLinesCompanion extends UpdateCompanion<GLLine> {
     this.syncStatus = const Value.absent(),
     required String entryId,
     required String accountId,
+    this.costCenterId = const Value.absent(),
     this.debit = const Value.absent(),
     this.credit = const Value.absent(),
     this.currencyId = const Value.absent(),
@@ -14367,6 +15113,7 @@ class GLLinesCompanion extends UpdateCompanion<GLLine> {
     Expression<int>? syncStatus,
     Expression<String>? entryId,
     Expression<String>? accountId,
+    Expression<String>? costCenterId,
     Expression<double>? debit,
     Expression<double>? credit,
     Expression<String>? currencyId,
@@ -14382,6 +15129,7 @@ class GLLinesCompanion extends UpdateCompanion<GLLine> {
       if (syncStatus != null) 'sync_status': syncStatus,
       if (entryId != null) 'entry_id': entryId,
       if (accountId != null) 'account_id': accountId,
+      if (costCenterId != null) 'cost_center_id': costCenterId,
       if (debit != null) 'debit': debit,
       if (credit != null) 'credit': credit,
       if (currencyId != null) 'currency_id': currencyId,
@@ -14399,6 +15147,7 @@ class GLLinesCompanion extends UpdateCompanion<GLLine> {
     Value<int>? syncStatus,
     Value<String>? entryId,
     Value<String>? accountId,
+    Value<String?>? costCenterId,
     Value<double>? debit,
     Value<double>? credit,
     Value<String?>? currencyId,
@@ -14414,6 +15163,7 @@ class GLLinesCompanion extends UpdateCompanion<GLLine> {
       syncStatus: syncStatus ?? this.syncStatus,
       entryId: entryId ?? this.entryId,
       accountId: accountId ?? this.accountId,
+      costCenterId: costCenterId ?? this.costCenterId,
       debit: debit ?? this.debit,
       credit: credit ?? this.credit,
       currencyId: currencyId ?? this.currencyId,
@@ -14447,6 +15197,9 @@ class GLLinesCompanion extends UpdateCompanion<GLLine> {
     if (accountId.present) {
       map['account_id'] = Variable<String>(accountId.value);
     }
+    if (costCenterId.present) {
+      map['cost_center_id'] = Variable<String>(costCenterId.value);
+    }
     if (debit.present) {
       map['debit'] = Variable<double>(debit.value);
     }
@@ -14478,6 +15231,7 @@ class GLLinesCompanion extends UpdateCompanion<GLLine> {
           ..write('syncStatus: $syncStatus, ')
           ..write('entryId: $entryId, ')
           ..write('accountId: $accountId, ')
+          ..write('costCenterId: $costCenterId, ')
           ..write('debit: $debit, ')
           ..write('credit: $credit, ')
           ..write('currencyId: $currencyId, ')
@@ -28827,6 +29581,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $SyncQueueTable syncQueue = $SyncQueueTable(this);
+  late final $CostCentersTable costCenters = $CostCentersTable(this);
   late final $GLEntriesTable gLEntries = $GLEntriesTable(this);
   late final $GLLinesTable gLLines = $GLLinesTable(this);
   late final $AccountingPeriodsTable accountingPeriods =
@@ -28898,6 +29653,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     customerPayments,
     supplierPayments,
     syncQueue,
+    costCenters,
     gLEntries,
     gLLines,
     accountingPeriods,
@@ -34573,6 +35329,9 @@ typedef $$SalesTableCreateCompanionBuilder =
       Value<String> status,
       Value<String?> currencyId,
       Value<double> exchangeRate,
+      Value<String?> qrCode,
+      Value<String?> hash,
+      Value<String?> signature,
       Value<int> rowid,
     });
 typedef $$SalesTableUpdateCompanionBuilder =
@@ -34591,6 +35350,9 @@ typedef $$SalesTableUpdateCompanionBuilder =
       Value<String> status,
       Value<String?> currencyId,
       Value<double> exchangeRate,
+      Value<String?> qrCode,
+      Value<String?> hash,
+      Value<String?> signature,
       Value<int> rowid,
     });
 
@@ -34722,6 +35484,21 @@ class $$SalesTableFilterComposer extends Composer<_$AppDatabase, $SalesTable> {
 
   ColumnFilters<double> get exchangeRate => $composableBuilder(
     column: $table.exchangeRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get qrCode => $composableBuilder(
+    column: $table.qrCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get hash => $composableBuilder(
+    column: $table.hash,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get signature => $composableBuilder(
+    column: $table.signature,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -34873,6 +35650,21 @@ class $$SalesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get qrCode => $composableBuilder(
+    column: $table.qrCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get hash => $composableBuilder(
+    column: $table.hash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get signature => $composableBuilder(
+    column: $table.signature,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$CustomersTableOrderingComposer get customerId {
     final $$CustomersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -34952,6 +35744,15 @@ class $$SalesTableAnnotationComposer
     column: $table.exchangeRate,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get qrCode =>
+      $composableBuilder(column: $table.qrCode, builder: (column) => column);
+
+  GeneratedColumn<String> get hash =>
+      $composableBuilder(column: $table.hash, builder: (column) => column);
+
+  GeneratedColumn<String> get signature =>
+      $composableBuilder(column: $table.signature, builder: (column) => column);
 
   $$CustomersTableAnnotationComposer get customerId {
     final $$CustomersTableAnnotationComposer composer = $composerBuilder(
@@ -35073,6 +35874,9 @@ class $$SalesTableTableManager
                 Value<String> status = const Value.absent(),
                 Value<String?> currencyId = const Value.absent(),
                 Value<double> exchangeRate = const Value.absent(),
+                Value<String?> qrCode = const Value.absent(),
+                Value<String?> hash = const Value.absent(),
+                Value<String?> signature = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SalesCompanion(
                 id: id,
@@ -35089,6 +35893,9 @@ class $$SalesTableTableManager
                 status: status,
                 currencyId: currencyId,
                 exchangeRate: exchangeRate,
+                qrCode: qrCode,
+                hash: hash,
+                signature: signature,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -35107,6 +35914,9 @@ class $$SalesTableTableManager
                 Value<String> status = const Value.absent(),
                 Value<String?> currencyId = const Value.absent(),
                 Value<double> exchangeRate = const Value.absent(),
+                Value<String?> qrCode = const Value.absent(),
+                Value<String?> hash = const Value.absent(),
+                Value<String?> signature = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SalesCompanion.insert(
                 id: id,
@@ -35123,6 +35933,9 @@ class $$SalesTableTableManager
                 status: status,
                 currencyId: currencyId,
                 exchangeRate: exchangeRate,
+                qrCode: qrCode,
+                hash: hash,
+                signature: signature,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -36431,6 +37244,7 @@ typedef $$PurchasesTableCreateCompanionBuilder =
       Value<String?> supplierId,
       required double total,
       Value<double> tax,
+      Value<double> landedCosts,
       Value<String?> invoiceNumber,
       Value<DateTime> date,
       Value<bool> isCredit,
@@ -36450,6 +37264,7 @@ typedef $$PurchasesTableUpdateCompanionBuilder =
       Value<String?> supplierId,
       Value<double> total,
       Value<double> tax,
+      Value<double> landedCosts,
       Value<String?> invoiceNumber,
       Value<DateTime> date,
       Value<bool> isCredit,
@@ -36588,6 +37403,11 @@ class $$PurchasesTableFilterComposer
 
   ColumnFilters<double> get tax => $composableBuilder(
     column: $table.tax,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get landedCosts => $composableBuilder(
+    column: $table.landedCosts,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -36762,6 +37582,11 @@ class $$PurchasesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get landedCosts => $composableBuilder(
+    column: $table.landedCosts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get invoiceNumber => $composableBuilder(
     column: $table.invoiceNumber,
     builder: (column) => ColumnOrderings(column),
@@ -36870,6 +37695,11 @@ class $$PurchasesTableAnnotationComposer
 
   GeneratedColumn<double> get tax =>
       $composableBuilder(column: $table.tax, builder: (column) => column);
+
+  GeneratedColumn<double> get landedCosts => $composableBuilder(
+    column: $table.landedCosts,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get invoiceNumber => $composableBuilder(
     column: $table.invoiceNumber,
@@ -37033,6 +37863,7 @@ class $$PurchasesTableTableManager
                 Value<String?> supplierId = const Value.absent(),
                 Value<double> total = const Value.absent(),
                 Value<double> tax = const Value.absent(),
+                Value<double> landedCosts = const Value.absent(),
                 Value<String?> invoiceNumber = const Value.absent(),
                 Value<DateTime> date = const Value.absent(),
                 Value<bool> isCredit = const Value.absent(),
@@ -37050,6 +37881,7 @@ class $$PurchasesTableTableManager
                 supplierId: supplierId,
                 total: total,
                 tax: tax,
+                landedCosts: landedCosts,
                 invoiceNumber: invoiceNumber,
                 date: date,
                 isCredit: isCredit,
@@ -37069,6 +37901,7 @@ class $$PurchasesTableTableManager
                 Value<String?> supplierId = const Value.absent(),
                 required double total,
                 Value<double> tax = const Value.absent(),
+                Value<double> landedCosts = const Value.absent(),
                 Value<String?> invoiceNumber = const Value.absent(),
                 Value<DateTime> date = const Value.absent(),
                 Value<bool> isCredit = const Value.absent(),
@@ -37086,6 +37919,7 @@ class $$PurchasesTableTableManager
                 supplierId: supplierId,
                 total: total,
                 tax: tax,
+                landedCosts: landedCosts,
                 invoiceNumber: invoiceNumber,
                 date: date,
                 isCredit: isCredit,
@@ -41679,6 +42513,369 @@ typedef $$SyncQueueTableProcessedTableManager =
       SyncQueueData,
       PrefetchHooks Function()
     >;
+typedef $$CostCentersTableCreateCompanionBuilder =
+    CostCentersCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String?> deviceId,
+      Value<int> syncStatus,
+      required String code,
+      required String name,
+      Value<bool> isActive,
+      Value<int> rowid,
+    });
+typedef $$CostCentersTableUpdateCompanionBuilder =
+    CostCentersCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String?> deviceId,
+      Value<int> syncStatus,
+      Value<String> code,
+      Value<String> name,
+      Value<bool> isActive,
+      Value<int> rowid,
+    });
+
+final class $$CostCentersTableReferences
+    extends BaseReferences<_$AppDatabase, $CostCentersTable, CostCenter> {
+  $$CostCentersTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$GLLinesTable, List<GLLine>> _gLLinesRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.gLLines,
+    aliasName: $_aliasNameGenerator(db.costCenters.id, db.gLLines.costCenterId),
+  );
+
+  $$GLLinesTableProcessedTableManager get gLLinesRefs {
+    final manager = $$GLLinesTableTableManager(
+      $_db,
+      $_db.gLLines,
+    ).filter((f) => f.costCenterId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_gLLinesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$CostCentersTableFilterComposer
+    extends Composer<_$AppDatabase, $CostCentersTable> {
+  $$CostCentersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> gLLinesRefs(
+    Expression<bool> Function($$GLLinesTableFilterComposer f) f,
+  ) {
+    final $$GLLinesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.gLLines,
+      getReferencedColumn: (t) => t.costCenterId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GLLinesTableFilterComposer(
+            $db: $db,
+            $table: $db.gLLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$CostCentersTableOrderingComposer
+    extends Composer<_$AppDatabase, $CostCentersTable> {
+  $$CostCentersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CostCentersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CostCentersTable> {
+  $$CostCentersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  Expression<T> gLLinesRefs<T extends Object>(
+    Expression<T> Function($$GLLinesTableAnnotationComposer a) f,
+  ) {
+    final $$GLLinesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.gLLines,
+      getReferencedColumn: (t) => t.costCenterId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GLLinesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.gLLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$CostCentersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CostCentersTable,
+          CostCenter,
+          $$CostCentersTableFilterComposer,
+          $$CostCentersTableOrderingComposer,
+          $$CostCentersTableAnnotationComposer,
+          $$CostCentersTableCreateCompanionBuilder,
+          $$CostCentersTableUpdateCompanionBuilder,
+          (CostCenter, $$CostCentersTableReferences),
+          CostCenter,
+          PrefetchHooks Function({bool gLLinesRefs})
+        > {
+  $$CostCentersTableTableManager(_$AppDatabase db, $CostCentersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CostCentersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CostCentersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CostCentersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> deviceId = const Value.absent(),
+                Value<int> syncStatus = const Value.absent(),
+                Value<String> code = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CostCentersCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deviceId: deviceId,
+                syncStatus: syncStatus,
+                code: code,
+                name: name,
+                isActive: isActive,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> deviceId = const Value.absent(),
+                Value<int> syncStatus = const Value.absent(),
+                required String code,
+                required String name,
+                Value<bool> isActive = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CostCentersCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deviceId: deviceId,
+                syncStatus: syncStatus,
+                code: code,
+                name: name,
+                isActive: isActive,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$CostCentersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({gLLinesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (gLLinesRefs) db.gLLines],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (gLLinesRefs)
+                    await $_getPrefetchedData<
+                      CostCenter,
+                      $CostCentersTable,
+                      GLLine
+                    >(
+                      currentTable: table,
+                      referencedTable: $$CostCentersTableReferences
+                          ._gLLinesRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$CostCentersTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).gLLinesRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where(
+                            (e) => e.costCenterId == item.id,
+                          ),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$CostCentersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CostCentersTable,
+      CostCenter,
+      $$CostCentersTableFilterComposer,
+      $$CostCentersTableOrderingComposer,
+      $$CostCentersTableAnnotationComposer,
+      $$CostCentersTableCreateCompanionBuilder,
+      $$CostCentersTableUpdateCompanionBuilder,
+      (CostCenter, $$CostCentersTableReferences),
+      CostCenter,
+      PrefetchHooks Function({bool gLLinesRefs})
+    >;
 typedef $$GLEntriesTableCreateCompanionBuilder =
     GLEntriesCompanion Function({
       Value<String> id,
@@ -42165,6 +43362,7 @@ typedef $$GLLinesTableCreateCompanionBuilder =
       Value<int> syncStatus,
       required String entryId,
       required String accountId,
+      Value<String?> costCenterId,
       Value<double> debit,
       Value<double> credit,
       Value<String?> currencyId,
@@ -42181,6 +43379,7 @@ typedef $$GLLinesTableUpdateCompanionBuilder =
       Value<int> syncStatus,
       Value<String> entryId,
       Value<String> accountId,
+      Value<String?> costCenterId,
       Value<double> debit,
       Value<double> credit,
       Value<String?> currencyId,
@@ -42223,6 +43422,25 @@ final class $$GLLinesTableReferences
       $_db.gLAccounts,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $CostCentersTable _costCenterIdTable(_$AppDatabase db) =>
+      db.costCenters.createAlias(
+        $_aliasNameGenerator(db.gLLines.costCenterId, db.costCenters.id),
+      );
+
+  $$CostCentersTableProcessedTableManager? get costCenterId {
+    final $_column = $_itemColumn<String>('cost_center_id');
+    if ($_column == null) return null;
+    final manager = $$CostCentersTableTableManager(
+      $_db,
+      $_db.costCenters,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_costCenterIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -42340,6 +43558,29 @@ class $$GLLinesTableFilterComposer
           }) => $$GLAccountsTableFilterComposer(
             $db: $db,
             $table: $db.gLAccounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CostCentersTableFilterComposer get costCenterId {
+    final $$CostCentersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.costCenterId,
+      referencedTable: $db.costCenters,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CostCentersTableFilterComposer(
+            $db: $db,
+            $table: $db.costCenters,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -42473,6 +43714,29 @@ class $$GLLinesTableOrderingComposer
     return composer;
   }
 
+  $$CostCentersTableOrderingComposer get costCenterId {
+    final $$CostCentersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.costCenterId,
+      referencedTable: $db.costCenters,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CostCentersTableOrderingComposer(
+            $db: $db,
+            $table: $db.costCenters,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
   $$CurrenciesTableOrderingComposer get currencyId {
     final $$CurrenciesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -42583,6 +43847,29 @@ class $$GLLinesTableAnnotationComposer
     return composer;
   }
 
+  $$CostCentersTableAnnotationComposer get costCenterId {
+    final $$CostCentersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.costCenterId,
+      referencedTable: $db.costCenters,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CostCentersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.costCenters,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
   $$CurrenciesTableAnnotationComposer get currencyId {
     final $$CurrenciesTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -42623,6 +43910,7 @@ class $$GLLinesTableTableManager
           PrefetchHooks Function({
             bool entryId,
             bool accountId,
+            bool costCenterId,
             bool currencyId,
           })
         > {
@@ -42646,6 +43934,7 @@ class $$GLLinesTableTableManager
                 Value<int> syncStatus = const Value.absent(),
                 Value<String> entryId = const Value.absent(),
                 Value<String> accountId = const Value.absent(),
+                Value<String?> costCenterId = const Value.absent(),
                 Value<double> debit = const Value.absent(),
                 Value<double> credit = const Value.absent(),
                 Value<String?> currencyId = const Value.absent(),
@@ -42660,6 +43949,7 @@ class $$GLLinesTableTableManager
                 syncStatus: syncStatus,
                 entryId: entryId,
                 accountId: accountId,
+                costCenterId: costCenterId,
                 debit: debit,
                 credit: credit,
                 currencyId: currencyId,
@@ -42676,6 +43966,7 @@ class $$GLLinesTableTableManager
                 Value<int> syncStatus = const Value.absent(),
                 required String entryId,
                 required String accountId,
+                Value<String?> costCenterId = const Value.absent(),
                 Value<double> debit = const Value.absent(),
                 Value<double> credit = const Value.absent(),
                 Value<String?> currencyId = const Value.absent(),
@@ -42690,6 +43981,7 @@ class $$GLLinesTableTableManager
                 syncStatus: syncStatus,
                 entryId: entryId,
                 accountId: accountId,
+                costCenterId: costCenterId,
                 debit: debit,
                 credit: credit,
                 currencyId: currencyId,
@@ -42706,7 +43998,12 @@ class $$GLLinesTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({entryId = false, accountId = false, currencyId = false}) {
+              ({
+                entryId = false,
+                accountId = false,
+                costCenterId = false,
+                currencyId = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [],
@@ -42752,6 +44049,19 @@ class $$GLLinesTableTableManager
                                   )
                                   as T;
                         }
+                        if (costCenterId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.costCenterId,
+                                    referencedTable: $$GLLinesTableReferences
+                                        ._costCenterIdTable(db),
+                                    referencedColumn: $$GLLinesTableReferences
+                                        ._costCenterIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
                         if (currencyId) {
                           state =
                               state.withJoin(
@@ -42789,7 +44099,12 @@ typedef $$GLLinesTableProcessedTableManager =
       $$GLLinesTableUpdateCompanionBuilder,
       (GLLine, $$GLLinesTableReferences),
       GLLine,
-      PrefetchHooks Function({bool entryId, bool accountId, bool currencyId})
+      PrefetchHooks Function({
+        bool entryId,
+        bool accountId,
+        bool costCenterId,
+        bool currencyId,
+      })
     >;
 typedef $$AccountingPeriodsTableCreateCompanionBuilder =
     AccountingPeriodsCompanion Function({
@@ -53521,6 +54836,8 @@ class $AppDatabaseManager {
       $$SupplierPaymentsTableTableManager(_db, _db.supplierPayments);
   $$SyncQueueTableTableManager get syncQueue =>
       $$SyncQueueTableTableManager(_db, _db.syncQueue);
+  $$CostCentersTableTableManager get costCenters =>
+      $$CostCentersTableTableManager(_db, _db.costCenters);
   $$GLEntriesTableTableManager get gLEntries =>
       $$GLEntriesTableTableManager(_db, _db.gLEntries);
   $$GLLinesTableTableManager get gLLines =>

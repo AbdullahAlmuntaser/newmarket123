@@ -67,7 +67,8 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase>
         calculatedSubtotal += item.quantity.value * item.price.value;
       }
       final tax = purchaseCompanion.tax.value;
-      final calculatedTotal = calculatedSubtotal + tax;
+      final landedCosts = purchaseCompanion.landedCosts.value;
+      final calculatedTotal = calculatedSubtotal + tax + landedCosts;
 
       final finalPurchaseCompanion = purchaseCompanion.copyWith(
         total: Value(calculatedTotal),
@@ -78,6 +79,15 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase>
 
       // 2. Process Items
       for (var item in itemsCompanions) {
+        // Calculate allocated landed cost for this item (by value proportion)
+        double itemValue = item.quantity.value * item.price.value;
+        double proportion = calculatedSubtotal > 0 ? itemValue / calculatedSubtotal : 0;
+        double allocatedLandedCost = landedCosts * proportion;
+        double landedCostPerUnit = item.quantity.value > 0 ? allocatedLandedCost / item.quantity.value : 0;
+        
+        // Final Unit Cost = Purchase Price + Landed Cost per Unit
+        double finalUnitCost = item.price.value + landedCostPerUnit;
+
         await into(purchaseItems).insert(item);
 
         // Update Stock (Increase) if status is RECEIVED
@@ -96,7 +106,7 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase>
           )..where((p) => p.id.equals(item.productId.value))).write(
             ProductsCompanion(
               stock: Value(product.stock + quantityToAdd),
-              buyPrice: Value(item.price.value), // Update buy price to latest
+              buyPrice: Value(finalUnitCost), // Update buy price to include landed costs
             ),
           );
 
@@ -109,7 +119,7 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase>
               batchNumber: 'PUR-${DateTime.now().millisecondsSinceEpoch}',
               quantity: Value(quantityToAdd),
               initialQuantity: Value(quantityToAdd),
-              costPrice: Value(item.price.value),
+              costPrice: Value(finalUnitCost),
               syncStatus: const Value(1),
             ),
           );

@@ -52,7 +52,7 @@ class GLLineWithAccount {
   GLLineWithAccount(this.line, this.account);
 }
 
-@DriftAccessor(tables: [GLAccounts, GLEntries, GLLines, Reconciliations])
+@DriftAccessor(tables: [GLAccounts, CostCenters, GLEntries, GLLines, Reconciliations])
 class AccountingDao extends DatabaseAccessor<AppDatabase>
     with _$AccountingDaoMixin {
   AccountingDao(super.db);
@@ -81,6 +81,12 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
   // New: Get accounts by type
   Future<List<GLAccount>> getAccountsByType(String type) =>
       (select(gLAccounts)..where((tbl) => tbl.type.equals(type))).get();
+
+  // --- Cost Centers ---
+  Future<List<CostCenter>> getAllCostCenters() => (select(costCenters)).get();
+  Stream<List<CostCenter>> watchCostCenters() => (select(costCenters)).watch();
+  Future<int> createCostCenter(CostCentersCompanion cc) => into(costCenters).insert(cc);
+  Future<bool> updateCostCenter(CostCenter cc) => update(costCenters).replace(cc);
 
   // --- GL Entries ---
   Future<void> createEntry(

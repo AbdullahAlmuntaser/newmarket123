@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
@@ -97,6 +98,10 @@ class Sales extends Table with SyncableTable {
   )(); // New: DRAFT, POSTED, CANCELLED
   TextColumn get currencyId => text().nullable()();
   RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
+  // ZATCA Fields
+  TextColumn get qrCode => text().nullable()();
+  TextColumn get hash => text().nullable()();
+  TextColumn get signature => text().nullable()();
 }
 
 class SaleItems extends Table with SyncableTable {
@@ -112,6 +117,7 @@ class Purchases extends Table with SyncableTable {
   TextColumn get supplierId => text().nullable().references(Suppliers, #id)();
   RealColumn get total => real()();
   RealColumn get tax => real().withDefault(const Constant(0.0))();
+  RealColumn get landedCosts => real().withDefault(const Constant(0.0))(); // New
   TextColumn get invoiceNumber => text().nullable()();
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
   BoolColumn get isCredit => boolean().withDefault(const Constant(false))();
@@ -200,6 +206,12 @@ class GLAccounts extends Table with SyncableTable {
   RealColumn get balance => real().withDefault(const Constant(0.0))();
 }
 
+class CostCenters extends Table with SyncableTable {
+  TextColumn get code => text().unique()();
+  TextColumn get name => text()();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+}
+
 class GLEntries extends Table with SyncableTable {
   TextColumn get description => text()();
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
@@ -218,6 +230,7 @@ class GLEntries extends Table with SyncableTable {
 class GLLines extends Table with SyncableTable {
   TextColumn get entryId => text().references(GLEntries, #id)();
   TextColumn get accountId => text().references(GLAccounts, #id)();
+  TextColumn get costCenterId => text().nullable().references(CostCenters, #id)();
   RealColumn get debit => real().withDefault(const Constant(0.0))();
   RealColumn get credit => real().withDefault(const Constant(0.0))();
   TextColumn get currencyId => text().nullable().references(Currencies, #id)();
@@ -461,6 +474,7 @@ class BillOfMaterials extends Table with SyncableTable {
     SupplierPayments,
     SyncQueue,
     GLAccounts,
+    CostCenters,
     GLEntries,
     GLLines,
     AccountingPeriods,
@@ -516,7 +530,7 @@ class AppDatabase extends _$AppDatabase {
       (select(syncQueue)).get().then((v) => v.length);
 
   @override
-  int get schemaVersion => 21; // Incremented to 21
+  int get schemaVersion => 23; // Incremented to 23
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -601,6 +615,8 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(purchases, purchases.exchangeRate);
         await m.addColumn(gLEntries, gLEntries.currencyId);
         await m.addColumn(gLEntries, gLEntries.exchangeRate);
+        await m.addColumn(gLLines, gLLines.currencyId);
+        await m.addColumn(gLLines, gLLines.exchangeRate);
       }
       if (from < 19) {
         await m.addColumn(customers, customers.taxNumber);
@@ -622,6 +638,24 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(stockTakeItems);
         await m.createTable(billOfMaterials);
         await m.createTable(checks);
+      }
+      if (from < 22) {
+        // Double check GLLines for users who already passed version 18
+        try {
+          await m.addColumn(gLLines, gLLines.currencyId);
+          await m.addColumn(gLLines, gLLines.exchangeRate);
+        } catch (e) {
+          // Columns might already exist if version 18 was executed correctly in some environments
+          debugPrint("Migration to 22 (GLLines) skipped or failed: $e");
+        }
+      }
+      if (from < 23) {
+        await m.createTable(costCenters);
+        await m.addColumn(gLLines, gLLines.costCenterId);
+        await m.addColumn(sales, sales.qrCode);
+        await m.addColumn(sales, sales.hash);
+        await m.addColumn(sales, sales.signature);
+        await m.addColumn(purchases, purchases.landedCosts);
       }
     },
   );
