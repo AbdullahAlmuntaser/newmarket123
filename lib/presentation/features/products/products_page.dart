@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/data/datasources/local/daos/products_dao.dart';
@@ -96,7 +97,25 @@ class _ProductsPageState extends State<ProductsPage> {
                 subtitle: Text(
                   'SKU: ${product.sku} | ${l10n.stock}: ${product.stock} | ${l10n.category}: $categoryName',
                 ),
-                trailing: Text('${l10n.price}: ${product.sellPrice}'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('${l10n.price}: ${product.sellPrice}'),
+                    PopupMenuButton<String>(
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          _showAddEditDialog(context, product);
+                        } else if (value == 'units') {
+                          context.push('/products/unit-conversion/${product.id}', extra: product.name);
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(value: 'edit', child: Text('تعديل المنتج')),
+                        const PopupMenuItem(value: 'units', child: Text('تحويل الوحدات')),
+                      ],
+                    ),
+                  ],
+                ),
                 onTap: () => _showAddEditDialog(context, product),
               );
             },

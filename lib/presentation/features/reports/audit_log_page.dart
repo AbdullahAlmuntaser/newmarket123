@@ -1,113 +1,46 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart' as intl;
-import 'package:drift/drift.dart' as drift;
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
-import 'package:supermarket/l10n/app_localizations.dart';
+import 'package:drift/drift.dart' as drift;
+import 'package:intl/intl.dart';
 
 class AuditLogPage extends StatelessWidget {
   const AuditLogPage({super.key});
 
-  Future<void> _exportToCsv(BuildContext context, List<AuditLog> logs) async {
-    final directory = await getTemporaryDirectory();
-    final file = File(
-      '${directory.path}/audit_log_${DateTime.now().millisecondsSinceEpoch}.csv',
-    );
-
-    StringBuffer buffer = StringBuffer();
-    buffer.writeln('Action,Target,Details,User,Timestamp');
-
-    for (var log in logs) {
-      buffer.writeln(
-        '${log.action},${log.targetEntity},"${log.details?.replaceAll('"', '""') ?? ''}",${log.userId ?? 'System'},${log.timestamp.toIso8601String()}',
-      );
-    }
-
-    await file.writeAsString(buffer.toString());
-
-    if (context.mounted) {
-      // ignore: deprecated_member_use
-      await Share.shareXFiles([XFile(file.path)], text: 'Audit Log Export');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final provider = context.watch<AccountingProvider>();
+    final db = context.watch<AppDatabase>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.auditLog),
-        actions: [
-          StreamBuilder<List<AuditLog>>(
-            stream:
-                (provider.db.select(provider.db.auditLogs)..orderBy([
-                      (t) => drift.OrderingTerm(
-                        expression: t.timestamp,
-                        mode: drift.OrderingMode.desc,
-                      ),
-                    ]))
-                    .watch(),
-            builder: (context, snapshot) {
-              return IconButton(
-                icon: const Icon(Icons.share),
-                onPressed: snapshot.hasData
-                    ? () => _exportToCsv(context, snapshot.data!)
-                    : null,
-              );
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('سجل التدقيق والرقابة')),
       body: StreamBuilder<List<AuditLog>>(
-        stream:
-            (provider.db.select(provider.db.auditLogs)..orderBy([
-                  (t) => drift.OrderingTerm(
-                    expression: t.timestamp,
-                    mode: drift.OrderingMode.desc,
-                  ),
-                ]))
-                .watch(),
+        stream: (db.select(db.auditLogs)..orderBy([(t) => drift.OrderingTerm.desc(t.timestamp)])).watch(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text(l10n.noDataAvailable));
-          }
-
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
           final logs = snapshot.data!;
+          if (logs.isEmpty) return const Center(child: Text('لا يوجد سجلات تدقيق بعد.'));
 
           return ListView.builder(
             itemCount: logs.length,
             itemBuilder: (context, index) {
               final log = logs[index];
               return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 child: ListTile(
-                  leading: Icon(
-                    _getActionIcon(log.action),
-                    color: _getActionColor(log.action),
-                  ),
-                  title: Text('${log.action}: ${log.targetEntity}'),
+                  leading: _buildActionIcon(log.action),
+                  title: Text('${log.targetEntity}: ${log.action}'),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(log.details ?? ''),
+                      const SizedBox(height: 4),
                       Text(
-                        intl.DateFormat(
-                          'yyyy-MM-dd HH:mm',
-                        ).format(log.timestamp),
-                        style: const TextStyle(fontSize: 12),
+                        DateFormat('yyyy-MM-dd HH:mm:ss').format(log.timestamp),
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ],
                   ),
-                  trailing: Text(log.userId ?? 'System'),
+                  trailing: Text('المستخدم: ${log.userId ?? "نظام"}'),
                 ),
               );
             },
@@ -117,29 +50,12 @@ class AuditLogPage extends StatelessWidget {
     );
   }
 
-  IconData _getActionIcon(String action) {
+  Widget _buildActionIcon(String action) {
     switch (action.toUpperCase()) {
-      case 'CREATE':
-        return Icons.add_circle;
-      case 'UPDATE':
-        return Icons.edit;
-      case 'DELETE':
-        return Icons.delete;
-      default:
-        return Icons.info;
-    }
-  }
-
-  Color _getActionColor(String action) {
-    switch (action.toUpperCase()) {
-      case 'CREATE':
-        return Colors.green;
-      case 'UPDATE':
-        return Colors.blue;
-      case 'DELETE':
-        return Colors.red;
-      default:
-        return Colors.grey;
+      case 'CREATE': return const Icon(Icons.add_circle, color: Colors.green);
+      case 'UPDATE': return const Icon(Icons.edit, color: Colors.blue);
+      case 'DELETE': return const Icon(Icons.delete_forever, color: Colors.red);
+      default: return const Icon(Icons.info, color: Colors.grey);
     }
   }
 }

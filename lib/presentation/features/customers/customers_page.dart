@@ -356,10 +356,12 @@ class _CustomersPageState extends State<CustomersPage> {
           ));
 
           await accountingService.recordCustomerPayment(
-            customerId: customer.id,
-            amount: amount,
-            paymentAccountCode: AccountingService.codeCash,
-          );
+              customerId: customer.id,
+              amount: amount,
+              paymentAccountCode: AccountingService.codeCash,
+              currencyId: customer.currencyId ?? 'USD', // Use customer's currency or default to USD
+              exchangeRate: customer.exchangeRate, // Use customer's exchange rate
+            );
         });
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.paymentSuccess)));
       } catch (e) {

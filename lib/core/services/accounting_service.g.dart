@@ -6,97 +6,6 @@ part of 'accounting_service.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-VatReportData _$VatReportDataFromJson(Map<String, dynamic> json) =>
-    VatReportData(
-      totalOutputVat: (json['totalOutputVat'] as num).toDouble(),
-      totalInputVat: (json['totalInputVat'] as num).toDouble(),
-      netVatPayable: (json['netVatPayable'] as num).toDouble(),
-      startDate: DateTime.parse(json['startDate'] as String),
-      endDate: DateTime.parse(json['endDate'] as String),
-    );
-
-Map<String, dynamic> _$VatReportDataToJson(VatReportData instance) =>
-    <String, dynamic>{
-      'totalOutputVat': instance.totalOutputVat,
-      'totalInputVat': instance.totalInputVat,
-      'netVatPayable': instance.netVatPayable,
-      'startDate': instance.startDate.toIso8601String(),
-      'endDate': instance.endDate.toIso8601String(),
-    };
-
-IncomeStatementData _$IncomeStatementDataFromJson(Map<String, dynamic> json) =>
-    IncomeStatementData(
-      revenues: (json['revenues'] as List<dynamic>)
-          .map((e) => TrialBalanceItem.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      expenses: (json['expenses'] as List<dynamic>)
-          .map((e) => TrialBalanceItem.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      totalRevenue: (json['totalRevenue'] as num).toDouble(),
-      totalExpense: (json['totalExpense'] as num).toDouble(),
-      netIncome: (json['netIncome'] as num).toDouble(),
-      startDate: json['startDate'] == null
-          ? null
-          : DateTime.parse(json['startDate'] as String),
-      endDate: DateTime.parse(json['endDate'] as String),
-    );
-
-Map<String, dynamic> _$IncomeStatementDataToJson(
-  IncomeStatementData instance,
-) => <String, dynamic>{
-  'revenues': instance.revenues.map((e) => e.toJson()).toList(),
-  'expenses': instance.expenses.map((e) => e.toJson()).toList(),
-  'totalRevenue': instance.totalRevenue,
-  'totalExpense': instance.totalExpense,
-  'netIncome': instance.netIncome,
-  'startDate': instance.startDate?.toIso8601String(),
-  'endDate': instance.endDate.toIso8601String(),
-};
-
-BalanceSheetData _$BalanceSheetDataFromJson(Map<String, dynamic> json) =>
-    BalanceSheetData(
-      assets: (json['assets'] as List<dynamic>)
-          .map((e) => BalanceSheetItem.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      liabilities: (json['liabilities'] as List<dynamic>)
-          .map((e) => BalanceSheetItem.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      equity: (json['equity'] as List<dynamic>)
-          .map((e) => BalanceSheetItem.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      totalAssets: (json['totalAssets'] as num).toDouble(),
-      totalLiabilities: (json['totalLiabilities'] as num).toDouble(),
-      totalEquity: (json['totalEquity'] as num).toDouble(),
-      netIncome: (json['netIncome'] as num).toDouble(),
-      date: DateTime.parse(json['date'] as String),
-    );
-
-Map<String, dynamic> _$BalanceSheetDataToJson(BalanceSheetData instance) =>
-    <String, dynamic>{
-      'assets': instance.assets.map((e) => e.toJson()).toList(),
-      'liabilities': instance.liabilities.map((e) => e.toJson()).toList(),
-      'equity': instance.equity.map((e) => e.toJson()).toList(),
-      'totalAssets': instance.totalAssets,
-      'totalLiabilities': instance.totalLiabilities,
-      'totalEquity': instance.totalEquity,
-      'netIncome': instance.netIncome,
-      'date': instance.date.toIso8601String(),
-    };
-
-BalanceSheetItem _$BalanceSheetItemFromJson(Map<String, dynamic> json) =>
-    BalanceSheetItem(
-      const GLAccountConverter().fromJson(
-        json['account'] as Map<String, dynamic>,
-      ),
-      (json['balance'] as num).toDouble(),
-    );
-
-Map<String, dynamic> _$BalanceSheetItemToJson(BalanceSheetItem instance) =>
-    <String, dynamic>{
-      'account': const GLAccountConverter().toJson(instance.account),
-      'balance': instance.balance,
-    };
-
 AccountingDashboardData _$AccountingDashboardDataFromJson(
   Map<String, dynamic> json,
 ) => AccountingDashboardData(
@@ -208,3 +117,94 @@ Map<String, dynamic> _$FinancialRatiosDataToJson(
   'netProfitMargin': instance.netProfitMargin,
   'currentRatio': instance.currentRatio,
 };
+
+VatReportData _$VatReportDataFromJson(Map<String, dynamic> json) =>
+    VatReportData(
+      totalOutputVat: (json['totalOutputVat'] as num).toDouble(),
+      totalInputVat: (json['totalInputVat'] as num).toDouble(),
+      netVatPayable: (json['netVatPayable'] as num).toDouble(),
+      startDate: DateTime.parse(json['startDate'] as String),
+      endDate: DateTime.parse(json['endDate'] as String),
+    );
+
+Map<String, dynamic> _$VatReportDataToJson(VatReportData instance) =>
+    <String, dynamic>{
+      'totalOutputVat': instance.totalOutputVat,
+      'totalInputVat': instance.totalInputVat,
+      'netVatPayable': instance.netVatPayable,
+      'startDate': instance.startDate.toIso8601String(),
+      'endDate': instance.endDate.toIso8601String(),
+    };
+
+IncomeStatementData _$IncomeStatementDataFromJson(Map<String, dynamic> json) =>
+    IncomeStatementData(
+      revenues: (json['revenues'] as List<dynamic>)
+          .map((e) => TrialBalanceItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      expenses: (json['expenses'] as List<dynamic>)
+          .map((e) => TrialBalanceItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      totalRevenue: (json['totalRevenue'] as num).toDouble(),
+      totalExpense: (json['totalExpense'] as num).toDouble(),
+      netIncome: (json['netIncome'] as num).toDouble(),
+      startDate: json['startDate'] == null
+          ? null
+          : DateTime.parse(json['startDate'] as String),
+      endDate: DateTime.parse(json['endDate'] as String),
+    );
+
+Map<String, dynamic> _$IncomeStatementDataToJson(
+  IncomeStatementData instance,
+) => <String, dynamic>{
+  'revenues': instance.revenues.map((e) => e.toJson()).toList(),
+  'expenses': instance.expenses.map((e) => e.toJson()).toList(),
+  'totalRevenue': instance.totalRevenue,
+  'totalExpense': instance.totalExpense,
+  'netIncome': instance.netIncome,
+  'startDate': instance.startDate?.toIso8601String(),
+  'endDate': instance.endDate.toIso8601String(),
+};
+
+BalanceSheetData _$BalanceSheetDataFromJson(Map<String, dynamic> json) =>
+    BalanceSheetData(
+      assets: (json['assets'] as List<dynamic>)
+          .map((e) => BalanceSheetItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      liabilities: (json['liabilities'] as List<dynamic>)
+          .map((e) => BalanceSheetItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      equity: (json['equity'] as List<dynamic>)
+          .map((e) => BalanceSheetItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      totalAssets: (json['totalAssets'] as num).toDouble(),
+      totalLiabilities: (json['totalLiabilities'] as num).toDouble(),
+      totalEquity: (json['totalEquity'] as num).toDouble(),
+      netIncome: (json['netIncome'] as num).toDouble(),
+      date: DateTime.parse(json['date'] as String),
+    );
+
+Map<String, dynamic> _$BalanceSheetDataToJson(BalanceSheetData instance) =>
+    <String, dynamic>{
+      'assets': instance.assets.map((e) => e.toJson()).toList(),
+      'liabilities': instance.liabilities.map((e) => e.toJson()).toList(),
+      'equity': instance.equity.map((e) => e.toJson()).toList(),
+      'totalAssets': instance.totalAssets,
+      'totalLiabilities': instance.totalLiabilities,
+      'totalEquity': instance.totalEquity,
+      'netIncome': instance.netIncome,
+      'date': instance.date.toIso8601String(),
+    };
+
+BalanceSheetItem _$BalanceSheetItemFromJson(Map<String, dynamic> json) =>
+    BalanceSheetItem(
+      const GLAccountConverter().fromJson(
+        json['account'] as Map<String, dynamic>,
+      ),
+      (json['balance'] as num).toDouble(),
+    );
+
+Map<String, dynamic> _$BalanceSheetItemToJson(BalanceSheetItem instance) =>
+    <String, dynamic>{
+      'account': const GLAccountConverter().toJson(instance.account),
+      'balance': instance.balance,
+    };

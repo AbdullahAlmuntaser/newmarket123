@@ -1,5 +1,4 @@
-import 'dart:typed_data';
-
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:printing/printing.dart';
@@ -36,51 +35,78 @@ class _PosPageState extends State<PosPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.pos),
-        actions: [
-          _buildPriceListSelector(context),
-          BlocBuilder<PosBloc, PosState>(
-            builder: (context, state) {
-              final isWholesale = state is PosLoaded
-                  ? state.isWholesaleMode
-                  : false;
-              return Row(
-                children: [
-                  Text(l10n.wholesale),
-                  Switch(
-                    value: isWholesale,
-                    onChanged: (val) =>
-                        context.read<PosBloc>().add(ToggleWholesaleMode(val)),
-                  ),
-                ],
-              );
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.f1): () => _showCheckoutDialog(context, l10n),
+        const SingleActivator(LogicalKeyboardKey.f2): () => context.read<PosBloc>().add(ClearCart()),
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(l10n.pos),
+            actions: [
+              _buildPriceListSelector(context),
+              _buildCurrencySelector(context),
+              BlocBuilder<PosBloc, PosState>(
+                builder: (context, state) {
+                  final isWholesale = state is PosLoaded ? state.isWholesaleMode : false;
+                  return Row(
+                    children: [
+                      Text(l10n.wholesale),
+                      Switch(
+                        value: isWholesale,
+                        onChanged: (val) => context.read<PosBloc>().add(ToggleWholesaleMode(val)),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_sweep),
+                onPressed: () => context.read<PosBloc>().add(ClearCart()),
+                tooltip: l10n.clearCart,
+              ),
+            ],
+          ),
+          drawer: const MainDrawer(),
+          body: Column(
+            children: [
+              _buildTopSearchBar(context, l10n),
+              _buildCategorySelector(),
+              Expanded(
+                child: Row(
+                  children: [
+                    const Expanded(flex: 2, child: ProductGrid()),
+                    const VerticalDivider(width: 1),
+                    Expanded(flex: 1, child: _buildCartSection(context, l10n)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCurrencySelector(BuildContext context) {
+    final db = context.read<AppDatabase>();
+    return FutureBuilder<List<Currency>>(
+      future: db.select(db.currencies).get(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: DropdownButton<String>(
+            value: 'YER', // Example: default to YER
+            items: snapshot.data!.map((c) => DropdownMenuItem(value: c.code, child: Text(c.code))).toList(),
+            onChanged: (val) {
+              // Handle currency change
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.delete_sweep),
-            onPressed: () => context.read<PosBloc>().add(ClearCart()),
-            tooltip: l10n.clearCart,
-          ),
-        ],
-      ),
-      drawer: const MainDrawer(),
-      body: Column(
-        children: [
-          _buildTopSearchBar(context, l10n),
-          _buildCategorySelector(),
-          Expanded(
-            child: Row(
-              children: [
-                const Expanded(flex: 2, child: ProductGrid()),
-                const VerticalDivider(width: 1),
-                Expanded(flex: 1, child: _buildCartSection(context, l10n)),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -298,37 +324,28 @@ class _PosPageState extends State<PosPage> {
                             ],
                           ),
                           const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              ChoiceChip(
-                                label: Text(item.product.unit),
-                                selected: !item.isCarton,
-                                onSelected: (selected) {
-                                  if (selected) {
-                                    context.read<PosBloc>().add(
-                                      ToggleCartItemUnit(
-                                        item.product.id,
-                                        false,
-                                      ),
-                                    );
-                                  }
-                                },
-                                visualDensity: VisualDensity.compact,
-                              ),
-                              const SizedBox(width: 8),
-                              ChoiceChip(
-                                label: Text(item.product.cartonUnit),
-                                selected: item.isCarton,
-                                onSelected: (selected) {
-                                  if (selected) {
-                                    context.read<PosBloc>().add(
-                                      ToggleCartItemUnit(item.product.id, true),
-                                    );
-                                  }
-                                },
-                                visualDensity: VisualDensity.compact,
-                              ),
-                            ],
+                          // Dynamic Units Dropdown
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: DropdownButton<String>(
+                              value: item.unitName,
+                              isDense: true,
+                              underline: const SizedBox(),
+                              items: [
+                                DropdownMenuItem(value: item.product.unit, child: Text(item.product.unit)),
+                                ...item.availableUnits.map(
+                                  (u) => DropdownMenuItem(value: u.unitName, child: Text(u.unitName)),
+                                ),
+                              ],
+                              onChanged: (val) {
+                                // هنا سنقوم بإطلاق حدث تحديث الوحدة
+                                // context.read<PosBloc>().add(UpdateCartItemUnit(item.product.id, val!));
+                              },
+                            ),
                           ),
                         ],
                       ),

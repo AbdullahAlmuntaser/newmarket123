@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:drift/drift.dart' show Value;
-import 'package:uuid/uuid.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
-import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
-import 'package:supermarket/l10n/app_localizations.dart';
+import 'package:drift/drift.dart' as drift;
 
 class ReconciliationPage extends StatefulWidget {
   const ReconciliationPage({super.key});
@@ -15,275 +12,127 @@ class ReconciliationPage extends StatefulWidget {
 }
 
 class _ReconciliationPageState extends State<ReconciliationPage> {
-  final _formKey = GlobalKey<FormState>();
   String? _selectedAccountId;
-  double _bookBalance = 0.0;
   final _actualBalanceController = TextEditingController();
   final _noteController = TextEditingController();
-  bool _isLoading = false;
-
-  @override
-  void dispose() {
-    _actualBalanceController.dispose();
-    _noteController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _onAccountChanged(String? accountId) async {
-    if (accountId == null) return;
-    setState(() {
-      _selectedAccountId = accountId;
-      _isLoading = true;
-    });
-
-    final provider = context.read<AccountingProvider>();
-    final balance = await provider.db.accountingDao.getAccountBalance(
-      accountId,
-    );
-
-    setState(() {
-      _bookBalance = balance;
-      _isLoading = false;
-    });
-  }
-
-  double get _actualBalance =>
-      double.tryParse(_actualBalanceController.text) ?? 0.0;
-  double get _difference => _actualBalance - _bookBalance;
-
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate() || _selectedAccountId == null) {
-      return;
-    }
-
-    setState(() => _isLoading = true);
-    final provider = context.read<AccountingProvider>();
-    final l10n = AppLocalizations.of(context)!;
-
-    try {
-      await provider.db.transaction(() async {
-        // 1. Create reconciliation record
-        await provider.db.accountingDao.createReconciliation(
-          ReconciliationsCompanion.insert(
-            accountId: _selectedAccountId!,
-            bookBalance: _bookBalance,
-            actualBalance: _actualBalance,
-            difference: _difference,
-            note: Value(_noteController.text),
-            date: Value(DateTime.now()),
-          ),
-        );
-
-        // 2. Create an adjustment journal entry if difference != 0
-        if (_difference != 0) {
-          final overShortAccount = await provider.db.accountingDao
-              .getAccountByCode(AccountingService.codeCashOverShort);
-
-          if (overShortAccount == null) {
-            throw Exception(
-              'Cash Over/Short account not found. Please seed accounts.',
-            );
-          }
-
-          final entryId = const Uuid().v4();
-          await provider.db.accountingDao.createEntry(
-            GLEntriesCompanion.insert(
-              id: Value(entryId),
-              description:
-                  '${l10n.reconciliationAdjustment}: ${_noteController.text}',
-              date: Value(DateTime.now()),
-              referenceType: const Value('RECONCILIATION'),
-            ),
-            [
-              // Line 1: The Cash/Bank Account
-              GLLinesCompanion.insert(
-                entryId: entryId,
-                accountId: _selectedAccountId!,
-                debit: Value(_difference > 0 ? _difference : 0.0),
-                credit: Value(_difference < 0 ? _difference.abs() : 0.0),
-                memo: Value(l10n.reconciliationAdjustment),
-              ),
-              // Line 2: Cash Over/Short Account
-              GLLinesCompanion.insert(
-                entryId: entryId,
-                accountId: overShortAccount.id,
-                debit: Value(_difference < 0 ? _difference.abs() : 0.0),
-                credit: Value(_difference > 0 ? _difference : 0.0),
-                memo: Value(l10n.reconciliationAdjustment),
-              ),
-            ],
-          );
-        }
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.saveSuccess)));
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
+  double _bookBalance = 0.0;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final provider = context.watch<AccountingProvider>();
+    final db = context.watch<AppDatabase>();
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.reconciliation)),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    StreamBuilder<List<GLAccount>>(
-                      stream: provider.watchAccounts(),
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData) return const SizedBox();
-                        // Filter for Bank and Cash accounts (ASSET type)
-                        final accounts = snapshot.data!
-                            .where((a) => !a.isHeader && a.type == 'asset')
-                            .toList();
-
-                        return DropdownButtonFormField<String>(
-                          initialValue: _selectedAccountId,
-                          decoration: InputDecoration(
-                            labelText: l10n.selectAccount,
-                            border: const OutlineInputBorder(),
-                          ),
-                          items: accounts.map((a) {
-                            return DropdownMenuItem(
-                              value: a.id,
-                              child: Text('${a.code} - ${a.name}'),
-                            );
-                          }).toList(),
-                          onChanged: _onAccountChanged,
-                          validator: (value) =>
-                              value == null ? l10n.selectAccountError : null,
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            _buildBalanceRow(
-                              l10n.bookBalance,
-                              _bookBalance,
-                              Colors.blue,
-                            ),
-                            const Divider(height: 32),
-                            TextFormField(
-                              controller: _actualBalanceController,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              decoration: InputDecoration(
-                                labelText: l10n.actualBalance,
-                                prefixIcon: const Icon(
-                                  Icons.account_balance_wallet,
-                                ),
-                                border: const OutlineInputBorder(),
-                                hintText: '0.00',
-                              ),
-                              onChanged: (v) => setState(() {}),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return l10n.enterActualBalanceError;
-                                }
-                                if (double.tryParse(value) == null) {
-                                  return l10n.enterAmountError;
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 24),
-                            _buildBalanceRow(
-                              l10n.reconciliationDifference,
-                              _difference,
-                              _difference == 0
-                                  ? Colors.green
-                                  : (_difference < 0
-                                        ? Colors.red
-                                        : Colors.orange),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _noteController,
-                      decoration: InputDecoration(
-                        labelText: l10n.notes,
-                        border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(Icons.note),
-                      ),
-                      maxLines: 2,
-                    ),
-                    const SizedBox(height: 30),
-                    ElevatedButton.icon(
-                      onPressed: _selectedAccountId == null ? null : _submit,
-                      icon: const Icon(Icons.check_circle),
-                      label: Text(
-                        l10n.save,
-                        style: const TextStyle(fontSize: 18),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+      appBar: AppBar(title: const Text('تسوية الأرصدة (صندوق/بنك)')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            _buildAccountSelector(db),
+            const SizedBox(height: 20),
+            if (_selectedAccountId != null) ...[
+              _buildBalanceComparison(),
+              const SizedBox(height: 20),
+              TextField(
+                controller: _actualBalanceController,
+                decoration: const InputDecoration(labelText: 'الرصيد الفعلي (الموجود حالياً)', border: OutlineInputBorder()),
+                keyboardType: TextInputType.number,
+                onChanged: (_) => setState(() {}),
               ),
-            ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _noteController,
+                decoration: const InputDecoration(labelText: 'ملاحظات التسوية', border: OutlineInputBorder()),
+              ),
+              const Spacer(),
+              _buildSubmitButton(db),
+            ]
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildBalanceRow(String label, double value, Color color) {
+  Widget _buildAccountSelector(AppDatabase db) {
+    return StreamBuilder<List<GLAccount>>(
+      stream: (db.select(db.gLAccounts)..where((t) => t.code.equals(AccountingService.codeCash) | t.code.equals(AccountingService.codeBank))).watch(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const CircularProgressIndicator();
+        return DropdownButtonFormField<String>(
+          initialValue: _selectedAccountId,
+          decoration: const InputDecoration(labelText: 'اختر الحساب المراد تسويته'),
+          items: snapshot.data!.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(),
+          onChanged: (val) async {
+            if (val != null) {
+              final balance = await db.accountingDao.getAccountBalance(val);
+              setState(() {
+                _selectedAccountId = val;
+                _bookBalance = balance;
+              });
+            }
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildBalanceComparison() {
+    final actual = double.tryParse(_actualBalanceController.text) ?? 0.0;
+    final diff = actual - _bookBalance;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blueGrey[50],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          _row('الرصيد الدفتري (في النظام):', _bookBalance.toStringAsFixed(2)),
+          const Divider(),
+          _row('الفارق:', diff.toStringAsFixed(2), color: diff < 0 ? Colors.red : Colors.green),
+        ],
+      ),
+    );
+  }
+
+  Widget _row(String label, String value, {Color? color}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-        ),
-        Text(
-          value.toStringAsFixed(2),
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
+        Text(label),
+        Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 18)),
       ],
+    );
+  }
+
+  Widget _buildSubmitButton(AppDatabase db) {
+    return SizedBox(
+      width: double.infinity,
+      height: 55,
+      child: ElevatedButton(
+        onPressed: () async {
+          final actual = double.tryParse(_actualBalanceController.text) ?? 0.0;
+          final diff = actual - _bookBalance;
+          
+          await db.into(db.reconciliations).insert(
+            ReconciliationsCompanion.insert(
+              accountId: _selectedAccountId!,
+              bookBalance: _bookBalance,
+              actualBalance: actual,
+              difference: diff,
+              note: drift.Value(_noteController.text),
+            )
+          );
+
+          // هنا يمكن إضافة توليد قيد تسوية تلقائي في المحاسبة
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تسجيل التسوية بنجاح')));
+            Navigator.pop(context);
+          }
+        },
+        child: const Text('تأكيد وتسجيل التسوية'),
+      ),
     );
   }
 }

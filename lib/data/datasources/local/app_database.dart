@@ -67,6 +67,8 @@ class Customers extends Table with SyncableTable {
   RealColumn get balance => real().withDefault(const Constant(0.0))();
   TextColumn get accountId =>
       text().nullable().references(GLAccounts, #id)(); // New: Linked to GL
+  TextColumn get currencyId => text().nullable().references(Currencies, #id)();
+  RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
 }
 
 class Suppliers extends Table with SyncableTable {
@@ -102,7 +104,8 @@ class SaleItems extends Table with SyncableTable {
   TextColumn get productId => text().references(Products, #id)();
   RealColumn get quantity => real()();
   RealColumn get price => real()();
-  BoolColumn get isCarton => boolean().withDefault(const Constant(false))();
+  TextColumn get unitName => text().withDefault(const Constant('حبة'))();
+  RealColumn get unitFactor => real().withDefault(const Constant(1.0))();
 }
 
 class Purchases extends Table with SyncableTable {
@@ -217,6 +220,8 @@ class GLLines extends Table with SyncableTable {
   TextColumn get accountId => text().references(GLAccounts, #id)();
   RealColumn get debit => real().withDefault(const Constant(0.0))();
   RealColumn get credit => real().withDefault(const Constant(0.0))();
+  TextColumn get currencyId => text().nullable().references(Currencies, #id)();
+  RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
   TextColumn get memo => text().nullable()();
 }
 
@@ -388,9 +393,53 @@ class Promotions extends Table with SyncableTable {
 }
 
 class Currencies extends Table with SyncableTable {
-  TextColumn get code => text().unique()(); // e.g., USD, SAR
+  TextColumn get code => text().unique()(); // e.g., USD, YER, SAR
   TextColumn get name => text()();
   RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
+  BoolColumn get isBase => boolean().withDefault(const Constant(false))();
+}
+
+class UnitConversions extends Table with SyncableTable {
+  TextColumn get productId => text().references(Products, #id)();
+  TextColumn get unitName => text()(); // حبة، كرتون، كيس
+  RealColumn get factor => real()(); // المعامل (مثلاً الكرتون فيه 24 حبة)
+  TextColumn get barcode => text().unique().nullable()(); // باركود خاص بالوحدة
+  RealColumn get sellPrice => real().nullable()(); // سعر خاص بهذه الوحدة (اختياري)
+}
+
+class StockTakes extends Table with SyncableTable {
+  TextColumn get warehouseId => text().references(Warehouses, #id)();
+  DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
+  TextColumn get status => text().withDefault(const Constant('DRAFT'))(); // DRAFT, COMPLETED
+  TextColumn get note => text().nullable()();
+}
+
+class StockTakeItems extends Table with SyncableTable {
+  TextColumn get stockTakeId => text().references(StockTakes, #id)();
+  TextColumn get productId => text().references(Products, #id)();
+  RealColumn get expectedQty => real()();
+  RealColumn get actualQty => real()();
+  RealColumn get variance => real()();
+}
+
+class Checks extends Table with SyncableTable {
+  TextColumn get checkNumber => text()();
+  TextColumn get bankName => text()();
+  DateTimeColumn get dueDate => dateTime()();
+  RealColumn get amount => real()();
+  TextColumn get type => text()(); // RECEIVED (from customer), ISSUED (to supplier)
+  TextColumn get status => text().withDefault(const Constant('PENDING'))(); // PENDING, COLLECTED, BOUNCED
+  TextColumn get partnerId => text().nullable()(); // Customer or Supplier ID
+  TextColumn get paymentAccountId => text().nullable().references(GLAccounts, #id)();
+  TextColumn get note => text().nullable()();
+  TextColumn get currencyId => text().nullable().references(Currencies, #id)();
+  RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
+}
+
+class BillOfMaterials extends Table with SyncableTable {
+  TextColumn get finishedProductId => text().references(Products, #id)();
+  TextColumn get componentProductId => text().references(Products, #id)();
+  RealColumn get quantity => real()(); // الكمية المطلوبة من المادة الخام لإنتاج وحدة واحدة
 }
 
 @DriftDatabase(
@@ -435,6 +484,11 @@ class Currencies extends Table with SyncableTable {
     PriceListItems,
     Promotions,
     Currencies,
+    UnitConversions,
+    StockTakes,
+    StockTakeItems,
+    Checks,
+    BillOfMaterials,
   ],
   daos: [
     ProductsDao,
@@ -462,7 +516,7 @@ class AppDatabase extends _$AppDatabase {
       (select(syncQueue)).get().then((v) => v.length);
 
   @override
-  int get schemaVersion => 20; // Incremented to 20
+  int get schemaVersion => 21; // Incremented to 21
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -518,7 +572,8 @@ class AppDatabase extends _$AppDatabase {
       if (from < 14) {
         await m.addColumn(products, products.piecesPerCarton);
         await m.addColumn(products, products.cartonUnit);
-        await m.addColumn(saleItems, saleItems.isCarton);
+        await m.addColumn(saleItems, saleItems.unitName);
+        await m.addColumn(saleItems, saleItems.unitFactor);
         await m.addColumn(purchaseItems, purchaseItems.isCarton);
       }
       if (from < 15) {
@@ -560,6 +615,13 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(suppliers, suppliers.email);
         await m.addColumn(suppliers, suppliers.supplierType);
         await m.addColumn(suppliers, suppliers.isActive);
+      }
+      if (from < 21) {
+        await m.createTable(unitConversions);
+        await m.createTable(stockTakes);
+        await m.createTable(stockTakeItems);
+        await m.createTable(billOfMaterials);
+        await m.createTable(checks);
       }
     },
   );

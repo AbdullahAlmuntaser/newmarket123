@@ -5,15 +5,19 @@ class CartItem extends Equatable {
   final Product product;
   final int quantity;
   final bool isWholesale;
-  final bool isCarton;
+  final String unitName; // الاسم الحالي للوحدة (حبة، كرتون، إلخ)
+  final double unitFactor; // المعامل الخاص بالوحدة المختارة
   final double unitPrice;
+  final List<UnitConversion> availableUnits; // قائمة بكل الوحدات المتاحة لهذا المنتج
 
   const CartItem({
     required this.product,
     this.quantity = 1,
     this.isWholesale = false,
-    this.isCarton = false,
+    this.unitName = 'حبة',
+    this.unitFactor = 1.0,
     this.unitPrice = 0.0,
+    this.availableUnits = const [],
   });
 
   double get total => unitPrice * quantity;
@@ -21,15 +25,19 @@ class CartItem extends Equatable {
   CartItem copyWith({
     int? quantity,
     bool? isWholesale,
-    bool? isCarton,
+    String? unitName,
+    double? unitFactor,
     double? unitPrice,
+    List<UnitConversion>? availableUnits,
   }) {
     return CartItem(
       product: product,
       quantity: quantity ?? this.quantity,
       isWholesale: isWholesale ?? this.isWholesale,
-      isCarton: isCarton ?? this.isCarton,
+      unitName: unitName ?? this.unitName,
+      unitFactor: unitFactor ?? this.unitFactor,
       unitPrice: unitPrice ?? this.unitPrice,
+      availableUnits: availableUnits ?? this.availableUnits,
     );
   }
 
@@ -38,8 +46,10 @@ class CartItem extends Equatable {
     product,
     quantity,
     isWholesale,
-    isCarton,
+    unitName,
+    unitFactor,
     unitPrice,
+    availableUnits,
   ];
 }
 

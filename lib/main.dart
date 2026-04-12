@@ -20,11 +20,6 @@ import 'package:supermarket/presentation/features/sales/sales_return_page.dart';
 import 'package:supermarket/presentation/features/sales/add_sales_return_page.dart';
 import 'package:supermarket/presentation/features/products/products_page.dart';
 import 'package:supermarket/presentation/features/products/categories_page.dart';
-import 'package:supermarket/presentation/features/purchases/purchases_page.dart';
-import 'package:supermarket/presentation/features/purchases/add_purchase_page.dart';
-import 'package:supermarket/presentation/features/purchases/add_purchase_return_page.dart';
-import 'package:supermarket/presentation/features/purchases/purchase_return_page.dart';
-import 'package:supermarket/presentation/features/purchases/purchase_details_page.dart';
 import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
 import 'package:supermarket/presentation/features/accounting/trial_balance_page.dart';
 import 'package:supermarket/presentation/features/accounting/chart_of_accounts_page.dart';
@@ -46,14 +41,12 @@ import 'package:supermarket/presentation/features/returns/create_return_page.dar
 import 'package:supermarket/presentation/features/sync/sync_page.dart';
 import 'package:supermarket/core/network/sync_service.dart';
 import 'package:supermarket/presentation/features/settings/backup_page.dart';
-import 'package:supermarket/presentation/features/customers/customers_page.dart';
-import 'package:supermarket/presentation/features/customers/customer_statement_page.dart';
 import 'package:supermarket/presentation/features/customers/customer_statement_provider.dart';
-import 'package:supermarket/presentation/features/suppliers/suppliers_page.dart';
-import 'package:supermarket/presentation/features/suppliers/supplier_statement_page.dart';
 import 'package:supermarket/presentation/features/inventory/stock_transfer_page.dart';
 import 'package:supermarket/presentation/features/hr/employees_page.dart';
 import 'package:supermarket/presentation/features/hr/payroll_page.dart';
+import 'package:supermarket/presentation/features/products/unit_conversion_page.dart';
+import 'package:supermarket/presentation/features/inventory/warehouse_management_page.dart'; 
 
 // Services & Providers Imports
 import 'package:supermarket/core/services/shift_service.dart';
@@ -175,22 +168,18 @@ class MyApp extends StatelessWidget {
 
         // Products & Inventory
         GoRoute(path: '/products', builder: (context, state) => const ProductsPage()),
+        GoRoute(
+          path: '/products/unit-conversion/:id',
+          builder: (context, state) {
+            final id = state.pathParameters['id']!;
+            final name = state.extra as String? ?? 'Product';
+            return UnitConversionPage(productId: id, productName: name);
+          },
+        ),
         GoRoute(path: '/categories', builder: (context, state) => const CategoriesPage()),
         GoRoute(path: '/low-stock', builder: (context, state) => const LowStockProductsPage()),
         GoRoute(path: '/inventory/transfer', builder: (context, state) => const StockTransferPage()),
-
-        // Purchases
-        GoRoute(path: '/purchases', builder: (context, state) => const PurchasesPage()),
-        GoRoute(path: '/purchases/add', builder: (context, state) => const AddPurchasePage()),
-        GoRoute(path: '/purchases/returns', builder: (context, state) => const PurchaseReturnPage()),
-        GoRoute(path: '/purchases/returns/new', builder: (context, state) => const AddPurchaseReturnPage()),
-        GoRoute(path: '/purchases/:id', builder: (context, state) => PurchaseDetailsPage(purchaseId: state.pathParameters['id']!)),
-
-        // Customers & Suppliers
-        GoRoute(path: '/customers', builder: (context, state) => const CustomersPage()),
-        GoRoute(path: '/customers/statements', builder: (context, state) => const CustomerStatementPage(customerId: 'some_id',)),
-        GoRoute(path: '/suppliers', builder: (context, state) => const SuppliersPage()),
-        GoRoute(path: '/suppliers/statements', builder: (context, state) => SupplierStatementPage(supplier: state.extra as Supplier)),
+        GoRoute(path: '/inventory/warehouses', builder: (context, state) => const WarehouseManagementPage()),
 
         // HR
         GoRoute(path: '/hr/employees', builder: (context, state) => const EmployeesPage()),

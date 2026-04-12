@@ -5,6 +5,7 @@ part of 'customers_dao.dart';
 // ignore_for_file: type=lint
 mixin _$CustomersDaoMixin on DatabaseAccessor<AppDatabase> {
   $GLAccountsTable get gLAccounts => attachedDatabase.gLAccounts;
+  $CurrenciesTable get currencies => attachedDatabase.currencies;
   $CustomersTable get customers => attachedDatabase.customers;
   $CustomerPaymentsTable get customerPayments =>
       attachedDatabase.customerPayments;
@@ -20,6 +21,8 @@ class CustomersDaoManager {
   CustomersDaoManager(this._db);
   $$GLAccountsTableTableManager get gLAccounts =>
       $$GLAccountsTableTableManager(_db.attachedDatabase, _db.gLAccounts);
+  $$CurrenciesTableTableManager get currencies =>
+      $$CurrenciesTableTableManager(_db.attachedDatabase, _db.currencies);
   $$CustomersTableTableManager get customers =>
       $$CustomersTableTableManager(_db.attachedDatabase, _db.customers);
   $$CustomerPaymentsTableTableManager get customerPayments =>

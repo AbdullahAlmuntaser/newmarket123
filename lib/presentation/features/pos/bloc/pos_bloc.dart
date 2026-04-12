@@ -27,7 +27,6 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       }
     });
     on<ToggleWholesaleMode>(_onToggleWholesale);
-    on<ToggleCartItemUnit>(_onToggleUnit);
     on<SearchProducts>(_onSearchProducts);
     on<SelectPriceList>(_onSelectPriceList);
     on<CheckoutEvent>(_onCheckout);
@@ -166,30 +165,47 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     final currentState = state as PosLoaded;
 
     try {
-      final product = await (db.select(
-        db.products,
-      )..where((t) => t.sku.equals(event.sku))).getSingleOrNull();
+      // 1. البحث في باركودات الوحدات أولاً (لأنه قد يكون باركود كرتون)
+      final unitConv = await (db.select(db.unitConversions)
+            ..where((t) => t.barcode.equals(event.sku)))
+          .getSingleOrNull();
+
+      Product? product;
+      String unitName = 'حبة';
+      double factor = 1.0;
+      double? specificPrice;
+
+      if (unitConv != null) {
+        product = await (db.select(db.products)
+              ..where((t) => t.id.equals(unitConv.productId)))
+            .getSingle();
+        unitName = unitConv.unitName;
+        factor = unitConv.factor;
+        specificPrice = unitConv.sellPrice;
+      } else {
+        // 2. إذا لم يجد في الوحدات، يبحث في باركود المنتج الأساسي
+        product = await (db.select(db.products)
+              ..where((t) => t.sku.equals(event.sku)))
+            .getSingleOrNull();
+      }
 
       if (product == null) {
-        emit(PosError("Product with SKU ${event.sku} not found"));
+        emit(PosError("لم يتم العثور على الصنف بالباركود ${event.sku}"));
         emit(currentState);
         return;
       }
 
-      // Calculate price using PricingService
-      final basePrice = await pricingService.getPriceForProduct(
-        product.id,
-        null, // Can be improved to support active PriceLists
-        1.0,
-      );
-      final finalPrice = await pricingService.applyPromotions(
-        product.id,
-        basePrice,
-        1.0,
-      );
+      // جلب كافة الوحدات المتاحة لهذا المنتج
+      final allUnits = await (db.select(db.unitConversions)
+            ..where((t) => t.productId.equals(product!.id)))
+          .get();
+
+      // حساب السعر
+      double basePrice = specificPrice ?? product.sellPrice;
+      if (currentState.isWholesaleMode) basePrice = product.wholesalePrice * factor;
 
       final existingIndex = currentState.cart.indexWhere(
-        (item) => item.product.id == product.id,
+        (item) => item.product.id == product!.id && item.unitName == unitName,
       );
 
       List<CartItem> newCart = List.from(currentState.cart);
@@ -201,8 +217,10 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         newCart.add(
           CartItem(
             product: product,
-            isWholesale: currentState.isWholesaleMode,
-            unitPrice: finalPrice, // Set the calculated price
+            unitName: unitName,
+            unitFactor: factor,
+            unitPrice: basePrice,
+            availableUnits: allUnits,
           ),
         );
       }
@@ -221,34 +239,12 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     if (state is! PosLoaded) return;
     final currentState = state as PosLoaded;
 
-    final updatedCart = <CartItem>[];
-    for (final item in currentState.cart) {
+    final updatedCart = currentState.cart.map((item) {
       if (item.product.id == event.productId) {
-        final newQuantity = event.quantity;
-
-        // Recalculate price based on new quantity
-        final basePrice = await pricingService.getPriceForProduct(
-          item.product.id,
-          currentState.activePriceListId,
-          newQuantity.toDouble(),
-        );
-
-        final finalPrice = await pricingService.applyPromotions(
-          item.product.id,
-          basePrice,
-          newQuantity.toDouble(),
-        );
-
-        updatedCart.add(
-          item.copyWith(
-            quantity: newQuantity,
-            unitPrice: finalPrice.toDouble(),
-          ),
-        );
-      } else {
-        updatedCart.add(item);
+        return item.copyWith(quantity: event.quantity);
       }
-    }
+      return item;
+    }).toList();
     emit(currentState.copyWith(cart: updatedCart));
   }
 
@@ -270,18 +266,6 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     emit(
       currentState.copyWith(cart: newCart, isWholesaleMode: event.isWholesale),
     );
-  }
-
-  void _onToggleUnit(ToggleCartItemUnit event, Emitter<PosState> emit) {
-    if (state is! PosLoaded) return;
-    final currentState = state as PosLoaded;
-    final newCart = currentState.cart.map((item) {
-      if (item.product.id == event.productId) {
-        return item.copyWith(isCarton: event.isCarton);
-      }
-      return item;
-    }).toList();
-    emit(currentState.copyWith(cart: newCart));
   }
 
   Future<void> _onCheckout(CheckoutEvent event, Emitter<PosState> emit) async {
@@ -316,9 +300,10 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         return SaleItemsCompanion.insert(
           saleId: saleId,
           productId: item.product.id,
-          quantity: item.quantity.toDouble(),
-          price: item.unitPrice,
-          isCarton: Value(item.isCarton),
+          quantity: item.quantity.toDouble(), // Quantity is already in base units from CartItem
+          price: item.unitPrice, // Unit price is already the price for the selected unit
+          unitName: Value(item.unitName),
+          unitFactor: Value(item.unitFactor),
           syncStatus: const Value(1),
         );
       }).toList();

@@ -115,20 +115,33 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
       // 2. Process Items
       for (var item in itemsCompanions) {
         final productId = item.productId.value;
-        final product = await (select(
-          products,
-        )..where((p) => p.id.equals(productId))).getSingle();
+        final product = await (select(products)..where((p) => p.id.equals(productId))).getSingle();
 
-        double quantityToDecrease = item.quantity.value;
-        if (item.isCarton.value) {
-          quantityToDecrease *= product.piecesPerCarton;
+        // Calculate actual quantity in base unit (pieces)
+        double quantityToDecrease = item.quantity.value * item.unitFactor.value;
+
+        // FEFO Logic: Get batches ordered by expiryDate (nulls last)
+        final batches = await (select(productBatches)
+              ..where((b) => b.productId.equals(productId) & b.quantity.isBiggerThanValue(0))
+              ..orderBy([
+                (b) => OrderingTerm(expression: b.expiryDate, mode: OrderingMode.asc),
+                (b) => OrderingTerm(expression: b.createdAt, mode: OrderingMode.asc),
+              ]))
+            .get();
+
+        double remainingToDeduct = quantityToDecrease;
+        for (var batch in batches) {
+          if (remainingToDeduct <= 0) break;
+          double deduct = batch.quantity >= remainingToDeduct ? remainingToDeduct : batch.quantity;
+
+          await (update(productBatches)..where((b) => b.id.equals(batch.id))).write(
+            ProductBatchesCompanion(quantity: Value(batch.quantity - deduct)),
+          );
+          remainingToDeduct -= deduct;
         }
 
-        // Check Stock Availability
-        if (product.stock < quantityToDecrease) {
-          throw Exception(
-            'الكمية المطلوبة من ${product.name} غير متوفرة. المتاح: ${product.stock}',
-          );
+        if (remainingToDeduct > 0) {
+          throw Exception('المخزون غير كافٍ للصنف ${product.name}');
         }
 
         await into(saleItems).insert(item);
@@ -137,37 +150,6 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
         await (update(products)..where((p) => p.id.equals(productId))).write(
           ProductsCompanion(stock: Value(product.stock - quantityToDecrease)),
         );
-
-        // FIFO: Update Product Batches
-        double remainingToDeduct = quantityToDecrease;
-        final batches =
-            await (select(productBatches)
-                  ..where(
-                    (b) =>
-                        b.productId.equals(productId) &
-                        b.quantity.isBiggerThanValue(0),
-                  )
-                  ..orderBy([
-                    (b) => OrderingTerm(
-                      expression: b.createdAt,
-                      mode: OrderingMode.asc,
-                    ),
-                  ]))
-                .get();
-
-        for (var batch in batches) {
-          if (remainingToDeduct <= 0) break;
-          double deduct = batch.quantity >= remainingToDeduct
-              ? remainingToDeduct
-              : batch.quantity;
-
-          await (update(
-            productBatches,
-          )..where((b) => b.id.equals(batch.id))).write(
-            ProductBatchesCompanion(quantity: Value(batch.quantity - deduct)),
-          );
-          remainingToDeduct -= deduct;
-        }
       }
 
       // 3. Update Customer Balance if Credit

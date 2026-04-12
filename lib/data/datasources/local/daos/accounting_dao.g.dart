@@ -6,6 +6,7 @@ part of 'accounting_dao.dart';
 mixin _$AccountingDaoMixin on DatabaseAccessor<AppDatabase> {
   $GLAccountsTable get gLAccounts => attachedDatabase.gLAccounts;
   $GLEntriesTable get gLEntries => attachedDatabase.gLEntries;
+  $CurrenciesTable get currencies => attachedDatabase.currencies;
   $GLLinesTable get gLLines => attachedDatabase.gLLines;
   $ReconciliationsTable get reconciliations => attachedDatabase.reconciliations;
   AccountingDaoManager get managers => AccountingDaoManager(this);
@@ -18,6 +19,8 @@ class AccountingDaoManager {
       $$GLAccountsTableTableManager(_db.attachedDatabase, _db.gLAccounts);
   $$GLEntriesTableTableManager get gLEntries =>
       $$GLEntriesTableTableManager(_db.attachedDatabase, _db.gLEntries);
+  $$CurrenciesTableTableManager get currencies =>
+      $$CurrenciesTableTableManager(_db.attachedDatabase, _db.currencies);
   $$GLLinesTableTableManager get gLLines =>
       $$GLLinesTableTableManager(_db.attachedDatabase, _db.gLLines);
   $$ReconciliationsTableTableManager get reconciliations =>

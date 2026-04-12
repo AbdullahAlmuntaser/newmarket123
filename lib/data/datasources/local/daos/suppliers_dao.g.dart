@@ -12,6 +12,7 @@ mixin _$SuppliersDaoMixin on DatabaseAccessor<AppDatabase> {
   $PurchasesTable get purchases => attachedDatabase.purchases;
   $PurchaseReturnsTable get purchaseReturns => attachedDatabase.purchaseReturns;
   $GLEntriesTable get gLEntries => attachedDatabase.gLEntries;
+  $CurrenciesTable get currencies => attachedDatabase.currencies;
   $GLLinesTable get gLLines => attachedDatabase.gLLines;
   SuppliersDaoManager get managers => SuppliersDaoManager(this);
 }
@@ -39,6 +40,8 @@ class SuppliersDaoManager {
       );
   $$GLEntriesTableTableManager get gLEntries =>
       $$GLEntriesTableTableManager(_db.attachedDatabase, _db.gLEntries);
+  $$CurrenciesTableTableManager get currencies =>
+      $$CurrenciesTableTableManager(_db.attachedDatabase, _db.currencies);
   $$GLLinesTableTableManager get gLLines =>
       $$GLLinesTableTableManager(_db.attachedDatabase, _db.gLLines);
 }
