@@ -96,9 +96,53 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     return transaction(() async {
       final entryRow = await into(gLEntries).insertReturning(entry);
       for (var line in lines) {
-        await into(gLLines).insert(line.copyWith(entryId: Value(entryRow.id)));
+        final lineRow = await into(gLLines).insertReturning(
+          line.copyWith(entryId: Value(entryRow.id)),
+        );
+
+        // Update AccountTransactions for running balance
+        await _updateAccountRunningBalance(lineRow, entryRow);
       }
     });
+  }
+
+  Future<void> _updateAccountRunningBalance(GLLine line, GLEntry entry) async {
+    // Get last running balance for this account
+    final lastTrans = await (select(db.accountTransactions)
+          ..where((t) => t.accountId.equals(line.accountId))
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc),
+            (t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc),
+          ])
+          ..limit(1))
+        .getSingleOrNull();
+
+    double lastBalance = lastTrans?.runningBalance ?? 0;
+
+    final account = await (select(gLAccounts)
+          ..where((a) => a.id.equals(line.accountId)))
+        .getSingle();
+
+    double newBalance;
+    // ASSET and EXPENSE accounts increase with Debit, decrease with Credit.
+    // LIABILITY, EQUITY, and REVENUE accounts increase with Credit, decrease with Debit.
+    if ([AccountType.asset, AccountType.expense].contains(account.type)) {
+      newBalance = lastBalance + line.debit - line.credit;
+    } else {
+      newBalance = lastBalance + line.credit - line.debit;
+    }
+
+    await into(db.accountTransactions).insert(
+      AccountTransactionsCompanion.insert(
+        accountId: line.accountId,
+        type: entry.referenceType ?? 'MANUAL',
+        referenceId: Value(entry.referenceId),
+        debit: Value(line.debit),
+        credit: Value(line.credit),
+        runningBalance: Value(newBalance),
+        date: Value(entry.date),
+      ),
+    );
   }
 
   Stream<List<GLEntry>> watchRecentEntries({int limit = 50}) {

@@ -14,6 +14,8 @@ import 'package:supermarket/presentation/features/pos/widgets/product_grid.dart'
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/presentation/widgets/main_drawer.dart';
 
+import 'package:supermarket/injection_container.dart';
+
 class PosPage extends StatefulWidget {
   const PosPage({super.key});
 
@@ -34,58 +36,73 @@ class _PosPageState extends State<PosPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return CallbackShortcuts(
-      bindings: {
-        const SingleActivator(LogicalKeyboardKey.f1): () => _showCheckoutDialog(context, l10n),
-        const SingleActivator(LogicalKeyboardKey.f2): () => context.read<PosBloc>().add(ClearCart()),
-      },
-      child: Focus(
-        autofocus: true,
-        child: Scaffold(
-          appBar: AppBar(
-            title: Text(l10n.pos),
-            actions: [
-              _buildPriceListSelector(context),
-              _buildCurrencySelector(context),
-              BlocBuilder<PosBloc, PosState>(
-                builder: (context, state) {
-                  final isWholesale = state is PosLoaded ? state.isWholesaleMode : false;
-                  return Row(
-                    children: [
-                      Text(l10n.wholesale),
-                      Switch(
-                        value: isWholesale,
-                        onChanged: (val) => context.read<PosBloc>().add(ToggleWholesaleMode(val)),
-                      ),
-                    ],
-                  );
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_sweep),
-                onPressed: () => context.read<PosBloc>().add(ClearCart()),
-                tooltip: l10n.clearCart,
-              ),
-            ],
-          ),
-          drawer: const MainDrawer(),
-          body: Column(
-            children: [
-              _buildTopSearchBar(context, l10n),
-              _buildCategorySelector(),
-              Expanded(
-                child: Row(
+    return BlocProvider<PosBloc>(
+      create: (context) => sl<PosBloc>(),
+      child: Builder(
+        builder: (context) {
+          final l10n = AppLocalizations.of(context)!;
+          return CallbackShortcuts(
+            bindings: {
+              const SingleActivator(LogicalKeyboardKey.f1):
+                  () => _showCheckoutDialog(context, l10n),
+              const SingleActivator(LogicalKeyboardKey.f2):
+                  () => context.read<PosBloc>().add(ClearCart()),
+            },
+            child: Focus(
+              autofocus: true,
+              child: Scaffold(
+                appBar: AppBar(
+                  title: Text(l10n.pos),
+                  actions: [
+                    _buildPriceListSelector(context),
+                    _buildCurrencySelector(context),
+                    BlocBuilder<PosBloc, PosState>(
+                      builder: (context, state) {
+                        final isWholesale =
+                            state is PosLoaded ? state.isWholesaleMode : false;
+                        return Row(
+                          children: [
+                            Text(l10n.wholesale),
+                            Switch(
+                              value: isWholesale,
+                              onChanged: (val) => context
+                                  .read<PosBloc>()
+                                  .add(ToggleWholesaleMode(val)),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_sweep),
+                      onPressed: () => context.read<PosBloc>().add(ClearCart()),
+                      tooltip: l10n.clearCart,
+                    ),
+                  ],
+                ),
+                drawer: const MainDrawer(),
+                body: Column(
                   children: [
-                    const Expanded(flex: 2, child: ProductGrid()),
-                    const VerticalDivider(width: 1),
-                    Expanded(flex: 1, child: _buildCartSection(context, l10n)),
+                    _buildTopSearchBar(context, l10n),
+                    _buildCategorySelector(),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const Expanded(flex: 2, child: ProductGrid()),
+                          const VerticalDivider(width: 1),
+                          Expanded(
+                            flex: 1,
+                            child: _buildCartSection(context, l10n),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

@@ -8,6 +8,9 @@ import 'package:drift/drift.dart' hide JsonKey, Column;
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:supermarket/core/services/transaction_engine.dart';
+import 'package:supermarket/injection_container.dart';
+
 class AddSalesReturnPage extends StatefulWidget {
   const AddSalesReturnPage({super.key});
 
@@ -281,6 +284,12 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
       await db.salesDao.createSaleReturn(
         returnCompanion: returnCompanion,
         itemsCompanions: itemCompanions,
+        userId: authProvider.currentUser?.id,
+      );
+
+      // Post via TransactionEngine
+      await sl<TransactionEngine>().postSaleReturn(
+        returnId,
         userId: authProvider.currentUser?.id,
       );
 

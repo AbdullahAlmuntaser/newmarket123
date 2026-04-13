@@ -420,6 +420,26 @@ class UnitConversions extends Table with SyncableTable {
   RealColumn get sellPrice => real().nullable()(); // سعر خاص بهذه الوحدة (اختياري)
 }
 
+class InventoryTransactions extends Table with SyncableTable {
+  TextColumn get productId => text().references(Products, #id)();
+  TextColumn get warehouseId => text().references(Warehouses, #id)();
+  TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
+  RealColumn get quantity => real()(); // Positive for in, negative for out
+  TextColumn get type => text()(); // PURCHASE, SALE, RETURN, TRANSFER, ADJUSTMENT
+  TextColumn get referenceId => text()(); // PurchaseId, SaleId, etc.
+  DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
+}
+
+class AccountTransactions extends Table with SyncableTable {
+  TextColumn get accountId => text().references(GLAccounts, #id)();
+  DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
+  TextColumn get type => text()(); // INVOICE, PAYMENT, RETURN
+  TextColumn get referenceId => text().nullable()();
+  RealColumn get debit => real().withDefault(const Constant(0.0))();
+  RealColumn get credit => real().withDefault(const Constant(0.0))();
+  RealColumn get runningBalance => real().withDefault(const Constant(0.0))();
+}
+
 class StockTakes extends Table with SyncableTable {
   TextColumn get warehouseId => text().references(Warehouses, #id)();
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
@@ -503,6 +523,8 @@ class BillOfMaterials extends Table with SyncableTable {
     StockTakeItems,
     Checks,
     BillOfMaterials,
+    InventoryTransactions,
+    AccountTransactions,
   ],
   daos: [
     ProductsDao,
@@ -524,13 +546,17 @@ class AppDatabase extends _$AppDatabase {
     TableIndex(name: 'purchases_supplier_idx', columns: {purchases.supplierId}),
     TableIndex(name: 'gl_lines_entry_idx', columns: {gLLines.entryId}),
     TableIndex(name: 'gl_lines_account_idx', columns: {gLLines.accountId}),
+    TableIndex(name: 'inv_trans_product_idx', columns: {inventoryTransactions.productId}),
+    TableIndex(name: 'inv_trans_date_idx', columns: {inventoryTransactions.date}),
+    TableIndex(name: 'acc_trans_account_idx', columns: {accountTransactions.accountId}),
+    TableIndex(name: 'acc_trans_date_idx', columns: {accountTransactions.date}),
   ];
 
   Future<int> getUnsyncedCount() async =>
       (select(syncQueue)).get().then((v) => v.length);
 
   @override
-  int get schemaVersion => 23; // Incremented to 23
+  int get schemaVersion => 24; // Incremented to 24
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -656,6 +682,10 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(sales, sales.hash);
         await m.addColumn(sales, sales.signature);
         await m.addColumn(purchases, purchases.landedCosts);
+      }
+      if (from < 24) {
+        await m.createTable(inventoryTransactions);
+        await m.createTable(accountTransactions);
       }
     },
   );

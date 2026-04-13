@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
+import 'package:supermarket/core/services/transaction_engine.dart';
+import 'package:supermarket/injection_container.dart';
 import 'package:uuid/uuid.dart';
 
 class AddPurchasePage extends StatefulWidget {
@@ -390,6 +392,14 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         itemsCompanions: itemsCompanions,
         userId: authProvider.currentUser?.id,
       );
+
+      // If status is RECEIVED, post it through TransactionEngine
+      if (_selectedStatus == 'RECEIVED') {
+        await sl<TransactionEngine>().postPurchase(
+          purchaseId,
+          userId: authProvider.currentUser?.id,
+        );
+      }
 
       if (mounted) {
         context.pop();

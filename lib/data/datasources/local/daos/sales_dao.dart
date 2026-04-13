@@ -1,8 +1,5 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/core/events/app_events.dart';
-import 'package:supermarket/core/services/event_bus_service.dart';
-import 'package:supermarket/injection_container.dart';
 
 part 'sales_dao.g.dart';
 
@@ -21,8 +18,6 @@ part 'sales_dao.g.dart';
 )
 class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
   SalesDao(super.db);
-
-  EventBusService get _eventBus => sl<EventBusService>();
 
   Stream<List<Sale>> watchAllSales() => select(sales).watch();
 
@@ -90,104 +85,27 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
     }
 
     return transaction(() async {
-      // Recalculate Totals from items to ensure accuracy
-      double calculatedSubtotal = 0.0;
-      for (var item in itemsCompanions) {
-        calculatedSubtotal += item.quantity.value * item.price.value;
-      }
-
-      final discount = saleCompanion.discount.value;
-      // Assume tax is calculated on (subtotal - discount)
-      // Here we trust the tax rate from the product or a global one.
-      // For now, we'll keep the tax passed but we could also derive it.
-      final calculatedTax =
-          (calculatedSubtotal - discount) * 0.15; // Example 15% tax
-      final calculatedTotal = (calculatedSubtotal - discount) + calculatedTax;
-
-      final finalSaleCompanion = saleCompanion.copyWith(
-        total: Value(calculatedTotal),
-        tax: Value(calculatedTax),
-      );
-
       // 1. Insert Sale
-      await into(sales).insert(finalSaleCompanion);
+      final saleId = saleCompanion.id.value;
+      await into(sales).insert(saleCompanion);
 
-      // 2. Process Items
+      // 2. Insert Items
       for (var item in itemsCompanions) {
-        final productId = item.productId.value;
-        final product = await (select(products)..where((p) => p.id.equals(productId))).getSingle();
-
-        // Calculate actual quantity in base unit (pieces)
-        double quantityToDecrease = item.quantity.value * item.unitFactor.value;
-
-        // FEFO Logic: Get batches ordered by expiryDate (nulls last)
-        final batches = await (select(productBatches)
-              ..where((b) => b.productId.equals(productId) & b.quantity.isBiggerThanValue(0))
-              ..orderBy([
-                (b) => OrderingTerm(expression: b.expiryDate, mode: OrderingMode.asc),
-                (b) => OrderingTerm(expression: b.createdAt, mode: OrderingMode.asc),
-              ]))
-            .get();
-
-        double remainingToDeduct = quantityToDecrease;
-        for (var batch in batches) {
-          if (remainingToDeduct <= 0) break;
-          double deduct = batch.quantity >= remainingToDeduct ? remainingToDeduct : batch.quantity;
-
-          await (update(productBatches)..where((b) => b.id.equals(batch.id))).write(
-            ProductBatchesCompanion(quantity: Value(batch.quantity - deduct)),
-          );
-          remainingToDeduct -= deduct;
-        }
-
-        if (remainingToDeduct > 0) {
-          throw Exception('المخزون غير كافٍ للصنف ${product.name}');
-        }
-
         await into(saleItems).insert(item);
-
-        // Update Global Stock
-        await (update(products)..where((p) => p.id.equals(productId))).write(
-          ProductsCompanion(stock: Value(product.stock - quantityToDecrease)),
-        );
       }
 
-      // 3. Update Customer Balance if Credit
-      if (finalSaleCompanion.isCredit.value &&
-          finalSaleCompanion.customerId.value != null) {
-        final customer =
-            await (select(customers)..where(
-                  (c) => c.id.equals(finalSaleCompanion.customerId.value!),
-                ))
-                .getSingle();
-        await (update(customers)
-              ..where((c) => c.id.equals(finalSaleCompanion.customerId.value!)))
-            .write(
-              CustomersCompanion(
-                balance: Value(
-                  customer.balance + finalSaleCompanion.total.value,
-                ),
-              ),
-            );
-      }
-
-      // 4. Accounting (via Event Bus)
-      final saleObj = await (select(
-        sales,
-      )..where((s) => s.id.equals(finalSaleCompanion.id.value))).getSingle();
-      final insertedItems = await (select(
-        saleItems,
-      )..where((si) => si.saleId.equals(finalSaleCompanion.id.value))).get();
-      _eventBus.fire(SaleCreatedEvent(saleObj, insertedItems, userId: userId));
-
-      // 5. Audit Log
+      // 3. Trigger Event (for other services if needed, e.g., for direct posting or sync)
+      // Note: Full business logic should be triggered by calling TransactionEngine.postSale 
+      // if the status is POSTED, or the UI should handle it.
+      
+      // 4. Audit Log
       await into(auditLogs).insert(
         AuditLogsCompanion.insert(
           userId: Value(userId),
           action: 'CREATE',
           targetEntity: 'SALES',
-          entityId: saleCompanion.id.value,
-          details: Value('Created sale: ${saleCompanion.id.value}'),
+          entityId: saleId,
+          details: Value('Created sale record: $saleId'),
         ),
       );
     });
@@ -203,70 +121,12 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
       final returnId = returnCompanion.id.value;
       await into(salesReturns).insert(returnCompanion);
 
-      // 2. Process Items
+      // 2. Insert Items
       for (var item in itemsCompanions) {
         await into(salesReturnItems).insert(item);
-
-        // Update Stock (Increase)
-        final product = await (select(
-          products,
-        )..where((p) => p.id.equals(item.productId.value))).getSingle();
-        await (update(
-          products,
-        )..where((p) => p.id.equals(item.productId.value))).write(
-          ProductsCompanion(stock: Value(product.stock + item.quantity.value)),
-        );
-
-        // Find latest batch to return stock to (FIFO reverse)
-        final latestBatch =
-            await (select(productBatches)
-                  ..where((t) => t.productId.equals(item.productId.value))
-                  ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
-                  ..limit(1))
-                .getSingleOrNull();
-
-        if (latestBatch != null) {
-          await (update(
-            productBatches,
-          )..where((t) => t.id.equals(latestBatch.id))).write(
-            ProductBatchesCompanion(
-              quantity: Value(latestBatch.quantity + item.quantity.value),
-            ),
-          );
-        }
       }
 
-      // 3. Update Customer Balance if Credit
-      final originalSale = await (select(
-        sales,
-      )..where((s) => s.id.equals(returnCompanion.saleId.value))).getSingle();
-      if (originalSale.isCredit && originalSale.customerId != null) {
-        final customer = await (select(
-          customers,
-        )..where((c) => c.id.equals(originalSale.customerId!))).getSingle();
-        await (update(
-          customers,
-        )..where((c) => c.id.equals(originalSale.customerId!))).write(
-          CustomersCompanion(
-            balance: Value(
-              customer.balance - returnCompanion.amountReturned.value,
-            ),
-          ),
-        );
-      }
-
-      // 4. Accounting (via Event Bus)
-      final returnObj = await (select(
-        salesReturns,
-      )..where((s) => s.id.equals(returnId))).getSingle();
-      final insertedItems = await (select(
-        salesReturnItems,
-      )..where((si) => si.salesReturnId.equals(returnId))).get();
-      _eventBus.fire(
-        SaleReturnCreatedEvent(returnObj, insertedItems, userId: userId),
-      );
-
-      // 5. Audit Log
+      // 3. Audit Log
       await into(auditLogs).insert(
         AuditLogsCompanion.insert(
           userId: Value(userId),
@@ -274,32 +134,111 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
           targetEntity: 'SALES_RETURNS',
           entityId: returnId,
           details: Value(
-            'Created sales return: $returnId for sale: ${returnCompanion.saleId.value}',
+            'Created sales return record: $returnId for sale: ${returnCompanion.saleId.value}',
           ),
         ),
       );
     });
   }
 
-  Future<List<TopProduct>> getTopSellingProducts({int limit = 5}) async {
-    final quantity = saleItems.quantity.sum();
-    final query = select(
-      saleItems,
-    ).join([innerJoin(products, products.id.equalsExp(saleItems.productId))]);
+  Future<List<ProductProfitability>> getProductProfitability({
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    final reportStartDate = startDate ?? DateTime(2000);
+    final reportEndDate = endDate ?? DateTime.now();
 
-    query.addColumns([quantity]);
-    query.groupBy([saleItems.productId]);
-    query.orderBy([OrderingTerm.desc(quantity)]);
-    query.limit(limit);
+    final query = select(saleItems).join([
+      innerJoin(sales, sales.id.equalsExp(saleItems.saleId)),
+      innerJoin(products, products.id.equalsExp(saleItems.productId)),
+    ])
+      ..where(sales.createdAt.isBetweenValues(reportStartDate, reportEndDate));
 
     final rows = await query.get();
-    return rows.map((row) {
-      return TopProduct(
-        product: row.readTable(products),
-        totalQuantity: row.read(quantity) ?? 0.0,
-      );
-    }).toList();
+    final Map<String, ProductProfitability> profitabilityMap = {};
+
+    for (final row in rows) {
+      final item = row.readTable(saleItems);
+      final product = row.readTable(products);
+      
+      final revenue = item.quantity * item.price;
+      // Use product buyPrice as fallback, though batches are more accurate
+      final cost = item.quantity * product.buyPrice; 
+
+      if (profitabilityMap.containsKey(product.id)) {
+        final current = profitabilityMap[product.id]!;
+        profitabilityMap[product.id] = ProductProfitability(
+          productId: product.id,
+          productName: product.name,
+          totalQuantity: current.totalQuantity + item.quantity,
+          totalRevenue: current.totalRevenue + revenue,
+          totalCost: current.totalCost + cost,
+        );
+      } else {
+        profitabilityMap[product.id] = ProductProfitability(
+          productId: product.id,
+          productName: product.name,
+          totalQuantity: item.quantity,
+          totalRevenue: revenue,
+          totalCost: cost,
+        );
+      }
+    }
+
+    return profitabilityMap.values.toList()
+      ..sort((a, b) => b.netProfit.compareTo(a.netProfit));
   }
+
+  Future<List<TopProduct>> getTopSellingProducts({int limit = 5}) async {
+    final query = select(saleItems).join([
+      innerJoin(products, products.id.equalsExp(saleItems.productId)),
+    ]);
+
+    final rows = await query.get();
+    final Map<String, TopProduct> topProductsMap = {};
+
+    for (final row in rows) {
+      final item = row.readTable(saleItems);
+      final product = row.readTable(products);
+
+      if (topProductsMap.containsKey(product.id)) {
+        final current = topProductsMap[product.id]!;
+        topProductsMap[product.id] = TopProduct(
+          product: product,
+          totalQuantity: current.totalQuantity + item.quantity,
+        );
+      } else {
+        topProductsMap[product.id] = TopProduct(
+          product: product,
+          totalQuantity: item.quantity,
+        );
+      }
+    }
+
+    final list = topProductsMap.values.toList()
+      ..sort((a, b) => b.totalQuantity.compareTo(a.totalQuantity));
+
+    return list.take(limit).toList();
+  }
+}
+
+class ProductProfitability {
+  final String productId;
+  final String productName;
+  final double totalQuantity;
+  final double totalRevenue;
+  final double totalCost;
+
+  double get netProfit => totalRevenue - totalCost;
+  double get profitMargin => totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+
+  ProductProfitability({
+    required this.productId,
+    required this.productName,
+    required this.totalQuantity,
+    required this.totalRevenue,
+    required this.totalCost,
+  });
 }
 
 class TopProduct {

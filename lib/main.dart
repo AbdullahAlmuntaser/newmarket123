@@ -31,11 +31,13 @@ import 'package:supermarket/presentation/features/accounting/shifts_page.dart';
 import 'package:supermarket/presentation/features/accounting/income_statement_page.dart';
 import 'package:supermarket/presentation/features/accounting/balance_sheet_page.dart';
 import 'package:supermarket/presentation/features/accounting/fixed_assets_page.dart';
+import 'package:supermarket/presentation/features/accounting/cost_centers_page.dart';
 import 'package:supermarket/presentation/features/reports/inventory_reports_screen.dart';
 import 'package:supermarket/presentation/features/reports/sales_reports_page.dart';
 import 'package:supermarket/presentation/features/reports/vat_report_page.dart';
 import 'package:supermarket/presentation/features/reports/audit_log_page.dart';
 import 'package:supermarket/presentation/features/reports/printer_settings_page.dart';
+import 'package:supermarket/presentation/features/reports/product_profitability_page.dart';
 import 'package:supermarket/presentation/features/returns/returns_page.dart';
 import 'package:supermarket/presentation/features/returns/create_return_page.dart';
 import 'package:supermarket/presentation/features/sync/sync_page.dart';
@@ -248,9 +250,11 @@ class MyApp extends StatelessWidget {
         GoRoute(path: '/accounting/reconciliation', builder: (context, state) => const ReconciliationPage()),
         GoRoute(path: '/accounting/shifts', builder: (context, state) => const ShiftsPage()),
         GoRoute(path: '/accounting/checks', builder: (context, state) => const ChecksPage()),
+        GoRoute(path: '/accounting/cost-centers', builder: (context, state) => const CostCentersPage()),
 
         // Reports
         GoRoute(path: '/reports/sales', builder: (context, state) => const SalesReportsPage()),
+        GoRoute(path: '/reports/profitability', builder: (context, state) => const ProductProfitabilityPage()),
         GoRoute(path: '/reports/inventory', builder: (context, state) => const InventoryReportsScreen()),
         GoRoute(path: '/reports/inventory-audit', builder: (context, state) => const InventoryAuditPage()),
         GoRoute(path: '/reports/vat', builder: (context, state) => const VatReportPage()),

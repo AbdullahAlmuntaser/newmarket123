@@ -8,6 +8,10 @@ import 'supplier_statement_page.dart';
 import 'package:supermarket/presentation/widgets/main_drawer.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
 
+import 'package:supermarket/core/services/transaction_engine.dart';
+import 'package:supermarket/injection_container.dart';
+import 'package:supermarket/core/auth/auth_provider.dart';
+
 class SuppliersPage extends StatefulWidget {
   const SuppliersPage({super.key});
 
@@ -117,6 +121,7 @@ class _SuppliersPageState extends State<SuppliersPage> {
 
   Future<void> _payAmount(AppDatabase db, Supplier supplier) async {
     final l10n = AppLocalizations.of(context)!;
+    final userId = Provider.of<AuthProvider>(context, listen: false).currentUser?.id;
     final controller = TextEditingController();
 
     final amount = await showDialog<double>(
@@ -155,29 +160,23 @@ class _SuppliersPageState extends State<SuppliersPage> {
     );
 
     if (amount != null) {
-      await db.transaction(() async {
-        // 1. Update supplier balance
-        final newBalance = supplier.balance - amount;
-        await (db.update(db.suppliers)..where((t) => t.id.equals(supplier.id)))
-            .write(SuppliersCompanion(balance: drift.Value(newBalance)));
+      try {
+        await sl<TransactionEngine>().postSupplierPayment(
+          supplierId: supplier.id,
+          amount: amount,
+          paymentMethod: 'cash',
+          userId: userId,
+        );
 
-        // 2. Record payment in SupplierPayments table
-        await db
-            .into(db.supplierPayments)
-            .insert(
-              SupplierPaymentsCompanion.insert(
-                supplierId: supplier.id,
-                amount: amount,
-                paymentDate: drift.Value(DateTime.now()),
-                syncStatus: const drift.Value(1),
-              ),
-            );
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.paymentSuccess)));
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.paymentSuccess)));
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        }
       }
     }
   }

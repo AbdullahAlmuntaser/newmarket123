@@ -234,12 +234,99 @@ class AccountingService {
         postSale(event.sale, event.items);
       } else if (event is SaleReturnCreatedEvent) {
         postSaleReturn(event.saleReturn, event.items);
-      } else if (event is PurchaseCreatedEvent) {
+      } else if (event is PurchasePostedEvent) {
         postPurchase(event.purchase, event.items);
       } else if (event is PurchaseReturnCreatedEvent) {
         postPurchaseReturn(event.purchaseReturn, event.items);
+      } else if (event is CustomerPaymentEvent) {
+        _handleCustomerPayment(event);
+      } else if (event is SupplierPaymentEvent) {
+        _handleSupplierPayment(event);
       }
     });
+  }
+
+  Future<void> _handleCustomerPayment(CustomerPaymentEvent event) async {
+    final dao = db.accountingDao;
+    final entryId = const Uuid().v4();
+
+    // Accounts
+    final arAccount = await dao.getAccountByCode(codeAccountsReceivable);
+    final cashAccount = await dao.getAccountByCode(codeCash); // Default to cash for now
+    // In a real scenario, we'd pick the account based on event.paymentMethod
+
+    if (arAccount == null || cashAccount == null) return;
+
+    final customer = await db.customersDao.getCustomerById(event.customerId);
+    final customerAccountId = customer?.accountId ?? arAccount.id;
+
+    final entry = GLEntriesCompanion.insert(
+      id: Value(entryId),
+      description: 'سند قبض: ${customer?.name ?? "عميل"} - ${event.note ?? ""}',
+      date: Value(DateTime.now()),
+      referenceType: const Value('RECEIPT'),
+      referenceId: Value(event.paymentId),
+      status: const Value('POSTED'),
+      postedAt: Value(DateTime.now()),
+    );
+
+    final lines = [
+      GLLinesCompanion.insert(
+        entryId: entryId,
+        accountId: cashAccount.id,
+        debit: Value(event.amount),
+        credit: const Value(0.0),
+      ),
+      GLLinesCompanion.insert(
+        entryId: entryId,
+        accountId: customerAccountId,
+        debit: const Value(0.0),
+        credit: Value(event.amount),
+      ),
+    ];
+
+    await dao.createEntry(entry, lines);
+  }
+
+  Future<void> _handleSupplierPayment(SupplierPaymentEvent event) async {
+    final dao = db.accountingDao;
+    final entryId = const Uuid().v4();
+
+    // Accounts
+    final apAccount = await dao.getAccountByCode(codeAccountsPayable);
+    final cashAccount = await dao.getAccountByCode(codeCash);
+
+    if (apAccount == null || cashAccount == null) return;
+
+    final supplier = await db.suppliersDao.getSupplierById(event.supplierId);
+    final supplierAccountId = supplier?.accountId ?? apAccount.id;
+
+    final entry = GLEntriesCompanion.insert(
+      id: Value(entryId),
+      description: 'سند صرف: ${supplier?.name ?? "مورد"} - ${event.note ?? ""}',
+      date: Value(DateTime.now()),
+      referenceType: const Value('PAYMENT'),
+      referenceId: Value(event.paymentId),
+      status: const Value('POSTED'),
+      postedAt: Value(DateTime.now()),
+    );
+
+    final lines = [
+      GLLinesCompanion.insert(
+        entryId: entryId,
+        accountId: supplierAccountId,
+        debit: Value(event.amount),
+        credit: const Value(0.0),
+      ),
+      GLLinesCompanion.insert(
+        entryId: entryId,
+        accountId: cashAccount.id,
+        debit: const Value(0.0),
+        credit: Value(event.amount),
+      ),
+    ];
+
+    await dao.createEntry(entry, lines);
   }
 
   // Standard Account Codes
@@ -628,48 +715,15 @@ class AccountingService {
       details: 'Revenue entry for Sale #${sale.id.substring(0, 8)}',
     );
 
+    // Calculate total cost for COGS (based on current buy prices as a fallback, 
+    // though TransactionEngine could pass actual costs if needed)
     double totalCost = 0.0;
-    List<Future<void>> stockUpdates = [];
-
     for (var item in items) {
-      double remainingQuantity = item.quantity;
-      final batches = await (db.select(db.productBatches)
-            ..where((b) => b.productId.equals(item.productId))
-            ..orderBy([
-              (b) => OrderingTerm(
-                expression: b.expiryDate,
-                mode: OrderingMode.asc,
-              ),
-              (b) => OrderingTerm(
-                expression: b.createdAt,
-                mode: OrderingMode.asc,
-              ),
-            ]))
-          .get();
-
-      for (var batch in batches) {
-        if (remainingQuantity <= 0) break;
-        double quantityToDeduct = 0;
-        if (batch.quantity >= remainingQuantity) {
-          quantityToDeduct = remainingQuantity;
-          remainingQuantity = 0;
-        } else {
-          quantityToDeduct = batch.quantity;
-          remainingQuantity -= batch.quantity;
-        }
-        totalCost += quantityToDeduct * batch.costPrice;
-        stockUpdates.add(
-          (db.update(db.productBatches)..where((b) => b.id.equals(batch.id)))
-              .write(
-            ProductBatchesCompanion(
-              quantity: Value(batch.quantity - quantityToDeduct),
-            ),
-          ),
-        );
+      final product = await db.productsDao.getProductById(item.productId);
+      if (product != null) {
+        totalCost += (item.quantity * item.unitFactor) * product.buyPrice;
       }
     }
-
-    await Future.wait(stockUpdates);
 
     if (totalCost > 0) {
       final cogsEntryId = const Uuid().v4();
@@ -717,14 +771,19 @@ class AccountingService {
       throw Exception('Missing GL accounts for purchase.');
     }
 
-    final subtotal = purchase.total - purchase.tax;
+    // Subtotal = Sum(Qty * Price) = Total - Tax - LandedCosts
+    // But in accounting, Landed Costs are also debited to Inventory.
+    // So Debit Inventory (Subtotal + LandedCosts), Debit VAT, Credit Accounts Payable (Total).
+    final inventoryValue = purchase.total - purchase.tax;
 
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
-      description: 'Purchase #${purchase.id.substring(0, 8)}',
+      description: 'إثبات فاتورة مشتريات #${purchase.id.substring(0, 8)}',
       date: Value(purchase.date),
       referenceType: const Value('PURCHASE'),
       referenceId: Value(purchase.id),
+      status: const Value('POSTED'),
+      postedAt: Value(DateTime.now()),
       currencyId: Value(purchase.currencyId),
       exchangeRate: Value(purchase.exchangeRate),
     );
@@ -733,7 +792,7 @@ class AccountingService {
       GLLinesCompanion.insert(
         entryId: entryId,
         accountId: inventoryAccount.id,
-        debit: Value(subtotal),
+        debit: Value(inventoryValue),
         credit: const Value(0.0),
         currencyId: Value(purchase.currencyId),
         exchangeRate: Value(purchase.exchangeRate),
@@ -758,17 +817,12 @@ class AccountingService {
     ];
 
     await dao.createEntry(entry, lines);
-
-    if (purchase.isCredit && purchase.supplierId != null) {
-      final supplier = await (db.select(db.suppliers)
-            ..where((tbl) => tbl.id.equals(purchase.supplierId!)))
-          .getSingleOrNull();
-      if (supplier != null) {
-        final newBalance = supplier.balance + purchase.total;
-        await (db.update(db.suppliers)..where((t) => t.id.equals(supplier.id)))
-            .write(SuppliersCompanion(balance: Value(newBalance)));
-      }
-    }
+    
+    await _auditService.logCreate(
+      'GLEntry',
+      entryId,
+      details: 'Purchase entry for Purchase #${purchase.id.substring(0, 8)}',
+    );
   }
 
   Future<void> recordCustomerPayment({

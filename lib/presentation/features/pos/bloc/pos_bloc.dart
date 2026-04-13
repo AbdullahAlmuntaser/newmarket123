@@ -4,13 +4,16 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/pricing_service.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_event.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_state.dart';
+import 'package:supermarket/core/services/transaction_engine.dart';
 import 'package:uuid/uuid.dart';
 
 class PosBloc extends Bloc<PosEvent, PosState> {
   final AppDatabase db;
   final PricingService pricingService;
+  final TransactionEngine transactionEngine;
 
-  PosBloc(this.db, this.pricingService) : super(const PosLoaded()) {
+  PosBloc(this.db, this.pricingService, this.transactionEngine)
+      : super(const PosLoaded()) {
     on<LoadCategories>(_onLoadCategories);
     on<SelectCategory>(_onSelectCategory);
     on<AddProductBySku>(_onAddProduct);
@@ -308,14 +311,17 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         );
       }).toList();
 
-      // 2. Execute via DAO
+      // 2. Execute via DAO (to create the base record)
       await db.salesDao.createSale(
         saleCompanion: saleCompanion,
         itemsCompanions: itemsCompanions,
         userId: event.userId,
       );
 
-      // 3. Fetch final objects for success emission
+      // 3. Post via TransactionEngine for full processing
+      await transactionEngine.postSale(saleId, userId: event.userId);
+
+      // 4. Fetch final objects for success emission
       final saleObj = await (db.select(
         db.sales,
       )..where((s) => s.id.equals(saleId))).getSingle();

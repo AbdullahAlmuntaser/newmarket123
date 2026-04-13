@@ -539,6 +539,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get wholesalePrice => 'سعر الجملة';
 
   @override
+  String get costCenters => 'مراكز التكلفة';
+
+  @override
+  String get addCostCenter => 'إضافة مركز تكلفة';
+
+  @override
+  String get code => 'الكود';
+
+  @override
+  String get noCostCentersFound => 'لم يتم العثور على مراكز تكلفة';
+
+  @override
   String get accounting => 'المحاسبة';
 
   @override

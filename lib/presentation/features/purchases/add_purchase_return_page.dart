@@ -6,6 +6,8 @@ import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
+import 'package:supermarket/core/services/transaction_engine.dart';
+import 'package:supermarket/injection_container.dart';
 
 class AddPurchaseReturnPage extends StatefulWidget {
   const AddPurchaseReturnPage({super.key});
@@ -274,13 +276,17 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
     );
 
     try {
-      await db.transaction(() async {
-        await db.purchasesDao.createPurchaseReturn(
-          returnCompanion: returnCompanion,
-          itemsCompanions: itemCompanions,
-          userId: authProvider.currentUser?.id,
-        );
-      });
+      await db.purchasesDao.createPurchaseReturn(
+        returnCompanion: returnCompanion,
+        itemsCompanions: itemCompanions,
+        userId: authProvider.currentUser?.id,
+      );
+
+      // Post via TransactionEngine
+      await sl<TransactionEngine>().postPurchaseReturn(
+        returnId,
+        userId: authProvider.currentUser?.id,
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -539,6 +539,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wholesalePrice => 'Wholesale Price';
 
   @override
+  String get costCenters => 'Cost Centers';
+
+  @override
+  String get addCostCenter => 'Add Cost Center';
+
+  @override
+  String get code => 'Code';
+
+  @override
+  String get noCostCentersFound => 'No cost centers found';
+
+  @override
   String get accounting => 'Accounting';
 
   @override

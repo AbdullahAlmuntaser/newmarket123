@@ -124,4 +124,31 @@ class AccountingProvider with ChangeNotifier {
     await db.accountingDao.createEntry(entry, updatedLines);
     notifyListeners();
   }
+
+  // Cost Centers
+  Stream<List<CostCenter>> watchCostCenters() {
+    return db.accountingDao.watchCostCenters();
+  }
+
+  Future<void> addCostCenter({
+    required String code,
+    required String name,
+    bool isActive = true,
+  }) async {
+    await db.accountingDao.createCostCenter(
+      CostCentersCompanion.insert(
+        code: code,
+        name: name,
+        isActive: Value(isActive),
+      ),
+    );
+    notifyListeners();
+  }
+
+  Future<void> toggleCostCenterStatus(CostCenter cc) async {
+    await db.accountingDao.updateCostCenter(
+      cc.copyWith(isActive: !cc.isActive),
+    );
+    notifyListeners();
+  }
 }

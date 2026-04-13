@@ -6,7 +6,9 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/customers/widgets/add_edit_customer_dialog.dart';
 import 'package:supermarket/presentation/widgets/main_drawer.dart';
 import 'package:supermarket/presentation/features/customers/widgets/customer_trailing_widgets.dart';
-import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:supermarket/core/services/transaction_engine.dart';
+import 'package:supermarket/injection_container.dart';
+import 'package:supermarket/core/auth/auth_provider.dart';
 
 class CustomersPage extends StatefulWidget {
   const CustomersPage({super.key});
@@ -312,7 +314,7 @@ class _CustomersPageState extends State<CustomersPage> {
 
   Future<void> _showPayAmountDialog(AppDatabase db, Customer customer) async {
     final l10n = AppLocalizations.of(context)!;
-    final accountingService = Provider.of<AccountingService>(context, listen: false);
+    final userId = Provider.of<AuthProvider>(context, listen: false).currentUser?.id;
     _payAmountController.clear();
 
     final amount = await showDialog<double>(
@@ -343,26 +345,13 @@ class _CustomersPageState extends State<CustomersPage> {
 
     if (amount != null) {
       try {
-        await db.transaction(() async {
-          final newBalance = customer.balance - amount;
-          await (db.update(db.customers)..where((t) => t.id.equals(customer.id)))
-              .write(CustomersCompanion(balance: drift.Value(newBalance)));
-
-          await db.into(db.customerPayments).insert(CustomerPaymentsCompanion.insert(
-            customerId: customer.id,
-            amount: amount,
-            paymentDate: drift.Value(DateTime.now()),
-            syncStatus: const drift.Value(1),
-          ));
-
-          await accountingService.recordCustomerPayment(
-              customerId: customer.id,
-              amount: amount,
-              paymentAccountCode: AccountingService.codeCash,
-              currencyId: customer.currencyId ?? 'USD', // Use customer's currency or default to USD
-              exchangeRate: customer.exchangeRate, // Use customer's exchange rate
-            );
-        });
+        await sl<TransactionEngine>().postCustomerPayment(
+          customerId: customer.id,
+          amount: amount,
+          paymentMethod: 'cash', // Default to cash for now
+          userId: userId,
+        );
+        
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.paymentSuccess)));
       } catch (e) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));

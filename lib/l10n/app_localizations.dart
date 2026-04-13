@@ -1118,6 +1118,30 @@ abstract class AppLocalizations {
   /// **'Wholesale Price'**
   String get wholesalePrice;
 
+  /// No description provided for @costCenters.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost Centers'**
+  String get costCenters;
+
+  /// No description provided for @addCostCenter.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Cost Center'**
+  String get addCostCenter;
+
+  /// No description provided for @code.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get code;
+
+  /// No description provided for @noCostCentersFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No cost centers found'**
+  String get noCostCentersFound;
+
   /// No description provided for @accounting.
   ///
   /// In en, this message translates to:
