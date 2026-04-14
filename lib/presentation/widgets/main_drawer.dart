@@ -113,8 +113,7 @@ class MainDrawer extends StatelessWidget {
                   title: l10n?.customers ?? 'العملاء',
                   children: [
                     _buildSubItem(context, 'قائمة العملاء', '/customers'),
-                    // تم توجيه "كشوفات الحساب" إلى صفحة العملاء حيث يمكن اختيار العميل لاستعراض كشفه
-                    _buildSubItem(context, 'كشوفات حساب العملاء', '/customers'),
+                    _buildSubItem(context, 'كشوفات الحساب', '/customers'),
                   ]
                 ),
 
@@ -125,13 +124,22 @@ class MainDrawer extends StatelessWidget {
                     title: l10n?.suppliers ?? 'الموردين',
                     children: [
                       _buildSubItem(context, 'قائمة الموردين', '/suppliers'),
-                      // تم توجيه "كشوفات الحساب" إلى صفحة الموردين
-                      _buildSubItem(context, 'كشوفات حساب الموردين', '/suppliers'),
+                      _buildSubItem(context, 'كشوفات الحساب', '/suppliers'),
                     ]
                   ),
                 ],
                 if (isManager) ...[
                   const _DrawerDivider(),
+                  _buildExpansionGroup(
+                    context,
+                    icon: Icons.inventory_2_rounded,
+                    title: 'إدارة المخزون',
+                    children: [
+                      _buildSubItem(context, 'المستودعات', '/inventory/warehouses'),
+                      _buildSubItem(context, 'التحويل المخزني', '/inventory/transfer'),
+                      _buildSubItem(context, 'جرد المخزون', '/inventory/stock-take'),
+                    ],
+                  ),
                   _buildExpansionGroup(
                     context,
                     icon: Icons.badge_rounded,
@@ -149,6 +157,7 @@ class MainDrawer extends StatelessWidget {
                       _buildSubItem(context, 'تقارير المبيعات', '/reports/sales'),
                       _buildSubItem(context, 'ربحية المنتجات', '/reports/profitability'),
                       _buildSubItem(context, 'تقارير المخزون', '/reports/inventory'),
+                      _buildSubItem(context, 'جرد المستودعات', '/reports/inventory-audit'),
                       _buildSubItem(context, 'تقرير ضريبة القيمة المضافة', '/reports/vat'),
                       _buildSubItem(context, 'سجل التدقيق', '/reports/audit'),
                     ],
@@ -165,8 +174,10 @@ class MainDrawer extends StatelessWidget {
                       _buildSubItem(context, l10n?.generalLedger ?? 'دفتر الأستاذ', '/accounting/general-ledger'),
                       _buildSubItem(context, 'الميزانية العمومية', '/accounting/balance-sheet'),
                       _buildSubItem(context, 'قائمة الدخل', '/accounting/income-statement'),
+                      _buildSubItem(context, 'التدفقات النقدية', '/accounting/cash-flow'),
                       _buildSubItem(context, 'ميزان المراجعة', '/accounting/trial-balance'),
                        _buildSubItem(context, 'المصروفات', '/accounting/expenses'),
+                       _buildSubItem(context, 'إدارة الشيكات', '/accounting/checks'),
                        _buildSubItem(context, 'الأصول الثابتة', '/accounting/fixed-assets'),
                        _buildSubItem(context, 'قيود يدوية', '/accounting/manual-journal'),
                        _buildSubItem(context, 'التسويات', '/accounting/reconciliation'),
@@ -180,6 +191,7 @@ class MainDrawer extends StatelessWidget {
                      title: 'الإعدادات',
                      children: [
                        _buildSubItem(context, 'إدارة المستخدمين', '/users'),
+                       _buildSubItem(context, 'أسعار العملات', '/settings/currency-rates'),
                        _buildSubItem(context, 'النسخ الاحتياطي', '/settings/backup'),
                        _buildSubItem(context, 'المزامنة', '/sync'),
                        _buildSubItem(context, 'إعدادات الطابعة', '/settings/printer'),

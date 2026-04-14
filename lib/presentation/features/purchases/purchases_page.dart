@@ -63,7 +63,7 @@ class PurchasesPage extends StatelessWidget {
                       fontSize: 16,
                     ),
                   ),
-                  onTap: () => context.go('/purchases/${purchase.id}'),
+                  onTap: () => context.push('/purchases/details/${purchase.id}'),
                 ),
               );
             },
@@ -71,7 +71,7 @@ class PurchasesPage extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/purchases/new'),
+        onPressed: () => context.push('/purchases/new'),
         label: Text(l10n.newPurchase),
         icon: const Icon(Icons.add),
       ),

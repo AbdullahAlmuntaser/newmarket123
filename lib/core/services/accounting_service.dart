@@ -246,14 +246,43 @@ class AccountingService {
     });
   }
 
+  Future<void> _recordAccountTransaction({
+    required String accountId,
+    required String type,
+    String? referenceId,
+    double debit = 0,
+    double credit = 0,
+    DateTime? date,
+  }) async {
+    final lastTransaction = await (db.select(db.accountTransactions)
+          ..where((t) => t.accountId.equals(accountId))
+          ..orderBy([(t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc)])
+          ..limit(1))
+        .getSingleOrNull();
+
+    double currentBalance = lastTransaction?.runningBalance ?? 0.0;
+    double newBalance = currentBalance + (debit - credit);
+
+    await db.into(db.accountTransactions).insert(
+      AccountTransactionsCompanion.insert(
+        accountId: accountId,
+        date: Value(date ?? DateTime.now()),
+        type: type,
+        referenceId: Value(referenceId),
+        debit: Value(debit),
+        credit: Value(credit),
+        runningBalance: Value(newBalance),
+      ),
+    );
+  }
+
   Future<void> _handleCustomerPayment(CustomerPaymentEvent event) async {
     final dao = db.accountingDao;
     final entryId = const Uuid().v4();
 
     // Accounts
     final arAccount = await dao.getAccountByCode(codeAccountsReceivable);
-    final cashAccount = await dao.getAccountByCode(codeCash); // Default to cash for now
-    // In a real scenario, we'd pick the account based on event.paymentMethod
+    final cashAccount = await dao.getAccountByCode(codeCash); 
 
     if (arAccount == null || cashAccount == null) return;
 
@@ -286,6 +315,14 @@ class AccountingService {
     ];
 
     await dao.createEntry(entry, lines);
+    
+    // Record in AccountTransactions for fast statements
+    await _recordAccountTransaction(
+      accountId: customerAccountId,
+      type: 'PAYMENT',
+      referenceId: event.paymentId,
+      credit: event.amount,
+    );
   }
 
   Future<void> _handleSupplierPayment(SupplierPaymentEvent event) async {
@@ -327,6 +364,14 @@ class AccountingService {
     ];
 
     await dao.createEntry(entry, lines);
+    
+    // Record in AccountTransactions for fast statements
+    await _recordAccountTransaction(
+      accountId: supplierAccountId,
+      type: 'PAYMENT',
+      referenceId: event.paymentId,
+      debit: event.amount,
+    );
   }
 
   // Standard Account Codes
@@ -709,14 +754,25 @@ class AccountingService {
     ];
 
     await dao.createEntry(entry, lines);
+    
+    // Record in AccountTransactions if credit
+    if (sale.isCredit) {
+      await _recordAccountTransaction(
+        accountId: debitAccountId,
+        type: 'INVOICE',
+        referenceId: sale.id,
+        debit: sale.total,
+        date: sale.createdAt,
+      );
+    }
+
     await _auditService.logCreate(
       'GLEntry',
       entryId,
       details: 'Revenue entry for Sale #${sale.id.substring(0, 8)}',
     );
 
-    // Calculate total cost for COGS (based on current buy prices as a fallback, 
-    // though TransactionEngine could pass actual costs if needed)
+    // Calculate total cost for COGS
     double totalCost = 0.0;
     for (var item in items) {
       final product = await db.productsDao.getProductById(item.productId);
@@ -764,16 +820,22 @@ class AccountingService {
 
     final inventoryAccount = await dao.getAccountByCode(codeInventory);
     final taxAccount = await dao.getAccountByCode(codeInputVAT);
-    final creditAccountCode = purchase.isCredit ? codeAccountsPayable : codeCash;
-    final creditAccount = await dao.getAccountByCode(creditAccountCode);
+    
+    String creditAccountId;
+    if (purchase.isCredit) {
+      if (purchase.supplierId == null) {
+        throw Exception('Credit purchase must have a supplier.');
+      }
+      final supplier = await db.suppliersDao.getSupplierById(purchase.supplierId!);
+      creditAccountId = supplier?.accountId ?? (await dao.getAccountByCode(codeAccountsPayable))!.id;
+    } else {
+      creditAccountId = (await dao.getAccountByCode(codeCash))!.id;
+    }
 
-    if (inventoryAccount == null || creditAccount == null || taxAccount == null) {
+    if (inventoryAccount == null || taxAccount == null) {
       throw Exception('Missing GL accounts for purchase.');
     }
 
-    // Subtotal = Sum(Qty * Price) = Total - Tax - LandedCosts
-    // But in accounting, Landed Costs are also debited to Inventory.
-    // So Debit Inventory (Subtotal + LandedCosts), Debit VAT, Credit Accounts Payable (Total).
     final inventoryValue = purchase.total - purchase.tax;
 
     final entry = GLEntriesCompanion.insert(
@@ -808,7 +870,7 @@ class AccountingService {
         ),
       GLLinesCompanion.insert(
         entryId: entryId,
-        accountId: creditAccount.id,
+        accountId: creditAccountId,
         debit: const Value(0.0),
         credit: Value(purchase.total),
         currencyId: Value(purchase.currencyId),
@@ -817,6 +879,17 @@ class AccountingService {
     ];
 
     await dao.createEntry(entry, lines);
+    
+    // Record in AccountTransactions if credit
+    if (purchase.isCredit) {
+      await _recordAccountTransaction(
+        accountId: creditAccountId,
+        type: 'INVOICE',
+        referenceId: purchase.id,
+        credit: purchase.total,
+        date: purchase.date,
+      );
+    }
     
     await _auditService.logCreate(
       'GLEntry',
@@ -1084,6 +1157,17 @@ class AccountingService {
 
     await dao.createEntry(entry, lines);
 
+    // Record in AccountTransactions if credit
+    if (originalSale.isCredit) {
+      await _recordAccountTransaction(
+        accountId: creditAccount.id,
+        type: 'RETURN',
+        referenceId: saleReturn.id,
+        credit: totalReturned,
+        date: saleReturn.createdAt,
+      );
+    }
+
     double totalCostReversed = 0;
     for (var item in items) {
       final product = await db.productsDao.getProductById(item.productId);
@@ -1174,6 +1258,81 @@ class AccountingService {
     ];
 
     await dao.createEntry(entry, lines);
+
+    // Record in AccountTransactions if credit
+    if (originalPurchase.isCredit) {
+      final supplier = await db.suppliersDao.getSupplierById(originalPurchase.supplierId!);
+      final supplierAccountId = supplier?.accountId ?? apAccount.id;
+      
+      await _recordAccountTransaction(
+        accountId: supplierAccountId,
+        type: 'RETURN',
+        referenceId: purchaseReturn.id,
+        debit: totalReturned,
+        date: purchaseReturn.createdAt,
+      );
+    }
+  }
+
+  Future<void> runAutomaticDepreciation(DateTime asOfDate) async {
+    final dao = db.accountingDao;
+    final assets = await db.select(db.fixedAssets).get();
+    final depreciationAccount = await dao.getAccountByCode(codeDepreciationExpense);
+    final accumulatedDepAccount = await dao.getAccountByCode(codeAccumulatedDepreciation);
+
+    if (depreciationAccount == null || accumulatedDepAccount == null) return;
+
+    for (var asset in assets) {
+      double monthlyDepreciation = (asset.cost - asset.salvageValue) / (asset.usefulLifeYears * 12);
+      
+      int totalMonths = asset.usefulLifeYears * 12;
+      double alreadyDepreciatedMonths = asset.accumulatedDepreciation / monthlyDepreciation;
+      
+      final elapsedDuration = asOfDate.difference(asset.purchaseDate);
+      int elapsedMonths = (elapsedDuration.inDays / 30).floor();
+      
+      int monthsToDepreciate = elapsedMonths - alreadyDepreciatedMonths.floor();
+      if (monthsToDepreciate <= 0) continue;
+      
+      if (alreadyDepreciatedMonths + monthsToDepreciate > totalMonths) {
+        monthsToDepreciate = (totalMonths - alreadyDepreciatedMonths).floor();
+      }
+
+      if (monthsToDepreciate <= 0) continue;
+
+      double depreciationAmount = monthsToDepreciate * monthlyDepreciation;
+      final entryId = const Uuid().v4();
+
+      final entry = GLEntriesCompanion.insert(
+        id: Value(entryId),
+        description: 'إهلاك تلقائي للأصل: ${asset.name} لمدة $monthsToDepreciate شهر',
+        date: Value(asOfDate),
+        referenceType: const Value('DEPRECIATION'),
+        referenceId: Value(asset.id),
+        status: const Value('POSTED'),
+        postedAt: Value(DateTime.now()),
+      );
+
+      final lines = [
+        GLLinesCompanion.insert(
+          entryId: entryId,
+          accountId: depreciationAccount.id,
+          debit: Value(depreciationAmount),
+        ),
+        GLLinesCompanion.insert(
+          entryId: entryId,
+          accountId: accumulatedDepAccount.id,
+          credit: Value(depreciationAmount),
+        ),
+      ];
+
+      await dao.createEntry(entry, lines);
+
+      await (db.update(db.fixedAssets)..where((a) => a.id.equals(asset.id)))
+          .write(FixedAssetsCompanion(
+        accumulatedDepreciation: Value(asset.accumulatedDepreciation + depreciationAmount),
+      ));
+    }
   }
 
   Future<VatReportData> getVatReport({DateTime? startDate, DateTime? endDate}) async {

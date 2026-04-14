@@ -34,6 +34,9 @@ class TransactionEngine {
       // 2. Calculate Subtotal for Landed Cost Allocation
       double subtotal = 0;
       for (var item in items) {
+        if (item.quantity <= 0) {
+          throw Exception('كمية الشراء يجب أن تكون أكبر من الصفر.');
+        }
         subtotal += item.quantity * item.price;
       }
 
@@ -141,7 +144,22 @@ class TransactionEngine {
 
       // 2. Process each item (Inventory Update - FEFO)
       for (var item in items) {
+        if (item.quantity <= 0) {
+          throw Exception('الكمية يجب أن تكون أكبر من الصفر.');
+        }
+
         double remainingToDeduct = item.quantity * item.unitFactor;
+
+        // Stock Validation
+        final product = await (db.select(db.products)
+              ..where((p) => p.id.equals(item.productId)))
+            .getSingle();
+
+        if (product.stock < remainingToDeduct) {
+          throw Exception(
+            'المخزون غير كافٍ للمنتج: ${product.name}. المتوفر: ${product.stock}',
+          );
+        }
 
         // Get Batches ordered by expiry date (FEFO)
         final batches = await (db.select(db.productBatches)
@@ -192,9 +210,6 @@ class TransactionEngine {
         }
 
         // Update Product Total Stock
-        final product = await (db.select(db.products)
-              ..where((p) => p.id.equals(item.productId)))
-            .getSingle();
         await (db.update(db.products)..where((p) => p.id.equals(item.productId)))
             .write(ProductsCompanion(stock: Value(product.stock - totalDeducted)));
       }
