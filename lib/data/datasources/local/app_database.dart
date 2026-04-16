@@ -51,14 +51,12 @@ class Products extends Table with SyncableTable {
   IntColumn get piecesPerCarton => integer().withDefault(const Constant(1))();
   RealColumn get buyPrice => real().withDefault(const Constant(0.0))();
   RealColumn get sellPrice => real().withDefault(const Constant(0.0))();
-  RealColumn get wholesalePrice =>
-      real().withDefault(const Constant(0.0))();
+  RealColumn get wholesalePrice => real().withDefault(const Constant(0.0))();
   RealColumn get stock => real().withDefault(const Constant(0.0))();
-  RealColumn get alertLimit =>
-      real().withDefault(const Constant(10.0))();
+  RealColumn get alertLimit => real().withDefault(const Constant(10.0))();
   DateTimeColumn get expiryDate => dateTime().nullable()();
-  RealColumn get taxRate => real()
-      .withDefault(const Constant(0.0))(); // New: Tax rate for ERP
+  RealColumn get taxRate =>
+      real().withDefault(const Constant(0.0))(); // New: Tax rate for ERP
 }
 
 class Customers extends Table with SyncableTable {
@@ -256,6 +254,11 @@ class AccountingPeriods extends Table with SyncableTable {
   DateTimeColumn get startDate => dateTime()();
   DateTimeColumn get endDate => dateTime()();
   BoolColumn get isClosed => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get closedAt => dateTime().nullable()();
+  TextColumn get closedBy => text().nullable()();
+  TextColumn get closingType => text().nullable()(); // DAILY, MONTHLY, YEARLY
+  TextColumn get status =>
+      text().withDefault(const Constant('OPEN'))(); // OPEN, CLOSED
 }
 
 class FixedAssets extends Table with SyncableTable {
@@ -463,6 +466,28 @@ class StockTakes extends Table with SyncableTable {
   TextColumn get note => text().nullable()();
 }
 
+class PostingProfiles extends Table {
+  TextColumn get id => text().clientDefault(() => const Uuid().v4())();
+  TextColumn get operationType =>
+      text()(); // SALE, PURCHASE, RETURN, PAYMENT, EXPENSE, INVENTORY
+  TextColumn get accountType =>
+      text()(); // REVENUE, COGS, INVENTORY, RECEIVABLE, PAYABLE, TAX, CASH
+  TextColumn get accountId => text().nullable().references(GLAccounts, #id)();
+  TextColumn get description => text().nullable()();
+  TextColumn get accountCode =>
+      text().nullable()(); // Alternative: account code instead of FK
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  IntColumn get sequence =>
+      integer().withDefault(const Constant(0))(); // Order of posting lines
+  TextColumn get side => text()(); // DEBIT or CREDIT
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+  IntColumn get syncStatus => integer().withDefault(const Constant(1))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class StockTakeItems extends Table with SyncableTable {
   TextColumn get stockTakeId => text().references(StockTakes, #id)();
   TextColumn get productId => text().references(Products, #id)();
@@ -546,6 +571,7 @@ class BillOfMaterials extends Table with SyncableTable {
     BillOfMaterials,
     InventoryTransactions,
     AccountTransactions,
+    PostingProfiles,
   ],
   daos: [
     ProductsDao,

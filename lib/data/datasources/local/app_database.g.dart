@@ -30962,6 +30962,727 @@ class AccountTransactionsCompanion extends UpdateCompanion<AccountTransaction> {
   }
 }
 
+class $PostingProfilesTable extends PostingProfiles
+    with TableInfo<$PostingProfilesTable, PostingProfile> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PostingProfilesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const Uuid().v4(),
+  );
+  static const VerificationMeta _operationTypeMeta = const VerificationMeta(
+    'operationType',
+  );
+  @override
+  late final GeneratedColumn<String> operationType = GeneratedColumn<String>(
+    'operation_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _accountTypeMeta = const VerificationMeta(
+    'accountType',
+  );
+  @override
+  late final GeneratedColumn<String> accountType = GeneratedColumn<String>(
+    'account_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<String> accountId = GeneratedColumn<String>(
+    'account_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES g_l_accounts (id)',
+    ),
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _accountCodeMeta = const VerificationMeta(
+    'accountCode',
+  );
+  @override
+  late final GeneratedColumn<String> accountCode = GeneratedColumn<String>(
+    'account_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _sequenceMeta = const VerificationMeta(
+    'sequence',
+  );
+  @override
+  late final GeneratedColumn<int> sequence = GeneratedColumn<int>(
+    'sequence',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _sideMeta = const VerificationMeta('side');
+  @override
+  late final GeneratedColumn<String> side = GeneratedColumn<String>(
+    'side',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<int> syncStatus = GeneratedColumn<int>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    operationType,
+    accountType,
+    accountId,
+    description,
+    accountCode,
+    isActive,
+    sequence,
+    side,
+    createdAt,
+    updatedAt,
+    syncStatus,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'posting_profiles';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PostingProfile> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('operation_type')) {
+      context.handle(
+        _operationTypeMeta,
+        operationType.isAcceptableOrUnknown(
+          data['operation_type']!,
+          _operationTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_operationTypeMeta);
+    }
+    if (data.containsKey('account_type')) {
+      context.handle(
+        _accountTypeMeta,
+        accountType.isAcceptableOrUnknown(
+          data['account_type']!,
+          _accountTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_accountTypeMeta);
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('account_code')) {
+      context.handle(
+        _accountCodeMeta,
+        accountCode.isAcceptableOrUnknown(
+          data['account_code']!,
+          _accountCodeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
+    if (data.containsKey('sequence')) {
+      context.handle(
+        _sequenceMeta,
+        sequence.isAcceptableOrUnknown(data['sequence']!, _sequenceMeta),
+      );
+    }
+    if (data.containsKey('side')) {
+      context.handle(
+        _sideMeta,
+        side.isAcceptableOrUnknown(data['side']!, _sideMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sideMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PostingProfile map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PostingProfile(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      operationType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation_type'],
+      )!,
+      accountType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_type'],
+      )!,
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_id'],
+      ),
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      accountCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_code'],
+      ),
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+      sequence: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sequence'],
+      )!,
+      side: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}side'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sync_status'],
+      )!,
+    );
+  }
+
+  @override
+  $PostingProfilesTable createAlias(String alias) {
+    return $PostingProfilesTable(attachedDatabase, alias);
+  }
+}
+
+class PostingProfile extends DataClass implements Insertable<PostingProfile> {
+  final String id;
+  final String operationType;
+  final String accountType;
+  final String? accountId;
+  final String? description;
+  final String? accountCode;
+  final bool isActive;
+  final int sequence;
+  final String side;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final int syncStatus;
+  const PostingProfile({
+    required this.id,
+    required this.operationType,
+    required this.accountType,
+    this.accountId,
+    this.description,
+    this.accountCode,
+    required this.isActive,
+    required this.sequence,
+    required this.side,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.syncStatus,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['operation_type'] = Variable<String>(operationType);
+    map['account_type'] = Variable<String>(accountType);
+    if (!nullToAbsent || accountId != null) {
+      map['account_id'] = Variable<String>(accountId);
+    }
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    if (!nullToAbsent || accountCode != null) {
+      map['account_code'] = Variable<String>(accountCode);
+    }
+    map['is_active'] = Variable<bool>(isActive);
+    map['sequence'] = Variable<int>(sequence);
+    map['side'] = Variable<String>(side);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['sync_status'] = Variable<int>(syncStatus);
+    return map;
+  }
+
+  PostingProfilesCompanion toCompanion(bool nullToAbsent) {
+    return PostingProfilesCompanion(
+      id: Value(id),
+      operationType: Value(operationType),
+      accountType: Value(accountType),
+      accountId: accountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accountId),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      accountCode: accountCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accountCode),
+      isActive: Value(isActive),
+      sequence: Value(sequence),
+      side: Value(side),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      syncStatus: Value(syncStatus),
+    );
+  }
+
+  factory PostingProfile.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PostingProfile(
+      id: serializer.fromJson<String>(json['id']),
+      operationType: serializer.fromJson<String>(json['operationType']),
+      accountType: serializer.fromJson<String>(json['accountType']),
+      accountId: serializer.fromJson<String?>(json['accountId']),
+      description: serializer.fromJson<String?>(json['description']),
+      accountCode: serializer.fromJson<String?>(json['accountCode']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      sequence: serializer.fromJson<int>(json['sequence']),
+      side: serializer.fromJson<String>(json['side']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      syncStatus: serializer.fromJson<int>(json['syncStatus']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'operationType': serializer.toJson<String>(operationType),
+      'accountType': serializer.toJson<String>(accountType),
+      'accountId': serializer.toJson<String?>(accountId),
+      'description': serializer.toJson<String?>(description),
+      'accountCode': serializer.toJson<String?>(accountCode),
+      'isActive': serializer.toJson<bool>(isActive),
+      'sequence': serializer.toJson<int>(sequence),
+      'side': serializer.toJson<String>(side),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'syncStatus': serializer.toJson<int>(syncStatus),
+    };
+  }
+
+  PostingProfile copyWith({
+    String? id,
+    String? operationType,
+    String? accountType,
+    Value<String?> accountId = const Value.absent(),
+    Value<String?> description = const Value.absent(),
+    Value<String?> accountCode = const Value.absent(),
+    bool? isActive,
+    int? sequence,
+    String? side,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    int? syncStatus,
+  }) => PostingProfile(
+    id: id ?? this.id,
+    operationType: operationType ?? this.operationType,
+    accountType: accountType ?? this.accountType,
+    accountId: accountId.present ? accountId.value : this.accountId,
+    description: description.present ? description.value : this.description,
+    accountCode: accountCode.present ? accountCode.value : this.accountCode,
+    isActive: isActive ?? this.isActive,
+    sequence: sequence ?? this.sequence,
+    side: side ?? this.side,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    syncStatus: syncStatus ?? this.syncStatus,
+  );
+  PostingProfile copyWithCompanion(PostingProfilesCompanion data) {
+    return PostingProfile(
+      id: data.id.present ? data.id.value : this.id,
+      operationType: data.operationType.present
+          ? data.operationType.value
+          : this.operationType,
+      accountType: data.accountType.present
+          ? data.accountType.value
+          : this.accountType,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      accountCode: data.accountCode.present
+          ? data.accountCode.value
+          : this.accountCode,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      sequence: data.sequence.present ? data.sequence.value : this.sequence,
+      side: data.side.present ? data.side.value : this.side,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PostingProfile(')
+          ..write('id: $id, ')
+          ..write('operationType: $operationType, ')
+          ..write('accountType: $accountType, ')
+          ..write('accountId: $accountId, ')
+          ..write('description: $description, ')
+          ..write('accountCode: $accountCode, ')
+          ..write('isActive: $isActive, ')
+          ..write('sequence: $sequence, ')
+          ..write('side: $side, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('syncStatus: $syncStatus')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    operationType,
+    accountType,
+    accountId,
+    description,
+    accountCode,
+    isActive,
+    sequence,
+    side,
+    createdAt,
+    updatedAt,
+    syncStatus,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PostingProfile &&
+          other.id == this.id &&
+          other.operationType == this.operationType &&
+          other.accountType == this.accountType &&
+          other.accountId == this.accountId &&
+          other.description == this.description &&
+          other.accountCode == this.accountCode &&
+          other.isActive == this.isActive &&
+          other.sequence == this.sequence &&
+          other.side == this.side &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.syncStatus == this.syncStatus);
+}
+
+class PostingProfilesCompanion extends UpdateCompanion<PostingProfile> {
+  final Value<String> id;
+  final Value<String> operationType;
+  final Value<String> accountType;
+  final Value<String?> accountId;
+  final Value<String?> description;
+  final Value<String?> accountCode;
+  final Value<bool> isActive;
+  final Value<int> sequence;
+  final Value<String> side;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> syncStatus;
+  final Value<int> rowid;
+  const PostingProfilesCompanion({
+    this.id = const Value.absent(),
+    this.operationType = const Value.absent(),
+    this.accountType = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.description = const Value.absent(),
+    this.accountCode = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.sequence = const Value.absent(),
+    this.side = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PostingProfilesCompanion.insert({
+    this.id = const Value.absent(),
+    required String operationType,
+    required String accountType,
+    this.accountId = const Value.absent(),
+    this.description = const Value.absent(),
+    this.accountCode = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.sequence = const Value.absent(),
+    required String side,
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : operationType = Value(operationType),
+       accountType = Value(accountType),
+       side = Value(side);
+  static Insertable<PostingProfile> custom({
+    Expression<String>? id,
+    Expression<String>? operationType,
+    Expression<String>? accountType,
+    Expression<String>? accountId,
+    Expression<String>? description,
+    Expression<String>? accountCode,
+    Expression<bool>? isActive,
+    Expression<int>? sequence,
+    Expression<String>? side,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? syncStatus,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (operationType != null) 'operation_type': operationType,
+      if (accountType != null) 'account_type': accountType,
+      if (accountId != null) 'account_id': accountId,
+      if (description != null) 'description': description,
+      if (accountCode != null) 'account_code': accountCode,
+      if (isActive != null) 'is_active': isActive,
+      if (sequence != null) 'sequence': sequence,
+      if (side != null) 'side': side,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PostingProfilesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? operationType,
+    Value<String>? accountType,
+    Value<String?>? accountId,
+    Value<String?>? description,
+    Value<String?>? accountCode,
+    Value<bool>? isActive,
+    Value<int>? sequence,
+    Value<String>? side,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? syncStatus,
+    Value<int>? rowid,
+  }) {
+    return PostingProfilesCompanion(
+      id: id ?? this.id,
+      operationType: operationType ?? this.operationType,
+      accountType: accountType ?? this.accountType,
+      accountId: accountId ?? this.accountId,
+      description: description ?? this.description,
+      accountCode: accountCode ?? this.accountCode,
+      isActive: isActive ?? this.isActive,
+      sequence: sequence ?? this.sequence,
+      side: side ?? this.side,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      syncStatus: syncStatus ?? this.syncStatus,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (operationType.present) {
+      map['operation_type'] = Variable<String>(operationType.value);
+    }
+    if (accountType.present) {
+      map['account_type'] = Variable<String>(accountType.value);
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<String>(accountId.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (accountCode.present) {
+      map['account_code'] = Variable<String>(accountCode.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (sequence.present) {
+      map['sequence'] = Variable<int>(sequence.value);
+    }
+    if (side.present) {
+      map['side'] = Variable<String>(side.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<int>(syncStatus.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PostingProfilesCompanion(')
+          ..write('id: $id, ')
+          ..write('operationType: $operationType, ')
+          ..write('accountType: $accountType, ')
+          ..write('accountId: $accountId, ')
+          ..write('description: $description, ')
+          ..write('accountCode: $accountCode, ')
+          ..write('isActive: $isActive, ')
+          ..write('sequence: $sequence, ')
+          ..write('side: $side, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -31038,6 +31759,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $InventoryTransactionsTable(this);
   late final $AccountTransactionsTable accountTransactions =
       $AccountTransactionsTable(this);
+  late final $PostingProfilesTable postingProfiles = $PostingProfilesTable(
+    this,
+  );
   late final ProductsDao productsDao = ProductsDao(this as AppDatabase);
   late final SalesDao salesDao = SalesDao(this as AppDatabase);
   late final CustomersDao customersDao = CustomersDao(this as AppDatabase);
@@ -31098,6 +31822,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     billOfMaterials,
     inventoryTransactions,
     accountTransactions,
+    postingProfiles,
   ];
 }
 
@@ -33955,6 +34680,29 @@ final class $$GLAccountsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$PostingProfilesTable, List<PostingProfile>>
+  _postingProfilesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.postingProfiles,
+    aliasName: $_aliasNameGenerator(
+      db.gLAccounts.id,
+      db.postingProfiles.accountId,
+    ),
+  );
+
+  $$PostingProfilesTableProcessedTableManager get postingProfilesRefs {
+    final manager = $$PostingProfilesTableTableManager(
+      $_db,
+      $_db.postingProfiles,
+    ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _postingProfilesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$GLAccountsTableFilterComposer
@@ -34180,6 +34928,31 @@ class $$GLAccountsTableFilterComposer
           }) => $$AccountTransactionsTableFilterComposer(
             $db: $db,
             $table: $db.accountTransactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> postingProfilesRefs(
+    Expression<bool> Function($$PostingProfilesTableFilterComposer f) f,
+  ) {
+    final $$PostingProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.postingProfiles,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PostingProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.postingProfiles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -34487,6 +35260,31 @@ class $$GLAccountsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> postingProfilesRefs<T extends Object>(
+    Expression<T> Function($$PostingProfilesTableAnnotationComposer a) f,
+  ) {
+    final $$PostingProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.postingProfiles,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PostingProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.postingProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$GLAccountsTableTableManager
@@ -34510,6 +35308,7 @@ class $$GLAccountsTableTableManager
             bool reconciliationsRefs,
             bool checksRefs,
             bool accountTransactionsRefs,
+            bool postingProfilesRefs,
           })
         > {
   $$GLAccountsTableTableManager(_$AppDatabase db, $GLAccountsTable table)
@@ -34596,6 +35395,7 @@ class $$GLAccountsTableTableManager
                 reconciliationsRefs = false,
                 checksRefs = false,
                 accountTransactionsRefs = false,
+                postingProfilesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -34606,6 +35406,7 @@ class $$GLAccountsTableTableManager
                     if (reconciliationsRefs) db.reconciliations,
                     if (checksRefs) db.checks,
                     if (accountTransactionsRefs) db.accountTransactions,
+                    if (postingProfilesRefs) db.postingProfiles,
                   ],
                   addJoins:
                       <
@@ -34768,6 +35569,27 @@ class $$GLAccountsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (postingProfilesRefs)
+                        await $_getPrefetchedData<
+                          GLAccount,
+                          $GLAccountsTable,
+                          PostingProfile
+                        >(
+                          currentTable: table,
+                          referencedTable: $$GLAccountsTableReferences
+                              ._postingProfilesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$GLAccountsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).postingProfilesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -34796,6 +35618,7 @@ typedef $$GLAccountsTableProcessedTableManager =
         bool reconciliationsRefs,
         bool checksRefs,
         bool accountTransactionsRefs,
+        bool postingProfilesRefs,
       })
     >;
 typedef $$CurrenciesTableCreateCompanionBuilder =
@@ -57781,6 +58604,477 @@ typedef $$AccountTransactionsTableProcessedTableManager =
       AccountTransaction,
       PrefetchHooks Function({bool accountId})
     >;
+typedef $$PostingProfilesTableCreateCompanionBuilder =
+    PostingProfilesCompanion Function({
+      Value<String> id,
+      required String operationType,
+      required String accountType,
+      Value<String?> accountId,
+      Value<String?> description,
+      Value<String?> accountCode,
+      Value<bool> isActive,
+      Value<int> sequence,
+      required String side,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> syncStatus,
+      Value<int> rowid,
+    });
+typedef $$PostingProfilesTableUpdateCompanionBuilder =
+    PostingProfilesCompanion Function({
+      Value<String> id,
+      Value<String> operationType,
+      Value<String> accountType,
+      Value<String?> accountId,
+      Value<String?> description,
+      Value<String?> accountCode,
+      Value<bool> isActive,
+      Value<int> sequence,
+      Value<String> side,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> syncStatus,
+      Value<int> rowid,
+    });
+
+final class $$PostingProfilesTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $PostingProfilesTable, PostingProfile> {
+  $$PostingProfilesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $GLAccountsTable _accountIdTable(_$AppDatabase db) =>
+      db.gLAccounts.createAlias(
+        $_aliasNameGenerator(db.postingProfiles.accountId, db.gLAccounts.id),
+      );
+
+  $$GLAccountsTableProcessedTableManager? get accountId {
+    final $_column = $_itemColumn<String>('account_id');
+    if ($_column == null) return null;
+    final manager = $$GLAccountsTableTableManager(
+      $_db,
+      $_db.gLAccounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$PostingProfilesTableFilterComposer
+    extends Composer<_$AppDatabase, $PostingProfilesTable> {
+  $$PostingProfilesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get operationType => $composableBuilder(
+    column: $table.operationType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get accountType => $composableBuilder(
+    column: $table.accountType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get accountCode => $composableBuilder(
+    column: $table.accountCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sequence => $composableBuilder(
+    column: $table.sequence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get side => $composableBuilder(
+    column: $table.side,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$GLAccountsTableFilterComposer get accountId {
+    final $$GLAccountsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.gLAccounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GLAccountsTableFilterComposer(
+            $db: $db,
+            $table: $db.gLAccounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PostingProfilesTableOrderingComposer
+    extends Composer<_$AppDatabase, $PostingProfilesTable> {
+  $$PostingProfilesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get operationType => $composableBuilder(
+    column: $table.operationType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get accountType => $composableBuilder(
+    column: $table.accountType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get accountCode => $composableBuilder(
+    column: $table.accountCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sequence => $composableBuilder(
+    column: $table.sequence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get side => $composableBuilder(
+    column: $table.side,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$GLAccountsTableOrderingComposer get accountId {
+    final $$GLAccountsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.gLAccounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GLAccountsTableOrderingComposer(
+            $db: $db,
+            $table: $db.gLAccounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PostingProfilesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PostingProfilesTable> {
+  $$PostingProfilesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get operationType => $composableBuilder(
+    column: $table.operationType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get accountType => $composableBuilder(
+    column: $table.accountType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get accountCode => $composableBuilder(
+    column: $table.accountCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<int> get sequence =>
+      $composableBuilder(column: $table.sequence, builder: (column) => column);
+
+  GeneratedColumn<String> get side =>
+      $composableBuilder(column: $table.side, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+
+  $$GLAccountsTableAnnotationComposer get accountId {
+    final $$GLAccountsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.gLAccounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GLAccountsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.gLAccounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PostingProfilesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PostingProfilesTable,
+          PostingProfile,
+          $$PostingProfilesTableFilterComposer,
+          $$PostingProfilesTableOrderingComposer,
+          $$PostingProfilesTableAnnotationComposer,
+          $$PostingProfilesTableCreateCompanionBuilder,
+          $$PostingProfilesTableUpdateCompanionBuilder,
+          (PostingProfile, $$PostingProfilesTableReferences),
+          PostingProfile,
+          PrefetchHooks Function({bool accountId})
+        > {
+  $$PostingProfilesTableTableManager(
+    _$AppDatabase db,
+    $PostingProfilesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PostingProfilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PostingProfilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PostingProfilesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> operationType = const Value.absent(),
+                Value<String> accountType = const Value.absent(),
+                Value<String?> accountId = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<String?> accountCode = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<int> sequence = const Value.absent(),
+                Value<String> side = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> syncStatus = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PostingProfilesCompanion(
+                id: id,
+                operationType: operationType,
+                accountType: accountType,
+                accountId: accountId,
+                description: description,
+                accountCode: accountCode,
+                isActive: isActive,
+                sequence: sequence,
+                side: side,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                syncStatus: syncStatus,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                required String operationType,
+                required String accountType,
+                Value<String?> accountId = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<String?> accountCode = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<int> sequence = const Value.absent(),
+                required String side,
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> syncStatus = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PostingProfilesCompanion.insert(
+                id: id,
+                operationType: operationType,
+                accountType: accountType,
+                accountId: accountId,
+                description: description,
+                accountCode: accountCode,
+                isActive: isActive,
+                sequence: sequence,
+                side: side,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                syncStatus: syncStatus,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PostingProfilesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({accountId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (accountId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.accountId,
+                                referencedTable:
+                                    $$PostingProfilesTableReferences
+                                        ._accountIdTable(db),
+                                referencedColumn:
+                                    $$PostingProfilesTableReferences
+                                        ._accountIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PostingProfilesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PostingProfilesTable,
+      PostingProfile,
+      $$PostingProfilesTableFilterComposer,
+      $$PostingProfilesTableOrderingComposer,
+      $$PostingProfilesTableAnnotationComposer,
+      $$PostingProfilesTableCreateCompanionBuilder,
+      $$PostingProfilesTableUpdateCompanionBuilder,
+      (PostingProfile, $$PostingProfilesTableReferences),
+      PostingProfile,
+      PrefetchHooks Function({bool accountId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -57881,4 +59175,6 @@ class $AppDatabaseManager {
       $$InventoryTransactionsTableTableManager(_db, _db.inventoryTransactions);
   $$AccountTransactionsTableTableManager get accountTransactions =>
       $$AccountTransactionsTableTableManager(_db, _db.accountTransactions);
+  $$PostingProfilesTableTableManager get postingProfiles =>
+      $$PostingProfilesTableTableManager(_db, _db.postingProfiles);
 }
