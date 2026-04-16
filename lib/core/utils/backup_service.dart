@@ -68,15 +68,6 @@ class BackupService {
   }
 
   Future<List<String>> listCloudBackups() async {
-    // Disabled as Firebase is removed
     return [];
-  }
-
-  Future<void> uploadToFirebase(String filePath) async {
-    // Disabled
-  }
-
-  Future<void> downloadAndRestore(String fileName) async {
-    // Disabled
   }
 }

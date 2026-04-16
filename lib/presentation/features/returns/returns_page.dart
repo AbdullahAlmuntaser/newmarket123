@@ -71,7 +71,7 @@ class _ReturnsPageState extends State<ReturnsPage>
         if (items.isEmpty) return Center(child: Text(l10n.noReturnsFound));
         return ListView.separated(
           itemCount: items.length,
-          separatorBuilder: (_, __) => const Divider(),
+          separatorBuilder: (context, index) => const Divider(),
           itemBuilder: (context, index) {
             final item = items[index];
             return ListTile(

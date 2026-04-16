@@ -88,9 +88,9 @@ class _ChecksPageState extends State<ChecksPage> {
     await db.into(db.checks).insert(check);
     _clearForm();
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم حفظ الشيك بنجاح')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('تم حفظ الشيك بنجاح')));
     }
   }
 
@@ -111,10 +111,19 @@ class _ChecksPageState extends State<ChecksPage> {
                   children: [
                     DropdownButtonFormField<String>(
                       initialValue: _selectedType,
-                      decoration: const InputDecoration(labelText: 'نوع الشيك', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: 'نوع الشيك',
+                        border: OutlineInputBorder(),
+                      ),
                       items: const [
-                        DropdownMenuItem(value: 'RECEIVED', child: Text('شيكات مستلمة (من العملاء)')),
-                        DropdownMenuItem(value: 'ISSUED', child: Text('شيكات صادرة (للموردين)')),
+                        DropdownMenuItem(
+                          value: 'RECEIVED',
+                          child: Text('شيكات مستلمة (من العملاء)'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'ISSUED',
+                          child: Text('شيكات صادرة (للموردين)'),
+                        ),
                       ],
                       onChanged: (val) => setState(() {
                         _selectedType = val!;
@@ -128,26 +137,40 @@ class _ChecksPageState extends State<ChecksPage> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _checkNumberController,
-                      decoration: const InputDecoration(labelText: 'رقم الشيك', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: 'رقم الشيك',
+                        border: OutlineInputBorder(),
+                      ),
                       validator: (v) => v!.isEmpty ? 'مطلوب' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _bankNameController,
-                      decoration: const InputDecoration(labelText: 'اسم البنك', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: 'اسم البنك',
+                        border: OutlineInputBorder(),
+                      ),
                       validator: (v) => v!.isEmpty ? 'مطلوب' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _amountController,
-                      decoration: const InputDecoration(labelText: 'المبلغ', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: 'المبلغ',
+                        border: OutlineInputBorder(),
+                      ),
                       keyboardType: TextInputType.number,
-                      validator: (v) => double.tryParse(v ?? '') == null ? 'مبلغ غير صحيح' : null,
+                      validator: (v) => double.tryParse(v ?? '') == null
+                          ? 'مبلغ غير صحيح'
+                          : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _dueDateController,
-                      decoration: const InputDecoration(labelText: 'تاريخ الاستحقاق', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: 'تاريخ الاستحقاق',
+                        border: OutlineInputBorder(),
+                      ),
                       readOnly: true,
                       onTap: _presentDatePicker,
                       validator: (v) => v!.isEmpty ? 'مطلوب' : null,
@@ -155,7 +178,10 @@ class _ChecksPageState extends State<ChecksPage> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _noteController,
-                      decoration: const InputDecoration(labelText: 'ملاحظات', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: 'ملاحظات',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                     const SizedBox(height: 20),
                     ElevatedButton(
@@ -167,10 +193,7 @@ class _ChecksPageState extends State<ChecksPage> {
               ),
             ),
             const Divider(),
-            SizedBox(
-              height: 400,
-              child: _buildChecksList(db),
-            ),
+            SizedBox(height: 400, child: _buildChecksList(db)),
           ],
         ),
       ),
@@ -185,8 +208,13 @@ class _ChecksPageState extends State<ChecksPage> {
           final customers = snapshot.data ?? [];
           return DropdownButtonFormField<String>(
             initialValue: _selectedPartnerId,
-            decoration: const InputDecoration(labelText: 'العميل', border: OutlineInputBorder()),
-            items: customers.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
+            decoration: const InputDecoration(
+              labelText: 'العميل',
+              border: OutlineInputBorder(),
+            ),
+            items: customers
+                .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
+                .toList(),
             onChanged: (val) => setState(() => _selectedPartnerId = val),
             validator: (v) => v == null ? 'مطلوب' : null,
           );
@@ -199,8 +227,13 @@ class _ChecksPageState extends State<ChecksPage> {
           final suppliers = snapshot.data ?? [];
           return DropdownButtonFormField<String>(
             initialValue: _selectedPartnerId,
-            decoration: const InputDecoration(labelText: 'المورد', border: OutlineInputBorder()),
-            items: suppliers.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
+            decoration: const InputDecoration(
+              labelText: 'المورد',
+              border: OutlineInputBorder(),
+            ),
+            items: suppliers
+                .map((s) => DropdownMenuItem(value: s.id, child: Text(s.name)))
+                .toList(),
             onChanged: (val) => setState(() => _selectedPartnerId = val),
             validator: (v) => v == null ? 'مطلوب' : null,
           );
@@ -211,13 +244,24 @@ class _ChecksPageState extends State<ChecksPage> {
 
   Widget _buildAccountSelector(AppDatabase db) {
     return StreamBuilder<List<GLAccount>>(
-      stream: (db.select(db.gLAccounts)..where((a) => a.code.equals(AccountingService.codeCash) | a.code.equals(AccountingService.codeBank))).watch(),
+      stream:
+          (db.select(db.gLAccounts)..where(
+                (a) =>
+                    a.code.equals(AccountingService.codeCash) |
+                    a.code.equals(AccountingService.codeBank),
+              ))
+              .watch(),
       builder: (context, snapshot) {
         final accounts = snapshot.data ?? [];
         return DropdownButtonFormField<String>(
           initialValue: _selectedAccountId,
-          decoration: const InputDecoration(labelText: 'حساب الدفع/التحصيل', border: OutlineInputBorder()),
-          items: accounts.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(),
+          decoration: const InputDecoration(
+            labelText: 'حساب الدفع/التحصيل',
+            border: OutlineInputBorder(),
+          ),
+          items: accounts
+              .map((a) => DropdownMenuItem(value: a.id, child: Text(a.name)))
+              .toList(),
           onChanged: (val) => setState(() => _selectedAccountId = val),
           validator: (v) => v == null ? 'مطلوب' : null,
         );
@@ -226,12 +270,16 @@ class _ChecksPageState extends State<ChecksPage> {
   }
 
   Widget _buildChecksList(AppDatabase db) {
-    final checksStream = (db.select(db.checks)..where((c) => c.type.equals(_selectedType))).watch();
+    final checksStream = (db.select(
+      db.checks,
+    )..where((c) => c.type.equals(_selectedType))).watch();
 
     return StreamBuilder<List<Check>>(
       stream: checksStream,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
         final checks = snapshot.data ?? [];
         if (checks.isEmpty) return const Center(child: Text('لا يوجد شيكات.'));
 
@@ -242,13 +290,22 @@ class _ChecksPageState extends State<ChecksPage> {
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: ListTile(
-                title: Text('رقم الشيك: ${check.checkNumber} - ${check.bankName}'),
-                subtitle: Text('المبلغ: ${check.amount} - الاستحقاق: ${DateFormat('yyyy-MM-dd').format(check.dueDate)}\nالحالة: ${check.status}'),
+                title: Text(
+                  'رقم الشيك: ${check.checkNumber} - ${check.bankName}',
+                ),
+                subtitle: Text(
+                  'المبلغ: ${check.amount} - الاستحقاق: ${DateFormat('yyyy-MM-dd').format(check.dueDate)}\nالحالة: ${check.status}',
+                ),
                 trailing: PopupMenuButton<String>(
                   onSelected: (val) => _updateCheckStatus(db, check, val),
                   itemBuilder: (context) => [
-                    if (check.status == 'PENDING') const PopupMenuItem(value: 'COLLECTED', child: Text('تحصيل')),
-                    if (check.status == 'PENDING') const PopupMenuItem(value: 'BOUNCED', child: Text('رفض')),
+                    if (check.status == 'PENDING')
+                      const PopupMenuItem(
+                        value: 'COLLECTED',
+                        child: Text('تحصيل'),
+                      ),
+                    if (check.status == 'PENDING')
+                      const PopupMenuItem(value: 'BOUNCED', child: Text('رفض')),
                   ],
                 ),
               ),
@@ -259,9 +316,13 @@ class _ChecksPageState extends State<ChecksPage> {
     );
   }
 
-  Future<void> _updateCheckStatus(AppDatabase db, Check check, String newStatus) async {
+  Future<void> _updateCheckStatus(
+    AppDatabase db,
+    Check check,
+    String newStatus,
+  ) async {
     final accountingService = context.read<AccountingService>();
-    
+
     await (db.update(db.checks)..where((c) => c.id.equals(check.id))).write(
       ChecksCompanion(status: drift.Value(newStatus)),
     );
@@ -272,10 +333,40 @@ class _ChecksPageState extends State<ChecksPage> {
       await accountingService.recordCheckCollected(updatedCheck);
     } else if (newStatus == 'BOUNCED') {
       await accountingService.recordCheckBounced(updatedCheck);
+      // تحديث رصيد العميل/المورد عند الارتداد
+      if (check.type == 'RECEIVED' && check.partnerId != null) {
+        final customer = await (db.select(
+          db.customers,
+        )..where((c) => c.id.equals(check.partnerId!))).getSingleOrNull();
+        if (customer != null) {
+          await (db.update(
+            db.customers,
+          )..where((c) => c.id.equals(customer.id))).write(
+            CustomersCompanion(
+              balance: drift.Value(customer.balance + check.amount),
+            ),
+          );
+        }
+      } else if (check.type == 'ISSUED' && check.partnerId != null) {
+        final supplier = await (db.select(
+          db.suppliers,
+        )..where((s) => s.id.equals(check.partnerId!))).getSingleOrNull();
+        if (supplier != null) {
+          await (db.update(
+            db.suppliers,
+          )..where((s) => s.id.equals(supplier.id))).write(
+            SuppliersCompanion(
+              balance: drift.Value(supplier.balance + check.amount),
+            ),
+          );
+        }
+      }
     }
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تحديث حالة الشيك إلى $newStatus')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تم تحديث حالة الشيك إلى $newStatus')),
+      );
     }
   }
 }

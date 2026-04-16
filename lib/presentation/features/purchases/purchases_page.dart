@@ -7,8 +7,16 @@ import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/widgets/main_drawer.dart';
 
-class PurchasesPage extends StatelessWidget {
+class PurchasesPage extends StatefulWidget {
   const PurchasesPage({super.key});
+
+  @override
+  State<PurchasesPage> createState() => _PurchasesPageState();
+}
+
+class _PurchasesPageState extends State<PurchasesPage> {
+  final int _pageSize = 20;
+  int _currentPage = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -18,55 +26,71 @@ class PurchasesPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.purchasesHistory)),
       drawer: const MainDrawer(),
-      body: StreamBuilder<List<PurchasesWithSupplierAndWarehouse>>(
-        stream: _watchPurchasesDetailed(db),
+      body: FutureBuilder<List<PurchasesWithSupplierAndWarehouse>>(
+        future: _fetchPurchases(db),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          final purchases = snapshot.data ?? [];
-          if (purchases.isEmpty) {
+          final allPurchases = snapshot.data ?? [];
+          if (allPurchases.isEmpty) {
             return Center(child: Text(l10n.noPurchasesFound));
           }
-          return ListView.builder(
-            itemCount: purchases.length,
-            itemBuilder: (context, index) {
-              final item = purchases[index];
-              final purchase = item.purchase;
-              final supplier = item.supplier;
-              final warehouse = item.warehouse;
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: ListTile(
-                  title: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(supplier?.name ?? l10n.walkInSupplier),
-                      _buildStatusChip(context, purchase.status, l10n),
-                    ],
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(DateFormat.yMMMd().format(purchase.date)),
-                      if (warehouse != null)
-                        Text('${l10n.warehouse}: ${warehouse.name}'),
-                    ],
-                  ),
-                  trailing: Text(
-                    '${NumberFormat.currency(
-                      symbol: '', // سنعرض العملة بجانب الرقم يدوياً
-                      decimalDigits: 2,
-                    ).format(purchase.total)} ${purchase.currencyId ?? 'USD'}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  onTap: () => context.push('/purchases/details/${purchase.id}'),
+
+          final totalPages = (allPurchases.length / _pageSize).ceil();
+          final start = _currentPage * _pageSize;
+          final end = (start + _pageSize < allPurchases.length)
+              ? start + _pageSize
+              : allPurchases.length;
+          final purchases = allPurchases.sublist(start, end);
+
+          return Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  itemCount: purchases.length,
+                  itemBuilder: (context, index) {
+                    final item = purchases[index];
+                    final purchase = item.purchase;
+                    final supplier = item.supplier;
+                    final warehouse = item.warehouse;
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: ListTile(
+                        title: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(supplier?.name ?? l10n.walkInSupplier),
+                            _buildStatusChip(context, purchase.status, l10n),
+                          ],
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(DateFormat.yMMMd().format(purchase.date)),
+                            if (warehouse != null)
+                              Text('${l10n.warehouse}: ${warehouse.name}'),
+                          ],
+                        ),
+                        trailing: Text(
+                          '${NumberFormat.currency(symbol: '', decimalDigits: 2).format(purchase.total)} ${purchase.currencyId ?? 'USD'}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        onTap: () =>
+                            context.push('/purchases/details/${purchase.id}'),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+              if (totalPages > 1) _buildPaginationControls(totalPages),
+            ],
           );
         },
       ),
@@ -76,6 +100,59 @@ class PurchasesPage extends StatelessWidget {
         icon: const Icon(Icons.add),
       ),
     );
+  }
+
+  Widget _buildPaginationControls(int totalPages) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        border: Border(top: BorderSide(color: Colors.grey[300]!)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: _currentPage > 0
+                ? () => setState(() => _currentPage--)
+                : null,
+          ),
+          Text('صفحة ${_currentPage + 1} من $totalPages'),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: _currentPage + 1 < totalPages
+                ? () => setState(() => _currentPage++)
+                : null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<List<PurchasesWithSupplierAndWarehouse>> _fetchPurchases(
+    AppDatabase db,
+  ) async {
+    final query = db.select(db.purchases).join([
+      drift.leftOuterJoin(
+        db.suppliers,
+        db.suppliers.id.equalsExp(db.purchases.supplierId),
+      ),
+      drift.leftOuterJoin(
+        db.warehouses,
+        db.warehouses.id.equalsExp(db.purchases.warehouseId),
+      ),
+    ])..orderBy([drift.OrderingTerm.desc(db.purchases.date)]);
+
+    final rows = await query.get();
+    return rows.map((row) {
+      return PurchasesWithSupplierAndWarehouse(
+        purchase: row.readTable(db.purchases),
+        supplier: row.readTableOrNull(db.suppliers),
+        warehouse: row.readTableOrNull(db.warehouses),
+      );
+    }).toList();
   }
 
   Widget _buildStatusChip(
@@ -118,31 +195,6 @@ class PurchasesPage extends StatelessWidget {
       padding: EdgeInsets.zero,
       visualDensity: VisualDensity.compact,
     );
-  }
-
-  Stream<List<PurchasesWithSupplierAndWarehouse>> _watchPurchasesDetailed(
-    AppDatabase db,
-  ) {
-    final query = db.select(db.purchases).join([
-      drift.leftOuterJoin(
-        db.suppliers,
-        db.suppliers.id.equalsExp(db.purchases.supplierId),
-      ),
-      drift.leftOuterJoin(
-        db.warehouses,
-        db.warehouses.id.equalsExp(db.purchases.warehouseId),
-      ),
-    ])..orderBy([drift.OrderingTerm.desc(db.purchases.date)]);
-
-    return query.watch().map((rows) {
-      return rows.map((row) {
-        return PurchasesWithSupplierAndWarehouse(
-          purchase: row.readTable(db.purchases),
-          supplier: row.readTableOrNull(db.suppliers),
-          warehouse: row.readTableOrNull(db.warehouses),
-        );
-      }).toList();
-    });
   }
 }
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:printing/printing.dart';
 import 'package:drift/drift.dart' show Value;
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:supermarket/core/services/invoice_service.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -26,6 +27,27 @@ class PosPage extends StatefulWidget {
 class _PosPageState extends State<PosPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  String _selectedCurrency = 'YER';
+  double _selectedExchangeRate = 1.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBaseCurrency();
+  }
+
+  Future<void> _loadBaseCurrency() async {
+    final db = context.read<AppDatabase>();
+    final baseCurrency = await (db.select(
+      db.currencies,
+    )..where((c) => c.isBase.equals(true))).getSingleOrNull();
+    if (baseCurrency != null && mounted) {
+      setState(() {
+        _selectedCurrency = baseCurrency.code;
+        _selectedExchangeRate = baseCurrency.exchangeRate;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -43,10 +65,10 @@ class _PosPageState extends State<PosPage> {
           final l10n = AppLocalizations.of(context)!;
           return CallbackShortcuts(
             bindings: {
-              const SingleActivator(LogicalKeyboardKey.f1):
-                  () => _showCheckoutDialog(context, l10n),
-              const SingleActivator(LogicalKeyboardKey.f2):
-                  () => context.read<PosBloc>().add(ClearCart()),
+              const SingleActivator(LogicalKeyboardKey.f1): () =>
+                  _showCheckoutDialog(context, l10n),
+              const SingleActivator(LogicalKeyboardKey.f2): () =>
+                  context.read<PosBloc>().add(ClearCart()),
             },
             child: Focus(
               autofocus: true,
@@ -58,16 +80,17 @@ class _PosPageState extends State<PosPage> {
                     _buildCurrencySelector(context),
                     BlocBuilder<PosBloc, PosState>(
                       builder: (context, state) {
-                        final isWholesale =
-                            state is PosLoaded ? state.isWholesaleMode : false;
+                        final isWholesale = state is PosLoaded
+                            ? state.isWholesaleMode
+                            : false;
                         return Row(
                           children: [
                             Text(l10n.wholesale),
                             Switch(
                               value: isWholesale,
-                              onChanged: (val) => context
-                                  .read<PosBloc>()
-                                  .add(ToggleWholesaleMode(val)),
+                              onChanged: (val) => context.read<PosBloc>().add(
+                                ToggleWholesaleMode(val),
+                              ),
                             ),
                           ],
                         );
@@ -115,12 +138,37 @@ class _PosPageState extends State<PosPage> {
         if (!snapshot.hasData) return const SizedBox.shrink();
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: DropdownButton<String>(
-            value: 'YER', // Example: default to YER
-            items: snapshot.data!.map((c) => DropdownMenuItem(value: c.code, child: Text(c.code))).toList(),
-            onChanged: (val) {
-              // Handle currency change
-            },
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButton<String>(
+                value: _selectedCurrency,
+                underline: const SizedBox(),
+                items: snapshot.data!
+                    .map(
+                      (c) =>
+                          DropdownMenuItem(value: c.code, child: Text(c.code)),
+                    )
+                    .toList(),
+                onChanged: (val) async {
+                  if (val != null) {
+                    final currency = snapshot.data!.firstWhere(
+                      (c) => c.code == val,
+                      orElse: () => snapshot.data!.first,
+                    );
+                    setState(() {
+                      _selectedCurrency = currency.code;
+                      _selectedExchangeRate = currency.exchangeRate;
+                    });
+                  }
+                },
+              ),
+              if (_selectedExchangeRate != 1.0)
+                Text(
+                  '1=$_selectedExchangeRate',
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+            ],
           ),
         );
       },
@@ -234,9 +282,7 @@ class _PosPageState extends State<PosPage> {
                   trailing: [
                     IconButton(
                       icon: const Icon(Icons.qr_code_scanner),
-                      onPressed: () {
-                        // هنا يمكن إضافة فتح الكاميرا للمسح
-                      },
+                      onPressed: () => _openBarcodeScanner(context),
                     ),
                   ],
                 );
@@ -295,7 +341,7 @@ class _PosPageState extends State<PosPage> {
                 return ListView.separated(
                   padding: const EdgeInsets.all(8.0),
                   itemCount: state.cart.length,
-                  separatorBuilder: (_, __) => const Divider(),
+                  separatorBuilder: (context, index) => const Divider(),
                   itemBuilder: (context, index) {
                     final item = state.cart[index];
                     return ListTile(
@@ -353,14 +399,23 @@ class _PosPageState extends State<PosPage> {
                               isDense: true,
                               underline: const SizedBox(),
                               items: [
-                                DropdownMenuItem(value: item.product.unit, child: Text(item.product.unit)),
+                                DropdownMenuItem(
+                                  value: item.product.unit,
+                                  child: Text(item.product.unit),
+                                ),
                                 ...item.availableUnits.map(
-                                  (u) => DropdownMenuItem(value: u.unitName, child: Text(u.unitName)),
+                                  (u) => DropdownMenuItem(
+                                    value: u.unitName,
+                                    child: Text(u.unitName),
+                                  ),
                                 ),
                               ],
                               onChanged: (val) {
-                                // هنا سنقوم بإطلاق حدث تحديث الوحدة
-                                // context.read<PosBloc>().add(UpdateCartItemUnit(item.product.id, val!));
+                                if (val != null) {
+                                  context.read<PosBloc>().add(
+                                    UpdateCartItemUnit(item.product.id, val),
+                                  );
+                                }
                               },
                             ),
                           ),
@@ -521,6 +576,19 @@ class _PosPageState extends State<PosPage> {
     );
   }
 
+  void _openBarcodeScanner(BuildContext context) async {
+    final bloc = context.read<PosBloc>();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => const BarcodeScannerDialog(),
+    );
+    if (result != null && result.isNotEmpty) {
+      bloc.add(AddProductBySku(result));
+      _searchController.clear();
+      _searchFocusNode.requestFocus();
+    }
+  }
+
   void _showCheckoutDialog(BuildContext context, AppLocalizations l10n) {
     final db = context.read<AppDatabase>();
     final authProvider = context.read<AuthProvider>();
@@ -659,6 +727,8 @@ class _PosPageState extends State<PosPage> {
                         'cash',
                         customerId: selectedCustomer?.id,
                         userId: userId,
+                        currencyId: _selectedCurrency,
+                        exchangeRate: _selectedExchangeRate,
                       ),
                     );
                     Navigator.pop(context);
@@ -693,6 +763,8 @@ class _PosPageState extends State<PosPage> {
                           'credit',
                           customerId: customerId,
                           userId: userId,
+                          currencyId: _selectedCurrency,
+                          exchangeRate: _selectedExchangeRate,
                         ),
                       );
                       Navigator.pop(context);
@@ -818,6 +890,66 @@ class _PosPageState extends State<PosPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Barcode scanner dialog for POS
+class BarcodeScannerDialog extends StatefulWidget {
+  const BarcodeScannerDialog({super.key});
+
+  @override
+  State<BarcodeScannerDialog> createState() => _BarcodeScannerDialogState();
+}
+
+class _BarcodeScannerDialogState extends State<BarcodeScannerDialog> {
+  late final MobileScannerController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = MobileScannerController(
+      detectionSpeed: DetectionSpeed.noDuplicates,
+      formats: [
+        BarcodeFormat.qrCode,
+        BarcodeFormat.ean13,
+        BarcodeFormat.code128,
+      ],
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('مسح الباركود'),
+      content: SizedBox(
+        width: 300,
+        height: 300,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: MobileScanner(
+            controller: _controller,
+            onDetect: (BarcodeCapture capture) {
+              final barcode = capture.barcodes.firstOrNull;
+              if (barcode != null && barcode.rawValue != null) {
+                Navigator.pop(context, barcode.rawValue);
+              }
+            },
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('إلغاء'),
+        ),
+      ],
     );
   }
 }

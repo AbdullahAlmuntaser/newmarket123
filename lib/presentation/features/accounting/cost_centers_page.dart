@@ -35,12 +35,20 @@ class CostCentersPage extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.business_center_outlined, size: 64, color: Colors.grey),
+                  const Icon(
+                    Icons.business_center_outlined,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
                   const SizedBox(height: 16),
-                  Text(l10n.noCostCentersFound, style: const TextStyle(color: Colors.grey)),
+                  Text(
+                    l10n.noCostCentersFound,
+                    style: const TextStyle(color: Colors.grey),
+                  ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => _showAddCostCenterDialog(context, provider),
+                    onPressed: () =>
+                        _showAddCostCenterDialog(context, provider),
                     child: Text(l10n.addCostCenter),
                   ),
                 ],
@@ -51,7 +59,7 @@ class CostCentersPage extends StatelessWidget {
           return ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: costCenters.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            separatorBuilder: (context, index) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
               final cc = costCenters[index];
               return Card(
@@ -62,10 +70,21 @@ class CostCentersPage extends StatelessWidget {
                 ),
                 child: ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                    child: Text(cc.code, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 12)),
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer,
+                    child: Text(
+                      cc.code,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
-                  title: Text(cc.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  title: Text(
+                    cc.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   subtitle: Text(cc.code),
                   trailing: Switch(
                     value: cc.isActive,
@@ -80,7 +99,10 @@ class CostCentersPage extends StatelessWidget {
     );
   }
 
-  void _showAddCostCenterDialog(BuildContext context, AccountingProvider provider) {
+  void _showAddCostCenterDialog(
+    BuildContext context,
+    AccountingProvider provider,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     final nameController = TextEditingController();
     final codeController = TextEditingController();
@@ -94,21 +116,34 @@ class CostCentersPage extends StatelessWidget {
           children: [
             TextField(
               controller: codeController,
-              decoration: InputDecoration(labelText: l10n.code, border: const OutlineInputBorder()),
+              decoration: InputDecoration(
+                labelText: l10n.code,
+                border: const OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: nameController,
-              decoration: InputDecoration(labelText: l10n.name, border: const OutlineInputBorder()),
+              decoration: InputDecoration(
+                labelText: l10n.name,
+                border: const OutlineInputBorder(),
+              ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
+          ),
           ElevatedButton(
             onPressed: () {
-              if (nameController.text.isNotEmpty && codeController.text.isNotEmpty) {
-                provider.addCostCenter(code: codeController.text, name: nameController.text);
+              if (nameController.text.isNotEmpty &&
+                  codeController.text.isNotEmpty) {
+                provider.addCostCenter(
+                  code: codeController.text,
+                  name: nameController.text,
+                );
                 Navigator.pop(context);
               }
             },

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
-import 'package:supermarket/core/network/sync_service.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 
 class MainDrawer extends StatelessWidget {
@@ -14,12 +13,10 @@ class MainDrawer extends StatelessWidget {
     const Color dividerColor = Color(0xFF3E3E4A);
 
     AuthProvider authProvider;
-    SyncService syncService;
     AppLocalizations? l10n;
 
     try {
       authProvider = Provider.of<AuthProvider>(context, listen: false);
-      syncService = Provider.of<SyncService>(context, listen: false);
       l10n = AppLocalizations.of(context);
     } catch (e) {
       return Drawer(
@@ -213,7 +210,6 @@ class MainDrawer extends StatelessWidget {
               ],
             ),
           ),
-          _buildSyncStatus(context, syncService),
         ],
       ),
     );
@@ -322,36 +318,6 @@ class MainDrawer extends StatelessWidget {
       onTap: () {
         Navigator.pop(context);
         context.push(route);
-      },
-    );
-  }
-
-  Widget _buildSyncStatus(BuildContext context, SyncService? syncService) {
-    if (syncService == null) return const SizedBox.shrink();
-
-    return ValueListenableBuilder<bool>(
-      valueListenable: syncService.isSyncing,
-      builder: (context, isSyncing, child) {
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
-          color: Colors.black12,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Text(
-                isSyncing ? 'جاري المزامنة...' : 'تمت المزامنة',
-                style: const TextStyle(color: Colors.white38, fontSize: 10),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                isSyncing ? Icons.sync : Icons.cloud_done,
-                color: isSyncing ? Colors.blue : Colors.green,
-                size: 12,
-              ),
-            ],
-          ),
-        );
       },
     );
   }

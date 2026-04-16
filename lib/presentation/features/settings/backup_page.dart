@@ -64,51 +64,52 @@ class _BackupPageState extends State<BackupPage> {
 
   Future<void> _restoreBackup() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['sqlite'],
       );
 
-      if (result != null) {
-        if (!mounted) return;
+      if (!mounted) return;
 
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('تحذير'),
-            content: const Text(
-              'استعادة النسخة الاحتياطية ستقوم بحذف البيانات الحالية. هل أنت متأكد؟',
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('تحذير'),
+          content: const Text(
+            'استعادة النسخة الاحتياطية ستقوم بحذف البيانات الحالية. هل أنت متأكد؟',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('إلغاء'),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('إلغاء'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('استعادة'),
-              ),
-            ],
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('استعادة'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true || result == null) return;
+
+      final filePath = result.files.single.path;
+      if (filePath == null) return;
+
+      setState(() => _isLoading = true);
+      if (!mounted) return;
+      final db = context.read<AppDatabase>();
+      final backupService = BackupService(db);
+      await backupService.restoreFromLocal(filePath);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'تم استعادة البيانات بنجاح، سيتم إعادة تشغيل التطبيق.',
+            ),
           ),
         );
-
-        if (confirmed != true) return;
-
-        setState(() => _isLoading = true);
-        if (!mounted) return;
-        final db = context.read<AppDatabase>();
-        final backupService = BackupService(db);
-        await backupService.restoreFromLocal(result.files.single.path!);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'تم استعادة البيانات بنجاح، سيتم إعادة تشغيل التطبيق.',
-              ),
-            ),
-          );
-        }
       }
     } catch (e) {
       if (mounted) {

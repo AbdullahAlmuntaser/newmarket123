@@ -25,7 +25,9 @@ import 'package:supermarket/presentation/features/accounting/trial_balance_page.
 import 'package:supermarket/presentation/features/accounting/chart_of_accounts_page.dart';
 import 'package:supermarket/presentation/features/accounting/general_ledger_page.dart';
 import 'package:supermarket/presentation/features/accounting/expenses_page.dart';
+import 'package:supermarket/presentation/features/accounting/accounting_periods_page.dart';
 import 'package:supermarket/presentation/features/accounting/manual_journal_entry_page.dart';
+import 'package:supermarket/presentation/features/accounting/manual_voucher_page.dart';
 import 'package:supermarket/presentation/features/accounting/reconciliation_page.dart';
 import 'package:supermarket/presentation/features/accounting/shifts_page.dart';
 import 'package:supermarket/presentation/features/accounting/income_statement_page.dart';
@@ -40,15 +42,14 @@ import 'package:supermarket/presentation/features/reports/printer_settings_page.
 import 'package:supermarket/presentation/features/reports/product_profitability_page.dart';
 import 'package:supermarket/presentation/features/returns/returns_page.dart';
 import 'package:supermarket/presentation/features/returns/create_return_page.dart';
-import 'package:supermarket/presentation/features/sync/sync_page.dart';
-import 'package:supermarket/core/network/sync_service.dart';
 import 'package:supermarket/presentation/features/settings/backup_page.dart';
+import 'package:supermarket/presentation/features/settings/permissions_management_page.dart';
 import 'package:supermarket/presentation/features/customers/customer_statement_provider.dart';
 import 'package:supermarket/presentation/features/inventory/stock_transfer_page.dart';
 import 'package:supermarket/presentation/features/hr/employees_page.dart';
 import 'package:supermarket/presentation/features/hr/payroll_page.dart';
 import 'package:supermarket/presentation/features/products/unit_conversion_page.dart';
-import 'package:supermarket/presentation/features/inventory/warehouse_management_page.dart'; 
+import 'package:supermarket/presentation/features/inventory/warehouse_management_page.dart';
 import 'package:supermarket/presentation/features/inventory/stock_take_page.dart';
 import 'package:supermarket/presentation/features/dashboard/dashboard_page.dart';
 import 'package:supermarket/presentation/features/dashboard/admin_dashboard_page.dart';
@@ -127,7 +128,6 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(create: (_) => AssetProvider(AssetService(db))),
         ChangeNotifierProvider(create: (_) => CustomerStatementProvider()),
-        Provider<SyncService>(create: (_) => SyncService(db)),
       ],
       child: Builder(
         builder: (context) {
@@ -175,19 +175,44 @@ class MyApp extends StatelessWidget {
       routes: [
         GoRoute(path: '/', builder: (context, state) => const HomePage()),
         GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
-        GoRoute(path: '/dashboard', builder: (context, state) => const DashboardPage()),
-        GoRoute(path: '/admin-dashboard', builder: (context, state) => const AdminDashboardPage()),
+        GoRoute(
+          path: '/dashboard',
+          builder: (context, state) => const DashboardPage(),
+        ),
+        GoRoute(
+          path: '/admin-dashboard',
+          builder: (context, state) => const AdminDashboardPage(),
+        ),
         GoRoute(path: '/pos', builder: (context, state) => const PosPage()),
-        
+
         // Sales & Returns
-        GoRoute(path: '/sales', builder: (context, state) => const SalesHistoryPage()),
-        GoRoute(path: '/sales/returns', builder: (context, state) => const SalesReturnPage()),
-        GoRoute(path: '/sales/returns/new', builder: (context, state) => const AddSalesReturnPage()),
-        GoRoute(path: '/returns', builder: (context, state) => const ReturnsPage()),
-        GoRoute(path: '/returns/new', builder: (context, state) => const CreateReturnPage(type: ReturnType.sale)),
+        GoRoute(
+          path: '/sales',
+          builder: (context, state) => const SalesHistoryPage(),
+        ),
+        GoRoute(
+          path: '/sales/returns',
+          builder: (context, state) => const SalesReturnPage(),
+        ),
+        GoRoute(
+          path: '/sales/returns/new',
+          builder: (context, state) => const AddSalesReturnPage(),
+        ),
+        GoRoute(
+          path: '/returns',
+          builder: (context, state) => const ReturnsPage(),
+        ),
+        GoRoute(
+          path: '/returns/new',
+          builder: (context, state) =>
+              const CreateReturnPage(type: ReturnType.sale),
+        ),
 
         // Products & Inventory
-        GoRoute(path: '/products', builder: (context, state) => const ProductsPage()),
+        GoRoute(
+          path: '/products',
+          builder: (context, state) => const ProductsPage(),
+        ),
         GoRoute(
           path: '/products/unit-conversion/:id',
           builder: (context, state) {
@@ -196,18 +221,42 @@ class MyApp extends StatelessWidget {
             return UnitConversionPage(productId: id, productName: name);
           },
         ),
-        GoRoute(path: '/categories', builder: (context, state) => const CategoriesPage()),
-        GoRoute(path: '/low-stock', builder: (context, state) => const LowStockProductsPage()),
-        GoRoute(path: '/inventory/transfer', builder: (context, state) => const StockTransferPage()),
-        GoRoute(path: '/inventory/warehouses', builder: (context, state) => const WarehouseManagementPage()),
-        GoRoute(path: '/inventory/stock-take', builder: (context, state) => const StockTakePage()),
+        GoRoute(
+          path: '/categories',
+          builder: (context, state) => const CategoriesPage(),
+        ),
+        GoRoute(
+          path: '/low-stock',
+          builder: (context, state) => const LowStockProductsPage(),
+        ),
+        GoRoute(
+          path: '/inventory/transfer',
+          builder: (context, state) => const StockTransferPage(),
+        ),
+        GoRoute(
+          path: '/inventory/warehouses',
+          builder: (context, state) => const WarehouseManagementPage(),
+        ),
+        GoRoute(
+          path: '/inventory/stock-take',
+          builder: (context, state) => const StockTakePage(),
+        ),
 
         // HR
-        GoRoute(path: '/hr/employees', builder: (context, state) => const EmployeesPage()),
-        GoRoute(path: '/hr/payroll', builder: (context, state) => const PayrollPage()),
+        GoRoute(
+          path: '/hr/employees',
+          builder: (context, state) => const EmployeesPage(),
+        ),
+        GoRoute(
+          path: '/hr/payroll',
+          builder: (context, state) => const PayrollPage(),
+        ),
 
         // Customers & Suppliers
-        GoRoute(path: '/customers', builder: (context, state) => const CustomersPage()),
+        GoRoute(
+          path: '/customers',
+          builder: (context, state) => const CustomersPage(),
+        ),
         GoRoute(
           path: '/customers/statement/:id',
           builder: (context, state) {
@@ -215,7 +264,10 @@ class MyApp extends StatelessWidget {
             return CustomerStatementPage(customerId: id);
           },
         ),
-        GoRoute(path: '/suppliers', builder: (context, state) => const SuppliersPage()),
+        GoRoute(
+          path: '/suppliers',
+          builder: (context, state) => const SuppliersPage(),
+        ),
         GoRoute(
           path: '/suppliers/statement/:id',
           builder: (context, state) {
@@ -225,8 +277,14 @@ class MyApp extends StatelessWidget {
         ),
 
         // Purchases
-        GoRoute(path: '/purchases', builder: (context, state) => const PurchasesPage()),
-        GoRoute(path: '/purchases/new', builder: (context, state) => const AddPurchasePage()),
+        GoRoute(
+          path: '/purchases',
+          builder: (context, state) => const PurchasesPage(),
+        ),
+        GoRoute(
+          path: '/purchases/new',
+          builder: (context, state) => const AddPurchasePage(),
+        ),
         GoRoute(
           path: '/purchases/details/:id',
           builder: (context, state) {
@@ -234,38 +292,127 @@ class MyApp extends StatelessWidget {
             return PurchaseDetailsPage(purchaseId: id);
           },
         ),
-        GoRoute(path: '/purchases/returns', builder: (context, state) => const PurchaseReturnPage()),
-        GoRoute(path: '/purchases/returns/new', builder: (context, state) => const AddPurchaseReturnPage()),
+        GoRoute(
+          path: '/purchases/returns',
+          builder: (context, state) => const PurchaseReturnPage(),
+        ),
+        GoRoute(
+          path: '/purchases/returns/new',
+          builder: (context, state) => const AddPurchaseReturnPage(),
+        ),
 
         // Accounting
-        GoRoute(path: '/accounting/coa', builder: (context, state) => const ChartOfAccountsPage()),
-        GoRoute(path: '/accounting/general-ledger', builder: (context, state) => const GeneralLedgerPage()),
-        GoRoute(path: '/accounting/balance-sheet', builder: (context, state) => const BalanceSheetPage()),
-        GoRoute(path: '/accounting/income-statement', builder: (context, state) => const IncomeStatementPage()),
-        GoRoute(path: '/accounting/cash-flow', builder: (context, state) => const CashFlowPage()),
-        GoRoute(path: '/accounting/trial-balance', builder: (context, state) => const TrialBalancePage()),
-        GoRoute(path: '/accounting/expenses', builder: (context, state) => const ExpensesPage()),
-        GoRoute(path: '/accounting/fixed-assets', builder: (context, state) => const FixedAssetsPage()),
-        GoRoute(path: '/accounting/manual-journal', builder: (context, state) => const ManualJournalEntryPage()),
-        GoRoute(path: '/accounting/reconciliation', builder: (context, state) => const ReconciliationPage()),
-        GoRoute(path: '/accounting/shifts', builder: (context, state) => const ShiftsPage()),
-        GoRoute(path: '/accounting/checks', builder: (context, state) => const ChecksPage()),
-        GoRoute(path: '/accounting/cost-centers', builder: (context, state) => const CostCentersPage()),
+        GoRoute(
+          path: '/accounting/coa',
+          builder: (context, state) => const ChartOfAccountsPage(),
+        ),
+        GoRoute(
+          path: '/accounting/general-ledger',
+          builder: (context, state) => const GeneralLedgerPage(),
+        ),
+        GoRoute(
+          path: '/accounting/balance-sheet',
+          builder: (context, state) => const BalanceSheetPage(),
+        ),
+        GoRoute(
+          path: '/accounting/income-statement',
+          builder: (context, state) => const IncomeStatementPage(),
+        ),
+        GoRoute(
+          path: '/accounting/cash-flow',
+          builder: (context, state) => const CashFlowPage(),
+        ),
+        GoRoute(
+          path: '/accounting/trial-balance',
+          builder: (context, state) => const TrialBalancePage(),
+        ),
+        GoRoute(
+          path: '/accounting/expenses',
+          builder: (context, state) => const ExpensesPage(),
+        ),
+        GoRoute(
+          path: '/accounting/fixed-assets',
+          builder: (context, state) => const FixedAssetsPage(),
+        ),
+        GoRoute(
+          path: '/accounting/manual-journal',
+          builder: (context, state) => const ManualJournalEntryPage(),
+        ),
+        GoRoute(
+          path: '/accounting/manual-voucher',
+          builder: (context, state) {
+            final isReceipt = state.uri.queryParameters['receipt'] != 'false';
+            return ManualVoucherPage(isReceipt: isReceipt);
+          },
+        ),
+        GoRoute(
+          path: '/accounting/reconciliation',
+          builder: (context, state) => const ReconciliationPage(),
+        ),
+        GoRoute(
+          path: '/accounting/periods',
+          builder: (context, state) => const AccountingPeriodsPage(),
+        ),
+        GoRoute(
+          path: '/accounting/shifts',
+          builder: (context, state) => const ShiftsPage(),
+        ),
+        GoRoute(
+          path: '/accounting/checks',
+          builder: (context, state) => const ChecksPage(),
+        ),
+        GoRoute(
+          path: '/accounting/cost-centers',
+          builder: (context, state) => const CostCentersPage(),
+        ),
 
         // Reports
-        GoRoute(path: '/reports/sales', builder: (context, state) => const SalesReportsPage()),
-        GoRoute(path: '/reports/profitability', builder: (context, state) => const ProductProfitabilityPage()),
-        GoRoute(path: '/reports/inventory', builder: (context, state) => const InventoryReportsScreen()),
-        GoRoute(path: '/reports/inventory-audit', builder: (context, state) => const InventoryAuditPage()),
-        GoRoute(path: '/reports/vat', builder: (context, state) => const VatReportPage()),
-        GoRoute(path: '/reports/audit', builder: (context, state) => const AuditLogPage()),
+        GoRoute(
+          path: '/reports/sales',
+          builder: (context, state) => const SalesReportsPage(),
+        ),
+        GoRoute(
+          path: '/reports/profitability',
+          builder: (context, state) => const ProductProfitabilityPage(),
+        ),
+        GoRoute(
+          path: '/reports/inventory',
+          builder: (context, state) => const InventoryReportsScreen(),
+        ),
+        GoRoute(
+          path: '/reports/inventory-audit',
+          builder: (context, state) => const InventoryAuditPage(),
+        ),
+        GoRoute(
+          path: '/reports/vat',
+          builder: (context, state) => const VatReportPage(),
+        ),
+        GoRoute(
+          path: '/reports/audit',
+          builder: (context, state) => const AuditLogPage(),
+        ),
 
         // Settings
-        GoRoute(path: '/users', builder: (context, state) => const StaffManagementPage()),
-        GoRoute(path: '/settings/backup', builder: (context, state) => const BackupPage()),
-        GoRoute(path: '/settings/currency-rates', builder: (context, state) => const CurrencyRatesPage()),
-        GoRoute(path: '/sync', builder: (context, state) => const SyncPage()),
-        GoRoute(path: '/settings/printer', builder: (context, state) => const PrinterSettingsPage()),
+        GoRoute(
+          path: '/users',
+          builder: (context, state) => const StaffManagementPage(),
+        ),
+        GoRoute(
+          path: '/settings/backup',
+          builder: (context, state) => const BackupPage(),
+        ),
+        GoRoute(
+          path: '/settings/permissions',
+          builder: (context, state) => const PermissionsManagementPage(),
+        ),
+        GoRoute(
+          path: '/settings/currency-rates',
+          builder: (context, state) => const CurrencyRatesPage(),
+        ),
+        GoRoute(
+          path: '/settings/printer',
+          builder: (context, state) => const PrinterSettingsPage(),
+        ),
       ],
     );
   }

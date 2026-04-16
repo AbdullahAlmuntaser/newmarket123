@@ -1,9 +1,11 @@
 import 'dart:io';
+// ignore_for_file: deprecated_member_use
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:sqlite3/sqlite3.dart' as sqlite;
 import 'package:uuid/uuid.dart';
 import 'daos/products_dao.dart';
 import 'daos/sales_dao.dart';
@@ -12,6 +14,7 @@ import 'daos/accounting_dao.dart';
 import 'daos/users_dao.dart';
 import 'daos/suppliers_dao.dart';
 import 'daos/purchases_dao.dart';
+import 'daos/bom_dao.dart';
 import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 
 part 'app_database.g.dart';
@@ -48,12 +51,14 @@ class Products extends Table with SyncableTable {
   IntColumn get piecesPerCarton => integer().withDefault(const Constant(1))();
   RealColumn get buyPrice => real().withDefault(const Constant(0.0))();
   RealColumn get sellPrice => real().withDefault(const Constant(0.0))();
-  RealColumn get wholesalePrice => real().withDefault(const Constant(0.0))();
+  RealColumn get wholesalePrice =>
+      real().withDefault(const Constant(0.0))();
   RealColumn get stock => real().withDefault(const Constant(0.0))();
-  RealColumn get alertLimit => real().withDefault(const Constant(10.0))();
+  RealColumn get alertLimit =>
+      real().withDefault(const Constant(10.0))();
   DateTimeColumn get expiryDate => dateTime().nullable()();
-  RealColumn get taxRate =>
-      real().withDefault(const Constant(0.0))(); // New: Tax rate for ERP
+  RealColumn get taxRate => real()
+      .withDefault(const Constant(0.0))(); // New: Tax rate for ERP
 }
 
 class Customers extends Table with SyncableTable {
@@ -62,8 +67,11 @@ class Customers extends Table with SyncableTable {
   TextColumn get taxNumber => text().nullable()(); // New: Tax Number for ERP
   TextColumn get address => text().nullable()(); // New: Detailed Address
   TextColumn get email => text().nullable()(); // New: Email
-  TextColumn get customerType => text().withDefault(const Constant('RETAIL'))(); // New: RETAIL, WHOLESALE, VIP
-  BoolColumn get isActive => boolean().withDefault(const Constant(true))(); // New: Status
+  TextColumn get customerType => text().withDefault(
+    const Constant('RETAIL'),
+  )(); // New: RETAIL, WHOLESALE, VIP
+  BoolColumn get isActive =>
+      boolean().withDefault(const Constant(true))(); // New: Status
   RealColumn get creditLimit => real().withDefault(const Constant(0.0))();
   RealColumn get balance => real().withDefault(const Constant(0.0))();
   TextColumn get accountId =>
@@ -79,8 +87,11 @@ class Suppliers extends Table with SyncableTable {
   TextColumn get taxNumber => text().nullable()(); // New: Tax Number
   TextColumn get address => text().nullable()(); // New: Address
   TextColumn get email => text().nullable()(); // New: Email
-  TextColumn get supplierType => text().withDefault(const Constant('LOCAL'))(); // New: LOCAL, INTERNATIONAL
-  BoolColumn get isActive => boolean().withDefault(const Constant(true))(); // New: Status
+  TextColumn get supplierType => text().withDefault(
+    const Constant('LOCAL'),
+  )(); // New: LOCAL, INTERNATIONAL
+  BoolColumn get isActive =>
+      boolean().withDefault(const Constant(true))(); // New: Status
   RealColumn get balance => real().withDefault(const Constant(0.0))();
   TextColumn get accountId =>
       text().nullable().references(GLAccounts, #id)(); // New: Linked to GL
@@ -117,7 +128,8 @@ class Purchases extends Table with SyncableTable {
   TextColumn get supplierId => text().nullable().references(Suppliers, #id)();
   RealColumn get total => real()();
   RealColumn get tax => real().withDefault(const Constant(0.0))();
-  RealColumn get landedCosts => real().withDefault(const Constant(0.0))(); // New
+  RealColumn get landedCosts =>
+      real().withDefault(const Constant(0.0))(); // New
   TextColumn get invoiceNumber => text().nullable()();
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
   BoolColumn get isCredit => boolean().withDefault(const Constant(false))();
@@ -230,7 +242,8 @@ class GLEntries extends Table with SyncableTable {
 class GLLines extends Table with SyncableTable {
   TextColumn get entryId => text().references(GLEntries, #id)();
   TextColumn get accountId => text().references(GLAccounts, #id)();
-  TextColumn get costCenterId => text().nullable().references(CostCenters, #id)();
+  TextColumn get costCenterId =>
+      text().nullable().references(CostCenters, #id)();
   RealColumn get debit => real().withDefault(const Constant(0.0))();
   RealColumn get credit => real().withDefault(const Constant(0.0))();
   TextColumn get currencyId => text().nullable().references(Currencies, #id)();
@@ -417,7 +430,8 @@ class UnitConversions extends Table with SyncableTable {
   TextColumn get unitName => text()(); // حبة، كرتون، كيس
   RealColumn get factor => real()(); // المعامل (مثلاً الكرتون فيه 24 حبة)
   TextColumn get barcode => text().unique().nullable()(); // باركود خاص بالوحدة
-  RealColumn get sellPrice => real().nullable()(); // سعر خاص بهذه الوحدة (اختياري)
+  RealColumn get sellPrice =>
+      real().nullable()(); // سعر خاص بهذه الوحدة (اختياري)
 }
 
 class InventoryTransactions extends Table with SyncableTable {
@@ -425,7 +439,8 @@ class InventoryTransactions extends Table with SyncableTable {
   TextColumn get warehouseId => text().references(Warehouses, #id)();
   TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
   RealColumn get quantity => real()(); // Positive for in, negative for out
-  TextColumn get type => text()(); // PURCHASE, SALE, RETURN, TRANSFER, ADJUSTMENT
+  TextColumn get type =>
+      text()(); // PURCHASE, SALE, RETURN, TRANSFER, ADJUSTMENT
   TextColumn get referenceId => text()(); // PurchaseId, SaleId, etc.
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
 }
@@ -443,7 +458,8 @@ class AccountTransactions extends Table with SyncableTable {
 class StockTakes extends Table with SyncableTable {
   TextColumn get warehouseId => text().references(Warehouses, #id)();
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
-  TextColumn get status => text().withDefault(const Constant('DRAFT'))(); // DRAFT, COMPLETED
+  TextColumn get status =>
+      text().withDefault(const Constant('DRAFT'))(); // DRAFT, COMPLETED
   TextColumn get note => text().nullable()();
 }
 
@@ -460,10 +476,14 @@ class Checks extends Table with SyncableTable {
   TextColumn get bankName => text()();
   DateTimeColumn get dueDate => dateTime()();
   RealColumn get amount => real()();
-  TextColumn get type => text()(); // RECEIVED (from customer), ISSUED (to supplier)
-  TextColumn get status => text().withDefault(const Constant('PENDING'))(); // PENDING, COLLECTED, BOUNCED
+  TextColumn get type =>
+      text()(); // RECEIVED (from customer), ISSUED (to supplier)
+  TextColumn get status => text().withDefault(
+    const Constant('PENDING'),
+  )(); // PENDING, COLLECTED, BOUNCED
   TextColumn get partnerId => text().nullable()(); // Customer or Supplier ID
-  TextColumn get paymentAccountId => text().nullable().references(GLAccounts, #id)();
+  TextColumn get paymentAccountId =>
+      text().nullable().references(GLAccounts, #id)();
   TextColumn get note => text().nullable()();
   TextColumn get currencyId => text().nullable().references(Currencies, #id)();
   RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
@@ -472,7 +492,8 @@ class Checks extends Table with SyncableTable {
 class BillOfMaterials extends Table with SyncableTable {
   TextColumn get finishedProductId => text().references(Products, #id)();
   TextColumn get componentProductId => text().references(Products, #id)();
-  RealColumn get quantity => real()(); // الكمية المطلوبة من المادة الخام لإنتاج وحدة واحدة
+  RealColumn get quantity =>
+      real()(); // الكمية المطلوبة من المادة الخام لإنتاج وحدة واحدة
 }
 
 @DriftDatabase(
@@ -534,29 +555,14 @@ class BillOfMaterials extends Table with SyncableTable {
     UsersDao,
     SuppliersDao,
     PurchasesDao,
+    BomDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
-  List<TableIndex> get indices => [
-    TableIndex(name: 'products_sku_idx', columns: {products.sku}),
-    TableIndex(name: 'sales_customer_idx', columns: {sales.customerId}),
-    TableIndex(name: 'sale_items_sale_idx', columns: {saleItems.saleId}),
-    TableIndex(name: 'purchases_supplier_idx', columns: {purchases.supplierId}),
-    TableIndex(name: 'gl_lines_entry_idx', columns: {gLLines.entryId}),
-    TableIndex(name: 'gl_lines_account_idx', columns: {gLLines.accountId}),
-    TableIndex(name: 'inv_trans_product_idx', columns: {inventoryTransactions.productId}),
-    TableIndex(name: 'inv_trans_date_idx', columns: {inventoryTransactions.date}),
-    TableIndex(name: 'acc_trans_account_idx', columns: {accountTransactions.accountId}),
-    TableIndex(name: 'acc_trans_date_idx', columns: {accountTransactions.date}),
-  ];
-
-  Future<int> getUnsyncedCount() async =>
-      (select(syncQueue)).get().then((v) => v.length);
-
   @override
-  int get schemaVersion => 24; // Incremented to 24
+  int get schemaVersion => 27; // Incremented schema version
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -564,145 +570,87 @@ class AppDatabase extends _$AppDatabase {
       await m.createAll();
     },
     onUpgrade: (Migrator m, int from, int to) async {
-      if (from < 2) {
-        await m.createTable(gLAccounts);
-        await m.createTable(gLEntries);
-        await m.createTable(gLLines);
-        await m.createTable(fixedAssets);
-      }
-      if (from < 3) {
-        await m.createTable(inventoryAudits);
-        await m.createTable(inventoryAuditItems);
-      }
-      if (from < 4) {
-        await m.createTable(shifts);
-      }
-      if (from < 5) {
-        await m.createTable(reconciliations);
-      }
-      if (from < 6) {
-        await m.createTable(auditLogs);
-      }
-      if (from < 7) {
-        await m.createTable(warehouses);
-        await m.createTable(productBatches);
-        await m.addColumn(purchases, purchases.status);
-        await m.addColumn(purchases, purchases.warehouseId);
-        await m.addColumn(purchaseItems, purchaseItems.batchId);
-      }
-      if (from < 8) {
-        await m.createTable(stockTransfers);
-        await m.createTable(stockTransferItems);
-      }
-      if (from < 9) {
-        await m.createTable(employees);
-        await m.createTable(payrollEntries);
-        await m.createTable(payrollLines);
-      }
-      if (from < 10) {
-        await m.createTable(permissions);
-        await m.createTable(rolePermissions);
-      }
-      if (from < 11) {
-        await m.createTable(cashboxTransactions);
-      }
-      if (from < 12) {
-        await m.addColumn(purchases, purchases.tax);
-      }
-      if (from < 14) {
-        await m.addColumn(products, products.piecesPerCarton);
-        await m.addColumn(products, products.cartonUnit);
-        await m.addColumn(saleItems, saleItems.unitName);
-        await m.addColumn(saleItems, saleItems.unitFactor);
-        await m.addColumn(purchaseItems, purchaseItems.isCarton);
-      }
-      if (from < 15) {
-        await m.createTable(accountingPeriods);
-        await m.addColumn(gLEntries, gLEntries.status);
-        await m.addColumn(gLEntries, gLEntries.postedAt);
-        await m.addColumn(gLEntries, gLEntries.postedBy);
-        await m.addColumn(customers, customers.accountId);
-        await m.addColumn(suppliers, suppliers.accountId);
-        await m.addColumn(products, products.taxRate);
-        await m.addColumn(sales, sales.status);
-      }
-      if (from < 16) {
-        await m.createTable(priceLists);
-        await m.createTable(priceListItems);
-        await m.createTable(promotions);
-      }
-      if (from < 17) {
-        await m.createTable(currencies);
-      }
-      if (from < 18) {
-        await m.addColumn(sales, sales.currencyId);
-        await m.addColumn(sales, sales.exchangeRate);
-        await m.addColumn(purchases, purchases.currencyId);
-        await m.addColumn(purchases, purchases.exchangeRate);
-        await m.addColumn(gLEntries, gLEntries.currencyId);
-        await m.addColumn(gLEntries, gLEntries.exchangeRate);
-        await m.addColumn(gLLines, gLLines.currencyId);
-        await m.addColumn(gLLines, gLLines.exchangeRate);
-      }
-      if (from < 19) {
-        await m.addColumn(customers, customers.taxNumber);
-        await m.addColumn(customers, customers.address);
-        await m.addColumn(customers, customers.email);
-        await m.addColumn(customers, customers.customerType);
-        await m.addColumn(customers, customers.isActive);
-      }
-      if (from < 20) {
-        await m.addColumn(suppliers, suppliers.taxNumber);
-        await m.addColumn(suppliers, suppliers.address);
-        await m.addColumn(suppliers, suppliers.email);
-        await m.addColumn(suppliers, suppliers.supplierType);
-        await m.addColumn(suppliers, suppliers.isActive);
-      }
-      if (from < 21) {
-        await m.createTable(unitConversions);
-        await m.createTable(stockTakes);
-        await m.createTable(stockTakeItems);
-        await m.createTable(billOfMaterials);
-        await m.createTable(checks);
-      }
-      if (from < 22) {
-        // Double check GLLines for users who already passed version 18
-        try {
-          await m.addColumn(gLLines, gLLines.currencyId);
-          await m.addColumn(gLLines, gLLines.exchangeRate);
-        } catch (e) {
-          // Columns might already exist if version 18 was executed correctly in some environments
-          debugPrint("Migration to 22 (GLLines) skipped or failed: $e");
+      final db = m.database;
+
+      // 1. Get all table and index names from the database schema
+      final schema = await db
+          .customSelect(
+            "SELECT type, name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' AND name NOT LIKE 'android_%'",
+          )
+          .get();
+      final existingTables = <String>{};
+      final existingIndices = <String>{};
+
+      for (final row in schema) {
+        final type = row.read<String>('type');
+        final name = row.read<String>('name');
+        if (type == 'table') {
+          existingTables.add(name);
+        } else if (type == 'index') {
+          existingIndices.add(name);
         }
       }
-      if (from < 23) {
-        await m.createTable(costCenters);
-        await m.addColumn(gLLines, gLLines.costCenterId);
-        await m.addColumn(sales, sales.qrCode);
-        await m.addColumn(sales, sales.hash);
-        await m.addColumn(sales, sales.signature);
-        await m.addColumn(purchases, purchases.landedCosts);
+
+      // 2. Create missing tables and their columns
+      for (final table in allTables) {
+        if (!existingTables.contains(table.actualTableName)) {
+          await m.createTable(table);
+          debugPrint('Created missing table: ${table.actualTableName}');
+        } else {
+          final columns = await db
+              .customSelect('PRAGMA table_info(${table.actualTableName})')
+              .get();
+          final existingColumnNames = columns
+              .map((col) => col.read<String>('name'))
+              .toSet();
+
+          for (final column in table.$columns) {
+            if (!existingColumnNames.contains(column.name)) {
+              await m.addColumn(table, column);
+              debugPrint(
+                'Added missing column ${column.name} to table ${table.actualTableName}',
+              );
+            }
+          }
+        }
       }
-      if (from < 24) {
-        await m.createTable(inventoryTransactions);
-        await m.createTable(accountTransactions);
+
+      // 3. Create missing indices by issuing custom commands
+      // This is a robust way to ensure all indices from your app's definition exist.
+      // We skip index creation in migration as drift handles it automatically
+      // Manually create specific indices that might not be attached to a table entity directly
+      // Commented out as these should be handled by drift's automatic index creation
+      /*
+       if (!existingIndices.contains('products_category_idx')){
+            await m.createIndex(TableIndex(name: 'products_category_idx', columns: {products.categoryId}));
+       }
+        if (!existingIndices.contains('sale_items_product_idx')){
+            await m.createIndex(TableIndex(name: 'sale_items_product_idx', columns: {saleItems.productId}));
+       }
+       */
+    },
+    beforeOpen: (details) async {
+      await customStatement('PRAGMA foreign_keys = ON;');
+      if (details.wasCreated) {
+        // seeding logic
       }
     },
   );
+
+  Future<int> getUnsyncedCount() async =>
+      (select(syncQueue)).get().then((v) => v.length);
 
   Future<void> seedData() async {
     // Add seed logic here in the future
   }
 
   Future<double> calculateTotalInventoryValue() async {
-    final result = await (select(
-      products,
-    )..addColumns([products.stock, products.buyPrice])).get();
+    final List<Product> products = await select(this.products).get();
 
     double totalValue = 0.0;
-    for (final row in result) {
-      final stock = row.stock;
-      final buyPrice = row.buyPrice;
+    for (final product in products) {
+      final stock = product.stock;
+      final buyPrice = product.buyPrice;
       totalValue += stock * buyPrice;
     }
     return totalValue;
@@ -722,7 +670,10 @@ LazyDatabase _openConnection() {
 
     await applyWorkaroundToOpenSqlite3OnOldAndroidVersions();
 
-    return NativeDatabase(
+    final cachebase = (await getTemporaryDirectory()).path;
+    sqlite.sqlite3.tempDirectory = cachebase;
+
+    return NativeDatabase.createInBackground(
       file,
       setup: (db) {
         db.execute("PRAGMA key = 'supermarket_secret_key';");

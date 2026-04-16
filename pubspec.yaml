@@ -27,10 +27,10 @@ dependencies:
   flutter_bloc: ^9.1.1
   get_it: ^9.2.1
   printing: ^5.14.3
-  file_picker: ^10.3.10
+  file_picker: ^11.0.2
   mobile_scanner: ^7.2.0
   fl_chart: ^1.2.0
-  google_fonts: ^6.2.1
+  google_fonts: ^8.0.2
   pdf: ^3.11.1
   barcode: ^2.2.8
   path: ^1.9.1
@@ -38,20 +38,21 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   bcrypt: ^1.2.0
-  firebase_core: ^4.7.0
-  firebase_ai: ^3.11.0
   crypto: ^3.0.7
+  freezed_annotation: ^3.1.0
+  sqlite3: ^2.9.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
   build_runner: ^2.13.1
   json_serializable: ^6.13.1
   drift_dev: ^2.31.0
   mockito: ^5.6.4
   mocktail: ^1.0.4
+  freezed: ^3.2.5
 
 flutter:
   generate: true

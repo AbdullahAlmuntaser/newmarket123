@@ -10,9 +10,26 @@ class TransactionEngine {
 
   TransactionEngine(this.db, this.eventBus);
 
+  /// Checks if the current accounting period is open
+  /// Throws an exception if no open period exists or if the current date is outside the open period
+  Future<void> _checkAccountingPeriodOpen() async {
+    final now = DateTime.now();
+    final openPeriod = await (db.select(db.accountingPeriods)
+          ..where((p) => p.isClosed.equals(false))
+          ..where((p) => p.startDate.isSmallerOrEqualValue(now))
+          ..where((p) => p.endDate.isBiggerOrEqualValue(now)))
+        .getSingleOrNull();
+
+    if (openPeriod == null) {
+      throw Exception('لا توجد فترة محاسبية مفتوحة حالياً. يرجى فتح فترة محاسبية جديدة.');
+    }
+  }
+
   /// Posts a purchase invoice (Draft -> Received)
   /// This updates inventory, creates batches, allocates landed costs, and triggers accounting.
   Future<void> postPurchase(String purchaseId, {String? userId}) async {
+    // Check if accounting period is open before posting
+    await _checkAccountingPeriodOpen();
     await db.transaction(() async {
       // 1. Get Purchase and Items
       final purchase = await (db.select(db.purchases)
@@ -125,6 +142,8 @@ class TransactionEngine {
   /// Posts a sale (Draft -> Posted)
   /// This updates inventory batches (FEFO), records inventory transactions, and triggers accounting.
   Future<void> postSale(String saleId, {String? userId}) async {
+    // Check if accounting period is open before posting
+    await _checkAccountingPeriodOpen();
     await db.transaction(() async {
       // 1. Get Sale and Items
       final sale = await (db.select(db.sales)..where((s) => s.id.equals(saleId)))
@@ -240,7 +259,8 @@ class TransactionEngine {
     /// This updates inventory batches (re-adds stock), records inventory transactions, and triggers accounting.
 
     Future<void> postSaleReturn(String returnId, {String? userId}) async {
-
+      // Check if accounting period is open before posting
+      await _checkAccountingPeriodOpen();
       await db.transaction(() async {
 
         // 1. Get Return and Items
@@ -402,7 +422,8 @@ class TransactionEngine {
     /// Posts a purchase return
 
     Future<void> postPurchaseReturn(String returnId, {String? userId}) async {
-
+      // Check if accounting period is open before posting
+      await _checkAccountingPeriodOpen();
       await db.transaction(() async {
 
         // 1. Get Return and Items

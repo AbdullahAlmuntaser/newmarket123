@@ -52,7 +52,23 @@ class CheckoutEvent extends PosEvent {
   final String paymentMethod;
   final String? customerId;
   final String? userId;
-  const CheckoutEvent(this.paymentMethod, {this.customerId, this.userId});
+  final String? currencyId;
+  final double exchangeRate;
+  const CheckoutEvent(
+    this.paymentMethod, {
+    this.customerId,
+    this.userId,
+    this.currencyId,
+    this.exchangeRate = 1.0,
+  });
+}
+
+class UpdateCartItemUnit extends PosEvent {
+  final String productId;
+  final String unitName;
+  const UpdateCartItemUnit(this.productId, this.unitName);
+  @override
+  List<Object?> get props => [productId, unitName];
 }
 
 class ToggleCartItemUnit extends PosEvent {
