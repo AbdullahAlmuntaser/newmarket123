@@ -194,8 +194,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       }
 
       if (product == null) {
-        emit(PosError("لم يتم العثور على الصنف بالباركود ${event.sku}"));
-        emit(currentState);
+        emit(PosError('المنتج غير موجود'));
         return;
       }
 

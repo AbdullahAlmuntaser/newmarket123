@@ -380,7 +380,8 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
             purchaseId: purchaseId,
             productId: item.product.id,
             quantity: item.quantity,
-            price: item.price,
+            unitPrice: item.price, // Unit price same as item price for now
+            price: item.quantity * item.price, // Total = qty * unitPrice
             syncStatus: const drift.Value(1),
           ),
         )
@@ -463,7 +464,36 @@ class _AddProductToPurchaseDialogState
   final TextEditingController _qtyController = TextEditingController(text: '1');
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _batchController = TextEditingController();
+  final TextEditingController _barcodeController = TextEditingController();
   DateTime? _expiryDate;
+
+  // Search product by barcode or SKU
+  Future<void> _searchByBarcode(String barcode, AppDatabase db) async {
+    if (barcode.isEmpty) return;
+    
+    // Search in Products table by barcode first
+    var products = await (db.select(db.products)
+          ..where((p) => p.barcode.equals(barcode)))
+        .get();
+    if (products.isNotEmpty) {
+      setState(() {
+        _selectedProduct = products.first;
+        _priceController.text = products.first.buyPrice.toString();
+      });
+      return;
+    }
+    
+    // Search by SKU
+    products = await (db.select(db.products)
+          ..where((p) => p.sku.equals(barcode)))
+        .get();
+    if (products.isNotEmpty) {
+      setState(() {
+        _selectedProduct = products.first;
+        _priceController.text = products.first.buyPrice.toString();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -478,19 +508,37 @@ class _AddProductToPurchaseDialogState
               stream: widget.db.select(widget.db.products).watch(),
               builder: (context, snapshot) {
                 final products = snapshot.data ?? [];
-                return DropdownButtonFormField<Product>(
-                  decoration: InputDecoration(labelText: l10n.productLabel),
-                  items: products
-                      .map(
-                        (p) => DropdownMenuItem(value: p, child: Text(p.name)),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedProduct = value;
-                      _priceController.text = value?.buyPrice.toString() ?? '';
-                    });
-                  },
+                return Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<Product>(
+                        decoration: InputDecoration(labelText: l10n.productLabel),
+                        items: products
+                            .map(
+                              (p) => DropdownMenuItem(value: p, child: Text('${p.name} (${p.sku})')),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedProduct = value;
+                            _priceController.text = value?.buyPrice.toString() ?? '';
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      width: 100,
+                      child: TextField(
+                        controller: _barcodeController,
+                        decoration: const InputDecoration(
+                          labelText: 'باركود',
+                          isDense: true,
+                        ),
+                        onSubmitted: (val) => _searchByBarcode(val, widget.db),
+                      ),
+                    ),
+                  ],
                 );
               },
             ),

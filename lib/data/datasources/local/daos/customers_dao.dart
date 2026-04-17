@@ -1,9 +1,22 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart';
+import 'package:supermarket/core/utils/name_normalizer.dart';
 import 'package:uuid/uuid.dart';
 
 part 'customers_dao.g.dart';
+
+class CustomerSearchResult {
+  final Customer customer;
+  final double similarity; // 0.0 to 1.0
+  final bool isExactMatch;
+
+  CustomerSearchResult({
+    required this.customer,
+    required this.similarity,
+    required this.isExactMatch,
+  });
+}
 
 class CustomerTransaction {
   final DateTime date;
@@ -180,5 +193,115 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
     allTransactions.sort((a, b) => a.date.compareTo(b.date));
 
     return allTransactions;
+  }
+
+  // ============================================
+  // Quick Customer Smart Search Methods
+  // ============================================
+
+  /// Smart search for customers by name
+  /// Returns list of search results with similarity scores
+  Future<List<CustomerSearchResult>> smartSearchCustomers(String query) async {
+    if (query.isEmpty) return [];
+
+    final normalizedQuery = NameNormalizer.normalize(query);
+    
+    // Get all active customers
+    final allCustomers = await (select(customers)
+      ..where((c) => c.isActive.equals(true)))
+      .get();
+
+    final results = <CustomerSearchResult>[];
+
+    for (final customer in allCustomers) {
+      // Use normalizedName if available, otherwise normalize on-the-fly
+      final customerNormalized = customer.normalizedName ?? 
+          NameNormalizer.normalize(customer.name);
+
+      // Exact match
+      if (customerNormalized == normalizedQuery) {
+        results.add(CustomerSearchResult(
+          customer: customer,
+          similarity: 1.0,
+          isExactMatch: true,
+        ));
+      } 
+      // Fuzzy match
+      else {
+        final similarity = NameNormalizer.calculateSimilarity(
+          customerNormalized, 
+          normalizedQuery,
+        );
+        
+        // Include if similarity >= 0.6 (60%)
+        if (similarity >= 0.6) {
+          results.add(CustomerSearchResult(
+            customer: customer,
+            similarity: similarity,
+            isExactMatch: false,
+          ));
+        }
+      }
+    }
+
+    // Sort by similarity (highest first), then exact matches first
+    results.sort((a, b) {
+      if (a.isExactMatch && !b.isExactMatch) return -1;
+      if (!a.isExactMatch && b.isExactMatch) return 1;
+      return b.similarity.compareTo(a.similarity);
+    });
+
+    return results;
+  }
+
+  /// Find exact match by normalized name
+  Future<Customer?> findByNormalizedName(String name) async {
+    final normalized = NameNormalizer.normalize(name);
+    return (select(customers)
+      ..where((c) => c.normalizedName.equals(normalized))
+      ..where((c) => c.isActive.equals(true)))
+      .getSingleOrNull();
+  }
+
+  /// Create a quick customer from POS
+  Future<String> createQuickCustomer(String name, {String? phone}) async {
+    final normalized = NameNormalizer.normalize(name);
+    
+    return transaction(() async {
+      final customerId = const Uuid().v4();
+      
+      // 1. Create customer with normalized name
+      await into(customers).insert(
+        CustomersCompanion.insert(
+          id: Value(customerId),
+          name: name,
+          normalizedName: Value(normalized),
+          phone: Value(phone),
+          isQuickCustomer: const Value(true),
+          createdFromPOS: const Value(true),
+          creditLimit: const Value(0.0),
+          balance: const Value(0.0),
+          isActive: const Value(true),
+        ),
+      );
+      
+      return customerId;
+    });
+  }
+
+  /// Get all quick customers (created from POS)
+  Future<List<Customer>> getQuickCustomers() {
+    return (select(customers)
+      ..where((c) => c.isQuickCustomer.equals(true))
+      ..where((c) => c.isActive.equals(true)))
+      .get();
+  }
+
+  /// Watch only regular (non-quick) customers for credit sales
+  Stream<List<Customer>> watchRegularCustomers() {
+    return (select(customers)
+      ..where((c) => c.isActive.equals(true))
+      ..where((c) => c.isQuickCustomer.equals(false)))
+        .watch();
   }
 }

@@ -15,6 +15,7 @@ import 'package:supermarket/core/services/event_bus_service.dart';
 import 'package:supermarket/core/services/pricing_service.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
 import 'package:supermarket/core/services/inventory_service.dart';
+import 'package:supermarket/core/services/purchase_service.dart';
 
 import 'package:supermarket/presentation/features/pos/bloc/pos_bloc.dart';
 
@@ -31,6 +32,7 @@ void init() {
   sl.registerLazySingleton(() => PricingService(sl()));
   sl.registerLazySingleton(() => TransactionEngine(sl(), sl()));
   sl.registerLazySingleton(() => InventoryService(sl()));
+  sl.registerLazySingleton(() => PurchaseService(sl()));
 
   // Providers
   sl.registerLazySingleton(() => AuthProvider(sl()));
