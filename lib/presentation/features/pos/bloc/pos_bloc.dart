@@ -193,8 +193,9 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         )..where((t) => t.sku.equals(event.sku))).getSingleOrNull();
       }
 
+      // Check if product was found
       if (product == null) {
-        emit(PosError('المنتج غير موجود'));
+        emit(PosError("المنتج غير موجود"));
         return;
       }
 
