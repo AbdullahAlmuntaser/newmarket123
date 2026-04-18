@@ -5,7 +5,7 @@
   channel = "stable-24.05"; # or "unstable"
   # Use https://search.nixos.org/packages to find packages
   packages = [
-    pkgs.jdk21
+    pkgs.jdk17
     pkgs.unzip
     pkgs.sqlite
   ];
@@ -27,7 +27,18 @@
     previews = {
       enable = true;
       previews = {
-        
+        android = {
+          command = [
+            "flutter"
+            "run"
+            "--machine"
+            "-d"
+            "android"
+            "-d"
+            "localhost:5555"
+          ];
+          manager = "flutter";
+        };
       };
     };
   };

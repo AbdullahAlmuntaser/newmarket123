@@ -96,11 +96,6 @@ class Customers extends Table with SyncableTable {
       boolean().withDefault(const Constant(false))(); // Quick customer flag
   BoolColumn get createdFromPOS =>
       boolean().withDefault(const Constant(false))(); // Created from POS
-
-  @override
-  List<String> get customConstraints => [
-    'CREATE INDEX IF NOT EXISTS idx_customers_normalized_name ON customers(normalized_name)',
-  ];
 }
 
 class Suppliers extends Table with SyncableTable {
