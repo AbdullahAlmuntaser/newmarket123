@@ -247,3 +247,4 @@ class TopProduct {
 
   TopProduct({required this.product, required this.totalQuantity});
 }
+

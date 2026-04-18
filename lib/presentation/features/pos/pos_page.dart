@@ -1,21 +1,12 @@
-import 'package:flutter/services.dart';
+import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:printing/printing.dart';
-import 'package:drift/drift.dart' show Value;
-import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:supermarket/core/auth/auth_provider.dart';
-import 'package:supermarket/core/services/invoice_service.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/core/utils/printer_helper.dart';
-import 'package:supermarket/presentation/features/pos/bloc/pos_bloc.dart';
-import 'package:supermarket/presentation/features/pos/bloc/pos_event.dart';
-import 'package:supermarket/presentation/features/pos/bloc/pos_state.dart';
-import 'package:supermarket/presentation/features/pos/widgets/product_grid.dart';
-import 'package:supermarket/l10n/app_localizations.dart';
-import 'package:supermarket/presentation/widgets/main_drawer.dart';
-
+import 'package:supermarket/core/services/transaction_engine.dart';
+import 'package:supermarket/core/services/quick_customer_service.dart';
 import 'package:supermarket/injection_container.dart';
+import 'package:uuid/uuid.dart';
 
 class PosPage extends StatefulWidget {
   const PosPage({super.key});
@@ -25,868 +16,496 @@ class PosPage extends StatefulWidget {
 }
 
 class _PosPageState extends State<PosPage> {
-  final TextEditingController _searchController = TextEditingController();
-  final FocusNode _searchFocusNode = FocusNode();
-  String _selectedCurrency = 'YER';
-  double _selectedExchangeRate = 1.0;
+  Customer? _selectedCustomer;
+  DateTime _selectedDate = DateTime.now();
+  String _paymentType = 'cash'; // cash / credit
+  final List<_SaleLineItem> _items = [];
+  final TextEditingController _customerController = TextEditingController();
+  final TextEditingController _discountController = TextEditingController();
+  bool _isSaving = false;
+  String _invoiceNumber = '';
+
+  double get _subtotal => _items.fold(0.0, (sum, item) => sum + item.lineTotal);
+  double get _discount => double.tryParse(_discountController.text) ?? 0.0;
+  double get _total => _subtotal - _discount;
 
   @override
   void initState() {
     super.initState();
-    _loadBaseCurrency();
+    _generateInvoiceNumber();
+    _discountController.addListener(() => setState(() {}));
   }
 
-  Future<void> _loadBaseCurrency() async {
-    final db = context.read<AppDatabase>();
-    final baseCurrency = await (db.select(
-      db.currencies,
-    )..where((c) => c.isBase.equals(true))).getSingleOrNull();
-    if (baseCurrency != null && mounted) {
+  @override
+  void dispose() {
+    _customerController.dispose();
+    _discountController.dispose();
+    super.dispose();
+  }
+
+  void _generateInvoiceNumber() {
+    final now = DateTime.now();
+    final year = now.year;
+    final month = now.month.toString().padLeft(2, '0');
+    final day = now.day.toString().padLeft(2, '0');
+    final time = now.millisecondsSinceEpoch.toString().substring(8);
+    _invoiceNumber = 'INV-$year$month$day-$time';
+  }
+
+  Future<void> _handleCustomerSearch(String name, AppDatabase db) async {
+    if (name.isEmpty) return;
+    final customer = await sl<QuickCustomerService>().getOrCreateCustomerForSale(name);
+    if (customer != null) {
       setState(() {
-        _selectedCurrency = baseCurrency.code;
-        _selectedExchangeRate = baseCurrency.exchangeRate;
+        _selectedCustomer = customer;
+        _customerController.text = customer.name;
       });
     }
   }
 
   @override
-  void dispose() {
-    _searchController.dispose();
-    _searchFocusNode.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return BlocProvider<PosBloc>(
-      create: (context) => sl<PosBloc>(),
-      child: Builder(
-        builder: (context) {
-          final l10n = AppLocalizations.of(context)!;
-          return CallbackShortcuts(
-            bindings: {
-              const SingleActivator(LogicalKeyboardKey.f1): () =>
-                  _showCheckoutDialog(context, l10n),
-              const SingleActivator(LogicalKeyboardKey.f2): () =>
-                  context.read<PosBloc>().add(ClearCart()),
-            },
-            child: Focus(
-              autofocus: true,
-              child: Scaffold(
-                appBar: AppBar(
-                  title: Text(l10n.pos),
-                  actions: [
-                    _buildPriceListSelector(context),
-                    _buildCurrencySelector(context),
-                    BlocBuilder<PosBloc, PosState>(
-                      builder: (context, state) {
-                        final isWholesale = state is PosLoaded
-                            ? state.isWholesaleMode
-                            : false;
-                        return Row(
-                          children: [
-                            Text(l10n.wholesale),
-                            Switch(
-                              value: isWholesale,
-                              onChanged: (val) => context.read<PosBloc>().add(
-                                ToggleWholesaleMode(val),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_sweep),
-                      onPressed: () => context.read<PosBloc>().add(ClearCart()),
-                      tooltip: l10n.clearCart,
-                    ),
-                  ],
-                ),
-                drawer: const MainDrawer(),
-                body: Column(
-                  children: [
-                    _buildTopSearchBar(context, l10n),
-                    _buildCategorySelector(),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          const Expanded(flex: 2, child: ProductGrid()),
-                          const VerticalDivider(width: 1),
-                          Expanded(
-                            flex: 1,
-                            child: _buildCartSection(context, l10n),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+    final db = Provider.of<AppDatabase>(context);
+    return Scaffold(
+      appBar: AppBar(title: const Text('نقطة البيع')),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildHeader(db),
+                  const Divider(),
+                  _buildItemsTable(db),
+                  _buildAddItemButton(db),
+                  const Divider(),
+                  _buildSummary(),
+                ],
               ),
             ),
-          );
-        },
+          ),
+          _buildFooter(db),
+        ],
       ),
     );
   }
 
-  Widget _buildCurrencySelector(BuildContext context) {
-    final db = context.read<AppDatabase>();
-    return FutureBuilder<List<Currency>>(
-      future: db.select(db.currencies).get(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return const SizedBox.shrink();
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+  Widget _buildHeader(AppDatabase db) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          Row(
             children: [
-              DropdownButton<String>(
-                value: _selectedCurrency,
-                underline: const SizedBox(),
-                items: snapshot.data!
-                    .map(
-                      (c) =>
-                          DropdownMenuItem(value: c.code, child: Text(c.code)),
-                    )
-                    .toList(),
-                onChanged: (val) async {
-                  if (val != null) {
-                    final currency = snapshot.data!.firstWhere(
-                      (c) => c.code == val,
-                      orElse: () => snapshot.data!.first,
-                    );
-                    setState(() {
-                      _selectedCurrency = currency.code;
-                      _selectedExchangeRate = currency.exchangeRate;
-                    });
-                  }
-                },
+              Expanded(
+                child: TextFormField(
+                  initialValue: _invoiceNumber,
+                  decoration: const InputDecoration(
+                    labelText: 'رقم الفاتورة',
+                    border: OutlineInputBorder(),
+                  ),
+                  readOnly: true,
+                ),
               ),
-              if (_selectedExchangeRate != 1.0)
-                Text(
-                  '1=$_selectedExchangeRate',
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildPriceListSelector(BuildContext context) {
-    final db = context.read<AppDatabase>();
-    return FutureBuilder<List<PriceList>>(
-      future: db.select(db.priceLists).get(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return const SizedBox.shrink();
-        final lists = snapshot.data!;
-
-        return BlocBuilder<PosBloc, PosState>(
-          builder: (context, state) {
-            final activeId = state is PosLoaded
-                ? state.activePriceListId
-                : null;
-            return DropdownButton<String?>(
-              value: activeId,
-              hint: const Text('القائمة السعرية'),
-              items: [
-                const DropdownMenuItem(value: null, child: Text('الافتراضي')),
-                ...lists.map(
-                  (l) => DropdownMenuItem(value: l.id, child: Text(l.name)),
-                ),
-              ],
-              onChanged: (val) {
-                context.read<PosBloc>().add(SelectPriceList(val));
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildCategorySelector() {
-    return BlocBuilder<PosBloc, PosState>(
-      builder: (context, state) {
-        if (state is! PosLoaded) return const SizedBox.shrink();
-
-        return Container(
-          height: 60,
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          color: Theme.of(
-            context,
-          ).colorScheme.surfaceContainerHighest.withAlpha(0x4D),
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            itemCount: state.categories.length + 1,
-            itemBuilder: (context, index) {
-              final isAll = index == 0;
-              final category = isAll ? null : state.categories[index - 1];
-              final isSelected = isAll
-                  ? state.selectedCategoryId == null
-                  : state.selectedCategoryId == category?.id;
-
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: ChoiceChip(
-                  label: Text(isAll ? "الكل" : category!.name),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    if (selected) {
-                      context.read<PosBloc>().add(SelectCategory(category?.id));
+              const SizedBox(width: 16),
+              Expanded(
+                child: InkWell(
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedDate,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2030),
+                    );
+                    if (date != null) {
+                      setState(() => _selectedDate = date);
                     }
                   },
-                  selectedColor: Theme.of(context).colorScheme.primary,
-                  labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : Colors.black87,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'التاريخ',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Text(_selectedDate.toString().split(' ')[0]),
                   ),
                 ),
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildTopSearchBar(BuildContext context, AppLocalizations l10n) {
-    return Container(
-      padding: const EdgeInsets.all(8.0),
-      color: Theme.of(context).colorScheme.surfaceContainerLow,
-      child: Row(
-        children: [
-          Expanded(
-            child: SearchAnchor(
-              builder: (context, controller) {
-                return SearchBar(
-                  controller: _searchController,
-                  focusNode: _searchFocusNode,
-                  hintText: 'ابحث بالاسم أو الباركود...',
-                  onChanged: (val) {
-                    context.read<PosBloc>().add(SearchProducts(val));
-                  },
-                  onSubmitted: (val) {
-                    if (val.isNotEmpty) {
-                      context.read<PosBloc>().add(AddProductBySku(val));
-                      _searchController.clear();
-                      _searchFocusNode.requestFocus();
-                    }
-                  },
-                  leading: const Icon(Icons.search),
-                  trailing: [
-                    IconButton(
-                      icon: const Icon(Icons.qr_code_scanner),
-                      onPressed: () => _openBarcodeScanner(context),
-                    ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(
+                    labelText: 'نوع الدفع',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    const DropdownMenuItem(value: 'cash', child: Text('نقدي')),
+                    const DropdownMenuItem(value: 'credit', child: Text('آجل')),
                   ],
-                );
-              },
-              suggestionsBuilder: (context, controller) {
-                final state = context.read<PosBloc>().state;
-                if (state is PosLoaded) {
-                  return state.searchResults.map(
-                    (product) => ListTile(
-                      title: Text(product.name),
-                      subtitle: Text(
-                        'SKU: ${product.sku} | السعر: ${product.sellPrice}',
+                  onChanged: (value) {
+                    setState(() => _paymentType = value!);
+                  },
+                  initialValue: _paymentType,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: StreamBuilder<List<Customer>>(
+                  stream: db.select(db.customers).watch(),
+                  builder: (context, snapshot) {
+                    final customers = snapshot.data ?? [];
+                    return DropdownButtonFormField<Customer>(
+                      decoration: const InputDecoration(
+                        labelText: 'اختيار العميل',
+                        border: OutlineInputBorder(),
                       ),
-                      onTap: () {
-                        context.read<PosBloc>().add(
-                          AddProductBySku(product.sku),
-                        );
-                        _searchController.clear();
-                        _searchFocusNode.requestFocus();
+                      items: customers
+                          .map(
+                            (c) => DropdownMenuItem(value: c, child: Text(c.name)),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCustomer = value;
+                          _customerController.text = value?.name ?? '';
+                        });
                       },
-                    ),
-                  );
-                }
-                return [];
-              },
-            ),
+                      initialValue: _selectedCustomer,
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: TextField(
+                  controller: _customerController,
+                  decoration: const InputDecoration(
+                    labelText: 'إدخال عميل جديد',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (value) => _handleCustomerSearch(value, db),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCartSection(BuildContext context, AppLocalizations l10n) {
-    return Column(
-      children: [
-        Expanded(
-          child: BlocConsumer<PosBloc, PosState>(
-            listener: (context, state) {
-              if (state is PosError) {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text(state.message)));
-              }
-              if (state is PosCheckoutSuccess) {
-                _showPrintDialog(context, state);
-              }
-            },
-            builder: (context, state) {
-              if (state is PosLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (state is PosLoaded) {
-                if (state.cart.isEmpty) {
-                  return Center(child: Text(l10n.cartEmpty));
-                }
-                return ListView.separated(
-                  padding: const EdgeInsets.all(8.0),
-                  itemCount: state.cart.length,
-                  separatorBuilder: (context, index) => const Divider(),
-                  itemBuilder: (context, index) {
-                    final item = state.cart[index];
-                    return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-                      title: Text(
-                        item.product.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              _quantityButton(
-                                Icons.remove,
-                                () => context.read<PosBloc>().add(
-                                  UpdateCartItemQuantity(
-                                    item.product.id,
-                                    item.quantity - 1,
-                                  ),
-                                ),
+  Widget _buildItemsTable(AppDatabase db) {
+    if (_items.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(32.0),
+        child: Center(child: Text('لا توجد أصناف')),
+      );
+    }
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _items.length,
+      itemBuilder: (context, index) {
+        final item = _items[index];
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: StreamBuilder<List<Product>>(
+                    stream: db.select(db.products).watch(),
+                    builder: (context, snapshot) {
+                      final products = snapshot.data ?? [];
+                      return DropdownButtonFormField<Product>(
+                        decoration: const InputDecoration(labelText: 'المنتج'),
+                        items: products
+                            .map(
+                              (p) => DropdownMenuItem(
+                                value: p,
+                                child: Text(p.name),
                               ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8.0,
-                                ),
-                                child: Text(
-                                  '${item.quantity}',
-                                  style: const TextStyle(fontSize: 16),
-                                ),
-                              ),
-                              _quantityButton(
-                                Icons.add,
-                                () => context.read<PosBloc>().add(
-                                  UpdateCartItemQuantity(
-                                    item.product.id,
-                                    item.quantity + 1,
-                                  ),
-                                ),
-                              ),
-                              const Spacer(),
-                              Text('${item.unitPrice.toStringAsFixed(2)} x'),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          // Dynamic Units Dropdown
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: DropdownButton<String>(
-                              value: item.unitName,
-                              isDense: true,
-                              underline: const SizedBox(),
-                              items: [
-                                DropdownMenuItem(
-                                  value: item.product.unit,
-                                  child: Text(item.product.unit),
-                                ),
-                                ...item.availableUnits.map(
-                                  (u) => DropdownMenuItem(
-                                    value: u.unitName,
-                                    child: Text(u.unitName),
-                                  ),
-                                ),
-                              ],
-                              onChanged: (val) {
-                                if (val != null) {
-                                  context.read<PosBloc>().add(
-                                    UpdateCartItemUnit(item.product.id, val),
-                                  );
-                                }
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            item.total.toStringAsFixed(2),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          InkWell(
-                            onTap: () => context.read<PosBloc>().add(
-                              RemoveCartItem(item.product.id),
-                            ),
-                            child: const Text(
-                              'حذف',
-                              style: TextStyle(color: Colors.red, fontSize: 12),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              item.product = value;
+                              item.selectedUnit = value.unit;
+                              item.price = value.sellPrice;
+                            });
+                          }
+                        },
+                        initialValue: item.product,
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    decoration: const InputDecoration(labelText: 'الوحدة'),
+                    items: ['حبة', 'كرتون', 'كيلو', 'علبة']
+                        .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        item.selectedUnit = value!;
+                      });
+                    },
+                    initialValue: item.selectedUnit,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 80,
+                  child: TextField(
+                    decoration: const InputDecoration(labelText: 'الكمية'),
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) {
+                      setState(() {
+                        item.quantity = double.tryParse(value) ?? 0.0;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 100,
+                  child: TextField(
+                    decoration: const InputDecoration(labelText: 'السعر'),
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) {
+                      setState(() {
+                        item.price = double.tryParse(value) ?? 0.0;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  item.lineTotal.toStringAsFixed(2),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () {
+                    setState(() {
+                      _items.removeAt(index);
+                    });
                   },
-                );
-              }
-              return const SizedBox.shrink();
-            },
+                ),
+              ],
+            ),
           ),
-        ),
-        _buildAdvancedSummary(context, l10n),
-      ],
+        );
+      },
     );
   }
 
-  Widget _quantityButton(IconData icon, VoidCallback onTap) {
-    return Container(
-      width: 30,
-      height: 30,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: IconButton(
-        padding: EdgeInsets.zero,
-        icon: Icon(icon, size: 18),
-        onPressed: onTap,
-      ),
-    );
-  }
-
-  Widget _buildAdvancedSummary(BuildContext context, AppLocalizations l10n) {
-    return Container(
+  Widget _buildAddItemButton(AppDatabase db) {
+    return Padding(
       padding: const EdgeInsets.all(16.0),
+      child: ElevatedButton.icon(
+        onPressed: () => _addNewItem(),
+        icon: const Icon(Icons.add),
+        label: const Text('إضافة صنف'),
+      ),
+    );
+  }
+
+  void _addNewItem() {
+    setState(() {
+      _items.add(_SaleLineItem());
+    });
+  }
+
+  Widget _buildSummary() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('المجموع الفرعي:'),
+              Text(_subtotal.toStringAsFixed(2)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('الخصم:'),
+              SizedBox(
+                width: 100,
+                child: TextField(
+                  controller: _discountController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(isDense: true),
+                ),
+              ),
+            ],
+          ),
+          const Divider(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'الإجمالي:',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                _total.toStringAsFixed(2),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFooter(AppDatabase db) {
+    return Container(
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(13),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
+            color: Colors.black.withAlpha(26),
+            blurRadius: 4,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
-      child: BlocBuilder<PosBloc, PosState>(
-        builder: (context, state) {
-          if (state is! PosLoaded) return const SizedBox.shrink();
-
-          return Column(
-            children: [
-              _buildSummaryRow(
-                l10n.subtotal,
-                state.subtotal.toStringAsFixed(2),
+      child: Row(
+        children: [
+          Expanded(
+            child: ElevatedButton(
+              onPressed: (_items.isEmpty || (_paymentType == 'credit' && _selectedCustomer == null) || _isSaving)
+                  ? null
+                  : () => _completeSale(db),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Colors.white,
               ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(l10n.discount),
-                  SizedBox(
-                    width: 100,
-                    height: 35,
-                    child: TextField(
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 8),
-                      ),
-                      keyboardType: TextInputType.number,
-                      onChanged: (val) => context.read<PosBloc>().add(
-                        UpdateDiscount(double.tryParse(val) ?? 0),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              _buildSummaryRow(l10n.tax, state.taxAmount.toStringAsFixed(2)),
-              const Divider(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    l10n.total,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  Text(
-                    state.total.toStringAsFixed(2),
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  onPressed: state.cart.isEmpty
-                      ? null
-                      : () => _showCheckoutDialog(context, l10n),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    l10n.proceedToCheckout,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
+              child: _isSaving
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('إتمام البيع'),
+            ),
+          ),
+          const SizedBox(width: 16),
+          ElevatedButton.icon(
+            onPressed: _items.isEmpty ? null : () => _printSale(),
+            icon: const Icon(Icons.print),
+            label: const Text('طباعة'),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSummaryRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
-      ],
+  Future<void> _completeSale(AppDatabase db) async {
+    if (_items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يجب إضافة أصناف على الأقل')),
+      );
+      return;
+    }
+    if (_paymentType == 'credit' && _selectedCustomer == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يجب اختيار عميل في البيع الآجل')),
+      );
+      return;
+    }
+    for (var item in _items) {
+      if (item.product == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('يجب اختيار منتج لكل صنف')),
+        );
+        return;
+      }
+      if (item.quantity <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('الكمية يجب أن تكون أكبر من صفر')),
+        );
+        return;
+      }
+      // Check stock
+      if (item.product!.stock < item.quantity) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('المخزون غير كافي للمنتج ${item.product!.name}')),
+        );
+        return;
+      }
+    }
+    setState(() => _isSaving = true);
+    final saleId = const Uuid().v4();
+    final saleCompanion = SalesCompanion.insert(
+      id: drift.Value(saleId),
+      customerId: drift.Value(_selectedCustomer?.id),
+      total: _total,
+      discount: drift.Value(_discount),
+      paymentMethod: _paymentType,
+      isCredit: drift.Value(_paymentType == 'credit'),
+      status: const drift.Value('COMPLETED'),
     );
-  }
-
-  void _openBarcodeScanner(BuildContext context) async {
-    final bloc = context.read<PosBloc>();
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => const BarcodeScannerDialog(),
-    );
-    if (result != null && result.isNotEmpty) {
-      bloc.add(AddProductBySku(result));
-      _searchController.clear();
-      _searchFocusNode.requestFocus();
+    final itemsCompanions = _items
+        .map(
+          (item) => SaleItemsCompanion.insert(
+            saleId: saleId,
+            productId: item.product!.id,
+            quantity: item.quantity,
+            price: item.price,
+            unitName: drift.Value(item.selectedUnit),
+          ),
+        )
+        .toList();
+    try {
+      await db.salesDao.createSale(
+        saleCompanion: saleCompanion,
+        itemsCompanions: itemsCompanions,
+        userId: null,
+      );
+      // Post sale
+      await sl<TransactionEngine>().postSale(saleId, userId: null);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم إتمام البيع')),
+        );
+        _printSale();
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في الحفظ: $e')),
+        );
+      }
+    } finally {
+      setState(() => _isSaving = false);
     }
   }
 
-  void _showCheckoutDialog(BuildContext context, AppLocalizations l10n) {
-    final db = context.read<AppDatabase>();
-    final authProvider = context.read<AuthProvider>();
-    final userId = authProvider.currentUser?.id;
-    final posState = context.read<PosBloc>().state as PosLoaded;
-    Customer? selectedCustomer;
-    final TextEditingController customerNameController =
-        TextEditingController();
-    final TextEditingController customerPhoneController =
-        TextEditingController();
-    final TextEditingController amountPaidController = TextEditingController();
-    double change = 0;
-
+  void _printSale() {
+    // Implement printing using printer_helper
+    // For now, just show dialog
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(l10n.completePayment),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // حساب المتبقي
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('المبلغ المطلوب:'),
-                          Text(
-                            posState.total.toStringAsFixed(2),
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: amountPaidController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'المبلغ المدفوع',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.money),
-                        ),
-                        onChanged: (val) {
-                          final paid = double.tryParse(val) ?? 0;
-                          setState(() {
-                            change = paid - posState.total;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('المتبقي للعميل:'),
-                          Text(
-                            change > 0 ? change.toStringAsFixed(2) : "0.00",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: change >= 0 ? Colors.green : Colors.red,
-                              fontSize: 18,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                StreamBuilder<List<Customer>>(
-                  stream: db.customersDao.watchAllCustomers(),
-                  builder: (context, snapshot) {
-                    final customers = snapshot.data ?? [];
-                    return Autocomplete<Customer>(
-                      displayStringForOption: (customer) => customer.name,
-                      optionsBuilder: (TextEditingValue textEditingValue) {
-                        if (textEditingValue.text == '') {
-                          return const Iterable<Customer>.empty();
-                        }
-                        return customers.where(
-                          (c) => c.name.toLowerCase().contains(
-                            textEditingValue.text.toLowerCase(),
-                          ),
-                        );
-                      },
-                      onSelected: (Customer selection) {
-                        setState(() {
-                          selectedCustomer = selection;
-                          customerNameController.text = selection.name;
-                          customerPhoneController.text = selection.phone ?? '';
-                        });
-                      },
-                      fieldViewBuilder:
-                          (
-                            context,
-                            textEditingController,
-                            focusNode,
-                            onFieldSubmitted,
-                          ) {
-                            return TextField(
-                              controller: textEditingController,
-                              focusNode: focusNode,
-                              decoration: InputDecoration(
-                                labelText: l10n.selectCustomer,
-                                suffixIcon: IconButton(
-                                  icon: const Icon(Icons.clear),
-                                  onPressed: () {
-                                    setState(() {
-                                      selectedCustomer = null;
-                                      customerNameController.clear();
-                                      customerPhoneController.clear();
-                                      textEditingController.clear();
-                                    });
-                                  },
-                                ),
-                              ),
-                            );
-                          },
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-                ListTile(
-                  leading: const Icon(Icons.money, color: Colors.green),
-                  title: Text(l10n.cashPayment),
-                  onTap: () {
-                    context.read<PosBloc>().add(
-                      CheckoutEvent(
-                        'cash',
-                        customerId: selectedCustomer?.id,
-                        userId: userId,
-                        currencyId: _selectedCurrency,
-                        exchangeRate: _selectedExchangeRate,
-                      ),
-                    );
-                    Navigator.pop(context);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.credit_card, color: Colors.blue),
-                  title: Text(l10n.creditSale),
-                  onTap: () async {
-                    String? customerId = selectedCustomer?.id;
-                    if (selectedCustomer == null &&
-                        customerNameController.text.isNotEmpty) {
-                      final newCustomer = await db
-                          .into(db.customers)
-                          .insertReturning(
-                            CustomersCompanion.insert(
-                              name: customerNameController.text,
-                              phone: Value(
-                                customerPhoneController.text.isEmpty
-                                    ? null
-                                    : customerPhoneController.text,
-                              ),
-                              creditLimit: const Value(0.0),
-                              balance: const Value(0.0),
-                            ),
-                          );
-                      customerId = newCustomer.id;
-                    }
-                    if (context.mounted) {
-                      context.read<PosBloc>().add(
-                        CheckoutEvent(
-                          'credit',
-                          customerId: customerId,
-                          userId: userId,
-                          currencyId: _selectedCurrency,
-                          exchangeRate: _selectedExchangeRate,
-                        ),
-                      );
-                      Navigator.pop(context);
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(l10n.cancel),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showPrintDialog(BuildContext context, PosCheckoutSuccess state) {
-    final l10n = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.saveSuccess),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(l10n.whatWouldYouLikeToDo),
-            const SizedBox(height: 20),
-            // PDF Invoice Button
-            ElevatedButton.icon(
-              icon: const Icon(Icons.picture_as_pdf),
-              label: Text(l10n.downloadPdfInvoice),
-              onPressed: () async {
-                final messenger = ScaffoldMessenger.of(ctx);
-                try {
-                  final db = context.read<AppDatabase>();
-                  String? customerName;
-                  if (state.sale.customerId != null) {
-                    final customer = await db.customersDao.getCustomerById(
-                      state.sale.customerId!,
-                    );
-                    customerName = customer?.name;
-                  }
-
-                  final invoiceService = InvoiceService();
-                  final Uint8List pdfData = await invoiceService
-                      .generatePdfInvoice(
-                        sale: state.sale,
-                        items: state.items,
-                        products: state.products,
-                        customerName: customerName,
-                        companyName: 'My Supermarket Inc.',
-                        companyAddress: '123 Business Avenue, Metro City',
-                        companyVatNumber: 'VAT123456789',
-                      );
-
-                  await Printing.sharePdf(
-                    bytes: pdfData,
-                    filename: 'invoice_${state.sale.id.substring(0, 8)}.pdf',
-                  );
-                } catch (e) {
-                  debugPrint("PDF Generation Error: $e");
-                  if (ctx.mounted) {
-                    messenger.showSnackBar(
-                      SnackBar(content: Text('Failed to generate PDF: $e')),
-                    );
-                  }
-                }
-              },
-            ),
-            const SizedBox(height: 10),
-            // Thermal Receipt Button
-            ElevatedButton.icon(
-              icon: const Icon(Icons.print_outlined),
-              label: Text(l10n.printReceipt),
-              onPressed: () async {
-                final messenger = ScaffoldMessenger.of(ctx);
-                try {
-                  final db = context.read<AppDatabase>();
-                  String? customerName;
-                  if (state.sale.customerId != null) {
-                    final customer = await db.customersDao.getCustomerById(
-                      state.sale.customerId!,
-                    );
-                    customerName = customer?.name;
-                  }
-
-                  final List<int> receiptData =
-                      await PrinterHelper.generateSaleReceipt(
-                        state.sale,
-                        state.items,
-                        state.products,
-                        customerName: customerName,
-                      );
-
-                  // Use printing package for a print preview
-                  await Printing.layoutPdf(
-                    onLayout: (format) async => Uint8List.fromList(receiptData),
-                  );
-                } catch (e) {
-                  debugPrint("Printing error: $e");
-                  if (ctx.mounted) {
-                    messenger.showSnackBar(
-                      SnackBar(content: Text('Failed to generate receipt: $e')),
-                    );
-                  }
-                }
-              },
-            ),
-          ],
-        ),
+      builder: (context) => AlertDialog(
+        title: const Text('طباعة الفاتورة'),
+        content: const Text('سيتم طباعة الفاتورة'),
         actions: [
           TextButton(
-            onPressed: () {
-              context.read<PosBloc>().add(ClearCart());
-              Navigator.pop(ctx); // Use ctx here
-            },
-            child: Text(l10n.done),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('موافق'),
           ),
         ],
       ),
@@ -894,62 +513,15 @@ class _PosPageState extends State<PosPage> {
   }
 }
 
-/// Barcode scanner dialog for POS
-class BarcodeScannerDialog extends StatefulWidget {
-  const BarcodeScannerDialog({super.key});
-
-  @override
-  State<BarcodeScannerDialog> createState() => _BarcodeScannerDialogState();
-}
-
-class _BarcodeScannerDialogState extends State<BarcodeScannerDialog> {
-  late final MobileScannerController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = MobileScannerController(
-      detectionSpeed: DetectionSpeed.noDuplicates,
-      formats: [
-        BarcodeFormat.qrCode,
-        BarcodeFormat.ean13,
-        BarcodeFormat.code128,
-      ],
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('مسح الباركود'),
-      content: SizedBox(
-        width: 300,
-        height: 300,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: MobileScanner(
-            controller: _controller,
-            onDetect: (BarcodeCapture capture) {
-              final barcode = capture.barcodes.firstOrNull;
-              if (barcode != null && barcode.rawValue != null) {
-                Navigator.pop(context, barcode.rawValue);
-              }
-            },
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('إلغاء'),
-        ),
-      ],
-    );
-  }
+class _SaleLineItem {
+  Product? product;
+  String selectedUnit;
+  double quantity;
+  double price;
+  double get lineTotal => quantity * price;
+  _SaleLineItem()
+      : product = null,
+        selectedUnit = 'حبة',
+        quantity = 0.0,
+        price = 0.0;
 }
