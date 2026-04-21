@@ -1,405 +1,626 @@
-# تقرير شامل - نظام إدارة السوبرماركت ERP
+هذا برومبت مرجع لك لكي تقوم بتنفيذ التحسينات المطلوبه. اي مرحله تنتهي منها تقوم بتاشيرها
 
-## ملخص النظام
-
-**نوع التطبيق:** Flutter Desktop/Mobile ERP System
-**قاعدة البيانات:** SQLite (Drift ORM)
-**الحالة:** Offline-First Mode (لا يوجد Firebase)
-**الإصدار:** 1.0.0
 
 ---
 
-## 1. قاعدة البيانات (Database Schema)
+🚀 البرومبت الموحد (ERP Enhancement Master Prompt)
 
-### الجداول الرئيسية (48 جدول)
+أنت مهندس برمجيات خبير في تطوير أنظمة ERP باستخدام:
 
-#### таблицы الأساسية للمبيعات:
-| الجدول | الوصف | الحقول الرئيسية |
-|--------|------|----------------|
-| Users | المستخدمون | username, password, role, fullName |
-| Products | المنتجات | name, sku, categoryId, stock, buyPrice, sellPrice |
-| Categories | التصنيفات | name, code |
-| SaleItems | أصناف الفاتورة | saleId, productId, quantity, price |
-| Sales | فواتير المبيعات | customerId, total, discount, tax, paymentMethod, status, currencyId, qrCode (ZATCA) |
+Flutter (Frontend)
 
-#### جداول المشتريات:
-| الجدول | الوصف | الحقول الرئيسية |
-|--------|------|----------------|
-| Purchases | فواتير المشتريات | supplierId, total, status, warehouseId, currencyId |
-| PurchaseItems | أصناف الفاتورة | purchaseId, productId, quantity, price, batchId |
-| Suppliers | الموردون | name, phone, balance, accountId |
+Drift (SQLite)
 
-#### جداول العملاء والمحاسبة:
-| الجدول | الوصف | الحقول الرئيسية |
-|--------|------|----------------|
-| Customers | العملاء | name, phone, balance, creditLimit, accountId, currencyId |
-| GLAccounts | شجرة الحسابات | code, name, type, parentId, balance |
-| GLEntries | القيود المحاسبية | description, date, referenceType, status, postedAt |
-| GLLines | أسطر القيود | entryId, accountId, debit, credit, costCenterId |
-| CostCenters | مراكز التكلفة | code, name, isActive |
+Clean Architecture
 
-#### جداول المخزون والمستودعات:
-| الجدول | الوصف | الحقول الرئيسية |
-|--------|------|----------------|
-| Warehouses | المستودعات | name, location, isDefault |
-| ProductBatches | دفعات المنتجات | productId, warehouseId, quantity, costPrice |
-| InventoryTransactions | حركات المخزون | productId, warehouseId, quantity, type |
-| StockTransfers | تحويلات المخزون | fromWarehouseId, toWarehouseId, status |
-| StockTakes | جرد المخزون | warehouseId, status |
+Bloc/Cubit
 
-#### جداول الموارد البشرية:
-| الجدول | الوصف | الحقول الرئيسية |
-|--------|------|----------------|
-| Employees | الموظفون | name, employeeCode, jobTitle, basicSalary |
-| PayrollEntries | مسيرات الرواتب | month, year, status |
-| Shifts | الورديات | userId, startTime, closingCash, isOpen |
+Services Layer + DAO Layer
 
-#### جداول أخرى:
-| الجدول | الوصف | الحقول الرئيسية |
-|--------|------|----------------|
-| Currencies | العملات | code, name, exchangeRate, isBase |
-| Promotions | العروض الترويجية | name, type, value, startDate, endDate |
-| PriceLists | قوائم الأسعار | name, currency, isActive |
-| FixedAssets | الأصول الثابتة | name, cost, accumulatedDepreciation |
-| Checks | الشيكات | checkNumber, bankName, amount, type, status |
-| BillOfMaterials | قائمة المواد (BOM) | finishedProductId, componentProductId, quantity |
-| AuditLogs | سجل التدقيق | userId, action, targetEntity, timestamp |
-| Permissions | الصلاحيات | code, description |
-| RolePermissions | صلاحيات الأدوار | role, permissionCode |
+
+ومتخصص في تحسين الأنظمة القائمة بدون إعادة كتابة أو كسر أي وظائف.
+
 
 ---
 
-## 2. الواجهات (UI Pages)
+🧩 النظام الحالي
 
-### 2.1 صفحات المحاسبة (Accounting)
-| الصفحة | الحالة | الوظائف |
-|--------|----------|---------|
-| chart_of_accounts_page.dart | ✅ مكتمل | عرض/إضافة/تعديل الحسابات |
-| trial_balance_page.dart | ✅ مكتمل | تقرير ميزان المراجعة |
-| general_ledger_page.dart | ✅ مكتمل | دفتر الأستاذ العام |
-| income_statement_page.dart | ✅ مكتمل | قائمة الدخل |
-| balance_sheet_page.dart | ✅ مكتمل | الميزان المالي |
-| cash_flow_page.dart | ✅ مكتمل | قائمة التدفقات النقدية |
-| accounting_periods_page.dart | ✅ مكتمل | الفترات المحاسبية |
-| manual_journal_entry_page.dart | ✅ مكتمل | القيود اليدوية |
-| manual_voucher_page.dart | ✅ مكتمل |القسائم اليدوية |
-| reconciliation_page.dart | ✅ مكتمل | المطابقة البنكية |
-| checks_page.dart | ✅ مكتمل | إدارة الشيكات |
-| expenses_page.dart | ✅ مكتمل | مصروفات ثابتة |
-| fixed_assets_page.dart | ✅ مكتمل | الأصول الثابتة |
-| cost_centers_page.dart | ✅ مكتمل | مراكز التكلفة |
-| shifts_page.dart | ✅ مكتمل | إدارة الورديات |
+لدي نظام ERP Offline يعمل ويحتوي على:
 
-### 2.2 صفحات المبيعات (Sales)
-| الصفحة | الحالة | الوظائف |
-|--------|----------|---------|
-| sales_history_page.dart | ✅ مكتمل | قائمة فواتير المبيعات |
-| pos_page.dart | ✅ مكتمل | نقطة البيع (POS) مع دعم العملات |
-| add_sales_return_page.dart | ✅ مكتمل | إضافة مردود مبيعات |
-| sale_return_page.dart | ✅ مكتمل | قائمة مردودات المبيعات |
+✔️ الوحدات الحالية
 
-### 2.3 صفحات المشتريات (Purchases)
-| الصفحة | الحالة | الوظائف |
-|--------|----------|---------|
-| purchases_page.dart | ✅ مكتمل | قائمة فواتير المشتريات |
-| add_purchase_page.dart | ✅ مكتمل | إضافةفاتورة مشتريات |
-| purchase_details_page.dart | ✅ مكتمل | تفاصيل الفاتورة |
-| add_purchase_return_page.dart | ✅ مكتمل | إضافة مردود مشتريات |
-| purchase_return_page.dart | ✅ مكتمل | قائمة مردودات المشتريات |
+محاسبة مزدوجة (Double Entry Accounting)
 
-### 2.4 صفحات المخزون (Inventory)
-| الصفحة | الحالة | الوظائف |
-|--------|----------|---------|
-| warehouse_management_page.dart | ✅ مكتمل | إدارة المستودعات |
-| stock_transfer_page.dart | ✅ مكتمل | تحويل المخزون |
-| stock_take_page.dart | ✅ مكتمل | جرد المخزون |
+مبيعات (POS)
 
-### 2.5 صفحات المنتجات والعملاء
-| الصفحة | الحالة | الوظائف |
-|--------|----------|---------|
-| products_page.dart | ✅ مكتمل | إدارة المنتجات |
-| categories_page.dart | ✅ مكتمل | إدارة التصنيفات |
-| unit_conversion_page.dart | ✅ مكتمل | تحويل الوحدات |
-| customers_page.dart | ✅ مكتمل | إدارة العملاء |
-| customer_statement_page.dart | ✅ مكتمل | كشف حساب العميل |
-| suppliers_page.dart | ✅ مكتمل | إدارة الموردين |
-| supplier_statement_page.dart | ✅ مكتمل | كشف حساب المورد |
+مشتريات (Purchases + Returns)
 
-### 2.6 صفحات الموظفين والتقارير
-| الصفحة | الحالة | الوظائف |
-|--------|----------|---------|
-| employees_page.dart | ✅ مكتمل | إدارة الموظفين |
-| payroll_page.dart | ✅ مكتمل | مسير الرواتب |
-| sales_reports_page.dart | ✅ مكتمل | تقارير المبيعات |
-| inventory_audit_page.dart | ✅ مكتمل | تدقيق المخزون |
-| vat_report_page.dart | ✅ مكتمل | تقرير ضريبة القيمة المضافة |
-| product_profitability_page.dart | ✅ مكتمل | ربحية المنتجات |
-| audit_log_page.dart | ✅ مكتمل | سجل التدقيق |
+مخزون (Batches + FEFO)
 
-### 2.7 الإعدادات والصلاحيات
-| الصفحة | الحالة | الوظائف |
-|--------|----------|---------|
-| backup_page.dart | ✅ مكتمل | النسخ الاحتياطي |
-| currency_rates_page.dart | ✅ مكتمل | أسعار العملات |
-| permissions_management_page.dart | ✅ مكتمل | إدارة الصلاحيات |
-| staff_management_page.dart | ✅ مكتمل | إدارة المستخدمين |
-| login_page.dart | ✅ مكتمل | تسجيل الدخول |
+منتجات (Products Management)
 
-### 2.8 صفحات أخرى
-| الصفحة | الحالة | الوظائف |
-|--------|----------|---------|
-| home_page.dart | ✅ مكتمل | الصفحة الرئيسية |
-| dashboard_page.dart | ✅ مكتمل | لوحة القيادة |
-| admin_dashboard_page.dart | ✅ مكتمل | لوحة المدير |
-| low_stock_products_page.dart | ✅ مكتمل |منتجات مخزون منخفض |
-| returns_page.dart | ✅ مكتمل | جميع المردودات |
-| manufacturing_page.dart | ✅ مكتمل | إدارة BOM |
+transaction_engine
+
+accounting_service
+
+inventory_service
+
+
 
 ---
 
-## 3. الخدمات والمنطق (Services & Business Logic)
+⚠️ قواعد صارمة (مهم جداً)
 
-### 3.1 الخدمات المحاسبية
-| الخدمة | الملف | الحالة |
-|---------|--------|----------|
-| AccountingService | accounting_service.dart | ✅ مكتمل |
-| TransactionEngine | transaction_engine.dart | ✅ مكتمل |
+1. ❌ ممنوع إعادة بناء النظام من الصفر
 
-**الوظائف المنجزة:**
-- ترحيل فواتير المبيعات (قيود آلية)
-- ترحيل فواتير المشتريات
-- معالجة المردودات
-- معالجة المدفوعات
-- ترحيل الشيكات
-- إغلاق الفترات المحاسبية
-- حساب الإهلاك
-- مطابقة الحسابات
 
-### 3.2 خدمات المخزون
-| الخدمة | الملف | الحالة |
-|---------|--------|----------|
-| InventoryService | inventory_service.dart | ✅ مكتمل |
-| StockTransferService | stock_transfer_service.dart | ✅ مكتمل |
+2. ❌ ممنوع كسر أي Feature موجود
 
-**الوظائف المنجزة:**
-- نظام FEFO (First Expired First Out)
-- إدارة الدفعات
-- تحويل المخزون بين المستودعات
-- جرد المخزون
 
-### 3.3 خدمات المبيعات والمشتريات
-| الخدمة | الملف | الحالة |
-|---------|--------|----------|
-| ReturnService | return_service.dart | ✅ مكتمل |
-| InvoiceService | invoice_service.dart | ✅ مكتمل |
+3. ❌ ممنوع وضع business logic داخل UI
 
-### 3.4 خدمات أخرى
-| الخدمة | الملف | الحالة |
-|---------|--------|----------|
-| HRService | hr_service.dart | ✅ مكتمل |
-| AssetService | asset_service.dart | ✅ مكتمل |
-| ShiftService | shift_service.dart | ✅ مكتمل |
-| PricingService | pricing_service.dart | ✅ مكتمل |
-| BomService | bom_service.dart | ✅ مكتمل |
-| PDFService | pdf_service.dart | ✅ مكتمل |
-| EventBusService | event_bus_service.dart | ✅ مكتمل |
-| BackupService | backup_service.dart | ✅ مكتمل |
+
+4. ✔️ كل العمليات عبر Services فقط
+
+
+5. ✔️ كل حركة مالية = قيد محاسبي تلقائي
+
+
+6. ✔️ كل حركة مخزون = تمر عبر transaction_engine
+
+
+7. ✔️ الحفاظ على نفس Architecture الحالي
+
+
+8. ✔️ عدم تكرار الكود
+
+
+9. ✔️ أي تحسين يجب أن يقلل الأخطاء ويزيد السرعة
+
+
+
 
 ---
 
-## 4. التكامل والربط
+🎯 الهدف العام
 
-### 4.1 قاعدة البيانات ← الواجهات
-- **الربط:** جميع الصفحات مرتبطة بـ AppDatabase عبر Drift DAOs
-- **الـ BLoC Pattern:** يستخدم في POS فقط (PosBloc)
-- **Provider:** باقي الصفحات تستخدم Provider مباشر
+تحويل النظام إلى ERP احترافي مثل Odoo يشمل:
 
-### 4.2 العمليات ← القيود المحاسبية
-- **AccountingService** يستدعيه **TransactionEngine**
-- **EventBus** يطلق الأحداث عند كل عملية
-- **GLEntries & GLLines** يتم إنشاؤها تلقائياً
+واجهات ذكية وسريعة
 
-### 4.3 POS ← المخزون
-- **البيع:** خصم المخزون عبر FEFO
-- **الدفع:** تحديث رصيد العميل/المورد
-- **المحاسبة:** إنشاء قيود تلقائية
+Workflow كامل للعمليات
 
----
+تقارير مالية وتشغيلية
 
-## 5. الوظائف المنجزة (Completed Features)
+CRM متقدم
 
-### 5.1 المحاسبة
-- ✅ شجرة الحسابات GL
-- ✅ ال��يو�� اليومية الآلية
-- ✅ دفتر الأستاذ العام
-- ✅ ميزان المراجعة
-- ✅ قائمة الدخل
-- ✅ الميزان المالي
-- ✅ قائمة التدفقات النقدية
-- ✅ الفترات المحاسبية
-- ✅ ترحيل وإغلاق会计 الفترة
-- ✅ مصروفات ثابتة
-- ✅ الأصول الثابتة والإهلاك
-- ✅ مراكز التكلفة
-- ✅ الشيكات (صرف واستلام)
-- ✅ المطابقة البنكية
+مخزون ذكي
 
-### 5.2 المبيعات
-- ✅ POS متعدد العملات
-- ✅ فواتير المبيعات
-- ✅ خصم المخزون (FEFO)
-- ✅ دفع نقدي وائتمان
-- ✅ مردودات المبيعات
-- ✅ العروض الترويجية
+صلاحيات وأمان
 
-### 5.3 المشتريات
-- ✅ فواتير المشتريات
-- ✅ استلام المشتريات
-- ✅ إنشاء الدفعات
-- ✅ تحديث المخزون
-- ✅ Landed Cost
-- ✅ مردودات المشتريات
+أداء عالي
 
-### 5.4 المخزون
-- ✅ إدارة المستودعات
-- ✅ نظام الدفعات (Batches)
-- ✅ تحويل المخزون
-- ✅ جرد المخزون
-- ✅ تنبيهات المخزون المنخفض
 
-### 5.5 العملاء والموردين
-- ✅ إدارة العملاء
-- ✅ كشف حساب العميل
-- ✅ حد الائتمان
-- ✅ إدارة الموردين
-- ✅ كشف حساب المورد
-- ✅ رصيد المورد
-
-### 5.6 المنتجات
-- ✅ إدارة المنتجات
-- ✅ التصنيفات
-- ✅ وحدات القياس (حبة، كرتون)
-- ✅ باركود المنتجات
-- ✅ قوائم الأسعار
-- ✅ تحويل الوحدات
-
-### 5.7 الموظفين
-- ✅ إدارة الموظفين
-- ✅ مسير الرواتب
-- ✅ الورديات
-
-### 5.8 التقارير
-- ✅ تقارير المبيعات
-- ✅ تقارير المخزون
-- ✅ تقرير ربحية المنتج
-- ✅ تقرير ضريبة القيمة المضافة
-- ✅ سجل التدقيق
-
-### 5.9 أخرى
-- ✅ النسخ الاحتياطي المحلية
-- ✅ صلاحيات المستخدمين
-- ✅ تدقيق العمليات (Audit Trail)
-- ✅ إشعارات App Events
-- ✅ PDF الفواتير
-- ✅ طباعة الفواتير
 
 ---
 
-## 6. الوظائف الناقصة (Missing Features)
+🧱 المرحلة 1: تحسين واجهات المشتريات (Purchases UI)
 
-### 6.1 محاسب
-- ❌ تسوية الشيكات الآلية (معلقة)
-- ❌ حساب الإهلاك التلقائي (جزئي فقط)
+🟢 1. اختيار المورد (Smart Supplier Selection)
 
-### 6.2 склад
-- ❌ تحليل المخزون المتقدم
-- ❌ طلبات التوريد (Purchase Requests)
+عند اختيار المورد اعرض:
 
-### 6.3 تقارير
-- ❌ تقارير مخصصة
-- ❌ تصدير Excel/PDF (جزئي للفاتورة فقط)
+آخر سعر شراء لكل منتج
 
-### 6.4 أخرى
-- ❌ خدمة المزامنة (تمت إزالتها)
-- ❌ التكامل مع بوابات الدفع
-- ❌ تطبيق ويب
+آخر تاريخ شراء
 
----
+أفضل سعر سابق
 
-## 7. المشاكل والملاحظات
+رصيد المورد الحالي
 
-### 7.1 مشاكل حادة
-| الملف | المشكلة |
-|--------|----------|
-| .vscode/settings.json | مفتاح API مكشوف (qwen.apiKey) |
 
-### 7.2 مشاكل متوسطة
-| الملف | المشكلة |
-|--------|----------|
-| backup_service.dart | استخدام دالة Share مهجورة |
-| sales_history_page.dart | استخدام withAlpha المهجور |
-| purchases_page.dart | StreamBuilder تم تغييره لـ FutureBuilder |
-| purchases_page.dart |Pagination state غير persistant |
+📌 البيانات من:
 
-### 7.3 ملفات محذوفة
-- lib/core/network/sync_service.dart (تمت إزالة خدمة Sync)
-- backend/package.json (backend Express)
-- backend/server.js
+purchases
 
-### 7.4 تحذيرات
-- pubspec.yaml: 20 حزمة لها إصدارات أحدث غير متوافقة
+purchase_items
+
+
 
 ---
 
-## 8. نسبة الإنجاز
+🟢 2. بيانات المنتج أثناء الإدخال
 
-###Overall Progress: **~85%**
+عند إضافة منتج:
 
-| الوحدة | النسبة |
-|---------|--------|
-| المحاسبة | 90% |
-| المبيعات | 95% |
-| المشتريات | 90% |
-| المخزون | 85% |
-| العملاء والموردين | 85% |
-| المنتجات | 80% |
-| الموظفين | 75% |
-| التقارير | 70% |
-| الصلاحيات | 80% |
+الكمية الحالية في المخزون
+
+متوسط التكلفة
+
+آخر سعر شراء
+
+وحدة القياس والتحويلات
+
+
 
 ---
 
-## 9. التالي (Next Steps)
+🟢 3. تنبيهات ذكية (Real-time)
 
-### أولوية قصوى:
-1. **إصلاح:** إزالة مفتاح API المكشوف
-2. **إضافة:** خدمة مزامنة بديلة (offline sync)
-3. **تحسين:** الـ Pagination state persistence
-4. **إضافة:** تقارير مخصصة
+السعر أعلى من المتوسط → تحذير
 
-### أولوية متوسطة:
-1. نظام طلبات التوريد
-2. تحليل المخزون المتقدم
-3. تكامل مع بوابات الدفع
+كمية كبيرة → تنبيه
 
-### أولوية منخفضة:
-1. تطبيق ويب
-2. تطبيق آي أو إس
-3. تقارير متعددة اللغات
+مخزون مرتفع → اقتراح تقليل
+
+
 
 ---
 
-## 10. الإحصائيات
+🟢 4. تحسين سطر المنتج (Purchase Item Row)
 
-| المقياس | القيمة |
-|---------|--------|
-| إجمالي الملفات | ~140 ملف |
-| إجمالي الخدمات | 13 خدمة |
-| إجمالي الجداول | 48 جدول |
-| إجمالي الصفحات | ~50 صفحة |
-| أسطر الكود (تقديري) | ~100,000 سطر |
+كل سطر يحتوي:
+
+quantity
+
+unit
+
+price
+
+discount per item
+
+tax
+
+total
+
+
+مع Live Calculation
+
 
 ---
 
-*تم إنشاء هذا التقرير بتاريخ 2026-04-16*
-*النظام مبني على Flutter + Drift (SQLite)*
+🟢 5. خصومات ومصاريف الفاتورة
+
+Discount invoice level
+
+Costs:
+
+شحن
+
+نقل
+
+جمارك
+
+
+
+📌 توزيع التكاليف على المنتجات (Cost Allocation)
+
+
+---
+
+🟢 6. تحويل Purchase Order
+
+زر: "تحويل إلى فاتورة"
+
+تعبئة تلقائية كاملة
+
+
+
+---
+
+🟢 7. UX Improvements
+
+Auto Focus
+
+Barcode input
+
+Draft saving
+
+تقليل النقرات
+
+
+
+---
+
+🟦 المرحلة 2: تحسين واجهات المبيعات (Sales UI)
+
+🟡 1. Sales Invoice Page جديدة
+
+sales_invoice_page.dart
+
+اختيار عميل
+
+إضافة منتجات
+
+طرق دفع
+
+ملاحظات
+
+
+
+---
+
+🟡 2. بيانات العميل الذكية
+
+الرصيد
+
+الحد الائتماني
+
+عدد الفواتير
+
+آخر شراء
+
+
+
+---
+
+🟡 3. التسعير الذكي
+
+retail price
+
+wholesale price
+
+customer-specific price
+
+
+
+---
+
+🟡 4. تنبيهات المبيعات
+
+عدم توفر الكمية → منع
+
+السعر أقل من التكلفة → تحذير
+
+تجاوز credit limit → منع أو تنبيه
+
+
+
+---
+
+🟡 5. Sales Item Row
+
+quantity
+
+price
+
+discount
+
+tax
+
+total
+
+
+Live Update
+
+
+---
+
+🟡 6. الدفع
+
+Cash
+
+Credit
+
+Partial Payment
+
+Split Payments
+
+
+
+---
+
+🟡 7. المرتجعات داخل الفاتورة
+
+زر: Return
+
+اختيار مباشر من الفاتورة
+
+
+
+---
+
+⚡ المرحلة 3: تحسين POS
+
+Barcode scanning
+
+Speed optimization
+
+Hotkeys
+
+Stock visibility
+
+Fast product search
+
+
+
+---
+
+🎨 تحسينات UX عامة
+
+Search سريع (اسم / SKU / باركود)
+
+Lazy Loading
+
+Loading states
+
+تقليل Popups
+
+UI نظيف وسريع
+
+
+
+---
+
+🧠 المرحلة 4: نظام التقارير (Reports System)
+
+📊 التقارير المالية
+
+Income Statement
+
+Balance Sheet
+
+Cash Flow
+
+
+📊 تقارير المبيعات
+
+حسب المنتج
+
+حسب العميل
+
+حسب التاريخ
+
+
+📊 تقارير المشتريات
+
+حسب المورد
+
+
+📊 المخزون
+
+Inventory Valuation
+
+Stock Ledger
+
+Inventory Aging
+
+
+📊 Dashboard
+
+مبيعات يومية
+
+أرباح
+
+أفضل المنتجات
+
+
+📌 إنشاء:
+
+reports_service.dart
+
+SQL Aggregations
+
+Filters (date / product / warehouse)
+
+
+
+---
+
+🔄 المرحلة 5: Workflow System
+
+🧾 المشتريات
+
+Purchase Request
+
+Purchase Order
+
+Invoice
+
+
+Flow: Request → Approval → Order → Receipt → Invoice
+
+
+---
+
+🧾 المبيعات
+
+Quotation
+
+Sales Order
+
+Invoice
+
+
+Flow: Quote → Approval → Order → Invoice
+
+
+---
+
+🧾 الموافقات
+
+approval_rules
+
+approval_logs
+
+
+مثال:
+
+> أي عملية فوق مبلغ معين تحتاج موافقة
+
+
+
+
+---
+
+📦 المرحلة 6: المخزون المتقدم
+
+Reorder System
+
+Auto Purchase Suggestions
+
+Warehouses Management
+
+Transfers
+
+Fast / Slow Products
+
+
+
+---
+
+👥 المرحلة 7: CRM
+
+Customer Segmentation
+
+Loyalty Points
+
+Credit Management
+
+Aging Reports
+
+
+
+---
+
+🏷️ المرحلة 8: الموردين
+
+Supplier Product Mapping
+
+Price History
+
+Best Supplier per Product
+
+
+
+---
+
+💰 المرحلة 9: المحاسبة المتقدمة
+
+Cost Centers
+
+Budgeting (Plan vs Actual)
+
+Multi-Currency
+
+
+
+---
+
+🔐 المرحلة 10: الصلاحيات
+
+Roles
+
+Permissions:
+
+Screen level
+
+Action level (add/edit/delete/approve)
+
+
+
+
+---
+
+🔌 المرحلة 11: التكامل
+
+REST API
+
+Export Excel
+
+Export PDF
+
+
+
+---
+
+⚡ المرحلة 12: الأداء
+
+Pagination
+
+Lazy Loading
+
+DB Indexing
+
+Cache Layer
+
+
+
+---
+
+🧪 طريقة التنفيذ الإلزامية
+
+لكل مرحلة:
+
+1. تحليل الكود الحالي
+
+
+2. تحديد نقاط الربط
+
+
+3. إنشاء:
+
+Tables (Drift)
+
+DAO
+
+Services
+
+
+
+4. ربط مع:
+
+accounting_service
+
+transaction_engine
+
+inventory_service
+
+
+
+5. بناء UI
+
+
+6. اختبار كامل بدون كسر النظام
+
+
+
+
+---
+
+🎯 الهدف النهائي
+
+تحويل النظام إلى ERP احترافي كامل يشمل:
+
+Finance
+
+Inventory
+
+Sales
+
+Purchases
+
+CRM
+
+Workflow
+
+Reports
+
+Permissions
+
+Performance optimized
+
+
+
+---
+
+🚀 بداية التنفيذ
+
+ابدأ مباشرة بـ:
+
+👉 المرحلة 1: تحسين واجهات المشتريات + Sales UI
+
+بدون الانتقال لأي مرحلة أخرى حتى يتم إكمالها بالكامل.
+
+
+---

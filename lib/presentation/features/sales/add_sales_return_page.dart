@@ -12,7 +12,8 @@ import 'package:supermarket/core/services/transaction_engine.dart';
 import 'package:supermarket/injection_container.dart';
 
 class AddSalesReturnPage extends StatefulWidget {
-  const AddSalesReturnPage({super.key});
+  final String? saleId;
+  const AddSalesReturnPage({super.key, this.saleId});
 
   @override
   State<AddSalesReturnPage> createState() => _AddSalesReturnPageState();
@@ -22,6 +23,24 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
   Sale? _selectedSale;
   final Map<String, double> _returnedQuantities = {};
   final Map<String, SaleItem> _saleItemsMap = {};
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.saleId != null) {
+      _loadSelectedSale(widget.saleId!);
+    }
+  }
+
+  Future<void> _loadSelectedSale(String saleId) async {
+    final db = Provider.of<AppDatabase>(context, listen: false);
+    final sale = await (db.select(db.sales)..where((s) => s.id.equals(saleId))).getSingleOrNull();
+    if (sale != null) {
+      setState(() {
+        _selectedSale = sale;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

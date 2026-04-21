@@ -1,33 +1,34 @@
 import 'package:equatable/equatable.dart';
+import 'package:decimal/decimal.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class CartItem extends Equatable {
   final Product product;
-  final int quantity;
+  final Decimal quantity;
   final bool isWholesale;
   final String unitName; // الاسم الحالي للوحدة (حبة، كرتون، إلخ)
-  final double unitFactor; // المعامل الخاص بالوحدة المختارة
-  final double unitPrice;
+  final Decimal unitFactor; // المعامل الخاص بالوحدة المختارة
+  final Decimal unitPrice;
   final List<UnitConversion> availableUnits; // قائمة بكل الوحدات المتاحة لهذا المنتج
 
   const CartItem({
     required this.product,
-    this.quantity = 1,
+    required this.quantity,
     this.isWholesale = false,
     this.unitName = 'حبة',
-    this.unitFactor = 1.0,
-    this.unitPrice = 0.0,
+    required this.unitFactor,
+    required this.unitPrice,
     this.availableUnits = const [],
   });
 
-  double get total => unitPrice * quantity;
+  Decimal get total => unitPrice * quantity;
 
   CartItem copyWith({
-    int? quantity,
+    Decimal? quantity,
     bool? isWholesale,
     String? unitName,
-    double? unitFactor,
-    double? unitPrice,
+    Decimal? unitFactor,
+    Decimal? unitPrice,
     List<UnitConversion>? availableUnits,
   }) {
     return CartItem(
@@ -65,8 +66,8 @@ class PosLoading extends PosState {}
 
 class PosLoaded extends PosState {
   final List<CartItem> cart;
-  final double discount;
-  final double taxRate; // e.g. 0.15 for 15%
+  final Decimal discount;
+  final Decimal taxRate; // e.g. 0.15 for 15%
   final bool isWholesaleMode;
   final List<Product> searchResults;
   final List<Category> categories;
@@ -74,26 +75,27 @@ class PosLoaded extends PosState {
   final List<Product> filteredProducts;
   final String? activePriceListId; // New field
 
-  const PosLoaded({
+  PosLoaded({
     this.cart = const [],
-    this.discount = 0,
-    this.taxRate = 0,
+    Decimal? discount,
+    Decimal? taxRate,
     this.isWholesaleMode = false,
     this.searchResults = const [],
     this.categories = const [],
     this.selectedCategoryId,
     this.filteredProducts = const [],
     this.activePriceListId,
-  });
+  })  : discount = discount ?? Decimal.zero,
+        taxRate = taxRate ?? Decimal.zero;
 
-  double get subtotal => cart.fold(0.0, (sum, item) => sum + item.total);
-  double get taxAmount => (subtotal - discount) * taxRate;
-  double get total => (subtotal - discount) + taxAmount;
+  Decimal get subtotal => cart.fold(Decimal.zero, (sum, item) => sum + item.total);
+  Decimal get taxAmount => (subtotal - discount) * taxRate;
+  Decimal get total => (subtotal - discount) + taxAmount;
 
   PosLoaded copyWith({
     List<CartItem>? cart,
-    double? discount,
-    double? taxRate,
+    Decimal? discount,
+    Decimal? taxRate,
     bool? isWholesaleMode,
     List<Product>? searchResults,
     List<Category>? categories,

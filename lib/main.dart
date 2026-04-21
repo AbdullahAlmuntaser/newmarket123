@@ -9,6 +9,9 @@ import 'package:supermarket/injection_container.dart' as di;
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'package:supermarket/presentation/features/sales/sales_invoice_page.dart';
+import 'package:supermarket/presentation/features/purchases/add_purchase_page.dart';
+
 // Import all pages
 import 'package:supermarket/presentation/features/auth/login_page.dart';
 import 'package:supermarket/presentation/features/auth/staff_management_page.dart';
@@ -62,10 +65,10 @@ import 'package:supermarket/presentation/features/customers/customer_statement_p
 import 'package:supermarket/presentation/features/suppliers/suppliers_page.dart';
 import 'package:supermarket/presentation/features/suppliers/supplier_statement_page.dart';
 import 'package:supermarket/presentation/features/purchases/purchases_page.dart';
-import 'package:supermarket/presentation/features/purchases/add_purchase_page.dart';
 import 'package:supermarket/presentation/features/purchases/purchase_details_page.dart';
 import 'package:supermarket/presentation/features/purchases/purchase_return_page.dart';
 import 'package:supermarket/presentation/features/purchases/add_purchase_return_page.dart';
+import 'package:supermarket/presentation/features/purchases/purchase_provider.dart';
 
 // Services & Providers Imports
 import 'package:supermarket/core/services/shift_service.dart';
@@ -73,6 +76,7 @@ import 'package:supermarket/core/services/hr_service.dart';
 import 'package:supermarket/core/services/stock_transfer_service.dart';
 import 'package:supermarket/core/services/asset_service.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:supermarket/core/services/purchase_service.dart';
 import 'package:supermarket/presentation/features/accounting/shifts_provider.dart';
 import 'package:supermarket/presentation/features/accounting/asset_provider.dart';
 import 'package:supermarket/presentation/features/hr/hr_provider.dart';
@@ -120,6 +124,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => di.sl<AuthProvider>()),
         ChangeNotifierProvider(create: (_) => AccountingProvider(db)),
         ChangeNotifierProvider(create: (_) => di.sl<ProductsProvider>()),
+        ChangeNotifierProvider(
+          create: (_) => PurchaseProvider(db, di.sl<PurchaseService>()),
+        ),
         ChangeNotifierProvider(create: (_) => ShiftProvider(ShiftService(db))),
         ChangeNotifierProvider(create: (_) => HRProvider(HRService(db))),
         ChangeNotifierProvider(create: (_) => PayrollProvider(HRService(db))),
@@ -191,12 +198,19 @@ class MyApp extends StatelessWidget {
           builder: (context, state) => const SalesHistoryPage(),
         ),
         GoRoute(
+          path: '/sales/invoice',
+          builder: (context, state) => const SalesInvoicePage(),
+        ),
+        GoRoute(
           path: '/sales/returns',
           builder: (context, state) => const SalesReturnPage(),
         ),
         GoRoute(
           path: '/sales/returns/new',
-          builder: (context, state) => const AddSalesReturnPage(),
+          builder: (context, state) {
+            final saleId = state.extra as String?;
+            return AddSalesReturnPage(saleId: saleId);
+          },
         ),
         GoRoute(
           path: '/returns',

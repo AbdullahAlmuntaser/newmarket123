@@ -16,8 +16,12 @@ import 'package:supermarket/core/services/pricing_service.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
 import 'package:supermarket/core/services/inventory_service.dart';
 import 'package:supermarket/core/services/purchase_service.dart';
+import 'package:supermarket/core/services/role_permissions_service.dart';
 
 import 'package:supermarket/presentation/features/pos/bloc/pos_bloc.dart';
+
+import 'package:supermarket/core/services/inventory_costing_service.dart';
+import 'package:supermarket/core/services/erp_data_service.dart';
 
 final sl = GetIt.instance;
 
@@ -28,15 +32,19 @@ void init() {
 
   // Services
   sl.registerLazySingleton(() => EventBusService());
+  sl.registerLazySingleton(() => InventoryCostingService(sl()));
+  sl.registerLazySingleton(() => ErpDataService(sl(), sl()));
   sl.registerLazySingleton(() => AccountingService(sl(), sl()));
   sl.registerLazySingleton(() => PricingService(sl()));
   sl.registerLazySingleton(() => TransactionEngine(sl(), sl()));
   sl.registerLazySingleton(() => InventoryService(sl()));
   sl.registerLazySingleton(() => PurchaseService(sl()));
+  sl.registerLazySingleton(() => PermissionsService(sl()));
 
   // Providers
-  sl.registerLazySingleton(() => AuthProvider(sl()));
+  sl.registerLazySingleton(() => AuthProvider(sl(), sl()));
   sl.registerLazySingleton(() => ThemeProvider());
+
   sl.registerFactory(() => ProductsProvider(sl()));
 
   // Blocs

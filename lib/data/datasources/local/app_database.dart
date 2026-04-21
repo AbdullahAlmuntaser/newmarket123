@@ -573,6 +573,45 @@ class BillOfMaterials extends Table with SyncableTable {
       real()(); // الكمية المطلوبة من المادة الخام لإنتاج وحدة واحدة
 }
 
+class PurchaseOrders extends Table with SyncableTable {
+  TextColumn get supplierId => text().nullable().references(Suppliers, #id)();
+  RealColumn get total => real()();
+  TextColumn get orderNumber => text().nullable()();
+  DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
+  TextColumn get status => text().withDefault(
+    const Constant('DRAFT'),
+  )(); // DRAFT, APPROVED, CONVERTED, CANCELLED
+  TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
+  TextColumn get notes => text().nullable()();
+}
+
+class PurchaseOrderItems extends Table with SyncableTable {
+  TextColumn get orderId => text().references(PurchaseOrders, #id)();
+  TextColumn get productId => text().references(Products, #id)();
+  RealColumn get quantity => real()();
+  RealColumn get price => real()();
+  TextColumn get unitId => text().nullable()();
+}
+
+class SalesOrders extends Table with SyncableTable {
+  TextColumn get customerId => text().nullable().references(Customers, #id)();
+  RealColumn get total => real()();
+  TextColumn get orderNumber => text().nullable()();
+  DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
+  TextColumn get status => text().withDefault(
+    const Constant('DRAFT'),
+  )(); // DRAFT, APPROVED, CONVERTED, CANCELLED
+  TextColumn get notes => text().nullable()();
+}
+
+class SalesOrderItems extends Table with SyncableTable {
+  TextColumn get orderId => text().references(SalesOrders, #id)();
+  TextColumn get productId => text().references(Products, #id)();
+  RealColumn get quantity => real()();
+  RealColumn get price => real()();
+  TextColumn get unitId => text().nullable()();
+}
+
 @DriftDatabase(
   tables: [
     Users,
@@ -584,6 +623,10 @@ class BillOfMaterials extends Table with SyncableTable {
     SaleItems,
     Purchases,
     PurchaseItems,
+    PurchaseOrders,
+    PurchaseOrderItems,
+    SalesOrders,
+    SalesOrderItems,
     SalesReturns,
     SalesReturnItems,
     PurchaseReturns,
@@ -640,7 +683,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 27; // Incremented schema version
+  int get schemaVersion => 28; // Incremented schema version
 
   @override
   MigrationStrategy get migration => MigrationStrategy(

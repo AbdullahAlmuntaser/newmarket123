@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/presentation/widgets/permission_guard.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:intl/intl.dart';
 
@@ -192,16 +193,19 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: ElevatedButton(
-          onPressed: _isBalanced ? () => _saveEntry(provider) : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: _isBalanced ? Colors.green : Colors.grey,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-          ),
-          child: const Text(
-            'حفظ القيد',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        child: PermissionGuard(
+          permissionCode: 'accounting.edit_journal',
+          child: ElevatedButton(
+            onPressed: _isBalanced ? () => _saveEntry(provider) : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _isBalanced ? Colors.green : Colors.grey,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+            child: const Text(
+              'حفظ القيد',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
           ),
         ),
       ),

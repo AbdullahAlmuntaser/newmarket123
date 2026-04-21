@@ -12,6 +12,7 @@ import 'package:supermarket/core/theme/theme_provider.dart';
 import 'package:supermarket/presentation/features/products/products_provider.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
 import 'package:supermarket/core/services/event_bus_service.dart';
+import 'package:supermarket/core/services/role_permissions_service.dart';
 
 void main() {
   late AppDatabase appDatabase;
@@ -19,6 +20,7 @@ void main() {
   late AccountingService accountingService;
   late EventBusService eventBus;
   late SharedPreferences prefs;
+  late PermissionsService permissionsService;
 
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +28,8 @@ void main() {
     prefs = await SharedPreferences.getInstance();
 
     appDatabase = AppDatabase(NativeDatabase.memory());
-    authProvider = AuthProvider(appDatabase);
+    permissionsService = PermissionsService(appDatabase);
+    authProvider = AuthProvider(appDatabase, permissionsService);
     eventBus = EventBusService();
     accountingService = AccountingService(appDatabase, eventBus);
 
@@ -36,6 +39,7 @@ void main() {
     di.sl.registerLazySingleton(() => authProvider);
     di.sl.registerLazySingleton(() => eventBus);
     di.sl.registerLazySingleton(() => accountingService);
+    di.sl.registerLazySingleton(() => permissionsService);
     di.sl.registerLazySingleton(() => ThemeProvider());
     di.sl.registerLazySingleton(() => ProductsProvider(appDatabase));
     di.sl.registerLazySingleton(() => prefs);

@@ -57,11 +57,14 @@ class MainDrawer extends StatelessWidget {
                   onTap: () => context.push('/pos'),
                 ),
                 if (isCashier) ...[
-                  _buildDrawerItem(
+                  _buildExpansionGroup(
                     context,
                     icon: Icons.history_rounded,
-                    title: l10n?.sales ?? 'سجل المبيعات',
-                    onTap: () => context.push('/sales'),
+                    title: l10n?.sales ?? 'المبيعات',
+                    children: [
+                      _buildSubItem(context, 'سجل المبيعات', '/sales'),
+                      _buildSubItem(context, 'فاتورة مبيعات جديدة', '/sales/invoice'),
+                    ],
                   ),
                   _buildExpansionGroup(
                     context,

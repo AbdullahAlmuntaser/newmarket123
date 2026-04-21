@@ -6,6 +6,7 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
 import 'package:supermarket/core/services/quick_customer_service.dart';
 import 'package:supermarket/injection_container.dart';
+import 'package:supermarket/presentation/features/sales/sales_provider.dart';
 import 'package:uuid/uuid.dart';
 
 class PosPage extends StatefulWidget {
@@ -23,6 +24,7 @@ class _PosPageState extends State<PosPage> {
   final TextEditingController _customerController = TextEditingController();
   final TextEditingController _discountController = TextEditingController();
   bool _isSaving = false;
+  bool _autoPrint = true;
   String _invoiceNumber = '';
 
   double get _subtotal => _items.fold(0.0, (sum, item) => sum + item.lineTotal);
@@ -36,11 +38,29 @@ class _PosPageState extends State<PosPage> {
     _discountController.addListener(() => setState(() {}));
   }
 
+  final TextEditingController _barcodeController = TextEditingController();
+
   @override
   void dispose() {
+    _barcodeController.dispose();
     _customerController.dispose();
     _discountController.dispose();
     super.dispose();
+  }
+
+  Future<void> _onBarcodeSubmitted(String barcode, AppDatabase db) async {
+    final products = await (db.select(db.products)
+          ..where((p) => p.barcode.equals(barcode) | p.sku.equals(barcode)))
+        .get();
+
+    if (products.isNotEmpty) {
+      _addProductToSale(products.first);
+      _barcodeController.clear();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('المنتج غير موجود')),
+      );
+    }
   }
 
   void _generateInvoiceNumber() {
@@ -66,31 +86,142 @@ class _PosPageState extends State<PosPage> {
   @override
   Widget build(BuildContext context) {
     final db = Provider.of<AppDatabase>(context);
+    final salesProvider = SalesProvider(db);
+    
     return Scaffold(
-      appBar: AppBar(title: const Text('نقطة البيع')),
-      body: Column(
+      appBar: AppBar(
+        title: const Text('نقطة البيع'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.lock_clock),
+            tooltip: 'إغلاق الوردية',
+            onPressed: () => _showCloseShiftDialog(db),
+          ),
+        ],
+      ),
+      body: Row(
         children: [
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildHeader(db),
-                  const Divider(),
-                  _buildItemsTable(db),
-                  _buildAddItemButton(db),
-                  const Divider(),
-                  _buildSummary(),
-                ],
-              ),
+            flex: 3,
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        _buildHeader(db, salesProvider),
+                        const Divider(),
+                        _buildAlertsPanel(salesProvider),
+                        const Divider(),
+                        _buildItemsTable(db, salesProvider),
+                        _buildAddItemButton(db, salesProvider),
+                        const Divider(),
+                        _buildSummary(),
+                      ],
+                    ),
+                  ),
+                ),
+                _buildFooter(db),
+              ],
             ),
           ),
-          _buildFooter(db),
+          const VerticalDivider(width: 1),
+          Expanded(
+            flex: 1,
+            child: _buildQuickProductsPanel(db),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(AppDatabase db) {
+  Widget _buildQuickProductsPanel(AppDatabase db) {
+    return Column(
+      children: [
+        const Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text('الأكثر مبيعاً', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        ),
+        Expanded(
+          child: FutureBuilder<List<Product>>(
+            future: db.salesDao.getMostSoldProducts(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+              final products = snapshot.data!;
+              return GridView.builder(
+                padding: const EdgeInsets.all(8),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 1,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                ),
+                itemCount: products.length,
+                itemBuilder: (context, index) {
+                  final p = products[index];
+                  return InkWell(
+                    onTap: () => _addProductToSale(p),
+                    child: Card(
+                      color: Colors.blue.shade50,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(p.name, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            const SizedBox(height: 4),
+                            Text('${p.sellPrice}', style: const TextStyle(color: Colors.blue)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _addProductToSale(Product product) {
+    setState(() {
+      final existingIndex = _items.indexWhere((item) => item.product?.id == product.id);
+      if (existingIndex != -1) {
+        _items[existingIndex].quantity += 1;
+      } else {
+        _items.add(_SaleLineItem()
+          ..product = product
+          ..price = product.sellPrice
+          ..quantity = 1
+          ..selectedUnit = product.unit);
+      }
+    });
+  }
+
+  Future<void> _showCloseShiftDialog(AppDatabase db) async {
+    // Logic for closing shift
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('إغلاق الوردية'),
+        content: const Text('هل أنت متأكد من إغلاق الوردية الحالية؟ سيتم إصدار تقرير الملخص.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.go('/accounting/shifts');
+            },
+            child: const Text('تأكيد الإغلاق'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(AppDatabase db, SalesProvider salesProvider) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -143,8 +274,42 @@ class _PosPageState extends State<PosPage> {
                   ],
                   onChanged: (value) {
                     setState(() => _paymentType = value!);
+                    // Check credit limit
+                    if (value == 'credit' && _selectedCustomer != null) {
+                      salesProvider.checkAlerts(newSaleTotal: _total, isCredit: true);
+                    }
                   },
                   initialValue: _paymentType,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: TextField(
+                  controller: _barcodeController,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    labelText: 'مسح الباركود / SKU',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.qr_code_scanner),
+                  ),
+                  onSubmitted: (value) => _onBarcodeSubmitted(value, db),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                flex: 1,
+                child: TextField(
+                  controller: _customerController,
+                  decoration: const InputDecoration(
+                    labelText: 'إدخال عميل جديد (سريع)',
+                    border: OutlineInputBorder(),
+                  ),
+                  onSubmitted: (value) => _handleCustomerSearch(value, db),
                 ),
               ),
             ],
@@ -159,7 +324,7 @@ class _PosPageState extends State<PosPage> {
                     final customers = snapshot.data ?? [];
                     return DropdownButtonFormField<Customer>(
                       decoration: const InputDecoration(
-                        labelText: 'اختيار العميل',
+                        labelText: 'اختيار العميل المسجل',
                         border: OutlineInputBorder(),
                       ),
                       items: customers
@@ -172,21 +337,11 @@ class _PosPageState extends State<PosPage> {
                           _selectedCustomer = value;
                           _customerController.text = value?.name ?? '';
                         });
+                        if (value != null) salesProvider.loadCustomerData(value.id);
                       },
                       initialValue: _selectedCustomer,
                     );
                   },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: TextField(
-                  controller: _customerController,
-                  decoration: const InputDecoration(
-                    labelText: 'إدخال عميل جديد',
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: (value) => _handleCustomerSearch(value, db),
                 ),
               ),
             ],
@@ -196,7 +351,7 @@ class _PosPageState extends State<PosPage> {
     );
   }
 
-  Widget _buildItemsTable(AppDatabase db) {
+  Widget _buildItemsTable(AppDatabase db, SalesProvider salesProvider) {
     if (_items.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(32.0),
@@ -236,6 +391,8 @@ class _PosPageState extends State<PosPage> {
                               item.selectedUnit = value.unit;
                               item.price = value.sellPrice;
                             });
+                            // Load product smart info
+                            salesProvider.loadProductData(value.id);
                           }
                         },
                         initialValue: item.product,
@@ -306,21 +463,74 @@ class _PosPageState extends State<PosPage> {
     );
   }
 
-  Widget _buildAddItemButton(AppDatabase db) {
+  Widget _buildAddItemButton(AppDatabase db, SalesProvider salesProvider) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: ElevatedButton.icon(
-        onPressed: () => _addNewItem(),
+        onPressed: () => _addNewItem(salesProvider),
         icon: const Icon(Icons.add),
         label: const Text('إضافة صنف'),
       ),
     );
   }
 
-  void _addNewItem() {
+  void _addNewItem(SalesProvider salesProvider) {
     setState(() {
       _items.add(_SaleLineItem());
     });
+    // Check credit alerts when adding items
+    if (_selectedCustomer != null && _paymentType == 'credit') {
+      salesProvider.checkAlerts(newSaleTotal: _total, isCredit: true);
+    }
+  }
+
+  /// Build alerts panel for sales
+  Widget _buildAlertsPanel(SalesProvider salesProvider) {
+    if (salesProvider.alerts.isEmpty) return const SizedBox.shrink();
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.orange),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.warning, color: Colors.orange),
+              SizedBox(width: 8),
+              Text('تنبيهات', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          ...salesProvider.alerts.map((alert) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Row(
+              children: [
+                Icon(
+                  alert.isBlocking ? Icons.block : Icons.warning_amber,
+                  color: alert.isBlocking ? Colors.red : Colors.orange,
+                  size: 16,
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    alert.message,
+                    style: TextStyle(
+                      color: alert.isBlocking ? Colors.red : Colors.orange.shade800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
   }
 
   Widget _buildSummary() {
@@ -385,27 +595,45 @@ class _PosPageState extends State<PosPage> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: ElevatedButton(
-              onPressed: (_items.isEmpty || (_paymentType == 'credit' && _selectedCustomer == null) || _isSaving)
-                  ? null
-                  : () => _completeSale(db),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
+          Row(
+            children: [
+              Checkbox(
+                value: _autoPrint,
+                onChanged: (v) => setState(() => _autoPrint = v!),
               ),
-              child: _isSaving
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('إتمام البيع'),
-            ),
+              const Text('طباعة تلقائية'),
+              const Spacer(),
+            ],
           ),
-          const SizedBox(width: 16),
-          ElevatedButton.icon(
-            onPressed: _items.isEmpty ? null : () => _printSale(),
-            icon: const Icon(Icons.print),
-            label: const Text('طباعة'),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: (_items.isEmpty || (_paymentType == 'credit' && _selectedCustomer == null) || _isSaving)
+                      ? null
+                      : () => _completeSale(db),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(0, 50),
+                  ),
+                  child: _isSaving
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('إتمام البيع (F10)', style: TextStyle(fontSize: 18)),
+                ),
+              ),
+              const SizedBox(width: 16),
+              ElevatedButton.icon(
+                onPressed: _items.isEmpty ? null : () => _printSale(),
+                icon: const Icon(Icons.print),
+                label: const Text('طباعة'),
+                style: ElevatedButton.styleFrom(minimumSize: const Size(0, 50)),
+              ),
+            ],
           ),
         ],
       ),
@@ -480,8 +708,19 @@ class _PosPageState extends State<PosPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('تم إتمام البيع')),
         );
-        _printSale();
-        context.pop();
+        
+        if (_autoPrint) {
+          _printSale();
+        }
+
+        // Reset for new sale
+        setState(() {
+          _items.clear();
+          _selectedCustomer = null;
+          _customerController.clear();
+          _discountController.clear();
+          _generateInvoiceNumber();
+        });
       }
     } catch (e) {
       if (mounted) {

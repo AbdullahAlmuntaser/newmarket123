@@ -7,6 +7,8 @@ part 'purchases_dao.g.dart';
   tables: [
     Purchases,
     PurchaseItems,
+    PurchaseOrders,
+    PurchaseOrderItems,
     Products,
     Suppliers,
     SyncQueue,
@@ -104,5 +106,80 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase> with _$PurchasesDaoMixi
         ),
       );
     });
+  }
+
+  Future<PurchaseItem?> getLastPurchaseItem(String productId, {String? supplierId}) async {
+    final query = select(purchaseItems).join([
+      innerJoin(purchases, purchases.id.equalsExp(purchaseItems.purchaseId)),
+    ])
+      ..where(purchaseItems.productId.equals(productId));
+
+    if (supplierId != null) {
+      query.where(purchases.supplierId.equals(supplierId));
+    }
+
+    query.orderBy([OrderingTerm.desc(purchases.date)]);
+
+    final results = await query.get();
+    if (results.isEmpty) return null;
+    final row = results.first;
+    return row.readTable(purchaseItems);
+  }
+
+  Future<Purchase?> getLastPurchase(String productId, {String? supplierId}) async {
+    final query = select(purchases).join([
+      innerJoin(purchaseItems, purchaseItems.purchaseId.equalsExp(purchases.id)),
+    ])
+      ..where(purchaseItems.productId.equals(productId));
+
+    if (supplierId != null) {
+      query.where(purchases.supplierId.equals(supplierId));
+    }
+
+    query.orderBy([OrderingTerm.desc(purchases.date)]);
+
+    final results = await query.get();
+    if (results.isEmpty) return null;
+    final row = results.first;
+    return row.readTable(purchases);
+  }
+
+  Future<double?> getBestPurchasePrice(String productId) async {
+    final query = selectOnly(purchaseItems)
+      ..addColumns([purchaseItems.unitPrice.min()])
+      ..where(purchaseItems.productId.equals(productId));
+
+    final row = await query.getSingle();
+    return row.read(purchaseItems.unitPrice.min());
+  }
+
+  // --- Purchase Orders ---
+  Stream<List<PurchaseOrder>> watchAllPurchaseOrders() {
+    return (select(purchaseOrders)..orderBy([
+          (t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc),
+        ]))
+        .watch();
+  }
+
+  Future<List<PurchaseOrderItem>> getPurchaseOrderItems(String orderId) {
+    return (select(purchaseOrderItems)..where((pi) => pi.orderId.equals(orderId))).get();
+  }
+
+  Future<void> createPurchaseOrder({
+    required PurchaseOrdersCompanion orderCompanion,
+    required List<PurchaseOrderItemsCompanion> itemsCompanions,
+  }) async {
+    return transaction(() async {
+      await into(purchaseOrders).insert(orderCompanion);
+      for (var item in itemsCompanions) {
+        await into(purchaseOrderItems).insert(item);
+      }
+    });
+  }
+
+  Future<void> updatePurchaseOrderStatus(String orderId, String status) async {
+    await (update(purchaseOrders)..where((t) => t.id.equals(orderId))).write(
+      PurchaseOrdersCompanion(status: Value(status)),
+    );
   }
 }

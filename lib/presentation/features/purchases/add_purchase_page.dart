@@ -1,11 +1,16 @@
 import 'package:drift/drift.dart' as drift;
+import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/purchase_service.dart';
 import 'package:supermarket/injection_container.dart';
+import 'package:supermarket/presentation/widgets/permission_guard.dart';
 import 'package:uuid/uuid.dart';
+
+import 'package:supermarket/core/services/erp_data_service.dart';
+import 'package:supermarket/presentation/features/purchases/widgets/purchase_item_row.dart';
 
 class AddPurchasePage extends StatefulWidget {
   const AddPurchasePage({super.key});
@@ -16,10 +21,11 @@ class AddPurchasePage extends StatefulWidget {
 
 class _AddPurchasePageState extends State<AddPurchasePage> {
   Supplier? _selectedSupplier;
+  SupplierSmartData? _supplierSmartData;
   Warehouse? _selectedWarehouse;
   DateTime _selectedDate = DateTime.now();
   String _paymentType = 'credit'; // cash / credit
-  final List<_PurchaseLineItem> _items = [];
+  final List<PurchaseLineItem> _items = [];
   final TextEditingController _supplierController = TextEditingController();
   final TextEditingController _discountController = TextEditingController();
   final TextEditingController _shippingCostController = TextEditingController();
@@ -44,13 +50,121 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
     _otherExpensesController.addListener(() => setState(() {}));
   }
 
+  final TextEditingController _barcodeController = TextEditingController();
+
+  Future<void> _onBarcodeSubmitted(String barcode, AppDatabase db) async {
+    final products = await (db.select(db.products)
+          ..where((p) => p.barcode.equals(barcode) | p.sku.equals(barcode)))
+        .get();
+
+    if (products.isNotEmpty) {
+      final product = products.first;
+      setState(() {
+        _items.add(
+          PurchaseLineItem(
+            product: product,
+            quantity: 1,
+            price: product.buyPrice,
+            selectedUnit: product.unit,
+          ),
+        );
+      });
+      _barcodeController.clear();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('المنتج غير موجود')),
+      );
+    }
+  }
+
   @override
   void dispose() {
+    _barcodeController.dispose();
     _supplierController.dispose();
     _discountController.dispose();
     _shippingCostController.dispose();
     _otherExpensesController.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchSupplierSmartData(String supplierId) async {
+    final data = await sl<ErpDataService>().getSupplierSmartData(supplierId);
+    setState(() {
+      _supplierSmartData = data;
+    });
+  }
+
+  Future<void> _showLoadPODialog(AppDatabase db) async {
+    final pos = await (db.select(db.purchaseOrders)
+          ..where((t) => t.status.equals('APPROVED'))
+          ..orderBy([(t) => OrderingTerm.desc(t.date)]))
+        .get();
+
+    if (!mounted) return;
+
+    if (pos.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('لا توجد أوامر شراء معتمدة')),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('اختيار أمر شراء'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: pos.length,
+            itemBuilder: (context, index) {
+              final po = pos[index];
+              return ListTile(
+                title: Text('أمر رقم: ${po.orderNumber ?? po.id.substring(0, 8)}'),
+                subtitle: Text('التاريخ: ${po.date.toString().split(' ')[0]} - الإجمالي: ${po.total}'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _loadPOItems(po, db);
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _loadPOItems(PurchaseOrder po, AppDatabase db) async {
+    final poItems = await db.purchasesDao.getPurchaseOrderItems(po.id);
+    final products = await db.select(db.products).get();
+
+    setState(() {
+      _items.clear();
+      for (var pi in poItems) {
+        final product = products.firstWhere((p) => p.id == pi.productId);
+        _items.add(
+          PurchaseLineItem(
+            product: product,
+            quantity: pi.quantity,
+            price: pi.price,
+            selectedUnit: pi.unitId ?? product.unit,
+          ),
+        );
+      }
+      if (po.supplierId != null) {
+        _selectedSupplier = null; // Reset to trigger search or selection
+        db.suppliersDao.getSupplierById(po.supplierId!).then((s) {
+          if (s != null) {
+            setState(() {
+              _selectedSupplier = s;
+              _supplierController.text = s.name;
+            });
+            _fetchSupplierSmartData(s.id);
+          }
+        });
+      }
+    });
   }
 
   Future<void> _ensureDefaultWarehouse() async {
@@ -87,6 +201,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         _selectedSupplier = suppliers.first;
         _supplierController.text = suppliers.first.name;
       });
+      _fetchSupplierSmartData(suppliers.first.id);
     } else {
       // إنشاء مورد جديد
       final newSupplierId = await db.suppliersDao.insertSupplierWithAccount(
@@ -98,6 +213,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
       setState(() {
         _selectedSupplier = createdSupplier;
       });
+      if (createdSupplier != null) _fetchSupplierSmartData(createdSupplier.id);
     }
   }
 
@@ -156,21 +272,54 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
                           _selectedSupplier = value;
                           _supplierController.text = value?.name ?? '';
                         });
+                        if (value != null) _fetchSupplierSmartData(value.id);
                       },
                       initialValue: _selectedSupplier,
                     );
                   },
                 ),
               ),
+              const SizedBox(width: 8),
+              ElevatedButton.icon(
+                onPressed: () => _showLoadPODialog(db),
+                icon: const Icon(Icons.download),
+                label: const Text('تحميل أمر شراء'),
+              ),
               const SizedBox(width: 16),
+              if (_selectedSupplier != null && _supplierSmartData != null)
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withAlpha(30),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text('رصيد المورد', style: TextStyle(fontSize: 10)),
+                      Text(
+                        _supplierSmartData!.currentBalance.toStringAsFixed(2),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
               Expanded(
                 child: TextField(
-                  controller: _supplierController,
+                  controller: _barcodeController,
                   decoration: const InputDecoration(
-                    labelText: 'إدخال مورد جديد',
+                    labelText: 'بحث بالباركود / SKU',
                     border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.qr_code_scanner),
                   ),
-                  onChanged: (value) => _handleSupplierSearch(value, db),
+                  onSubmitted: (value) => _onBarcodeSubmitted(value, db),
                 ),
               ),
             ],
@@ -250,110 +399,25 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   }
 
   Widget _buildItemsTable(AppDatabase db) {
-    if (_items.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(32.0),
-        child: Center(child: Text('لا توجد أصناف')),
-      );
-    }
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _items.length,
-      itemBuilder: (context, index) {
-        final item = _items[index];
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: StreamBuilder<List<Product>>(
-                    stream: db.select(db.products).watch(),
-                    builder: (context, snapshot) {
-                      final products = snapshot.data ?? [];
-                      return DropdownButtonFormField<Product>(
-                        decoration: const InputDecoration(labelText: 'المنتج'),
-                        items: products
-                            .map(
-                              (p) => DropdownMenuItem(
-                                value: p,
-                                child: Text(p.name),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() {
-                              item.product = value;
-                              item.selectedUnit = value.unit;
-                              item.price = value.buyPrice;
-                            });
-                          }
-                        },
-                        initialValue: item.product,
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(labelText: 'الوحدة'),
-                    items: ['حبة', 'كرتون', 'كيلو', 'علبة']
-                        .map((u) => DropdownMenuItem(value: u, child: Text(u)))
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        item.selectedUnit = value!;
-                      });
-                    },
-                    initialValue: item.selectedUnit,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 80,
-                  child: TextField(
-                    decoration: const InputDecoration(labelText: 'الكمية'),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      setState(() {
-                        item.quantity = double.tryParse(value) ?? 0.0;
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 100,
-                  child: TextField(
-                    decoration: const InputDecoration(labelText: 'السعر'),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      setState(() {
-                        item.price = double.tryParse(value) ?? 0.0;
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  item.lineTotal.toStringAsFixed(2),
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () {
-                    setState(() {
-                      _items.removeAt(index);
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
+    return FutureBuilder<List<Product>>(
+      future: db.select(db.products).get(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const CircularProgressIndicator();
+        final products = snapshot.data!;
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _items.length,
+          itemBuilder: (context, index) {
+            return PurchaseItemRow(
+              index: index,
+              item: _items[index],
+              products: products,
+              supplierId: _selectedSupplier?.id,
+              onDelete: () => setState(() => _items.removeAt(index)),
+              onChanged: () => setState(() {}),
+            );
+          },
         );
       },
     );
@@ -372,7 +436,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
 
   void _addNewItem() {
     setState(() {
-      _items.add(_PurchaseLineItem());
+      _items.add(PurchaseLineItem());
     });
   }
 
@@ -468,26 +532,41 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
           ),
         ],
       ),
-      child: SizedBox(
-        width: double.infinity,
-        height: 50,
-        child: ElevatedButton(
-          onPressed: (_items.isEmpty || _selectedWarehouse == null || _isSaving)
-              ? null
-              : () => _savePurchase(db),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Colors.white,
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: (_items.isEmpty || _isSaving)
+                  ? null
+                  : () => _savePurchase(db, post: false),
+              child: const Text('حفظ كمسودة'),
+            ),
           ),
-          child: _isSaving
-              ? const CircularProgressIndicator(color: Colors.white)
-              : const Text('حفظ الفاتورة'),
-        ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: PermissionGuard(
+              permissionCode: 'purchases.post',
+              child: ElevatedButton(
+                onPressed:
+                    (_items.isEmpty || _selectedWarehouse == null || _isSaving)
+                        ? null
+                        : () => _savePurchase(db, post: true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Colors.white,
+                ),
+                child: _isSaving
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('ترحيل الفاتورة'),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Future<void> _savePurchase(AppDatabase db) async {
+  Future<void> _savePurchase(AppDatabase db, {required bool post}) async {
     if (_items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يجب إضافة أصناف على الأقل')),
@@ -553,34 +632,19 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         itemsCompanions: itemsCompanions,
         userId: null,
       );
-      // إنشاء batches
-      for (var item in _items) {
-        await db
-            .into(db.productBatches)
-            .insert(
-              ProductBatchesCompanion.insert(
-                productId: item.product!.id,
-                warehouseId: _selectedWarehouse!.id,
-                batchNumber: 'PURCHASE-$purchaseId-${item.product!.id}',
-                quantity: drift.Value(item.quantity),
-                initialQuantity: drift.Value(item.quantity),
-                costPrice: drift.Value(item.price),
-              ),
-            );
-        // تحديث stock في products
-        final product = await db.productsDao.getProductById(item.product!.id);
-        if (product != null) {
-          await db
-              .update(db.products)
-              .replace(product.copyWith(stock: product.stock + item.quantity));
-        }
+
+      if (post) {
+        // استخدم purchase_service للـ posting
+        await sl<PurchaseService>().postPurchase(
+          purchaseId: purchaseId,
+          userId: null,
+        );
       }
-      // استخدم purchase_service للـ posting
-      await sl<PurchaseService>().postPurchase(purchaseId: purchaseId, userId: null);
+
       if (mounted) {
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم حفظ الفاتورة')),
+          SnackBar(content: Text(post ? 'تم ترحيل الفاتورة' : 'تم حفظ المسودة')),
         );
       }
     } catch (e) {
@@ -595,15 +659,5 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   }
 }
 
-class _PurchaseLineItem {
-  Product? product;
-  String selectedUnit;
-  double quantity;
-  double price;
-  double get lineTotal => quantity * price;
-  _PurchaseLineItem()
-      : product = null,
-        selectedUnit = 'حبة',
-        quantity = 0.0,
-        price = 0.0;
-}
+// Remove old _PurchaseLineItem class as it's replaced by PurchaseLineItem in widgets/purchase_item_row.dart
+

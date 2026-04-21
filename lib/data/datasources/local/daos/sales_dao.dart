@@ -7,6 +7,8 @@ part 'sales_dao.g.dart';
   tables: [
     Sales,
     SaleItems,
+    SalesOrders,
+    SalesOrderItems,
     Products,
     Customers,
     SyncQueue,
@@ -94,11 +96,7 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
         await into(saleItems).insert(item);
       }
 
-      // 3. Trigger Event (for other services if needed, e.g., for direct posting or sync)
-      // Note: Full business logic should be triggered by calling TransactionEngine.postSale 
-      // if the status is POSTED, or the UI should handle it.
-      
-      // 4. Audit Log
+      // 3. Audit Log
       await into(auditLogs).insert(
         AuditLogsCompanion.insert(
           userId: Value(userId),
@@ -117,16 +115,13 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
     required String? userId,
   }) async {
     return transaction(() async {
-      // 1. Insert Sales Return
       final returnId = returnCompanion.id.value;
       await into(salesReturns).insert(returnCompanion);
 
-      // 2. Insert Items
       for (var item in itemsCompanions) {
         await into(salesReturnItems).insert(item);
       }
 
-      // 3. Audit Log
       await into(auditLogs).insert(
         AuditLogsCompanion.insert(
           userId: Value(userId),
@@ -139,6 +134,21 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
         ),
       );
     });
+  }
+
+  Future<List<Product>> getMostSoldProducts({int limit = 10}) async {
+    final query = selectOnly(saleItems)
+      ..addColumns([saleItems.productId, saleItems.quantity.sum()])
+      ..groupBy([saleItems.productId])
+      ..orderBy([OrderingTerm.desc(saleItems.quantity.sum())])
+      ..limit(limit);
+
+    final rows = await query.get();
+    final productIds = rows.map((row) => row.read(saleItems.productId)!).toList();
+
+    if (productIds.isEmpty) return [];
+
+    return (select(db.products)..where((p) => p.id.isIn(productIds))).get();
   }
 
   Future<List<ProductProfitability>> getProductProfitability({
@@ -247,4 +257,3 @@ class TopProduct {
 
   TopProduct({required this.product, required this.totalQuantity});
 }
-

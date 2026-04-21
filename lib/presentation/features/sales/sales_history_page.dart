@@ -26,6 +26,11 @@ class _SalesHistoryPageState extends State<SalesHistoryPage> {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.sales)),
       drawer: const MainDrawer(),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.pushNamed(context, '/sales/invoice'),
+        icon: const Icon(Icons.add),
+        label: const Text('فاتورة مبيعات'),
+      ),
       body: FutureBuilder<List<Sale>>(
         future: (db.select(
           db.sales,

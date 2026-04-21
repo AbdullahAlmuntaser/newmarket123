@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:decimal/decimal.dart';
 
 abstract class PosEvent extends Equatable {
   const PosEvent();
@@ -24,7 +25,7 @@ class AddProductBySku extends PosEvent {
 
 class UpdateCartItemQuantity extends PosEvent {
   final String productId;
-  final int quantity;
+  final Decimal quantity;
   const UpdateCartItemQuantity(this.productId, this.quantity);
 }
 
@@ -34,12 +35,12 @@ class RemoveCartItem extends PosEvent {
 }
 
 class UpdateDiscount extends PosEvent {
-  final double discount;
+  final Decimal discount;
   const UpdateDiscount(this.discount);
 }
 
 class UpdateTaxRate extends PosEvent {
-  final double taxRate;
+  final Decimal taxRate;
   const UpdateTaxRate(this.taxRate);
 }
 
@@ -53,14 +54,14 @@ class CheckoutEvent extends PosEvent {
   final String? customerId;
   final String? userId;
   final String? currencyId;
-  final double exchangeRate;
-  const CheckoutEvent(
+  final Decimal exchangeRate;
+  CheckoutEvent(
     this.paymentMethod, {
     this.customerId,
     this.userId,
     this.currencyId,
-    this.exchangeRate = 1.0,
-  });
+    Decimal? exchangeRate,
+  }) : exchangeRate = exchangeRate ?? Decimal.one;
 }
 
 class UpdateCartItemUnit extends PosEvent {
@@ -94,3 +95,5 @@ class SelectPriceList extends PosEvent {
 }
 
 class ClearCart extends PosEvent {}
+
+class RefreshPricesEvent extends PosEvent {}

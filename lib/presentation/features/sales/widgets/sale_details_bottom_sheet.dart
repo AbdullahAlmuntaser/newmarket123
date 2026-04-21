@@ -65,16 +65,29 @@ class SaleDetailsBottomSheet extends StatelessWidget {
                           l10n.saleDetails,
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.picture_as_pdf),
-                          tooltip: l10n.viewInvoice,
-                          onPressed: () => _viewInvoice(
-                            context,
-                            db,
-                            sale,
-                            items,
-                            productMap,
-                          ),
+                        Row(
+                          children: [
+                            if (sale.status == 'POSTED')
+                              IconButton(
+                                icon: const Icon(Icons.assignment_return, color: Colors.orange),
+                                tooltip: 'إرجاع أصناف',
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  Navigator.pushNamed(context, '/sales/returns/new', arguments: sale.id);
+                                },
+                              ),
+                            IconButton(
+                              icon: const Icon(Icons.picture_as_pdf),
+                              tooltip: l10n.viewInvoice,
+                              onPressed: () => _viewInvoice(
+                                context,
+                                db,
+                                sale,
+                                items,
+                                productMap,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

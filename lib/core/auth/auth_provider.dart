@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:bcrypt/bcrypt.dart';
 import '../../data/datasources/local/app_database.dart';
+import '../services/role_permissions_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final AppDatabase db;
+  final PermissionsService permissionsService;
   User? _currentUser;
 
-  AuthProvider(this.db);
+  AuthProvider(this.db, this.permissionsService);
 
   User? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
@@ -19,6 +21,7 @@ class AuthProvider with ChangeNotifier {
 
     if (user != null && BCrypt.checkpw(password, user.password)) {
       _currentUser = user;
+      await permissionsService.init(user.role);
       notifyListeners();
       return true;
     }
@@ -27,6 +30,7 @@ class AuthProvider with ChangeNotifier {
 
   void logout() {
     _currentUser = null;
+    permissionsService.init(null);
     notifyListeners();
   }
 
