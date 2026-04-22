@@ -20,6 +20,7 @@ class CustomersPage extends StatefulWidget {
 class _CustomersPageState extends State<CustomersPage> {
   String _searchQuery = '';
   String _selectedType = 'ALL';
+  bool _isFilterExpanded = false;
   final TextEditingController _payAmountController = TextEditingController();
 
   @override
@@ -39,18 +40,12 @@ class _CustomersPageState extends State<CustomersPage> {
       appBar: AppBar(
         title: Text(l10n.customers),
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () => _showFilterDialog(context),
-          ),
-        ],
       ),
       drawer: const MainDrawer(),
       body: Column(
         children: [
           _buildSummaryCards(db, l10n, colorScheme),
-          _buildSearchBar(l10n, colorScheme),
+          _buildCollapsibleFilter(l10n, colorScheme),
           Expanded(
             child: StreamBuilder<List<Customer>>(
               stream: _getFilteredStream(db),
@@ -64,7 +59,7 @@ class _CustomersPageState extends State<CustomersPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.person_off, size: 64, color: colorScheme.outline),
+                        Icon(Icons.person_off, size: 64, color: colorScheme.outlineVariant),
                         const SizedBox(height: 16),
                         Text(l10n.noCustomersFound),
                       ],
@@ -72,7 +67,7 @@ class _CustomersPageState extends State<CustomersPage> {
                   );
                 }
                 return ListView.builder(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 80),
                   itemCount: customers.length,
                   itemBuilder: (context, index) {
                     final customer = customers[index];
@@ -94,36 +89,34 @@ class _CustomersPageState extends State<CustomersPage> {
 
   Widget _buildSummaryCards(AppDatabase db, AppLocalizations l10n, ColorScheme colorScheme) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withAlpha(77), // Replaced withOpacity(0.3)
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(24),
-          bottomRight: Radius.circular(24),
-        ),
+        color: colorScheme.primaryContainer.withAlpha(50),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
       ),
       child: Row(
         children: [
-          _summaryItem("العملاء", db.select(db.customers).watch().map((l) => l.length.toString()), Icons.people, colorScheme.primary),
-          _summaryItem("إجمالي المديونية", _getTotalBalance(db), Icons.account_balance_wallet, colorScheme.error),
+          _summaryCard("العدد", db.select(db.customers).watch().map((l) => l.length.toString()), Icons.people_outline, colorScheme.primary),
+          const SizedBox(width: 12),
+          _summaryCard("إجمالي المديونية", _getTotalBalance(db), Icons.account_balance_wallet_outlined, colorScheme.error),
         ],
       ),
     );
   }
 
-  Widget _summaryItem(String title, Stream<String> valueStream, IconData icon, Color color) {
+  Widget _summaryCard(String title, Stream<String> valueStream, IconData icon, Color color) {
     return Expanded(
       child: Card(
         elevation: 0,
-        color: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: color.withAlpha(50))),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: color),
+              Icon(icon, color: color, size: 20),
               const SizedBox(height: 4),
-              Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              Text(title, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
               StreamBuilder<String>(
                 stream: valueStream,
                 builder: (context, snap) => Text(
@@ -138,29 +131,55 @@ class _CustomersPageState extends State<CustomersPage> {
     );
   }
 
-  Stream<String> _getTotalBalance(AppDatabase db) {
-    return db.select(db.customers).watch().map((customers) {
-      double total = customers.fold(0, (sum, item) => sum + item.balance);
-      return total.toStringAsFixed(2);
-    });
+  Widget _buildCollapsibleFilter(AppLocalizations l10n, ColorScheme colorScheme) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: l10n.searchCustomers,
+              prefixIcon: const Icon(Icons.search),
+              isDense: true,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              filled: true,
+              fillColor: colorScheme.surface,
+            ),
+            onChanged: (value) => setState(() => _searchQuery = value),
+          ),
+        ),
+        ExpansionTile(
+          initiallyExpanded: _isFilterExpanded,
+          onExpansionChanged: (v) => setState(() => _isFilterExpanded = v),
+          title: const Text('تصفية النتائج', style: TextStyle(fontSize: 14)),
+          leading: const Icon(Icons.tune, size: 20),
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Wrap(
+                spacing: 8,
+                children: [
+                  _filterChip("الكل", "ALL"),
+                  _filterChip("تجزئة", "RETAIL"),
+                  _filterChip("جملة", "WHOLESALE"),
+                  _filterChip("VIP", "VIP"),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
-  Widget _buildSearchBar(AppLocalizations l10n, ColorScheme colorScheme) {
-    return Padding(
-      padding: const EdgeInsets.all(12.0),
-      child: TextField(
-        decoration: InputDecoration(
-          hintText: l10n.searchCustomers,
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: _searchQuery.isNotEmpty 
-            ? IconButton(icon: const Icon(Icons.clear), onPressed: () => setState(() => _searchQuery = '')) 
-            : null,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-          filled: true,
-          fillColor: colorScheme.surface,
-        ),
-        onChanged: (value) => setState(() => _searchQuery = value),
-      ),
+  Widget _filterChip(String label, String value) {
+    final bool isSelected = _selectedType == value;
+    return FilterChip(
+      label: Text(label, style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : null)),
+      selected: isSelected,
+      onSelected: (v) => setState(() => _selectedType = value),
+      selectedColor: Theme.of(context).colorScheme.primary,
+      checkmarkColor: Colors.white,
     );
   }
 
@@ -170,23 +189,20 @@ class _CustomersPageState extends State<CustomersPage> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
       child: InkWell(
         onTap: () => _editCustomer(db, customer),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.all(12.0),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   CircleAvatar(
-                    radius: 28,
-                    backgroundColor: _getTypeColor(customer.customerType).withAlpha(26),
-                    child: Text(
-                      customer.name[0].toUpperCase(),
-                      style: TextStyle(color: _getTypeColor(customer.customerType), fontWeight: FontWeight.bold, fontSize: 20),
-                    ),
+                    radius: 24,
+                    backgroundColor: colorScheme.secondaryContainer,
+                    child: Text(customer.name[0].toUpperCase(), style: TextStyle(color: colorScheme.onSecondaryContainer, fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -194,29 +210,24 @@ class _CustomersPageState extends State<CustomersPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(customer.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        Text(customer.phone ?? l10n.noPhone, style: TextStyle(color: colorScheme.outline, fontSize: 13)),
-                        if (customer.taxNumber != null && customer.taxNumber!.isNotEmpty)
-                          Text("ضريبي: ${customer.taxNumber}", style: TextStyle(color: colorScheme.primary, fontSize: 12)),
+                        Text(customer.phone ?? l10n.noPhone, style: TextStyle(color: colorScheme.outline, fontSize: 12)),
                       ],
                     ),
                   ),
                   _buildTypeBadge(customer.customerType),
                 ],
               ),
-              const Divider(height: 24),
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("الرصيد الحالي", style: TextStyle(fontSize: 12)),
+                      const Text("الرصيد", style: TextStyle(fontSize: 10, color: Colors.grey)),
                       Text(
-                        "${customer.balance.toStringAsFixed(2)} ${l10n.currencySymbol}",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: isDebit ? Colors.red : Colors.green,
-                        ),
+                        "${customer.balance.toStringAsFixed(2)} ر.س",
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isDebit ? Colors.red : Colors.green),
                       ),
                     ],
                   ),
@@ -236,165 +247,66 @@ class _CustomersPageState extends State<CustomersPage> {
   }
 
   Widget _buildTypeBadge(String type) {
+    Color color = Colors.grey;
+    String label = type;
+    switch (type) {
+      case 'RETAIL': color = Colors.blue; label = "تجزئة"; break;
+      case 'WHOLESALE': color = Colors.orange; label = "جملة"; break;
+      case 'VIP': color = Colors.purple; break;
+    }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: _getTypeColor(type).withAlpha(26),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: _getTypeColor(type).withAlpha(128)),
-      ),
-      child: Text(
-        _getTypeLabel(type),
-        style: TextStyle(color: _getTypeColor(type), fontSize: 10, fontWeight: FontWeight.bold),
-      ),
+      decoration: BoxDecoration(color: color.withAlpha(25), borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withAlpha(100))),
+      child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
     );
   }
 
-  Color _getTypeColor(String type) {
-    switch (type) {
-      case 'RETAIL': return Colors.blue;
-      case 'WHOLESALE': return Colors.orange;
-      case 'VIP': return Colors.purple;
-      default: return Colors.grey;
-    }
-  }
-
-  String _getTypeLabel(String type) {
-    switch (type) {
-      case 'RETAIL': return "تجزئة";
-      case 'WHOLESALE': return "جملة";
-      case 'VIP': return "VIP";
-      default: return type;
-    }
+  Stream<String> _getTotalBalance(AppDatabase db) {
+    return db.select(db.customers).watch().map((customers) => customers.fold(0.0, (sum, item) => sum + item.balance).toStringAsFixed(2));
   }
 
   Stream<List<Customer>> _getFilteredStream(AppDatabase db) {
     return (db.select(db.customers)..where((t) {
-      final matchesSearch = t.name.like('%${_searchQuery.toLowerCase()}%') | 
-                           t.phone.like('%$_searchQuery%') |
-                           t.taxNumber.like('%$_searchQuery%');
+      final matchesSearch = t.name.like('%${_searchQuery.toLowerCase()}%') | t.phone.like('%$_searchQuery%');
       final matchesType = _selectedType == 'ALL' ? const drift.Constant(true) : t.customerType.equals(_selectedType);
       return matchesSearch & matchesType & t.isActive.equals(true);
     })).watch();
   }
 
-  void _showFilterDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("تصفية العملاء"),
-        content: RadioGroup<String>(
-          groupValue: _selectedType,
-          onChanged: (val) {
-            if (val != null) {
-              setState(() => _selectedType = val);
-              Navigator.pop(context);
-            }
-          },
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _filterOption("الكل", "ALL"),
-              _filterOption("تجزئة", "RETAIL"),
-              _filterOption("جملة", "WHOLESALE"),
-              _filterOption("VIP", "VIP"),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _filterOption(String title, String value) {
-    return RadioListTile<String>(
-      title: Text(title),
-      value: value,
-    );
-  }
-
+  // Reuse original logic methods
   Future<void> _showPayAmountDialog(AppDatabase db, Customer customer) async {
     final l10n = AppLocalizations.of(context)!;
     final userId = Provider.of<AuthProvider>(context, listen: false).currentUser?.id;
     _payAmountController.clear();
-
     final amount = await showDialog<double>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         title: Text(l10n.payAmount),
-        content: TextField(
-          controller: _payAmountController,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            labelText: l10n.paymentAmount,
-            suffixText: l10n.currencySymbol,
-          ),
-          autofocus: true,
-        ),
+        content: TextField(controller: _payAmountController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'المبلغ'), autofocus: true),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(l10n.cancel)),
-          ElevatedButton(
-            onPressed: () {
-              final val = double.tryParse(_payAmountController.text);
-              if (val != null && val > 0) Navigator.pop(dialogContext, val);
-            },
-            child: Text(l10n.save),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
+          ElevatedButton(onPressed: () { final val = double.tryParse(_payAmountController.text); if (val != null && val > 0) Navigator.pop(ctx, val); }, child: Text(l10n.save)),
         ],
       ),
     );
-
     if (amount != null) {
       try {
-        await sl<TransactionEngine>().postCustomerPayment(
-          customerId: customer.id,
-          amount: amount,
-          paymentMethod: 'cash', // Default to cash for now
-          userId: userId,
-        );
-        
+        await sl<TransactionEngine>().postCustomerPayment(customerId: customer.id, amount: amount, paymentMethod: 'cash', userId: userId);
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.paymentSuccess)));
-      } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
+      } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e'))); }
     }
   }
 
   Future<void> _addCustomer(AppDatabase db) async {
-    final l10n = AppLocalizations.of(context)!;
-    
-    final companion = await showDialog<CustomersCompanion>(
-      context: context,
-      builder: (context) => const AddEditCustomerDialog(),
-    );
-
+    final companion = await showDialog<CustomersCompanion>(context: context, builder: (ctx) => const AddEditCustomerDialog());
     if (companion != null) {
-      try {
-        await db.customersDao.insertCustomerWithAccount(companion);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.customerAdded)),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e')),
-          );
-        }
-      }
+      try { await db.customersDao.insertCustomerWithAccount(companion); if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تمت الإضافة'))); }
+      catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e'))); }
     }
   }
 
   Future<void> _editCustomer(AppDatabase db, Customer customer) async {
-    final l10n = AppLocalizations.of(context)!;
-    final companion = await showDialog<CustomersCompanion>(
-      context: context,
-      builder: (context) => AddEditCustomerDialog(customer: customer),
-    );
-
-    if (companion != null) {
-      await (db.update(db.customers)..where((t) => t.id.equals(customer.id))).write(companion);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.customerUpdated)));
-    }
+    final companion = await showDialog<CustomersCompanion>(context: context, builder: (ctx) => AddEditCustomerDialog(customer: customer));
+    if (companion != null) { await (db.update(db.customers)..where((t) => t.id.equals(customer.id))).write(companion); if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم التحديث'))); }
   }
 }

@@ -13,8 +13,10 @@ class GeneralLedgerPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final provider = context.watch<AccountingProvider>();
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      appBar: AppBar(title: Text(l10n.generalLedger), elevation: 0),
       body: StreamBuilder<List<GLEntry>>(
         stream: provider.watchEntries(),
         builder: (context, snapshot) {
@@ -23,89 +25,47 @@ class GeneralLedgerPage extends StatelessWidget {
           }
           final entries = snapshot.data ?? [];
           if (entries.isEmpty) {
-            return const Center(child: Text('No entries found.'));
+            return Center(child: Text(l10n.noTransactionsFound));
           }
 
           return ListView.builder(
+            padding: const EdgeInsets.all(8),
             itemCount: entries.length,
             itemBuilder: (context, index) {
               final entry = entries[index];
               return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                margin: const EdgeInsets.only(bottom: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 child: ExpansionTile(
-                  title: Text(entry.description),
-                  subtitle: Text(
-                    DateFormat('yyyy-MM-dd HH:mm').format(entry.date),
+                  tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  title: Text(entry.description, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Row(
+                    children: [
+                      Icon(Icons.calendar_today, size: 12, color: colorScheme.outline),
+                      const SizedBox(width: 4),
+                      Text(DateFormat('yyyy-MM-dd HH:mm').format(entry.date), style: TextStyle(fontSize: 12, color: colorScheme.outline)),
+                    ],
+                  ),
+                  leading: CircleAvatar(
+                    backgroundColor: colorScheme.primaryContainer,
+                    child: Icon(Icons.receipt_long, color: colorScheme.onPrimaryContainer, size: 20),
                   ),
                   trailing: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.secondaryContainer,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      entry.referenceType ?? '',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSecondaryContainer,
-                      ),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(color: colorScheme.secondaryContainer, borderRadius: BorderRadius.circular(8)),
+                    child: Text(entry.referenceType ?? '', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: colorScheme.onSecondaryContainer)),
                   ),
                   children: [
                     FutureBuilder<List<GLLineWithAccount>>(
                       future: provider.getEntryLines(entry.id),
                       builder: (context, lineSnapshot) {
-                        if (!lineSnapshot.hasData) {
-                          return const Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: LinearProgressIndicator(),
-                          );
-                        }
+                        if (!lineSnapshot.hasData) return const LinearProgressIndicator();
                         final lines = lineSnapshot.data!;
-                        return SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: DataTable(
-                            columns: [
-                              DataColumn(label: Text(l10n.accountName)),
-                              DataColumn(
-                                label: Text(l10n.debit),
-                                numeric: true,
-                              ),
-                              DataColumn(
-                                label: Text(l10n.credit),
-                                numeric: true,
-                              ),
-                            ],
-                            rows: lines.map((line) {
-                              return DataRow(
-                                cells: [
-                                  DataCell(
-                                    Text(
-                                      '${line.account.code} - ${line.account.name}',
-                                    ),
-                                  ),
-                                  DataCell(
-                                    Text(
-                                      line.line.debit > 0
-                                          ? line.line.debit.toStringAsFixed(2)
-                                          : '-',
-                                    ),
-                                  ),
-                                  DataCell(
-                                    Text(
-                                      line.line.credit > 0
-                                          ? line.line.credit.toStringAsFixed(2)
-                                          : '-',
-                                    ),
-                                  ),
-                                ],
-                              );
-                            }).toList(),
+                        return Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(color: colorScheme.surfaceContainerHighest.withAlpha(50), borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16))),
+                          child: Column(
+                            children: lines.map((line) => _buildLineItem(context, line)).toList(),
                           ),
                         );
                       },
@@ -116,6 +76,41 @@ class GeneralLedgerPage extends StatelessWidget {
             },
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildLineItem(BuildContext context, GLLineWithAccount line) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(line.account.name, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+                Text(line.account.code, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.outline)),
+              ],
+            ),
+          ),
+          if (line.line.debit > 0)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                const Text('مدين', style: TextStyle(fontSize: 9, color: Colors.green)),
+                Text(line.line.debit.toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+              ],
+            ),
+          if (line.line.credit > 0)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                const Text('دائن', style: TextStyle(fontSize: 9, color: Colors.red)),
+                Text(line.line.credit.toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+              ],
+            ),
+        ],
       ),
     );
   }
