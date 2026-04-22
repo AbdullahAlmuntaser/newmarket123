@@ -1,24 +1,27 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
-class BomDao extends DatabaseAccessor<AppDatabase> {
+part 'bom_dao.g.dart';
+
+@DriftAccessor(tables: [BillOfMaterials])
+class BomDao extends DatabaseAccessor<AppDatabase> with _$BomDaoMixin {
   BomDao(super.db);
 
   Future<List<BillOfMaterial>> getBomForProduct(String productId) {
     return (select(
-      db.billOfMaterials,
+      billOfMaterials,
     )..where((b) => b.finishedProductId.equals(productId))).get();
   }
 
   Future<List<BillOfMaterial>> getAllBoms() {
     return (select(
-      db.billOfMaterials,
+      billOfMaterials,
     )..orderBy([(b) => OrderingTerm.asc(b.finishedProductId)])).get();
   }
 
   Future<List<BillOfMaterial>> getBomsWhereComponentIs(String componentId) {
     return (select(
-      db.billOfMaterials,
+      billOfMaterials,
     )..where((b) => b.componentProductId.equals(componentId))).get();
   }
 
@@ -27,7 +30,7 @@ class BomDao extends DatabaseAccessor<AppDatabase> {
     String componentProductId,
     double quantity,
   ) {
-    return into(db.billOfMaterials).insert(
+    return into(billOfMaterials).insert(
       BillOfMaterialsCompanion.insert(
         finishedProductId: finishedProductId,
         componentProductId: componentProductId,
@@ -37,18 +40,18 @@ class BomDao extends DatabaseAccessor<AppDatabase> {
   }
 
   Future<int> updateBom(String id, double quantity) {
-    return (update(db.billOfMaterials)..where((b) => b.id.equals(id))).write(
+    return (update(billOfMaterials)..where((b) => b.id.equals(id))).write(
       BillOfMaterialsCompanion(quantity: Value(quantity)),
     );
   }
 
   Future<int> deleteBom(String id) {
-    return (delete(db.billOfMaterials)..where((b) => b.id.equals(id))).go();
+    return (delete(billOfMaterials)..where((b) => b.id.equals(id))).go();
   }
 
   Future<int> deleteAllBomsForProduct(String productId) {
     return (delete(
-      db.billOfMaterials,
+      billOfMaterials,
     )..where((b) => b.finishedProductId.equals(productId))).go();
   }
 }

@@ -7,6 +7,7 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/purchase_service.dart';
 import 'package:supermarket/injection_container.dart';
 import 'package:supermarket/presentation/widgets/permission_guard.dart';
+import 'package:supermarket/presentation/widgets/entity_picker.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:supermarket/core/services/erp_data_service.dart';
@@ -29,6 +30,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   final TextEditingController _supplierController = TextEditingController();
   final TextEditingController _discountController = TextEditingController();
   final TextEditingController _shippingCostController = TextEditingController();
+  final TextEditingController _customsDutyController = TextEditingController();
   final TextEditingController _otherExpensesController =
       TextEditingController();
   bool _isSaving = false;
@@ -39,7 +41,9 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
       double.tryParse(_shippingCostController.text) ?? 0.0;
   double get _otherExpenses =>
       double.tryParse(_otherExpensesController.text) ?? 0.0;
-  double get _total => _subtotal - _discount + _shippingCost + _otherExpenses;
+  double get _customsDuty =>
+      double.tryParse(_customsDutyController.text) ?? 0.0;
+  double get _total => _subtotal - _discount + _shippingCost + _otherExpenses + _customsDuty;
 
   @override
   void initState() {
@@ -48,6 +52,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
     _discountController.addListener(() => setState(() {}));
     _shippingCostController.addListener(() => setState(() {}));
     _otherExpensesController.addListener(() => setState(() {}));
+    _customsDutyController.addListener(() => setState(() {}));
   }
 
   final TextEditingController _barcodeController = TextEditingController();
@@ -71,6 +76,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
       });
       _barcodeController.clear();
     } else {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('المنتج غير موجود')),
       );
@@ -84,6 +90,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
     _discountController.dispose();
     _shippingCostController.dispose();
     _otherExpensesController.dispose();
+    _customsDutyController.dispose();
     super.dispose();
   }
 
@@ -193,30 +200,6 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
     }
   }
 
-  Future<void> _handleSupplierSearch(String name, AppDatabase db) async {
-    if (name.isEmpty) return;
-    final suppliers = await db.suppliersDao.searchSuppliers(name);
-    if (suppliers.isNotEmpty) {
-      setState(() {
-        _selectedSupplier = suppliers.first;
-        _supplierController.text = suppliers.first.name;
-      });
-      _fetchSupplierSmartData(suppliers.first.id);
-    } else {
-      // إنشاء مورد جديد
-      final newSupplierId = await db.suppliersDao.insertSupplierWithAccount(
-        SuppliersCompanion.insert(name: name),
-      );
-      final createdSupplier = await db.suppliersDao.getSupplierById(
-        newSupplierId,
-      );
-      setState(() {
-        _selectedSupplier = createdSupplier;
-      });
-      if (createdSupplier != null) _fetchSupplierSmartData(createdSupplier.id);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final db = Provider.of<AppDatabase>(context);
@@ -252,30 +235,15 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
           Row(
             children: [
               Expanded(
-                child: StreamBuilder<List<Supplier>>(
-                  stream: db.select(db.suppliers).watch(),
-                  builder: (context, snapshot) {
-                    final suppliers = snapshot.data ?? [];
-                    return DropdownButtonFormField<Supplier>(
-                      decoration: const InputDecoration(
-                        labelText: 'اختيار المورد',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: suppliers
-                          .map(
-                            (s) =>
-                                DropdownMenuItem(value: s, child: Text(s.name)),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedSupplier = value;
-                          _supplierController.text = value?.name ?? '';
-                        });
-                        if (value != null) _fetchSupplierSmartData(value.id);
-                      },
-                      initialValue: _selectedSupplier,
-                    );
+                child: SupplierPicker(
+                  db: db,
+                  value: _selectedSupplier,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedSupplier = value;
+                      _supplierController.text = value?.name ?? '';
+                    });
+                    if (value != null) _fetchSupplierSmartData(value.id);
                   },
                 ),
               ),
@@ -441,6 +409,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   }
 
   Widget _buildSummary() {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -448,15 +417,33 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('المجموع الفرعي:'),
-              Text(_subtotal.toStringAsFixed(2)),
+              Text(
+                'المجموع الفرعي:',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              Text(
+                _subtotal.toStringAsFixed(2),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('الخصم:'),
+              Text(
+                'الخصم:',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
               SizedBox(
                 width: 100,
                 child: TextField(
@@ -471,7 +458,13 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('الشحن:'),
+              Text(
+                'الشحن:',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
               SizedBox(
                 width: 100,
                 child: TextField(
@@ -486,7 +479,13 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('مصروفات أخرى:'),
+              Text(
+                'مصروفات أخرى:',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
               SizedBox(
                 width: 100,
                 child: TextField(
@@ -497,19 +496,43 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'جمارك:',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              SizedBox(
+                width: 100,
+                child: TextField(
+                  controller: _customsDutyController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(isDense: true),
+                ),
+              ),
+            ],
+          ),
           const Divider(),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'الإجمالي:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
               Text(
                 _total.toStringAsFixed(2),
-                style: const TextStyle(
-                  fontSize: 18,
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
                 ),
               ),
             ],

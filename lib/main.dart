@@ -84,6 +84,9 @@ import 'package:supermarket/presentation/features/hr/payroll_provider.dart';
 import 'package:supermarket/presentation/features/inventory/stock_transfer_provider.dart';
 import 'package:supermarket/presentation/features/products/products_provider.dart';
 
+import 'package:supermarket/core/events/app_events.dart';
+import 'package:supermarket/core/services/event_bus_service.dart';
+
 void main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
@@ -95,6 +98,18 @@ void main() async {
 
     final accountingService = di.sl<AccountingService>();
     await accountingService.seedDefaultAccounts();
+
+    // Event Listeners setup
+    final eventBus = di.sl<EventBusService>();
+    final purchaseService = di.sl<PurchaseService>();
+
+    eventBus.stream.listen((event) {
+      if (event is SaleCreatedEvent) {
+        accountingService.createJournalEntry(event);
+      } else if (event is PurchasePostedEvent) {
+        purchaseService.createJournalEntry(event);
+      }
+    });
 
     runApp(const MyApp());
   } catch (e, stack) {

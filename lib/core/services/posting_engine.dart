@@ -30,6 +30,18 @@ enum AccountType {
   costCenter,
 }
 
+class CostCenterDistribution {
+  final String costCenterId;
+  final double percentage; // 0.0 to 1.0
+  final double? amount; // Optional fixed amount
+
+  CostCenterDistribution({
+    required this.costCenterId,
+    this.percentage = 1.0,
+    this.amount,
+  });
+}
+
 class PostingContext {
   final OperationType operationType;
   final String? referenceId;
@@ -49,6 +61,7 @@ class PostingContext {
   final double? baseCurrencyRate;
   final List<PostingItem> items;
   final String? costCenterId;
+  final List<CostCenterDistribution> distributions;
 
   PostingContext({
     required this.operationType,
@@ -68,6 +81,7 @@ class PostingContext {
     this.baseCurrencyRate,
     this.items = const [],
     this.costCenterId,
+    this.distributions = const [],
   });
 
   double get baseAmount => total * exchangeRate;
@@ -467,17 +481,38 @@ class PostingEngine {
         continue;
       }
 
-      lines.add(
-        GLLinesCompanion.insert(
-          entryId: entryId,
-          accountId: accountId,
-          debit: rule.side == 'DEBIT' ? Value(amount) : const Value(0.0),
-          credit: rule.side == 'CREDIT' ? Value(amount) : const Value(0.0),
-          currencyId: Value(context.currencyId),
-          exchangeRate: Value(context.exchangeRate),
-          costCenterId: Value(context.costCenterId),
-        ),
-      );
+      // Handle Cost Center Distribution
+      if (context.distributions.isNotEmpty && 
+          (rule.accountType == 'expense' || rule.accountType == 'inventory')) {
+        for (var dist in context.distributions) {
+          final distAmount = dist.amount ?? (amount * dist.percentage);
+          if (distAmount <= 0) continue;
+          
+          lines.add(
+            GLLinesCompanion.insert(
+              entryId: entryId,
+              accountId: accountId,
+              debit: rule.side == 'DEBIT' ? Value(distAmount) : const Value(0.0),
+              credit: rule.side == 'CREDIT' ? Value(distAmount) : const Value(0.0),
+              currencyId: Value(context.currencyId),
+              exchangeRate: Value(context.exchangeRate),
+              costCenterId: Value(dist.costCenterId),
+            ),
+          );
+        }
+      } else {
+        lines.add(
+          GLLinesCompanion.insert(
+            entryId: entryId,
+            accountId: accountId,
+            debit: rule.side == 'DEBIT' ? Value(amount) : const Value(0.0),
+            credit: rule.side == 'CREDIT' ? Value(amount) : const Value(0.0),
+            currencyId: Value(context.currencyId),
+            exchangeRate: Value(context.exchangeRate),
+            costCenterId: Value(context.costCenterId),
+          ),
+        );
+      }
     }
 
     if (!skipValidation) {

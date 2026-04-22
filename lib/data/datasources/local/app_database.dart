@@ -15,6 +15,7 @@ import 'daos/users_dao.dart';
 import 'daos/suppliers_dao.dart';
 import 'daos/purchases_dao.dart';
 import 'daos/bom_dao.dart';
+import 'daos/warehouses_dao.dart';
 import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 
 part 'app_database.g.dart';
@@ -677,6 +678,7 @@ class SalesOrderItems extends Table with SyncableTable {
     SuppliersDao,
     PurchasesDao,
     BomDao,
+    WarehousesDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {

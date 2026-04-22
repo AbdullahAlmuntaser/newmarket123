@@ -1,8 +1,32 @@
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' as drift;
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
 import 'package:supermarket/core/services/audit_service.dart';
 import 'package:uuid/uuid.dart';
+
+class InventoryTransactionReport {
+  final InventoryTransaction transaction;
+  final Product product;
+  final Warehouse? warehouse;
+
+  InventoryTransactionReport({
+    required this.transaction,
+    required this.product,
+    this.warehouse,
+  });
+}
+
+class BatchReport {
+  final ProductBatch batch;
+  final Product product;
+  final Warehouse? warehouse;
+
+  BatchReport({
+    required this.batch,
+    required this.product,
+    this.warehouse,
+  });
+}
 
 class InventoryService {
   final AppDatabase db;
@@ -11,6 +35,84 @@ class InventoryService {
   InventoryService(this.db) {
     _auditService = AuditService(db);
   }
+
+  // ==================== REPORTING ====================
+
+  /// Report: Inventory Transactions with product and warehouse details
+  Stream<List<InventoryTransactionReport>> watchInventoryTransactions({
+    String? productId,
+    String? warehouseId,
+    int limit = 100,
+  }) {
+    final query = db.select(db.inventoryTransactions).join([
+      drift.innerJoin(db.products, db.products.id.equalsExp(db.inventoryTransactions.productId)),
+      drift.leftOuterJoin(db.warehouses, db.warehouses.id.equalsExp(db.inventoryTransactions.warehouseId)),
+    ])
+      ..orderBy([
+        drift.OrderingTerm(expression: db.inventoryTransactions.date, mode: drift.OrderingMode.desc),
+      ])
+      ..limit(limit);
+
+    if (productId != null) {
+      query.where(db.inventoryTransactions.productId.equals(productId));
+    }
+    if (warehouseId != null) {
+      query.where(db.inventoryTransactions.warehouseId.equals(warehouseId));
+    }
+
+    return query.watch().map((rows) {
+      return rows.map((row) {
+        return InventoryTransactionReport(
+          transaction: row.readTable(db.inventoryTransactions),
+          product: row.readTable(db.products),
+          warehouse: row.readTableOrNull(db.warehouses),
+        );
+      }).toList();
+    });
+  }
+
+  /// Report: Product Batches with product and warehouse details
+  Stream<List<BatchReport>> watchProductBatches({
+    String? productId,
+    String? warehouseId,
+  }) {
+    final query = db.select(db.productBatches).join([
+      drift.innerJoin(db.products, db.products.id.equalsExp(db.productBatches.productId)),
+      drift.leftOuterJoin(db.warehouses, db.warehouses.id.equalsExp(db.productBatches.warehouseId)),
+    ]);
+
+    if (productId != null) {
+      query.where(db.productBatches.productId.equals(productId));
+    }
+    if (warehouseId != null) {
+      query.where(db.productBatches.warehouseId.equals(warehouseId));
+    }
+
+    query.orderBy([
+      drift.OrderingTerm(expression: db.productBatches.createdAt, mode: drift.OrderingMode.desc),
+    ]);
+
+    return query.watch().map((rows) {
+      return rows.map((row) {
+        return BatchReport(
+          batch: row.readTable(db.productBatches),
+          product: row.readTable(db.products),
+          warehouse: row.readTableOrNull(db.warehouses),
+        );
+      }).toList();
+    });
+  }
+
+  /// Convenience: Get total inventory value (delegates to DB)
+  Future<double> getTotalInventoryValue() {
+    return db.calculateTotalInventoryValue();
+  }
+
+  /// Convenience: Watch low stock products (delegates to DB)
+  Stream<List<Product>> watchLowStockProducts() {
+    return db.watchLowStockProducts();
+  }
+
 
   /// تنفيذ عملية جرد وتسوية للمخزون
   /// [auditCompanion] رأس الجرد (التاريخ، الملاحظات)
@@ -42,20 +144,18 @@ class InventoryService {
             .into(db.inventoryAuditItems)
             .insert(
               item.copyWith(
-                auditId: Value(auditId as String),
-                systemStock: Value(systemStock),
-                difference: Value(difference),
+                auditId: drift.Value(auditId as String),
+                systemStock: drift.Value(systemStock),
+                difference: drift.Value(difference),
               ),
             );
 
         if (difference != 0) {
           // 4. تحديث كمية المنتج في جدول المنتجات
           await (db.update(db.products)..where((p) => p.id.equals(productId)))
-              .write(ProductsCompanion(stock: Value(actualStock)));
+              .write(ProductsCompanion(stock: drift.Value(actualStock)));
 
           // 5. تحديث الدفعات (Batches) - منطق التسوية
-          // إذا كان هناك عجز (Difference < 0)، نخصم من أقدم الدفعات (FIFO)
-          // إذا كان هناك فائض (Difference > 0)، نضيف للدفعة الأحدث أو ننشئ دفعة تسوية
           if (difference < 0) {
             double remainingToDeduct = difference.abs();
             final batches =
@@ -66,9 +166,9 @@ class InventoryService {
                             b.quantity.isBiggerThanValue(0),
                       )
                       ..orderBy([
-                        (b) => OrderingTerm(
+                        (b) => drift.OrderingTerm(
                           expression: b.createdAt,
-                          mode: OrderingMode.asc,
+                          mode: drift.OrderingMode.asc,
                         ),
                       ]))
                     .get();
@@ -83,7 +183,7 @@ class InventoryService {
                 db.productBatches,
               )..where((b) => b.id.equals(batch.id))).write(
                 ProductBatchesCompanion(
-                  quantity: Value(batch.quantity - deductFromThisBatch),
+                  quantity: drift.Value(batch.quantity - deductFromThisBatch),
                 ),
               );
               remainingToDeduct -= deductFromThisBatch;
@@ -91,14 +191,14 @@ class InventoryService {
                   deductFromThisBatch * batch.costPrice;
             }
           } else {
-            // فائض: نضيفه لأحدث دفعة موجودة لتبسيط العملية
+            // فائض
             final latestBatch =
                 await (db.select(db.productBatches)
                       ..where((b) => b.productId.equals(productId))
                       ..orderBy([
-                        (b) => OrderingTerm(
+                        (b) => drift.OrderingTerm(
                           expression: b.createdAt,
-                          mode: OrderingMode.desc,
+                          mode: drift.OrderingMode.desc,
                         ),
                       ])
                       ..limit(1))
@@ -109,7 +209,7 @@ class InventoryService {
                 db.productBatches,
               )..where((b) => b.id.equals(latestBatch.id))).write(
                 ProductBatchesCompanion(
-                  quantity: Value(latestBatch.quantity + difference),
+                  quantity: drift.Value(latestBatch.quantity + difference),
                 ),
               );
               totalInventoryAdjustmentValue +=
@@ -151,55 +251,53 @@ class InventoryService {
     );
     final adjustmentAccount = await dao.getAccountByCode(
       AccountingService.codeCashOverShort,
-    ); // يمكن استخدام حساب مخصص لتسويات المخزون
+    ); 
 
     if (inventoryAccount == null || adjustmentAccount == null) {
       throw Exception('Missing GL accounts for inventory adjustment.');
     }
 
     final entry = GLEntriesCompanion.insert(
-      id: Value(entryId),
+      id: drift.Value(entryId),
       description: 'Inventory Adjustment (Audit #$referenceId)',
-      date: Value(DateTime.now()),
-      referenceType: const Value('INVENTORY_ADJUST'),
-      referenceId: Value(referenceId),
+      date: drift.Value(DateTime.now()),
+      referenceType: const drift.Value('INVENTORY_ADJUST'),
+      referenceId: drift.Value(referenceId),
     );
 
     List<GLLinesCompanion> lines = [];
     if (value > 0) {
-      // فائض: مدين مخزون، دائن تسويات (أرباح)
       lines.add(
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: inventoryAccount.id,
-          debit: Value(value.abs()),
-          credit: const Value(0.0),
+          debit: drift.Value(value.abs()),
+          credit: const drift.Value(0.0),
         ),
       );
       lines.add(
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: adjustmentAccount.id,
-          debit: const Value(0.0),
-          credit: Value(value.abs()),
+          debit: const drift.Value(0.0),
+          credit: drift.Value(value.abs()),
         ),
       );
     } else {
-      // عجز: مدين تسويات (مصاريف)، دائن مخزون
       lines.add(
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: adjustmentAccount.id,
-          debit: Value(value.abs()),
-          credit: const Value(0.0),
+          debit: drift.Value(value.abs()),
+          credit: const drift.Value(0.0),
         ),
       );
       lines.add(
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: inventoryAccount.id,
-          debit: const Value(0.0),
-          credit: Value(value.abs()),
+          debit: const drift.Value(0.0),
+          credit: drift.Value(value.abs()),
         ),
       );
     }

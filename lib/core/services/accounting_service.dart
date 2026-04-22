@@ -230,12 +230,8 @@ class AccountingService {
 
   void _listenToEvents() {
     eventBus.stream.listen((event) {
-      if (event is SaleCreatedEvent) {
-        postSale(event.sale, event.items);
-      } else if (event is SaleReturnCreatedEvent) {
+      if (event is SaleReturnCreatedEvent) {
         postSaleReturn(event.saleReturn, event.items);
-      } else if (event is PurchasePostedEvent) {
-        postPurchase(event.purchase, event.items);
       } else if (event is PurchaseReturnCreatedEvent) {
         postPurchaseReturn(event.purchaseReturn, event.items);
       } else if (event is CustomerPaymentEvent) {
@@ -244,6 +240,13 @@ class AccountingService {
         _handleSupplierPayment(event);
       }
     });
+  }
+
+  /// New: Generic journal entry creation from events
+  Future<void> createJournalEntry(AppEvent event) async {
+    if (event is SaleCreatedEvent) {
+      await postSale(event.sale, event.items);
+    }
   }
 
   Future<void> _recordAccountTransaction({

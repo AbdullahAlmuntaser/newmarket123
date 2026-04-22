@@ -8,6 +8,9 @@ import 'package:supermarket/core/services/quick_customer_service.dart';
 import 'package:supermarket/injection_container.dart';
 import 'package:supermarket/presentation/features/sales/sales_provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:supermarket/core/auth/auth_provider.dart';
+import 'package:supermarket/core/services/shift_service.dart';
+import 'package:supermarket/core/utils/printer_helper.dart';
 
 class PosPage extends StatefulWidget {
   const PosPage({super.key});
@@ -57,6 +60,7 @@ class _PosPageState extends State<PosPage> {
       _addProductToSale(products.first);
       _barcodeController.clear();
     } else {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('المنتج غير موجود')),
       );
@@ -201,18 +205,58 @@ class _PosPageState extends State<PosPage> {
   }
 
   Future<void> _showCloseShiftDialog(AppDatabase db) async {
-    // Logic for closing shift
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userId = authProvider.currentUser?.id;
+    if (userId == null) return;
+
+    final shiftService = ShiftService(db);
+    final activeShift = await shiftService.getActiveShift(userId);
+
+    if (activeShift == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('لا توجد وردية مفتوحة حالياً')),
+        );
+      }
+      return;
+    }
+
+    final expectedCash = await shiftService.calculateExpectedCash(activeShift);
+    final cashController = TextEditingController(text: expectedCash.toStringAsFixed(2));
+
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('إغلاق الوردية'),
-        content: const Text('هل أنت متأكد من إغلاق الوردية الحالية؟ سيتم إصدار تقرير الملخص.'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('الرصيد المتوقع: ${expectedCash.toStringAsFixed(2)}'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: cashController,
+              decoration: const InputDecoration(labelText: 'الرصيد الفعلي (كاش)'),
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.go('/accounting/shifts');
+            onPressed: () async {
+              final actualCash = double.tryParse(cashController.text) ?? 0.0;
+              await shiftService.closeShift(
+                activeShift.id,
+                actualCash,
+              );
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('تم إغلاق الوردية بنجاح')),
+                );
+                context.go('/accounting/shifts');
+              }
             },
             child: const Text('تأكيد الإغلاق'),
           ),
@@ -733,22 +777,58 @@ class _PosPageState extends State<PosPage> {
     }
   }
 
-  void _printSale() {
-    // Implement printing using printer_helper
-    // For now, just show dialog
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('طباعة الفاتورة'),
-        content: const Text('سيتم طباعة الفاتورة'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('موافق'),
-          ),
-        ],
-      ),
+  void _printSale() async {
+    if (_items.isEmpty) return;
+    
+    final db = Provider.of<AppDatabase>(context, listen: false);
+    final products = await (db.select(db.products)).get();
+    
+    final tempSale = Sale(
+      id: 'TEMP',
+      total: _total,
+      discount: _discount,
+      tax: 0.0, // Assuming 0 for now as _tax is undefined
+      paymentMethod: _paymentType,
+      isCredit: _paymentType == 'credit',
+      status: 'POSTED',
+      exchangeRate: 1.0,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      syncStatus: 1,
     );
+    
+    final tempItems = _items.map((item) => SaleItem(
+      id: 'TEMP',
+      saleId: 'TEMP',
+      productId: item.product?.id ?? '',
+      quantity: item.quantity,
+      price: item.price,
+      unitName: item.selectedUnit,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      syncStatus: 1,
+      unitFactor: 1.0,
+    )).toList();
+
+    try {
+      await PrinterHelper.printReceipt(
+        tempSale,
+        tempItems,
+        products,
+        customerName: _selectedCustomer?.name,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم إرسال الفاتورة للطباعة')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('فشل في الطباعة: $e')),
+        );
+      }
+    }
   }
 }
 

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/presentation/features/reports/widgets/inventory_value_report.dart';
 import 'package:supermarket/presentation/features/reports/widgets/low_stock_report.dart';
+import 'package:supermarket/presentation/features/reports/widgets/inventory_transactions_report.dart';
+import 'package:supermarket/presentation/features/reports/widgets/product_batches_report.dart';
 
 class InventoryReportsScreen extends StatelessWidget {
   const InventoryReportsScreen({super.key});
@@ -12,7 +14,7 @@ class InventoryReportsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.inventoryReports), // Will add this to l10n
+        title: Text(l10n.inventoryReports),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
@@ -20,6 +22,10 @@ class InventoryReportsScreen extends StatelessWidget {
           InventoryValueReport(),
           SizedBox(height: 24),
           LowStockReport(),
+          SizedBox(height: 24),
+          InventoryTransactionsReportWidget(),
+          SizedBox(height: 24),
+          ProductBatchesReportWidget(),
         ],
       ),
     );

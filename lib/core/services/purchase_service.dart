@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:supermarket/core/events/app_events.dart';
 import 'package:uuid/uuid.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
@@ -412,6 +413,28 @@ class PurchaseService {
 
     await (db.update(db.suppliers)..where((s) => s.id.equals(supplierId)))
         .write(SuppliersCompanion(balance: Value(newBalance)));
+  }
+
+  /// Public method to create journal entry from event
+  Future<void> createJournalEntry(PurchasePostedEvent event) async {
+    final purchase = event.purchase;
+    
+    // Get supplier if exists
+    Supplier? supplier;
+    if (purchase.supplierId != null) {
+      final supplierList = await (db.select(
+        db.suppliers,
+      )..where((s) => s.id.equals(purchase.supplierId!))).get();
+      if (supplierList.isNotEmpty) {
+        supplier = supplierList.first;
+      }
+    }
+
+    await _createJournalEntry(
+      purchase: purchase,
+      supplier: supplier,
+      isCredit: purchase.isCredit,
+    );
   }
 
   /// Create journal entry for purchase

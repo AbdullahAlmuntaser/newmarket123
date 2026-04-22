@@ -139,6 +139,8 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
     if (_smartData == null) return const SizedBox.shrink();
 
     final isPriceHigh = widget.item.price > _smartData!.averageCost && _smartData!.averageCost > 0;
+    final isLargeQuantity = widget.item.quantity > 100; // Large order alert
+    final isHighStock = _smartData!.currentStock > 500; // High inventory alert
 
     return Container(
       padding: const EdgeInsets.all(8),
@@ -151,13 +153,19 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _infoTile('المخزون', '${_smartData!.currentStock}'),
+              _infoTile('المخزون', '${_smartData!.currentStock}', color: isHighStock ? Colors.purple : null, highlight: isHighStock),
               _infoTile('متوسط التكلفة', _smartData!.averageCost.toStringAsFixed(2)),
               _infoTile('آخر سعر', _smartData!.lastPurchasePrice.toStringAsFixed(2)),
               if (_supplierSmartData != null)
                 _infoTile('آخر سعر (المورد)', _supplierSmartData!.lastPurchasePriceForProduct.toStringAsFixed(2)),
             ],
           ),
+          // Unit conversions
+          if (widget.item.product != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: _buildUnitConversions(),
+            ),
           if (isPriceHigh)
             Padding(
               padding: const EdgeInsets.only(top: 8.0),
@@ -172,17 +180,88 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
                 ],
               ),
             ),
+          if (isLargeQuantity)
+            Padding(
+              padding: const EdgeInsets.only(top: 4.0),
+              child: Row(
+                children: [
+                  const Icon(Icons.info, color: Colors.blue, size: 16),
+                  const SizedBox(width: 4),
+                  const Text(
+                    'تنبيه: كمية كبيرة! راجع الحاجة قبل الطلب',
+                    style: TextStyle(color: Colors.blue, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          if (isHighStock)
+            Padding(
+              padding: const EdgeInsets.only(top: 4.0),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning, color: Colors.purple, size: 16),
+                  const SizedBox(width: 4),
+                  Text(
+                    'مخزون مرتفع:(${_smartData!.currentStock.toStringAsFixed(0)}) - اقترح تقليل الكمية',
+                    style: const TextStyle(color: Colors.purple, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
   }
 
-  Widget _infoTile(String label, String value) {
-    return Column(
+  Widget _buildUnitConversions() {
+    if (widget.item.product == null) return const SizedBox.shrink();
+    // Calculate unit conversions based on pieces per carton
+    final product = widget.item.product!;
+    final piecesPerCarton = product.piecesPerCarton > 0 ? product.piecesPerCarton : 1;
+    
+    return Wrap(
+      spacing: 16,
+      runSpacing: 4,
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-        Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+        _infoTile('كرتون', (widget.item.quantity / piecesPerCarton).toStringAsFixed(2), onTap: () {
+          setState(() {
+            widget.item.quantity = widget.item.quantity / piecesPerCarton;
+            widget.item.selectedUnit = product.cartonUnit;
+          });
+          widget.onChanged();
+        }),
+        _infoTile('صندوق', (widget.item.quantity / (piecesPerCarton / 6)).toStringAsFixed(2), onTap: () {
+          setState(() {
+            widget.item.quantity = widget.item.quantity / (piecesPerCarton / 6);
+            widget.item.selectedUnit = product.boxUnit ?? 'box';
+          });
+          widget.onChanged();
+        }),
+        _infoTile('pcs', widget.item.quantity.toStringAsFixed(0), onTap: () {
+          setState(() {
+            widget.item.selectedUnit = product.unit;
+          });
+          widget.onChanged();
+        }),
       ],
+    );
+  }
+
+  Widget _infoTile(String label, String value, {Color? color, bool highlight = false, VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: highlight
+            ? BoxDecoration(color: Colors.purple.withAlpha(30), borderRadius: BorderRadius.circular(4))
+            : null,
+        child: Column(
+          children: [
+            Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+            Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+          ],
+        ),
+      ),
     );
   }
 }
