@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:drift/drift.dart' hide Column;
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:drift/drift.dart' as drift;
 import 'package:supermarket/l10n/app_localizations.dart';
 
 class SalesReportsPage extends StatefulWidget {
@@ -15,6 +15,7 @@ class SalesReportsPage extends StatefulWidget {
 class _SalesReportsPageState extends State<SalesReportsPage> {
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 7));
   DateTime _endDate = DateTime.now();
+  String _selectedSaleType = 'all'; // all, retail, wholesale
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +26,16 @@ class _SalesReportsPageState extends State<SalesReportsPage> {
       appBar: AppBar(
         title: Text(l10n.viewReports),
         actions: [
+          DropdownButton<String>(
+            value: _selectedSaleType,
+            underline: const SizedBox(),
+            items: const [
+              DropdownMenuItem(value: 'all', child: Text('الكل')),
+              DropdownMenuItem(value: 'retail', child: Text('تجزئة')),
+              DropdownMenuItem(value: 'wholesale', child: Text('جملة')),
+            ],
+            onChanged: (value) => setState(() => _selectedSaleType = value!),
+          ),
           IconButton(
             icon: const Icon(Icons.date_range),
             onPressed: () => _selectDateRange(context),
@@ -71,33 +82,69 @@ class _SalesReportsPageState extends State<SalesReportsPage> {
 
   Widget _buildSummaryCards(AppDatabase db, AppLocalizations l10n) {
     return FutureBuilder<List<Sale>>(
-      future: (db.select(
-        db.sales,
-      )..where((t) => t.createdAt.isBetweenValues(_startDate, _endDate))).get(),
+      future: (db.select(db.sales)
+            ..where((t) {
+              final dateFilter = t.createdAt.isBetween(Variable(_startDate), Variable(_endDate));
+              if (_selectedSaleType == 'all') return dateFilter;
+              return dateFilter & t.saleType.equals(_selectedSaleType);
+            }))
+          .get(),
       builder: (context, snapshot) {
         final sales = snapshot.data ?? [];
         final totalRevenue = sales.fold(0.0, (sum, sale) => sum + sale.total);
-        final totalSalesCount = sales.length;
+        
+        final retailSales = sales.where((s) => s.saleType == 'retail');
+        final wholesaleSales = sales.where((s) => s.saleType == 'wholesale');
+        
+        final retailTotal = retailSales.fold(0.0, (sum, s) => sum + s.total);
+        final wholesaleTotal = wholesaleSales.fold(0.0, (sum, s) => sum + s.total);
 
-        return Row(
+        return Column(
           children: [
-            Expanded(
-              child: _summaryCard(
-                l10n.totalSales,
-                totalRevenue.toStringAsFixed(2),
-                Icons.attach_money,
-                Colors.green,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: _summaryCard(
+                    l10n.totalSales,
+                    totalRevenue.toStringAsFixed(2),
+                    Icons.attach_money,
+                    Colors.green,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _summaryCard(
+                    'عدد العمليات',
+                    sales.length.toString(),
+                    Icons.shopping_cart,
+                    Colors.blue,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _summaryCard(
-                'عدد العمليات',
-                totalSalesCount.toString(),
-                Icons.shopping_cart,
-                Colors.blue,
+            const SizedBox(height: 16),
+            if (_selectedSaleType == 'all')
+              Row(
+                children: [
+                  Expanded(
+                    child: _summaryCard(
+                      'مبيعات التجزئة',
+                      retailTotal.toStringAsFixed(2),
+                      Icons.person,
+                      Colors.orange,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _summaryCard(
+                      'مبيعات الجملة',
+                      wholesaleTotal.toStringAsFixed(2),
+                      Icons.business,
+                      Colors.purple,
+                    ),
+                  ),
+                ],
               ),
-            ),
           ],
         );
       },
@@ -135,7 +182,7 @@ class _SalesReportsPageState extends State<SalesReportsPage> {
       child: FutureBuilder<List<Sale>>(
         future:
             (db.select(db.sales)..where(
-                  (t) => t.createdAt.isBetweenValues(_startDate, _endDate),
+                  (t) => t.createdAt.isBetween(Variable(_startDate), Variable(_endDate)),
                 ))
                 .get(),
         builder: (context, snapshot) {

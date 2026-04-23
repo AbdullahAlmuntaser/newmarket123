@@ -5,6 +5,7 @@
   channel = "stable-24.05"; # or "unstable"
   # Use https://search.nixos.org/packages to find packages
   packages = [
+    pkgs.flutter
     pkgs.jdk17
     pkgs.unzip
     pkgs.sqlite
@@ -20,8 +21,12 @@
     ];
     workspace = {
       # Runs when a workspace is first created with this `dev.nix` file
-      onCreate = { };
+      onCreate = {
+        # Example: install JS dependencies from npm
+        # npm-install = "npm install";
+      };
       # To run something each time the workspace is (re)started, use the `onStart` hook
+      onStart = {};
     };
     # Enable previews and customize configuration
     previews = {

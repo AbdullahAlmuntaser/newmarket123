@@ -10,6 +10,7 @@ import 'package:supermarket/presentation/widgets/entity_picker.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:supermarket/core/services/erp_data_service.dart';
+import 'package:supermarket/presentation/features/purchases/purchase_provider.dart';
 import 'package:supermarket/presentation/features/purchases/widgets/purchase_item_row.dart';
 
 class AddPurchasePage extends StatefulWidget {
@@ -25,7 +26,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   Warehouse? _selectedWarehouse;
   DateTime _selectedDate = DateTime.now();
   String _paymentType = 'credit'; // cash / credit
-  final List<PurchaseLineItem> _items = [];
+  final List<PurchaseItemData> _items = [];
   final TextEditingController _supplierController = TextEditingController();
   final TextEditingController _discountController = TextEditingController();
   final TextEditingController _shippingCostController = TextEditingController();
@@ -36,7 +37,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   bool _isHeaderExpanded = true;
   bool _isExpensesExpanded = false;
 
-  double get _subtotal => _items.fold(0.0, (sum, item) => sum + item.lineTotal);
+  double get _subtotal => _items.fold(0.0, (sum, item) => sum + item.subtotal);
   double get _discount => double.tryParse(_discountController.text) ?? 0.0;
   double get _shippingCost =>
       double.tryParse(_shippingCostController.text) ?? 0.0;
@@ -67,11 +68,11 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
       final product = products.first;
       setState(() {
         _items.add(
-          PurchaseLineItem(
+          PurchaseItemData(
             product: product,
             quantity: 1,
-            price: product.buyPrice,
-            selectedUnit: product.unit,
+            unitPrice: product.buyPrice,
+            selectedUnit: null,
           ),
         );
       });
@@ -266,7 +267,6 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
                 index: index,
                 item: _items[index],
                 products: products,
-                supplierId: _selectedSupplier?.id,
                 onDelete: () => setState(() => _items.removeAt(index)),
                 onChanged: () => setState(() {}),
               ),
@@ -281,9 +281,40 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: TextButton.icon(
-        onPressed: () => setState(() => _items.add(PurchaseLineItem())),
+        onPressed: () {
+          // Show product picker instead of adding empty item
+          _showProductPickerDialog();
+        },
         icon: const Icon(Icons.add_circle_outline),
         label: const Text('إضافة منتج جديد للجدول'),
+      ),
+    );
+  }
+
+  Future<void> _showProductPickerDialog() async {
+    final db = Provider.of<AppDatabase>(context, listen: false);
+    final products = await db.select(db.products).get();
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => ListView.builder(
+        itemCount: products.length,
+        itemBuilder: (context, index) {
+          final p = products[index];
+          return ListTile(
+            title: Text(p.name),
+            onTap: () {
+              setState(() {
+                _items.add(PurchaseItemData(
+                  product: p,
+                  unitPrice: p.buyPrice,
+                ));
+              });
+              Navigator.pop(context);
+            },
+          );
+        },
       ),
     );
   }
@@ -377,8 +408,25 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
     final products = await db.select(db.products).get();
     setState(() {
       _items.clear();
-      for (var pi in poItems) { final product = products.firstWhere((p) => p.id == pi.productId); _items.add(PurchaseLineItem(product: product, quantity: pi.quantity, price: pi.price, selectedUnit: pi.unitId ?? product.unit)); }
-      if (po.supplierId != null) { db.suppliersDao.getSupplierById(po.supplierId!).then((s) { if (s != null) { setState(() { _selectedSupplier = s; _supplierController.text = s.name; }); _fetchSupplierSmartData(s.id); } }); }
+      for (var pi in poItems) {
+        final product = products.firstWhere((p) => p.id == pi.productId);
+        _items.add(PurchaseItemData(
+            product: product,
+            quantity: pi.quantity,
+            unitPrice: pi.price,
+            selectedUnit: null));
+      }
+      if (po.supplierId != null) {
+        db.suppliersDao.getSupplierById(po.supplierId!).then((s) {
+          if (s != null) {
+            setState(() {
+              _selectedSupplier = s;
+              _supplierController.text = s.name;
+            });
+            _fetchSupplierSmartData(s.id);
+          }
+        });
+      }
     });
   }
 
@@ -387,24 +435,63 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
     final warehouses = await db.select(db.warehouses).get();
     if (warehouses.isEmpty) {
       final id = const Uuid().v4();
-      await db.into(db.warehouses).insert(WarehousesCompanion.insert(id: drift.Value(id), name: 'Main Warehouse', isDefault: const drift.Value(true)));
+      await db.into(db.warehouses).insert(WarehousesCompanion.insert(
+          id: drift.Value(id),
+          name: 'Main Warehouse',
+          isDefault: const drift.Value(true)));
       final updated = await db.select(db.warehouses).get();
       setState(() => _selectedWarehouse = updated.first);
     } else {
-      setState(() => _selectedWarehouse = warehouses.firstWhere((w) => w.isDefault, orElse: () => warehouses.first));
+      setState(() => _selectedWarehouse =
+          warehouses.firstWhere((w) => w.isDefault, orElse: () => warehouses.first));
     }
   }
 
   Future<void> _savePurchase(AppDatabase db, {required bool post}) async {
-    if (_items.isEmpty || _selectedSupplier == null || _selectedWarehouse == null) return;
+    if (_items.isEmpty || _selectedSupplier == null || _selectedWarehouse == null) {
+      return;
+    }
     setState(() => _isSaving = true);
     final purchaseId = const Uuid().v4();
     try {
-      final purchaseCompanion = PurchasesCompanion.insert(id: drift.Value(purchaseId), supplierId: drift.Value(_selectedSupplier!.id), total: _total, discount: drift.Value(_discount), shippingCost: drift.Value(_shippingCost), otherExpenses: drift.Value(_otherExpenses), purchaseType: drift.Value(_paymentType), date: drift.Value(_selectedDate), isCredit: drift.Value(_paymentType == 'credit'), status: const drift.Value('DRAFT'), warehouseId: drift.Value(_selectedWarehouse!.id));
-      final itemsCompanions = _items.map((item) => PurchaseItemsCompanion.insert(purchaseId: purchaseId, productId: item.product!.id, unitId: drift.Value(item.selectedUnit), quantity: item.quantity, unitPrice: item.price, price: item.lineTotal)).toList();
-      await db.purchasesDao.createPurchase(purchaseCompanion: purchaseCompanion, itemsCompanions: itemsCompanions, userId: null);
-      if (post) await sl<PurchaseService>().postPurchase(purchaseId: purchaseId, userId: null);
-      if (mounted) { context.pop(); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(post ? 'تم ترحيل الفاتورة' : 'تم حفظ المسودة'))); }
-    } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e'))); } finally { setState(() => _isSaving = false); }
+      final purchaseCompanion = PurchasesCompanion.insert(
+          id: drift.Value(purchaseId),
+          supplierId: drift.Value(_selectedSupplier!.id),
+          total: _total,
+          discount: drift.Value(_discount),
+          shippingCost: drift.Value(_shippingCost),
+          otherExpenses: drift.Value(_otherExpenses),
+          purchaseType: drift.Value(_paymentType),
+          date: drift.Value(_selectedDate),
+          isCredit: drift.Value(_paymentType == 'credit'),
+          status: const drift.Value('DRAFT'),
+          warehouseId: drift.Value(_selectedWarehouse!.id));
+      final itemsCompanions = _items
+          .map((item) => PurchaseItemsCompanion.insert(
+              purchaseId: purchaseId,
+              productId: item.product.id,
+              unitId: drift.Value(item.selectedUnit?.unitName),
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              price: item.subtotal))
+          .toList();
+      await db.purchasesDao.createPurchase(
+          purchaseCompanion: purchaseCompanion,
+          itemsCompanions: itemsCompanions,
+          userId: null);
+      if (post) {
+        await sl<PurchaseService>()
+            .postPurchase(purchaseId: purchaseId, userId: null);
+      }
+      if (mounted) {
+        context.pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(post ? 'تم ترحيل الفاتورة' : 'تم حفظ المسودة')));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e')));
+    } finally {
+      setState(() => _isSaving = false);
+    }
   }
 }

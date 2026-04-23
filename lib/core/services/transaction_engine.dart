@@ -71,11 +71,8 @@ class TransactionEngine {
               ..where((p) => p.id.equals(item.productId)))
             .getSingle();
 
-        double qtyInBaseUnit = item.quantity;
-        if (item.isCarton) {
-          qtyInBaseUnit *= product.piecesPerCarton;
-        }
-
+        double qtyInBaseUnit = item.quantity * item.unitFactor;
+        
         // A. Create Product Batch
         final batchId = const Uuid().v4();
         await db.into(db.productBatches).insert(
@@ -83,10 +80,13 @@ class TransactionEngine {
             id: Value(batchId),
             productId: item.productId,
             warehouseId: purchase.warehouseId ?? '',
-            batchNumber: 'PUR-${purchase.id.substring(0, 8)}',
+            batchNumber: item.batchNumber != null && item.batchNumber!.isNotEmpty 
+                ? item.batchNumber! 
+                : 'PUR-${purchase.id.substring(0, 8)}',
+            expiryDate: Value(item.expiryDate),
             quantity: Value(qtyInBaseUnit),
             initialQuantity: Value(qtyInBaseUnit),
-            costPrice: Value(finalUnitCost),
+            costPrice: Value(finalUnitCost / item.unitFactor), // Cost per base unit
             syncStatus: const Value(1),
           ),
         );
@@ -181,10 +181,15 @@ class TransactionEngine {
         }
 
         // Get Batches ordered by expiry date (FEFO)
+        // Batches with expiry dates come first (ordered by date), then batches without expiry dates (FIFO)
         final batches = await (db.select(db.productBatches)
               ..where((b) => b.productId.equals(item.productId))
               ..where((b) => b.quantity.isBiggerThanValue(0))
               ..orderBy([
+                (b) => OrderingTerm(
+                  expression: b.expiryDate.isNull(), // False (0) comes before True (1) in many SQLites, but let's be explicit
+                  mode: OrderingMode.asc,
+                ),
                 (b) => OrderingTerm(
                   expression: b.expiryDate,
                   mode: OrderingMode.asc,

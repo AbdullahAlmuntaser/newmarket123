@@ -6,6 +6,7 @@ import 'package:supermarket/data/datasources/local/daos/products_dao.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/presentation/widgets/main_drawer.dart';
 import 'package:supermarket/presentation/features/products/widgets/add_edit_product_dialog.dart';
+import 'package:supermarket/presentation/features/products/widgets/smart_stock_widget.dart';
 
 class ProductsPage extends StatefulWidget {
   const ProductsPage({super.key});
@@ -94,8 +95,20 @@ class _ProductsPageState extends State<ProductsPage> {
 
               return ListTile(
                 title: Text(product.name),
-                subtitle: Text(
-                  'SKU: ${product.sku} | ${l10n.stock}: ${product.stock} | ${l10n.category}: $categoryName',
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'SKU: ${product.sku} | ${l10n.category}: $categoryName',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    Row(
+                      children: [
+                        Text('${l10n.stock}: ', style: const TextStyle(fontSize: 12)),
+                        SmartStockWidget(product: product),
+                      ],
+                    ),
+                  ],
                 ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,

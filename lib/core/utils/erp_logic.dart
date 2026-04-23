@@ -88,4 +88,40 @@ class ErpLogic {
         : requestedQty;
     return product.stock >= actualQty;
   }
+
+  /// عرض المخزون بشكل نصي ذكي (مثلاً: 2 كرتون و 5 حبات)
+  static String formatInventory({
+    required double totalBaseQty,
+    required String baseUnitName,
+    required List<UnitConversion> conversions,
+  }) {
+    if (totalBaseQty == 0) return '0 $baseUnitName';
+    
+    // ترتيب الوحدات من الأكبر للأصغر (معامل التحويل الأكبر أولاً)
+    final sortedConversions = List<UnitConversion>.from(conversions)
+      ..sort((a, b) => b.factor.compareTo(a.factor));
+    
+    List<String> parts = [];
+    double remaining = totalBaseQty;
+
+    for (var unit in sortedConversions) {
+      if (unit.factor <= 1) continue; // تخطي الوحدات الأساسية أو الأصغر
+      
+      int count = (remaining / unit.factor).floor();
+      if (count > 0) {
+        parts.add('$count ${unit.unitName}');
+        remaining %= unit.factor;
+      }
+    }
+
+    if (remaining > 0 || parts.isEmpty) {
+      // إزالة الكسور إذا كانت قريبة جداً من الصفر
+      String formattedRemaining = remaining == remaining.toInt() 
+          ? remaining.toInt().toString() 
+          : remaining.toStringAsFixed(2);
+      parts.add('$formattedRemaining $baseUnitName');
+    }
+
+    return parts.join(' و ');
+  }
 }

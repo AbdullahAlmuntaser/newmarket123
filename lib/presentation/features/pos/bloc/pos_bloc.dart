@@ -218,6 +218,9 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         product = await (db.select(
           db.products,
         )..where((t) => t.sku.equals(event.sku))).getSingleOrNull();
+        if (product != null) {
+          unitName = product.unit;
+        }
       }
 
       // Check if product was found
@@ -242,10 +245,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
           priceListId: currentState.activePriceListId,
         );
       } else {
-        finalPrice = specificPrice ?? await pricingService.calculatePrice(
-          productId: product.id,
-          quantity: Decimal.one,
-        );
+        finalPrice = specificPrice ?? Decimal.parse(product.sellPrice.toString()) * factor;
       }
 
       final existingIndex = currentState.cart.indexWhere(
@@ -264,6 +264,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
             unitName: unitName,
             unitFactor: factor,
             unitPrice: finalPrice,
+            isWholesale: currentState.isWholesaleMode,
             availableUnits: allUnits,
             quantity: Decimal.one,
           ),
@@ -351,9 +352,23 @@ class PosBloc extends Bloc<PosEvent, PosState> {
   void _onToggleWholesale(ToggleWholesaleMode event, Emitter<PosState> emit) {
     if (state is! PosLoaded) return;
     final currentState = state as PosLoaded;
-    final newCart = currentState.cart
-        .map((item) => item.copyWith(isWholesale: event.isWholesale))
-        .toList();
+    
+    final newCart = currentState.cart.map((item) {
+      Decimal newPrice;
+      if (event.isWholesale) {
+        newPrice = Decimal.parse(item.product.wholesalePrice.toString()) * item.unitFactor;
+      } else {
+        final unitInfo = item.availableUnits.cast<UnitConversion?>().firstWhere(
+          (u) => u?.unitName == item.unitName,
+          orElse: () => null,
+        );
+        newPrice = (unitInfo?.sellPrice != null) 
+            ? Decimal.parse(unitInfo!.sellPrice.toString()) 
+            : Decimal.parse(item.product.sellPrice.toString()) * item.unitFactor;
+      }
+      return item.copyWith(isWholesale: event.isWholesale, unitPrice: newPrice);
+    }).toList();
+
     emit(
       currentState.copyWith(cart: newCart, isWholesaleMode: event.isWholesale),
     );

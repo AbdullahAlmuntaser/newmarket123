@@ -2,6 +2,8 @@ import 'package:get_it/get_it.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:supermarket/core/theme/theme_provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/data/datasources/local/daos/products_dao.dart';
+import 'package:supermarket/data/datasources/local/daos/product_units_dao.dart';
 import 'package:supermarket/data/repositories/category_repository_impl.dart';
 import 'package:supermarket/domain/repositories/category_repository.dart';
 import 'package:supermarket/domain/usecases/add_category.dart';
@@ -17,6 +19,7 @@ import 'package:supermarket/core/services/transaction_engine.dart';
 import 'package:supermarket/core/services/inventory_service.dart';
 import 'package:supermarket/core/services/purchase_service.dart';
 import 'package:supermarket/core/services/role_permissions_service.dart';
+import 'package:supermarket/core/services/unit_conversion_service.dart';
 
 import 'package:supermarket/presentation/features/pos/bloc/pos_bloc.dart';
 
@@ -30,6 +33,10 @@ void init() {
   final db = AppDatabase();
   sl.registerLazySingleton(() => db);
 
+  // DAOs
+  sl.registerLazySingleton<ProductsDao>(() => ProductsDao(sl()));
+  sl.registerLazySingleton<ProductUnitsDao>(() => ProductUnitsDao(sl()));
+
   // Services
   sl.registerLazySingleton(() => EventBusService());
   sl.registerLazySingleton(() => InventoryCostingService(sl()));
@@ -40,6 +47,10 @@ void init() {
   sl.registerLazySingleton(() => InventoryService(sl()));
   sl.registerLazySingleton(() => PurchaseService(sl()));
   sl.registerLazySingleton(() => PermissionsService(sl()));
+  sl.registerLazySingleton(() => UnitConversionService(
+        productsDao: sl(),
+        productUnitsDao: sl(),
+      ));
 
   // Providers
   sl.registerLazySingleton(() => AuthProvider(sl(), sl()));

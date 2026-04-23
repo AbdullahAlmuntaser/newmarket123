@@ -5,7 +5,8 @@ import 'package:supermarket/presentation/features/pos/bloc/pos_bloc.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_event.dart';
 
 class ProductSearchWidget extends StatelessWidget {
-  const ProductSearchWidget({super.key});
+  final TextEditingController? controller;
+  const ProductSearchWidget({super.key, this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -16,6 +17,7 @@ class ProductSearchWidget extends StatelessWidget {
       child: Column(
         children: [
           TextField(
+            controller: controller,
             decoration: InputDecoration(
               labelText: l10n.searchProducts,
               suffixIcon: const Icon(Icons.search),

@@ -194,6 +194,8 @@ class PurchaseProvider with ChangeNotifier {
       tax: Value((item.subtotal - item.discountAmount) * (item.taxPercent / 100)),
       unitId: Value(item.selectedUnit?.unitName),
       unitFactor: Value(item.selectedUnit?.factor ?? 1.0),
+      batchNumber: Value(item.batchNumber),
+      expiryDate: Value(item.expiryDate),
     )).toList();
 
     await purchaseService.createPurchase(

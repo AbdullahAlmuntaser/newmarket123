@@ -10,6 +10,9 @@ mixin _$SalesDaoMixin on DatabaseAccessor<AppDatabase> {
   $SalesTable get sales => attachedDatabase.sales;
   $CategoriesTable get categories => attachedDatabase.categories;
   $ProductsTable get products => attachedDatabase.products;
+  $GlobalUnitsTable get globalUnits => attachedDatabase.globalUnits;
+  $WarehousesTable get warehouses => attachedDatabase.warehouses;
+  $ProductBatchesTable get productBatches => attachedDatabase.productBatches;
   $SaleItemsTable get saleItems => attachedDatabase.saleItems;
   $SalesOrdersTable get salesOrders => attachedDatabase.salesOrders;
   $SalesOrderItemsTable get salesOrderItems => attachedDatabase.salesOrderItems;
@@ -18,8 +21,6 @@ mixin _$SalesDaoMixin on DatabaseAccessor<AppDatabase> {
   $SalesReturnsTable get salesReturns => attachedDatabase.salesReturns;
   $SalesReturnItemsTable get salesReturnItems =>
       attachedDatabase.salesReturnItems;
-  $WarehousesTable get warehouses => attachedDatabase.warehouses;
-  $ProductBatchesTable get productBatches => attachedDatabase.productBatches;
   SalesDaoManager get managers => SalesDaoManager(this);
 }
 
@@ -38,6 +39,15 @@ class SalesDaoManager {
       $$CategoriesTableTableManager(_db.attachedDatabase, _db.categories);
   $$ProductsTableTableManager get products =>
       $$ProductsTableTableManager(_db.attachedDatabase, _db.products);
+  $$GlobalUnitsTableTableManager get globalUnits =>
+      $$GlobalUnitsTableTableManager(_db.attachedDatabase, _db.globalUnits);
+  $$WarehousesTableTableManager get warehouses =>
+      $$WarehousesTableTableManager(_db.attachedDatabase, _db.warehouses);
+  $$ProductBatchesTableTableManager get productBatches =>
+      $$ProductBatchesTableTableManager(
+        _db.attachedDatabase,
+        _db.productBatches,
+      );
   $$SaleItemsTableTableManager get saleItems =>
       $$SaleItemsTableTableManager(_db.attachedDatabase, _db.saleItems);
   $$SalesOrdersTableTableManager get salesOrders =>
@@ -57,12 +67,5 @@ class SalesDaoManager {
       $$SalesReturnItemsTableTableManager(
         _db.attachedDatabase,
         _db.salesReturnItems,
-      );
-  $$WarehousesTableTableManager get warehouses =>
-      $$WarehousesTableTableManager(_db.attachedDatabase, _db.warehouses);
-  $$ProductBatchesTableTableManager get productBatches =>
-      $$ProductBatchesTableTableManager(
-        _db.attachedDatabase,
-        _db.productBatches,
       );
 }

@@ -16,6 +16,8 @@ import 'daos/suppliers_dao.dart';
 import 'daos/purchases_dao.dart';
 import 'daos/bom_dao.dart';
 import 'daos/warehouses_dao.dart';
+import 'daos/global_units_dao.dart';
+import 'daos/product_units_dao.dart';
 import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 
 part 'app_database.g.dart';
@@ -116,6 +118,12 @@ class Suppliers extends Table with SyncableTable {
       text().nullable().references(GLAccounts, #id)(); // New: Linked to GL
 }
 
+class GlobalUnits extends Table with SyncableTable {
+  TextColumn get name => text().unique()();
+  TextColumn get symbol => text().nullable()();
+  BoolColumn get isCustom => boolean().withDefault(const Constant(true))();
+}
+
 class Sales extends Table with SyncableTable {
   TextColumn get customerId => text().nullable().references(Customers, #id)();
   RealColumn get total => real()();
@@ -123,9 +131,10 @@ class Sales extends Table with SyncableTable {
   RealColumn get tax => real().withDefault(const Constant(0.0))();
   TextColumn get paymentMethod => text()();
   BoolColumn get isCredit => boolean().withDefault(const Constant(false))();
-  TextColumn get status => text().withDefault(
-    const Constant('POSTED'),
-  )(); // New: DRAFT, POSTED, CANCELLED
+  TextColumn get status =>
+      text().withDefault(const Constant('POSTED'))(); // DRAFT, POSTED, CANCELLED
+  TextColumn get saleType =>
+      text().withDefault(const Constant('retail'))(); // retail / wholesale
   TextColumn get currencyId => text().nullable()();
   RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
   // ZATCA Fields
@@ -139,8 +148,26 @@ class SaleItems extends Table with SyncableTable {
   TextColumn get productId => text().references(Products, #id)();
   RealColumn get quantity => real()();
   RealColumn get price => real()();
+  TextColumn get unitId => text().nullable().references(GlobalUnits, #id)();
   TextColumn get unitName => text().withDefault(const Constant('حبة'))();
   RealColumn get unitFactor => real().withDefault(const Constant(1.0))();
+  TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
+  TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
+}
+
+class StockMovements extends Table with SyncableTable {
+  TextColumn get productId => text().references(Products, #id)();
+  TextColumn get fromWarehouseId =>
+      text().nullable().references(Warehouses, #id)();
+  TextColumn get toWarehouseId =>
+      text().nullable().references(Warehouses, #id)();
+  RealColumn get quantity => real()();
+  TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
+  DateTimeColumn get movementDate =>
+      dateTime().withDefault(currentDateAndTime)();
+  TextColumn get type =>
+      text()(); // TRANSFER, ADJUSTMENT, INITIAL, SALE, PURCHASE
+  TextColumn get referenceId => text().nullable()(); // SaleId, PurchaseId, etc.
 }
 
 class Purchases extends Table with SyncableTable {
@@ -483,11 +510,12 @@ class Currencies extends Table with SyncableTable {
 
 class UnitConversions extends Table with SyncableTable {
   TextColumn get productId => text().references(Products, #id)();
-  TextColumn get unitName => text()(); // حبة، كرتون، كيس
-  RealColumn get factor => real()(); // المعامل (مثلاً الكرتون فيه 24 حبة)
-  TextColumn get barcode => text().unique().nullable()(); // باركود خاص بالوحدة
-  RealColumn get sellPrice =>
-      real().nullable()(); // سعر خاص بهذه الوحدة (اختياري)
+  TextColumn get unitName => text()();
+  RealColumn get factor => real()(); // How many of this unit equal the base unit
+  BoolColumn get isBaseUnit => boolean().withDefault(const Constant(false))();
+  RealColumn get buyPrice => real().nullable()(); // Unit-specific buy price
+  RealColumn get sellPrice => real().nullable()(); // Unit-specific sell price
+  TextColumn get barcode => text().unique().nullable()(); // Barcode for this unit
 }
 
 class InventoryTransactions extends Table with SyncableTable {
@@ -668,6 +696,10 @@ class SalesOrderItems extends Table with SyncableTable {
     InventoryTransactions,
     AccountTransactions,
     PostingProfiles,
+    GlobalUnits,
+    StockMovements,
+    ProductUnits,
+    UnitConversions,
   ],
   daos: [
     ProductsDao,
@@ -679,6 +711,8 @@ class SalesOrderItems extends Table with SyncableTable {
     PurchasesDao,
     BomDao,
     WarehousesDao,
+    GlobalUnitsDao,
+    ProductUnitsDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -784,6 +818,30 @@ class AppDatabase extends _$AppDatabase {
       products,
     )..where((p) => p.stock.isSmallerOrEqual(p.alertLimit))).watch();
   }
+
+  // DAO getters
+  @override
+  AccountingDao get accountingDao => AccountingDao(this);
+  @override
+  CustomersDao get customersDao => CustomersDao(this);
+  @override
+  ProductsDao get productsDao => ProductsDao(this);
+  @override
+  SalesDao get salesDao => SalesDao(this);
+  @override
+  PurchasesDao get purchasesDao => PurchasesDao(this);
+  @override
+  SuppliersDao get suppliersDao => SuppliersDao(this);
+  @override
+  UsersDao get usersDao => UsersDao(this);
+  @override
+  WarehousesDao get warehousesDao => WarehousesDao(this);
+  @override
+  GlobalUnitsDao get globalUnitsDao => GlobalUnitsDao(this);
+  @override
+  ProductUnitsDao get productUnitsDao => ProductUnitsDao(this);
+  @override
+  BomDao get bomDao => BomDao(this);
 }
 
 LazyDatabase _openConnection() {

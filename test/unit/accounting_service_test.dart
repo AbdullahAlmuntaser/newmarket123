@@ -56,6 +56,7 @@ void main() {
       syncStatus: 1,
       currencyId: 'USD',
       exchangeRate: 1.0,
+      saleType: 'retail',
     );
 
     // Mock products for COGS

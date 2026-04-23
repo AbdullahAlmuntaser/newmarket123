@@ -5,6 +5,7 @@ import 'package:supermarket/presentation/features/purchases/purchase_provider.da
 import 'package:supermarket/presentation/widgets/permission_guard.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:go_router/go_router.dart';
+import 'package:supermarket/presentation/features/purchases/widgets/purchase_item_row.dart';
 
 // Export supplier and product smart info for use in UI
 export 'package:supermarket/presentation/features/purchases/purchase_provider.dart' 
@@ -178,93 +179,23 @@ class _NewPurchasePageState extends State<NewPurchasePage> {
           ],
         ),
         const SizedBox(height: 10),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: provider.items.length,
-          itemBuilder: (context, index) {
-            final item = provider.items[index];
-            final productInfo = provider.getProductInfo(item.product.id);
-            return Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(flex: 2, child: Text(item.product.name, style: const TextStyle(fontWeight: FontWeight.bold))),
-                        IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => provider.removeItem(index)),
-                      ],
-                    ),
-                    // Show product smart info
-                    if (productInfo != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: _buildProductInfoWidget(item, productInfo),
-                      ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            initialValue: item.quantity.toString(),
-                            decoration: const InputDecoration(labelText: 'الكمية'),
-                            keyboardType: TextInputType.number,
-                            onChanged: (val) => provider.updateItemAndCheckAlerts(index, quantity: double.tryParse(val)),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextFormField(
-                            initialValue: item.unitPrice.toString(),
-                            decoration: const InputDecoration(labelText: 'سعر الوحدة'),
-                            keyboardType: TextInputType.number,
-                            onChanged: (val) => provider.updateItemAndCheckAlerts(index, unitPrice: double.tryParse(val)),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextFormField(
-                            initialValue: item.discountAmount.toString(),
-                            decoration: const InputDecoration(labelText: 'الخصم'),
-                            keyboardType: TextInputType.number,
-                            onChanged: (val) => provider.updateItemAndCheckAlerts(index, discount: double.tryParse(val)),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            decoration: const InputDecoration(labelText: 'رقم الدفعة (Batch)'),
-                            onChanged: (val) => provider.updateItem(index, batch: val),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () async {
-                              final date = await showDatePicker(
-                                context: context,
-                                initialDate: DateTime.now().add(const Duration(days: 365)),
-                                firstDate: DateTime.now(),
-                                lastDate: DateTime(2040),
-                              );
-                              if (date != null) provider.updateItem(index, expiry: date);
-                            },
-                            child: InputDecorator(
-                              decoration: const InputDecoration(labelText: 'تاريخ الانتهاء'),
-                              child: Text(item.expiryDate == null ? 'لم يحدد' : DateFormat('yyyy-MM-dd').format(item.expiryDate!)),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+        FutureBuilder<List<Product>>(
+          future: db.select(db.products).get(),
+          builder: (context, snapshot) {
+            final products = snapshot.data ?? [];
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: provider.items.length,
+              itemBuilder: (context, index) {
+                return PurchaseItemRow(
+                  index: index,
+                  item: provider.items[index],
+                  products: products,
+                  onDelete: () => provider.removeItem(index),
+                  onChanged: () => setState(() {}),
+                );
+              },
             );
           },
         ),
@@ -390,53 +321,6 @@ class _NewPurchasePageState extends State<NewPurchasePage> {
               Text('آخر شراء: ${info.lastPurchaseDate!.toString().split(' ')[0]}'),
           ],
         ),
-      ),
-    );
-  }
-
-  /// Build product info for a purchase item row
-  Widget _buildProductInfoWidget(PurchaseItemData item, ProductSmartInfo? info) {
-    if (info == null) return const SizedBox.shrink();
-    
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.inventory_2, size: 16),
-              const SizedBox(width: 4),
-              Text('المخزون: ${info.currentStock.toStringAsFixed(2)}'),
-            ],
-          ),
-          Row(
-            children: [
-              const Icon(Icons.attach_money, size: 16),
-              const SizedBox(width: 4),
-              Text('متوسط التكلفة: ${info.averageCost.toStringAsFixed(2)}'),
-            ],
-          ),
-          Row(
-            children: [
-              const Icon(Icons.shopping_cart, size: 16),
-              const SizedBox(width: 4),
-              Text('آخر سعر: ${info.lastPurchasePrice.toStringAsFixed(2)}'),
-            ],
-          ),
-          if (info.lastPurchaseDate != null)
-            Row(
-              children: [
-                const Icon(Icons.calendar_today, size: 16),
-                const SizedBox(width: 4),
-                Text('تاريخ آخر شراء: ${info.lastPurchaseDate!.toString().split(' ')[0]}'),
-              ],
-            ),
-        ],
       ),
     );
   }

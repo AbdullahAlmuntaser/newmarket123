@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:supermarket/core/services/asset_service.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/services/asset_service.dart';
 import 'package:drift/drift.dart';
 
 class AssetProvider with ChangeNotifier {
