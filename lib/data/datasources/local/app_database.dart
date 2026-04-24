@@ -484,21 +484,21 @@ class PriceListItems extends Table with SyncableTable {
 
 class Promotions extends Table with SyncableTable {
   TextColumn get name => text()();
-  TextColumn get type =>
-      text()(); // PERCENTAGE_DISCOUNT, FIXED_DISCOUNT, BOGO (Buy One Get One)
+  TextColumn get type => text()(); // PERCENTAGE_DISCOUNT, FIXED_DISCOUNT, BOGO (Buy One Get One)
   RealColumn get value => real()(); // Discount amount or percentage
   DateTimeColumn get startDate => dateTime()();
   DateTimeColumn get endDate => dateTime()();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
-  TextColumn get categoryId => text().nullable().references(
-    Categories,
-    #id,
-  )(); // Optional category constraint
-  TextColumn get productId => text().nullable().references(
-    Products,
-    #id,
-  )(); // Optional product constraint
+  TextColumn get categoryId => text().nullable().references(Categories, #id)();
+  TextColumn get productId => text().nullable().references(Products, #id)();
   RealColumn get minPurchaseAmount => real().withDefault(const Constant(0.0))();
+}
+
+class PriceHistory extends Table with SyncableTable {
+  TextColumn get productId => text().references(Products, #id)();
+  RealColumn get oldPrice => real()();
+  RealColumn get newPrice => real()();
+  TextColumn get type => text()(); // PURCHASE / SALE
 }
 
 class Currencies extends Table with SyncableTable {
@@ -688,6 +688,7 @@ class SalesOrderItems extends Table with SyncableTable {
     PriceListItems,
     Promotions,
     Currencies,
+    PriceHistory,
     UnitConversions,
     StockTakes,
     StockTakeItems,

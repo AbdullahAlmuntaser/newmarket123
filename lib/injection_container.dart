@@ -16,9 +16,13 @@ import 'package:supermarket/core/services/accounting_service.dart';
 import 'package:supermarket/core/services/event_bus_service.dart';
 import 'package:supermarket/core/services/pricing_service.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
+import 'package:supermarket/core/services/posting_engine.dart';
 import 'package:supermarket/core/services/inventory_service.dart';
 import 'package:supermarket/core/services/purchase_service.dart';
+import 'package:supermarket/core/services/system_auditor.dart';
+import 'package:supermarket/core/services/supplier_analytics_service.dart';
 import 'package:supermarket/core/services/role_permissions_service.dart';
+import 'package:supermarket/core/services/reorder_service.dart';
 import 'package:supermarket/core/services/unit_conversion_service.dart';
 
 import 'package:supermarket/presentation/features/pos/bloc/pos_bloc.dart';
@@ -44,12 +48,16 @@ void init() {
   sl.registerLazySingleton(() => AccountingService(sl(), sl()));
   sl.registerLazySingleton(() => PricingService(sl()));
   sl.registerLazySingleton(() => TransactionEngine(sl(), sl()));
+  sl.registerLazySingleton(() => PostingEngine(sl()));
   sl.registerLazySingleton(() => InventoryService(sl()));
   sl.registerLazySingleton(() => UnitConversionService(
         productsDao: sl(),
         productUnitsDao: sl(),
       ));
-  sl.registerLazySingleton(() => PurchaseService(sl(), sl()));
+  sl.registerLazySingleton(() => PurchaseService(sl(), sl(), sl()));
+  sl.registerLazySingleton(() => ReorderService(sl()));
+  sl.registerLazySingleton(() => SupplierAnalyticsService(sl()));
+  sl.registerLazySingleton(() => SystemAuditor(sl()));
   sl.registerLazySingleton(() => PermissionsService(sl()));
 
   // Providers

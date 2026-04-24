@@ -12,12 +12,15 @@ import 'package:supermarket/core/services/unit_conversion_service.dart';
 /// - Posting (inventory, batch creation, journal entries)
 /// - Supplier balance management
 
+import 'package:supermarket/core/services/posting_engine.dart';
+
 class PurchaseService {
   final AppDatabase db;
   final UnitConversionService unitConversionService;
+  final PostingEngine postingEngine;
   final _uuid = const Uuid();
 
-  PurchaseService(this.db, this.unitConversionService);
+  PurchaseService(this.db, this.unitConversionService, this.postingEngine);
 
   // ==================== CALCULATIONS ====================
 
@@ -197,12 +200,12 @@ class PurchaseService {
       for (var item in itemsCompanions) {
         final productId = item.productId.value;
         final unitId = item.unitId.value ?? 'pcs';
-        final quantity = item.quantity.value;
+        final q = item.quantity.value;
 
         // Convert to base units
         final baseQuantity = await unitConversionService.convertToBaseUnit(
           productId: productId,
-          quantity: quantity,
+          quantity: q,
           unitName: unitId,
         );
         
@@ -218,7 +221,7 @@ class PurchaseService {
       }
 
       // 2. Insert Purchase
-      final total = totalSubtotal + totalTax + purchaseCompanion.landedCosts.value;
+      final total = totalSubtotal + totalTax + (purchaseCompanion.landedCosts.present ? purchaseCompanion.landedCosts.value : 0.0);
 
       await db.into(db.purchases).insert(
             purchaseCompanion.copyWith(
@@ -347,20 +350,17 @@ class PurchaseService {
         amount: purchase.total,
         isIncrease: true,
       );
-      // Create journal entry for credit purchase
-      await _createJournalEntry(
-        purchase: purchase,
-        supplier: supplier,
-        isCredit: true,
-      );
-    } else {
-      // Create journal entry for cash purchase
-      await _createJournalEntry(
-        purchase: purchase,
-        supplier: supplier,
-        isCredit: false,
-      );
     }
+    
+    // Create journal entry using PostingEngine
+    await postingEngine.post(
+      type: TransactionType.purchase,
+      referenceId: purchaseId,
+      context: {
+        'amount': purchase.total,
+        'description': 'مشتريات - ${supplier?.name ?? "غير محدد"} - ${purchase.invoiceNumber ?? purchase.id}',
+      },
+    );
 
     // Update purchase status
     await (db.update(
@@ -407,7 +407,7 @@ class PurchaseService {
           ),
         );
 
-    // 2. Update Moving Average Cost
+    // 2. Update Moving Average Cost (which handles stock update)
     await _updateMovingAverageCost(item.productId, item.quantity, item.price);
   }
 
@@ -424,6 +424,15 @@ class PurchaseService {
     if (newStock > 0) {
       final newCost = ((currentStock * currentCost) + (quantity * purchasePrice)) / newStock;
       
+      if ((currentCost - newCost).abs() > 0.001) {
+        await db.into(db.priceHistory).insert(PriceHistoryCompanion.insert(
+          productId: productId,
+          oldPrice: currentCost,
+          newPrice: newCost,
+          type: 'PURCHASE',
+        ));
+      }
+
       await (db.update(db.products)..where((p) => p.id.equals(productId))).write(
         ProductsCompanion(
           stock: Value(newStock),

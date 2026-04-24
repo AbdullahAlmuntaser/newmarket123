@@ -1,3 +1,4 @@
+import 'package:supermarket/core/services/unit_conversion_service.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -27,6 +28,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
   final TextEditingController _barcodeController = TextEditingController();
   final TextEditingController _discountController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
+  final TextEditingController _referenceController = TextEditingController();
+  final TextEditingController _termsController = TextEditingController();
   bool _isSaving = false;
   bool _isHeaderExpanded = true;
   
@@ -181,6 +184,24 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
                   ],
                 ),
                 if (_isSplitPayment) _buildSplitPaymentFields(),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _referenceController,
+                        decoration: const InputDecoration(labelText: 'رقم المرجع الخارجي', border: OutlineInputBorder(), isDense: true),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _termsController,
+                        decoration: const InputDecoration(labelText: 'شروط الدفع', border: OutlineInputBorder(), isDense: true),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _notesController,
@@ -386,8 +407,34 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     for (var item in _items) { if (item.product != null) totalTax += (item.lineTotal / (1 + (item.product!.taxRate / 100))) * (item.product!.taxRate / 100); }
 
     try {
-      final saleCompanion = SalesCompanion.insert(id: drift.Value(saleId), customerId: drift.Value(_selectedCustomer?.id), total: _total, tax: drift.Value(totalTax), discount: drift.Value(_discount), paymentMethod: _paymentType, isCredit: drift.Value(_paymentType == 'credit'), status: const drift.Value('DRAFT'));
-      final itemsCompanions = _items.map((item) => SaleItemsCompanion.insert(saleId: saleId, productId: item.product!.id, quantity: item.quantity, price: item.price, unitName: drift.Value(item.selectedUnit), unitFactor: drift.Value(item.unitFactor))).toList();
+      final saleCompanion = SalesCompanion.insert(
+        id: drift.Value(saleId), 
+        customerId: drift.Value(_selectedCustomer?.id), 
+        total: _total, 
+        tax: drift.Value(totalTax), 
+        discount: drift.Value(_discount), 
+        paymentMethod: _paymentType, 
+        isCredit: drift.Value(_paymentType == 'credit'), 
+        status: const drift.Value('DRAFT'),
+      );
+      final itemsCompanions = <SaleItemsCompanion>[];
+      for (var item in _items) {
+        final baseQuantity = await sl<UnitConversionService>().convertToBaseUnit(
+          productId: item.product!.id,
+          quantity: item.quantity,
+          unitName: item.selectedUnit,
+        );
+        itemsCompanions.add(
+          SaleItemsCompanion.insert(
+            saleId: saleId,
+            productId: item.product!.id,
+            quantity: baseQuantity,
+            price: item.price,
+            unitName: drift.Value(item.selectedUnit),
+            unitFactor: drift.Value(item.unitFactor),
+          ),
+        );
+      }
       await db.salesDao.createSale(saleCompanion: saleCompanion, itemsCompanions: itemsCompanions, userId: null);
       if (post) await sl<TransactionEngine>().postSale(saleId, userId: null);
       if (mounted) { context.pop(); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(post ? 'تم ترحيل الفاتورة' : 'تم حفظ المسودة'))); }

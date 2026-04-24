@@ -76,6 +76,7 @@ import 'package:supermarket/core/services/hr_service.dart';
 import 'package:supermarket/core/services/stock_transfer_service.dart';
 import 'package:supermarket/core/services/asset_service.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:supermarket/core/services/posting_engine.dart';
 import 'package:supermarket/core/services/purchase_service.dart';
 import 'package:supermarket/presentation/features/accounting/shifts_provider.dart';
 import 'package:supermarket/presentation/features/accounting/asset_provider.dart';
@@ -143,8 +144,8 @@ class MyApp extends StatelessWidget {
           create: (_) => PurchaseProvider(db, di.sl<PurchaseService>()),
         ),
         ChangeNotifierProvider(create: (_) => ShiftProvider(ShiftService(db))),
-        ChangeNotifierProvider(create: (_) => HRProvider(HRService(db))),
-        ChangeNotifierProvider(create: (_) => PayrollProvider(HRService(db))),
+        ChangeNotifierProvider(create: (_) => HRProvider(HRService(db, PostingEngine(db)))),
+        ChangeNotifierProvider(create: (_) => PayrollProvider(HRService(db, PostingEngine(db)))),
         ChangeNotifierProvider(
           create: (_) => StockTransferProvider(StockTransferService(db)),
         ),

@@ -160,7 +160,7 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
       builder: (context, snapshot) {
       final conversions = snapshot.data ?? [];
       return DropdownButtonFormField<UnitConversion?>(
-        value: widget.item.selectedUnit,
+        initialValue: widget.item.selectedUnit,
         decoration: const InputDecoration(labelText: 'الوحدة', isDense: true),
         items: [
           DropdownMenuItem(
