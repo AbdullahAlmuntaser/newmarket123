@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:intl/intl.dart';
@@ -27,7 +28,7 @@ class _SalesHistoryPageState extends State<SalesHistoryPage> {
       appBar: AppBar(title: Text(l10n.sales)),
       drawer: const MainDrawer(),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.pushNamed(context, '/sales/invoice'),
+        onPressed: () => context.push('/sales/invoice'),
         icon: const Icon(Icons.add),
         label: const Text('فاتورة مبيعات'),
       ),

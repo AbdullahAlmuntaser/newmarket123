@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:supermarket/presentation/features/returns/create_return_page.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class ReturnsPage extends StatefulWidget {
   const ReturnsPage({super.key});
@@ -100,13 +100,7 @@ class _ReturnsPageState extends State<ReturnsPage>
               title: Text(l10n.fromSale),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        const CreateReturnPage(type: ReturnType.sale),
-                  ),
-                );
+                context.push('/returns/new');
               },
             ),
             ListTile(
@@ -114,13 +108,7 @@ class _ReturnsPageState extends State<ReturnsPage>
               title: Text(l10n.fromPurchase),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        const CreateReturnPage(type: ReturnType.purchase),
-                  ),
-                );
+                context.push('/purchases/returns/new');
               },
             ),
           ],

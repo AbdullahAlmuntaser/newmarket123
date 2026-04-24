@@ -69,6 +69,13 @@ import 'package:supermarket/presentation/features/purchases/purchase_details_pag
 import 'package:supermarket/presentation/features/purchases/purchase_return_page.dart';
 import 'package:supermarket/presentation/features/purchases/add_purchase_return_page.dart';
 import 'package:supermarket/presentation/features/purchases/purchase_provider.dart';
+import 'package:supermarket/presentation/features/manufacturing/bom_management_page.dart';
+import 'package:supermarket/presentation/features/purchases/purchase_orders_page.dart';
+import 'package:supermarket/presentation/features/purchases/supplier_performance_page.dart';
+import 'package:supermarket/presentation/features/suppliers/add_supplier_payment_page.dart';
+import 'package:supermarket/presentation/features/inventory/low_stock_alert_page.dart';
+import 'package:supermarket/presentation/features/reports/profitability_report_page.dart';
+import 'package:supermarket/presentation/features/inventory/warehouse_manager_page.dart';
 
 // Services & Providers Imports
 import 'package:supermarket/core/services/shift_service.dart';
@@ -271,6 +278,18 @@ class MyApp extends StatelessWidget {
           path: '/inventory/stock-take',
           builder: (context, state) => const StockTakePage(),
         ),
+        GoRoute(
+          path: '/inventory/low-stock-alert',
+          builder: (context, state) => const LowStockAlertPage(),
+        ),
+        GoRoute(
+          path: '/inventory/warehouse-manager',
+          builder: (context, state) => const WarehouseManagerPage(),
+        ),
+        GoRoute(
+          path: '/manufacturing/bom',
+          builder: (context, state) => const BomManagementPage(),
+        ),
 
         // HR
         GoRoute(
@@ -301,8 +320,21 @@ class MyApp extends StatelessWidget {
         GoRoute(
           path: '/suppliers/statement/:id',
           builder: (context, state) {
-            final supplier = state.extra as Supplier;
+            final supplier = state.extra as Supplier?;
+            if (supplier == null) {
+              return const Scaffold(body: Center(child: Text('Supplier data missing')));
+            }
             return SupplierStatementPage(supplier: supplier);
+          },
+        ),
+        GoRoute(
+          path: '/suppliers/payment',
+          builder: (context, state) {
+            final supplier = state.extra as Supplier?;
+            if (supplier == null) {
+              return const Scaffold(body: Center(child: Text('Supplier data missing')));
+            }
+            return AddSupplierPaymentPage(supplier: supplier);
           },
         ),
 
@@ -314,6 +346,14 @@ class MyApp extends StatelessWidget {
         GoRoute(
           path: '/purchases/new',
           builder: (context, state) => const AddPurchasePage(),
+        ),
+        GoRoute(
+          path: '/purchases/orders',
+          builder: (context, state) => const PurchaseOrdersPage(),
+        ),
+        GoRoute(
+          path: '/purchases/performance',
+          builder: (context, state) => const SupplierPerformancePage(),
         ),
         GoRoute(
           path: '/purchases/details/:id',
@@ -406,6 +446,10 @@ class MyApp extends StatelessWidget {
           builder: (context, state) => const ProductProfitabilityPage(),
         ),
         GoRoute(
+          path: '/reports/gross-profit',
+          builder: (context, state) => const ProfitabilityReportPage(),
+        ),
+        GoRoute(
           path: '/reports/inventory',
           builder: (context, state) => const InventoryReportsScreen(),
         ),
@@ -430,6 +474,10 @@ class MyApp extends StatelessWidget {
         GoRoute(
           path: '/settings/backup',
           builder: (context, state) => const BackupPage(),
+        ),
+        GoRoute(
+          path: '/sync',
+          builder: (context, state) => const Scaffold(body: Center(child: Text('Sync Page - Coming Soon'))),
         ),
         GoRoute(
           path: '/settings/permissions',

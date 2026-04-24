@@ -12,6 +12,7 @@ import 'package:uuid/uuid.dart';
 import 'package:supermarket/core/services/erp_data_service.dart';
 import 'package:supermarket/presentation/features/purchases/purchase_provider.dart';
 import 'package:supermarket/presentation/features/purchases/widgets/purchase_item_row.dart';
+import 'package:supermarket/presentation/features/purchases/widgets/quick_product_add_dialog.dart';
 
 class AddPurchasePage extends StatefulWidget {
   const AddPurchasePage({super.key});
@@ -293,28 +294,103 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
 
   Future<void> _showProductPickerDialog() async {
     final db = Provider.of<AppDatabase>(context, listen: false);
-    final products = await db.select(db.products).get();
+    final allProducts = await db.select(db.products).get();
     if (!mounted) return;
+
+    String searchQuery = '';
 
     showModalBottomSheet(
       context: context,
-      builder: (context) => ListView.builder(
-        itemCount: products.length,
-        itemBuilder: (context, index) {
-          final p = products[index];
-          return ListTile(
-            title: Text(p.name),
-            onTap: () {
-              setState(() {
-                _items.add(PurchaseItemData(
-                  product: p,
-                  unitPrice: p.buyPrice,
-                ));
-              });
-              Navigator.pop(context);
-            },
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final filteredProducts = allProducts.where((p) {
+            final nameMatch = p.name.toLowerCase().contains(searchQuery.toLowerCase());
+            final barcodeMatch = (p.barcode?.toLowerCase() ?? '').contains(searchQuery.toLowerCase());
+            return nameMatch || barcodeMatch;
+          }).toList();
+
+          return DraggableScrollableSheet(
+            initialChildSize: 0.7,
+            maxChildSize: 0.9,
+            expand: false,
+            builder: (context, scrollController) => Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          showDialog(
+                            context: context,
+                            builder: (context) => QuickProductAddDialog(
+                              onProductCreated: (newProduct) {
+                                setState(() {
+                                  _items.add(PurchaseItemData(
+                                    product: newProduct,
+                                    unitPrice: newProduct.buyPrice,
+                                  ));
+                                });
+                              },
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.add),
+                        label: const Text('إضافة منتج جديد كلياً'),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 50),
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        decoration: InputDecoration(
+                          hintText: 'بحث في المنتجات المحفوظة...',
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
+                        ),
+                        onChanged: (value) {
+                          setModalState(() => searchQuery = value);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(),
+                Expanded(
+                  child: filteredProducts.isEmpty 
+                    ? const Center(child: Text('لا توجد نتائج مطابقة'))
+                    : ListView.builder(
+                        controller: scrollController,
+                        itemCount: filteredProducts.length,
+                        itemBuilder: (context, index) {
+                          final p = filteredProducts[index];
+                          return ListTile(
+                            leading: const Icon(Icons.inventory_2, color: Colors.blue),
+                            title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: Text('باركود: ${p.barcode} | السعر الحالي: ${p.buyPrice}'),
+                            onTap: () {
+                              setState(() {
+                                _items.add(PurchaseItemData(
+                                  product: p,
+                                  unitPrice: p.buyPrice,
+                                ));
+                              });
+                              Navigator.pop(context);
+                            },
+                          );
+                        },
+                      ),
+                ),
+              ],
+            ),
           );
-        },
+        }
       ),
     );
   }

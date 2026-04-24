@@ -25828,6 +25828,16 @@ class $EmployeesTable extends Employees
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _roleMeta = const VerificationMeta('role');
+  @override
+  late final GeneratedColumn<String> role = GeneratedColumn<String>(
+    'role',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('USER'),
+  );
   static const VerificationMeta _basicSalaryMeta = const VerificationMeta(
     'basicSalary',
   );
@@ -25890,6 +25900,7 @@ class $EmployeesTable extends Employees
     name,
     employeeCode,
     jobTitle,
+    role,
     basicSalary,
     hireDate,
     warehouseId,
@@ -25957,6 +25968,12 @@ class $EmployeesTable extends Employees
       context.handle(
         _jobTitleMeta,
         jobTitle.isAcceptableOrUnknown(data['job_title']!, _jobTitleMeta),
+      );
+    }
+    if (data.containsKey('role')) {
+      context.handle(
+        _roleMeta,
+        role.isAcceptableOrUnknown(data['role']!, _roleMeta),
       );
     }
     if (data.containsKey('basic_salary')) {
@@ -26030,6 +26047,10 @@ class $EmployeesTable extends Employees
         DriftSqlType.string,
         data['${effectivePrefix}job_title'],
       ),
+      role: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}role'],
+      )!,
       basicSalary: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}basic_salary'],
@@ -26064,6 +26085,7 @@ class Employee extends DataClass implements Insertable<Employee> {
   final String name;
   final String employeeCode;
   final String? jobTitle;
+  final String role;
   final double basicSalary;
   final DateTime? hireDate;
   final String? warehouseId;
@@ -26077,6 +26099,7 @@ class Employee extends DataClass implements Insertable<Employee> {
     required this.name,
     required this.employeeCode,
     this.jobTitle,
+    required this.role,
     required this.basicSalary,
     this.hireDate,
     this.warehouseId,
@@ -26097,6 +26120,7 @@ class Employee extends DataClass implements Insertable<Employee> {
     if (!nullToAbsent || jobTitle != null) {
       map['job_title'] = Variable<String>(jobTitle);
     }
+    map['role'] = Variable<String>(role);
     map['basic_salary'] = Variable<double>(basicSalary);
     if (!nullToAbsent || hireDate != null) {
       map['hire_date'] = Variable<DateTime>(hireDate);
@@ -26122,6 +26146,7 @@ class Employee extends DataClass implements Insertable<Employee> {
       jobTitle: jobTitle == null && nullToAbsent
           ? const Value.absent()
           : Value(jobTitle),
+      role: Value(role),
       basicSalary: Value(basicSalary),
       hireDate: hireDate == null && nullToAbsent
           ? const Value.absent()
@@ -26147,6 +26172,7 @@ class Employee extends DataClass implements Insertable<Employee> {
       name: serializer.fromJson<String>(json['name']),
       employeeCode: serializer.fromJson<String>(json['employeeCode']),
       jobTitle: serializer.fromJson<String?>(json['jobTitle']),
+      role: serializer.fromJson<String>(json['role']),
       basicSalary: serializer.fromJson<double>(json['basicSalary']),
       hireDate: serializer.fromJson<DateTime?>(json['hireDate']),
       warehouseId: serializer.fromJson<String?>(json['warehouseId']),
@@ -26165,6 +26191,7 @@ class Employee extends DataClass implements Insertable<Employee> {
       'name': serializer.toJson<String>(name),
       'employeeCode': serializer.toJson<String>(employeeCode),
       'jobTitle': serializer.toJson<String?>(jobTitle),
+      'role': serializer.toJson<String>(role),
       'basicSalary': serializer.toJson<double>(basicSalary),
       'hireDate': serializer.toJson<DateTime?>(hireDate),
       'warehouseId': serializer.toJson<String?>(warehouseId),
@@ -26181,6 +26208,7 @@ class Employee extends DataClass implements Insertable<Employee> {
     String? name,
     String? employeeCode,
     Value<String?> jobTitle = const Value.absent(),
+    String? role,
     double? basicSalary,
     Value<DateTime?> hireDate = const Value.absent(),
     Value<String?> warehouseId = const Value.absent(),
@@ -26194,6 +26222,7 @@ class Employee extends DataClass implements Insertable<Employee> {
     name: name ?? this.name,
     employeeCode: employeeCode ?? this.employeeCode,
     jobTitle: jobTitle.present ? jobTitle.value : this.jobTitle,
+    role: role ?? this.role,
     basicSalary: basicSalary ?? this.basicSalary,
     hireDate: hireDate.present ? hireDate.value : this.hireDate,
     warehouseId: warehouseId.present ? warehouseId.value : this.warehouseId,
@@ -26213,6 +26242,7 @@ class Employee extends DataClass implements Insertable<Employee> {
           ? data.employeeCode.value
           : this.employeeCode,
       jobTitle: data.jobTitle.present ? data.jobTitle.value : this.jobTitle,
+      role: data.role.present ? data.role.value : this.role,
       basicSalary: data.basicSalary.present
           ? data.basicSalary.value
           : this.basicSalary,
@@ -26235,6 +26265,7 @@ class Employee extends DataClass implements Insertable<Employee> {
           ..write('name: $name, ')
           ..write('employeeCode: $employeeCode, ')
           ..write('jobTitle: $jobTitle, ')
+          ..write('role: $role, ')
           ..write('basicSalary: $basicSalary, ')
           ..write('hireDate: $hireDate, ')
           ..write('warehouseId: $warehouseId, ')
@@ -26253,6 +26284,7 @@ class Employee extends DataClass implements Insertable<Employee> {
     name,
     employeeCode,
     jobTitle,
+    role,
     basicSalary,
     hireDate,
     warehouseId,
@@ -26270,6 +26302,7 @@ class Employee extends DataClass implements Insertable<Employee> {
           other.name == this.name &&
           other.employeeCode == this.employeeCode &&
           other.jobTitle == this.jobTitle &&
+          other.role == this.role &&
           other.basicSalary == this.basicSalary &&
           other.hireDate == this.hireDate &&
           other.warehouseId == this.warehouseId &&
@@ -26285,6 +26318,7 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
   final Value<String> name;
   final Value<String> employeeCode;
   final Value<String?> jobTitle;
+  final Value<String> role;
   final Value<double> basicSalary;
   final Value<DateTime?> hireDate;
   final Value<String?> warehouseId;
@@ -26299,6 +26333,7 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
     this.name = const Value.absent(),
     this.employeeCode = const Value.absent(),
     this.jobTitle = const Value.absent(),
+    this.role = const Value.absent(),
     this.basicSalary = const Value.absent(),
     this.hireDate = const Value.absent(),
     this.warehouseId = const Value.absent(),
@@ -26314,6 +26349,7 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
     required String name,
     required String employeeCode,
     this.jobTitle = const Value.absent(),
+    this.role = const Value.absent(),
     this.basicSalary = const Value.absent(),
     this.hireDate = const Value.absent(),
     this.warehouseId = const Value.absent(),
@@ -26330,6 +26366,7 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
     Expression<String>? name,
     Expression<String>? employeeCode,
     Expression<String>? jobTitle,
+    Expression<String>? role,
     Expression<double>? basicSalary,
     Expression<DateTime>? hireDate,
     Expression<String>? warehouseId,
@@ -26345,6 +26382,7 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
       if (name != null) 'name': name,
       if (employeeCode != null) 'employee_code': employeeCode,
       if (jobTitle != null) 'job_title': jobTitle,
+      if (role != null) 'role': role,
       if (basicSalary != null) 'basic_salary': basicSalary,
       if (hireDate != null) 'hire_date': hireDate,
       if (warehouseId != null) 'warehouse_id': warehouseId,
@@ -26362,6 +26400,7 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
     Value<String>? name,
     Value<String>? employeeCode,
     Value<String?>? jobTitle,
+    Value<String>? role,
     Value<double>? basicSalary,
     Value<DateTime?>? hireDate,
     Value<String?>? warehouseId,
@@ -26377,6 +26416,7 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
       name: name ?? this.name,
       employeeCode: employeeCode ?? this.employeeCode,
       jobTitle: jobTitle ?? this.jobTitle,
+      role: role ?? this.role,
       basicSalary: basicSalary ?? this.basicSalary,
       hireDate: hireDate ?? this.hireDate,
       warehouseId: warehouseId ?? this.warehouseId,
@@ -26412,6 +26452,9 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
     if (jobTitle.present) {
       map['job_title'] = Variable<String>(jobTitle.value);
     }
+    if (role.present) {
+      map['role'] = Variable<String>(role.value);
+    }
     if (basicSalary.present) {
       map['basic_salary'] = Variable<double>(basicSalary.value);
     }
@@ -26441,6 +26484,7 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
           ..write('name: $name, ')
           ..write('employeeCode: $employeeCode, ')
           ..write('jobTitle: $jobTitle, ')
+          ..write('role: $role, ')
           ..write('basicSalary: $basicSalary, ')
           ..write('hireDate: $hireDate, ')
           ..write('warehouseId: $warehouseId, ')
@@ -62686,6 +62730,7 @@ typedef $$EmployeesTableCreateCompanionBuilder =
       required String name,
       required String employeeCode,
       Value<String?> jobTitle,
+      Value<String> role,
       Value<double> basicSalary,
       Value<DateTime?> hireDate,
       Value<String?> warehouseId,
@@ -62702,6 +62747,7 @@ typedef $$EmployeesTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String> employeeCode,
       Value<String?> jobTitle,
+      Value<String> role,
       Value<double> basicSalary,
       Value<DateTime?> hireDate,
       Value<String?> warehouseId,
@@ -62800,6 +62846,11 @@ class $$EmployeesTableFilterComposer
 
   ColumnFilters<String> get jobTitle => $composableBuilder(
     column: $table.jobTitle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get role => $composableBuilder(
+    column: $table.role,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -62916,6 +62967,11 @@ class $$EmployeesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get basicSalary => $composableBuilder(
     column: $table.basicSalary,
     builder: (column) => ColumnOrderings(column),
@@ -62991,6 +63047,9 @@ class $$EmployeesTableAnnotationComposer
 
   GeneratedColumn<String> get jobTitle =>
       $composableBuilder(column: $table.jobTitle, builder: (column) => column);
+
+  GeneratedColumn<String> get role =>
+      $composableBuilder(column: $table.role, builder: (column) => column);
 
   GeneratedColumn<double> get basicSalary => $composableBuilder(
     column: $table.basicSalary,
@@ -63088,6 +63147,7 @@ class $$EmployeesTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String> employeeCode = const Value.absent(),
                 Value<String?> jobTitle = const Value.absent(),
+                Value<String> role = const Value.absent(),
                 Value<double> basicSalary = const Value.absent(),
                 Value<DateTime?> hireDate = const Value.absent(),
                 Value<String?> warehouseId = const Value.absent(),
@@ -63102,6 +63162,7 @@ class $$EmployeesTableTableManager
                 name: name,
                 employeeCode: employeeCode,
                 jobTitle: jobTitle,
+                role: role,
                 basicSalary: basicSalary,
                 hireDate: hireDate,
                 warehouseId: warehouseId,
@@ -63118,6 +63179,7 @@ class $$EmployeesTableTableManager
                 required String name,
                 required String employeeCode,
                 Value<String?> jobTitle = const Value.absent(),
+                Value<String> role = const Value.absent(),
                 Value<double> basicSalary = const Value.absent(),
                 Value<DateTime?> hireDate = const Value.absent(),
                 Value<String?> warehouseId = const Value.absent(),
@@ -63132,6 +63194,7 @@ class $$EmployeesTableTableManager
                 name: name,
                 employeeCode: employeeCode,
                 jobTitle: jobTitle,
+                role: role,
                 basicSalary: basicSalary,
                 hireDate: hireDate,
                 warehouseId: warehouseId,

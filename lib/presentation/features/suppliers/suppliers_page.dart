@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'widgets/add_edit_supplier_dialog.dart';
-import 'supplier_statement_page.dart';
 import 'package:supermarket/presentation/widgets/main_drawer.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
@@ -147,7 +147,7 @@ class _SuppliersPageState extends State<SuppliersPage> {
                       const SizedBox(width: 8),
                       IconButton.filledTonal(
                         icon: const Icon(Icons.receipt_long),
-                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => SupplierStatementPage(supplier: supplier))),
+                        onPressed: () => context.push('/suppliers/statement/${supplier.id}', extra: supplier),
                         tooltip: 'كشف حساب',
                       ),
                     ],

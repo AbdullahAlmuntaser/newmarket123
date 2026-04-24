@@ -425,6 +425,7 @@ class Employees extends Table with SyncableTable {
   TextColumn get name => text()();
   TextColumn get employeeCode => text().unique()();
   TextColumn get jobTitle => text().nullable()();
+  TextColumn get role => text().withDefault(const Constant('USER'))(); // ADMIN or USER
   RealColumn get basicSalary => real().withDefault(const Constant(0.0))();
   DateTimeColumn get hireDate => dateTime().nullable()();
   TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:printing/printing.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -73,7 +74,7 @@ class SaleDetailsBottomSheet extends StatelessWidget {
                                 tooltip: 'إرجاع أصناف',
                                 onPressed: () {
                                   Navigator.pop(context);
-                                  Navigator.pushNamed(context, '/sales/returns/new', arguments: sale.id);
+                                  context.push('/sales/returns/new', extra: sale.id);
                                 },
                               ),
                             IconButton(

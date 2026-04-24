@@ -85,6 +85,7 @@ class MainDrawer extends StatelessWidget {
                     children: [
                       _buildSubItem(context, 'قائمة المنتجات', '/products'),
                       _buildSubItem(context, l10n?.categories ?? 'الفئات', '/categories'),
+                      _buildSubItem(context, 'إدارة التصنيع (BOM)', '/manufacturing/bom'),
                       _buildSubItem(context, 'المنتجات أوشكت على النفاد', '/low-stock'),
                     ],
                   ),
@@ -95,6 +96,8 @@ class MainDrawer extends StatelessWidget {
                     children: [
                        _buildSubItem(context, 'قائمة المشتريات', '/purchases'),
                        _buildSubItem(context, 'إضافة عملية شراء', '/purchases/new'),
+                       _buildSubItem(context, 'أوامر الشراء', '/purchases/orders'),
+                       _buildSubItem(context, 'دفعات الموردين', '/suppliers/payment'),
                     ]
                   ),
                   _buildDrawerItem(
@@ -113,7 +116,7 @@ class MainDrawer extends StatelessWidget {
                   title: l10n?.customers ?? 'العملاء',
                   children: [
                     _buildSubItem(context, 'قائمة العملاء', '/customers'),
-                    _buildSubItem(context, 'كشوفات الحساب', '/customers'),
+                    _buildSubItem(context, 'كشوفات حساب العملاء', '/customers'),
                   ]
                 ),
 
@@ -124,7 +127,7 @@ class MainDrawer extends StatelessWidget {
                     title: l10n?.suppliers ?? 'الموردين',
                     children: [
                       _buildSubItem(context, 'قائمة الموردين', '/suppliers'),
-                      _buildSubItem(context, 'كشوفات الحساب', '/suppliers'),
+                      _buildSubItem(context, 'كشوفات حساب الموردين', '/suppliers'),
                     ]
                   ),
                 ],
@@ -180,6 +183,7 @@ class MainDrawer extends StatelessWidget {
                        _buildSubItem(context, 'إدارة الشيكات', '/accounting/checks'),
                        _buildSubItem(context, 'الأصول الثابتة', '/accounting/fixed-assets'),
                        _buildSubItem(context, 'قيود يدوية', '/accounting/manual-journal'),
+                       _buildSubItem(context, 'سندات القبض والصرف', '/accounting/manual-voucher'),
                        _buildSubItem(context, 'التسويات', '/accounting/reconciliation'),
                        _buildSubItem(context, 'ورديات الكاشير', '/accounting/shifts'),
                        _buildSubItem(context, 'مراكز التكلفة', '/accounting/cost-centers'),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/daos/products_dao.dart';
 
@@ -65,6 +66,11 @@ class ProductCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                IconButton(
+                  icon: const Icon(Icons.straighten_rounded, color: Colors.orange),
+                  onPressed: () => context.push('/products/unit-conversion/${product.id}', extra: product.name),
+                  tooltip: 'تحويل الوحدات',
+                ),
                 IconButton(
                   icon: const Icon(Icons.edit, color: Colors.blueAccent),
                   onPressed: onEdit,

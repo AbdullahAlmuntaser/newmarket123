@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/injection_container.dart';
-import 'package:drift/drift.dart' as drift;
+import 'package:supermarket/core/services/reorder_service.dart';
 
 class PurchaseOrdersPage extends StatefulWidget {
   const PurchaseOrdersPage({super.key});
@@ -11,9 +11,12 @@ class PurchaseOrdersPage extends StatefulWidget {
 }
 
 class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
+  final ReorderService _reorderService = sl<ReorderService>();
+  final AppDatabase db = sl<AppDatabase>();
+  bool _isLoading = false;
+
   @override
   Widget build(BuildContext context) {
-    final db = sl<AppDatabase>();
     return Scaffold(
       appBar: AppBar(title: const Text('أوامر الشراء')),
       body: StreamBuilder<List<PurchaseOrder>>(
@@ -26,7 +29,7 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
             itemBuilder: (context, index) {
               final order = orders[index];
               return ListTile(
-                title: Text('أمر شراء رقم: ${order.orderNumber ?? order.id.substring(0,8)}'),
+                title: Text('أمر شراء رقم: ${order.orderNumber ?? order.id}'),
                 subtitle: Text('التاريخ: ${order.date.toString().split(' ')[0]} | الحالة: ${order.status}'),
                 trailing: Text(order.total.toStringAsFixed(2)),
               );
@@ -34,18 +37,23 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _createNewOrder(db),
-        child: const Icon(Icons.add),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _isLoading ? null : () => _generateAutoOrder(),
+        label: _isLoading ? const Text('جاري الإنشاء...') : const Text('توليد أوامر شراء تلقائية'),
+        icon: const Icon(Icons.auto_awesome),
       ),
     );
   }
 
-  Future<void> _createNewOrder(AppDatabase db) async {
-    // Basic navigation or dialog to create new PO
-    await db.into(db.purchaseOrders).insert(PurchaseOrdersCompanion.insert(
-      total: 0,
-      status: const drift.Value('DRAFT'),
-    ));
+  Future<void> _generateAutoOrder() async {
+    setState(() => _isLoading = true);
+    try {
+      await _reorderService.generateAutoPurchaseOrders(warehouseId: '1');
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم توليد أوامر الشراء بنجاح')));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e')));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 }
