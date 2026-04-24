@@ -6,6 +6,7 @@ import 'package:supermarket/presentation/widgets/permission_guard.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:go_router/go_router.dart';
 import 'package:supermarket/presentation/features/purchases/widgets/purchase_item_row.dart';
+import 'package:supermarket/presentation/features/purchases/widgets/quick_product_add_dialog.dart';
 
 // Export supplier and product smart info for use in UI
 export 'package:supermarket/presentation/features/purchases/purchase_provider.dart' 
@@ -383,15 +384,38 @@ class _NewPurchasePageState extends State<NewPurchasePage> {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: TextField(
-                decoration: const InputDecoration(
-                  hintText: 'بحث عن منتج...',
-                  prefixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (query) {
-                  // Filter products
-                },
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      decoration: const InputDecoration(
+                        hintText: 'بحث عن منتج...',
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (query) {
+                        // Implement filtering if needed
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.add_box, color: Colors.blue, size: 30),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => QuickProductAddDialog(
+                          db: db,
+                          onProductAdded: (p) {
+                            provider.addItemWithInfo(p);
+                            Navigator.pop(context); // Close picker
+                          },
+                        ),
+                      );
+                    },
+                    tooltip: 'إضافة منتج جديد',
+                  ),
+                ],
               ),
             ),
             Expanded(

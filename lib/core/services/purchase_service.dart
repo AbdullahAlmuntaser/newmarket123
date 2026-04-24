@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:supermarket/core/events/app_events.dart';
 import 'package:uuid/uuid.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/services/unit_conversion_service.dart';
 
 /// Comprehensive Purchase Service for ERP
 /// Handles all purchase invoice operations including:
@@ -13,9 +14,10 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class PurchaseService {
   final AppDatabase db;
+  final UnitConversionService unitConversionService;
   final _uuid = const Uuid();
 
-  PurchaseService(this.db);
+  PurchaseService(this.db, this.unitConversionService);
 
   // ==================== CALCULATIONS ====================
 
@@ -185,46 +187,53 @@ class PurchaseService {
 
     final purchaseId = purchaseCompanion.id.value;
 
-    // Calculate totals
-    double totalSubtotal = 0;
-    double totalTax = 0;
-
-    for (var item in itemsCompanions) {
-      final qty = item.quantity.value;
-      final price = item.price.value;
-      totalSubtotal += qty * price;
-      // Calculate tax if taxRate is provided (stored in product)
-      final product = await (db.select(
-        db.products,
-      )..where((p) => p.id.equals(item.productId.value))).getSingleOrNull();
-      if (product != null && product.taxRate > 0) {
-        totalTax += (qty * price) * (product.taxRate / 100);
-      }
-    }
-
     return await db.transaction(() async {
-      // 1. Insert Purchase
-      final total =
-          totalSubtotal + totalTax + purchaseCompanion.landedCosts.value;
+      double totalSubtotal = 0;
+      double totalTax = 0;
 
-      await db
-          .into(db.purchases)
-          .insert(
+      // 1. Process Items and Convert to Base Units
+      final processedItems = <PurchaseItemsCompanion>[];
+
+      for (var item in itemsCompanions) {
+        final productId = item.productId.value;
+        final unitId = item.unitId.value ?? 'pcs';
+        final quantity = item.quantity.value;
+
+        // Convert to base units
+        final baseQuantity = await unitConversionService.convertToBaseUnit(
+          productId: productId,
+          quantity: quantity,
+          unitName: unitId,
+        );
+        
+        final price = item.price.value;
+        totalSubtotal += baseQuantity * price; 
+
+        final product = await (db.select(db.products)..where((p) => p.id.equals(productId))).getSingle();
+        if (product.taxRate > 0) {
+          totalTax += (baseQuantity * price) * (product.taxRate / 100);
+        }
+
+        processedItems.add(item.copyWith(quantity: Value(baseQuantity)));
+      }
+
+      // 2. Insert Purchase
+      final total = totalSubtotal + totalTax + purchaseCompanion.landedCosts.value;
+
+      await db.into(db.purchases).insert(
             purchaseCompanion.copyWith(
               total: Value(total),
               tax: Value(totalTax),
             ),
           );
 
-      // 2. Insert Items
-      for (var item in itemsCompanions) {
+      // 3. Insert Items
+      for (var item in processedItems) {
         await db.into(db.purchaseItems).insert(item);
       }
 
-      // 3. Audit Log
-      await db
-          .into(db.auditLogs)
-          .insert(
+      // 4. Audit Log
+      await db.into(db.auditLogs).insert(
             AuditLogsCompanion.insert(
               userId: Value(userId),
               action: 'CREATE',
@@ -384,18 +393,44 @@ class PurchaseService {
     required String referenceId,
   }) async {
     if (warehouseId.isEmpty) return;
-    // Create inventory transaction
+
+    // 1. Create inventory transaction
     await db
         .into(db.inventoryTransactions)
         .insert(
           InventoryTransactionsCompanion(
             productId: Value(item.productId),
-            warehouseId: Value(warehouseId.isEmpty ? '' : warehouseId),
+            warehouseId: Value(warehouseId),
             quantity: Value(item.quantity),
             type: const Value('PURCHASE'),
             referenceId: Value(referenceId),
           ),
         );
+
+    // 2. Update Moving Average Cost
+    await _updateMovingAverageCost(item.productId, item.quantity, item.price);
+  }
+
+  Future<void> _updateMovingAverageCost(String productId, double quantity, double purchasePrice) async {
+    final product = await (db.select(db.products)..where((p) => p.id.equals(productId))).getSingle();
+    
+    final currentStock = product.stock;
+    final currentCost = product.buyPrice; // Using buyPrice as the cost basis
+    
+    // New Stock Calculation
+    final newStock = currentStock + quantity;
+    
+    // New Cost Calculation: ((Stock * CurrentCost) + (Quantity * PurchasePrice)) / NewStock
+    if (newStock > 0) {
+      final newCost = ((currentStock * currentCost) + (quantity * purchasePrice)) / newStock;
+      
+      await (db.update(db.products)..where((p) => p.id.equals(productId))).write(
+        ProductsCompanion(
+          stock: Value(newStock),
+          buyPrice: Value(newCost), // Updating buyPrice
+        ),
+      );
+    }
   }
 
   Future<void> _updateSupplierBalance({

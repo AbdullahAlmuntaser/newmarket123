@@ -45,12 +45,12 @@ void init() {
   sl.registerLazySingleton(() => PricingService(sl()));
   sl.registerLazySingleton(() => TransactionEngine(sl(), sl()));
   sl.registerLazySingleton(() => InventoryService(sl()));
-  sl.registerLazySingleton(() => PurchaseService(sl()));
-  sl.registerLazySingleton(() => PermissionsService(sl()));
   sl.registerLazySingleton(() => UnitConversionService(
         productsDao: sl(),
         productUnitsDao: sl(),
       ));
+  sl.registerLazySingleton(() => PurchaseService(sl(), sl()));
+  sl.registerLazySingleton(() => PermissionsService(sl()));
 
   // Providers
   sl.registerLazySingleton(() => AuthProvider(sl(), sl()));

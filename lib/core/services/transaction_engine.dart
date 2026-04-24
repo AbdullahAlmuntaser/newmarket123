@@ -217,27 +217,26 @@ class TransactionEngine {
             ),
           );
 
-          // Record Inventory Transaction
-          await db.into(db.inventoryTransactions).insert(
-            InventoryTransactionsCompanion.insert(
-              productId: item.productId,
-              warehouseId: batch.warehouseId,
-              batchId: Value(batch.id),
-              quantity: -deductFromThisBatch,
-              type: 'SALE',
-              referenceId: saleId,
-            ),
-          );
+        // Record Inventory Transaction
+        await db.into(db.inventoryTransactions).insert(
+          InventoryTransactionsCompanion.insert(
+            productId: item.productId,
+            warehouseId: batch.warehouseId,
+            batchId: Value(batch.id),
+            quantity: -deductFromThisBatch,
+            type: 'SALE',
+            referenceId: saleId,
+          ),
+        );
 
-          remainingToDeduct -= deductFromThisBatch;
-          totalDeducted += deductFromThisBatch;
+        remainingToDeduct -= deductFromThisBatch;
+        totalDeducted += deductFromThisBatch;
         }
 
         // Update Product Total Stock
         await (db.update(db.products)..where((p) => p.id.equals(item.productId)))
-            .write(ProductsCompanion(stock: Value(product.stock - totalDeducted)));
-      }
-
+          .write(ProductsCompanion(stock: Value(product.stock - totalDeducted)));
+        }
       // 3. Update Sale Status
       await (db.update(db.sales)..where((s) => s.id.equals(saleId)))
           .write(const SalesCompanion(status: Value('POSTED')));

@@ -158,25 +158,28 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
     return StreamBuilder<List<UnitConversion>>(
       stream: (db.select(db.unitConversions)..where((t) => t.productId.equals(widget.item.product.id))).watch(),
       builder: (context, snapshot) {
-        final conversions = snapshot.data ?? [];
-        return DropdownButtonFormField<UnitConversion?>(
-          initialValue: widget.item.selectedUnit,
-          decoration: const InputDecoration(labelText: 'الوحدة', isDense: true),
-          items: [
-            DropdownMenuItem(
-              value: null,
-              child: Text(widget.item.product.unit),
-            ),
-            ...conversions.map((u) => DropdownMenuItem(value: u, child: Text(u.unitName))),
-          ],
-          onChanged: (value) {
-            setState(() {
-              widget.item.selectedUnit = value;
-            });
-            widget.onChanged();
-          },
-        );
+      final conversions = snapshot.data ?? [];
+      return DropdownButtonFormField<UnitConversion?>(
+        value: widget.item.selectedUnit,
+        decoration: const InputDecoration(labelText: 'الوحدة', isDense: true),
+        items: [
+          DropdownMenuItem(
+            value: null,
+            child: Text(widget.item.product.unit),
+          ),
+          ...conversions.map((u) => DropdownMenuItem(value: u, child: Text(u.unitName))),
+        ],
+        onChanged: (value) {
+          setState(() {
+            widget.item.selectedUnit = value;
+            // If a new unit is selected, you might want to adjust the price 
+            // based on the factor, for now we just update the unit reference.
+          });
+          widget.onChanged();
+        },
+      );
       },
+
     );
   }
 }
