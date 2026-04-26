@@ -1,3 +1,4 @@
+import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/erp_data_service.dart';
@@ -113,13 +114,37 @@ class _SalesItemRowState extends State<SalesItemRow> {
                 const SizedBox(width: 8),
                 Expanded(
                   flex: 1,
-                  child: TextFormField(
-                    initialValue: widget.item.quantity.toString(),
-                    decoration: const InputDecoration(labelText: 'الكمية'),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      widget.item.quantity = double.tryParse(value) ?? 0.0;
-                      widget.onChanged();
+                  child: StreamBuilder<List<UnitConversion>>(
+                    stream: (sl<AppDatabase>().select(sl<AppDatabase>().unitConversions)
+                      ..where((t) => t.productId.equals(widget.item.product?.id ?? ''))).watch(),
+                    builder: (context, snapshot) {
+                      final units = snapshot.data ?? [];
+                      return DropdownButtonFormField<String>(
+                        initialValue: widget.item.selectedUnit,
+                        decoration: const InputDecoration(labelText: 'الوحدة'),
+                        items: [
+                          DropdownMenuItem(value: widget.item.product?.unit ?? 'حبة', child: Text(widget.item.product?.unit ?? 'حبة')),
+                          ...units.map((u) => DropdownMenuItem(value: u.unitName, child: Text(u.unitName))),
+                        ],
+                        onChanged: (value) async {
+                          final unit = units.firstWhere((u) => u.unitName == value, orElse: () => UnitConversion(
+                              id: const Uuid().v4(),
+                              productId: '',
+                              unitName: widget.item.product?.unit ?? 'حبة',
+                              factor: 1,
+                              isBaseUnit: true,
+                              createdAt: DateTime.now(),
+                              updatedAt: DateTime.now(),
+                              syncStatus: 1,
+                          ));
+                          setState(() {
+                            widget.item.selectedUnit = value!;
+                            widget.item.unitFactor = unit.factor;
+                            widget.item.price = (unit.sellPrice ?? widget.item.product?.sellPrice ?? 0.0);
+                          });
+                          widget.onChanged();
+                        },
+                      );
                     },
                   ),
                 ),
@@ -127,12 +152,11 @@ class _SalesItemRowState extends State<SalesItemRow> {
                 Expanded(
                   flex: 1,
                   child: TextFormField(
-                    key: ValueKey(widget.item.price),
-                    initialValue: widget.item.price.toString(),
-                    decoration: const InputDecoration(labelText: 'السعر'),
+                    initialValue: widget.item.discount.toString(),
+                    decoration: const InputDecoration(labelText: 'خصم'),
                     keyboardType: TextInputType.number,
                     onChanged: (value) {
-                      widget.item.price = double.tryParse(value) ?? 0.0;
+                      widget.item.discount = double.tryParse(value) ?? 0.0;
                       widget.onChanged();
                     },
                   ),

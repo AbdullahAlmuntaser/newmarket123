@@ -9,6 +9,7 @@ class CartItem extends Equatable {
   final String unitName; // الاسم الحالي للوحدة (حبة، كرتون، إلخ)
   final Decimal unitFactor; // المعامل الخاص بالوحدة المختارة
   final Decimal unitPrice;
+  final Decimal? discount;
   final List<UnitConversion>
   availableUnits; // قائمة بكل الوحدات المتاحة لهذا المنتج
 
@@ -19,10 +20,11 @@ class CartItem extends Equatable {
     this.unitName = 'حبة',
     required this.unitFactor,
     required this.unitPrice,
+    this.discount,
     this.availableUnits = const [],
   });
 
-  Decimal get total => unitPrice * quantity;
+  Decimal get total => (unitPrice * quantity) - (discount ?? Decimal.zero);
 
   CartItem copyWith({
     Decimal? quantity,
@@ -30,6 +32,7 @@ class CartItem extends Equatable {
     String? unitName,
     Decimal? unitFactor,
     Decimal? unitPrice,
+    Decimal? discount,
     List<UnitConversion>? availableUnits,
   }) {
     return CartItem(
@@ -39,6 +42,7 @@ class CartItem extends Equatable {
       unitName: unitName ?? this.unitName,
       unitFactor: unitFactor ?? this.unitFactor,
       unitPrice: unitPrice ?? this.unitPrice,
+      discount: discount ?? this.discount,
       availableUnits: availableUnits ?? this.availableUnits,
     );
   }
@@ -51,6 +55,7 @@ class CartItem extends Equatable {
     unitName,
     unitFactor,
     unitPrice,
+    discount,
     availableUnits,
   ];
 }

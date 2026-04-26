@@ -39,30 +39,47 @@ class PurchaseService {
   }
 
   Future<void> postPurchase(String purchaseId) async {
-    final purchase = await (db.select(
-      db.purchases,
-    )..where((p) => p.id.equals(purchaseId))).getSingle();
-    final items = await (db.select(
-      db.purchaseItems,
-    )..where((i) => i.purchaseId.equals(purchaseId))).get();
+    final purchase = await (db.select(db.purchases)..where((p) => p.id.equals(purchaseId))).getSingle();
+    final items = await (db.select(db.purchaseItems)..where((i) => i.purchaseId.equals(purchaseId))).get();
 
+    double subtotal = 0;
     for (var item in items) {
+      subtotal += (item.quantity * item.unitFactor * item.unitPrice);
+    }
+
+    // حساب إجمالي المصاريف الإضافية
+    double totalExpenses = (purchase.shippingCost + purchase.otherExpenses);
+    
+    for (var item in items) {
+      // حساب نصيب الصنف من المصاريف (توزيع نسبي حسب القيمة)
+      double itemSubtotal = (item.quantity * item.unitFactor * item.unitPrice);
+      double itemExpenseShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalExpenses : 0;
+      double landedCostPerUnit = (item.unitPrice + (itemExpenseShare / (item.quantity * item.unitFactor)));
+
+      // تحديث المخزون بالتكلفة الجديدة (شاملة المصاريف)
       await inventoryCostingService.returnToInventory(
         item.productId,
-        item.quantity,
-        item.unitPrice,
+        item.quantity * item.unitFactor,
+        landedCostPerUnit,
         InventoryTransactionType.purchase,
         transactionId: purchaseId,
       );
     }
 
+    double discount = purchase.discount;
+    double tax = (subtotal - discount) * 0.15;
+
     await postingEngine.post(
       type: TransactionType.purchase,
       referenceId: purchaseId,
       context: {
-        'amount': purchase.total,
+        'subtotal': subtotal,
+        'discount': discount,
+        'tax': tax,
+        'expenses': totalExpenses,
+        'total': subtotal - discount + tax + totalExpenses,
         'supplierId': purchase.supplierId,
-        'description': 'Purchase Invoice #${purchase.id.substring(0, 8)}',
+        'description': 'Purchase Invoice #${purchase.invoiceNumber ?? purchase.id.substring(0, 8)}',
       },
     );
   }

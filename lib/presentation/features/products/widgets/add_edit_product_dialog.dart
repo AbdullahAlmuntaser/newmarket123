@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -31,6 +32,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   late String _cartonUnit;
   late int _piecesPerCarton;
   final MobileScannerController _scannerController = MobileScannerController();
+  List<ProductUnit> _extraUnits = []; // إضافة قائمة الوحدات الإضافية
 
   @override
   void initState() {
@@ -46,6 +48,15 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     _unit = widget.product?.unit ?? 'pcs';
     _cartonUnit = widget.product?.cartonUnit ?? 'carton';
     _piecesPerCarton = widget.product?.piecesPerCarton ?? 1;
+    _loadExtraUnits();
+  }
+
+  Future<void> _loadExtraUnits() async {
+    if (widget.product != null) {
+      final db = Provider.of<AppDatabase>(context, listen: false);
+      _extraUnits = await (db.select(db.productUnits)..where((t) => t.productId.equals(widget.product!.id))).get();
+      setState(() {});
+    }
   }
 
   @override
@@ -192,6 +203,17 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 onSaved: (value) =>
                     _piecesPerCarton = int.tryParse(value!) ?? 1,
               ),
+              const Divider(),
+              Text('الوحدات الإضافية', style: Theme.of(context).textTheme.titleMedium),
+              ..._extraUnits.map((u) => ListTile(
+                title: Text(u.unitName),
+                subtitle: Text('عامل التحويل: ${u.unitFactor}'),
+                trailing: IconButton(icon: const Icon(Icons.delete), onPressed: () => setState(() => _extraUnits.remove(u))),
+              )),
+              ElevatedButton(
+                onPressed: _addNewUnit,
+                child: const Text('إضافة وحدة جديدة'),
+              ),
             ],
           ),
         ),
@@ -211,70 +233,71 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     );
   }
 
+  void _addNewUnit() {
+    final nameCtrl = TextEditingController();
+    final factorCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('إضافة وحدة'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'اسم الوحدة')),
+          TextField(controller: factorCtrl, decoration: const InputDecoration(labelText: 'عامل التحويل'), keyboardType: TextInputType.number),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          TextButton(onPressed: () {
+            setState(() => _extraUnits.add(ProductUnit(
+              id: const Uuid().v4(),
+              productId: widget.product?.id ?? '',
+              unitName: nameCtrl.text,
+              unitFactor: double.tryParse(factorCtrl.text) ?? 1.0,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+              syncStatus: 1,
+              isDefault: false,
+            )));
+            Navigator.pop(context);
+          }, child: const Text('إضافة')),
+        ],
+      ),
+    );
+  }
+
   void _saveProduct() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      final productsProvider = context.read<ProductsProvider>();
-      final l10n = AppLocalizations.of(context)!;
-
+      final db = Provider.of<AppDatabase>(context, listen: false);
       try {
-        if (widget.product == null) {
-          await productsProvider.addProduct(
-            ProductsCompanion.insert(
-              name: _name,
-              sku: _skuController.text,
-              categoryId: Value(_categoryId),
-              buyPrice: Value(_buyPrice),
-              sellPrice: Value(_sellPrice),
-              wholesalePrice: Value(_wholesalePrice),
-              stock: Value(_stock),
-              alertLimit: Value(_alertLimit),
-              unit: Value(_unit),
-              cartonUnit: Value(_cartonUnit),
-              piecesPerCarton: Value(_piecesPerCarton),
-            ),
-          );
-          if (!mounted) return;
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(l10n.productAdded)));
-        } else {
-          await productsProvider.updateProduct(
-            widget.product!.copyWith(
-              name: _name,
-              sku: _skuController.text,
-              categoryId: Value(_categoryId),
-              buyPrice: _buyPrice,
-              sellPrice: _sellPrice,
-              wholesalePrice: _wholesalePrice,
-              stock: _stock,
-              alertLimit: _alertLimit,
-              unit: _unit,
-              cartonUnit: _cartonUnit,
-              piecesPerCarton: _piecesPerCarton,
-            ),
-          );
-          if (!mounted) return;
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(l10n.productUpdated)));
-        }
+        await db.transaction(() async {
+          String productId;
+          if (widget.product == null) {
+            productId = await db.into(db.products).insertReturning(ProductsCompanion.insert(
+              name: _name, sku: _skuController.text, unit: Value(_unit),
+              cartonUnit: Value(_cartonUnit), piecesPerCarton: Value(_piecesPerCarton),
+            )).then((p) => p.id);
+          } else {
+            productId = widget.product!.id;
+            await db.update(db.products).replace(widget.product!.copyWith(
+              name: _name, sku: _skuController.text, unit: _unit,
+              cartonUnit: _cartonUnit, piecesPerCarton: _piecesPerCarton,
+            ));
+          }
+          await (db.delete(db.productUnits)..where((t) => t.productId.equals(productId))).go();
+          for (var u in _extraUnits) {
+            await db.into(db.productUnits).insert(ProductUnitsCompanion.insert(
+              productId: productId,
+              unitName: u.unitName,
+              unitFactor: Value(u.unitFactor),
+              createdAt: Value(DateTime.now()),
+              updatedAt: Value(DateTime.now()),
+            ));
+          }
+        });
         if (!mounted) return;
-        Navigator.of(context).pop();
-      } catch (e, s) {
-        developer.log(
-          'Failed to save product',
-          name: 'add_edit_product_dialog',
-          error: e,
-          stackTrace: s,
-        );
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${l10n.failedToSaveProduct}: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        Navigator.pop(context);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل الحفظ: $e')));
       }
     }
   }

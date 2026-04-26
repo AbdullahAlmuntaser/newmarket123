@@ -53,20 +53,20 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
           children: [
             Row(
               children: [
-                CircleAvatar(child: Text('${widget.index + 1}')),
-                const SizedBox(width: 12),
                 Expanded(
-                  flex: 3,
-                  child: Text(
-                    widget.item.product.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  flex: 2,
+                  child: TextFormField(
+                    initialValue: widget.item.quantity.toString(),
+                    decoration: const InputDecoration(labelText: 'الكمية', border: OutlineInputBorder()),
+                    keyboardType: TextInputType.number,
+                    onChanged: (v) {
+                      widget.item.quantity = double.tryParse(v) ?? 0.0;
+                      widget.onChanged();
+                    },
                   ),
                 ),
-                Expanded(flex: 2, child: _buildUnitSelector(db)),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: widget.onDelete,
-                ),
+                const SizedBox(width: 8),
+                Expanded(flex: 3, child: _buildUnitSelector(db)),
               ],
             ),
             const SizedBox(height: 12),

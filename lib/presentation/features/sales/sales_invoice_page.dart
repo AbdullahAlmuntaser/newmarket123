@@ -568,7 +568,9 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       await db.transaction(() async {
         final saleId = const Uuid().v4();
         double totalTax = 0;
+        double totalItemDiscount = 0; // خصم الأصناف المجمع
         for (var item in _items) {
+          totalItemDiscount += item.discount;
           if (item.product != null) {
             totalTax += (item.lineTotal / (1 + (item.product!.taxRate / 100))) * (item.product!.taxRate / 100);
           }
@@ -578,7 +580,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
           customerId: drift.Value(_selectedCustomer?.id),
           total: _total,
           tax: drift.Value(totalTax),
-          discount: drift.Value(_discount),
+          discount: drift.Value(_discount + totalItemDiscount), // إضافة خصم الأصناف للخصم الإجمالي
           paymentMethod: _paymentType,
           isCredit: drift.Value(_paymentType == 'credit'),
           status: const drift.Value('DRAFT'),

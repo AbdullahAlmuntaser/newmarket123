@@ -76,20 +76,34 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   );
 
   Future<void> _savePurchase(AppDatabase db, {required bool post}) async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate() || _items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء تعبئة البيانات وإضافة أصناف')));
+      return;
+    }
     setState(() => _isSaving = true);
     final purchaseId = const Uuid().v4();
     try {
       await db.transaction(() async {
+        // تجهيز عناصر الفاتورة
+        final itemsCompanions = _items.map((item) => PurchaseItemsCompanion.insert(
+          purchaseId: purchaseId,
+          productId: item.product.id, // تم التصحيح هنا
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          unitFactor: drift.Value(item.selectedUnit?.factor ?? 1.0), // تم التصحيح هنا
+          price: item.subtotal,
+        )).toList();
+
         await db.purchasesDao.createPurchase(
           purchaseCompanion: PurchasesCompanion.insert(
             id: drift.Value(purchaseId),
             supplierId: drift.Value(_selectedSupplier?.id ?? ''),
             total: _total,
+            discount: drift.Value(_discount),
             date: drift.Value(_selectedDate),
             status: const drift.Value('DRAFT'),
           ),
-          itemsCompanions: [],
+          itemsCompanions: itemsCompanions,
           userId: null,
         );
         if (post) await sl<PurchaseService>().postPurchase(purchaseId);

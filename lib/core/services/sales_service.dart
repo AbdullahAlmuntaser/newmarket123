@@ -9,11 +9,23 @@ class SalesService {
   SalesService(this.postingEngine, this.inventoryService);
 
   Future<void> processInvoice(SalesInvoice invoice) async {
+    // حساب الإجماليات بدقة
+    double subtotal = 0;
+    for (var item in invoice.items) {
+      // quantity * unit_factor * unit_price
+      subtotal += (item.quantity * item.unitFactor * item.price);
+    }
+
+    // حساب الخصم والضريبة
+    double discount = invoice.discount;
+    double tax = (subtotal - discount) * 0.15; // فرض 15% ضريبة مؤقتاً
+    double total = subtotal - discount + tax;
+
     // 1. خصم الكميات من المخزون
     for (var item in invoice.items) {
       await inventoryService.deductStock(
         itemId: item.itemId,
-        quantity: item.quantity,
+        quantity: item.quantity * item.unitFactor, // تحويل للوحدة الأساسية
         warehouseId: "MAIN_WAREHOUSE",
         referenceId: invoice.id,
       );
@@ -24,18 +36,18 @@ class SalesService {
       entries: [
         PostingLine(
           account: invoice.paymentMethod == 'cash' ? 'CASH_BOX' : 'CUSTOMER_AR',
-          debit: invoice.totalAmount,
+          debit: total,
           credit: 0,
         ),
         PostingLine(
           account: 'SALES_REVENUE',
           debit: 0,
-          credit: invoice.subtotal,
+          credit: subtotal - discount,
         ),
         PostingLine(
           account: 'VAT_PAYABLE',
           debit: 0,
-          credit: invoice.taxAmount,
+          credit: tax,
         ),
       ],
       reference: "INV_${invoice.id}",

@@ -87,7 +87,7 @@ final GoRouter appRouter = GoRouter(
   routes: [
     GoRoute(path: '/', builder: (context, state) => const HomePage()),
     GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
-    GoRoute(path: '/dashboard', builder: (context, state) => const DashboardPage()),
+    GoRoute(path: '/dashboard', builder: (context, state) => DashboardPage(currentUserId: 'admin')),
     GoRoute(path: '/admin-dashboard', builder: (context, state) => const AdminDashboardPage()),
     GoRoute(path: '/pos', builder: (context, state) => const PosPage()),
     GoRoute(path: '/sales', builder: (context, state) => const SalesHistoryPage()),

@@ -396,21 +396,28 @@ class PosBloc extends Bloc<PosEvent, PosState> {
 
     try {
       final total = currentState.total;
-      final discount = currentState.discount;
       final tax = currentState.taxAmount;
 
       emit(PosLoading());
 
       final saleId = const Uuid().v4();
 
-      // 1. Prepare Companions - use currency from event or default
+      // 1. Prepare Companions
       final currencyId = event.currencyId ?? 'USD';
       final exchangeRate = event.exchangeRate;
+
+      // تجميع خصومات الأصناف
+      final itemDiscountSum = currentState.cart.fold<Decimal>(
+        Decimal.zero,
+        (sum, item) => sum + (item.discount ?? Decimal.zero),
+      );
+      final totalDiscount = currentState.discount + itemDiscountSum;
+
       final saleCompanion = SalesCompanion.insert(
         id: Value(saleId),
         customerId: Value(event.customerId),
         total: total.toDouble(),
-        discount: Value(discount.toDouble()),
+        discount: Value(totalDiscount.toDouble()),
         tax: Value(tax.toDouble()),
         paymentMethod: event.paymentMethod,
         isCredit: Value(event.paymentMethod == 'credit'),
