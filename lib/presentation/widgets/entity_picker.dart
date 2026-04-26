@@ -3,6 +3,85 @@ import 'package:flutter/material.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
 
+/// A generic dialog for picking an entity from a stream
+class EntityPicker<T> extends StatefulWidget {
+  final Stream<List<T>> stream;
+  final String title;
+  final Widget Function(T) builder;
+  final bool Function(T, String)? filter;
+
+  const EntityPicker({
+    super.key,
+    required this.stream,
+    required this.title,
+    required this.builder,
+    this.filter,
+  });
+
+  @override
+  State<EntityPicker<T>> createState() => _EntityPickerState<T>();
+}
+
+class _EntityPickerState<T> extends State<EntityPicker<T>> {
+  String _searchQuery = '';
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              decoration: const InputDecoration(
+                hintText: 'بحث...',
+                prefixIcon: Icon(Icons.search),
+              ),
+              onChanged: (v) => setState(() => _searchQuery = v),
+            ),
+            const SizedBox(height: 8),
+            Flexible(
+              child: StreamBuilder<List<T>>(
+                stream: widget.stream,
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  var items = snapshot.data!;
+                  if (_searchQuery.isNotEmpty && widget.filter != null) {
+                    items = items
+                        .where((item) => widget.filter!(item, _searchQuery))
+                        .toList();
+                  }
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      final item = items[index];
+                      return ListTile(
+                        title: widget.builder(item),
+                        onTap: () => Navigator.pop(context, item),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('إلغاء'),
+        ),
+      ],
+    );
+  }
+}
+
 /// A reusable widget for selecting an existing customer/supplier or adding a new one.
 ///
 /// Features:

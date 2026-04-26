@@ -54,6 +54,21 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
             Row(
               children: [
                 Expanded(
+                  child: Text(
+                    widget.item.product.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: widget.onDelete,
+                ),
+              ],
+            ),
+            const Divider(),
+            Row(
+              children: [
+                Expanded(
                   flex: 2,
                   child: TextFormField(
                     initialValue: widget.item.quantity.toString(),
@@ -74,21 +89,6 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
               children: [
                 Expanded(
                   child: TextFormField(
-                    initialValue: widget.item.quantity.toString(),
-                    decoration: const InputDecoration(
-                      labelText: 'الكمية',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (v) {
-                      widget.item.quantity = double.tryParse(v) ?? 0.0;
-                      widget.onChanged();
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextFormField(
                     initialValue: widget.item.unitPrice.toString(),
                     decoration: const InputDecoration(
                       labelText: 'سعر الشراء',
@@ -99,6 +99,14 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
                       widget.item.unitPrice = double.tryParse(v) ?? 0.0;
                       widget.onChanged();
                     },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'الإجمالي: ${(widget.item.quantity * widget.item.unitPrice).toStringAsFixed(2)}',
+                    textAlign: TextAlign.end,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ],

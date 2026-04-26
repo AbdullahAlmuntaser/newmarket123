@@ -238,21 +238,19 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         db.unitConversions,
       )..where((t) => t.productId.equals(product!.id))).get();
 
-      // حساب السعر - استخدام PricingService إذا كانت هناك قائمة أسعار نشطة
-      Decimal finalPrice;
-      if (currentState.isWholesaleMode) {
-        finalPrice = Decimal.parse(product.wholesalePrice.toString()) * factor;
-      } else if (currentState.activePriceListId != null &&
-          specificPrice == null) {
-        finalPrice = await pricingService.calculatePrice(
-          productId: product.id,
-          quantity: Decimal.one,
-          priceListId: currentState.activePriceListId,
-        );
+      // جلب السعر الأدق عبر PricingService
+      Decimal finalPrice = await pricingService.calculatePrice(
+        productId: product.id,
+        priceListId: currentState.activePriceListId,
+        quantity: factor, // استخدام factor الوحدة للتحقق من السعر حسب الكمية
+      );
+
+      // إذا كانت الوحدة لها سعر محدد في جدول التحويلات، نستخدمه
+      if (specificPrice != null) {
+        finalPrice = specificPrice;
       } else {
-        finalPrice =
-            specificPrice ??
-            Decimal.parse(product.sellPrice.toString()) * factor;
+        // إذا كان هناك عامل تحويل، نضرب السعر في المعامل
+        finalPrice = finalPrice * factor;
       }
 
       final existingIndex = currentState.cart.indexWhere(
@@ -280,7 +278,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
 
       emit(currentState.copyWith(cart: newCart));
     } catch (e) {
-      emit(PosError(e.toString()));
+      emit(PosError("خطأ عند إضافة المنتج: $e"));
       emit(currentState);
     }
   }

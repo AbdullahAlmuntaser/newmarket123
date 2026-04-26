@@ -7,6 +7,8 @@ import 'package:supermarket/core/services/purchase_service.dart';
 import 'package:supermarket/injection_container.dart';
 import 'package:uuid/uuid.dart';
 import 'purchase_provider.dart';
+import '../../widgets/entity_picker.dart';
+import 'widgets/purchase_item_row.dart';
 
 class AddPurchasePage extends StatefulWidget {
   const AddPurchasePage({super.key});
@@ -16,7 +18,6 @@ class AddPurchasePage extends StatefulWidget {
 }
 
 class _AddPurchasePageState extends State<AddPurchasePage> {
-  final _formKey = GlobalKey<FormState>();
   Supplier? _selectedSupplier;
   final DateTime _selectedDate = DateTime.now();
   final List<PurchaseItemData> _items = [];
@@ -41,34 +42,167 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
     super.dispose();
   }
 
+  Future<void> _loadFromOrder(AppDatabase db) async {
+    final order = await showDialog<PurchaseOrder>(
+      context: context,
+      builder: (context) => EntityPicker<PurchaseOrder>(
+        stream: db.select(db.purchaseOrders).watch(),
+        title: 'اختر أمر شراء للتحميل',
+        builder: (o) => Text('أمر رقم: ${o.orderNumber ?? (o.id.length > 8 ? o.id.substring(0, 8) : o.id)}'),
+      ),
+    );
+    if (order != null) {
+      final orderItems = await (db.select(db.purchaseOrderItems)..where((i) => i.orderId.equals(order.id))).get();
+      final products = await db.select(db.products).get();
+      final supplierId = order.supplierId;
+      final supplier = supplierId != null 
+          ? await (db.select(db.suppliers)..where((s) => s.id.equals(supplierId))).getSingleOrNull()
+          : null;
+      
+      setState(() {
+        _selectedSupplier = supplier;
+        _items.clear();
+        for (var item in orderItems) {
+          final product = products.firstWhere((p) => p.id == item.productId);
+          _items.add(PurchaseItemData(
+            product: product,
+            quantity: item.quantity,
+            unitPrice: item.price,
+          ));
+        }
+      });
+    }
+  }
+
+  Future<void> _quickAddSupplier(AppDatabase db) async {
+    final nameCtrl = TextEditingController();
+    final newSupplier = await showDialog<Supplier>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('إضافة مورد جديد'),
+        content: TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'اسم المورد')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          TextButton(onPressed: () async {
+            final id = const Uuid().v4();
+            final supplier = SuppliersCompanion.insert(id: drift.Value(id), name: nameCtrl.text);
+            await db.into(db.suppliers).insert(supplier);
+            final newSupplier = await (db.select(db.suppliers)..where((s) => s.id.equals(id))).getSingle();
+            if (context.mounted) {
+              Navigator.pop(context, newSupplier);
+            }
+          }, child: const Text('حفظ')),
+        ],
+      ),
+    );
+    if (newSupplier != null) setState(() => _selectedSupplier = newSupplier);
+  }
+
   @override
   Widget build(BuildContext context) {
     final db = Provider.of<AppDatabase>(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('فاتورة مشتريات')),
-      body: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  // Assuming SupplierPicker exists. If not, it needs to be imported or handled.
-                  // SupplierPicker(db: db, value: _selectedSupplier, onChanged: (v) => setState(() => _selectedSupplier = v)),
-                  const SizedBox(height: 12),
-                  _buildSummary(),
-                ],
+      appBar: AppBar(
+        title: const Text('فاتورة مشتريات'),
+        actions: [
+          IconButton(icon: const Icon(Icons.file_download), onPressed: () => _loadFromOrder(db), tooltip: 'تحميل من أمر شراء'),
+        ],
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(child: SupplierPicker(db: db, value: _selectedSupplier, onChanged: (v) => setState(() => _selectedSupplier = v))),
+                IconButton(icon: const Icon(Icons.add_business), onPressed: () => _quickAddSupplier(db), tooltip: 'إضافة مورد سريع'),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _items.length,
+              itemBuilder: (ctx, i) => PurchaseItemRow(
+                index: i,
+                item: _items[i],
+                products: const [],
+                onChanged: () => setState(() {}),
+                onDelete: () => setState(() => _items.removeAt(i)),
               ),
             ),
-            _buildFooter(db),
-          ],
-        ),
+          ),
+          TextButton.icon(
+            onPressed: () => _showProductPicker(db),
+            icon: const Icon(Icons.add_shopping_cart),
+            label: const Text('إضافة صنف'),
+          ),
+          _buildSummary(),
+        ],
       ),
+      bottomNavigationBar: _buildFooter(db),
     );
   }
 
-  Widget _buildSummary() => Card(child: Padding(padding: const EdgeInsets.all(16), child: Text('الإجمالي: ${_total.toStringAsFixed(2)}')));
+  Future<void> _showProductPicker(AppDatabase db) async {
+    final product = await showDialog<Product>(
+      context: context,
+      builder: (context) => EntityPicker<Product>(
+        stream: db.select(db.products).watch(),
+        title: 'اختر منتج',
+        builder: (p) => Text(p.name),
+      ),
+    );
+    if (product != null) {
+      setState(() {
+        _items.add(PurchaseItemData(
+          product: product,
+          quantity: 1.0,
+          unitPrice: product.buyPrice,
+        ));
+      });
+    }
+  }
+
+  Widget _buildSummary() => Card(
+    margin: const EdgeInsets.all(8),
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          _buildRow('الإجمالي الفرعي', _subtotal),
+          _buildEditableRow('الخصم', _discountController),
+          _buildEditableRow('الشحن', _shippingCostController),
+          _buildEditableRow('مصاريف أخرى', _otherExpensesController),
+          const Divider(),
+          _buildRow('الإجمالي النهائي', _total, isBold: true),
+        ],
+      ),
+    ),
+  );
+
+  Widget _buildRow(String title, double value, {bool isBold = false}) => Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Text(title, style: TextStyle(fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
+      Text(value.toStringAsFixed(2), style: TextStyle(fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
+    ],
+  );
+
+  Widget _buildEditableRow(String title, TextEditingController controller) => Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Text(title),
+      SizedBox(
+        width: 100,
+        child: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(isDense: true),
+          onChanged: (_) => setState(() {}),
+        ),
+      ),
+    ],
+  );
 
   Widget _buildFooter(AppDatabase db) => ElevatedButton(
     onPressed: _isSaving ? null : () => _savePurchase(db, post: true),
@@ -76,8 +210,8 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   );
 
   Future<void> _savePurchase(AppDatabase db, {required bool post}) async {
-    if (!_formKey.currentState!.validate() || _items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء تعبئة البيانات وإضافة أصناف')));
+    if (_items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء إضافة أصناف')));
       return;
     }
     setState(() => _isSaving = true);
@@ -87,10 +221,10 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         // تجهيز عناصر الفاتورة
         final itemsCompanions = _items.map((item) => PurchaseItemsCompanion.insert(
           purchaseId: purchaseId,
-          productId: item.product.id, // تم التصحيح هنا
+          productId: item.product.id,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
-          unitFactor: drift.Value(item.selectedUnit?.factor ?? 1.0), // تم التصحيح هنا
+          unitFactor: drift.Value(item.selectedUnit?.factor ?? 1.0),
           price: item.subtotal,
         )).toList();
 
