@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_bloc.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_event.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_state.dart';
@@ -62,57 +63,58 @@ class _PosViewState extends State<PosView> {
       },
       child: Scaffold(
         appBar: AppBar(
-        title: const Text('نقطة البيع السريع'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: () => context.push('/sales'),
-            tooltip: 'سجل المبيعات',
-          ),
-          BlocBuilder<PosBloc, PosState>(
-            builder: (context, state) {
-              if (state is! PosLoaded) return const SizedBox.shrink();
-              return Row(
-                children: [
-                  const Text('جملة'),
-                  Switch(
-                    value: state.isWholesaleMode,
-                    onChanged: (value) {
-                      context.read<PosBloc>().add(ToggleWholesaleMode(value));
-                    },
-                  ),
-                ],
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.qr_code_scanner),
-            onPressed: () => _openScanner(context),
-          ),
-        ],
-      ),
-      body: Row(
-        children: [
-          // Left Side: Cart & Checkout
-          const Expanded(flex: 2, child: CartWidget()),
-          // Right Side: Products & Search
-          Expanded(
-            flex: 3,
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ProductSearchWidget(controller: _barcodeController),
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8.0),
-                  child: CategorySelector(),
-                ),
-                const Expanded(child: ProductGrid()),
-              ],
+          title: const Text('نقطة البيع السريع'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.history),
+              onPressed: () => context.push('/sales'),
+              tooltip: 'سجل المبيعات',
             ),
-          ),
-        ],
+            BlocBuilder<PosBloc, PosState>(
+              builder: (context, state) {
+                if (state is! PosLoaded) return const SizedBox.shrink();
+                return Row(
+                  children: [
+                    const Text('جملة'),
+                    Switch(
+                      value: state.isWholesaleMode,
+                      onChanged: (value) {
+                        context.read<PosBloc>().add(ToggleWholesaleMode(value));
+                      },
+                    ),
+                  ],
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.qr_code_scanner),
+              onPressed: () => _openScanner(context),
+            ),
+          ],
+        ),
+        body: Row(
+          children: [
+            // Left Side: Cart & Checkout
+            const Expanded(flex: 2, child: CartWidget()),
+            // Right Side: Products & Search
+            Expanded(
+              flex: 3,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ProductSearchWidget(controller: _barcodeController),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8.0),
+                    child: CategorySelector(),
+                  ),
+                  const Expanded(child: ProductGrid()),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

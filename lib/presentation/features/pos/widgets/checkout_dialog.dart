@@ -52,7 +52,7 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
                 children: [
                   const Text('المبلغ الإجمالي'),
                   Text(
-                    '${total.toStringAsFixed(2)}',
+                    total.toStringAsFixed(2),
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -108,7 +108,7 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
                 children: [
                   const Text('المتبقي (الفكة):'),
                   Text(
-                    '${change.toStringAsFixed(2)}',
+                    change.toStringAsFixed(2),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -150,7 +150,7 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
 
   void _onCheckout() {
     context.read<PosBloc>().add(CheckoutEvent(
-      paymentMethod: _paymentMethod,
+      _paymentMethod,
       customerId: _selectedCustomer?.id,
     ));
     Navigator.pop(context);
