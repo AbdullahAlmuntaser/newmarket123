@@ -10,6 +10,8 @@ mixin _$AccountingDaoMixin on DatabaseAccessor<AppDatabase> {
   $CurrenciesTable get currencies => attachedDatabase.currencies;
   $GLLinesTable get gLLines => attachedDatabase.gLLines;
   $ReconciliationsTable get reconciliations => attachedDatabase.reconciliations;
+  $AccountingPeriodsTable get accountingPeriods =>
+      attachedDatabase.accountingPeriods;
   AccountingDaoManager get managers => AccountingDaoManager(this);
 }
 
@@ -30,6 +32,11 @@ class AccountingDaoManager {
       $$ReconciliationsTableTableManager(
         _db.attachedDatabase,
         _db.reconciliations,
+      );
+  $$AccountingPeriodsTableTableManager get accountingPeriods =>
+      $$AccountingPeriodsTableTableManager(
+        _db.attachedDatabase,
+        _db.accountingPeriods,
       );
 }
 

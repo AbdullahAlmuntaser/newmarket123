@@ -16,15 +16,19 @@ void main() {
     db = AppDatabase(NativeDatabase.memory());
     eventBus = EventBusService();
     engine = TransactionEngine(db, eventBus);
-    
+
     // Seed some basic data
-    await db.into(db.accountingPeriods).insert(AccountingPeriodsCompanion.insert(
-      id: Value(const Uuid().v4()),
-      name: 'Test Period',
-      startDate: DateTime.now().subtract(const Duration(days: 30)),
-      endDate: DateTime.now().add(const Duration(days: 30)),
-      isClosed: const Value(false),
-    ));
+    await db
+        .into(db.accountingPeriods)
+        .insert(
+          AccountingPeriodsCompanion.insert(
+            id: Value(const Uuid().v4()),
+            name: 'Test Period',
+            startDate: DateTime.now().subtract(const Duration(days: 30)),
+            endDate: DateTime.now().add(const Duration(days: 30)),
+            isClosed: const Value(false),
+          ),
+        );
   });
 
   tearDown(() async {
@@ -36,27 +40,39 @@ void main() {
     final saleId = const Uuid().v4();
     final productId = const Uuid().v4();
 
-    await db.into(db.products).insert(ProductsCompanion.insert(
-      id: Value(productId),
-      name: 'Test Product',
-      sku: 'TEST-001',
-      stock: const Value(10.0),
-      sellPrice: const Value(100.0),
-    ));
+    await db
+        .into(db.products)
+        .insert(
+          ProductsCompanion.insert(
+            id: Value(productId),
+            name: 'Test Product',
+            sku: 'TEST-001',
+            stock: const Value(10.0),
+            sellPrice: const Value(100.0),
+          ),
+        );
 
-    await db.into(db.sales).insert(SalesCompanion.insert(
-      id: Value(saleId),
-      total: 100.0,
-      paymentMethod: 'Cash',
-      status: const Value('DRAFT'),
-    ));
+    await db
+        .into(db.sales)
+        .insert(
+          SalesCompanion.insert(
+            id: Value(saleId),
+            total: 100.0,
+            paymentMethod: 'Cash',
+            status: const Value('DRAFT'),
+          ),
+        );
 
-    await db.into(db.saleItems).insert(SaleItemsCompanion.insert(
-      saleId: saleId,
-      productId: productId,
-      quantity: 1.0,
-      price: 100.0,
-    ));
+    await db
+        .into(db.saleItems)
+        .insert(
+          SaleItemsCompanion.insert(
+            saleId: saleId,
+            productId: productId,
+            quantity: 1.0,
+            price: 100.0,
+          ),
+        );
 
     bool eventFired = false;
     eventBus.stream.listen((event) {
@@ -66,10 +82,12 @@ void main() {
     });
 
     await engine.postSale(saleId);
-    
+
     expect(eventFired, isTrue);
-    
-    final updatedSale = await (db.select(db.sales)..where((s) => s.id.equals(saleId))).getSingle();
+
+    final updatedSale = await (db.select(
+      db.sales,
+    )..where((s) => s.id.equals(saleId))).getSingle();
     expect(updatedSale.status, 'POSTED');
   });
 }

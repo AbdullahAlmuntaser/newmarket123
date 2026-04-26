@@ -63,7 +63,11 @@ class MainDrawer extends StatelessWidget {
                     title: l10n?.sales ?? 'المبيعات',
                     children: [
                       _buildSubItem(context, 'سجل المبيعات', '/sales'),
-                      _buildSubItem(context, 'فاتورة مبيعات جديدة', '/sales/invoice'),
+                      _buildSubItem(
+                        context,
+                        'فاتورة مبيعات جديدة',
+                        '/sales/invoice',
+                      ),
                     ],
                   ),
                   _buildExpansionGroup(
@@ -71,8 +75,16 @@ class MainDrawer extends StatelessWidget {
                     icon: Icons.assignment_return_rounded,
                     title: l10n?.returns ?? 'المرتجعات',
                     children: [
-                      _buildSubItem(context, l10n?.salesReturns ?? 'مرتجعات المبيعات', '/sales/returns'),
-                      _buildSubItem(context, l10n?.purchaseReturns ?? 'مرتجعات المشتريات', '/purchases/returns'),
+                      _buildSubItem(
+                        context,
+                        l10n?.salesReturns ?? 'مرتجعات المبيعات',
+                        '/sales/returns',
+                      ),
+                      _buildSubItem(
+                        context,
+                        l10n?.purchaseReturns ?? 'مرتجعات المشتريات',
+                        '/purchases/returns',
+                      ),
                     ],
                   ),
                 ],
@@ -84,9 +96,21 @@ class MainDrawer extends StatelessWidget {
                     title: l10n?.products ?? 'المنتجات',
                     children: [
                       _buildSubItem(context, 'قائمة المنتجات', '/products'),
-                      _buildSubItem(context, l10n?.categories ?? 'الفئات', '/categories'),
-                      _buildSubItem(context, 'إدارة التصنيع (BOM)', '/manufacturing/bom'),
-                      _buildSubItem(context, 'المنتجات أوشكت على النفاد', '/low-stock'),
+                      _buildSubItem(
+                        context,
+                        l10n?.categories ?? 'الفئات',
+                        '/categories',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'إدارة التصنيع (BOM)',
+                        '/manufacturing/bom',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'المنتجات أوشكت على النفاد',
+                        '/low-stock',
+                      ),
                     ],
                   ),
                   _buildExpansionGroup(
@@ -94,11 +118,23 @@ class MainDrawer extends StatelessWidget {
                     icon: Icons.shopping_cart_rounded,
                     title: l10n?.purchases ?? 'المشتريات',
                     children: [
-                       _buildSubItem(context, 'قائمة المشتريات', '/purchases'),
-                       _buildSubItem(context, 'إضافة عملية شراء', '/purchases/new'),
-                       _buildSubItem(context, 'أوامر الشراء', '/purchases/orders'),
-                       _buildSubItem(context, 'دفعات الموردين', '/suppliers/payment'),
-                    ]
+                      _buildSubItem(context, 'قائمة المشتريات', '/purchases'),
+                      _buildSubItem(
+                        context,
+                        'إضافة عملية شراء',
+                        '/purchases/new',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'أوامر الشراء',
+                        '/purchases/orders',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'دفعات الموردين',
+                        '/suppliers/payment',
+                      ),
+                    ],
                   ),
                   _buildDrawerItem(
                     context,
@@ -117,18 +153,22 @@ class MainDrawer extends StatelessWidget {
                   children: [
                     _buildSubItem(context, 'قائمة العملاء', '/customers'),
                     _buildSubItem(context, 'كشوفات حساب العملاء', '/customers'),
-                  ]
+                  ],
                 ),
 
                 if (isManager) ...[
-                   _buildExpansionGroup(
+                  _buildExpansionGroup(
                     context,
                     icon: Icons.local_shipping_rounded,
                     title: l10n?.suppliers ?? 'الموردين',
                     children: [
                       _buildSubItem(context, 'قائمة الموردين', '/suppliers'),
-                      _buildSubItem(context, 'كشوفات حساب الموردين', '/suppliers'),
-                    ]
+                      _buildSubItem(
+                        context,
+                        'كشوفات حساب الموردين',
+                        '/suppliers',
+                      ),
+                    ],
                   ),
                 ],
                 if (isManager) ...[
@@ -138,9 +178,21 @@ class MainDrawer extends StatelessWidget {
                     icon: Icons.inventory_2_rounded,
                     title: 'إدارة المخزون',
                     children: [
-                      _buildSubItem(context, 'المستودعات', '/inventory/warehouses'),
-                      _buildSubItem(context, 'التحويل المخزني', '/inventory/transfer'),
-                      _buildSubItem(context, 'جرد المخزون', '/inventory/stock-take'),
+                      _buildSubItem(
+                        context,
+                        'المستودعات',
+                        '/inventory/warehouses',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'التحويل المخزني',
+                        '/inventory/transfer',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'جرد المخزون',
+                        '/inventory/stock-take',
+                      ),
                     ],
                   ),
                   _buildExpansionGroup(
@@ -157,11 +209,31 @@ class MainDrawer extends StatelessWidget {
                     icon: Icons.assessment_rounded,
                     title: 'التقارير',
                     children: [
-                      _buildSubItem(context, 'تقارير المبيعات', '/reports/sales'),
-                      _buildSubItem(context, 'ربحية المنتجات', '/reports/profitability'),
-                      _buildSubItem(context, 'تقارير المخزون', '/reports/inventory'),
-                      _buildSubItem(context, 'جرد المستودعات', '/reports/inventory-audit'),
-                      _buildSubItem(context, 'تقرير ضريبة القيمة المضافة', '/reports/vat'),
+                      _buildSubItem(
+                        context,
+                        'تقارير المبيعات',
+                        '/reports/sales',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'ربحية المنتجات',
+                        '/reports/profitability',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'تقارير المخزون',
+                        '/reports/inventory',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'جرد المستودعات',
+                        '/reports/inventory-audit',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'تقرير ضريبة القيمة المضافة',
+                        '/reports/vat',
+                      ),
                       _buildSubItem(context, 'سجل التدقيق', '/reports/audit'),
                     ],
                   ),
@@ -173,34 +245,102 @@ class MainDrawer extends StatelessWidget {
                     icon: Icons.account_balance_rounded,
                     title: l10n?.accounting ?? 'المحاسبة',
                     children: [
-                      _buildSubItem(context, l10n?.chartOfAccounts ?? 'شجرة الحسابات', '/accounting/coa'),
-                      _buildSubItem(context, l10n?.generalLedger ?? 'دفتر الأستاذ', '/accounting/general-ledger'),
-                      _buildSubItem(context, 'الميزانية العمومية', '/accounting/balance-sheet'),
-                      _buildSubItem(context, 'قائمة الدخل', '/accounting/income-statement'),
-                      _buildSubItem(context, 'التدفقات النقدية', '/accounting/cash-flow'),
-                      _buildSubItem(context, 'ميزان المراجعة', '/accounting/trial-balance'),
-                       _buildSubItem(context, 'المصروفات', '/accounting/expenses'),
-                       _buildSubItem(context, 'إدارة الشيكات', '/accounting/checks'),
-                       _buildSubItem(context, 'الأصول الثابتة', '/accounting/fixed-assets'),
-                       _buildSubItem(context, 'قيود يدوية', '/accounting/manual-journal'),
-                       _buildSubItem(context, 'سندات القبض والصرف', '/accounting/manual-voucher'),
-                       _buildSubItem(context, 'التسويات', '/accounting/reconciliation'),
-                       _buildSubItem(context, 'ورديات الكاشير', '/accounting/shifts'),
-                       _buildSubItem(context, 'مراكز التكلفة', '/accounting/cost-centers'),
+                      _buildSubItem(
+                        context,
+                        l10n?.chartOfAccounts ?? 'شجرة الحسابات',
+                        '/accounting/coa',
+                      ),
+                      _buildSubItem(
+                        context,
+                        l10n?.generalLedger ?? 'دفتر الأستاذ',
+                        '/accounting/general-ledger',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'الميزانية العمومية',
+                        '/accounting/balance-sheet',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'قائمة الدخل',
+                        '/accounting/income-statement',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'التدفقات النقدية',
+                        '/accounting/cash-flow',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'ميزان المراجعة',
+                        '/accounting/trial-balance',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'المصروفات',
+                        '/accounting/expenses',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'إدارة الشيكات',
+                        '/accounting/checks',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'الأصول الثابتة',
+                        '/accounting/fixed-assets',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'قيود يدوية',
+                        '/accounting/manual-journal',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'سندات القبض والصرف',
+                        '/accounting/manual-voucher',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'التسويات',
+                        '/accounting/reconciliation',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'ورديات الكاشير',
+                        '/accounting/shifts',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'مراكز التكلفة',
+                        '/accounting/cost-centers',
+                      ),
                     ],
                   ),
-                   _buildExpansionGroup(
-                     context,
-                     icon: Icons.settings_rounded,
-                     title: 'الإعدادات',
-                     children: [
-                       _buildSubItem(context, 'إدارة المستخدمين', '/users'),
-                       _buildSubItem(context, 'أسعار العملات', '/settings/currency-rates'),
-                       _buildSubItem(context, 'النسخ الاحتياطي', '/settings/backup'),
-                       _buildSubItem(context, 'المزامنة', '/sync'),
-                       _buildSubItem(context, 'إعدادات الطابعة', '/settings/printer'),
-                     ]
-                   )
+                  _buildExpansionGroup(
+                    context,
+                    icon: Icons.settings_rounded,
+                    title: 'الإعدادات',
+                    children: [
+                      _buildSubItem(context, 'إدارة المستخدمين', '/users'),
+                      _buildSubItem(
+                        context,
+                        'أسعار العملات',
+                        '/settings/currency-rates',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'النسخ الاحتياطي',
+                        '/settings/backup',
+                      ),
+                      _buildSubItem(context, 'المزامنة', '/sync'),
+                      _buildSubItem(
+                        context,
+                        'إعدادات الطابعة',
+                        '/settings/printer',
+                      ),
+                    ],
+                  ),
                 ],
 
                 const SizedBox(height: 20),

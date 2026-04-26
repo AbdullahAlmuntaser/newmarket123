@@ -37,10 +37,7 @@ class _CustomersPageState extends State<CustomersPage> {
     final ColorScheme colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.customers),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: Text(l10n.customers), elevation: 0),
       drawer: const MainDrawer(),
       body: Column(
         children: [
@@ -59,7 +56,11 @@ class _CustomersPageState extends State<CustomersPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.person_off, size: 64, color: colorScheme.outlineVariant),
+                        Icon(
+                          Icons.person_off,
+                          size: 64,
+                          color: colorScheme.outlineVariant,
+                        ),
                         const SizedBox(height: 16),
                         Text(l10n.noCustomersFound),
                       ],
@@ -87,7 +88,11 @@ class _CustomersPageState extends State<CustomersPage> {
     );
   }
 
-  Widget _buildSummaryCards(AppDatabase db, AppLocalizations l10n, ColorScheme colorScheme) {
+  Widget _buildSummaryCards(
+    AppDatabase db,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -96,19 +101,37 @@ class _CustomersPageState extends State<CustomersPage> {
       ),
       child: Row(
         children: [
-          _summaryCard("العدد", db.select(db.customers).watch().map((l) => l.length.toString()), Icons.people_outline, colorScheme.primary),
+          _summaryCard(
+            "العدد",
+            db.select(db.customers).watch().map((l) => l.length.toString()),
+            Icons.people_outline,
+            colorScheme.primary,
+          ),
           const SizedBox(width: 12),
-          _summaryCard("إجمالي المديونية", _getTotalBalance(db), Icons.account_balance_wallet_outlined, colorScheme.error),
+          _summaryCard(
+            "إجمالي المديونية",
+            _getTotalBalance(db),
+            Icons.account_balance_wallet_outlined,
+            colorScheme.error,
+          ),
         ],
       ),
     );
   }
 
-  Widget _summaryCard(String title, Stream<String> valueStream, IconData icon, Color color) {
+  Widget _summaryCard(
+    String title,
+    Stream<String> valueStream,
+    IconData icon,
+    Color color,
+  ) {
     return Expanded(
       child: Card(
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: color.withAlpha(50))),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: color.withAlpha(50)),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Column(
@@ -116,12 +139,22 @@ class _CustomersPageState extends State<CustomersPage> {
             children: [
               Icon(icon, color: color, size: 20),
               const SizedBox(height: 4),
-              Text(title, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               StreamBuilder<String>(
                 stream: valueStream,
                 builder: (context, snap) => Text(
                   snap.data ?? '0.0',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
                 ),
               ),
             ],
@@ -131,7 +164,10 @@ class _CustomersPageState extends State<CustomersPage> {
     );
   }
 
-  Widget _buildCollapsibleFilter(AppLocalizations l10n, ColorScheme colorScheme) {
+  Widget _buildCollapsibleFilter(
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+  ) {
     return Column(
       children: [
         Padding(
@@ -141,7 +177,9 @@ class _CustomersPageState extends State<CustomersPage> {
               hintText: l10n.searchCustomers,
               prefixIcon: const Icon(Icons.search),
               isDense: true,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               filled: true,
               fillColor: colorScheme.surface,
             ),
@@ -175,7 +213,10 @@ class _CustomersPageState extends State<CustomersPage> {
   Widget _filterChip(String label, String value) {
     final bool isSelected = _selectedType == value;
     return FilterChip(
-      label: Text(label, style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : null)),
+      label: Text(
+        label,
+        style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : null),
+      ),
       selected: isSelected,
       onSelected: (v) => setState(() => _selectedType = value),
       selectedColor: Theme.of(context).colorScheme.primary,
@@ -183,9 +224,14 @@ class _CustomersPageState extends State<CustomersPage> {
     );
   }
 
-  Widget _buildCustomerCard(Customer customer, AppDatabase db, AppLocalizations l10n, ColorScheme colorScheme) {
+  Widget _buildCustomerCard(
+    Customer customer,
+    AppDatabase db,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+  ) {
     final bool isDebit = customer.balance > 0;
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -202,15 +248,33 @@ class _CustomersPageState extends State<CustomersPage> {
                   CircleAvatar(
                     radius: 24,
                     backgroundColor: colorScheme.secondaryContainer,
-                    child: Text(customer.name[0].toUpperCase(), style: TextStyle(color: colorScheme.onSecondaryContainer, fontWeight: FontWeight.bold)),
+                    child: Text(
+                      customer.name[0].toUpperCase(),
+                      style: TextStyle(
+                        color: colorScheme.onSecondaryContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(customer.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        Text(customer.phone ?? l10n.noPhone, style: TextStyle(color: colorScheme.outline, fontSize: 12)),
+                        Text(
+                          customer.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          customer.phone ?? l10n.noPhone,
+                          style: TextStyle(
+                            color: colorScheme.outline,
+                            fontSize: 12,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -224,10 +288,17 @@ class _CustomersPageState extends State<CustomersPage> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("الرصيد", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                      const Text(
+                        "الرصيد",
+                        style: TextStyle(fontSize: 10, color: Colors.grey),
+                      ),
                       Text(
                         "${customer.balance.toStringAsFixed(2)} ر.س",
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isDebit ? Colors.red : Colors.green),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: isDebit ? Colors.red : Colors.green,
+                        ),
                       ),
                     ],
                   ),
@@ -250,63 +321,153 @@ class _CustomersPageState extends State<CustomersPage> {
     Color color = Colors.grey;
     String label = type;
     switch (type) {
-      case 'RETAIL': color = Colors.blue; label = "تجزئة"; break;
-      case 'WHOLESALE': color = Colors.orange; label = "جملة"; break;
-      case 'VIP': color = Colors.purple; break;
+      case 'RETAIL':
+        color = Colors.blue;
+        label = "تجزئة";
+        break;
+      case 'WHOLESALE':
+        color = Colors.orange;
+        label = "جملة";
+        break;
+      case 'VIP':
+        color = Colors.purple;
+        break;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: color.withAlpha(25), borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withAlpha(100))),
-      child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+      decoration: BoxDecoration(
+        color: color.withAlpha(25),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withAlpha(100)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 
   Stream<String> _getTotalBalance(AppDatabase db) {
-    return db.select(db.customers).watch().map((customers) => customers.fold(0.0, (sum, item) => sum + item.balance).toStringAsFixed(2));
+    return db
+        .select(db.customers)
+        .watch()
+        .map(
+          (customers) => customers
+              .fold(0.0, (sum, item) => sum + item.balance)
+              .toStringAsFixed(2),
+        );
   }
 
   Stream<List<Customer>> _getFilteredStream(AppDatabase db) {
     return (db.select(db.customers)..where((t) {
-      final matchesSearch = t.name.like('%${_searchQuery.toLowerCase()}%') | t.phone.like('%$_searchQuery%');
-      final matchesType = _selectedType == 'ALL' ? const drift.Constant(true) : t.customerType.equals(_selectedType);
-      return matchesSearch & matchesType & t.isActive.equals(true);
-    })).watch();
+          final matchesSearch =
+              t.name.like('%${_searchQuery.toLowerCase()}%') |
+              t.phone.like('%$_searchQuery%');
+          final matchesType = _selectedType == 'ALL'
+              ? const drift.Constant(true)
+              : t.customerType.equals(_selectedType);
+          return matchesSearch & matchesType & t.isActive.equals(true);
+        }))
+        .watch();
   }
 
   // Reuse original logic methods
   Future<void> _showPayAmountDialog(AppDatabase db, Customer customer) async {
     final l10n = AppLocalizations.of(context)!;
-    final userId = Provider.of<AuthProvider>(context, listen: false).currentUser?.id;
+    final userId = Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).currentUser?.id;
     _payAmountController.clear();
     final amount = await showDialog<double>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(l10n.payAmount),
-        content: TextField(controller: _payAmountController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'المبلغ'), autofocus: true),
+        content: TextField(
+          controller: _payAmountController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(labelText: 'المبلغ'),
+          autofocus: true,
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
-          ElevatedButton(onPressed: () { final val = double.tryParse(_payAmountController.text); if (val != null && val > 0) Navigator.pop(ctx, val); }, child: Text(l10n.save)),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final val = double.tryParse(_payAmountController.text);
+              if (val != null && val > 0) Navigator.pop(ctx, val);
+            },
+            child: Text(l10n.save),
+          ),
         ],
       ),
     );
     if (amount != null) {
       try {
-        await sl<TransactionEngine>().postCustomerPayment(customerId: customer.id, amount: amount, paymentMethod: 'cash', userId: userId);
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.paymentSuccess)));
-      } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e'))); }
+        await sl<TransactionEngine>().postCustomerPayment(
+          customerId: customer.id,
+          amount: amount,
+          paymentMethod: 'cash',
+          userId: userId,
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.paymentSuccess)));
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('خطأ: $e')));
+        }
+      }
     }
   }
 
   Future<void> _addCustomer(AppDatabase db) async {
-    final companion = await showDialog<CustomersCompanion>(context: context, builder: (ctx) => const AddEditCustomerDialog());
+    final companion = await showDialog<CustomersCompanion>(
+      context: context,
+      builder: (ctx) => const AddEditCustomerDialog(),
+    );
     if (companion != null) {
-      try { await db.customersDao.insertCustomerWithAccount(companion); if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تمت الإضافة'))); }
-      catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e'))); }
+      try {
+        await db.customersDao.insertCustomerWithAccount(companion);
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('تمت الإضافة')));
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('خطأ: $e')));
+        }
+      }
     }
   }
 
   Future<void> _editCustomer(AppDatabase db, Customer customer) async {
-    final companion = await showDialog<CustomersCompanion>(context: context, builder: (ctx) => AddEditCustomerDialog(customer: customer));
-    if (companion != null) { await (db.update(db.customers)..where((t) => t.id.equals(customer.id))).write(companion); if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم التحديث'))); }
+    final companion = await showDialog<CustomersCompanion>(
+      context: context,
+      builder: (ctx) => AddEditCustomerDialog(customer: customer),
+    );
+    if (companion != null) {
+      await (db.update(
+        db.customers,
+      )..where((t) => t.id.equals(customer.id))).write(companion);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('تم التحديث')));
+      }
+    }
   }
 }

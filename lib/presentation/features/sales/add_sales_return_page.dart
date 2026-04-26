@@ -34,7 +34,9 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
 
   Future<void> _loadSelectedSale(String saleId) async {
     final db = Provider.of<AppDatabase>(context, listen: false);
-    final sale = await (db.select(db.sales)..where((s) => s.id.equals(saleId))).getSingleOrNull();
+    final sale = await (db.select(
+      db.sales,
+    )..where((s) => s.id.equals(saleId))).getSingleOrNull();
     if (sale != null) {
       setState(() {
         _selectedSale = sale;

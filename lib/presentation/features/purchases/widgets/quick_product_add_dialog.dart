@@ -20,7 +20,7 @@ class _QuickProductAddDialogState extends State<QuickProductAddDialog> {
   final _buyPriceController = TextEditingController();
   final _sellPriceController = TextEditingController();
   final _unitController = TextEditingController(text: 'حبة');
-  
+
   Category? _selectedCategory;
   bool _isSaving = false;
 
@@ -36,7 +36,7 @@ class _QuickProductAddDialogState extends State<QuickProductAddDialog> {
 
   Future<void> _saveProduct() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() => _isSaving = true);
     final db = context.read<AppDatabase>();
     final productId = const Uuid().v4();
@@ -44,13 +44,17 @@ class _QuickProductAddDialogState extends State<QuickProductAddDialog> {
     try {
       final buyPrice = double.tryParse(_buyPriceController.text) ?? 0.0;
       final sellPrice = double.tryParse(_sellPriceController.text) ?? 0.0;
-      final sku = _barcodeController.text.isNotEmpty ? _barcodeController.text : productId.substring(0, 8);
+      final sku = _barcodeController.text.isNotEmpty
+          ? _barcodeController.text
+          : productId.substring(0, 8);
 
       final companion = ProductsCompanion.insert(
         id: drift.Value(productId),
         name: _nameController.text,
         sku: sku,
-        barcode: drift.Value(_barcodeController.text.isEmpty ? null : _barcodeController.text),
+        barcode: drift.Value(
+          _barcodeController.text.isEmpty ? null : _barcodeController.text,
+        ),
         categoryId: drift.Value(_selectedCategory?.id),
         unit: drift.Value(_unitController.text),
         buyPrice: drift.Value(buyPrice),
@@ -67,15 +71,17 @@ class _QuickProductAddDialogState extends State<QuickProductAddDialog> {
       await db.into(db.products).insert(companion);
 
       // Fetch the created product to return it
-      final createdProduct = await (db.select(db.products)..where((t) => t.id.equals(productId))).getSingle();
+      final createdProduct = await (db.select(
+        db.products,
+      )..where((t) => t.id.equals(productId))).getSingle();
 
       widget.onProductCreated(createdProduct);
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في حفظ المنتج: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('خطأ في حفظ المنتج: $e')));
       }
     } finally {
       setState(() => _isSaving = false);
@@ -108,9 +114,12 @@ class _QuickProductAddDialogState extends State<QuickProductAddDialog> {
                   Expanded(
                     child: TextFormField(
                       controller: _buyPriceController,
-                      decoration: const InputDecoration(labelText: 'سعر الشراء'),
+                      decoration: const InputDecoration(
+                        labelText: 'سعر الشراء',
+                      ),
                       keyboardType: TextInputType.number,
-                      validator: (v) => double.tryParse(v ?? '') == null ? 'خطأ' : null,
+                      validator: (v) =>
+                          double.tryParse(v ?? '') == null ? 'خطأ' : null,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -119,7 +128,8 @@ class _QuickProductAddDialogState extends State<QuickProductAddDialog> {
                       controller: _sellPriceController,
                       decoration: const InputDecoration(labelText: 'سعر البيع'),
                       keyboardType: TextInputType.number,
-                      validator: (v) => double.tryParse(v ?? '') == null ? 'خطأ' : null,
+                      validator: (v) =>
+                          double.tryParse(v ?? '') == null ? 'خطأ' : null,
                     ),
                   ),
                 ],
@@ -140,8 +150,16 @@ class _QuickProductAddDialogState extends State<QuickProductAddDialog> {
                         final categories = snapshot.data ?? [];
                         return DropdownButtonFormField<Category>(
                           decoration: const InputDecoration(labelText: 'الفئة'),
-                          items: categories.map((c) => DropdownMenuItem(value: c, child: Text(c.name))).toList(),
-                          onChanged: (v) => setState(() => _selectedCategory = v),
+                          items: categories
+                              .map(
+                                (c) => DropdownMenuItem(
+                                  value: c,
+                                  child: Text(c.name),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (v) =>
+                              setState(() => _selectedCategory = v),
                         );
                       },
                     ),
@@ -153,10 +171,15 @@ class _QuickProductAddDialogState extends State<QuickProductAddDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('إلغاء'),
+        ),
         ElevatedButton(
           onPressed: _isSaving ? null : _saveProduct,
-          child: _isSaving ? const CircularProgressIndicator() : const Text('حفظ وإضافة للفاتورة'),
+          child: _isSaving
+              ? const CircularProgressIndicator()
+              : const Text('حفظ وإضافة للفاتورة'),
         ),
       ],
     );

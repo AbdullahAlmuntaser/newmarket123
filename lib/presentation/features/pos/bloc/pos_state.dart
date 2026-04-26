@@ -9,7 +9,8 @@ class CartItem extends Equatable {
   final String unitName; // الاسم الحالي للوحدة (حبة، كرتون، إلخ)
   final Decimal unitFactor; // المعامل الخاص بالوحدة المختارة
   final Decimal unitPrice;
-  final List<UnitConversion> availableUnits; // قائمة بكل الوحدات المتاحة لهذا المنتج
+  final List<UnitConversion>
+  availableUnits; // قائمة بكل الوحدات المتاحة لهذا المنتج
 
   const CartItem({
     required this.product,
@@ -85,10 +86,11 @@ class PosLoaded extends PosState {
     this.selectedCategoryId,
     this.filteredProducts = const [],
     this.activePriceListId,
-  })  : discount = discount ?? Decimal.zero,
-        taxRate = taxRate ?? Decimal.zero;
+  }) : discount = discount ?? Decimal.zero,
+       taxRate = taxRate ?? Decimal.zero;
 
-  Decimal get subtotal => cart.fold(Decimal.zero, (sum, item) => sum + item.total);
+  Decimal get subtotal =>
+      cart.fold(Decimal.zero, (sum, item) => sum + item.total);
   Decimal get taxAmount => (subtotal - discount) * taxRate;
   Decimal get total => (subtotal - discount) + taxAmount;
 

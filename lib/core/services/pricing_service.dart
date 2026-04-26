@@ -52,7 +52,11 @@ class PricingService {
     String? priceListId,
   }) async {
     // 1. Get base price (from list or product default)
-    final basePrice = await getPriceForProduct(productId, priceListId, quantity);
+    final basePrice = await getPriceForProduct(
+      productId,
+      priceListId,
+      quantity,
+    );
 
     // 2. Apply promotions
     final finalPrice = await applyPromotions(productId, basePrice, quantity);
@@ -79,7 +83,9 @@ class PricingService {
 
     Decimal finalPrice = basePrice;
     for (var promo in activePromotions) {
-      if (quantity < Decimal.parse(promo.minPurchaseAmount.toString())) continue;
+      if (quantity < Decimal.parse(promo.minPurchaseAmount.toString())) {
+        continue;
+      }
 
       if (promo.type == 'PERCENTAGE_DISCOUNT') {
         final discountFactor = Decimal.parse((promo.value / 100).toString());

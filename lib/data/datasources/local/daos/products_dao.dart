@@ -36,7 +36,7 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
     with _$ProductsDaoMixin {
   ProductsDao(super.db);
 
-  // Warehouse & Batch Management
+  // ========== Warehouse & Batch Management ==========
   Stream<List<Warehouse>> watchWarehouses() {
     return select(warehouses).watch();
   }
@@ -66,7 +66,6 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
     String? note,
   }) async {
     await transaction(() async {
-      // 1. إنشاء رأس التحويل
       final transfer = await into(stockTransfers).insertReturning(
         StockTransfersCompanion.insert(
           fromWarehouseId: fromWarehouseId,
@@ -79,7 +78,6 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
       final transferId = transfer.id;
 
       for (var item in items) {
-        // 2. جلب الدفعة المصدر
         final sourceBatch = await (select(
           productBatches,
         )..where((b) => b.id.equals(item.batchId))).getSingle();
@@ -88,7 +86,6 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
           throw Exception('الكمية المطلوبة غير متوفرة في الدفعة المحددة');
         }
 
-        // 3. خصم الكمية من الدفعة المصدر
         await (update(
           productBatches,
         )..where((b) => b.id.equals(item.batchId))).write(
@@ -97,8 +94,6 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
           ),
         );
 
-        // 4. إضافة الكمية للدفعة الهدف (أو إنشاء واحدة جديدة)
-        // نبحث عن دفعة بنفس رقم الدفعة وتاريخ الانتهاء في المستودع الهدف
         final targetBatch =
             await (select(productBatches)..where(
                   (b) =>
@@ -130,12 +125,6 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
           );
         }
 
-        // 5. تحديث إجمالي المخزون في جدول المنتجات (إذا كان المخزون يمثل الإجمالي)
-        // ملاحظة: في أنظمة ERP المتقدمة، يتم حساب المخزون من الدفعات مباشرة
-        // ولكن للتوافق مع الكود الحالي سنقوم بتحديث حقل stock
-        // (لا حاجة هنا لأن الإجمالي العام للمنتج لم يتغير، فقط توزيعه بين المستودعات)
-
-        // 6. تسجيل الصنف في تفاصيل التحويل
         await into(stockTransferItems).insert(
           StockTransferItemsCompanion.insert(
             transferId: transferId,
@@ -148,6 +137,7 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
     });
   }
 
+  // ========== Products (Items) Operations ==========
   Stream<List<ProductWithCategory>> watchProducts({
     String? searchQuery,
     String? categoryId,
@@ -159,7 +149,8 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
     if (searchQuery != null && searchQuery.isNotEmpty) {
       query.where(
         products.name.like('%$searchQuery%') |
-            products.sku.like('%$searchQuery%'),
+            products.sku.like('%$searchQuery%') |
+            products.barcode.like('%$searchQuery%'),
       );
     }
 
@@ -201,6 +192,12 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
     )..where((p) => p.sku.equals(sku))).getSingleOrNull();
   }
 
+  Future<Product?> getProductByBarcode(String barcode) {
+    return (select(
+      products,
+    )..where((p) => p.barcode.equals(barcode))).getSingleOrNull();
+  }
+
   Future<int> addProduct(ProductsCompanion entry) {
     return into(products).insert(entry);
   }
@@ -213,7 +210,30 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
     return delete(products).delete(entry);
   }
 
-  // Categories
+  // ========== Variant Operations ==========
+  /// Get all variants for a specific product (parent)
+  Future<List<Product>> getVariantsForProduct(String productId) {
+    return (select(
+      products,
+    )..where((p) => p.parentProductId.equals(productId))).get();
+  }
+
+  /// Stream variants for a product
+  Stream<List<Product>> watchVariantsForProduct(String productId) {
+    return (select(
+      products,
+    )..where((p) => p.parentProductId.equals(productId))).watch();
+  }
+
+  /// Get a product with its variants (returns the parent)
+  Future<ProductWithVariants?> getProductWithVariants(String productId) async {
+    final product = await getProductById(productId);
+    if (product == null) return null;
+    final variants = await getVariantsForProduct(productId);
+    return ProductWithVariants(product: product, variants: variants);
+  }
+
+  // ========== Categories ==========
   Stream<List<Category>> watchCategories() {
     return select(categories).watch();
   }
@@ -230,6 +250,7 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
     return delete(categories).delete(entry);
   }
 
+  // ========== Expiring Batches ==========
   Stream<List<ProductBatch>> watchExpiringBatches({int daysThreshold = 30}) {
     final thresholdDate = DateTime.now().add(Duration(days: daysThreshold));
     return (select(productBatches)
@@ -261,4 +282,12 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
           ]))
         .get();
   }
+}
+
+/// Helper class to return a product with its variants
+class ProductWithVariants {
+  final Product product;
+  final List<Product> variants;
+
+  ProductWithVariants({required this.product, required this.variants});
 }

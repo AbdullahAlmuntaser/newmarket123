@@ -16,7 +16,10 @@ class _CurrencyRatesPageState extends State<CurrencyRatesPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Use context inside postFrameCallback to avoid async gap issues
-      context.read<AppDatabase>().select(context.read<AppDatabase>().currencies).get();
+      context
+          .read<AppDatabase>()
+          .select(context.read<AppDatabase>().currencies)
+          .get();
     });
   }
 
@@ -29,9 +32,11 @@ class _CurrencyRatesPageState extends State<CurrencyRatesPage> {
       body: StreamBuilder<List<Currency>>(
         stream: db.select(db.currencies).watch(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
           final currencies = snapshot.data!;
-          
+
           return ListView.builder(
             itemCount: currencies.length,
             itemBuilder: (context, index) {
@@ -40,10 +45,13 @@ class _CurrencyRatesPageState extends State<CurrencyRatesPage> {
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: ListTile(
                   title: Text('${currency.name} (${currency.code})'),
-                  subtitle: Text('السعر مقابل الأساسي: ${currency.exchangeRate.toStringAsFixed(4)}'),
+                  subtitle: Text(
+                    'السعر مقابل الأساسي: ${currency.exchangeRate.toStringAsFixed(4)}',
+                  ),
                   trailing: IconButton(
                     icon: const Icon(Icons.edit),
-                    onPressed: () => _showEditCurrencyDialog(context, db, currency),
+                    onPressed: () =>
+                        _showEditCurrencyDialog(context, db, currency),
                   ),
                 ),
               );
@@ -72,16 +80,34 @@ class _CurrencyRatesPageState extends State<CurrencyRatesPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: codeController, decoration: const InputDecoration(labelText: 'رمز العملة (USD)')),
-              TextField(controller: nameController, decoration: const InputDecoration(labelText: 'اسم العملة (دولار أمريكي)')),
-              TextField(controller: rateController, decoration: const InputDecoration(labelText: 'سعر الصرف مقابل الأساسي'), keyboardType: TextInputType.number),
+              TextField(
+                controller: codeController,
+                decoration: const InputDecoration(
+                  labelText: 'رمز العملة (USD)',
+                ),
+              ),
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'اسم العملة (دولار أمريكي)',
+                ),
+              ),
+              TextField(
+                controller: rateController,
+                decoration: const InputDecoration(
+                  labelText: 'سعر الصرف مقابل الأساسي',
+                ),
+                keyboardType: TextInputType.number,
+              ),
               Row(
                 children: [
                   Checkbox(
                     value: isBase,
                     onChanged: (value) {
                       if (value != null) {
-                        setState(() { isBase = value; }); // Update local state
+                        setState(() {
+                          isBase = value;
+                        }); // Update local state
                       }
                     },
                   ),
@@ -92,20 +118,27 @@ class _CurrencyRatesPageState extends State<CurrencyRatesPage> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
           ElevatedButton(
             onPressed: () async {
-              if (codeController.text.isNotEmpty && nameController.text.isNotEmpty && rateController.text.isNotEmpty) {
+              if (codeController.text.isNotEmpty &&
+                  nameController.text.isNotEmpty &&
+                  rateController.text.isNotEmpty) {
                 final rate = double.tryParse(rateController.text);
                 if (rate != null) {
-                  await db.into(db.currencies).insert(
-                    CurrenciesCompanion.insert(
-                      code: codeController.text,
-                      name: nameController.text,
-                      exchangeRate: drift.Value(rate),
-                      isBase: drift.Value(isBase),
-                    ),
-                  );
+                  await db
+                      .into(db.currencies)
+                      .insert(
+                        CurrenciesCompanion.insert(
+                          code: codeController.text,
+                          name: nameController.text,
+                          exchangeRate: drift.Value(rate),
+                          isBase: drift.Value(isBase),
+                        ),
+                      );
                   if (context.mounted) Navigator.pop(context);
                 }
               }
@@ -117,10 +150,16 @@ class _CurrencyRatesPageState extends State<CurrencyRatesPage> {
     );
   }
 
-  void _showEditCurrencyDialog(BuildContext context, AppDatabase db, Currency currency) {
+  void _showEditCurrencyDialog(
+    BuildContext context,
+    AppDatabase db,
+    Currency currency,
+  ) {
     final codeController = TextEditingController(text: currency.code);
     final nameController = TextEditingController(text: currency.name);
-    final rateController = TextEditingController(text: currency.exchangeRate.toString());
+    final rateController = TextEditingController(
+      text: currency.exchangeRate.toString(),
+    );
     bool isBase = currency.isBase; // Initialize local state from currency
 
     showDialog(
@@ -131,16 +170,32 @@ class _CurrencyRatesPageState extends State<CurrencyRatesPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: codeController, decoration: const InputDecoration(labelText: 'رمز العملة'), readOnly: true),
-              TextField(controller: nameController, decoration: const InputDecoration(labelText: 'اسم العملة'), readOnly: true),
-              TextField(controller: rateController, decoration: const InputDecoration(labelText: 'سعر الصرف مقابل الأساسي'), keyboardType: TextInputType.number),
+              TextField(
+                controller: codeController,
+                decoration: const InputDecoration(labelText: 'رمز العملة'),
+                readOnly: true,
+              ),
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'اسم العملة'),
+                readOnly: true,
+              ),
+              TextField(
+                controller: rateController,
+                decoration: const InputDecoration(
+                  labelText: 'سعر الصرف مقابل الأساسي',
+                ),
+                keyboardType: TextInputType.number,
+              ),
               Row(
                 children: [
                   Checkbox(
                     value: isBase,
                     onChanged: (value) {
                       if (value != null) {
-                        setState(() { isBase = value; }); // Update local state
+                        setState(() {
+                          isBase = value;
+                        }); // Update local state
                       }
                     },
                   ),
@@ -151,18 +206,20 @@ class _CurrencyRatesPageState extends State<CurrencyRatesPage> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
           ElevatedButton(
             onPressed: () async {
               if (rateController.text.isNotEmpty) {
                 final rate = double.tryParse(rateController.text);
                 if (rate != null) {
-                  await db.update(db.currencies).replace(
-                    currency.copyWith(
-                      exchangeRate: rate,
-                      isBase: isBase,
-                    ),
-                  );
+                  await db
+                      .update(db.currencies)
+                      .replace(
+                        currency.copyWith(exchangeRate: rate, isBase: isBase),
+                      );
                   if (context.mounted) Navigator.pop(context);
                 }
               }

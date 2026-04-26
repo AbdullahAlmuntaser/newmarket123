@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supermarket/injection_container.dart' as di;
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/bom_service.dart';
@@ -26,7 +27,7 @@ class _BomManagementPageState extends State<BomManagementPage> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     final db = Provider.of<AppDatabase>(context, listen: false);
-    final bomService = BomService(db);
+    final bomService = di.sl<BomService>();
     _allBoms = await bomService.getAllBoms();
     _products = await (db.select(db.products)).get();
     for (final p in _products) {
@@ -209,8 +210,7 @@ class _BomManagementPageState extends State<BomManagementPage> {
           ElevatedButton(
             onPressed: () async {
               if (formKey.currentState!.validate()) {
-                final db = Provider.of<AppDatabase>(context, listen: false);
-                final bomService = BomService(db);
+                          final bomService = di.sl<BomService>();
                 await bomService.addComponent(
                   finishedProduct!,
                   component!,
@@ -249,8 +249,7 @@ class _BomManagementPageState extends State<BomManagementPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              final db = Provider.of<AppDatabase>(context, listen: false);
-              final bomService = BomService(db);
+                        final bomService = di.sl<BomService>();
               await bomService.updateComponentQuantity(
                 bom.id,
                 double.parse(ctrl.text),
@@ -292,9 +291,7 @@ class _BomManagementPageState extends State<BomManagementPage> {
 
     if (confirmed == true) {
       if (!mounted) return;
-      final db = Provider.of<AppDatabase>(context, listen: false);
-      final bomService = BomService(db);
-      await bomService.removeComponent(bom.id);
+      final bomService = di.sl<BomService>();      await bomService.removeComponent(bom.id);
       await _loadData();
     }
   }
@@ -332,8 +329,7 @@ class _BomAssemblyPageState extends State<BomAssemblyPage> {
   }
 
   Future<void> _loadBom(String productId) async {
-    final db = Provider.of<AppDatabase>(context, listen: false);
-    final bomService = BomService(db);
+              final bomService = di.sl<BomService>();
     _currentBom = await bomService.getBomForProduct(productId);
     setState(() {});
   }
@@ -489,8 +485,7 @@ class _BomAssemblyPageState extends State<BomAssemblyPage> {
     }
 
     setState(() => _isLoading = true);
-    final db = Provider.of<AppDatabase>(context, listen: false);
-    final bomService = BomService(db);
+              final bomService = di.sl<BomService>();
 
     try {
       final result = await bomService.assemble(

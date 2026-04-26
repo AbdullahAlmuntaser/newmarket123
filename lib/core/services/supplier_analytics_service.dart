@@ -24,21 +24,25 @@ class SupplierAnalyticsService {
     final suppliers = await db.select(db.suppliers).get();
 
     for (var supplier in suppliers) {
-      final purchases = await (db.select(db.purchases)..where((p) => p.supplierId.equals(supplier.id))).get();
-      
+      final purchases = await (db.select(
+        db.purchases,
+      )..where((p) => p.supplierId.equals(supplier.id))).get();
+
       double total = 0;
       for (var p in purchases) {
         total += p.total;
       }
 
-      report.add(SupplierPerformance(
-        supplierName: supplier.name,
-        totalPurchases: total,
-        averagePrice: purchases.isNotEmpty ? total / purchases.length : 0,
-        totalInvoices: purchases.length,
-      ));
+      report.add(
+        SupplierPerformance(
+          supplierName: supplier.name,
+          totalPurchases: total,
+          averagePrice: purchases.isNotEmpty ? total / purchases.length : 0,
+          totalInvoices: purchases.length,
+        ),
+      );
     }
-    
+
     report.sort((a, b) => b.totalPurchases.compareTo(a.totalPurchases));
     return report;
   }

@@ -1263,6 +1263,42 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _parentProductIdMeta = const VerificationMeta(
+    'parentProductId',
+  );
+  @override
+  late final GeneratedColumn<String> parentProductId = GeneratedColumn<String>(
+    'parent_product_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES products (id)',
+    ),
+  );
+  static const VerificationMeta _attributesMeta = const VerificationMeta(
+    'attributes',
+  );
+  @override
+  late final GeneratedColumn<String> attributes = GeneratedColumn<String>(
+    'attributes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _additionalCostMeta = const VerificationMeta(
+    'additionalCost',
+  );
+  @override
+  late final GeneratedColumn<double> additionalCost = GeneratedColumn<double>(
+    'additional_cost',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1287,6 +1323,9 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     expiryDate,
     taxRate,
     isActive,
+    parentProductId,
+    attributes,
+    additionalCost,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1439,6 +1478,30 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
       );
     }
+    if (data.containsKey('parent_product_id')) {
+      context.handle(
+        _parentProductIdMeta,
+        parentProductId.isAcceptableOrUnknown(
+          data['parent_product_id']!,
+          _parentProductIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('attributes')) {
+      context.handle(
+        _attributesMeta,
+        attributes.isAcceptableOrUnknown(data['attributes']!, _attributesMeta),
+      );
+    }
+    if (data.containsKey('additional_cost')) {
+      context.handle(
+        _additionalCostMeta,
+        additionalCost.isAcceptableOrUnknown(
+          data['additional_cost']!,
+          _additionalCostMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1536,6 +1599,18 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         DriftSqlType.bool,
         data['${effectivePrefix}is_active'],
       )!,
+      parentProductId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}parent_product_id'],
+      ),
+      attributes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}attributes'],
+      ),
+      additionalCost: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}additional_cost'],
+      ),
     );
   }
 
@@ -1568,6 +1643,9 @@ class Product extends DataClass implements Insertable<Product> {
   final DateTime? expiryDate;
   final double taxRate;
   final bool isActive;
+  final String? parentProductId;
+  final String? attributes;
+  final double? additionalCost;
   const Product({
     required this.id,
     required this.createdAt,
@@ -1591,6 +1669,9 @@ class Product extends DataClass implements Insertable<Product> {
     this.expiryDate,
     required this.taxRate,
     required this.isActive,
+    this.parentProductId,
+    this.attributes,
+    this.additionalCost,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1629,6 +1710,15 @@ class Product extends DataClass implements Insertable<Product> {
     }
     map['tax_rate'] = Variable<double>(taxRate);
     map['is_active'] = Variable<bool>(isActive);
+    if (!nullToAbsent || parentProductId != null) {
+      map['parent_product_id'] = Variable<String>(parentProductId);
+    }
+    if (!nullToAbsent || attributes != null) {
+      map['attributes'] = Variable<String>(attributes);
+    }
+    if (!nullToAbsent || additionalCost != null) {
+      map['additional_cost'] = Variable<double>(additionalCost);
+    }
     return map;
   }
 
@@ -1668,6 +1758,15 @@ class Product extends DataClass implements Insertable<Product> {
           : Value(expiryDate),
       taxRate: Value(taxRate),
       isActive: Value(isActive),
+      parentProductId: parentProductId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(parentProductId),
+      attributes: attributes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(attributes),
+      additionalCost: additionalCost == null && nullToAbsent
+          ? const Value.absent()
+          : Value(additionalCost),
     );
   }
 
@@ -1699,6 +1798,9 @@ class Product extends DataClass implements Insertable<Product> {
       expiryDate: serializer.fromJson<DateTime?>(json['expiryDate']),
       taxRate: serializer.fromJson<double>(json['taxRate']),
       isActive: serializer.fromJson<bool>(json['isActive']),
+      parentProductId: serializer.fromJson<String?>(json['parentProductId']),
+      attributes: serializer.fromJson<String?>(json['attributes']),
+      additionalCost: serializer.fromJson<double?>(json['additionalCost']),
     );
   }
   @override
@@ -1727,6 +1829,9 @@ class Product extends DataClass implements Insertable<Product> {
       'expiryDate': serializer.toJson<DateTime?>(expiryDate),
       'taxRate': serializer.toJson<double>(taxRate),
       'isActive': serializer.toJson<bool>(isActive),
+      'parentProductId': serializer.toJson<String?>(parentProductId),
+      'attributes': serializer.toJson<String?>(attributes),
+      'additionalCost': serializer.toJson<double?>(additionalCost),
     };
   }
 
@@ -1753,6 +1858,9 @@ class Product extends DataClass implements Insertable<Product> {
     Value<DateTime?> expiryDate = const Value.absent(),
     double? taxRate,
     bool? isActive,
+    Value<String?> parentProductId = const Value.absent(),
+    Value<String?> attributes = const Value.absent(),
+    Value<double?> additionalCost = const Value.absent(),
   }) => Product(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -1776,6 +1884,13 @@ class Product extends DataClass implements Insertable<Product> {
     expiryDate: expiryDate.present ? expiryDate.value : this.expiryDate,
     taxRate: taxRate ?? this.taxRate,
     isActive: isActive ?? this.isActive,
+    parentProductId: parentProductId.present
+        ? parentProductId.value
+        : this.parentProductId,
+    attributes: attributes.present ? attributes.value : this.attributes,
+    additionalCost: additionalCost.present
+        ? additionalCost.value
+        : this.additionalCost,
   );
   Product copyWithCompanion(ProductsCompanion data) {
     return Product(
@@ -1815,6 +1930,15 @@ class Product extends DataClass implements Insertable<Product> {
           : this.expiryDate,
       taxRate: data.taxRate.present ? data.taxRate.value : this.taxRate,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      parentProductId: data.parentProductId.present
+          ? data.parentProductId.value
+          : this.parentProductId,
+      attributes: data.attributes.present
+          ? data.attributes.value
+          : this.attributes,
+      additionalCost: data.additionalCost.present
+          ? data.additionalCost.value
+          : this.additionalCost,
     );
   }
 
@@ -1842,7 +1966,10 @@ class Product extends DataClass implements Insertable<Product> {
           ..write('alertLimit: $alertLimit, ')
           ..write('expiryDate: $expiryDate, ')
           ..write('taxRate: $taxRate, ')
-          ..write('isActive: $isActive')
+          ..write('isActive: $isActive, ')
+          ..write('parentProductId: $parentProductId, ')
+          ..write('attributes: $attributes, ')
+          ..write('additionalCost: $additionalCost')
           ..write(')'))
         .toString();
   }
@@ -1871,6 +1998,9 @@ class Product extends DataClass implements Insertable<Product> {
     expiryDate,
     taxRate,
     isActive,
+    parentProductId,
+    attributes,
+    additionalCost,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1897,7 +2027,10 @@ class Product extends DataClass implements Insertable<Product> {
           other.alertLimit == this.alertLimit &&
           other.expiryDate == this.expiryDate &&
           other.taxRate == this.taxRate &&
-          other.isActive == this.isActive);
+          other.isActive == this.isActive &&
+          other.parentProductId == this.parentProductId &&
+          other.attributes == this.attributes &&
+          other.additionalCost == this.additionalCost);
 }
 
 class ProductsCompanion extends UpdateCompanion<Product> {
@@ -1923,6 +2056,9 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   final Value<DateTime?> expiryDate;
   final Value<double> taxRate;
   final Value<bool> isActive;
+  final Value<String?> parentProductId;
+  final Value<String?> attributes;
+  final Value<double?> additionalCost;
   final Value<int> rowid;
   const ProductsCompanion({
     this.id = const Value.absent(),
@@ -1947,6 +2083,9 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.expiryDate = const Value.absent(),
     this.taxRate = const Value.absent(),
     this.isActive = const Value.absent(),
+    this.parentProductId = const Value.absent(),
+    this.attributes = const Value.absent(),
+    this.additionalCost = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ProductsCompanion.insert({
@@ -1972,6 +2111,9 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.expiryDate = const Value.absent(),
     this.taxRate = const Value.absent(),
     this.isActive = const Value.absent(),
+    this.parentProductId = const Value.absent(),
+    this.attributes = const Value.absent(),
+    this.additionalCost = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : name = Value(name),
        sku = Value(sku);
@@ -1998,6 +2140,9 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Expression<DateTime>? expiryDate,
     Expression<double>? taxRate,
     Expression<bool>? isActive,
+    Expression<String>? parentProductId,
+    Expression<String>? attributes,
+    Expression<double>? additionalCost,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2023,6 +2168,9 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       if (expiryDate != null) 'expiry_date': expiryDate,
       if (taxRate != null) 'tax_rate': taxRate,
       if (isActive != null) 'is_active': isActive,
+      if (parentProductId != null) 'parent_product_id': parentProductId,
+      if (attributes != null) 'attributes': attributes,
+      if (additionalCost != null) 'additional_cost': additionalCost,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2050,6 +2198,9 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Value<DateTime?>? expiryDate,
     Value<double>? taxRate,
     Value<bool>? isActive,
+    Value<String?>? parentProductId,
+    Value<String?>? attributes,
+    Value<double?>? additionalCost,
     Value<int>? rowid,
   }) {
     return ProductsCompanion(
@@ -2075,6 +2226,9 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       expiryDate: expiryDate ?? this.expiryDate,
       taxRate: taxRate ?? this.taxRate,
       isActive: isActive ?? this.isActive,
+      parentProductId: parentProductId ?? this.parentProductId,
+      attributes: attributes ?? this.attributes,
+      additionalCost: additionalCost ?? this.additionalCost,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2148,6 +2302,15 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
+    if (parentProductId.present) {
+      map['parent_product_id'] = Variable<String>(parentProductId.value);
+    }
+    if (attributes.present) {
+      map['attributes'] = Variable<String>(attributes.value);
+    }
+    if (additionalCost.present) {
+      map['additional_cost'] = Variable<double>(additionalCost.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2179,6 +2342,9 @@ class ProductsCompanion extends UpdateCompanion<Product> {
           ..write('expiryDate: $expiryDate, ')
           ..write('taxRate: $taxRate, ')
           ..write('isActive: $isActive, ')
+          ..write('parentProductId: $parentProductId, ')
+          ..write('attributes: $attributes, ')
+          ..write('additionalCost: $additionalCost, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -37390,6 +37556,16 @@ class $StockMovementsTable extends StockMovements
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _costMeta = const VerificationMeta('cost');
+  @override
+  late final GeneratedColumn<double> cost = GeneratedColumn<double>(
+    'cost',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
   static const VerificationMeta _batchIdMeta = const VerificationMeta(
     'batchId',
   );
@@ -37425,6 +37601,26 @@ class $StockMovementsTable extends StockMovements
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _transactionIdMeta = const VerificationMeta(
+    'transactionId',
+  );
+  @override
+  late final GeneratedColumn<String> transactionId = GeneratedColumn<String>(
+    'transaction_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<String> date = GeneratedColumn<String>(
+    'date',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _referenceIdMeta = const VerificationMeta(
     'referenceId',
   );
@@ -37447,9 +37643,12 @@ class $StockMovementsTable extends StockMovements
     fromWarehouseId,
     toWarehouseId,
     quantity,
+    cost,
     batchId,
     movementDate,
     type,
+    transactionId,
+    date,
     referenceId,
   ];
   @override
@@ -37525,6 +37724,12 @@ class $StockMovementsTable extends StockMovements
     } else if (isInserting) {
       context.missing(_quantityMeta);
     }
+    if (data.containsKey('cost')) {
+      context.handle(
+        _costMeta,
+        cost.isAcceptableOrUnknown(data['cost']!, _costMeta),
+      );
+    }
     if (data.containsKey('batch_id')) {
       context.handle(
         _batchIdMeta,
@@ -37547,6 +37752,21 @@ class $StockMovementsTable extends StockMovements
       );
     } else if (isInserting) {
       context.missing(_typeMeta);
+    }
+    if (data.containsKey('transaction_id')) {
+      context.handle(
+        _transactionIdMeta,
+        transactionId.isAcceptableOrUnknown(
+          data['transaction_id']!,
+          _transactionIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
     }
     if (data.containsKey('reference_id')) {
       context.handle(
@@ -37602,6 +37822,10 @@ class $StockMovementsTable extends StockMovements
         DriftSqlType.double,
         data['${effectivePrefix}quantity'],
       )!,
+      cost: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cost'],
+      )!,
       batchId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}batch_id'],
@@ -37614,6 +37838,14 @@ class $StockMovementsTable extends StockMovements
         DriftSqlType.string,
         data['${effectivePrefix}type'],
       )!,
+      transactionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}transaction_id'],
+      ),
+      date: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}date'],
+      ),
       referenceId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}reference_id'],
@@ -37637,9 +37869,12 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
   final String? fromWarehouseId;
   final String? toWarehouseId;
   final double quantity;
+  final double cost;
   final String? batchId;
   final DateTime movementDate;
   final String type;
+  final String? transactionId;
+  final String? date;
   final String? referenceId;
   const StockMovement({
     required this.id,
@@ -37651,9 +37886,12 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
     this.fromWarehouseId,
     this.toWarehouseId,
     required this.quantity,
+    required this.cost,
     this.batchId,
     required this.movementDate,
     required this.type,
+    this.transactionId,
+    this.date,
     this.referenceId,
   });
   @override
@@ -37674,11 +37912,18 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
       map['to_warehouse_id'] = Variable<String>(toWarehouseId);
     }
     map['quantity'] = Variable<double>(quantity);
+    map['cost'] = Variable<double>(cost);
     if (!nullToAbsent || batchId != null) {
       map['batch_id'] = Variable<String>(batchId);
     }
     map['movement_date'] = Variable<DateTime>(movementDate);
     map['type'] = Variable<String>(type);
+    if (!nullToAbsent || transactionId != null) {
+      map['transaction_id'] = Variable<String>(transactionId);
+    }
+    if (!nullToAbsent || date != null) {
+      map['date'] = Variable<String>(date);
+    }
     if (!nullToAbsent || referenceId != null) {
       map['reference_id'] = Variable<String>(referenceId);
     }
@@ -37702,11 +37947,16 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
           ? const Value.absent()
           : Value(toWarehouseId),
       quantity: Value(quantity),
+      cost: Value(cost),
       batchId: batchId == null && nullToAbsent
           ? const Value.absent()
           : Value(batchId),
       movementDate: Value(movementDate),
       type: Value(type),
+      transactionId: transactionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(transactionId),
+      date: date == null && nullToAbsent ? const Value.absent() : Value(date),
       referenceId: referenceId == null && nullToAbsent
           ? const Value.absent()
           : Value(referenceId),
@@ -37728,9 +37978,12 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
       fromWarehouseId: serializer.fromJson<String?>(json['fromWarehouseId']),
       toWarehouseId: serializer.fromJson<String?>(json['toWarehouseId']),
       quantity: serializer.fromJson<double>(json['quantity']),
+      cost: serializer.fromJson<double>(json['cost']),
       batchId: serializer.fromJson<String?>(json['batchId']),
       movementDate: serializer.fromJson<DateTime>(json['movementDate']),
       type: serializer.fromJson<String>(json['type']),
+      transactionId: serializer.fromJson<String?>(json['transactionId']),
+      date: serializer.fromJson<String?>(json['date']),
       referenceId: serializer.fromJson<String?>(json['referenceId']),
     );
   }
@@ -37747,9 +38000,12 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
       'fromWarehouseId': serializer.toJson<String?>(fromWarehouseId),
       'toWarehouseId': serializer.toJson<String?>(toWarehouseId),
       'quantity': serializer.toJson<double>(quantity),
+      'cost': serializer.toJson<double>(cost),
       'batchId': serializer.toJson<String?>(batchId),
       'movementDate': serializer.toJson<DateTime>(movementDate),
       'type': serializer.toJson<String>(type),
+      'transactionId': serializer.toJson<String?>(transactionId),
+      'date': serializer.toJson<String?>(date),
       'referenceId': serializer.toJson<String?>(referenceId),
     };
   }
@@ -37764,9 +38020,12 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
     Value<String?> fromWarehouseId = const Value.absent(),
     Value<String?> toWarehouseId = const Value.absent(),
     double? quantity,
+    double? cost,
     Value<String?> batchId = const Value.absent(),
     DateTime? movementDate,
     String? type,
+    Value<String?> transactionId = const Value.absent(),
+    Value<String?> date = const Value.absent(),
     Value<String?> referenceId = const Value.absent(),
   }) => StockMovement(
     id: id ?? this.id,
@@ -37782,9 +38041,14 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
         ? toWarehouseId.value
         : this.toWarehouseId,
     quantity: quantity ?? this.quantity,
+    cost: cost ?? this.cost,
     batchId: batchId.present ? batchId.value : this.batchId,
     movementDate: movementDate ?? this.movementDate,
     type: type ?? this.type,
+    transactionId: transactionId.present
+        ? transactionId.value
+        : this.transactionId,
+    date: date.present ? date.value : this.date,
     referenceId: referenceId.present ? referenceId.value : this.referenceId,
   );
   StockMovement copyWithCompanion(StockMovementsCompanion data) {
@@ -37804,11 +38068,16 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
           ? data.toWarehouseId.value
           : this.toWarehouseId,
       quantity: data.quantity.present ? data.quantity.value : this.quantity,
+      cost: data.cost.present ? data.cost.value : this.cost,
       batchId: data.batchId.present ? data.batchId.value : this.batchId,
       movementDate: data.movementDate.present
           ? data.movementDate.value
           : this.movementDate,
       type: data.type.present ? data.type.value : this.type,
+      transactionId: data.transactionId.present
+          ? data.transactionId.value
+          : this.transactionId,
+      date: data.date.present ? data.date.value : this.date,
       referenceId: data.referenceId.present
           ? data.referenceId.value
           : this.referenceId,
@@ -37827,9 +38096,12 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
           ..write('fromWarehouseId: $fromWarehouseId, ')
           ..write('toWarehouseId: $toWarehouseId, ')
           ..write('quantity: $quantity, ')
+          ..write('cost: $cost, ')
           ..write('batchId: $batchId, ')
           ..write('movementDate: $movementDate, ')
           ..write('type: $type, ')
+          ..write('transactionId: $transactionId, ')
+          ..write('date: $date, ')
           ..write('referenceId: $referenceId')
           ..write(')'))
         .toString();
@@ -37846,9 +38118,12 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
     fromWarehouseId,
     toWarehouseId,
     quantity,
+    cost,
     batchId,
     movementDate,
     type,
+    transactionId,
+    date,
     referenceId,
   );
   @override
@@ -37864,9 +38139,12 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
           other.fromWarehouseId == this.fromWarehouseId &&
           other.toWarehouseId == this.toWarehouseId &&
           other.quantity == this.quantity &&
+          other.cost == this.cost &&
           other.batchId == this.batchId &&
           other.movementDate == this.movementDate &&
           other.type == this.type &&
+          other.transactionId == this.transactionId &&
+          other.date == this.date &&
           other.referenceId == this.referenceId);
 }
 
@@ -37880,9 +38158,12 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
   final Value<String?> fromWarehouseId;
   final Value<String?> toWarehouseId;
   final Value<double> quantity;
+  final Value<double> cost;
   final Value<String?> batchId;
   final Value<DateTime> movementDate;
   final Value<String> type;
+  final Value<String?> transactionId;
+  final Value<String?> date;
   final Value<String?> referenceId;
   final Value<int> rowid;
   const StockMovementsCompanion({
@@ -37895,9 +38176,12 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
     this.fromWarehouseId = const Value.absent(),
     this.toWarehouseId = const Value.absent(),
     this.quantity = const Value.absent(),
+    this.cost = const Value.absent(),
     this.batchId = const Value.absent(),
     this.movementDate = const Value.absent(),
     this.type = const Value.absent(),
+    this.transactionId = const Value.absent(),
+    this.date = const Value.absent(),
     this.referenceId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -37911,9 +38195,12 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
     this.fromWarehouseId = const Value.absent(),
     this.toWarehouseId = const Value.absent(),
     required double quantity,
+    this.cost = const Value.absent(),
     this.batchId = const Value.absent(),
     this.movementDate = const Value.absent(),
     required String type,
+    this.transactionId = const Value.absent(),
+    this.date = const Value.absent(),
     this.referenceId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : productId = Value(productId),
@@ -37929,9 +38216,12 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
     Expression<String>? fromWarehouseId,
     Expression<String>? toWarehouseId,
     Expression<double>? quantity,
+    Expression<double>? cost,
     Expression<String>? batchId,
     Expression<DateTime>? movementDate,
     Expression<String>? type,
+    Expression<String>? transactionId,
+    Expression<String>? date,
     Expression<String>? referenceId,
     Expression<int>? rowid,
   }) {
@@ -37945,9 +38235,12 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
       if (fromWarehouseId != null) 'from_warehouse_id': fromWarehouseId,
       if (toWarehouseId != null) 'to_warehouse_id': toWarehouseId,
       if (quantity != null) 'quantity': quantity,
+      if (cost != null) 'cost': cost,
       if (batchId != null) 'batch_id': batchId,
       if (movementDate != null) 'movement_date': movementDate,
       if (type != null) 'type': type,
+      if (transactionId != null) 'transaction_id': transactionId,
+      if (date != null) 'date': date,
       if (referenceId != null) 'reference_id': referenceId,
       if (rowid != null) 'rowid': rowid,
     });
@@ -37963,9 +38256,12 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
     Value<String?>? fromWarehouseId,
     Value<String?>? toWarehouseId,
     Value<double>? quantity,
+    Value<double>? cost,
     Value<String?>? batchId,
     Value<DateTime>? movementDate,
     Value<String>? type,
+    Value<String?>? transactionId,
+    Value<String?>? date,
     Value<String?>? referenceId,
     Value<int>? rowid,
   }) {
@@ -37979,9 +38275,12 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
       fromWarehouseId: fromWarehouseId ?? this.fromWarehouseId,
       toWarehouseId: toWarehouseId ?? this.toWarehouseId,
       quantity: quantity ?? this.quantity,
+      cost: cost ?? this.cost,
       batchId: batchId ?? this.batchId,
       movementDate: movementDate ?? this.movementDate,
       type: type ?? this.type,
+      transactionId: transactionId ?? this.transactionId,
+      date: date ?? this.date,
       referenceId: referenceId ?? this.referenceId,
       rowid: rowid ?? this.rowid,
     );
@@ -38017,6 +38316,9 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
     if (quantity.present) {
       map['quantity'] = Variable<double>(quantity.value);
     }
+    if (cost.present) {
+      map['cost'] = Variable<double>(cost.value);
+    }
     if (batchId.present) {
       map['batch_id'] = Variable<String>(batchId.value);
     }
@@ -38025,6 +38327,12 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
     }
     if (type.present) {
       map['type'] = Variable<String>(type.value);
+    }
+    if (transactionId.present) {
+      map['transaction_id'] = Variable<String>(transactionId.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<String>(date.value);
     }
     if (referenceId.present) {
       map['reference_id'] = Variable<String>(referenceId.value);
@@ -38047,9 +38355,12 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
           ..write('fromWarehouseId: $fromWarehouseId, ')
           ..write('toWarehouseId: $toWarehouseId, ')
           ..write('quantity: $quantity, ')
+          ..write('cost: $cost, ')
           ..write('batchId: $batchId, ')
           ..write('movementDate: $movementDate, ')
           ..write('type: $type, ')
+          ..write('transactionId: $transactionId, ')
+          ..write('date: $date, ')
           ..write('referenceId: $referenceId, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -38191,6 +38502,28 @@ class $ProductUnitsTable extends ProductUnits
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _wholesalePriceMeta = const VerificationMeta(
+    'wholesalePrice',
+  );
+  @override
+  late final GeneratedColumn<double> wholesalePrice = GeneratedColumn<double>(
+    'wholesale_price',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _halfWholesalePriceMeta =
+      const VerificationMeta('halfWholesalePrice');
+  @override
+  late final GeneratedColumn<double> halfWholesalePrice =
+      GeneratedColumn<double>(
+        'half_wholesale_price',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _isDefaultMeta = const VerificationMeta(
     'isDefault',
   );
@@ -38219,6 +38552,8 @@ class $ProductUnitsTable extends ProductUnits
     unitFactor,
     buyPrice,
     sellPrice,
+    wholesalePrice,
+    halfWholesalePrice,
     isDefault,
   ];
   @override
@@ -38300,6 +38635,24 @@ class $ProductUnitsTable extends ProductUnits
         sellPrice.isAcceptableOrUnknown(data['sell_price']!, _sellPriceMeta),
       );
     }
+    if (data.containsKey('wholesale_price')) {
+      context.handle(
+        _wholesalePriceMeta,
+        wholesalePrice.isAcceptableOrUnknown(
+          data['wholesale_price']!,
+          _wholesalePriceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('half_wholesale_price')) {
+      context.handle(
+        _halfWholesalePriceMeta,
+        halfWholesalePrice.isAcceptableOrUnknown(
+          data['half_wholesale_price']!,
+          _halfWholesalePriceMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_default')) {
       context.handle(
         _isDefaultMeta,
@@ -38359,6 +38712,14 @@ class $ProductUnitsTable extends ProductUnits
         DriftSqlType.double,
         data['${effectivePrefix}sell_price'],
       ),
+      wholesalePrice: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}wholesale_price'],
+      ),
+      halfWholesalePrice: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}half_wholesale_price'],
+      ),
       isDefault: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_default'],
@@ -38384,6 +38745,8 @@ class ProductUnit extends DataClass implements Insertable<ProductUnit> {
   final double unitFactor;
   final double? buyPrice;
   final double? sellPrice;
+  final double? wholesalePrice;
+  final double? halfWholesalePrice;
   final bool isDefault;
   const ProductUnit({
     required this.id,
@@ -38397,6 +38760,8 @@ class ProductUnit extends DataClass implements Insertable<ProductUnit> {
     required this.unitFactor,
     this.buyPrice,
     this.sellPrice,
+    this.wholesalePrice,
+    this.halfWholesalePrice,
     required this.isDefault,
   });
   @override
@@ -38420,6 +38785,12 @@ class ProductUnit extends DataClass implements Insertable<ProductUnit> {
     }
     if (!nullToAbsent || sellPrice != null) {
       map['sell_price'] = Variable<double>(sellPrice);
+    }
+    if (!nullToAbsent || wholesalePrice != null) {
+      map['wholesale_price'] = Variable<double>(wholesalePrice);
+    }
+    if (!nullToAbsent || halfWholesalePrice != null) {
+      map['half_wholesale_price'] = Variable<double>(halfWholesalePrice);
     }
     map['is_default'] = Variable<bool>(isDefault);
     return map;
@@ -38446,6 +38817,12 @@ class ProductUnit extends DataClass implements Insertable<ProductUnit> {
       sellPrice: sellPrice == null && nullToAbsent
           ? const Value.absent()
           : Value(sellPrice),
+      wholesalePrice: wholesalePrice == null && nullToAbsent
+          ? const Value.absent()
+          : Value(wholesalePrice),
+      halfWholesalePrice: halfWholesalePrice == null && nullToAbsent
+          ? const Value.absent()
+          : Value(halfWholesalePrice),
       isDefault: Value(isDefault),
     );
   }
@@ -38467,6 +38844,10 @@ class ProductUnit extends DataClass implements Insertable<ProductUnit> {
       unitFactor: serializer.fromJson<double>(json['unitFactor']),
       buyPrice: serializer.fromJson<double?>(json['buyPrice']),
       sellPrice: serializer.fromJson<double?>(json['sellPrice']),
+      wholesalePrice: serializer.fromJson<double?>(json['wholesalePrice']),
+      halfWholesalePrice: serializer.fromJson<double?>(
+        json['halfWholesalePrice'],
+      ),
       isDefault: serializer.fromJson<bool>(json['isDefault']),
     );
   }
@@ -38485,6 +38866,8 @@ class ProductUnit extends DataClass implements Insertable<ProductUnit> {
       'unitFactor': serializer.toJson<double>(unitFactor),
       'buyPrice': serializer.toJson<double?>(buyPrice),
       'sellPrice': serializer.toJson<double?>(sellPrice),
+      'wholesalePrice': serializer.toJson<double?>(wholesalePrice),
+      'halfWholesalePrice': serializer.toJson<double?>(halfWholesalePrice),
       'isDefault': serializer.toJson<bool>(isDefault),
     };
   }
@@ -38501,6 +38884,8 @@ class ProductUnit extends DataClass implements Insertable<ProductUnit> {
     double? unitFactor,
     Value<double?> buyPrice = const Value.absent(),
     Value<double?> sellPrice = const Value.absent(),
+    Value<double?> wholesalePrice = const Value.absent(),
+    Value<double?> halfWholesalePrice = const Value.absent(),
     bool? isDefault,
   }) => ProductUnit(
     id: id ?? this.id,
@@ -38514,6 +38899,12 @@ class ProductUnit extends DataClass implements Insertable<ProductUnit> {
     unitFactor: unitFactor ?? this.unitFactor,
     buyPrice: buyPrice.present ? buyPrice.value : this.buyPrice,
     sellPrice: sellPrice.present ? sellPrice.value : this.sellPrice,
+    wholesalePrice: wholesalePrice.present
+        ? wholesalePrice.value
+        : this.wholesalePrice,
+    halfWholesalePrice: halfWholesalePrice.present
+        ? halfWholesalePrice.value
+        : this.halfWholesalePrice,
     isDefault: isDefault ?? this.isDefault,
   );
   ProductUnit copyWithCompanion(ProductUnitsCompanion data) {
@@ -38533,6 +38924,12 @@ class ProductUnit extends DataClass implements Insertable<ProductUnit> {
           : this.unitFactor,
       buyPrice: data.buyPrice.present ? data.buyPrice.value : this.buyPrice,
       sellPrice: data.sellPrice.present ? data.sellPrice.value : this.sellPrice,
+      wholesalePrice: data.wholesalePrice.present
+          ? data.wholesalePrice.value
+          : this.wholesalePrice,
+      halfWholesalePrice: data.halfWholesalePrice.present
+          ? data.halfWholesalePrice.value
+          : this.halfWholesalePrice,
       isDefault: data.isDefault.present ? data.isDefault.value : this.isDefault,
     );
   }
@@ -38551,6 +38948,8 @@ class ProductUnit extends DataClass implements Insertable<ProductUnit> {
           ..write('unitFactor: $unitFactor, ')
           ..write('buyPrice: $buyPrice, ')
           ..write('sellPrice: $sellPrice, ')
+          ..write('wholesalePrice: $wholesalePrice, ')
+          ..write('halfWholesalePrice: $halfWholesalePrice, ')
           ..write('isDefault: $isDefault')
           ..write(')'))
         .toString();
@@ -38569,6 +38968,8 @@ class ProductUnit extends DataClass implements Insertable<ProductUnit> {
     unitFactor,
     buyPrice,
     sellPrice,
+    wholesalePrice,
+    halfWholesalePrice,
     isDefault,
   );
   @override
@@ -38586,6 +38987,8 @@ class ProductUnit extends DataClass implements Insertable<ProductUnit> {
           other.unitFactor == this.unitFactor &&
           other.buyPrice == this.buyPrice &&
           other.sellPrice == this.sellPrice &&
+          other.wholesalePrice == this.wholesalePrice &&
+          other.halfWholesalePrice == this.halfWholesalePrice &&
           other.isDefault == this.isDefault);
 }
 
@@ -38601,6 +39004,8 @@ class ProductUnitsCompanion extends UpdateCompanion<ProductUnit> {
   final Value<double> unitFactor;
   final Value<double?> buyPrice;
   final Value<double?> sellPrice;
+  final Value<double?> wholesalePrice;
+  final Value<double?> halfWholesalePrice;
   final Value<bool> isDefault;
   final Value<int> rowid;
   const ProductUnitsCompanion({
@@ -38615,6 +39020,8 @@ class ProductUnitsCompanion extends UpdateCompanion<ProductUnit> {
     this.unitFactor = const Value.absent(),
     this.buyPrice = const Value.absent(),
     this.sellPrice = const Value.absent(),
+    this.wholesalePrice = const Value.absent(),
+    this.halfWholesalePrice = const Value.absent(),
     this.isDefault = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -38630,6 +39037,8 @@ class ProductUnitsCompanion extends UpdateCompanion<ProductUnit> {
     this.unitFactor = const Value.absent(),
     this.buyPrice = const Value.absent(),
     this.sellPrice = const Value.absent(),
+    this.wholesalePrice = const Value.absent(),
+    this.halfWholesalePrice = const Value.absent(),
     this.isDefault = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : productId = Value(productId),
@@ -38646,6 +39055,8 @@ class ProductUnitsCompanion extends UpdateCompanion<ProductUnit> {
     Expression<double>? unitFactor,
     Expression<double>? buyPrice,
     Expression<double>? sellPrice,
+    Expression<double>? wholesalePrice,
+    Expression<double>? halfWholesalePrice,
     Expression<bool>? isDefault,
     Expression<int>? rowid,
   }) {
@@ -38661,6 +39072,9 @@ class ProductUnitsCompanion extends UpdateCompanion<ProductUnit> {
       if (unitFactor != null) 'unit_factor': unitFactor,
       if (buyPrice != null) 'buy_price': buyPrice,
       if (sellPrice != null) 'sell_price': sellPrice,
+      if (wholesalePrice != null) 'wholesale_price': wholesalePrice,
+      if (halfWholesalePrice != null)
+        'half_wholesale_price': halfWholesalePrice,
       if (isDefault != null) 'is_default': isDefault,
       if (rowid != null) 'rowid': rowid,
     });
@@ -38678,6 +39092,8 @@ class ProductUnitsCompanion extends UpdateCompanion<ProductUnit> {
     Value<double>? unitFactor,
     Value<double?>? buyPrice,
     Value<double?>? sellPrice,
+    Value<double?>? wholesalePrice,
+    Value<double?>? halfWholesalePrice,
     Value<bool>? isDefault,
     Value<int>? rowid,
   }) {
@@ -38693,6 +39109,8 @@ class ProductUnitsCompanion extends UpdateCompanion<ProductUnit> {
       unitFactor: unitFactor ?? this.unitFactor,
       buyPrice: buyPrice ?? this.buyPrice,
       sellPrice: sellPrice ?? this.sellPrice,
+      wholesalePrice: wholesalePrice ?? this.wholesalePrice,
+      halfWholesalePrice: halfWholesalePrice ?? this.halfWholesalePrice,
       isDefault: isDefault ?? this.isDefault,
       rowid: rowid ?? this.rowid,
     );
@@ -38734,6 +39152,12 @@ class ProductUnitsCompanion extends UpdateCompanion<ProductUnit> {
     if (sellPrice.present) {
       map['sell_price'] = Variable<double>(sellPrice.value);
     }
+    if (wholesalePrice.present) {
+      map['wholesale_price'] = Variable<double>(wholesalePrice.value);
+    }
+    if (halfWholesalePrice.present) {
+      map['half_wholesale_price'] = Variable<double>(halfWholesalePrice.value);
+    }
     if (isDefault.present) {
       map['is_default'] = Variable<bool>(isDefault.value);
     }
@@ -38757,6 +39181,8 @@ class ProductUnitsCompanion extends UpdateCompanion<ProductUnit> {
           ..write('unitFactor: $unitFactor, ')
           ..write('buyPrice: $buyPrice, ')
           ..write('sellPrice: $sellPrice, ')
+          ..write('wholesalePrice: $wholesalePrice, ')
+          ..write('halfWholesalePrice: $halfWholesalePrice, ')
           ..write('isDefault: $isDefault, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -38867,6 +39293,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this as AppDatabase,
   );
   late final ProductUnitsDao productUnitsDao = ProductUnitsDao(
+    this as AppDatabase,
+  );
+  late final AuditDao auditDao = AuditDao(this as AppDatabase);
+  late final StockMovementDao stockMovementDao = StockMovementDao(
     this as AppDatabase,
   );
   @override
@@ -39872,6 +40302,9 @@ typedef $$ProductsTableCreateCompanionBuilder =
       Value<DateTime?> expiryDate,
       Value<double> taxRate,
       Value<bool> isActive,
+      Value<String?> parentProductId,
+      Value<String?> attributes,
+      Value<double?> additionalCost,
       Value<int> rowid,
     });
 typedef $$ProductsTableUpdateCompanionBuilder =
@@ -39898,6 +40331,9 @@ typedef $$ProductsTableUpdateCompanionBuilder =
       Value<DateTime?> expiryDate,
       Value<double> taxRate,
       Value<bool> isActive,
+      Value<String?> parentProductId,
+      Value<String?> attributes,
+      Value<double?> additionalCost,
       Value<int> rowid,
     });
 
@@ -39918,6 +40354,25 @@ final class $$ProductsTableReferences
       $_db.categories,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_categoryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ProductsTable _parentProductIdTable(_$AppDatabase db) =>
+      db.products.createAlias(
+        $_aliasNameGenerator(db.products.parentProductId, db.products.id),
+      );
+
+  $$ProductsTableProcessedTableManager? get parentProductId {
+    final $_column = $_itemColumn<String>('parent_product_id');
+    if ($_column == null) return null;
+    final manager = $$ProductsTableTableManager(
+      $_db,
+      $_db.products,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_parentProductIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -40412,6 +40867,16 @@ class $$ProductsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get attributes => $composableBuilder(
+    column: $table.attributes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get additionalCost => $composableBuilder(
+    column: $table.additionalCost,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$CategoriesTableFilterComposer get categoryId {
     final $$CategoriesTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -40426,6 +40891,29 @@ class $$ProductsTableFilterComposer
           }) => $$CategoriesTableFilterComposer(
             $db: $db,
             $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProductsTableFilterComposer get parentProductId {
+    final $$ProductsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.parentProductId,
+      referencedTable: $db.products,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductsTableFilterComposer(
+            $db: $db,
+            $table: $db.products,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -40976,6 +41464,16 @@ class $$ProductsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get attributes => $composableBuilder(
+    column: $table.attributes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get additionalCost => $composableBuilder(
+    column: $table.additionalCost,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$CategoriesTableOrderingComposer get categoryId {
     final $$CategoriesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -40990,6 +41488,29 @@ class $$ProductsTableOrderingComposer
           }) => $$CategoriesTableOrderingComposer(
             $db: $db,
             $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProductsTableOrderingComposer get parentProductId {
+    final $$ProductsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.parentProductId,
+      referencedTable: $db.products,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductsTableOrderingComposer(
+            $db: $db,
+            $table: $db.products,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -41084,6 +41605,16 @@ class $$ProductsTableAnnotationComposer
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
 
+  GeneratedColumn<String> get attributes => $composableBuilder(
+    column: $table.attributes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get additionalCost => $composableBuilder(
+    column: $table.additionalCost,
+    builder: (column) => column,
+  );
+
   $$CategoriesTableAnnotationComposer get categoryId {
     final $$CategoriesTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -41098,6 +41629,29 @@ class $$ProductsTableAnnotationComposer
           }) => $$CategoriesTableAnnotationComposer(
             $db: $db,
             $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProductsTableAnnotationComposer get parentProductId {
+    final $$ProductsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.parentProductId,
+      referencedTable: $db.products,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.products,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -41553,6 +42107,7 @@ class $$ProductsTableTableManager
           Product,
           PrefetchHooks Function({
             bool categoryId,
+            bool parentProductId,
             bool productBatchesRefs,
             bool saleItemsRefs,
             bool purchaseItemsRefs,
@@ -41607,6 +42162,9 @@ class $$ProductsTableTableManager
                 Value<DateTime?> expiryDate = const Value.absent(),
                 Value<double> taxRate = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
+                Value<String?> parentProductId = const Value.absent(),
+                Value<String?> attributes = const Value.absent(),
+                Value<double?> additionalCost = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProductsCompanion(
                 id: id,
@@ -41631,6 +42189,9 @@ class $$ProductsTableTableManager
                 expiryDate: expiryDate,
                 taxRate: taxRate,
                 isActive: isActive,
+                parentProductId: parentProductId,
+                attributes: attributes,
+                additionalCost: additionalCost,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -41657,6 +42218,9 @@ class $$ProductsTableTableManager
                 Value<DateTime?> expiryDate = const Value.absent(),
                 Value<double> taxRate = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
+                Value<String?> parentProductId = const Value.absent(),
+                Value<String?> attributes = const Value.absent(),
+                Value<double?> additionalCost = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProductsCompanion.insert(
                 id: id,
@@ -41681,6 +42245,9 @@ class $$ProductsTableTableManager
                 expiryDate: expiryDate,
                 taxRate: taxRate,
                 isActive: isActive,
+                parentProductId: parentProductId,
+                attributes: attributes,
+                additionalCost: additionalCost,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -41694,6 +42261,7 @@ class $$ProductsTableTableManager
           prefetchHooksCallback:
               ({
                 categoryId = false,
+                parentProductId = false,
                 productBatchesRefs = false,
                 saleItemsRefs = false,
                 purchaseItemsRefs = false,
@@ -41758,6 +42326,19 @@ class $$ProductsTableTableManager
                                         ._categoryIdTable(db),
                                     referencedColumn: $$ProductsTableReferences
                                         ._categoryIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (parentProductId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.parentProductId,
+                                    referencedTable: $$ProductsTableReferences
+                                        ._parentProductIdTable(db),
+                                    referencedColumn: $$ProductsTableReferences
+                                        ._parentProductIdTable(db)
                                         .id,
                                   )
                                   as T;
@@ -42146,6 +42727,7 @@ typedef $$ProductsTableProcessedTableManager =
       Product,
       PrefetchHooks Function({
         bool categoryId,
+        bool parentProductId,
         bool productBatchesRefs,
         bool saleItemsRefs,
         bool purchaseItemsRefs,
@@ -71497,9 +72079,12 @@ typedef $$StockMovementsTableCreateCompanionBuilder =
       Value<String?> fromWarehouseId,
       Value<String?> toWarehouseId,
       required double quantity,
+      Value<double> cost,
       Value<String?> batchId,
       Value<DateTime> movementDate,
       required String type,
+      Value<String?> transactionId,
+      Value<String?> date,
       Value<String?> referenceId,
       Value<int> rowid,
     });
@@ -71514,9 +72099,12 @@ typedef $$StockMovementsTableUpdateCompanionBuilder =
       Value<String?> fromWarehouseId,
       Value<String?> toWarehouseId,
       Value<double> quantity,
+      Value<double> cost,
       Value<String?> batchId,
       Value<DateTime> movementDate,
       Value<String> type,
+      Value<String?> transactionId,
+      Value<String?> date,
       Value<String?> referenceId,
       Value<int> rowid,
     });
@@ -71648,6 +72236,11 @@ class $$StockMovementsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<double> get cost => $composableBuilder(
+    column: $table.cost,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get movementDate => $composableBuilder(
     column: $table.movementDate,
     builder: (column) => ColumnFilters(column),
@@ -71655,6 +72248,16 @@ class $$StockMovementsTableFilterComposer
 
   ColumnFilters<String> get type => $composableBuilder(
     column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get transactionId => $composableBuilder(
+    column: $table.transactionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get date => $composableBuilder(
+    column: $table.date,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -71795,6 +72398,11 @@ class $$StockMovementsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get cost => $composableBuilder(
+    column: $table.cost,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get movementDate => $composableBuilder(
     column: $table.movementDate,
     builder: (column) => ColumnOrderings(column),
@@ -71802,6 +72410,16 @@ class $$StockMovementsTableOrderingComposer
 
   ColumnOrderings<String> get type => $composableBuilder(
     column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get transactionId => $composableBuilder(
+    column: $table.transactionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get date => $composableBuilder(
+    column: $table.date,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -71932,6 +72550,9 @@ class $$StockMovementsTableAnnotationComposer
   GeneratedColumn<double> get quantity =>
       $composableBuilder(column: $table.quantity, builder: (column) => column);
 
+  GeneratedColumn<double> get cost =>
+      $composableBuilder(column: $table.cost, builder: (column) => column);
+
   GeneratedColumn<DateTime> get movementDate => $composableBuilder(
     column: $table.movementDate,
     builder: (column) => column,
@@ -71939,6 +72560,14 @@ class $$StockMovementsTableAnnotationComposer
 
   GeneratedColumn<String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get transactionId => $composableBuilder(
+    column: $table.transactionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
 
   GeneratedColumn<String> get referenceId => $composableBuilder(
     column: $table.referenceId,
@@ -72082,9 +72711,12 @@ class $$StockMovementsTableTableManager
                 Value<String?> fromWarehouseId = const Value.absent(),
                 Value<String?> toWarehouseId = const Value.absent(),
                 Value<double> quantity = const Value.absent(),
+                Value<double> cost = const Value.absent(),
                 Value<String?> batchId = const Value.absent(),
                 Value<DateTime> movementDate = const Value.absent(),
                 Value<String> type = const Value.absent(),
+                Value<String?> transactionId = const Value.absent(),
+                Value<String?> date = const Value.absent(),
                 Value<String?> referenceId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => StockMovementsCompanion(
@@ -72097,9 +72729,12 @@ class $$StockMovementsTableTableManager
                 fromWarehouseId: fromWarehouseId,
                 toWarehouseId: toWarehouseId,
                 quantity: quantity,
+                cost: cost,
                 batchId: batchId,
                 movementDate: movementDate,
                 type: type,
+                transactionId: transactionId,
+                date: date,
                 referenceId: referenceId,
                 rowid: rowid,
               ),
@@ -72114,9 +72749,12 @@ class $$StockMovementsTableTableManager
                 Value<String?> fromWarehouseId = const Value.absent(),
                 Value<String?> toWarehouseId = const Value.absent(),
                 required double quantity,
+                Value<double> cost = const Value.absent(),
                 Value<String?> batchId = const Value.absent(),
                 Value<DateTime> movementDate = const Value.absent(),
                 required String type,
+                Value<String?> transactionId = const Value.absent(),
+                Value<String?> date = const Value.absent(),
                 Value<String?> referenceId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => StockMovementsCompanion.insert(
@@ -72129,9 +72767,12 @@ class $$StockMovementsTableTableManager
                 fromWarehouseId: fromWarehouseId,
                 toWarehouseId: toWarehouseId,
                 quantity: quantity,
+                cost: cost,
                 batchId: batchId,
                 movementDate: movementDate,
                 type: type,
+                transactionId: transactionId,
+                date: date,
                 referenceId: referenceId,
                 rowid: rowid,
               ),
@@ -72273,6 +72914,8 @@ typedef $$ProductUnitsTableCreateCompanionBuilder =
       Value<double> unitFactor,
       Value<double?> buyPrice,
       Value<double?> sellPrice,
+      Value<double?> wholesalePrice,
+      Value<double?> halfWholesalePrice,
       Value<bool> isDefault,
       Value<int> rowid,
     });
@@ -72289,6 +72932,8 @@ typedef $$ProductUnitsTableUpdateCompanionBuilder =
       Value<double> unitFactor,
       Value<double?> buyPrice,
       Value<double?> sellPrice,
+      Value<double?> wholesalePrice,
+      Value<double?> halfWholesalePrice,
       Value<bool> isDefault,
       Value<int> rowid,
     });
@@ -72373,6 +73018,16 @@ class $$ProductUnitsTableFilterComposer
 
   ColumnFilters<double> get sellPrice => $composableBuilder(
     column: $table.sellPrice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get wholesalePrice => $composableBuilder(
+    column: $table.wholesalePrice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get halfWholesalePrice => $composableBuilder(
+    column: $table.halfWholesalePrice,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -72464,6 +73119,16 @@ class $$ProductUnitsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get wholesalePrice => $composableBuilder(
+    column: $table.wholesalePrice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get halfWholesalePrice => $composableBuilder(
+    column: $table.halfWholesalePrice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isDefault => $composableBuilder(
     column: $table.isDefault,
     builder: (column) => ColumnOrderings(column),
@@ -72536,6 +73201,16 @@ class $$ProductUnitsTableAnnotationComposer
   GeneratedColumn<double> get sellPrice =>
       $composableBuilder(column: $table.sellPrice, builder: (column) => column);
 
+  GeneratedColumn<double> get wholesalePrice => $composableBuilder(
+    column: $table.wholesalePrice,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get halfWholesalePrice => $composableBuilder(
+    column: $table.halfWholesalePrice,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get isDefault =>
       $composableBuilder(column: $table.isDefault, builder: (column) => column);
 
@@ -72602,6 +73277,8 @@ class $$ProductUnitsTableTableManager
                 Value<double> unitFactor = const Value.absent(),
                 Value<double?> buyPrice = const Value.absent(),
                 Value<double?> sellPrice = const Value.absent(),
+                Value<double?> wholesalePrice = const Value.absent(),
+                Value<double?> halfWholesalePrice = const Value.absent(),
                 Value<bool> isDefault = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProductUnitsCompanion(
@@ -72616,6 +73293,8 @@ class $$ProductUnitsTableTableManager
                 unitFactor: unitFactor,
                 buyPrice: buyPrice,
                 sellPrice: sellPrice,
+                wholesalePrice: wholesalePrice,
+                halfWholesalePrice: halfWholesalePrice,
                 isDefault: isDefault,
                 rowid: rowid,
               ),
@@ -72632,6 +73311,8 @@ class $$ProductUnitsTableTableManager
                 Value<double> unitFactor = const Value.absent(),
                 Value<double?> buyPrice = const Value.absent(),
                 Value<double?> sellPrice = const Value.absent(),
+                Value<double?> wholesalePrice = const Value.absent(),
+                Value<double?> halfWholesalePrice = const Value.absent(),
                 Value<bool> isDefault = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProductUnitsCompanion.insert(
@@ -72646,6 +73327,8 @@ class $$ProductUnitsTableTableManager
                 unitFactor: unitFactor,
                 buyPrice: buyPrice,
                 sellPrice: sellPrice,
+                wholesalePrice: wholesalePrice,
+                halfWholesalePrice: halfWholesalePrice,
                 isDefault: isDefault,
                 rowid: rowid,
               ),

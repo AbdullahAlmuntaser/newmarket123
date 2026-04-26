@@ -31,7 +31,7 @@ class SupplierTransaction {
     PurchaseReturns,
     GLAccounts,
     GLEntries,
-    GLLines
+    GLLines,
   ],
 )
 class SuppliersDao extends DatabaseAccessor<AppDatabase>
@@ -49,9 +49,9 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
   Future<String> insertSupplierWithAccount(SuppliersCompanion entry) async {
     return transaction(() async {
       // 1. البحث عن الحساب الرئيسي للموردين (مثلاً '2010')
-      final parentAccount = await (select(gLAccounts)
-            ..where((t) => t.code.equals('2010')))
-          .getSingleOrNull();
+      final parentAccount = await (select(
+        gLAccounts,
+      )..where((t) => t.code.equals('2010'))).getSingleOrNull();
 
       final accountId = const Uuid().v4();
       final supplierId = const Uuid().v4();
@@ -62,7 +62,8 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
           id: Value(accountId),
           code: '2010-${supplierId.substring(0, 5)}',
           name: 'مورد: ${entry.name.value}',
-          type: AccountType.liability, // Removed .name as AccountType.liability is already a String
+          type: AccountType
+              .liability, // Removed .name as AccountType.liability is already a String
           parentId: Value(parentAccount?.id),
           isHeader: const Value(false),
           balance: const Value(0.0),
@@ -75,7 +76,7 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
         accountId: Value(accountId),
       );
       await into(suppliers).insert(finalEntry);
-      
+
       return supplierId;
     });
   }
@@ -86,17 +87,20 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
 
   Future<int> deleteSupplier(Supplier entry) {
     // تعطيل المورد بدلاً من حذفه
-    return (update(suppliers)..where((t) => t.id.equals(entry.id)))
-        .write(const SuppliersCompanion(isActive: Value(false)));
+    return (update(suppliers)..where((t) => t.id.equals(entry.id))).write(
+      const SuppliersCompanion(isActive: Value(false)),
+    );
   }
 
   /// بحث متقدم عن الموردين
   Future<List<Supplier>> searchSuppliers(String query) {
     return (select(suppliers)
-          ..where((t) =>
-              t.name.contains(query) |
-              t.phone.contains(query) |
-              t.taxNumber.contains(query))
+          ..where(
+            (t) =>
+                t.name.contains(query) |
+                t.phone.contains(query) |
+                t.taxNumber.contains(query),
+          )
           ..where((t) => t.isActive.equals(true)))
         .get();
   }
@@ -107,11 +111,11 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
     final List<SupplierTransaction> allTransactions = [];
 
     // 1. جلب المشتريات الآجلة
-    final supplierPurchases = await (select(db.purchases)
-          ..where(
-            (p) => p.supplierId.equals(supplierId) & p.isCredit.equals(true),
-          ))
-        .get();
+    final supplierPurchases =
+        await (select(db.purchases)..where(
+              (p) => p.supplierId.equals(supplierId) & p.isCredit.equals(true),
+            ))
+            .get();
 
     for (var purchase in supplierPurchases) {
       allTransactions.add(

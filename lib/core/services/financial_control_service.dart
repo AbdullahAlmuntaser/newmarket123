@@ -36,7 +36,7 @@ class FinancialControlService {
 
   FinancialControlService(this.db) {
     _auditService = AuditService(db);
-    _inventoryCostingService = InventoryCostingService(db);
+    _inventoryCostingService = InventoryCostingService(db.stockMovementDao);
   }
 
   Future<ValidationResult> validateSale(String saleId) async {
@@ -307,10 +307,11 @@ class FinancialControlService {
 
       for (var item in items) {
         await _inventoryCostingService.returnToInventory(
-          productId: item.productId,
-          quantity: item.quantity * item.unitFactor,
-          originalSaleId: saleId,
-          returnId: 'VOID-${sale.id.substring(0, 8)}',
+          item.productId,
+          item.quantity * item.unitFactor,
+          item.price, // Assuming cost is the sale price for the return
+          InventoryTransactionType.saleReturn,
+          transactionId: saleId,
         );
       }
 
@@ -386,10 +387,10 @@ class FinancialControlService {
 
       for (var item in items) {
         await _inventoryCostingService.deductFromInventory(
-          productId: item.productId,
-          quantity: item.quantity,
-          referenceId: 'VOID-${purchase.id.substring(0, 8)}',
-          type: InventoryTransactionType.returnOut,
+          item.productId,
+          item.quantity,
+          InventoryTransactionType.purchaseReturn,
+          transactionId: purchaseId,
         );
       }
 
@@ -441,7 +442,7 @@ class FinancialControlService {
         revenueAccount == null ||
         expenseAccount == null ||
         cashAccount == null) {
-      throw Exception('某些必需账户不存在');
+      throw Exception('بعض الحسابات المطلوبة غير موجودة');
     }
 
     GLLinesCompanion line1;

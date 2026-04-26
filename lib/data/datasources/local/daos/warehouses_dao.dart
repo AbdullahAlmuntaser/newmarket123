@@ -4,7 +4,8 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 part 'warehouses_dao.g.dart';
 
 @DriftAccessor(tables: [Warehouses, ProductBatches])
-class WarehousesDao extends DatabaseAccessor<AppDatabase> with _$WarehousesDaoMixin {
+class WarehousesDao extends DatabaseAccessor<AppDatabase>
+    with _$WarehousesDaoMixin {
   WarehousesDao(super.db);
 
   Future<List<Warehouse>> getAllWarehouses() => select(warehouses).get();
@@ -25,17 +26,22 @@ class WarehousesDao extends DatabaseAccessor<AppDatabase> with _$WarehousesDaoMi
 
   Future<bool> hasStock(String warehouseId) async {
     final query = select(productBatches)
-      ..where((t) => t.warehouseId.equals(warehouseId) & t.quantity.isBiggerThanValue(0));
+      ..where(
+        (t) =>
+            t.warehouseId.equals(warehouseId) & t.quantity.isBiggerThanValue(0),
+      );
     final results = await query.get();
     return results.isNotEmpty;
   }
 
   Future<void> setDefaultWarehouse(String id) async {
     await transaction(() async {
-      await (update(warehouses)..where((t) => t.isDefault.equals(true)))
-          .write(const WarehousesCompanion(isDefault: Value(false)));
-      await (update(warehouses)..where((t) => t.id.equals(id)))
-          .write(const WarehousesCompanion(isDefault: Value(true)));
+      await (update(warehouses)..where((t) => t.isDefault.equals(true))).write(
+        const WarehousesCompanion(isDefault: Value(false)),
+      );
+      await (update(warehouses)..where((t) => t.id.equals(id))).write(
+        const WarehousesCompanion(isDefault: Value(true)),
+      );
     });
   }
 }

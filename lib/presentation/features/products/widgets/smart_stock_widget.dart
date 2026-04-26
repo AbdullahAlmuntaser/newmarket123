@@ -11,9 +11,11 @@ class SmartStockWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final db = context.watch<AppDatabase>();
-    
+
     return StreamBuilder<List<UnitConversion>>(
-      stream: (db.select(db.unitConversions)..where((t) => t.productId.equals(product.id))).watch(),
+      stream: (db.select(
+        db.unitConversions,
+      )..where((t) => t.productId.equals(product.id))).watch(),
       builder: (context, snapshot) {
         final conversions = snapshot.data ?? [];
         final formattedStock = ErpLogic.formatInventory(
@@ -24,7 +26,10 @@ class SmartStockWidget extends StatelessWidget {
 
         return Text(
           formattedStock,
-          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.blueGrey,
+          ),
         );
       },
     );

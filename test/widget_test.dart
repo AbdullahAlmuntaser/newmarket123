@@ -20,7 +20,7 @@ void main() {
   late AccountingService accountingService;
   late EventBusService eventBus;
   late SharedPreferences prefs;
-  late PermissionsService permissionsService;
+  late PermissionService permissionsService;
 
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
@@ -28,21 +28,22 @@ void main() {
     prefs = await SharedPreferences.getInstance();
 
     appDatabase = AppDatabase(NativeDatabase.memory());
-    permissionsService = PermissionsService(appDatabase);
+    permissionsService = PermissionService();
     authProvider = AuthProvider(appDatabase, permissionsService);
     eventBus = EventBusService();
     accountingService = AccountingService(appDatabase, eventBus);
 
-    // Register in GetIt for MyApp to find them
-    await di.sl.reset(); // Await reset to ensure it's finished
-    di.sl.registerLazySingleton(() => appDatabase);
-    di.sl.registerLazySingleton(() => authProvider);
-    di.sl.registerLazySingleton(() => eventBus);
-    di.sl.registerLazySingleton(() => accountingService);
-    di.sl.registerLazySingleton(() => permissionsService);
-    di.sl.registerLazySingleton(() => ThemeProvider());
-    di.sl.registerLazySingleton(() => ProductsProvider(appDatabase));
-    di.sl.registerLazySingleton(() => prefs);
+    await di.sl.reset();
+    di.sl.registerLazySingleton<AppDatabase>(() => appDatabase);
+    di.sl.registerLazySingleton<AuthProvider>(() => authProvider);
+    di.sl.registerLazySingleton<EventBusService>(() => eventBus);
+    di.sl.registerLazySingleton<AccountingService>(() => accountingService);
+    di.sl.registerLazySingleton<PermissionService>(() => permissionsService);
+    di.sl.registerLazySingleton<ThemeProvider>(() => ThemeProvider());
+    di.sl.registerLazySingleton<ProductsProvider>(
+      () => ProductsProvider(appDatabase),
+    );
+    di.sl.registerLazySingleton<SharedPreferences>(() => prefs);
   });
 
   tearDownAll(() {
@@ -66,7 +67,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(LoginPage), findsOneWidget);
-    // The app is hardcoded to 'ar' locale in main.dart
     expect(find.text('نظام المحاسبة'), findsOneWidget);
 
     expect(find.byType(TextField), findsNWidgets(2));

@@ -42,22 +42,32 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
             children: [
               TextFormField(
                 controller: _unitNameController,
-                decoration: const InputDecoration(labelText: 'اسم الوحدة (مثلاً: كرتون)'),
+                decoration: const InputDecoration(
+                  labelText: 'اسم الوحدة (مثلاً: كرتون)',
+                ),
                 validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
               ),
               TextFormField(
                 controller: _factorController,
-                decoration: const InputDecoration(labelText: 'المعامل (كم حبة تحتوي؟)'),
+                decoration: const InputDecoration(
+                  labelText: 'المعامل (كم حبة تحتوي؟)',
+                ),
                 keyboardType: TextInputType.number,
-                validator: (v) => double.tryParse(v ?? '') == null ? 'أدخل رقماً صحيحاً' : null,
+                validator: (v) => double.tryParse(v ?? '') == null
+                    ? 'أدخل رقماً صحيحاً'
+                    : null,
               ),
               TextFormField(
                 controller: _barcodeController,
-                decoration: const InputDecoration(labelText: 'باركود الوحدة (اختياري)'),
+                decoration: const InputDecoration(
+                  labelText: 'باركود الوحدة (اختياري)',
+                ),
               ),
               TextFormField(
                 controller: _priceController,
-                decoration: const InputDecoration(labelText: 'سعر الوحدة (اختياري)'),
+                decoration: const InputDecoration(
+                  labelText: 'سعر الوحدة (اختياري)',
+                ),
                 keyboardType: TextInputType.number,
               ),
             ],
@@ -65,15 +75,22 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('إلغاء'),
+        ),
         ElevatedButton(
           onPressed: () async {
             if (_formKey.currentState!.validate()) {
               Navigator.pop(context, {
                 'unitName': _unitNameController.text,
                 'factor': double.parse(_factorController.text),
-                'barcode': _barcodeController.text.isEmpty ? null : _barcodeController.text,
-                'sellPrice': _priceController.text.isEmpty ? null : double.parse(_priceController.text),
+                'barcode': _barcodeController.text.isEmpty
+                    ? null
+                    : _barcodeController.text,
+                'sellPrice': _priceController.text.isEmpty
+                    ? null
+                    : double.parse(_priceController.text),
               });
             }
           },

@@ -23,7 +23,7 @@ class WarehouseManagementPage extends StatelessWidget {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
           final warehouses = snapshot.data ?? [];
-          
+
           if (warehouses.isEmpty) {
             return const Center(child: Text('لا توجد مستودعات مضافة'));
           }
@@ -35,7 +35,9 @@ class WarehouseManagementPage extends StatelessWidget {
               return ListTile(
                 leading: Icon(
                   Icons.warehouse,
-                  color: warehouse.isDefault ? Theme.of(context).primaryColor : null,
+                  color: warehouse.isDefault
+                      ? Theme.of(context).primaryColor
+                      : null,
                 ),
                 title: Text(warehouse.name),
                 subtitle: Text(warehouse.location ?? 'بدون موقع'),
@@ -55,9 +57,9 @@ class WarehouseManagementPage extends StatelessWidget {
                       ),
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: warehouse.isDefault 
-                        ? null 
-                        : () => _deleteWarehouse(context, db, warehouse.id),
+                      onPressed: warehouse.isDefault
+                          ? null
+                          : () => _deleteWarehouse(context, db, warehouse.id),
                     ),
                   ],
                 ),
@@ -86,18 +88,21 @@ class WarehouseManagementPage extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
-              controller: nameController, 
+              controller: nameController,
               decoration: const InputDecoration(labelText: 'اسم المستودع'),
               autofocus: true,
             ),
             TextField(
-              controller: locationController, 
+              controller: locationController,
               decoration: const InputDecoration(labelText: 'الموقع'),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
           ElevatedButton(
             onPressed: () async {
               if (nameController.text.isNotEmpty) {
@@ -105,7 +110,7 @@ class WarehouseManagementPage extends StatelessWidget {
                   WarehousesCompanion.insert(
                     name: nameController.text,
                     location: drift.Value(locationController.text),
-                  )
+                  ),
                 );
                 if (context.mounted) Navigator.pop(context);
               }
@@ -117,7 +122,11 @@ class WarehouseManagementPage extends StatelessWidget {
     );
   }
 
-  void _showEditWarehouseDialog(BuildContext context, AppDatabase db, Warehouse warehouse) {
+  void _showEditWarehouseDialog(
+    BuildContext context,
+    AppDatabase db,
+    Warehouse warehouse,
+  ) {
     final nameController = TextEditingController(text: warehouse.name);
     final locationController = TextEditingController(text: warehouse.location);
 
@@ -128,12 +137,21 @@ class WarehouseManagementPage extends StatelessWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'اسم المستودع')),
-            TextField(controller: locationController, decoration: const InputDecoration(labelText: 'الموقع')),
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: 'اسم المستودع'),
+            ),
+            TextField(
+              controller: locationController,
+              decoration: const InputDecoration(labelText: 'الموقع'),
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
           ElevatedButton(
             onPressed: () async {
               if (nameController.text.isNotEmpty) {
@@ -141,7 +159,7 @@ class WarehouseManagementPage extends StatelessWidget {
                   warehouse.copyWith(
                     name: nameController.text,
                     location: drift.Value(locationController.text),
-                  )
+                  ),
                 );
                 if (context.mounted) Navigator.pop(context);
               }
@@ -158,12 +176,14 @@ class WarehouseManagementPage extends StatelessWidget {
     if (hasStock) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('لا يمكن حذف المستودع لأنه يحتوي على مخزون.')),
+          const SnackBar(
+            content: Text('لا يمكن حذف المستودع لأنه يحتوي على مخزون.'),
+          ),
         );
       }
       return;
     }
-    
+
     if (!context.mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -171,9 +191,12 @@ class WarehouseManagementPage extends StatelessWidget {
         title: const Text('تأكيد الحذف'),
         content: const Text('هل أنت متأكد من حذف هذا المستودع؟'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
           TextButton(
-            onPressed: () => Navigator.pop(context, true), 
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('إلغاء'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
             child: const Text('حذف', style: TextStyle(color: Colors.red)),
           ),
         ],

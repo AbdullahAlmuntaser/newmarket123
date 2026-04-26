@@ -47,9 +47,7 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
     final db = context.read<AppDatabase>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.isReceipt ? 'سند قبض' : 'سند صرف'),
-      ),
+      appBar: AppBar(title: Text(widget.isReceipt ? 'سند قبض' : 'سند صرف')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -75,7 +73,9 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
                         ButtonSegment(value: 'customer', label: Text('عميل')),
                         ButtonSegment(value: 'supplier', label: Text('مورد')),
                       ],
-                      selected: {_selectedCustomer != null ? 'customer' : 'supplier'},
+                      selected: {
+                        _selectedCustomer != null ? 'customer' : 'supplier',
+                      },
                       onSelectionChanged: (selection) {
                         setState(() {
                           if (selection.contains('customer')) {
@@ -109,7 +109,10 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
                   children: [
                     const Text(
                       'المبلغ',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     TextField(
@@ -136,12 +139,17 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
                   children: [
                     const Text(
                       'طريقة الدفع',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                       initialValue: _paymentMethod,
-                      decoration: const InputDecoration(border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                      ),
                       items: const [
                         DropdownMenuItem(value: 'cash', child: Text('نقدي')),
                         DropdownMenuItem(value: 'bank', child: Text('بنكي')),
@@ -166,7 +174,10 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
                   children: [
                     const Text(
                       'التاريخ',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     InkWell(
@@ -207,7 +218,10 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
                   children: [
                     const Text(
                       'ملاحظات',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     TextField(
@@ -238,9 +252,17 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(widget.isReceipt ? Icons.receipt_long : Icons.money_off),
+                          Icon(
+                            widget.isReceipt
+                                ? Icons.receipt_long
+                                : Icons.money_off,
+                          ),
                           const SizedBox(width: 8),
-                          Text(widget.isReceipt ? 'حفظ سند القبض' : 'حفظ سند الصرف'),
+                          Text(
+                            widget.isReceipt
+                                ? 'حفظ سند القبض'
+                                : 'حفظ سند الصرف',
+                          ),
                         ],
                       ),
               ),
@@ -265,7 +287,9 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
                 labelText: 'اختر العميل',
                 border: OutlineInputBorder(),
               ),
-              items: customers.map((c) => DropdownMenuItem(value: c, child: Text(c.name))).toList(),
+              items: customers
+                  .map((c) => DropdownMenuItem(value: c, child: Text(c.name)))
+                  .toList(),
               onChanged: (value) {
                 setState(() {
                   _selectedCustomer = value;
@@ -293,7 +317,9 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
                 labelText: 'اختر المورد',
                 border: OutlineInputBorder(),
               ),
-              items: suppliers.map((s) => DropdownMenuItem(value: s, child: Text(s.name))).toList(),
+              items: suppliers
+                  .map((s) => DropdownMenuItem(value: s, child: Text(s.name)))
+                  .toList(),
               onChanged: (value) {
                 setState(() {
                   _selectedSupplier = value;
@@ -310,9 +336,9 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
   Future<void> _saveVoucher() async {
     final amount = double.tryParse(_amountController.text);
     if (amount == null || amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('الرجاء إدخال مبلغ صحيح')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('الرجاء إدخال مبلغ صحيح')));
       return;
     }
 

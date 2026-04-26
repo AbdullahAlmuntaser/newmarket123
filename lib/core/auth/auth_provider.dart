@@ -5,7 +5,7 @@ import '../services/role_permissions_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final AppDatabase db;
-  final PermissionsService permissionsService;
+  final PermissionService permissionsService;
   User? _currentUser;
 
   AuthProvider(this.db, this.permissionsService);
@@ -21,7 +21,7 @@ class AuthProvider with ChangeNotifier {
 
     if (user != null && BCrypt.checkpw(password, user.password)) {
       _currentUser = user;
-      await permissionsService.init(user.role);
+      permissionsService.init(user.role);
       notifyListeners();
       return true;
     }

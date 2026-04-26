@@ -81,7 +81,10 @@ class HRService {
       }
 
       final lines = await getPayrollLines(entryId);
-      double totalNetSalary = lines.fold(0, (sum, line) => sum + line.netSalary);
+      double totalNetSalary = lines.fold(
+        0,
+        (sum, line) => sum + line.netSalary,
+      );
 
       if (totalNetSalary <= 0) {
         throw Exception('لا يمكن اعتماد كشف رواتب بإجمالي صفر أو سالب');
@@ -91,7 +94,7 @@ class HRService {
           .write(const PayrollEntriesCompanion(status: Value('PAID')));
 
       await postingEngine.post(
-        type: TransactionType.paymentOut, 
+        type: TransactionType.paymentOut,
         referenceId: entryId,
         context: {
           'amount': totalNetSalary,
@@ -104,7 +107,8 @@ class HRService {
         targetEntity: 'PayrollEntries',
         entityId: entryId,
         userId: userId,
-        details: 'Approved payroll for ${entry.month}/${entry.year}. Total: $totalNetSalary',
+        details:
+            'Approved payroll for ${entry.month}/${entry.year}. Total: $totalNetSalary',
       );
     });
   }

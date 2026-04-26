@@ -82,22 +82,28 @@ class _SalesReportsPageState extends State<SalesReportsPage> {
 
   Widget _buildSummaryCards(AppDatabase db, AppLocalizations l10n) {
     return FutureBuilder<List<Sale>>(
-      future: (db.select(db.sales)
-            ..where((t) {
-              final dateFilter = t.createdAt.isBetween(Variable(_startDate), Variable(_endDate));
-              if (_selectedSaleType == 'all') return dateFilter;
-              return dateFilter & t.saleType.equals(_selectedSaleType);
-            }))
-          .get(),
+      future:
+          (db.select(db.sales)..where((t) {
+                final dateFilter = t.createdAt.isBetween(
+                  Variable(_startDate),
+                  Variable(_endDate),
+                );
+                if (_selectedSaleType == 'all') return dateFilter;
+                return dateFilter & t.saleType.equals(_selectedSaleType);
+              }))
+              .get(),
       builder: (context, snapshot) {
         final sales = snapshot.data ?? [];
         final totalRevenue = sales.fold(0.0, (sum, sale) => sum + sale.total);
-        
+
         final retailSales = sales.where((s) => s.saleType == 'retail');
         final wholesaleSales = sales.where((s) => s.saleType == 'wholesale');
-        
+
         final retailTotal = retailSales.fold(0.0, (sum, s) => sum + s.total);
-        final wholesaleTotal = wholesaleSales.fold(0.0, (sum, s) => sum + s.total);
+        final wholesaleTotal = wholesaleSales.fold(
+          0.0,
+          (sum, s) => sum + s.total,
+        );
 
         return Column(
           children: [
@@ -182,7 +188,10 @@ class _SalesReportsPageState extends State<SalesReportsPage> {
       child: FutureBuilder<List<Sale>>(
         future:
             (db.select(db.sales)..where(
-                  (t) => t.createdAt.isBetween(Variable(_startDate), Variable(_endDate)),
+                  (t) => t.createdAt.isBetween(
+                    Variable(_startDate),
+                    Variable(_endDate),
+                  ),
                 ))
                 .get(),
         builder: (context, snapshot) {

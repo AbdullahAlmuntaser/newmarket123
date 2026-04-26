@@ -18,6 +18,8 @@ import 'daos/bom_dao.dart';
 import 'daos/warehouses_dao.dart';
 import 'daos/global_units_dao.dart';
 import 'daos/product_units_dao.dart';
+import 'daos/audit_dao.dart';
+import 'daos/stock_movement_dao.dart';
 import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 
 part 'app_database.g.dart';
@@ -48,32 +50,47 @@ class Categories extends Table with SyncableTable {
 class Products extends Table with SyncableTable {
   TextColumn get name => text()();
   TextColumn get sku => text().unique()();
-  TextColumn get barcode => text().nullable()(); // New: Primary barcode
+  TextColumn get barcode => text().nullable()(); // Primary barcode
   TextColumn get categoryId => text().nullable().references(Categories, #id)();
-  TextColumn get unit => text().withDefault(const Constant('pcs'))(); // Base unit (e.g., piece, kilo, liter)
+  TextColumn get unit =>
+      text().withDefault(const Constant('pcs'))(); // Base unit
   TextColumn get cartonUnit => text().withDefault(const Constant('carton'))();
   IntColumn get piecesPerCarton => integer().withDefault(const Constant(1))();
-  TextColumn get kiloUnit => text().nullable()(); // New: Unit for weighed products
-  TextColumn get boxUnit => text().nullable()(); // New: Box unit
+  TextColumn get kiloUnit => text().nullable()();
+  TextColumn get boxUnit => text().nullable()();
   RealColumn get buyPrice => real().withDefault(const Constant(0.0))();
   RealColumn get sellPrice => real().withDefault(const Constant(0.0))();
   RealColumn get wholesalePrice => real().withDefault(const Constant(0.0))();
   RealColumn get stock => real().withDefault(const Constant(0.0))();
   RealColumn get alertLimit => real().withDefault(const Constant(10.0))();
   DateTimeColumn get expiryDate => dateTime().nullable()();
-  RealColumn get taxRate =>
-      real().withDefault(const Constant(0.0))(); // New: Tax rate for ERP
-  BoolColumn get isActive => boolean().withDefault(const Constant(true))(); // New
+  RealColumn get taxRate => real().withDefault(const Constant(0.0))();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  // Variant support
+  TextColumn get parentProductId => text().nullable().references(
+    Products,
+    #id,
+  )(); // Null for main items; points to parent for variants
+  TextColumn get attributes =>
+      text().nullable()(); // JSON: {"color":"Red","size":"XL"}
+  RealColumn get additionalCost =>
+      real().nullable()(); // Extra cost for variant over base product
 }
 
 class ProductUnits extends Table with SyncableTable {
-  // Multi-unit support for products
+  // Multi-unit support for products (and variants)
   TextColumn get productId => text().references(Products, #id)();
   TextColumn get unitName => text()(); // e.g., carton, box, kilo
-  TextColumn get barcode => text().unique().nullable()(); // Barcode for this unit
-  RealColumn get unitFactor => real().withDefault(const Constant(1.0))(); // How many base units
+  TextColumn get barcode =>
+      text().unique().nullable()(); // Barcode for this unit
+  RealColumn get unitFactor =>
+      real().withDefault(const Constant(1.0))(); // How many base units
   RealColumn get buyPrice => real().nullable()(); // Unit-specific buy price
   RealColumn get sellPrice => real().nullable()(); // Unit-specific sell price
+  RealColumn get wholesalePrice =>
+      real().nullable()(); // Wholesale price for this unit
+  RealColumn get halfWholesalePrice =>
+      real().nullable()(); // Half-wholesale price
   BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
 }
 
@@ -131,8 +148,9 @@ class Sales extends Table with SyncableTable {
   RealColumn get tax => real().withDefault(const Constant(0.0))();
   TextColumn get paymentMethod => text()();
   BoolColumn get isCredit => boolean().withDefault(const Constant(false))();
-  TextColumn get status =>
-      text().withDefault(const Constant('POSTED'))(); // DRAFT, POSTED, CANCELLED
+  TextColumn get status => text().withDefault(
+    const Constant('POSTED'),
+  )(); // DRAFT, POSTED, CANCELLED
   TextColumn get saleType =>
       text().withDefault(const Constant('retail'))(); // retail / wholesale
   TextColumn get currencyId => text().nullable()();
@@ -162,11 +180,16 @@ class StockMovements extends Table with SyncableTable {
   TextColumn get toWarehouseId =>
       text().nullable().references(Warehouses, #id)();
   RealColumn get quantity => real()();
+  RealColumn get cost =>
+      real().withDefault(const Constant(0.0))(); // ADDED COST
   TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
   DateTimeColumn get movementDate =>
       dateTime().withDefault(currentDateAndTime)();
   TextColumn get type =>
       text()(); // TRANSFER, ADJUSTMENT, INITIAL, SALE, PURCHASE
+  TextColumn get transactionId => text().nullable()(); // ADDED transactionId
+  TextColumn get date => text()
+      .nullable()(); // ADDED date as string or something? Wait, StockMovements already has movementDate. I will use date if needed.
   TextColumn get referenceId => text().nullable()(); // SaleId, PurchaseId, etc.
 }
 
@@ -174,15 +197,17 @@ class Purchases extends Table with SyncableTable {
   TextColumn get supplierId => text().nullable().references(Suppliers, #id)();
   RealColumn get total => real()();
   RealColumn get tax => real().withDefault(const Constant(0.0))();
-  RealColumn get discount => real().withDefault(const Constant(0.0))(); // New: Additional header discount
-  RealColumn get landedCosts =>
-      real().withDefault(const Constant(0.0))();
-  RealColumn get shippingCost => real().withDefault(const Constant(0.0))(); // New
-  RealColumn get otherExpenses => real().withDefault(const Constant(0.0))(); // New
+  RealColumn get discount => real().withDefault(
+    const Constant(0.0),
+  )(); // New: Additional header discount
+  RealColumn get landedCosts => real().withDefault(const Constant(0.0))();
+  RealColumn get shippingCost =>
+      real().withDefault(const Constant(0.0))(); // New
+  RealColumn get otherExpenses =>
+      real().withDefault(const Constant(0.0))(); // New
   TextColumn get invoiceNumber => text().nullable()();
-  TextColumn get purchaseType => text().withDefault(
-    const Constant('cash'),
-  )(); // cash / credit
+  TextColumn get purchaseType =>
+      text().withDefault(const Constant('cash'))(); // cash / credit
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get time => dateTime().nullable()(); // New: Time field
   BoolColumn get isCredit => boolean().withDefault(const Constant(false))();
@@ -193,27 +218,39 @@ class Purchases extends Table with SyncableTable {
   TextColumn get currencyId => text().nullable()();
   RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
   TextColumn get notes => text().nullable()(); // New
-  TextColumn get attachmentPath => text().nullable()(); // New: Invoice image path
+  TextColumn get attachmentPath =>
+      text().nullable()(); // New: Invoice image path
 }
 
 class PurchaseItems extends Table with SyncableTable {
   TextColumn get purchaseId => text().references(Purchases, #id)();
   TextColumn get productId => text().references(Products, #id)();
-  TextColumn get unitId => text().nullable()(); // New: Unit ID (e.g., carton, kilo)
-  RealColumn get unitFactor => real().withDefault(const Constant(1.0))(); // New: Conversion to base unit
+  TextColumn get unitId =>
+      text().nullable()(); // New: Unit ID (e.g., carton, kilo)
+  RealColumn get unitFactor =>
+      real().withDefault(const Constant(1.0))(); // New: Conversion to base unit
   RealColumn get quantity => real()();
-  RealColumn get quantityInBaseUnit => real().nullable()(); // New: Calculated base quantity
+  RealColumn get quantityInBaseUnit =>
+      real().nullable()(); // New: Calculated base quantity
   RealColumn get unitPrice => real()(); // New: Price per selected unit
   RealColumn get price => real()(); // Total price (kept for compatibility)
-  RealColumn get discount => real().withDefault(const Constant(0.0))(); // New: Item discount
-  RealColumn get discountPercent => real().withDefault(const Constant(0.0))(); // New: Discount percentage
-  RealColumn get tax => real().withDefault(const Constant(0.0))(); // New: Tax amount
-  RealColumn get taxPercent => real().withDefault(const Constant(0.0))(); // New: Tax percentage
-  RealColumn get landedCostShare => real().withDefault(const Constant(0.0))(); // New: Share of landed costs
+  RealColumn get discount =>
+      real().withDefault(const Constant(0.0))(); // New: Item discount
+  RealColumn get discountPercent =>
+      real().withDefault(const Constant(0.0))(); // New: Discount percentage
+  RealColumn get tax =>
+      real().withDefault(const Constant(0.0))(); // New: Tax amount
+  RealColumn get taxPercent =>
+      real().withDefault(const Constant(0.0))(); // New: Tax percentage
+  RealColumn get landedCostShare =>
+      real().withDefault(const Constant(0.0))(); // New: Share of landed costs
   TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
   TextColumn get batchNumber => text().nullable()(); // New
   DateTimeColumn get expiryDate => dateTime().nullable()(); // New
-  TextColumn get warehouseId => text().nullable().references(Warehouses, #id)(); // New: Override warehouse per item
+  TextColumn get warehouseId => text().nullable().references(
+    Warehouses,
+    #id,
+  )(); // New: Override warehouse per item
   BoolColumn get isCarton => boolean().withDefault(const Constant(false))();
 }
 
@@ -232,6 +269,12 @@ class ProductBatches extends Table with SyncableTable {
   RealColumn get quantity => real().withDefault(const Constant(0.0))();
   RealColumn get initialQuantity => real().withDefault(const Constant(0.0))();
   RealColumn get costPrice => real().withDefault(const Constant(0.0))();
+}
+
+/// Item variants (e.g., color, size) for products with multiple attributes
+class ItemVariants extends Table with SyncableTable {
+  @override
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }
 
 class SalesReturns extends Table with SyncableTable {
@@ -271,7 +314,8 @@ class CustomerPayments extends Table with SyncableTable {
 class SupplierPayments extends Table with SyncableTable {
   TextColumn get supplierId => text().references(Suppliers, #id)();
   RealColumn get amount => real()();
-  RealColumn get remainingAmount => real().withDefault(const Constant(0.0))(); // Unapplied amount
+  RealColumn get remainingAmount =>
+      real().withDefault(const Constant(0.0))(); // Unapplied amount
   DateTimeColumn get paymentDate =>
       dateTime().withDefault(currentDateAndTime)();
   TextColumn get note => text().nullable()();
@@ -425,7 +469,8 @@ class Employees extends Table with SyncableTable {
   TextColumn get name => text()();
   TextColumn get employeeCode => text().unique()();
   TextColumn get jobTitle => text().nullable()();
-  TextColumn get role => text().withDefault(const Constant('USER'))(); // ADMIN or USER
+  TextColumn get role =>
+      text().withDefault(const Constant('USER'))(); // ADMIN or USER
   RealColumn get basicSalary => real().withDefault(const Constant(0.0))();
   DateTimeColumn get hireDate => dateTime().nullable()();
   TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
@@ -485,7 +530,8 @@ class PriceListItems extends Table with SyncableTable {
 
 class Promotions extends Table with SyncableTable {
   TextColumn get name => text()();
-  TextColumn get type => text()(); // PERCENTAGE_DISCOUNT, FIXED_DISCOUNT, BOGO (Buy One Get One)
+  TextColumn get type =>
+      text()(); // PERCENTAGE_DISCOUNT, FIXED_DISCOUNT, BOGO (Buy One Get One)
   RealColumn get value => real()(); // Discount amount or percentage
   DateTimeColumn get startDate => dateTime()();
   DateTimeColumn get endDate => dateTime()();
@@ -512,11 +558,13 @@ class Currencies extends Table with SyncableTable {
 class UnitConversions extends Table with SyncableTable {
   TextColumn get productId => text().references(Products, #id)();
   TextColumn get unitName => text()();
-  RealColumn get factor => real()(); // How many of this unit equal the base unit
+  RealColumn get factor =>
+      real()(); // How many of this unit equal the base unit
   BoolColumn get isBaseUnit => boolean().withDefault(const Constant(false))();
   RealColumn get buyPrice => real().nullable()(); // Unit-specific buy price
   RealColumn get sellPrice => real().nullable()(); // Unit-specific sell price
-  TextColumn get barcode => text().unique().nullable()(); // Barcode for this unit
+  TextColumn get barcode =>
+      text().unique().nullable()(); // Barcode for this unit
 }
 
 class InventoryTransactions extends Table with SyncableTable {
@@ -715,13 +763,15 @@ class SalesOrderItems extends Table with SyncableTable {
     WarehousesDao,
     GlobalUnitsDao,
     ProductUnitsDao,
+    AuditDao,
+    StockMovementDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 28; // Incremented schema version
+  int get schemaVersion => 29; // Incremented schema version
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -844,6 +894,10 @@ class AppDatabase extends _$AppDatabase {
   ProductUnitsDao get productUnitsDao => ProductUnitsDao(this);
   @override
   BomDao get bomDao => BomDao(this);
+  @override
+  AuditDao get auditDao => AuditDao(this);
+  @override
+  StockMovementDao get stockMovementDao => StockMovementDao(this);
 }
 
 LazyDatabase _openConnection() {

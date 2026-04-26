@@ -35,37 +35,82 @@ class GeneralLedgerPage extends StatelessWidget {
               final entry = entries[index];
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: ExpansionTile(
-                  tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  title: Text(entry.description, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  tilePadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  title: Text(
+                    entry.description,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   subtitle: Row(
                     children: [
-                      Icon(Icons.calendar_today, size: 12, color: colorScheme.outline),
+                      Icon(
+                        Icons.calendar_today,
+                        size: 12,
+                        color: colorScheme.outline,
+                      ),
                       const SizedBox(width: 4),
-                      Text(DateFormat('yyyy-MM-dd HH:mm').format(entry.date), style: TextStyle(fontSize: 12, color: colorScheme.outline)),
+                      Text(
+                        DateFormat('yyyy-MM-dd HH:mm').format(entry.date),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: colorScheme.outline,
+                        ),
+                      ),
                     ],
                   ),
                   leading: CircleAvatar(
                     backgroundColor: colorScheme.primaryContainer,
-                    child: Icon(Icons.receipt_long, color: colorScheme.onPrimaryContainer, size: 20),
+                    child: Icon(
+                      Icons.receipt_long,
+                      color: colorScheme.onPrimaryContainer,
+                      size: 20,
+                    ),
                   ),
                   trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: colorScheme.secondaryContainer, borderRadius: BorderRadius.circular(8)),
-                    child: Text(entry.referenceType ?? '', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: colorScheme.onSecondaryContainer)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.secondaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      entry.referenceType ?? '',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSecondaryContainer,
+                      ),
+                    ),
                   ),
                   children: [
                     FutureBuilder<List<GLLineWithAccount>>(
                       future: provider.getEntryLines(entry.id),
                       builder: (context, lineSnapshot) {
-                        if (!lineSnapshot.hasData) return const LinearProgressIndicator();
+                        if (!lineSnapshot.hasData) {
+                          return const LinearProgressIndicator();
+                        }
                         final lines = lineSnapshot.data!;
                         return Container(
                           padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(color: colorScheme.surfaceContainerHighest.withAlpha(50), borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16))),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest
+                                .withAlpha(50),
+                            borderRadius: const BorderRadius.vertical(
+                              bottom: Radius.circular(16),
+                            ),
+                          ),
                           child: Column(
-                            children: lines.map((line) => _buildLineItem(context, line)).toList(),
+                            children: lines
+                                .map((line) => _buildLineItem(context, line))
+                                .toList(),
                           ),
                         );
                       },
@@ -89,8 +134,20 @@ class GeneralLedgerPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(line.account.name, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
-                Text(line.account.code, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.outline)),
+                Text(
+                  line.account.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  line.account.code,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                ),
               ],
             ),
           ),
@@ -98,16 +155,34 @@ class GeneralLedgerPage extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                const Text('مدين', style: TextStyle(fontSize: 9, color: Colors.green)),
-                Text(line.line.debit.toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                const Text(
+                  'مدين',
+                  style: TextStyle(fontSize: 9, color: Colors.green),
+                ),
+                Text(
+                  line.line.debit.toStringAsFixed(2),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
               ],
             ),
           if (line.line.credit > 0)
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                const Text('دائن', style: TextStyle(fontSize: 9, color: Colors.red)),
-                Text(line.line.credit.toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                const Text(
+                  'دائن',
+                  style: TextStyle(fontSize: 9, color: Colors.red),
+                ),
+                Text(
+                  line.line.credit.toStringAsFixed(2),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
               ],
             ),
         ],

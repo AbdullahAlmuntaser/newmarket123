@@ -68,10 +68,7 @@ class _PosViewState extends State<PosView> {
       body: Row(
         children: [
           // Left Side: Cart & Checkout
-          const Expanded(
-            flex: 2,
-            child: CartWidget(),
-          ),
+          const Expanded(flex: 2, child: CartWidget()),
           // Right Side: Products & Search
           Expanded(
             flex: 3,
@@ -94,7 +91,8 @@ class _PosViewState extends State<PosView> {
     final posBloc = context.read<PosBloc>();
     final result = await showGeneralDialog<String>(
       context: context,
-      pageBuilder: (context, animation, secondaryAnimation) => const BarcodeScannerDialog(),
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          const BarcodeScannerDialog(),
     );
     if (result != null && mounted) {
       posBloc.add(AddProductBySku(result));

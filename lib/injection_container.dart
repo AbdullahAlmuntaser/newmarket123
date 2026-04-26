@@ -1,90 +1,77 @@
 import 'package:get_it/get_it.dart';
-import 'package:supermarket/core/auth/auth_provider.dart';
-import 'package:supermarket/core/theme/theme_provider.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/data/datasources/local/daos/products_dao.dart';
-import 'package:supermarket/data/datasources/local/daos/product_units_dao.dart';
-import 'package:supermarket/data/repositories/category_repository_impl.dart';
-import 'package:supermarket/domain/repositories/category_repository.dart';
-import 'package:supermarket/domain/usecases/add_category.dart';
-import 'package:supermarket/domain/usecases/delete_category.dart';
-import 'package:supermarket/domain/usecases/get_categories.dart';
-import 'package:supermarket/domain/usecases/update_category.dart';
-import 'package:supermarket/presentation/blocs/category/category_bloc.dart';
-import 'package:supermarket/presentation/features/products/products_provider.dart';
-import 'package:supermarket/core/services/accounting_service.dart';
-import 'package:supermarket/core/services/event_bus_service.dart';
-import 'package:supermarket/core/services/pricing_service.dart';
-import 'package:supermarket/core/services/transaction_engine.dart';
-import 'package:supermarket/core/services/posting_engine.dart';
-import 'package:supermarket/core/services/inventory_service.dart';
-import 'package:supermarket/core/services/purchase_service.dart';
-import 'package:supermarket/core/services/system_auditor.dart';
-import 'package:supermarket/core/services/supplier_analytics_service.dart';
-import 'package:supermarket/core/services/role_permissions_service.dart';
-import 'package:supermarket/core/services/reorder_service.dart';
-import 'package:supermarket/core/services/unit_conversion_service.dart';
-
-import 'package:supermarket/presentation/features/pos/bloc/pos_bloc.dart';
-
-import 'package:supermarket/core/services/inventory_costing_service.dart';
-import 'package:supermarket/core/services/erp_data_service.dart';
+import 'core/auth/auth_provider.dart';
+import 'core/services/role_permissions_service.dart';
+import 'core/services/inventory_service.dart';
+import 'core/services/accounting_service.dart';
+import 'core/services/event_bus_service.dart';
+import 'core/theme/theme_provider.dart';
+import 'data/datasources/local/app_database.dart';
+import 'data/datasources/local/daos/products_dao.dart';
+import 'core/services/posting_engine.dart';
+import 'core/services/inventory_costing_service.dart';
+import 'core/services/purchase_service.dart';
+import 'core/services/sales_service.dart';
+import 'core/services/statement_service.dart';
+import 'core/services/report_service.dart';
+import 'core/services/audit_service.dart';
+import 'data/datasources/local/daos/audit_dao.dart';
+import 'data/datasources/local/daos/stock_movement_dao.dart';
+import 'data/repositories/inventory_repository_impl.dart';
+import 'data/repositories/item_repository_impl.dart';
+import 'domain/repositories/inventory_repository.dart';
+import 'domain/repositories/item_repository.dart';
+import 'domain/usecases/create_item.dart';
+import 'domain/usecases/add_stock.dart';
+import 'core/services/bom_service.dart';
 
 final sl = GetIt.instance;
 
-void init() {
-  // Data sources
+Future<void> init() async {
   final db = AppDatabase();
-  sl.registerLazySingleton(() => db);
+  sl.registerLazySingleton<AppDatabase>(() => db);
+sl.registerLazySingleton<AuditDao>(() => AuditDao(db));
+sl.registerLazySingleton<StockMovementDao>(() => StockMovementDao(db));
+sl.registerLazySingleton<ProductsDao>(() => ProductsDao(db));
 
-  // DAOs
-  sl.registerLazySingleton<ProductsDao>(() => ProductsDao(sl()));
-  sl.registerLazySingleton<ProductUnitsDao>(() => ProductUnitsDao(sl()));
+sl.registerLazySingleton<AccountingService>(
+  () => AccountingService(db, sl<EventBusService>()),
+);
+sl.registerLazySingleton<PostingEngine>(() => PostingEngine(db));
+sl.registerLazySingleton<InventoryCostingService>(
+  () => InventoryCostingService(sl<StockMovementDao>()),
+);
+sl.registerLazySingleton<PermissionService>(() => PermissionService());
+sl.registerLazySingleton<AuditService>(() => AuditService(db));
+sl.registerLazySingleton<InventoryService>(() => InventoryService(db));
+sl.registerLazySingleton<EventBusService>(() => EventBusService());
+sl.registerLazySingleton<PurchaseService>(
+  () =>
+      PurchaseService(db, sl<PostingEngine>(), sl<InventoryCostingService>()),
+);
+sl.registerLazySingleton<SalesService>(
+  () => SalesService(sl<PostingEngine>(), sl<InventoryService>()),
+);
+sl.registerLazySingleton<StatementService>(
+  () => StatementService(sl<PostingEngine>()),
+);
+sl.registerLazySingleton<ReportService>(() => ReportService(sl<PostingEngine>()));
 
-  // Services
-  sl.registerLazySingleton(() => EventBusService());
-  sl.registerLazySingleton(() => InventoryCostingService(sl()));
-  sl.registerLazySingleton(() => ErpDataService(sl(), sl()));
-  sl.registerLazySingleton(() => AccountingService(sl(), sl()));
-  sl.registerLazySingleton(() => PricingService(sl()));
-  sl.registerLazySingleton(() => TransactionEngine(sl(), sl()));
-  sl.registerLazySingleton(() => PostingEngine(sl()));
-  sl.registerLazySingleton(() => InventoryService(sl()));
-  sl.registerLazySingleton(() => UnitConversionService(
-        productsDao: sl(),
-        productUnitsDao: sl(),
-      ));
-  sl.registerLazySingleton(() => PurchaseService(sl(), sl(), sl()));
-  sl.registerLazySingleton(() => ReorderService(sl()));
-  sl.registerLazySingleton(() => SupplierAnalyticsService(sl()));
-  sl.registerLazySingleton(() => SystemAuditor(sl()));
-  sl.registerLazySingleton(() => PermissionsService(sl()));
+sl.registerLazySingleton<AuthProvider>(() => AuthProvider(
+  sl<AppDatabase>(),
+  sl<PermissionService>(),
+));
 
-  // Providers
-  sl.registerLazySingleton(() => AuthProvider(sl(), sl()));
-  sl.registerLazySingleton(() => ThemeProvider());
+sl.registerLazySingleton<ItemRepository>(() => ItemRepositoryImpl(sl<ProductsDao>()));sl.registerLazySingleton<InventoryRepository>(() => InventoryRepositoryImpl(
+  sl<StockMovementDao>(),
+  sl<ProductsDao>(),
+));
 
-  sl.registerFactory(() => ProductsProvider(sl()));
-
-  // Blocs
-  sl.registerFactory(() => PosBloc(sl(), sl(), sl()));
-  sl.registerFactory(
-    () => CategoryBloc(
-      getCategories: sl(),
-      addCategory: sl(),
-      updateCategory: sl(),
-      deleteCategory: sl(),
-    ),
+  sl.registerLazySingleton<CreateItemUseCase>(
+    () => CreateItemUseCase(sl<ItemRepository>()),
   );
-
-  // Use cases
-  sl.registerLazySingleton(() => GetCategories(sl()));
-  sl.registerLazySingleton(() => AddCategory(sl()));
-  sl.registerLazySingleton(() => UpdateCategory(sl()));
-  sl.registerLazySingleton(() => DeleteCategory(sl()));
-
-  // Repositories
-  sl.registerLazySingleton<CategoryRepository>(
-    () => CategoryRepositoryImpl(appDatabase: sl()),
+  sl.registerLazySingleton<AddStockUseCase>(
+    () => AddStockUseCase(sl<InventoryRepository>()),
   );
+  sl.registerLazySingleton<ThemeProvider>(() => ThemeProvider());
+  sl.registerLazySingleton(() => BomService(db, sl<AccountingService>()));
 }

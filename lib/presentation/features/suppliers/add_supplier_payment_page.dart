@@ -45,9 +45,18 @@ class _AddSupplierPaymentPageState extends State<AddSupplierPaymentPage> {
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      const Text('الرصيد الحالي المستحق', style: TextStyle(color: Colors.grey)),
-                      Text(widget.supplier.balance.toStringAsFixed(2), 
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.red)),
+                      const Text(
+                        'الرصيد الحالي المستحق',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      Text(
+                        widget.supplier.balance.toStringAsFixed(2),
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -55,18 +64,28 @@ class _AddSupplierPaymentPageState extends State<AddSupplierPaymentPage> {
               const SizedBox(height: 24),
               TextFormField(
                 controller: _amountController,
-                decoration: const InputDecoration(labelText: 'المبلغ المدفوع', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'المبلغ المدفوع',
+                  border: OutlineInputBorder(),
+                ),
                 keyboardType: TextInputType.number,
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'يرجى إدخال المبلغ';
-                  if (double.tryParse(value) == null) return 'يرجى إدخال رقم صحيح';
+                  if (value == null || value.isEmpty) {
+                    return 'يرجى إدخال المبلغ';
+                  }
+                  if (double.tryParse(value) == null) {
+                    return 'يرجى إدخال رقم صحيح';
+                  }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _noteController,
-                decoration: const InputDecoration(labelText: 'ملاحظات', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'ملاحظات',
+                  border: OutlineInputBorder(),
+                ),
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
@@ -90,7 +109,9 @@ class _AddSupplierPaymentPageState extends State<AddSupplierPaymentPage> {
                 height: 50,
                 child: ElevatedButton(
                   onPressed: _isSaving ? null : _savePayment,
-                  child: _isSaving ? const CircularProgressIndicator() : const Text('حفظ السند'),
+                  child: _isSaving
+                      ? const CircularProgressIndicator()
+                      : const Text('حفظ السند'),
                 ),
               ),
             ],
@@ -110,31 +131,41 @@ class _AddSupplierPaymentPageState extends State<AddSupplierPaymentPage> {
 
     try {
       // 1. Record payment in database
-      await db.into(db.supplierPayments).insert(
-        SupplierPaymentsCompanion.insert(
-          id: drift.Value(paymentId),
-          supplierId: widget.supplier.id,
-          amount: amount,
-          paymentDate: drift.Value(_selectedDate),
-          syncStatus: const drift.Value(1),
-        )
-      );
+      await db
+          .into(db.supplierPayments)
+          .insert(
+            SupplierPaymentsCompanion.insert(
+              id: drift.Value(paymentId),
+              supplierId: widget.supplier.id,
+              amount: amount,
+              paymentDate: drift.Value(_selectedDate),
+              syncStatus: const drift.Value(1),
+            ),
+          );
 
       // 2. Fire event for accounting
-      sl<EventBusService>().fire(SupplierPaymentEvent(
-        supplierId: widget.supplier.id,
-        amount: amount,
-        paymentMethod: 'cash',
-        paymentId: paymentId,
-        note: _noteController.text,
-      ));
+      sl<EventBusService>().fire(
+        SupplierPaymentEvent(
+          supplierId: widget.supplier.id,
+          amount: amount,
+          paymentMethod: 'cash',
+          paymentId: paymentId,
+          note: _noteController.text,
+        ),
+      );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ السند بنجاح')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('تم حفظ السند بنجاح')));
         context.pop();
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('خطأ: $e')));
+      }
     } finally {
       setState(() => _isSaving = false);
     }

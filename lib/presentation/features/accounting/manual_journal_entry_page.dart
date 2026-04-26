@@ -20,7 +20,8 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
 
   double get _totalDebit => _lines.fold(0, (sum, l) => sum + l.debit);
   double get _totalCredit => _lines.fold(0, (sum, l) => sum + l.credit);
-  bool get _isBalanced => (_totalDebit - _totalCredit).abs() < 0.001 && _totalDebit > 0;
+  bool get _isBalanced =>
+      (_totalDebit - _totalCredit).abs() < 0.001 && _totalDebit > 0;
 
   @override
   Widget build(BuildContext context) {
@@ -47,23 +48,39 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
   Widget _buildHeader(ColorScheme colorScheme) {
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: colorScheme.outlineVariant)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: colorScheme.outlineVariant),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             TextField(
               controller: _descriptionController,
-              decoration: const InputDecoration(labelText: 'وصف القيد العام', border: OutlineInputBorder(), isDense: true),
+              decoration: const InputDecoration(
+                labelText: 'وصف القيد العام',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
             ),
             const SizedBox(height: 12),
             InkWell(
               onTap: () async {
-                final date = await showDatePicker(context: context, initialDate: _selectedDate, firstDate: DateTime(2000), lastDate: DateTime(2100));
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: _selectedDate,
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2100),
+                );
                 if (date != null) setState(() => _selectedDate = date);
               },
               child: InputDecorator(
-                decoration: const InputDecoration(labelText: 'تاريخ القيد', border: OutlineInputBorder(), isDense: true),
+                decoration: const InputDecoration(
+                  labelText: 'تاريخ القيد',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -83,16 +100,23 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
     return StreamBuilder<List<GLAccount>>(
       stream: provider.watchAccounts(),
       builder: (context, snapshot) {
-        final accounts = (snapshot.data ?? []).where((a) => !a.isHeader).toList();
+        final accounts = (snapshot.data ?? [])
+            .where((a) => !a.isHeader)
+            .toList();
         return Column(
           children: [
-            ..._lines.asMap().entries.map((entry) => _buildLineCard(entry.key, entry.value, accounts, colorScheme)),
+            ..._lines.asMap().entries.map(
+              (entry) =>
+                  _buildLineCard(entry.key, entry.value, accounts, colorScheme),
+            ),
             const SizedBox(height: 12),
             ElevatedButton.icon(
               onPressed: () => setState(() => _lines.add(ManualLine())),
               icon: const Icon(Icons.add),
               label: const Text('إضافة حساب للقيد'),
-              style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 50),
+              ),
             ),
           ],
         );
@@ -100,7 +124,12 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
     );
   }
 
-  Widget _buildLineCard(int index, ManualLine line, List<GLAccount> accounts, ColorScheme colorScheme) {
+  Widget _buildLineCard(
+    int index,
+    ManualLine line,
+    List<GLAccount> accounts,
+    ColorScheme colorScheme,
+  ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -110,18 +139,42 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
           children: [
             Row(
               children: [
-                CircleAvatar(radius: 12, backgroundColor: colorScheme.primary, child: Text('${index + 1}', style: const TextStyle(fontSize: 10, color: Colors.white))),
+                CircleAvatar(
+                  radius: 12,
+                  backgroundColor: colorScheme.primary,
+                  child: Text(
+                    '${index + 1}',
+                    style: const TextStyle(fontSize: 10, color: Colors.white),
+                  ),
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     initialValue: line.accountId,
-                    decoration: const InputDecoration(labelText: 'الحساب', isDense: true, border: UnderlineInputBorder()),
+                    decoration: const InputDecoration(
+                      labelText: 'الحساب',
+                      isDense: true,
+                      border: UnderlineInputBorder(),
+                    ),
                     isExpanded: true,
-                    items: accounts.map((a) => DropdownMenuItem(value: a.id, child: Text('${a.code} - ${a.name}', style: const TextStyle(fontSize: 13)))).toList(),
+                    items: accounts
+                        .map(
+                          (a) => DropdownMenuItem(
+                            value: a.id,
+                            child: Text(
+                              '${a.code} - ${a.name}',
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
+                        )
+                        .toList(),
                     onChanged: (val) => setState(() => line.accountId = val),
                   ),
                 ),
-                IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red), onPressed: () => setState(() => _lines.removeAt(index))),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  onPressed: () => setState(() => _lines.removeAt(index)),
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -129,17 +182,27 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
               children: [
                 Expanded(
                   child: TextField(
-                    decoration: const InputDecoration(labelText: 'مدين (Debit)', border: OutlineInputBorder(), isDense: true),
+                    decoration: const InputDecoration(
+                      labelText: 'مدين (Debit)',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
                     keyboardType: TextInputType.number,
-                    onChanged: (val) => setState(() => line.debit = double.tryParse(val) ?? 0),
+                    onChanged: (val) =>
+                        setState(() => line.debit = double.tryParse(val) ?? 0),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: TextField(
-                    decoration: const InputDecoration(labelText: 'دائن (Credit)', border: OutlineInputBorder(), isDense: true),
+                    decoration: const InputDecoration(
+                      labelText: 'دائن (Credit)',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
                     keyboardType: TextInputType.number,
-                    onChanged: (val) => setState(() => line.credit = double.tryParse(val) ?? 0),
+                    onChanged: (val) =>
+                        setState(() => line.credit = double.tryParse(val) ?? 0),
                   ),
                 ),
               ],
@@ -153,7 +216,16 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
   Widget _buildPersistentFooter(AccountingProvider provider) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Theme.of(context).cardColor, boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: const Offset(0, -2))]),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 4,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -169,16 +241,28 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
           SizedBox(
             width: double.infinity,
             child: PermissionGuard(
-              permissionCode: 'accounting.edit_journal',
+              permission: 'accounting.edit_journal',
               child: ElevatedButton(
                 onPressed: _isBalanced ? () => _saveEntry(provider) : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _isBalanced ? Colors.green : Colors.grey.shade300,
-                  foregroundColor: _isBalanced ? Colors.white : Colors.grey.shade600,
+                  backgroundColor: _isBalanced
+                      ? Colors.green
+                      : Colors.grey.shade300,
+                  foregroundColor: _isBalanced
+                      ? Colors.white
+                      : Colors.grey.shade600,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                child: Text(_isBalanced ? 'حفظ وترحيل القيد' : 'القيد غير متزن', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: Text(
+                  _isBalanced ? 'حفظ وترحيل القيد' : 'القيد غير متزن',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ),
@@ -191,7 +275,14 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
     return Column(
       children: [
         Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-        Text(val.toStringAsFixed(2), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: color)),
+        Text(
+          val.toStringAsFixed(2),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: color,
+          ),
+        ),
       ],
     );
   }
@@ -200,11 +291,29 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     try {
-      final lines = _lines.where((l) => l.accountId != null).map((l) => GLLinesCompanion.insert(entryId: '', accountId: l.accountId!, debit: Value(l.debit), credit: Value(l.credit))).toList();
-      await provider.createManualEntry(description: _descriptionController.text, date: _selectedDate, lines: lines);
-      messenger.showSnackBar(const SnackBar(content: Text('تم حفظ القيد بنجاح')));
+      final lines = _lines
+          .where((l) => l.accountId != null)
+          .map(
+            (l) => GLLinesCompanion.insert(
+              entryId: '',
+              accountId: l.accountId!,
+              debit: Value(l.debit),
+              credit: Value(l.credit),
+            ),
+          )
+          .toList();
+      await provider.createManualEntry(
+        description: _descriptionController.text,
+        date: _selectedDate,
+        lines: lines,
+      );
+      messenger.showSnackBar(
+        const SnackBar(content: Text('تم حفظ القيد بنجاح')),
+      );
       navigator.pop();
-    } catch (e) { messenger.showSnackBar(SnackBar(content: Text(e.toString()))); }
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+    }
   }
 }
 

@@ -36,21 +36,31 @@ class _UnitConversionPageState extends State<UnitConversionPage> {
   Future<void> _addConversion() async {
     if (_formKey.currentState!.validate()) {
       final db = context.read<AppDatabase>();
-      await db.into(db.unitConversions).insert(
+      await db
+          .into(db.unitConversions)
+          .insert(
             UnitConversionsCompanion.insert(
               productId: widget.productId,
               unitName: _unitNameController.text,
               factor: double.parse(_factorController.text),
-              barcode: drift.Value(_barcodeController.text.isEmpty ? null : _barcodeController.text),
-              sellPrice: drift.Value(_priceController.text.isEmpty ? null : double.parse(_priceController.text)),
+              barcode: drift.Value(
+                _barcodeController.text.isEmpty
+                    ? null
+                    : _barcodeController.text,
+              ),
+              sellPrice: drift.Value(
+                _priceController.text.isEmpty
+                    ? null
+                    : double.parse(_priceController.text),
+              ),
             ),
           );
-      
+
       _unitNameController.clear();
       _factorController.clear();
       _barcodeController.clear();
       _priceController.clear();
-      
+
       if (mounted) {
         Navigator.pop(context);
         setState(() {}); // Refresh list
@@ -63,32 +73,47 @@ class _UnitConversionPageState extends State<UnitConversionPage> {
     final db = context.watch<AppDatabase>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('تحويل الوحدات: ${widget.productName}'),
-      ),
+      appBar: AppBar(title: Text('تحويل الوحدات: ${widget.productName}')),
       body: Column(
         children: [
           Expanded(
             child: StreamBuilder<List<UnitConversion>>(
-              stream: (db.select(db.unitConversions)..where((t) => t.productId.equals(widget.productId))).watch(),
+              stream: (db.select(
+                db.unitConversions,
+              )..where((t) => t.productId.equals(widget.productId))).watch(),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
                 final conversions = snapshot.data!;
-                if (conversions.isEmpty) return const Center(child: Text('لا يوجد تحويلات مضافة بعد.'));
+                if (conversions.isEmpty) {
+                  return const Center(
+                    child: Text('لا يوجد تحويلات مضافة بعد.'),
+                  );
+                }
 
                 return ListView.builder(
                   itemCount: conversions.length,
                   itemBuilder: (context, index) {
                     final conv = conversions[index];
                     return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       child: ListTile(
-                        title: Text('${conv.unitName} (المعامل: ${conv.factor})'),
-                        subtitle: Text('باركود: ${conv.barcode ?? "لا يوجد"} | السعر: ${conv.sellPrice ?? "افتراضي"}'),
+                        title: Text(
+                          '${conv.unitName} (المعامل: ${conv.factor})',
+                        ),
+                        subtitle: Text(
+                          'باركود: ${conv.barcode ?? "لا يوجد"} | السعر: ${conv.sellPrice ?? "افتراضي"}',
+                        ),
                         trailing: IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () async {
-                            await (db.delete(db.unitConversions)..where((t) => t.id.equals(conv.id))).go();
+                            await (db.delete(
+                              db.unitConversions,
+                            )..where((t) => t.id.equals(conv.id))).go();
                           },
                         ),
                       ),
@@ -121,22 +146,32 @@ class _UnitConversionPageState extends State<UnitConversionPage> {
               children: [
                 TextFormField(
                   controller: _unitNameController,
-                  decoration: const InputDecoration(labelText: 'اسم الوحدة (مثلاً: كرتون)'),
+                  decoration: const InputDecoration(
+                    labelText: 'اسم الوحدة (مثلاً: كرتون)',
+                  ),
                   validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
                 ),
                 TextFormField(
                   controller: _factorController,
-                  decoration: const InputDecoration(labelText: 'المعامل (كم حبة تحتوي؟)'),
+                  decoration: const InputDecoration(
+                    labelText: 'المعامل (كم حبة تحتوي؟)',
+                  ),
                   keyboardType: TextInputType.number,
-                  validator: (v) => double.tryParse(v ?? '') == null ? 'أدخل رقماً صحيحاً' : null,
+                  validator: (v) => double.tryParse(v ?? '') == null
+                      ? 'أدخل رقماً صحيحاً'
+                      : null,
                 ),
                 TextFormField(
                   controller: _barcodeController,
-                  decoration: const InputDecoration(labelText: 'باركود الوحدة (اختياري)'),
+                  decoration: const InputDecoration(
+                    labelText: 'باركود الوحدة (اختياري)',
+                  ),
                 ),
                 TextFormField(
                   controller: _priceController,
-                  decoration: const InputDecoration(labelText: 'سعر الوحدة (اختياري)'),
+                  decoration: const InputDecoration(
+                    labelText: 'سعر الوحدة (اختياري)',
+                  ),
                   keyboardType: TextInputType.number,
                 ),
               ],
@@ -144,7 +179,10 @@ class _UnitConversionPageState extends State<UnitConversionPage> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
           ElevatedButton(onPressed: _addConversion, child: const Text('حفظ')),
         ],
       ),

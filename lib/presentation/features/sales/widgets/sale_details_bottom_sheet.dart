@@ -70,11 +70,17 @@ class SaleDetailsBottomSheet extends StatelessWidget {
                           children: [
                             if (sale.status == 'POSTED')
                               IconButton(
-                                icon: const Icon(Icons.assignment_return, color: Colors.orange),
+                                icon: const Icon(
+                                  Icons.assignment_return,
+                                  color: Colors.orange,
+                                ),
                                 tooltip: 'إرجاع أصناف',
                                 onPressed: () {
                                   Navigator.pop(context);
-                                  context.push('/sales/returns/new', extra: sale.id);
+                                  context.push(
+                                    '/sales/returns/new',
+                                    extra: sale.id,
+                                  );
                                 },
                               ),
                             IconButton(

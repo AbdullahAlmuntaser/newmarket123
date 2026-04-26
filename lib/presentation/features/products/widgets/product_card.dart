@@ -67,8 +67,14 @@ class ProductCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.straighten_rounded, color: Colors.orange),
-                  onPressed: () => context.push('/products/unit-conversion/${product.id}', extra: product.name),
+                  icon: const Icon(
+                    Icons.straighten_rounded,
+                    color: Colors.orange,
+                  ),
+                  onPressed: () => context.push(
+                    '/products/unit-conversion/${product.id}',
+                    extra: product.name,
+                  ),
                   tooltip: 'تحويل الوحدات',
                 ),
                 IconButton(

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:supermarket/presentation/widgets/permission_guard.dart';
 
 extension PermissionExtension on Widget {
-  Widget guard(String permissionCode, {Widget? deniedWidget}) {
+  Widget guard(String permission, {Widget? fallback}) {
     return PermissionGuard(
-      permissionCode: permissionCode,
-      deniedWidget: deniedWidget,
+      permission: permission,
+      fallback: fallback,
       child: this,
     );
   }

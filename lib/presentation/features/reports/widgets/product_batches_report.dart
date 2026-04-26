@@ -52,7 +52,15 @@ class ProductBatchesReportWidget extends StatelessWidget {
                         cells: [
                           DataCell(Text(b.batch.id.substring(0, 8))),
                           DataCell(Text(b.product.name)),
-                          DataCell(Text(b.batch.expiryDate != null ? DateFormat('yyyy-MM-dd').format(b.batch.expiryDate!) : '-')),
+                          DataCell(
+                            Text(
+                              b.batch.expiryDate != null
+                                  ? DateFormat(
+                                      'yyyy-MM-dd',
+                                    ).format(b.batch.expiryDate!)
+                                  : '-',
+                            ),
+                          ),
                           DataCell(Text(b.batch.quantity.toString())),
                           DataCell(Text(b.batch.costPrice.toStringAsFixed(2))),
                           DataCell(Text(b.warehouse?.name ?? 'افتراضي')),

@@ -75,14 +75,16 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     if (state is! PosLoaded) return;
     final currentState = state as PosLoaded;
 
-    final updatedCart = await Future.wait(currentState.cart.map((item) async {
-      final newPrice = await pricingService.calculatePrice(
-        productId: item.product.id,
-        priceListId: currentState.activePriceListId,
-        quantity: item.quantity,
-      );
-      return item.copyWith(unitPrice: newPrice);
-    }));
+    final updatedCart = await Future.wait(
+      currentState.cart.map((item) async {
+        final newPrice = await pricingService.calculatePrice(
+          productId: item.product.id,
+          priceListId: currentState.activePriceListId,
+          quantity: item.quantity,
+        );
+        return item.copyWith(unitPrice: newPrice);
+      }),
+    );
 
     emit(currentState.copyWith(cart: updatedCart));
   }
@@ -212,7 +214,9 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         )..where((t) => t.id.equals(unitConv.productId))).getSingle();
         unitName = unitConv.unitName;
         factor = Decimal.parse(unitConv.factor.toString());
-        specificPrice = unitConv.sellPrice != null ? Decimal.parse(unitConv.sellPrice.toString()) : null;
+        specificPrice = unitConv.sellPrice != null
+            ? Decimal.parse(unitConv.sellPrice.toString())
+            : null;
       } else {
         // 2. إذا لم يجد في الوحدات، يبحث في باركود المنتج الأساسي
         product = await (db.select(
@@ -238,14 +242,17 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       Decimal finalPrice;
       if (currentState.isWholesaleMode) {
         finalPrice = Decimal.parse(product.wholesalePrice.toString()) * factor;
-      } else if (currentState.activePriceListId != null && specificPrice == null) {
+      } else if (currentState.activePriceListId != null &&
+          specificPrice == null) {
         finalPrice = await pricingService.calculatePrice(
           productId: product.id,
           quantity: Decimal.one,
           priceListId: currentState.activePriceListId,
         );
       } else {
-        finalPrice = specificPrice ?? Decimal.parse(product.sellPrice.toString()) * factor;
+        finalPrice =
+            specificPrice ??
+            Decimal.parse(product.sellPrice.toString()) * factor;
       }
 
       final existingIndex = currentState.cart.indexWhere(
@@ -317,22 +324,27 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         }
 
         final unitName = event.unitName;
-        final factor = selectedUnit != null ? Decimal.parse(selectedUnit.factor.toString()) : Decimal.one;
+        final factor = selectedUnit != null
+            ? Decimal.parse(selectedUnit.factor.toString())
+            : Decimal.one;
 
         Decimal finalPrice;
         if (currentState.isWholesaleMode) {
-          finalPrice = Decimal.parse(item.product.wholesalePrice.toString()) * factor;
+          finalPrice =
+              Decimal.parse(item.product.wholesalePrice.toString()) * factor;
         } else {
-          finalPrice = selectedUnit?.sellPrice != null 
+          finalPrice = selectedUnit?.sellPrice != null
               ? Decimal.parse(selectedUnit!.sellPrice.toString())
               : Decimal.parse(item.product.sellPrice.toString()) * factor;
         }
 
-        updatedCart.add(item.copyWith(
-          unitName: unitName,
-          unitFactor: factor,
-          unitPrice: finalPrice,
-        ));
+        updatedCart.add(
+          item.copyWith(
+            unitName: unitName,
+            unitFactor: factor,
+            unitPrice: finalPrice,
+          ),
+        );
       } else {
         updatedCart.add(item);
       }
@@ -352,19 +364,22 @@ class PosBloc extends Bloc<PosEvent, PosState> {
   void _onToggleWholesale(ToggleWholesaleMode event, Emitter<PosState> emit) {
     if (state is! PosLoaded) return;
     final currentState = state as PosLoaded;
-    
+
     final newCart = currentState.cart.map((item) {
       Decimal newPrice;
       if (event.isWholesale) {
-        newPrice = Decimal.parse(item.product.wholesalePrice.toString()) * item.unitFactor;
+        newPrice =
+            Decimal.parse(item.product.wholesalePrice.toString()) *
+            item.unitFactor;
       } else {
         final unitInfo = item.availableUnits.cast<UnitConversion?>().firstWhere(
           (u) => u?.unitName == item.unitName,
           orElse: () => null,
         );
-        newPrice = (unitInfo?.sellPrice != null) 
-            ? Decimal.parse(unitInfo!.sellPrice.toString()) 
-            : Decimal.parse(item.product.sellPrice.toString()) * item.unitFactor;
+        newPrice = (unitInfo?.sellPrice != null)
+            ? Decimal.parse(unitInfo!.sellPrice.toString())
+            : Decimal.parse(item.product.sellPrice.toString()) *
+                  item.unitFactor;
       }
       return item.copyWith(isWholesale: event.isWholesale, unitPrice: newPrice);
     }).toList();
@@ -408,8 +423,10 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         return SaleItemsCompanion.insert(
           saleId: saleId,
           productId: item.product.id,
-          quantity: item.quantity.toDouble(), // Quantity is already in base units from CartItem
-          price: item.unitPrice.toDouble(), // Unit price is already the price for the selected unit
+          quantity: item.quantity
+              .toDouble(), // Quantity is already in base units from CartItem
+          price: item.unitPrice
+              .toDouble(), // Unit price is already the price for the selected unit
           unitName: Value(item.unitName),
           unitFactor: Value(item.unitFactor.toDouble()),
           syncStatus: const Value(1),
@@ -447,4 +464,3 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     }
   }
 }
-

@@ -13,7 +13,9 @@ class WarehouseManagerPage extends StatelessWidget {
       body: StreamBuilder<List<Employee>>(
         stream: db.select(db.employees).watch(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
           final employees = snapshot.data!;
           return ListView.builder(
             itemCount: employees.length,
@@ -21,7 +23,9 @@ class WarehouseManagerPage extends StatelessWidget {
               final emp = employees[index];
               return ListTile(
                 title: Text(emp.name),
-                subtitle: Text('الكود: ${emp.employeeCode} | الوظيفة: ${emp.jobTitle ?? 'غير محدد'}'),
+                subtitle: Text(
+                  'الكود: ${emp.employeeCode} | الوظيفة: ${emp.jobTitle ?? 'غير محدد'}',
+                ),
                 trailing: const Icon(Icons.person),
               );
             },

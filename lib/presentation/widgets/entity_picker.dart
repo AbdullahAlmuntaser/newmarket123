@@ -4,7 +4,7 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
 
 /// A reusable widget for selecting an existing customer/supplier or adding a new one.
-/// 
+///
 /// Features:
 /// - Searchable dropdown for existing entities
 /// - Option to add a new entity directly
@@ -87,7 +87,7 @@ class _EntityPickerDropdownState extends State<EntityPickerDropdown> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -99,12 +99,12 @@ class _EntityPickerDropdownState extends State<EntityPickerDropdown> {
                 icon: const Icon(Icons.search, size: 18),
                 label: Text(widget.selectLabel),
                 style: OutlinedButton.styleFrom(
-                  backgroundColor: !_isAddingNew 
-                    ? theme.colorScheme.primaryContainer 
-                    : null,
-                  foregroundColor: !_isAddingNew 
-                    ? theme.colorScheme.onPrimaryContainer 
-                    : null,
+                  backgroundColor: !_isAddingNew
+                      ? theme.colorScheme.primaryContainer
+                      : null,
+                  foregroundColor: !_isAddingNew
+                      ? theme.colorScheme.onPrimaryContainer
+                      : null,
                 ),
               ),
             ),
@@ -115,19 +115,19 @@ class _EntityPickerDropdownState extends State<EntityPickerDropdown> {
                 icon: const Icon(Icons.add, size: 18),
                 label: Text(widget.addNewLabel),
                 style: OutlinedButton.styleFrom(
-                  backgroundColor: _isAddingNew 
-                    ? theme.colorScheme.primaryContainer 
-                    : null,
-                  foregroundColor: _isAddingNew 
-                    ? theme.colorScheme.onPrimaryContainer 
-                    : null,
+                  backgroundColor: _isAddingNew
+                      ? theme.colorScheme.primaryContainer
+                      : null,
+                  foregroundColor: _isAddingNew
+                      ? theme.colorScheme.onPrimaryContainer
+                      : null,
                 ),
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        
+
         if (!_isAddingNew) ...[
           TextField(
             controller: _searchController,
@@ -137,29 +137,33 @@ class _EntityPickerDropdownState extends State<EntityPickerDropdown> {
               prefixIcon: const Icon(Icons.search),
               border: const OutlineInputBorder(),
               suffixIcon: _searchQuery.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() => _searchQuery = '');
-                    },
-                  )
-                : null,
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                    )
+                  : null,
             ),
             onChanged: (v) => setState(() => _searchQuery = v),
           ),
           const SizedBox(height: 8),
-          
+
           StreamBuilder<List<dynamic>>(
             stream: widget.streamBuilder(widget.db),
             builder: (context, snapshot) {
               final allItems = snapshot.data ?? [];
               final filtered = _searchQuery.isEmpty
-                ? allItems
-                : allItems.where((item) => 
-                    widget.itemText(item).toLowerCase()
-                      .contains(_searchQuery.toLowerCase())
-                  ).toList();
+                  ? allItems
+                  : allItems
+                        .where(
+                          (item) => widget
+                              .itemText(item)
+                              .toLowerCase()
+                              .contains(_searchQuery.toLowerCase()),
+                        )
+                        .toList();
 
               return Container(
                 decoration: BoxDecoration(
@@ -171,13 +175,23 @@ class _EntityPickerDropdownState extends State<EntityPickerDropdown> {
                   decoration: InputDecoration(
                     labelText: widget.labelText,
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                   ),
                   isExpanded: true,
-                  items: filtered.map((item) => DropdownMenuItem<dynamic>(
-                    value: item,
-                    child: Text(widget.itemText(item), overflow: TextOverflow.ellipsis),
-                  )).toList(),
+                  items: filtered
+                      .map(
+                        (item) => DropdownMenuItem<dynamic>(
+                          value: item,
+                          child: Text(
+                            widget.itemText(item),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
+                      .toList(),
                   onChanged: widget.onChanged,
                 ),
               );
@@ -264,14 +278,18 @@ class CustomerPicker extends StatelessWidget {
 
   Future<Customer?> _addNewCustomer(String name) async {
     final id = drift.Value(const Uuid().v4());
-    await db.into(db.customers).insert(
-      CustomersCompanion.insert(
-        id: id,
-        name: name,
-        createdAt: drift.Value(DateTime.now()),
-      ),
-    );
-    final result = await (db.select(db.customers)..where((c) => c.name.equals(name))).get();
+    await db
+        .into(db.customers)
+        .insert(
+          CustomersCompanion.insert(
+            id: id,
+            name: name,
+            createdAt: drift.Value(DateTime.now()),
+          ),
+        );
+    final result = await (db.select(
+      db.customers,
+    )..where((c) => c.name.equals(name))).get();
     return result.isNotEmpty ? result.first : null;
   }
 
@@ -308,14 +326,18 @@ class SupplierPicker extends StatelessWidget {
 
   Future<Supplier?> _addNewSupplier(String name) async {
     final id = drift.Value(const Uuid().v4());
-    await db.into(db.suppliers).insert(
-      SuppliersCompanion.insert(
-        id: id,
-        name: name,
-        createdAt: drift.Value(DateTime.now()),
-      ),
-    );
-    final result = await (db.select(db.suppliers)..where((s) => s.name.equals(name))).get();
+    await db
+        .into(db.suppliers)
+        .insert(
+          SuppliersCompanion.insert(
+            id: id,
+            name: name,
+            createdAt: drift.Value(DateTime.now()),
+          ),
+        );
+    final result = await (db.select(
+      db.suppliers,
+    )..where((s) => s.name.equals(name))).get();
     return result.isNotEmpty ? result.first : null;
   }
 

@@ -49,7 +49,13 @@ class InventoryTransactionsReportWidget extends StatelessWidget {
                     rows: transactions.map((t) {
                       return DataRow(
                         cells: [
-                          DataCell(Text(DateFormat('yyyy-MM-dd HH:mm').format(t.transaction.date))),
+                          DataCell(
+                            Text(
+                              DateFormat(
+                                'yyyy-MM-dd HH:mm',
+                              ).format(t.transaction.date),
+                            ),
+                          ),
                           DataCell(Text(t.product.name)),
                           DataCell(Text(t.transaction.type)),
                           DataCell(Text(t.transaction.quantity.toString())),

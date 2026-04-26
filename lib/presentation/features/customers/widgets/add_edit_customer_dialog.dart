@@ -37,9 +37,15 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
     _creditLimitController = TextEditingController(
       text: widget.customer?.creditLimit.toString() ?? '0.0',
     );
-    _taxNumberController = TextEditingController(text: widget.customer?.taxNumber ?? '');
-    _addressController = TextEditingController(text: widget.customer?.address ?? '');
-    _emailController = TextEditingController(text: widget.customer?.email ?? '');
+    _taxNumberController = TextEditingController(
+      text: widget.customer?.taxNumber ?? '',
+    );
+    _addressController = TextEditingController(
+      text: widget.customer?.address ?? '',
+    );
+    _emailController = TextEditingController(
+      text: widget.customer?.email ?? '',
+    );
     _customerType = widget.customer?.customerType ?? 'RETAIL';
     _selectedCurrencyId = widget.customer?.currencyId;
     _exchangeRateController = TextEditingController(
@@ -51,10 +57,16 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
 
   Future<void> _loadCurrencies() async {
     final db = Provider.of<AppDatabase>(context, listen: false);
-    final fetchedCurrencies = await db.customSelect('SELECT * FROM currencies').map((row) {
-      return Currency.fromJson(row.data);
-    }).get();
-    final baseCurrency = fetchedCurrencies.firstWhere((c) => c.isBase, orElse: () => fetchedCurrencies.first);
+    final fetchedCurrencies = await db
+        .customSelect('SELECT * FROM currencies')
+        .map((row) {
+          return Currency.fromJson(row.data);
+        })
+        .get();
+    final baseCurrency = fetchedCurrencies.firstWhere(
+      (c) => c.isBase,
+      orElse: () => fetchedCurrencies.first,
+    );
 
     setState(() {
       _currencies = fetchedCurrencies;
@@ -65,8 +77,11 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
         _exchangeRateController.text = baseCurrency.exchangeRate.toString();
       } else {
         // Ensure selected currency is in the list and update exchange rate if needed
-        if (_selectedCurrencyId != null && _currencies.any((c) => c.code == _selectedCurrencyId)) {
-          final selected = _currencies.firstWhere((c) => c.code == _selectedCurrencyId);
+        if (_selectedCurrencyId != null &&
+            _currencies.any((c) => c.code == _selectedCurrencyId)) {
+          final selected = _currencies.firstWhere(
+            (c) => c.code == _selectedCurrencyId,
+          );
           _selectedCurrencyId = selected.code;
           _exchangeRateController.text = selected.exchangeRate.toString();
         } else if (_currencies.isNotEmpty) {
@@ -155,7 +170,9 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
                 decoration: InputDecoration(
                   labelText: "عملة العميل",
                   prefixIcon: const Icon(Icons.attach_money),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 items: _currencies.map((Currency currency) {
                   return DropdownMenuItem<String>(
@@ -168,28 +185,34 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
                     _selectedCurrencyId = value;
                     final selectedCurrency = _currencies.firstWhere(
                       (c) => c.code == value,
-                      orElse: () => _baseCurrency ?? Currency(
-                        id: 'USD',
-                        code: 'USD',
-                        name: 'US Dollar',
-                        exchangeRate: 1.0,
-                        isBase: false,
-                        createdAt: DateTime.now(),
-                        updatedAt: DateTime.now(),
-                        syncStatus: 1,
-                      ), // Fallback
+                      orElse: () =>
+                          _baseCurrency ??
+                          Currency(
+                            id: 'USD',
+                            code: 'USD',
+                            name: 'US Dollar',
+                            exchangeRate: 1.0,
+                            isBase: false,
+                            createdAt: DateTime.now(),
+                            updatedAt: DateTime.now(),
+                            syncStatus: 1,
+                          ), // Fallback
                     );
-                    _exchangeRateController.text = selectedCurrency.exchangeRate.toString();
+                    _exchangeRateController.text = selectedCurrency.exchangeRate
+                        .toString();
                   });
                 },
-                validator: (value) => value == null ? "الرجاء اختيار عملة" : null,
+                validator: (value) =>
+                    value == null ? "الرجاء اختيار عملة" : null,
               ),
               const SizedBox(height: 16),
               _buildTextField(
                 controller: _exchangeRateController,
                 label: "سعر الصرف",
                 icon: Icons.swap_horiz,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return "الرجاء إدخال سعر الصرف";
@@ -206,7 +229,9 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
                 decoration: InputDecoration(
                   labelText: "نوع العميل",
                   prefixIcon: const Icon(Icons.category),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 items: const [
                   DropdownMenuItem(value: 'RETAIL', child: Text("تجزئة")),
@@ -230,7 +255,9 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           ),
           onPressed: _saveCustomer,
@@ -278,7 +305,9 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
         isActive: const drift.Value(true),
         syncStatus: const drift.Value(1),
         currencyId: drift.Value(_selectedCurrencyId),
-        exchangeRate: drift.Value(double.tryParse(_exchangeRateController.text) ?? 1.0),
+        exchangeRate: drift.Value(
+          double.tryParse(_exchangeRateController.text) ?? 1.0,
+        ),
       );
       Navigator.pop(context, companion);
     }

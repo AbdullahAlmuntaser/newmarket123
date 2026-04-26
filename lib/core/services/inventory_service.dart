@@ -21,11 +21,7 @@ class BatchReport {
   final Product product;
   final Warehouse? warehouse;
 
-  BatchReport({
-    required this.batch,
-    required this.product,
-    this.warehouse,
-  });
+  BatchReport({required this.batch, required this.product, this.warehouse});
 }
 
 class InventoryService {
@@ -44,14 +40,24 @@ class InventoryService {
     String? warehouseId,
     int limit = 100,
   }) {
-    final query = db.select(db.inventoryTransactions).join([
-      drift.innerJoin(db.products, db.products.id.equalsExp(db.inventoryTransactions.productId)),
-      drift.leftOuterJoin(db.warehouses, db.warehouses.id.equalsExp(db.inventoryTransactions.warehouseId)),
-    ])
-      ..orderBy([
-        drift.OrderingTerm(expression: db.inventoryTransactions.date, mode: drift.OrderingMode.desc),
-      ])
-      ..limit(limit);
+    final query =
+        db.select(db.inventoryTransactions).join([
+            drift.innerJoin(
+              db.products,
+              db.products.id.equalsExp(db.inventoryTransactions.productId),
+            ),
+            drift.leftOuterJoin(
+              db.warehouses,
+              db.warehouses.id.equalsExp(db.inventoryTransactions.warehouseId),
+            ),
+          ])
+          ..orderBy([
+            drift.OrderingTerm(
+              expression: db.inventoryTransactions.date,
+              mode: drift.OrderingMode.desc,
+            ),
+          ])
+          ..limit(limit);
 
     if (productId != null) {
       query.where(db.inventoryTransactions.productId.equals(productId));
@@ -77,8 +83,14 @@ class InventoryService {
     String? warehouseId,
   }) {
     final query = db.select(db.productBatches).join([
-      drift.innerJoin(db.products, db.products.id.equalsExp(db.productBatches.productId)),
-      drift.leftOuterJoin(db.warehouses, db.warehouses.id.equalsExp(db.productBatches.warehouseId)),
+      drift.innerJoin(
+        db.products,
+        db.products.id.equalsExp(db.productBatches.productId),
+      ),
+      drift.leftOuterJoin(
+        db.warehouses,
+        db.warehouses.id.equalsExp(db.productBatches.warehouseId),
+      ),
     ]);
 
     if (productId != null) {
@@ -89,7 +101,10 @@ class InventoryService {
     }
 
     query.orderBy([
-      drift.OrderingTerm(expression: db.productBatches.createdAt, mode: drift.OrderingMode.desc),
+      drift.OrderingTerm(
+        expression: db.productBatches.createdAt,
+        mode: drift.OrderingMode.desc,
+      ),
     ]);
 
     return query.watch().map((rows) {
@@ -112,7 +127,6 @@ class InventoryService {
   Stream<List<Product>> watchLowStockProducts() {
     return db.watchLowStockProducts();
   }
-
 
   /// تنفيذ عملية جرد وتسوية للمخزون
   /// [auditCompanion] رأس الجرد (التاريخ، الملاحظات)
@@ -251,7 +265,7 @@ class InventoryService {
     );
     final adjustmentAccount = await dao.getAccountByCode(
       AccountingService.codeCashOverShort,
-    ); 
+    );
 
     if (inventoryAccount == null || adjustmentAccount == null) {
       throw Exception('Missing GL accounts for inventory adjustment.');
@@ -303,5 +317,35 @@ class InventoryService {
     }
 
     await dao.createEntry(entry, lines);
+  }
+
+  Future<void> deductStock({
+    required String itemId,
+    required double quantity,
+    required String warehouseId,
+    String? referenceId,
+  }) async {
+    final product = await (db.select(
+      db.products,
+    )..where((p) => p.id.equals(itemId))).getSingleOrNull();
+    if (product == null) throw Exception('Product not found');
+
+    final newStock = product.stock - quantity;
+    if (newStock < 0) throw Exception('Insufficient stock');
+
+    await (db.update(db.products)..where((p) => p.id.equals(itemId))).write(
+      ProductsCompanion(stock: drift.Value(newStock)),
+    );
+
+    await db
+        .into(db.stockMovements)
+        .insert(
+          StockMovementsCompanion.insert(
+            productId: itemId,
+            quantity: -quantity,
+            type: 'SALE',
+            referenceId: drift.Value(referenceId),
+          ),
+        );
   }
 }

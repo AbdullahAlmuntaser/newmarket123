@@ -144,7 +144,9 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
       ..limit(limit);
 
     final rows = await query.get();
-    final productIds = rows.map((row) => row.read(saleItems.productId)!).toList();
+    final productIds = rows
+        .map((row) => row.read(saleItems.productId)!)
+        .toList();
 
     if (productIds.isEmpty) return [];
 
@@ -161,8 +163,7 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
     final query = select(saleItems).join([
       innerJoin(sales, sales.id.equalsExp(saleItems.saleId)),
       innerJoin(products, products.id.equalsExp(saleItems.productId)),
-    ])
-      ..where(sales.createdAt.isBetweenValues(reportStartDate, reportEndDate));
+    ])..where(sales.createdAt.isBetweenValues(reportStartDate, reportEndDate));
 
     final rows = await query.get();
     final Map<String, ProductProfitability> profitabilityMap = {};
@@ -170,10 +171,10 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
     for (final row in rows) {
       final item = row.readTable(saleItems);
       final product = row.readTable(products);
-      
+
       final revenue = item.quantity * item.price;
       // Use product buyPrice as fallback, though batches are more accurate
-      final cost = item.quantity * product.buyPrice; 
+      final cost = item.quantity * product.buyPrice;
 
       if (profitabilityMap.containsKey(product.id)) {
         final current = profitabilityMap[product.id]!;
@@ -200,9 +201,9 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
   }
 
   Future<List<TopProduct>> getTopSellingProducts({int limit = 5}) async {
-    final query = select(saleItems).join([
-      innerJoin(products, products.id.equalsExp(saleItems.productId)),
-    ]);
+    final query = select(
+      saleItems,
+    ).join([innerJoin(products, products.id.equalsExp(saleItems.productId))]);
 
     final rows = await query.get();
     final Map<String, TopProduct> topProductsMap = {};
@@ -240,7 +241,8 @@ class ProductProfitability {
   final double totalCost;
 
   double get netProfit => totalRevenue - totalCost;
-  double get profitMargin => totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+  double get profitMargin =>
+      totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
   ProductProfitability({
     required this.productId,

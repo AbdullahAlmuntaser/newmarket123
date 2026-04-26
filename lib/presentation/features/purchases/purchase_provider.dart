@@ -97,7 +97,10 @@ class PurchaseItemData {
   });
 
   double get subtotal => quantity * unitPrice;
-  double get total => subtotal - discountAmount + (subtotal - discountAmount) * (taxPercent / 100);
+  double get total =>
+      subtotal -
+      discountAmount +
+      (subtotal - discountAmount) * (taxPercent / 100);
 }
 
 class PurchaseProvider with ChangeNotifier {
@@ -116,7 +119,8 @@ class PurchaseProvider with ChangeNotifier {
   List<PurchaseAlert> get alerts => _alerts;
 
   /// Get product smart info for a specific product
-  ProductSmartInfo? getProductInfo(String productId) => _productInfoCache[productId];
+  ProductSmartInfo? getProductInfo(String productId) =>
+      _productInfoCache[productId];
 
   Supplier? selectedSupplier;
   Warehouse? selectedWarehouse;
@@ -133,16 +137,30 @@ class PurchaseProvider with ChangeNotifier {
   final List<PurchaseItemData> items = [];
 
   double get subtotal => items.fold(0.0, (sum, item) => sum + item.subtotal);
-  double get totalDiscount => items.fold(0.0, (sum, item) => sum + item.discountAmount) + headerDiscount;
-  double get totalTax => items.fold(0.0, (sum, item) => sum + (item.subtotal - item.discountAmount) * (item.taxPercent / 100));
-  double get grandTotal => subtotal - totalDiscount + totalTax + shippingCost + otherExpenses + landedCosts;
+  double get totalDiscount =>
+      items.fold(0.0, (sum, item) => sum + item.discountAmount) +
+      headerDiscount;
+  double get totalTax => items.fold(
+    0.0,
+    (sum, item) =>
+        sum + (item.subtotal - item.discountAmount) * (item.taxPercent / 100),
+  );
+  double get grandTotal =>
+      subtotal -
+      totalDiscount +
+      totalTax +
+      shippingCost +
+      otherExpenses +
+      landedCosts;
 
   void addItem(Product product) {
-    items.add(PurchaseItemData(
-      product: product,
-      unitPrice: product.buyPrice,
-      taxPercent: product.taxRate,
-    ));
+    items.add(
+      PurchaseItemData(
+        product: product,
+        unitPrice: product.buyPrice,
+        taxPercent: product.taxRate,
+      ),
+    );
     notifyListeners();
   }
 
@@ -151,7 +169,15 @@ class PurchaseProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void updateItem(int index, {double? quantity, double? unitPrice, double? discount, DateTime? expiry, String? batch, UnitConversion? unit}) {
+  void updateItem(
+    int index, {
+    double? quantity,
+    double? unitPrice,
+    double? discount,
+    DateTime? expiry,
+    String? batch,
+    UnitConversion? unit,
+  }) {
     if (quantity != null) items[index].quantity = quantity;
     if (unitPrice != null) items[index].unitPrice = unitPrice;
     if (discount != null) items[index].discountAmount = discount;
@@ -163,49 +189,40 @@ class PurchaseProvider with ChangeNotifier {
 
   Future<void> savePurchase({bool post = false, String? userId}) async {
     if (items.isEmpty) throw Exception('يجب إضافة أصناف أولاً');
-    if (selectedSupplier == null && paymentType == 'credit') throw Exception('يجب اختيار مورد للبيع الآجل');
+    if (selectedSupplier == null && paymentType == 'credit') {
+      throw Exception('يجب اختيار مورد للبيع الآجل');
+    }
 
     final purchaseId = const Uuid().v4();
-    final companion = PurchasesCompanion.insert(
-      id: Value(purchaseId),
-      supplierId: Value(selectedSupplier?.id),
-      total: grandTotal,
-      tax: Value(totalTax),
-      discount: Value(totalDiscount),
-      landedCosts: Value(landedCosts),
-      shippingCost: Value(shippingCost),
-      otherExpenses: Value(otherExpenses),
-      invoiceNumber: Value(invoiceNumber),
-      purchaseType: Value(paymentType),
-      date: Value(selectedDate),
-      isCredit: Value(paymentType == 'credit'),
-      warehouseId: Value(selectedWarehouse?.id),
-      notes: Value(notes),
-      status: Value(post ? 'POSTED' : 'DRAFT'),
-    );
 
-    final itemCompanions = items.map((item) => PurchaseItemsCompanion.insert(
-      purchaseId: purchaseId,
-      productId: item.product.id,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      price: item.total,
-      discount: Value(item.discountAmount),
-      tax: Value((item.subtotal - item.discountAmount) * (item.taxPercent / 100)),
-      unitId: Value(item.selectedUnit?.unitName),
-      unitFactor: Value(item.selectedUnit?.factor ?? 1.0),
-      batchNumber: Value(item.batchNumber),
-      expiryDate: Value(item.expiryDate),
-    )).toList();
+    final itemCompanions = items
+        .map(
+          (item) => PurchaseItemsCompanion.insert(
+            purchaseId: purchaseId,
+            productId: item.product.id,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            price: item.total,
+            discount: Value(item.discountAmount),
+            tax: Value(
+              (item.subtotal - item.discountAmount) * (item.taxPercent / 100),
+            ),
+            unitId: Value(item.selectedUnit?.unitName),
+            unitFactor: Value(item.selectedUnit?.factor ?? 1.0),
+            batchNumber: Value(item.batchNumber),
+            expiryDate: Value(item.expiryDate),
+          ),
+        )
+        .toList();
 
     await purchaseService.createPurchase(
-      purchaseCompanion: companion,
-      itemsCompanions: itemCompanions,
-      userId: userId,
+      supplierId: selectedSupplier!.id,
+      items: itemCompanions,
+      total: grandTotal,
     );
 
     if (post) {
-      await purchaseService.postPurchase(purchaseId: purchaseId, userId: userId);
+      await purchaseService.postPurchase(purchaseId);
     }
   }
 
@@ -242,10 +259,11 @@ class PurchaseProvider with ChangeNotifier {
     );
 
     // Get purchase history for this supplier
-    final purchases = await (db.select(db.purchases)
-          ..where((p) => p.supplierId.equals(supplier.id))
-          ..orderBy([(p) => OrderingTerm.desc(p.date)]))
-        .get();
+    final purchases =
+        await (db.select(db.purchases)
+              ..where((p) => p.supplierId.equals(supplier.id))
+              ..orderBy([(p) => OrderingTerm.desc(p.date)]))
+            .get();
 
     if (purchases.isNotEmpty) {
       double totalAmount = 0;
@@ -271,26 +289,30 @@ class PurchaseProvider with ChangeNotifier {
   Future<void> _loadLastPurchasePricesForSupplier(String supplierId) async {
     // Get all products
     final products = await db.select(db.products).get();
-    
+
     for (var product in products) {
       // Get last purchase of this product from this supplier
-      final query = db.select(db.purchases).join([
-        innerJoin(db.purchaseItems, db.purchaseItems.purchaseId.equalsExp(db.purchases.id)),
-      ])
-        ..where(db.purchases.supplierId.equals(supplierId))
-        ..where(db.purchaseItems.productId.equals(product.id))
-        ..orderBy([OrderingTerm.desc(db.purchases.date)])
-        ..limit(1);
-      
+      final query =
+          db.select(db.purchases).join([
+              innerJoin(
+                db.purchaseItems,
+                db.purchaseItems.purchaseId.equalsExp(db.purchases.id),
+              ),
+            ])
+            ..where(db.purchases.supplierId.equals(supplierId))
+            ..where(db.purchaseItems.productId.equals(product.id))
+            ..orderBy([OrderingTerm.desc(db.purchases.date)])
+            ..limit(1);
+
       final lastPurchase = await query.getSingleOrNull();
 
       if (lastPurchase != null) {
         final purchase = lastPurchase.readTable(db.purchases);
         final item = lastPurchase.readTable(db.purchaseItems);
-        
+
         // Calculate average cost from purchase items
         final avgCost = await _calculateAverageCost(product.id);
-        
+
         _productInfoCache[product.id] = ProductSmartInfo(
           currentStock: product.stock,
           averageCost: avgCost,
@@ -308,13 +330,14 @@ class PurchaseProvider with ChangeNotifier {
   Future<void> loadProductInfo(Product product, {String? supplierId}) async {
     // Get current stock from inventory
     double currentStock = product.stock;
-    
+
     // Get inventory transactions for this product
-    final transactions = await (db.select(db.inventoryTransactions)
-          ..where((t) => t.productId.equals(product.id))
-          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
-        .get();
-    
+    final transactions =
+        await (db.select(db.inventoryTransactions)
+              ..where((t) => t.productId.equals(product.id))
+              ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+            .get();
+
     // Calculate actual stock from transactions
     double calculatedStock = 0;
     for (var t in transactions) {
@@ -332,14 +355,18 @@ class PurchaseProvider with ChangeNotifier {
     // Get last purchase info
     double? lastPrice;
     DateTime? lastDate;
-    
-    final query = db.select(db.purchases).join([
-      innerJoin(db.purchaseItems, db.purchaseItems.purchaseId.equalsExp(db.purchases.id)),
-    ])
-      ..where(db.purchaseItems.productId.equals(product.id))
-      ..orderBy([OrderingTerm.desc(db.purchases.date)])
-      ..limit(1);
-    
+
+    final query =
+        db.select(db.purchases).join([
+            innerJoin(
+              db.purchaseItems,
+              db.purchaseItems.purchaseId.equalsExp(db.purchases.id),
+            ),
+          ])
+          ..where(db.purchaseItems.productId.equals(product.id))
+          ..orderBy([OrderingTerm.desc(db.purchases.date)])
+          ..limit(1);
+
     final lastPurchase = await query.getSingleOrNull();
 
     if (lastPurchase != null) {
@@ -365,9 +392,9 @@ class PurchaseProvider with ChangeNotifier {
 
   /// Calculate average cost of a product from all purchases
   Future<double> _calculateAverageCost(String productId) async {
-    final items = await (db.select(db.purchaseItems)
-          ..where((i) => i.productId.equals(productId)))
-        .get();
+    final items = await (db.select(
+      db.purchaseItems,
+    )..where((i) => i.productId.equals(productId))).get();
 
     if (items.isEmpty) return 0;
 
@@ -384,13 +411,20 @@ class PurchaseProvider with ChangeNotifier {
 
   /// Get price history for a product
   Future<List<ProductPriceHistory>> _getPriceHistory(String productId) async {
-    final query = db.select(db.purchases).join([
-      innerJoin(db.purchaseItems, db.purchaseItems.purchaseId.equalsExp(db.purchases.id)),
-      leftOuterJoin(db.suppliers, db.suppliers.id.equalsExp(db.purchases.supplierId)),
-    ])
-      ..where(db.purchaseItems.productId.equals(productId))
-      ..orderBy([OrderingTerm.desc(db.purchases.date)])
-      ..limit(10);
+    final query =
+        db.select(db.purchases).join([
+            innerJoin(
+              db.purchaseItems,
+              db.purchaseItems.purchaseId.equalsExp(db.purchases.id),
+            ),
+            leftOuterJoin(
+              db.suppliers,
+              db.suppliers.id.equalsExp(db.purchases.supplierId),
+            ),
+          ])
+          ..where(db.purchaseItems.productId.equals(productId))
+          ..orderBy([OrderingTerm.desc(db.purchases.date)])
+          ..limit(10);
 
     final result = await query.get();
 
@@ -399,12 +433,14 @@ class PurchaseProvider with ChangeNotifier {
       final purchase = row.readTable(db.purchases);
       final item = row.readTable(db.purchaseItems);
       final supplier = row.readTableOrNull(db.suppliers);
-      
-      history.add(ProductPriceHistory(
-        price: item.unitPrice,
-        date: purchase.date,
-        supplierName: supplier?.name ?? 'غير محدد',
-      ));
+
+      history.add(
+        ProductPriceHistory(
+          price: item.unitPrice,
+          date: purchase.date,
+          supplierName: supplier?.name ?? 'غير محدد',
+        ),
+      );
     }
 
     return history;
@@ -418,59 +454,75 @@ class PurchaseProvider with ChangeNotifier {
 
     for (var item in items) {
       final productInfo = _productInfoCache[item.product.id];
-      
+
       if (productInfo != null) {
         // Check if price is higher than average
-        if (item.unitPrice > productInfo.averageCost && productInfo.averageCost > 0) {
-          final diff = ((item.unitPrice - productInfo.averageCost) / productInfo.averageCost * 100);
+        if (item.unitPrice > productInfo.averageCost &&
+            productInfo.averageCost > 0) {
+          final diff =
+              ((item.unitPrice - productInfo.averageCost) /
+              productInfo.averageCost *
+              100);
           if (diff > 10) {
-            _alerts.add(PurchaseAlert(
-              type: PurchaseAlertType.highPrice,
-              message: 'السعر أعلى من متوسط التكلفة بنسبة ${diff.toStringAsFixed(1)}%',
-              isWarning: true,
-              productId: item.product.id,
-            ));
+            _alerts.add(
+              PurchaseAlert(
+                type: PurchaseAlertType.highPrice,
+                message:
+                    'السعر أعلى من متوسط التكلفة بنسبة ${diff.toStringAsFixed(1)}%',
+                isWarning: true,
+                productId: item.product.id,
+              ),
+            );
           }
         }
 
         // Check if price is significantly lower
-        if (item.unitPrice < productInfo.averageCost * 0.7 && productInfo.averageCost > 0) {
-          _alerts.add(PurchaseAlert(
-            type: PurchaseAlertType.lowPrice,
-            message: 'السعر أقل بكثير من متوسط التكلفة',
-            isWarning: false,
-            productId: item.product.id,
-          ));
+        if (item.unitPrice < productInfo.averageCost * 0.7 &&
+            productInfo.averageCost > 0) {
+          _alerts.add(
+            PurchaseAlert(
+              type: PurchaseAlertType.lowPrice,
+              message: 'السعر أقل بكثير من متوسط التكلفة',
+              isWarning: false,
+              productId: item.product.id,
+            ),
+          );
         }
 
         // Check for large quantity
         if (item.quantity > 100) {
-          _alerts.add(PurchaseAlert(
-            type: PurchaseAlertType.largeQuantity,
-            message: 'كمية كبيرة: ${item.quantity}',
-            isWarning: true,
-            productId: item.product.id,
-          ));
+          _alerts.add(
+            PurchaseAlert(
+              type: PurchaseAlertType.largeQuantity,
+              message: 'كمية كبيرة: ${item.quantity}',
+              isWarning: true,
+              productId: item.product.id,
+            ),
+          );
         }
 
         // Check for low stock
         if (productInfo.currentStock < item.product.alertLimit) {
-          _alerts.add(PurchaseAlert(
-            type: PurchaseAlertType.lowStock,
-            message: 'مخزون منخفض: ${productInfo.currentStock}',
-            isWarning: true,
-            productId: item.product.id,
-          ));
+          _alerts.add(
+            PurchaseAlert(
+              type: PurchaseAlertType.lowStock,
+              message: 'مخزون منخفض: ${productInfo.currentStock}',
+              isWarning: true,
+              productId: item.product.id,
+            ),
+          );
         }
 
         // Check for high stock
         if (productInfo.currentStock > item.product.alertLimit * 10) {
-          _alerts.add(PurchaseAlert(
-            type: PurchaseAlertType.highStock,
-            message: 'مخزون مرتفع: ${productInfo.currentStock} -可以考虑减少采购',
-            isWarning: false,
-            productId: item.product.id,
-          ));
+          _alerts.add(
+            PurchaseAlert(
+              type: PurchaseAlertType.highStock,
+              message: 'مخزون مرتفع: ${productInfo.currentStock} -可以考虑减少采购',
+              isWarning: false,
+              productId: item.product.id,
+            ),
+          );
         }
       }
     }
@@ -479,25 +531,43 @@ class PurchaseProvider with ChangeNotifier {
   }
 
   /// Update item and recheck alerts
-  void updateItemAndCheckAlerts(int index, {double? quantity, double? unitPrice, double? discount, DateTime? expiry, String? batch, UnitConversion? unit}) {
-    updateItem(index, quantity: quantity, unitPrice: unitPrice, discount: discount, expiry: expiry, batch: batch, unit: unit);
+  void updateItemAndCheckAlerts(
+    int index, {
+    double? quantity,
+    double? unitPrice,
+    double? discount,
+    DateTime? expiry,
+    String? batch,
+    UnitConversion? unit,
+  }) {
+    updateItem(
+      index,
+      quantity: quantity,
+      unitPrice: unitPrice,
+      discount: discount,
+      expiry: expiry,
+      batch: batch,
+      unit: unit,
+    );
     checkAlerts();
   }
 
   /// Add item and load product info
   Future<void> addItemWithInfo(Product product) async {
-    items.add(PurchaseItemData(
-      product: product,
-      unitPrice: product.buyPrice,
-      taxPercent: product.taxRate,
-    ));
-    
+    items.add(
+      PurchaseItemData(
+        product: product,
+        unitPrice: product.buyPrice,
+        taxPercent: product.taxRate,
+      ),
+    );
+
     // Load smart info for this product
     await loadProductInfo(product);
-    
+
     // Check alerts
     checkAlerts();
-    
+
     notifyListeners();
   }
 

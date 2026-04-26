@@ -63,11 +63,15 @@ class ErpDataService {
     // Current stock and average cost from costing service
     double stock = 0;
     double avgCost = 0;
-    final product = await (db.select(db.products)..where((p) => p.id.equals(productId))).getSingleOrNull();
+    final product = await (db.select(
+      db.products,
+    )..where((p) => p.id.equals(productId))).getSingleOrNull();
 
     try {
       final valuation = await costingService.getInventoryValuation();
-      final productValuation = valuation.firstWhere((v) => v.productId == productId);
+      final productValuation = valuation.firstWhere(
+        (v) => v.productId == productId,
+      );
       stock = productValuation.totalQuantity;
       avgCost = productValuation.averageCost;
     } catch (_) {
@@ -78,7 +82,8 @@ class ErpDataService {
     // Last purchase info from PurchasesDao
     final lastItem = await db.purchasesDao.getLastPurchaseItem(productId);
     final lastPurchase = await db.purchasesDao.getLastPurchase(productId);
-    final bestPrice = await db.purchasesDao.getBestPurchasePrice(productId) ?? 0;
+    final bestPrice =
+        await db.purchasesDao.getBestPurchasePrice(productId) ?? 0;
 
     return ProductSmartData(
       currentStock: stock,
@@ -91,23 +96,33 @@ class ErpDataService {
     );
   }
 
-  Future<CustomerSmartData> getCustomerSmartData(String customerId, {String? productId}) async {
-    final customer = await (db.select(db.customers)..where((c) => c.id.equals(customerId))).getSingleOrNull();
+  Future<CustomerSmartData> getCustomerSmartData(
+    String customerId, {
+    String? productId,
+  }) async {
+    final customer = await (db.select(
+      db.customers,
+    )..where((c) => c.id.equals(customerId))).getSingleOrNull();
     final balance = customer?.balance ?? 0;
     final limit = customer?.creditLimit ?? 0;
 
-    final sales = await (db.select(db.sales)..where((s) => s.customerId.equals(customerId))).get();
+    final sales = await (db.select(
+      db.sales,
+    )..where((s) => s.customerId.equals(customerId))).get();
     final lastSale = sales.isNotEmpty ? sales.last : null;
 
     double lastPrice = 0;
     if (productId != null) {
-      final query = db.select(db.saleItems).join([
-        innerJoin(db.sales, db.sales.id.equalsExp(db.saleItems.saleId)),
-      ])
-        ..where(db.sales.customerId.equals(customerId) & db.saleItems.productId.equals(productId));
-      
+      final query =
+          db.select(db.saleItems).join([
+            innerJoin(db.sales, db.sales.id.equalsExp(db.saleItems.saleId)),
+          ])..where(
+            db.sales.customerId.equals(customerId) &
+                db.saleItems.productId.equals(productId),
+          );
+
       query.orderBy([OrderingTerm.desc(db.sales.createdAt)]);
-      
+
       final results = await query.get();
       if (results.isNotEmpty) {
         lastPrice = results.first.readTable(db.saleItems).price;
@@ -123,9 +138,14 @@ class ErpDataService {
     );
   }
 
-  Future<SupplierSmartData> getSupplierSmartData(String supplierId, {String? productId}) async {
+  Future<SupplierSmartData> getSupplierSmartData(
+    String supplierId, {
+    String? productId,
+  }) async {
     // Current balance
-    final supplier = await (db.select(db.suppliers)..where((s) => s.id.equals(supplierId))).getSingleOrNull();
+    final supplier = await (db.select(
+      db.suppliers,
+    )..where((s) => s.id.equals(supplierId))).getSingleOrNull();
     final balance = supplier?.balance ?? 0;
 
     double lastPrice = 0;
@@ -133,18 +153,31 @@ class ErpDataService {
     double bestPrice = 0;
 
     if (productId != null) {
-      final lastItem = await db.purchasesDao.getLastPurchaseItem(productId, supplierId: supplierId);
-      final lastPurchase = await db.purchasesDao.getLastPurchase(productId, supplierId: supplierId);
+      final lastItem = await db.purchasesDao.getLastPurchaseItem(
+        productId,
+        supplierId: supplierId,
+      );
+      final lastPurchase = await db.purchasesDao.getLastPurchase(
+        productId,
+        supplierId: supplierId,
+      );
       lastPrice = lastItem?.unitPrice ?? 0;
       lastDate = lastPurchase?.date;
-      
+
       // Best price from this supplier
-      final query = db.selectOnly(db.purchaseItems).join([
-        innerJoin(db.purchases, db.purchases.id.equalsExp(db.purchaseItems.purchaseId)),
-      ])
-        ..addColumns([db.purchaseItems.unitPrice.min()])
-        ..where(db.purchaseItems.productId.equals(productId) & db.purchases.supplierId.equals(supplierId));
-      
+      final query =
+          db.selectOnly(db.purchaseItems).join([
+              innerJoin(
+                db.purchases,
+                db.purchases.id.equalsExp(db.purchaseItems.purchaseId),
+              ),
+            ])
+            ..addColumns([db.purchaseItems.unitPrice.min()])
+            ..where(
+              db.purchaseItems.productId.equals(productId) &
+                  db.purchases.supplierId.equals(supplierId),
+            );
+
       final row = await query.getSingle();
       bestPrice = row.read(db.purchaseItems.unitPrice.min()) ?? 0;
     }

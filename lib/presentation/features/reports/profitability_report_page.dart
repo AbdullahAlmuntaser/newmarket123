@@ -6,7 +6,8 @@ class ProfitabilityReportPage extends StatefulWidget {
   const ProfitabilityReportPage({super.key});
 
   @override
-  State<ProfitabilityReportPage> createState() => _ProfitabilityReportPageState();
+  State<ProfitabilityReportPage> createState() =>
+      _ProfitabilityReportPageState();
 }
 
 class _ProfitabilityReportPageState extends State<ProfitabilityReportPage> {
@@ -35,28 +36,45 @@ class _ProfitabilityReportPageState extends State<ProfitabilityReportPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _report == null
-              ? const Center(child: Text('لا توجد بيانات'))
-              : Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      _buildCard('إجمالي المبيعات', _report!.totalRevenue),
-                      _buildCard('إجمالي تكلفة البضاعة', _report!.totalCost),
-                      _buildCard('إجمالي الربح', _report!.grossProfit, color: Colors.green),
-                      _buildCard('هامش الربح', _report!.profitMargin, isPercent: true),
-                    ],
+          ? const Center(child: Text('لا توجد بيانات'))
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  _buildCard('إجمالي المبيعات', _report!.totalRevenue),
+                  _buildCard('إجمالي تكلفة البضاعة', _report!.totalCost),
+                  _buildCard(
+                    'إجمالي الربح',
+                    _report!.grossProfit,
+                    color: Colors.green,
                   ),
-                ),
+                  _buildCard(
+                    'هامش الربح',
+                    _report!.profitMargin,
+                    isPercent: true,
+                  ),
+                ],
+              ),
+            ),
     );
   }
 
-  Widget _buildCard(String title, double value, {Color? color, bool isPercent = false}) {
+  Widget _buildCard(
+    String title,
+    double value, {
+    Color? color,
+    bool isPercent = false,
+  }) {
     return Card(
       child: ListTile(
         title: Text(title),
         trailing: Text(
           isPercent ? '${value.toStringAsFixed(2)}%' : value.toStringAsFixed(2),
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: color),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: color,
+          ),
         ),
       ),
     );

@@ -18,7 +18,8 @@ part 'purchases_dao.g.dart';
     PurchaseReturnItems,
   ],
 )
-class PurchasesDao extends DatabaseAccessor<AppDatabase> with _$PurchasesDaoMixin {
+class PurchasesDao extends DatabaseAccessor<AppDatabase>
+    with _$PurchasesDaoMixin {
   PurchasesDao(super.db);
 
   Stream<List<Purchase>> watchAllPurchases() => select(purchases).watch();
@@ -108,11 +109,13 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase> with _$PurchasesDaoMixi
     });
   }
 
-  Future<PurchaseItem?> getLastPurchaseItem(String productId, {String? supplierId}) async {
+  Future<PurchaseItem?> getLastPurchaseItem(
+    String productId, {
+    String? supplierId,
+  }) async {
     final query = select(purchaseItems).join([
       innerJoin(purchases, purchases.id.equalsExp(purchaseItems.purchaseId)),
-    ])
-      ..where(purchaseItems.productId.equals(productId));
+    ])..where(purchaseItems.productId.equals(productId));
 
     if (supplierId != null) {
       query.where(purchases.supplierId.equals(supplierId));
@@ -126,11 +129,16 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase> with _$PurchasesDaoMixi
     return row.readTable(purchaseItems);
   }
 
-  Future<Purchase?> getLastPurchase(String productId, {String? supplierId}) async {
+  Future<Purchase?> getLastPurchase(
+    String productId, {
+    String? supplierId,
+  }) async {
     final query = select(purchases).join([
-      innerJoin(purchaseItems, purchaseItems.purchaseId.equalsExp(purchases.id)),
-    ])
-      ..where(purchaseItems.productId.equals(productId));
+      innerJoin(
+        purchaseItems,
+        purchaseItems.purchaseId.equalsExp(purchases.id),
+      ),
+    ])..where(purchaseItems.productId.equals(productId));
 
     if (supplierId != null) {
       query.where(purchases.supplierId.equals(supplierId));
@@ -162,7 +170,9 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase> with _$PurchasesDaoMixi
   }
 
   Future<List<PurchaseOrderItem>> getPurchaseOrderItems(String orderId) {
-    return (select(purchaseOrderItems)..where((pi) => pi.orderId.equals(orderId))).get();
+    return (select(
+      purchaseOrderItems,
+    )..where((pi) => pi.orderId.equals(orderId))).get();
   }
 
   Future<void> createPurchaseOrder({

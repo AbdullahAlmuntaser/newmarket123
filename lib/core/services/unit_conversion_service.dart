@@ -27,7 +27,8 @@ class UnitConversionService {
     final productUnits = await productUnitsDao.getUnitsForProduct(productId);
     final productUnit = productUnits.firstWhere(
       (pu) => pu.unitName == unitName,
-      orElse: () => throw Exception('Unit "$unitName" not found for product $productId'),
+      orElse: () =>
+          throw Exception('Unit "$unitName" not found for product $productId'),
     );
 
     return quantity * productUnit.unitFactor;
@@ -47,7 +48,8 @@ class UnitConversionService {
     final productUnits = await productUnitsDao.getUnitsForProduct(productId);
     final productUnit = productUnits.firstWhere(
       (pu) => pu.unitName == unitName,
-      orElse: () => throw Exception('Unit "$unitName" not found for product $productId'),
+      orElse: () =>
+          throw Exception('Unit "$unitName" not found for product $productId'),
     );
 
     return baseQuantity / productUnit.unitFactor;
@@ -76,22 +78,28 @@ class UnitConversionService {
   }) async {
     final product = await productsDao.getProductById(productId);
     if (product == null) throw Exception('Product not found');
-    if (unitName == product.unit) throw Exception('Cannot add base unit as custom unit');
+    if (unitName == product.unit) {
+      throw Exception('Cannot add base unit as custom unit');
+    }
 
     final existingUnits = await productUnitsDao.getUnitsForProduct(productId);
     final exists = existingUnits.any((pu) => pu.unitName == unitName);
     if (exists) throw Exception('Unit "$unitName" already exists');
 
-    if (conversionFactor <= 0) throw Exception('Conversion factor must be positive');
+    if (conversionFactor <= 0) {
+      throw Exception('Conversion factor must be positive');
+    }
 
-    await productUnitsDao.addProductUnit(ProductUnitsCompanion.insert(
-      productId: productId,
-      unitName: unitName,
-      barcode: Value(barcode),
-      unitFactor: Value(conversionFactor),
-      buyPrice: Value(buyPrice),
-      sellPrice: Value(sellPrice),
-      isDefault: const Value(false),
-    ));
+    await productUnitsDao.addProductUnit(
+      ProductUnitsCompanion.insert(
+        productId: productId,
+        unitName: unitName,
+        barcode: Value(barcode),
+        unitFactor: Value(conversionFactor),
+        buyPrice: Value(buyPrice),
+        sellPrice: Value(sellPrice),
+        isDefault: const Value(false),
+      ),
+    );
   }
 }

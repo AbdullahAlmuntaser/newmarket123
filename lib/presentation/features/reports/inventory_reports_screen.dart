@@ -13,9 +13,7 @@ class InventoryReportsScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.inventoryReports),
-      ),
+      appBar: AppBar(title: Text(l10n.inventoryReports)),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: const [

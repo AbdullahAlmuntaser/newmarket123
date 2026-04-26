@@ -1,12 +1,14 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/services/accounting_service.dart';
 
 /// خدمة التصنيع (Bill of Materials)
 /// مسؤولة عن تجميع المنتجات من المواد الخام
 class BomService {
   final AppDatabase db;
+  final AccountingService accountingService;
 
-  BomService(this.db);
+  BomService(this.db, this.accountingService);
 
   /// الحصول على قائمة المكونات لمنتج مُصنَّع
   Future<List<BillOfMaterial>> getBomForProduct(String productId) {

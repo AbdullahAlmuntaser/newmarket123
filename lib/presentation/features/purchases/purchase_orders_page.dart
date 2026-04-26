@@ -22,7 +22,9 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
       body: StreamBuilder<List<PurchaseOrder>>(
         stream: db.select(db.purchaseOrders).watch(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
           final orders = snapshot.data!;
           return ListView.builder(
             itemCount: orders.length,
@@ -30,7 +32,9 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
               final order = orders[index];
               return ListTile(
                 title: Text('أمر شراء رقم: ${order.orderNumber ?? order.id}'),
-                subtitle: Text('التاريخ: ${order.date.toString().split(' ')[0]} | الحالة: ${order.status}'),
+                subtitle: Text(
+                  'التاريخ: ${order.date.toString().split(' ')[0]} | الحالة: ${order.status}',
+                ),
                 trailing: Text(order.total.toStringAsFixed(2)),
               );
             },
@@ -39,7 +43,9 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _isLoading ? null : () => _generateAutoOrder(),
-        label: _isLoading ? const Text('جاري الإنشاء...') : const Text('توليد أوامر شراء تلقائية'),
+        label: _isLoading
+            ? const Text('جاري الإنشاء...')
+            : const Text('توليد أوامر شراء تلقائية'),
         icon: const Icon(Icons.auto_awesome),
       ),
     );
@@ -49,9 +55,17 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
     setState(() => _isLoading = true);
     try {
       await _reorderService.generateAutoPurchaseOrders(warehouseId: '1');
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم توليد أوامر الشراء بنجاح')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم توليد أوامر الشراء بنجاح')),
+        );
+      }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('خطأ: $e')));
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

@@ -16,13 +16,17 @@ void main() {
     eventBus = EventBusService();
     service = AccountingService(db, eventBus);
     await service.seedDefaultAccounts();
-    
+
     // Seed default currency
-    await db.into(db.currencies).insert(CurrenciesCompanion.insert(
-      id: const Value('USD'),
-      code: 'USD',
-      name: 'US Dollar',
-    ));
+    await db
+        .into(db.currencies)
+        .insert(
+          CurrenciesCompanion.insert(
+            id: const Value('USD'),
+            code: 'USD',
+            name: 'US Dollar',
+          ),
+        );
   });
 
   tearDown(() async {

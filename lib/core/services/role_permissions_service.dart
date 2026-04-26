@@ -1,37 +1,24 @@
-import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/injection_container.dart';
+class PermissionService {
+  static const String canViewCost = 'view_cost';
+  static const String canDeleteInvoice = 'delete_invoice';
 
-class PermissionsService {
-  final AppDatabase db;
-  List<String> _permissions = [];
+  List<String> _userPermissions = [];
 
-  PermissionsService(this.db);
+  static final Map<String, List<String>> _rolePermissions = {
+    'admin': [canViewCost, canDeleteInvoice, 'manage_users', 'view_reports'],
+    'manager': [canViewCost, 'view_reports'],
+    'cashier': [],
+  };
 
-  /// Initializes permissions for the given role.
-  Future<void> init(String? role) async {
-    if (role == null) {
-      _permissions = [];
-      return;
+  PermissionService();
+
+  void init(String? role) {
+    _userPermissions = [];
+    if (role != null && _rolePermissions.containsKey(role)) {
+      _userPermissions.addAll(_rolePermissions[role]!);
     }
-    if (role.toLowerCase() == 'admin') {
-      _permissions = ['*']; // Super admin has all permissions
-      return;
-    }
-
-    final results = await (db.select(db.rolePermissions)
-          ..where((rp) => rp.role.equals(role)))
-        .get();
-    _permissions = results.map((rp) => rp.permissionCode).toList();
   }
 
-  /// Checks if the current role has the specified permission.
-  bool can(String action) {
-    if (_permissions.contains('*')) return true;
-    return _permissions.contains(action);
-  }
-
-  /// Static shortcut for easy access in UI
-  static bool hasPermission(String action) {
-    return sl<PermissionsService>().can(action);
-  }
+  bool hasPermission(String permission) =>
+      _userPermissions.contains(permission);
 }

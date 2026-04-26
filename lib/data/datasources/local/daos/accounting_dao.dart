@@ -52,10 +52,23 @@ class GLLineWithAccount {
   GLLineWithAccount(this.line, this.account);
 }
 
-@DriftAccessor(tables: [GLAccounts, CostCenters, GLEntries, GLLines, Reconciliations])
+@DriftAccessor(
+  tables: [GLAccounts, CostCenters, GLEntries, GLLines, Reconciliations, AccountingPeriods],
+)
 class AccountingDao extends DatabaseAccessor<AppDatabase>
     with _$AccountingDaoMixin {
   AccountingDao(super.db);
+
+  // New: Check if a date is within a closed accounting period
+  Future<bool> isDateInClosedPeriod(DateTime date) async {
+    final query = select(db.accountingPeriods)
+      ..where((p) =>
+          p.isClosed.equals(true) &
+          p.startDate.isSmallerOrEqualValue(date) &
+          p.endDate.isBiggerOrEqualValue(date));
+    final closedPeriod = await query.getSingleOrNull();
+    return closedPeriod != null;
+  }
 
   // --- GL Accounts ---
   Future<List<GLAccount>> getAllAccounts() => (select(
@@ -85,8 +98,10 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
   // --- Cost Centers ---
   Future<List<CostCenter>> getAllCostCenters() => (select(costCenters)).get();
   Stream<List<CostCenter>> watchCostCenters() => (select(costCenters)).watch();
-  Future<int> createCostCenter(CostCentersCompanion cc) => into(costCenters).insert(cc);
-  Future<bool> updateCostCenter(CostCenter cc) => update(costCenters).replace(cc);
+  Future<int> createCostCenter(CostCentersCompanion cc) =>
+      into(costCenters).insert(cc);
+  Future<bool> updateCostCenter(CostCenter cc) =>
+      update(costCenters).replace(cc);
 
   // --- GL Entries ---
   Future<void> createEntry(
@@ -96,9 +111,9 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     return transaction(() async {
       final entryRow = await into(gLEntries).insertReturning(entry);
       for (var line in lines) {
-        final lineRow = await into(gLLines).insertReturning(
-          line.copyWith(entryId: Value(entryRow.id)),
-        );
+        final lineRow = await into(
+          gLLines,
+        ).insertReturning(line.copyWith(entryId: Value(entryRow.id)));
 
         // Update AccountTransactions for running balance
         await _updateAccountRunningBalance(lineRow, entryRow);
@@ -108,20 +123,25 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
 
   Future<void> _updateAccountRunningBalance(GLLine line, GLEntry entry) async {
     // Get last running balance for this account
-    final lastTrans = await (select(db.accountTransactions)
-          ..where((t) => t.accountId.equals(line.accountId))
-          ..orderBy([
-            (t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc),
-            (t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc),
-          ])
-          ..limit(1))
-        .getSingleOrNull();
+    final lastTrans =
+        await (select(db.accountTransactions)
+              ..where((t) => t.accountId.equals(line.accountId))
+              ..orderBy([
+                (t) =>
+                    OrderingTerm(expression: t.date, mode: OrderingMode.desc),
+                (t) => OrderingTerm(
+                  expression: t.createdAt,
+                  mode: OrderingMode.desc,
+                ),
+              ])
+              ..limit(1))
+            .getSingleOrNull();
 
     double lastBalance = lastTrans?.runningBalance ?? 0;
 
-    final account = await (select(gLAccounts)
-          ..where((a) => a.id.equals(line.accountId)))
-        .getSingle();
+    final account = await (select(
+      gLAccounts,
+    )..where((a) => a.id.equals(line.accountId))).getSingle();
 
     double newBalance;
     // ASSET and EXPENSE accounts increase with Debit, decrease with Credit.
@@ -320,18 +340,15 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     DateTime asOfDate,
   ) async {
     final allAccounts = await getAllAccounts();
-
     final debitSum = gLLines.debit.sum();
     final creditSum = gLLines.credit.sum();
 
-    final query =
-        selectOnly(gLLines).join([
-            innerJoin(gLEntries, gLEntries.id.equalsExp(gLLines.entryId)),
-          ])
-          ..addColumns([gLLines.accountId, debitSum, creditSum])
-          ..where(gLEntries.date.isSmallerOrEqualValue(asOfDate));
-
-    query.groupBy([gLLines.accountId]);
+    final query = selectOnly(gLLines).join([
+      innerJoin(gLEntries, gLEntries.id.equalsExp(gLLines.entryId)),
+    ])
+      ..addColumns([gLLines.accountId, debitSum, creditSum])
+      ..where(gLEntries.date.isSmallerOrEqualValue(asOfDate))
+      ..groupBy([gLLines.accountId]);
 
     final rows = await query.get();
     final Map<String, ({double debit, double credit})> balanceMap = {

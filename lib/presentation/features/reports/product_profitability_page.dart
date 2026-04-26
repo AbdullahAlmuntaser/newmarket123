@@ -8,7 +8,8 @@ class ProductProfitabilityPage extends StatefulWidget {
   const ProductProfitabilityPage({super.key});
 
   @override
-  State<ProductProfitabilityPage> createState() => _ProductProfitabilityPageState();
+  State<ProductProfitabilityPage> createState() =>
+      _ProductProfitabilityPageState();
 }
 
 class _ProductProfitabilityPageState extends State<ProductProfitabilityPage> {
@@ -61,7 +62,9 @@ class _ProductProfitabilityPageState extends State<ProductProfitabilityPage> {
               final item = data[index];
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -72,18 +75,27 @@ class _ProductProfitabilityPageState extends State<ProductProfitabilityPage> {
                           Expanded(
                             child: Text(
                               item.productName,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.green.withAlpha(26),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               '${item.profitMargin.toStringAsFixed(1)}%',
-                              style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],
@@ -92,10 +104,23 @@ class _ProductProfitabilityPageState extends State<ProductProfitabilityPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildStatColumn('الكمية', item.totalQuantity.toStringAsFixed(0)),
-                          _buildStatColumn('الإيرادات', currencyFormat.format(item.totalRevenue)),
-                          _buildStatColumn('التكلفة', currencyFormat.format(item.totalCost)),
-                          _buildStatColumn('الربح', currencyFormat.format(item.netProfit), isHighlight: true),
+                          _buildStatColumn(
+                            'الكمية',
+                            item.totalQuantity.toStringAsFixed(0),
+                          ),
+                          _buildStatColumn(
+                            'الإيرادات',
+                            currencyFormat.format(item.totalRevenue),
+                          ),
+                          _buildStatColumn(
+                            'التكلفة',
+                            currencyFormat.format(item.totalCost),
+                          ),
+                          _buildStatColumn(
+                            'الربح',
+                            currencyFormat.format(item.netProfit),
+                            isHighlight: true,
+                          ),
                         ],
                       ),
                     ],
@@ -109,7 +134,11 @@ class _ProductProfitabilityPageState extends State<ProductProfitabilityPage> {
     );
   }
 
-  Widget _buildStatColumn(String label, String value, {bool isHighlight = false}) {
+  Widget _buildStatColumn(
+    String label,
+    String value, {
+    bool isHighlight = false,
+  }) {
     return Column(
       children: [
         Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),

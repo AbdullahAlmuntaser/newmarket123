@@ -6,7 +6,8 @@ class SupplierPerformancePage extends StatefulWidget {
   const SupplierPerformancePage({super.key});
 
   @override
-  State<SupplierPerformancePage> createState() => _SupplierPerformancePageState();
+  State<SupplierPerformancePage> createState() =>
+      _SupplierPerformancePageState();
 }
 
 class _SupplierPerformancePageState extends State<SupplierPerformancePage> {
@@ -37,7 +38,10 @@ class _SupplierPerformancePageState extends State<SupplierPerformancePage> {
               itemBuilder: (context, index) {
                 final p = _report[index];
                 return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   child: ListTile(
                     title: Text(p.supplierName),
                     subtitle: Text('عدد الفواتير: ${p.totalInvoices}'),
@@ -45,8 +49,14 @@ class _SupplierPerformancePageState extends State<SupplierPerformancePage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text('الإجمالي: ${p.totalPurchases.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        Text('متوسط الفاتورة: ${p.averagePrice.toStringAsFixed(2)}', style: TextStyle(color: Colors.grey.shade600)),
+                        Text(
+                          'الإجمالي: ${p.totalPurchases.toStringAsFixed(2)}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'متوسط الفاتورة: ${p.averagePrice.toStringAsFixed(2)}',
+                          style: TextStyle(color: Colors.grey.shade600),
+                        ),
                       ],
                     ),
                   ),

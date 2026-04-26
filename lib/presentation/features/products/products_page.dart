@@ -104,7 +104,10 @@ class _ProductsPageState extends State<ProductsPage> {
                     ),
                     Row(
                       children: [
-                        Text('${l10n.stock}: ', style: const TextStyle(fontSize: 12)),
+                        Text(
+                          '${l10n.stock}: ',
+                          style: const TextStyle(fontSize: 12),
+                        ),
                         SmartStockWidget(product: product),
                       ],
                     ),
@@ -119,12 +122,21 @@ class _ProductsPageState extends State<ProductsPage> {
                         if (value == 'edit') {
                           _showAddEditDialog(context, product);
                         } else if (value == 'units') {
-                          context.push('/products/unit-conversion/${product.id}', extra: product.name);
+                          context.push(
+                            '/products/unit-conversion/${product.id}',
+                            extra: product.name,
+                          );
                         }
                       },
                       itemBuilder: (context) => [
-                        const PopupMenuItem(value: 'edit', child: Text('تعديل المنتج')),
-                        const PopupMenuItem(value: 'units', child: Text('تحويل الوحدات')),
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Text('تعديل المنتج'),
+                        ),
+                        const PopupMenuItem(
+                          value: 'units',
+                          child: Text('تحويل الوحدات'),
+                        ),
                       ],
                     ),
                   ],

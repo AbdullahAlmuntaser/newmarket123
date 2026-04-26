@@ -10,7 +10,10 @@ class QuickCustomerService {
   QuickCustomerService(this.db) : customersDao = db.customersDao;
 
   /// Smart search for customers with Quick Customer creation logic
-  Future<CustomerSearchResult?> smartSearchAndCreate(String name, {String? phone}) async {
+  Future<CustomerSearchResult?> smartSearchAndCreate(
+    String name, {
+    String? phone,
+  }) async {
     if (name.trim().isEmpty) return null;
 
     // final normalizedInput = NameNormalizer.normalize(name);
@@ -34,7 +37,10 @@ class QuickCustomerService {
     }
 
     // 4. If no good matches, create a Quick Customer
-    final customerId = await customersDao.createQuickCustomer(name, phone: phone);
+    final customerId = await customersDao.createQuickCustomer(
+      name,
+      phone: phone,
+    );
     final newCustomer = await customersDao.getCustomerById(customerId);
 
     return newCustomer != null
@@ -48,7 +54,10 @@ class QuickCustomerService {
 
   /// Get or create customer for POS sale
   /// This is the main method used in POS checkout
-  Future<Customer?> getOrCreateCustomerForSale(String name, {String? phone}) async {
+  Future<Customer?> getOrCreateCustomerForSale(
+    String name, {
+    String? phone,
+  }) async {
     final result = await smartSearchAndCreate(name, phone: phone);
     return result?.customer;
   }
@@ -73,7 +82,8 @@ class QuickCustomerService {
   }
 
   /// Upgrade Quick Customer to regular customer
-  Future<bool> upgradeQuickCustomer(String customerId, {
+  Future<bool> upgradeQuickCustomer(
+    String customerId, {
     required String customerType,
     double creditLimit = 0.0,
     String? phone,
@@ -81,9 +91,10 @@ class QuickCustomerService {
     String? email,
   }) async {
     try {
-      await (db.update(db.customers)
-        ..where((c) => c.id.equals(customerId)))
-        .write(CustomersCompanion(
+      await (db.update(
+        db.customers,
+      )..where((c) => c.id.equals(customerId))).write(
+        CustomersCompanion(
           isQuickCustomer: const Value(false),
           customerType: Value(customerType),
           creditLimit: Value(creditLimit),
@@ -91,7 +102,8 @@ class QuickCustomerService {
           address: Value(address),
           email: Value(email),
           updatedAt: Value(DateTime.now()),
-        ));
+        ),
+      );
 
       return true;
     } catch (e) {
@@ -100,27 +112,34 @@ class QuickCustomerService {
   }
 
   /// Merge duplicate customers
-  Future<bool> mergeCustomers(String primaryCustomerId, List<String> duplicateIds) async {
+  Future<bool> mergeCustomers(
+    String primaryCustomerId,
+    List<String> duplicateIds,
+  ) async {
     try {
       await db.transaction(() async {
         // Transfer sales to primary customer
         for (final duplicateId in duplicateIds) {
-          await (db.update(db.sales)
-            ..where((s) => s.customerId.equals(duplicateId)))
-            .write(SalesCompanion(
+          await (db.update(
+            db.sales,
+          )..where((s) => s.customerId.equals(duplicateId))).write(
+            SalesCompanion(
               customerId: Value(primaryCustomerId),
               updatedAt: Value(DateTime.now()),
-            ));
+            ),
+          );
         }
 
         // Mark duplicates as inactive
         for (final duplicateId in duplicateIds) {
-          await (db.update(db.customers)
-            ..where((c) => c.id.equals(duplicateId)))
-            .write(CustomersCompanion(
+          await (db.update(
+            db.customers,
+          )..where((c) => c.id.equals(duplicateId))).write(
+            CustomersCompanion(
               isActive: const Value(false),
               updatedAt: Value(DateTime.now()),
-            ));
+            ),
+          );
         }
       });
 
@@ -131,20 +150,24 @@ class QuickCustomerService {
   }
 
   /// Clean up old Quick Customers (optional maintenance)
-  Future<int> cleanupOldQuickCustomers({Duration olderThan = const Duration(days: 365)}) async {
+  Future<int> cleanupOldQuickCustomers({
+    Duration olderThan = const Duration(days: 365),
+  }) async {
     final cutoffDate = DateTime.now().subtract(olderThan);
 
     try {
-      final oldQuickCustomers = await (db.select(db.customers)
-        ..where((c) => c.isQuickCustomer.equals(true))
-        ..where((c) => c.createdAt.isSmallerThanValue(cutoffDate))
-        ..where((c) => c.balance.equals(0.0))) // Only if no outstanding balance
-        .get();
+      final oldQuickCustomers =
+          await (db.select(db.customers)
+                ..where((c) => c.isQuickCustomer.equals(true))
+                ..where((c) => c.createdAt.isSmallerThanValue(cutoffDate))
+                ..where(
+                  (c) => c.balance.equals(0.0),
+                )) // Only if no outstanding balance
+              .get();
 
       for (final customer in oldQuickCustomers) {
-        await (db.update(db.customers)
-          ..where((c) => c.id.equals(customer.id)))
-          .write(CustomersCompanion(isActive: const Value(false)));
+        await (db.update(db.customers)..where((c) => c.id.equals(customer.id)))
+            .write(CustomersCompanion(isActive: const Value(false)));
       }
 
       return oldQuickCustomers.length;
@@ -163,7 +186,9 @@ class QuickCustomerService {
       'quick': allCustomers.where((c) => c.isQuickCustomer).length,
       'regular': allCustomers.where((c) => !c.isQuickCustomer).length,
       'vip': allCustomers.where((c) => c.customerType == 'VIP').length,
-      'wholesale': allCustomers.where((c) => c.customerType == 'WHOLESALE').length,
+      'wholesale': allCustomers
+          .where((c) => c.customerType == 'WHOLESALE')
+          .length,
     };
 
     return stats;

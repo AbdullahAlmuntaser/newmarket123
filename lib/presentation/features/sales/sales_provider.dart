@@ -42,13 +42,17 @@ class SalesProvider with ChangeNotifier {
   // Getters
   CustomerSmartData? get customerData => _customerData;
   List<SalesAlert> get alerts => _alerts;
-  ProductSmartData? getProductData(String productId) => _productDataCache[productId];
+  ProductSmartData? getProductData(String productId) =>
+      _productDataCache[productId];
 
   // ==================== SMART CUSTOMER ====================
 
   /// Load customer info when customer is selected
   Future<void> loadCustomerData(String customerId, {String? productId}) async {
-    _customerData = await erpService.getCustomerSmartData(customerId, productId: productId);
+    _customerData = await erpService.getCustomerSmartData(
+      customerId,
+      productId: productId,
+    );
     notifyListeners();
   }
 
@@ -74,13 +78,17 @@ class SalesProvider with ChangeNotifier {
     _alerts.clear();
 
     if (_customerData != null && isCredit) {
-      final totalWithNewSale = _customerData!.currentBalance + (newSaleTotal ?? 0);
-      if (totalWithNewSale > _customerData!.creditLimit && _customerData!.creditLimit > 0) {
-        _alerts.add(SalesAlert(
-          type: SalesAlertType.overCreditLimit,
-          message: 'العميل تجاوز حد الائتمان!',
-          isBlocking: true,
-        ));
+      final totalWithNewSale =
+          _customerData!.currentBalance + (newSaleTotal ?? 0);
+      if (totalWithNewSale > _customerData!.creditLimit &&
+          _customerData!.creditLimit > 0) {
+        _alerts.add(
+          SalesAlert(
+            type: SalesAlertType.overCreditLimit,
+            message: 'العميل تجاوز حد الائتمان!',
+            isBlocking: true,
+          ),
+        );
       }
     }
 
@@ -93,21 +101,25 @@ class SalesProvider with ChangeNotifier {
     if (productData == null) return;
 
     if (productData.currentStock < quantity) {
-      _alerts.add(SalesAlert(
-        type: SalesAlertType.outOfStock,
-        message: 'المخزون غير كافٍ',
-        isBlocking: true,
-        productId: productId,
-      ));
+      _alerts.add(
+        SalesAlert(
+          type: SalesAlertType.outOfStock,
+          message: 'المخزون غير كافٍ',
+          isBlocking: true,
+          productId: productId,
+        ),
+      );
     }
 
     if (price < productData.averageCost && productData.averageCost > 0) {
-      _alerts.add(SalesAlert(
-        type: SalesAlertType.priceBelowCost,
-        message: 'السعر أقل من التكلفة',
-        isBlocking: false,
-        productId: productId,
-      ));
+      _alerts.add(
+        SalesAlert(
+          type: SalesAlertType.priceBelowCost,
+          message: 'السعر أقل من التكلفة',
+          isBlocking: false,
+          productId: productId,
+        ),
+      );
     }
 
     notifyListeners();

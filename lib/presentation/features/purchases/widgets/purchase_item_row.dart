@@ -62,10 +62,7 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
-                Expanded(
-                  flex: 2,
-                  child: _buildUnitSelector(db),
-                ),
+                Expanded(flex: 2, child: _buildUnitSelector(db)),
                 IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
                   onPressed: widget.onDelete,
@@ -78,7 +75,10 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
                 Expanded(
                   child: TextFormField(
                     initialValue: widget.item.quantity.toString(),
-                    decoration: const InputDecoration(labelText: 'الكمية', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(
+                      labelText: 'الكمية',
+                      border: OutlineInputBorder(),
+                    ),
                     keyboardType: TextInputType.number,
                     onChanged: (v) {
                       widget.item.quantity = double.tryParse(v) ?? 0.0;
@@ -90,7 +90,10 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
                 Expanded(
                   child: TextFormField(
                     initialValue: widget.item.unitPrice.toString(),
-                    decoration: const InputDecoration(labelText: 'سعر الشراء', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(
+                      labelText: 'سعر الشراء',
+                      border: OutlineInputBorder(),
+                    ),
                     keyboardType: TextInputType.number,
                     onChanged: (v) {
                       widget.item.unitPrice = double.tryParse(v) ?? 0.0;
@@ -106,7 +109,10 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
                 Expanded(
                   child: TextFormField(
                     initialValue: widget.item.batchNumber,
-                    decoration: const InputDecoration(labelText: 'رقم الباتش', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(
+                      labelText: 'رقم الباتش',
+                      border: OutlineInputBorder(),
+                    ),
                     onChanged: (v) {
                       widget.item.batchNumber = v;
                     },
@@ -125,14 +131,18 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
                     onTap: () async {
                       final date = await showDatePicker(
                         context: context,
-                        initialDate: DateTime.now().add(const Duration(days: 365)),
+                        initialDate: DateTime.now().add(
+                          const Duration(days: 365),
+                        ),
                         firstDate: DateTime.now(),
                         lastDate: DateTime(2040),
                       );
                       if (date != null) {
                         setState(() {
                           widget.item.expiryDate = date;
-                          _expiryController.text = date.toString().split(' ')[0];
+                          _expiryController.text = date.toString().split(
+                            ' ',
+                          )[0];
                         });
                       }
                     },
@@ -140,12 +150,17 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
                 ),
               ],
             ),
-            if (widget.item.selectedUnit != null && widget.item.selectedUnit!.factor > 1)
+            if (widget.item.selectedUnit != null &&
+                widget.item.selectedUnit!.factor > 1)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
                   'إجمالي الكمية بالوحدة الأساسية: ${(widget.item.quantity * widget.item.selectedUnit!.factor).toStringAsFixed(2)} ${widget.item.product.unit}',
-                  style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12),
+                  style: const TextStyle(
+                    color: Colors.blue,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
               ),
           ],
@@ -156,30 +171,33 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
 
   Widget _buildUnitSelector(AppDatabase db) {
     return StreamBuilder<List<UnitConversion>>(
-      stream: (db.select(db.unitConversions)..where((t) => t.productId.equals(widget.item.product.id))).watch(),
+      stream: (db.select(
+        db.unitConversions,
+      )..where((t) => t.productId.equals(widget.item.product.id))).watch(),
       builder: (context, snapshot) {
-      final conversions = snapshot.data ?? [];
-      return DropdownButtonFormField<UnitConversion?>(
-        initialValue: widget.item.selectedUnit,
-        decoration: const InputDecoration(labelText: 'الوحدة', isDense: true),
-        items: [
-          DropdownMenuItem(
-            value: null,
-            child: Text(widget.item.product.unit),
-          ),
-          ...conversions.map((u) => DropdownMenuItem(value: u, child: Text(u.unitName))),
-        ],
-        onChanged: (value) {
-          setState(() {
-            widget.item.selectedUnit = value;
-            // If a new unit is selected, you might want to adjust the price 
-            // based on the factor, for now we just update the unit reference.
-          });
-          widget.onChanged();
-        },
-      );
+        final conversions = snapshot.data ?? [];
+        return DropdownButtonFormField<UnitConversion?>(
+          initialValue: widget.item.selectedUnit,
+          decoration: const InputDecoration(labelText: 'الوحدة', isDense: true),
+          items: [
+            DropdownMenuItem(
+              value: null,
+              child: Text(widget.item.product.unit),
+            ),
+            ...conversions.map(
+              (u) => DropdownMenuItem(value: u, child: Text(u.unitName)),
+            ),
+          ],
+          onChanged: (value) {
+            setState(() {
+              widget.item.selectedUnit = value;
+              // If a new unit is selected, you might want to adjust the price
+              // based on the factor, for now we just update the unit reference.
+            });
+            widget.onChanged();
+          },
+        );
       },
-
     );
   }
 }

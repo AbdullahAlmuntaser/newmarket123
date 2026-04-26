@@ -6,12 +6,12 @@ class ErpLogic {
   /// يحسب القيم المالية لفاتورة بناءً على العناصر المضافة.
   /// تعتمد الحسابات على: (الكمية × السعر) - الخصم + الضريبة.
   static Map<String, double> calculateInvoiceTotals({
-    required List<dynamic> items, 
+    required List<dynamic> items,
     double globalDiscount = 0.0,
     double taxRate = 0.15, // 15% Standard VAT
   }) {
     double subtotal = 0.0;
-    
+
     for (var item in items) {
       double quantity = 0.0;
       double price = 0.0;
@@ -96,17 +96,17 @@ class ErpLogic {
     required List<UnitConversion> conversions,
   }) {
     if (totalBaseQty == 0) return '0 $baseUnitName';
-    
+
     // ترتيب الوحدات من الأكبر للأصغر (معامل التحويل الأكبر أولاً)
     final sortedConversions = List<UnitConversion>.from(conversions)
       ..sort((a, b) => b.factor.compareTo(a.factor));
-    
+
     List<String> parts = [];
     double remaining = totalBaseQty;
 
     for (var unit in sortedConversions) {
       if (unit.factor <= 1) continue; // تخطي الوحدات الأساسية أو الأصغر
-      
+
       int count = (remaining / unit.factor).floor();
       if (count > 0) {
         parts.add('$count ${unit.unitName}');
@@ -116,8 +116,8 @@ class ErpLogic {
 
     if (remaining > 0 || parts.isEmpty) {
       // إزالة الكسور إذا كانت قريبة جداً من الصفر
-      String formattedRemaining = remaining == remaining.toInt() 
-          ? remaining.toInt().toString() 
+      String formattedRemaining = remaining == remaining.toInt()
+          ? remaining.toInt().toString()
           : remaining.toStringAsFixed(2);
       parts.add('$formattedRemaining $baseUnitName');
     }
