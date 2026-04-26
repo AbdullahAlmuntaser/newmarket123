@@ -5,6 +5,7 @@ import 'package:supermarket/presentation/features/pos/bloc/pos_bloc.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_event.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_state.dart';
 import 'package:supermarket/presentation/features/pos/widgets/add_unit_dialog.dart';
+import 'package:supermarket/presentation/features/pos/widgets/checkout_dialog.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:decimal/decimal.dart';
@@ -395,9 +396,16 @@ class CartWidget extends StatelessWidget {
   }
 
   void _handleCheckout(BuildContext context) {
-    // Implement checkout dialog with customer selection
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('سيتم تنفيذ الدفع قريباً')));
+    final posBloc = context.read<PosBloc>();
+    final state = posBloc.state;
+    if (state is! PosLoaded) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => BlocProvider.value(
+        value: posBloc,
+        child: CheckoutDialog(state: state),
+      ),
+    );
   }
 }

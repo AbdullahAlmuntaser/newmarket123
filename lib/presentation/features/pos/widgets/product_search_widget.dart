@@ -12,27 +12,25 @@ class ProductSearchWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          TextField(
-            controller: controller,
-            decoration: InputDecoration(
-              labelText: l10n.searchProducts,
-              suffixIcon: const Icon(Icons.search),
-            ),
-            onSubmitted: (value) {
-              if (value.isNotEmpty) {
-                context.read<PosBloc>().add(AddProductBySku(value));
-              }
-            },
-          ),
-          const Expanded(
-            child: SizedBox(), // Placeholder for search results
-          ),
-        ],
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: l10n.searchProducts,
+        prefixIcon: const Icon(Icons.search),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        filled: true,
+        fillColor: Colors.grey[100],
       ),
+      onSubmitted: (value) {
+        if (value.isNotEmpty) {
+          context.read<PosBloc>().add(AddProductBySku(value));
+          controller?.clear();
+        }
+      },
+      onChanged: (value) {
+        // Optional: Trigger real-time search
+        // context.read<PosBloc>().add(SearchProducts(value));
+      },
     );
   }
 }

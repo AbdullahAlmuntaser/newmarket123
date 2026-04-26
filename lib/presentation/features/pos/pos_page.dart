@@ -7,6 +7,7 @@ import 'package:supermarket/presentation/features/pos/widgets/cart_widget.dart';
 import 'package:supermarket/presentation/features/pos/widgets/product_grid.dart';
 import 'package:supermarket/presentation/features/pos/widgets/product_search_widget.dart';
 import 'package:supermarket/presentation/features/pos/widgets/barcode_scanner_dialog.dart';
+import 'package:supermarket/presentation/features/pos/widgets/category_selector.dart';
 import 'package:supermarket/injection_container.dart';
 
 class PosPage extends StatelessWidget {
@@ -39,10 +40,35 @@ class _PosViewState extends State<PosView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('نقطة البيع الذكية'),
+    return BlocListener<PosBloc, PosState>(
+      listener: (context, state) {
+        if (state is PosCheckoutSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('تمت عملية البيع بنجاح'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // Clear cart and reset to PosLoaded
+          context.read<PosBloc>().add(ClearCart());
+        } else if (state is PosError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+        title: const Text('نقطة البيع السريع'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            onPressed: () => context.push('/sales'),
+            tooltip: 'سجل المبيعات',
+          ),
           BlocBuilder<PosBloc, PosState>(
             builder: (context, state) {
               if (state is! PosLoaded) return const SizedBox.shrink();
@@ -77,6 +103,10 @@ class _PosViewState extends State<PosView> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: ProductSearchWidget(controller: _barcodeController),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8.0),
+                  child: CategorySelector(),
                 ),
                 const Expanded(child: ProductGrid()),
               ],
