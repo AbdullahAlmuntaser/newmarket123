@@ -195,6 +195,7 @@ class _ChartOfAccountsPageState extends State<ChartOfAccountsPage> {
     final codeController = TextEditingController();
     final nameController = TextEditingController();
     String selectedType = 'ASSET';
+    String? selectedAnalyticType;
     bool isHeader = false;
 
     showDialog(
@@ -222,6 +223,15 @@ class _ChartOfAccountsPageState extends State<ChartOfAccountsPage> {
                   onChanged: (val) => setState(() => selectedType = val!),
                   decoration: InputDecoration(labelText: l10n.accountType),
                 ),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedAnalyticType,
+                  hint: const Text('اختياري'),
+                  items: ['صندوق', 'بنك', 'عميل', 'مورد', 'موظف', 'مركز تكلفة']
+                      .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                      .toList(),
+                  onChanged: (val) => setState(() => selectedAnalyticType = val),
+                  decoration: const InputDecoration(labelText: 'الحساب التحليلي'),
+                ),
                 SwitchListTile(
                   title: Text(l10n.isHeader),
                   value: isHeader,
@@ -242,6 +252,7 @@ class _ChartOfAccountsPageState extends State<ChartOfAccountsPage> {
                   name: nameController.text,
                   type: selectedType,
                   isHeader: isHeader,
+                  analyticType: selectedAnalyticType,
                 );
                 Navigator.pop(context);
               },
