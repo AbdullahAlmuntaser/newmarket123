@@ -147,7 +147,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
     final product = await showDialog<Product>(
       context: context,
       builder: (context) => EntityPicker<Product>(
-        stream: db.select(db.products).watch(),
+        stream: db.productsDao.watchAllProducts(),
         title: 'اختر منتج',
         builder: (p) => Text(p.name),
       ),

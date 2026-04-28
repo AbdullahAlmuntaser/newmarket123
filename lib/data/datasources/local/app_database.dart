@@ -30,9 +30,18 @@ mixin SyncableTable on Table {
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
   TextColumn get deviceId => text().nullable()();
   IntColumn get syncStatus => integer().withDefault(const Constant(1))();
+  TextColumn get branchId => text().nullable().references(Branches, #id)();
 
   @override
   Set<Column> get primaryKey => {id};
+}
+
+class Branches extends Table with SyncableTable {
+  TextColumn get name => text()();
+  TextColumn get code => text().unique()();
+  TextColumn get address => text().nullable()();
+  TextColumn get phone => text().nullable()();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
 }
 
 class Users extends Table with SyncableTable {
@@ -62,6 +71,11 @@ class Products extends Table with SyncableTable {
   RealColumn get sellPrice => real().withDefault(const Constant(0.0))();
   RealColumn get wholesalePrice => real().withDefault(const Constant(0.0))();
   RealColumn get stock => real().withDefault(const Constant(0.0))();
+  RealColumn get maxStock => real().withDefault(const Constant(1000.0))();
+  TextColumn get supplierId => text().nullable().references(Suppliers, #id)();
+  TextColumn get valuationMethod => text().withDefault(const Constant('FIFO'))(); // FIFO, AVCO
+  BoolColumn get allowFreeQty => boolean().withDefault(const Constant(false))();
+  BoolColumn get isService => boolean().withDefault(const Constant(false))();
   RealColumn get alertLimit => real().withDefault(const Constant(10.0))();
   DateTimeColumn get expiryDate => dateTime().nullable()();
   RealColumn get taxRate => real().withDefault(const Constant(0.0))();
@@ -116,6 +130,7 @@ class Customers extends Table with SyncableTable {
       boolean().withDefault(const Constant(false))(); // Quick customer flag
   BoolColumn get createdFromPOS =>
       boolean().withDefault(const Constant(false))(); // Created from POS
+  RealColumn get discountRate => real().withDefault(const Constant(0.0))(); // Customer-specific discount
 }
 
 class Suppliers extends Table with SyncableTable {
@@ -218,6 +233,7 @@ class Purchases extends Table with SyncableTable {
   TextColumn get currencyId => text().nullable()();
   RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
   TextColumn get notes => text().nullable()(); // New
+  TextColumn get referenceDocument => text().nullable()(); // جديد
   TextColumn get attachmentPath =>
       text().nullable()(); // New: Invoice image path
 }
@@ -257,6 +273,8 @@ class PurchaseItems extends Table with SyncableTable {
 class Warehouses extends Table with SyncableTable {
   TextColumn get name => text()();
   TextColumn get location => text().nullable()();
+  @override
+  TextColumn get branchId => text().nullable().references(Branches, #id)();
   BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
 }
 
@@ -288,6 +306,7 @@ class SalesReturnItems extends Table with SyncableTable {
   TextColumn get productId => text().references(Products, #id)();
   RealColumn get quantity => real()();
   RealColumn get price => real()();
+  TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
 }
 
 class PurchaseReturns extends Table with SyncableTable {
@@ -335,6 +354,7 @@ class GLAccounts extends Table with SyncableTable {
   TextColumn get code => text().unique()();
   TextColumn get name => text()();
   TextColumn get type => text()(); // ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
+  TextColumn get analyticType => text().nullable()(); // جديد: صندوق، بنك، عميل، مورد، موظف، مركز تكلفة
   TextColumn get parentId => text().nullable().references(GLAccounts, #id)();
   BoolColumn get isHeader => boolean().withDefault(const Constant(false))();
   RealColumn get balance => real().withDefault(const Constant(0.0))();
@@ -551,6 +571,8 @@ class PriceHistory extends Table with SyncableTable {
 class Currencies extends Table with SyncableTable {
   TextColumn get code => text().unique()(); // e.g., USD, YER, SAR
   TextColumn get name => text()();
+  TextColumn get fractionalUnit => text().nullable()(); // فكة العملة
+  IntColumn get decimalPlaces => integer().withDefault(const Constant(2))(); // عدد الكسور
   RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
   BoolColumn get isBase => boolean().withDefault(const Constant(false))();
 }
@@ -565,6 +587,32 @@ class UnitConversions extends Table with SyncableTable {
   RealColumn get sellPrice => real().nullable()(); // Unit-specific sell price
   TextColumn get barcode =>
       text().unique().nullable()(); // Barcode for this unit
+}
+
+class APInvoices extends Table with SyncableTable {
+  TextColumn get supplierId => text().references(Suppliers, #id)();
+  TextColumn get invoiceNumber => text()();
+  DateTimeColumn get invoiceDate => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get dueDate => dateTime().nullable()();
+  RealColumn get totalAmount => real()();
+  RealColumn get taxAmount => real().withDefault(const Constant(0.0))();
+  RealColumn get paidAmount => real().withDefault(const Constant(0.0))();
+  TextColumn get status => text().withDefault(const Constant('DRAFT'))(); // DRAFT, POSTED, PAID, PARTIAL
+  TextColumn get notes => text().nullable()();
+  TextColumn get accountId => text().nullable().references(GLAccounts, #id)();
+}
+
+class ARInvoices extends Table with SyncableTable {
+  TextColumn get customerId => text().references(Customers, #id)();
+  TextColumn get invoiceNumber => text()();
+  DateTimeColumn get invoiceDate => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get dueDate => dateTime().nullable()();
+  RealColumn get totalAmount => real()();
+  RealColumn get taxAmount => real().withDefault(const Constant(0.0))();
+  RealColumn get paidAmount => real().withDefault(const Constant(0.0))();
+  TextColumn get status => text().withDefault(const Constant('DRAFT'))(); // DRAFT, POSTED, PAID, PARTIAL
+  TextColumn get notes => text().nullable()();
+  TextColumn get accountId => text().nullable().references(GLAccounts, #id)();
 }
 
 class InventoryTransactions extends Table with SyncableTable {
@@ -596,6 +644,14 @@ class StockTakes extends Table with SyncableTable {
   TextColumn get note => text().nullable()();
 }
 
+class StockTakeItems extends Table with SyncableTable {
+  TextColumn get stockTakeId => text().references(StockTakes, #id)();
+  TextColumn get productId => text().references(Products, #id)();
+  RealColumn get expectedQty => real()();
+  RealColumn get actualQty => real()();
+  RealColumn get variance => real()();
+}
+
 class PostingProfiles extends Table {
   TextColumn get id => text().clientDefault(() => const Uuid().v4())();
   TextColumn get operationType =>
@@ -618,12 +674,39 @@ class PostingProfiles extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-class StockTakeItems extends Table with SyncableTable {
-  TextColumn get stockTakeId => text().references(StockTakes, #id)();
+class GoodReceivedNotes extends Table with SyncableTable {
+  TextColumn get purchaseOrderId => text().references(PurchaseOrders, #id)();
+  TextColumn get warehouseId => text().references(Warehouses, #id)();
+  TextColumn get grnNumber => text().unique()();
+  DateTimeColumn get receivedDate => dateTime().withDefault(currentDateAndTime)();
+  TextColumn get receivedBy => text().nullable()();
+  TextColumn get notes => text().nullable()();
+  TextColumn get status => text().withDefault(const Constant('DRAFT'))(); // DRAFT, POSTED
+}
+
+class GoodReceivedNoteItems extends Table with SyncableTable {
+  TextColumn get grnId => text().references(GoodReceivedNotes, #id)();
   TextColumn get productId => text().references(Products, #id)();
-  RealColumn get expectedQty => real()();
-  RealColumn get actualQty => real()();
-  RealColumn get variance => real()();
+  RealColumn get quantity => real()();
+  TextColumn get batchNumber => text().nullable()();
+  DateTimeColumn get expiryDate => dateTime().nullable()();
+}
+
+class DeliveryNotes extends Table with SyncableTable {
+  TextColumn get saleOrderId => text().references(SalesOrders, #id)();
+  TextColumn get warehouseId => text().references(Warehouses, #id)();
+  TextColumn get deliveryNumber => text().unique()();
+  DateTimeColumn get deliveryDate => dateTime().withDefault(currentDateAndTime)();
+  TextColumn get deliveredBy => text().nullable()();
+  TextColumn get notes => text().nullable()();
+  TextColumn get status => text().withDefault(const Constant('DRAFT'))(); // DRAFT, POSTED
+}
+
+class DeliveryNoteItems extends Table with SyncableTable {
+  TextColumn get deliveryNoteId => text().references(DeliveryNotes, #id)();
+  TextColumn get productId => text().references(Products, #id)();
+  RealColumn get quantity => real()();
+  TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
 }
 
 class Checks extends Table with SyncableTable {
@@ -657,8 +740,8 @@ class PurchaseOrders extends Table with SyncableTable {
   TextColumn get orderNumber => text().nullable()();
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
   TextColumn get status => text().withDefault(
-    const Constant('DRAFT'),
-  )(); // DRAFT, APPROVED, CONVERTED, CANCELLED
+    const Constant('QUOTATION'),
+  )(); // QUOTATION, ORDER, DELIVERED, INVOICED, CANCELLED
   TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
   TextColumn get notes => text().nullable()();
 }
@@ -677,8 +760,8 @@ class SalesOrders extends Table with SyncableTable {
   TextColumn get orderNumber => text().nullable()();
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
   TextColumn get status => text().withDefault(
-    const Constant('DRAFT'),
-  )(); // DRAFT, APPROVED, CONVERTED, CANCELLED
+    const Constant('QUOTATION'),
+  )(); // QUOTATION, ORDER, DELIVERED, INVOICED, CANCELLED
   TextColumn get notes => text().nullable()();
 }
 
@@ -692,6 +775,7 @@ class SalesOrderItems extends Table with SyncableTable {
 
 @DriftDatabase(
   tables: [
+    Branches,
     Users,
     Categories,
     Products,
@@ -711,6 +795,7 @@ class SalesOrderItems extends Table with SyncableTable {
     PurchaseReturnItems,
     CustomerPayments,
     SupplierPayments,
+    PurchasePaymentLinks,
     SyncQueue,
     GLAccounts,
     CostCenters,
@@ -725,6 +810,7 @@ class SalesOrderItems extends Table with SyncableTable {
     AuditLogs,
     Warehouses,
     ProductBatches,
+    ItemVariants,
     StockTransfers,
     StockTransferItems,
     Employees,
@@ -749,7 +835,12 @@ class SalesOrderItems extends Table with SyncableTable {
     GlobalUnits,
     StockMovements,
     ProductUnits,
-    UnitConversions,
+    APInvoices,
+    ARInvoices,
+    GoodReceivedNotes,
+    GoodReceivedNoteItems,
+    DeliveryNotes,
+    DeliveryNoteItems,
   ],
   daos: [
     ProductsDao,
@@ -771,7 +862,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 29; // Incremented schema version
+  int get schemaVersion => 33;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -779,6 +870,22 @@ class AppDatabase extends _$AppDatabase {
       await m.createAll();
     },
     onUpgrade: (Migrator m, int from, int to) async {
+      if (from < 32) {
+        // Create indexes added in version 32
+        await m.createIndex(Index('products_sku_idx', 'CREATE INDEX products_sku_idx ON products (sku)'));
+        await m.createIndex(Index('products_barcode_idx', 'CREATE INDEX products_barcode_idx ON products (barcode)'));
+        await m.createIndex(Index('sale_items_sale_id_idx', 'CREATE INDEX sale_items_sale_id_idx ON sale_items (sale_id)'));
+        await m.createIndex(Index('purchase_items_purchase_id_idx', 'CREATE INDEX purchase_items_purchase_id_idx ON purchase_items (purchase_id)'));
+        await m.createIndex(Index('gl_lines_entry_id_idx', 'CREATE INDEX gl_lines_entry_id_idx ON gl_lines (entry_id)'));
+        await m.createIndex(Index('gl_lines_account_id_idx', 'CREATE INDEX gl_lines_account_id_idx ON gl_lines (account_id)'));
+        await m.createIndex(Index('stock_movements_product_id_idx', 'CREATE INDEX stock_movements_product_id_idx ON stock_movements (product_id)'));
+      }
+      if (from < 33) {
+        await m.addColumn(products, products.valuationMethod);
+        await m.addColumn(products, products.allowFreeQty);
+        await m.addColumn(products, products.isService);
+      }
+      
       final db = m.database;
 
       // 1. Get all table and index names from the database schema

@@ -234,6 +234,16 @@ class MainDrawer extends StatelessWidget {
                         'تقرير ضريبة القيمة المضافة',
                         '/reports/vat',
                       ),
+                      _buildSubItem(
+                        context,
+                        l10n?.agingReport ?? 'تقرير أعمار الديون',
+                        '/reports/aging',
+                      ),
+                      _buildSubItem(
+                        context,
+                        l10n?.cashFlowForecast ?? 'توقعات التدفق النقدي',
+                        '/reports/cash-flow',
+                      ),
                       _buildSubItem(context, 'سجل التدقيق', '/reports/audit'),
                     ],
                   ),
@@ -312,12 +322,31 @@ class MainDrawer extends StatelessWidget {
                       ),
                       _buildSubItem(
                         context,
-                        'مراكز التكلفة',
+                        l10n?.costCenters ?? 'مراكز التكلفة',
                         '/accounting/cost-centers',
                       ),
-                    ],
-                  ),
-                  _buildExpansionGroup(
+                      _buildSubItem(
+                        context,
+                        l10n?.apInvoices ?? 'فواتير الذمم الدائنة',
+                        '/accounting/ap-invoices',
+                      ),
+                      _buildSubItem(
+                        context,
+                        l10n?.supplierLedger ?? 'كشف حساب المورد',
+                        '/accounting/supplier-ledger',
+                      ),
+                      _buildSubItem(
+                        context,
+                        l10n?.arInvoices ?? 'فواتير الذمم المدينة',
+                        '/accounting/ar-invoices',
+                      ),
+                      _buildSubItem(
+                        context,
+                        l10n?.customerLedger ?? 'كشف حساب العميل',
+                        '/accounting/customer-ledger',
+                      ),
+                      ],
+                      ),                  _buildExpansionGroup(
                     context,
                     icon: Icons.settings_rounded,
                     title: 'الإعدادات',

@@ -52,6 +52,40 @@ class GLLineWithAccount {
   GLLineWithAccount(this.line, this.account);
 }
 
+class IncomeStatement {
+  final double totalRevenue;
+  final double costOfGoodsSold;
+  final double grossProfit;
+  final double totalExpenses;
+  final double netIncome;
+
+  IncomeStatement({
+    required this.totalRevenue,
+    required this.costOfGoodsSold,
+    required this.grossProfit,
+    required this.totalExpenses,
+    required this.netIncome,
+  });
+}
+
+class BalanceSheet {
+  final List<TrialBalanceItem> assets;
+  final List<TrialBalanceItem> liabilities;
+  final List<TrialBalanceItem> equity;
+  final double totalAssets;
+  final double totalLiabilities;
+  final double totalEquity;
+
+  BalanceSheet({
+    required this.assets,
+    required this.liabilities,
+    required this.equity,
+    required this.totalAssets,
+    required this.totalLiabilities,
+    required this.totalEquity,
+  });
+}
+
 @DriftAccessor(
   tables: [GLAccounts, CostCenters, GLEntries, GLLines, Reconciliations, AccountingPeriods],
 )
@@ -64,10 +98,21 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     final query = select(db.accountingPeriods)
       ..where((p) =>
           p.isClosed.equals(true) &
-          p.startDate.isSmallerOrEqualValue(date) &
-          p.endDate.isBiggerOrEqualValue(date));
+          p.startDate.isSmallerOrEqual(Variable(date)) &
+          p.endDate.isBiggerOrEqual(Variable(date)));
     final closedPeriod = await query.getSingleOrNull();
     return closedPeriod != null;
+  }
+
+  Future<void> closeAccountingPeriod(String periodId, {String? userId}) async {
+    await (update(db.accountingPeriods)..where((t) => t.id.equals(periodId))).write(
+      AccountingPeriodsCompanion(
+        isClosed: const Value(true),
+        closedAt: Value(DateTime.now()),
+        closedBy: Value(userId),
+        status: const Value('CLOSED'),
+      ),
+    );
   }
 
   // --- GL Accounts ---
@@ -109,6 +154,19 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     List<GLLinesCompanion> lines,
   ) {
     return transaction(() async {
+      // Validate accounting balance: Sum of Debits == Sum of Credits
+      double totalDebit = 0.0;
+      double totalCredit = 0.0;
+      for (var line in lines) {
+        totalDebit += line.debit.value;
+        totalCredit += line.credit.value;
+      }
+      if ((totalDebit - totalCredit).abs() > 0.001) {
+        throw Exception(
+          'القيد المحاسبي غير متوازن! (المدين: $totalDebit، الدائن: $totalCredit)',
+        );
+      }
+
       final entryRow = await into(gLEntries).insertReturning(entry);
       for (var line in lines) {
         final lineRow = await into(
@@ -195,7 +253,7 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
   ) {
     return (select(
       gLEntries,
-    )..where((tbl) => tbl.date.isBetweenValues(startDate, endDate))).get();
+    )..where((tbl) => tbl.date.isBetween(Variable(startDate), Variable(endDate)))).get();
   }
 
   // --- Reconciliations ---
@@ -209,7 +267,7 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
           .watch();
 
   // --- Reports ---
-  Future<List<TrialBalanceItem>> getTrialBalance() async {
+  Future<List<TrialBalanceItem>> getTrialBalance({String? branchId}) async {
     final accounts = await getAllAccounts();
     final items = <TrialBalanceItem>[];
     for (final account in accounts) {
@@ -217,9 +275,15 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
 
       final debitSum = gLLines.debit.sum();
       final creditSum = gLLines.credit.sum();
+      
       final query = selectOnly(gLLines)
-        ..addColumns([debitSum, creditSum])
-        ..where(gLLines.accountId.equals(account.id));
+        ..addColumns([debitSum, creditSum]);
+      
+      if (branchId != null) {
+        query.where(gLLines.accountId.equals(account.id) & gLLines.branchId.equals(branchId));
+      } else {
+        query.where(gLLines.accountId.equals(account.id));
+      }
 
       final result = await query.getSingle();
       final debit = result.read(debitSum) ?? 0.0;
@@ -230,7 +294,7 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     return items;
   }
 
-  Future<double> getAccountBalance(String accountId) async {
+  Future<double> getAccountBalance(String accountId, {String? branchId}) async {
     final account = await getAccountById(accountId);
     if (account == null) return 0.0;
 
@@ -238,8 +302,13 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     final creditSum = gLLines.credit.sum();
 
     final query = selectOnly(gLLines)
-      ..addColumns([debitSum, creditSum])
-      ..where(gLLines.accountId.equals(accountId));
+      ..addColumns([debitSum, creditSum]);
+    
+    if (branchId != null) {
+      query.where(gLLines.accountId.equals(accountId) & gLLines.branchId.equals(branchId));
+    } else {
+      query.where(gLLines.accountId.equals(accountId));
+    }
 
     final result = await query.getSingleOrNull();
 
@@ -261,8 +330,9 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
   // New: Get account balance up to a specific date
   Future<double> getAccountBalanceAsOfDate(
     String accountId,
-    DateTime asOfDate,
-  ) async {
+    DateTime asOfDate, {
+    String? branchId,
+  }) async {
     final account = await getAccountById(accountId);
     if (account == null) return 0.0;
 
@@ -273,11 +343,16 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
         selectOnly(gLLines).join([
             innerJoin(gLEntries, gLEntries.id.equalsExp(gLLines.entryId)),
           ])
-          ..addColumns([debitSum, creditSum])
-          ..where(
-            gLLines.accountId.equals(accountId) &
-                gLEntries.date.isSmallerOrEqualValue(asOfDate),
-          );
+          ..addColumns([debitSum, creditSum]);
+    
+    var predicate = gLLines.accountId.equals(accountId) &
+                gLEntries.date.isSmallerOrEqual(Variable(asOfDate));
+    
+    if (branchId != null) {
+      predicate = predicate & gLLines.branchId.equals(branchId);
+    }
+    
+    query.where(predicate);
 
     final result = await query.getSingleOrNull();
 
@@ -300,8 +375,9 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
   Future<double> getAccountBalanceInRange(
     String accountId,
     DateTime startDate,
-    DateTime endDate,
-  ) async {
+    DateTime endDate, {
+    String? branchId,
+  }) async {
     final account = await getAccountById(accountId);
     if (account == null) return 0.0;
 
@@ -312,11 +388,16 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
         selectOnly(gLLines).join([
             innerJoin(gLEntries, gLEntries.id.equalsExp(gLLines.entryId)),
           ])
-          ..addColumns([debitSum, creditSum])
-          ..where(
-            gLLines.accountId.equals(accountId) &
-                gLEntries.date.isBetweenValues(startDate, endDate),
-          );
+          ..addColumns([debitSum, creditSum]);
+    
+    var predicate = gLLines.accountId.equals(accountId) &
+                gLEntries.date.isBetween(Variable(startDate), Variable(endDate));
+    
+    if (branchId != null) {
+      predicate = predicate & gLLines.branchId.equals(branchId);
+    }
+    
+    query.where(predicate);
 
     final result = await query.getSingleOrNull();
 
@@ -337,8 +418,9 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
 
   // New: Get all account balances as of a specific date efficiently
   Future<List<TrialBalanceItem>> getAllAccountBalancesAsOfDate(
-    DateTime asOfDate,
-  ) async {
+    DateTime asOfDate, {
+    String? branchId,
+  }) async {
     final allAccounts = await getAllAccounts();
     final debitSum = gLLines.debit.sum();
     final creditSum = gLLines.credit.sum();
@@ -346,9 +428,15 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     final query = selectOnly(gLLines).join([
       innerJoin(gLEntries, gLEntries.id.equalsExp(gLLines.entryId)),
     ])
-      ..addColumns([gLLines.accountId, debitSum, creditSum])
-      ..where(gLEntries.date.isSmallerOrEqualValue(asOfDate))
-      ..groupBy([gLLines.accountId]);
+      ..addColumns([gLLines.accountId, debitSum, creditSum]);
+    
+    var predicate = gLEntries.date.isSmallerOrEqual(Variable(asOfDate));
+    if (branchId != null) {
+      predicate = predicate & gLLines.branchId.equals(branchId);
+    }
+    
+    query.where(predicate);
+    query.groupBy([gLLines.accountId]);
 
     final rows = await query.get();
     final Map<String, ({double debit, double credit})> balanceMap = {
@@ -369,14 +457,19 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
   Future<List<GLLine>> getGLLinesForAccountInDateRange(
     String accountId,
     DateTime startDate,
-    DateTime endDate,
-  ) {
+    DateTime endDate, {
+    String? branchId,
+  }) {
+    var predicate = gLLines.accountId.equals(accountId) &
+              gLEntries.date.isBetween(Variable(startDate), Variable(endDate));
+    
+    if (branchId != null) {
+      predicate = predicate & gLLines.branchId.equals(branchId);
+    }
+
     return (select(gLLines).join([
           innerJoin(gLEntries, gLEntries.id.equalsExp(gLLines.entryId)),
-        ])..where(
-          gLLines.accountId.equals(accountId) &
-              gLEntries.date.isBetweenValues(startDate, endDate),
-        ))
+        ])..where(predicate))
         .map((row) => row.readTable(gLLines))
         .get();
   }
@@ -384,12 +477,19 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
   // New: Get all GLLines with their associated GLEntries within a date range
   Future<List<GLLineWithAccount>> getGLLinesWithEntriesInDateRange(
     DateTime startDate,
-    DateTime endDate,
-  ) async {
+    DateTime endDate, {
+    String? branchId,
+  }) async {
+    var predicate = gLEntries.date.isBetween(Variable(startDate), Variable(endDate));
+    
+    if (branchId != null) {
+      predicate = predicate & gLLines.branchId.equals(branchId);
+    }
+
     final query = select(gLLines).join([
       innerJoin(gLEntries, gLEntries.id.equalsExp(gLLines.entryId)),
       innerJoin(gLAccounts, gLAccounts.id.equalsExp(gLLines.accountId)),
-    ])..where(gLEntries.date.isBetweenValues(startDate, endDate));
+    ])..where(predicate);
 
     final rows = await query.get();
     return rows.map((row) {
@@ -398,5 +498,58 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
         row.readTable(gLAccounts),
       );
     }).toList();
+  }
+
+  Future<IncomeStatement> getIncomeStatement({
+    required DateTime startDate,
+    required DateTime endDate,
+    String? branchId,
+  }) async {
+    final revenueAccounts = await getAccountsByType(AccountType.revenue);
+    final expenseAccounts = await getAccountsByType(AccountType.expense);
+
+    double totalRevenue = 0;
+    for (final account in revenueAccounts) {
+      totalRevenue +=
+          await getAccountBalanceInRange(account.id, startDate, endDate, branchId: branchId);
+    }
+
+    double totalExpenses = 0;
+    for (final account in expenseAccounts) {
+      totalExpenses +=
+          await getAccountBalanceInRange(account.id, startDate, endDate, branchId: branchId);
+    }
+
+    // In this model, COGS is typically part of expenses
+    return IncomeStatement(
+      totalRevenue: totalRevenue,
+      costOfGoodsSold: 0, // Simplified
+      grossProfit: totalRevenue,
+      totalExpenses: totalExpenses,
+      netIncome: totalRevenue - totalExpenses,
+    );
+  }
+
+  Future<BalanceSheet> getBalanceSheet({DateTime? asOfDate, String? branchId}) async {
+    final date = asOfDate ?? DateTime.now();
+    final trialBalance = await getAllAccountBalancesAsOfDate(date, branchId: branchId);
+
+    final assets = trialBalance.where((item) => item.account.type == AccountType.asset).toList();
+    final liabilities = trialBalance.where((item) => item.account.type == AccountType.liability).toList();
+    final equity = trialBalance.where((item) => item.account.type == AccountType.equity).toList();
+
+    double totalAssets = assets.fold(0.0, (sum, item) => sum + item.netBalance);
+    double totalLiabilities = liabilities.fold(0.0, (sum, item) => sum + item.netBalance);
+    double totalEquity = equity.fold(0.0, (sum, item) => sum + item.netBalance);
+
+    // Note: In a real system, Current Period Net Income should be added to Equity
+    return BalanceSheet(
+      assets: assets,
+      liabilities: liabilities,
+      equity: equity,
+      totalAssets: totalAssets,
+      totalLiabilities: totalLiabilities,
+      totalEquity: totalEquity,
+    );
   }
 }

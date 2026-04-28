@@ -1,3 +1,5 @@
+import 'package:supermarket/presentation/widgets/permission_guard.dart';
+import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/core/services/unit_conversion_service.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
@@ -22,8 +24,10 @@ class SalesInvoicePage extends StatefulWidget {
 class _SalesInvoicePageState extends State<SalesInvoicePage> {
   Customer? _selectedCustomer;
   CustomerSmartData? _customerSmartData;
-  DateTime _selectedDate = DateTime.now();
+  final DateTime _selectedDate = DateTime.now();
   String _paymentType = 'cash'; // cash / credit
+  String? _representativeId;
+  String _priceLevel = 'RETAIL';
   final List<SalesLineItem> _items = [];
   final TextEditingController _barcodeController = TextEditingController();
   final TextEditingController _discountController = TextEditingController();
@@ -64,29 +68,50 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
 
   Future<void> _onBarcodeSubmitted(String barcode, AppDatabase db) async {
     if (barcode.isEmpty) return;
+    
+    // 1. Search in main products table
     final products = await (db.select(
       db.products,
     )..where((p) => p.barcode.equals(barcode) | p.sku.equals(barcode))).get();
 
     if (products.isNotEmpty) {
       final product = products.first;
-      setState(() {
-        _items.add(
-          SalesLineItem(
-            product: product,
-            quantity: 1,
-            price: product.sellPrice,
-            selectedUnit: product.unit,
-          ),
-        );
-      });
+      _addItemToInvoice(product, 1, product.sellPrice, product.unit);
       _barcodeController.clear();
-    } else {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('المنتج $barcode غير موجود')));
+      return;
     }
+
+    // 2. Search in product units table (multi-unit support)
+    final unitQuery = await (db.select(db.productUnits).join([
+      drift.innerJoin(db.products, db.products.id.equalsExp(db.productUnits.productId)),
+    ])..where(db.productUnits.barcode.equals(barcode))).get();
+
+    if (unitQuery.isNotEmpty) {
+      final row = unitQuery.first;
+      final product = row.readTable(db.products);
+      final unit = row.readTable(db.productUnits);
+      _addItemToInvoice(product, 1, unit.sellPrice ?? product.sellPrice, unit.unitName);
+      _barcodeController.clear();
+      return;
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('المنتج $barcode غير موجود')));
+  }
+
+  void _addItemToInvoice(Product product, double qty, double price, String unit) {
+    setState(() {
+      _items.add(
+        SalesLineItem(
+          product: product,
+          quantity: qty,
+          price: price,
+          selectedUnit: unit,
+        ),
+      );
+    });
   }
 
   final _formKey = GlobalKey<FormState>();
@@ -162,10 +187,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
                         items: const [
                           DropdownMenuItem(value: 'cash', child: Text('نقد')),
                           DropdownMenuItem(value: 'credit', child: Text('آجل')),
-                          DropdownMenuItem(
-                            value: 'partial',
-                            child: Text('جزئي'),
-                          ),
+                          DropdownMenuItem(value: 'partial', child: Text('جزئي')),
                           DropdownMenuItem(value: 'split', child: Text('مجزأ')),
                         ],
                         onChanged: (value) {
@@ -179,31 +201,32 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: InkWell(
-                        onTap: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: _selectedDate,
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime(2030),
-                          );
-                          if (date != null) {
-                            setState(() => _selectedDate = date);
-                          }
-                        },
-                        child: InputDecorator(
-                          decoration: const InputDecoration(
-                            labelText: 'التاريخ',
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                          child: Text(_selectedDate.toString().split(' ')[0]),
+                      child: DropdownButtonFormField<String>(
+                        decoration: const InputDecoration(
+                          labelText: 'مستوى التسعير',
+                          border: OutlineInputBorder(),
+                          isDense: true,
                         ),
+                        items: const ['RETAIL', 'WHOLESALE', 'SPECIAL']
+                            .map((l) => DropdownMenuItem(value: l, child: Text(l)))
+                            .toList(),
+                        onChanged: (value) => setState(() => _priceLevel = value!),
+                        initialValue: _priceLevel,
                       ),
                     ),
                   ],
                 ),
-                if (_isSplitPayment) _buildSplitPaymentFields(),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(
+                    labelText: 'المندوب',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  items: const [DropdownMenuItem(value: '1', child: Text('مندوب عام'))],
+                  onChanged: (value) => setState(() => _representativeId = value),
+                  initialValue: _representativeId,
+                ),                if (_isSplitPayment) _buildSplitPaymentFields(),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -517,17 +540,21 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: ElevatedButton(
-              onPressed: _items.isEmpty || _isSaving
-                  ? null
-                  : () => _saveInvoice(db, post: true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
+            child: PermissionGuard(
+              permission: 'POST_INVOICE',
+              fallback: const SizedBox.shrink(),
+              child: ElevatedButton(
+                onPressed: _items.isEmpty || _isSaving
+                    ? null
+                    : () => _saveInvoice(db, post: true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+                child: _isSaving
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('ترحيل'),
               ),
-              child: _isSaving
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('ترحيل'),
             ),
           ),
         ],
@@ -580,7 +607,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
           customerId: drift.Value(_selectedCustomer?.id),
           total: _total,
           tax: drift.Value(totalTax),
-          discount: drift.Value(_discount + totalItemDiscount), // إضافة خصم الأصناف للخصم الإجمالي
+          discount: drift.Value(_discount + totalItemDiscount),
           paymentMethod: _paymentType,
           isCredit: drift.Value(_paymentType == 'credit'),
           status: const drift.Value('DRAFT'),
@@ -608,7 +635,21 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
           itemsCompanions: itemsCompanions,
           userId: null,
         );
-        if (post) await sl<TransactionEngine>().postSale(saleId, userId: null);
+
+        await sl<AuditService>().logCreate(
+          'SalesInvoice', 
+          saleId, 
+          details: 'فاتورة مبيعات جديدة بقيمة ${_total.toStringAsFixed(2)}',
+        );
+
+        if (post) {
+          await sl<TransactionEngine>().postSale(saleId, userId: null);
+          await sl<AuditService>().logUpdate(
+            'SalesInvoice', 
+            saleId, 
+            details: 'تم ترحيل الفاتورة',
+          );
+        }
       });
       
       if (mounted) {

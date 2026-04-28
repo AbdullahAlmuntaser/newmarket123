@@ -4,11 +4,13 @@ part of 'sales_dao.dart';
 
 // ignore_for_file: type=lint
 mixin _$SalesDaoMixin on DatabaseAccessor<AppDatabase> {
+  $BranchesTable get branches => attachedDatabase.branches;
   $GLAccountsTable get gLAccounts => attachedDatabase.gLAccounts;
   $CurrenciesTable get currencies => attachedDatabase.currencies;
   $CustomersTable get customers => attachedDatabase.customers;
   $SalesTable get sales => attachedDatabase.sales;
   $CategoriesTable get categories => attachedDatabase.categories;
+  $SuppliersTable get suppliers => attachedDatabase.suppliers;
   $ProductsTable get products => attachedDatabase.products;
   $GlobalUnitsTable get globalUnits => attachedDatabase.globalUnits;
   $WarehousesTable get warehouses => attachedDatabase.warehouses;
@@ -27,6 +29,8 @@ mixin _$SalesDaoMixin on DatabaseAccessor<AppDatabase> {
 class SalesDaoManager {
   final _$SalesDaoMixin _db;
   SalesDaoManager(this._db);
+  $$BranchesTableTableManager get branches =>
+      $$BranchesTableTableManager(_db.attachedDatabase, _db.branches);
   $$GLAccountsTableTableManager get gLAccounts =>
       $$GLAccountsTableTableManager(_db.attachedDatabase, _db.gLAccounts);
   $$CurrenciesTableTableManager get currencies =>
@@ -37,6 +41,8 @@ class SalesDaoManager {
       $$SalesTableTableManager(_db.attachedDatabase, _db.sales);
   $$CategoriesTableTableManager get categories =>
       $$CategoriesTableTableManager(_db.attachedDatabase, _db.categories);
+  $$SuppliersTableTableManager get suppliers =>
+      $$SuppliersTableTableManager(_db.attachedDatabase, _db.suppliers);
   $$ProductsTableTableManager get products =>
       $$ProductsTableTableManager(_db.attachedDatabase, _db.products);
   $$GlobalUnitsTableTableManager get globalUnits =>

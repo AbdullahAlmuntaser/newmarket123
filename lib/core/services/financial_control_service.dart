@@ -179,8 +179,8 @@ class FinancialControlService {
   Future<AccountingPeriod?> _getOpenPeriod(DateTime date) async {
     return await (db.select(db.accountingPeriods)
           ..where((p) => p.isClosed.equals(false))
-          ..where((p) => p.startDate.isSmallerOrEqualValue(date))
-          ..where((p) => p.endDate.isBiggerOrEqualValue(date)))
+          ..where((p) => p.startDate.isSmallerOrEqual(Variable(date)))
+          ..where((p) => p.endDate.isBiggerOrEqual(Variable(date))))
         .getSingleOrNull();
   }
 
@@ -620,10 +620,10 @@ class FinancialControlService {
       query = query..where((l) => l.entityId.equals(entityId));
     }
     if (startDate != null) {
-      query = query..where((l) => l.timestamp.isBiggerOrEqualValue(startDate));
+      query = query..where((l) => l.timestamp.isBiggerOrEqual(Variable(startDate)));
     }
     if (endDate != null) {
-      query = query..where((l) => l.timestamp.isSmallerOrEqualValue(endDate));
+      query = query..where((l) => l.timestamp.isSmallerOrEqual(Variable(endDate)));
     }
 
     query = query

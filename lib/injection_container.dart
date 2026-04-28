@@ -1,6 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'core/auth/auth_provider.dart';
-import 'core/services/role_permissions_service.dart';
+import 'core/services/permission_service.dart';
 import 'core/services/inventory_service.dart';
 import 'core/services/accounting_service.dart';
 import 'core/services/event_bus_service.dart';
@@ -40,7 +40,7 @@ sl.registerLazySingleton<PostingEngine>(() => PostingEngine(db));
 sl.registerLazySingleton<InventoryCostingService>(
   () => InventoryCostingService(sl<StockMovementDao>()),
 );
-sl.registerLazySingleton<PermissionService>(() => PermissionService());
+sl.registerLazySingleton<PermissionService>(() => PermissionService(db));
 sl.registerLazySingleton<AuditService>(() => AuditService(db));
 sl.registerLazySingleton<InventoryService>(() => InventoryService(db));
 sl.registerLazySingleton<EventBusService>(() => EventBusService());

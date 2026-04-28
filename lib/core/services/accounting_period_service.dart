@@ -31,7 +31,7 @@ class AccountingPeriodService {
   /// Checks if a transaction date is allowed (must not be in a closed period)
   Future<bool> isDateAllowed(DateTime date) async {
     final closedPeriods = await (db.select(db.accountingPeriods)
-          ..where((p) => p.isClosed.equals(true) & p.startDate.isSmallerOrEqualValue(date) & p.endDate.isBiggerOrEqualValue(date)))
+          ..where((p) => p.isClosed.equals(true) & p.startDate.isSmallerOrEqual(Variable(date)) & p.endDate.isBiggerOrEqual(Variable(date))))
         .get();
         
     return closedPeriods.isEmpty;

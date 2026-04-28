@@ -4,6 +4,7 @@ part of 'users_dao.dart';
 
 // ignore_for_file: type=lint
 mixin _$UsersDaoMixin on DatabaseAccessor<AppDatabase> {
+  $BranchesTable get branches => attachedDatabase.branches;
   $UsersTable get users => attachedDatabase.users;
   $PermissionsTable get permissions => attachedDatabase.permissions;
   $RolePermissionsTable get rolePermissions => attachedDatabase.rolePermissions;
@@ -13,6 +14,8 @@ mixin _$UsersDaoMixin on DatabaseAccessor<AppDatabase> {
 class UsersDaoManager {
   final _$UsersDaoMixin _db;
   UsersDaoManager(this._db);
+  $$BranchesTableTableManager get branches =>
+      $$BranchesTableTableManager(_db.attachedDatabase, _db.branches);
   $$UsersTableTableManager get users =>
       $$UsersTableTableManager(_db.attachedDatabase, _db.users);
   $$PermissionsTableTableManager get permissions =>

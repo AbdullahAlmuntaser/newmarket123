@@ -2245,6 +2245,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Is Carton?'**
   String get isCarton;
+
+  /// No description provided for @accountsPayable.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts Payable'**
+  String get accountsPayable;
+
+  /// No description provided for @apInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'AP Invoices'**
+  String get apInvoices;
+
+  /// No description provided for @supplierLedger.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier Ledger'**
+  String get supplierLedger;
+
+  /// No description provided for @newAPInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'New AP Invoice'**
+  String get newAPInvoice;
+
+  /// No description provided for @invoiceDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice Date'**
+  String get invoiceDate;
+
+  /// No description provided for @dueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Due Date'**
+  String get dueDate;
+
+  /// No description provided for @totalAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Amount'**
+  String get totalAmount;
+
+  /// No description provided for @taxAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Tax Amount'**
+  String get taxAmount;
+
+  /// No description provided for @paidAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid Amount'**
+  String get paidAmount;
+
+  /// No description provided for @apInvoiceAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'AP Invoice added successfully'**
+  String get apInvoiceAdded;
+
+  /// No description provided for @accountsReceivable.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts Receivable'**
+  String get accountsReceivable;
+
+  /// No description provided for @arInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'AR Invoices'**
+  String get arInvoices;
+
+  /// No description provided for @customerLedger.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer Ledger'**
+  String get customerLedger;
+
+  /// No description provided for @newARInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'New AR Invoice'**
+  String get newARInvoice;
+
+  /// No description provided for @arInvoiceAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'AR Invoice added successfully'**
+  String get arInvoiceAdded;
+
+  /// No description provided for @agingReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Aging Report'**
+  String get agingReport;
+
+  /// No description provided for @current.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get current;
+
+  /// No description provided for @days30.
+  ///
+  /// In en, this message translates to:
+  /// **'30 Days'**
+  String get days30;
+
+  /// No description provided for @days60.
+  ///
+  /// In en, this message translates to:
+  /// **'60 Days'**
+  String get days60;
+
+  /// No description provided for @days90Plus.
+  ///
+  /// In en, this message translates to:
+  /// **'90+ Days'**
+  String get days90Plus;
+
+  /// No description provided for @totalDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Due'**
+  String get totalDue;
+
+  /// No description provided for @selectType.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Type'**
+  String get selectType;
+
+  /// No description provided for @cashFlowForecast.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash Flow Forecast'**
+  String get cashFlowForecast;
+
+  /// No description provided for @inflow.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash Inflow (AR)'**
+  String get inflow;
+
+  /// No description provided for @outflow.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash Outflow (AP)'**
+  String get outflow;
+
+  /// No description provided for @netCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Net Cash'**
+  String get netCash;
+
+  /// No description provided for @next30Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Next 30 Days'**
+  String get next30Days;
+
+  /// No description provided for @next60Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Next 60 Days'**
+  String get next60Days;
+
+  /// No description provided for @next90Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Next 90 Days'**
+  String get next90Days;
+
+  /// No description provided for @period.
+  ///
+  /// In en, this message translates to:
+  /// **'Period'**
+  String get period;
 }
 
 class _AppLocalizationsDelegate

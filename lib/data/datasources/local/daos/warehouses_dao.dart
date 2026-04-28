@@ -28,7 +28,7 @@ class WarehousesDao extends DatabaseAccessor<AppDatabase>
     final query = select(productBatches)
       ..where(
         (t) =>
-            t.warehouseId.equals(warehouseId) & t.quantity.isBiggerThanValue(0),
+            t.warehouseId.equals(warehouseId) & t.quantity.isBiggerThan(Variable(0)),
       );
     final results = await query.get();
     return results.isNotEmpty;

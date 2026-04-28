@@ -1117,4 +1117,94 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get isCarton => 'Is Carton?';
+
+  @override
+  String get accountsPayable => 'Accounts Payable';
+
+  @override
+  String get apInvoices => 'AP Invoices';
+
+  @override
+  String get supplierLedger => 'Supplier Ledger';
+
+  @override
+  String get newAPInvoice => 'New AP Invoice';
+
+  @override
+  String get invoiceDate => 'Invoice Date';
+
+  @override
+  String get dueDate => 'Due Date';
+
+  @override
+  String get totalAmount => 'Total Amount';
+
+  @override
+  String get taxAmount => 'Tax Amount';
+
+  @override
+  String get paidAmount => 'Paid Amount';
+
+  @override
+  String get apInvoiceAdded => 'AP Invoice added successfully';
+
+  @override
+  String get accountsReceivable => 'Accounts Receivable';
+
+  @override
+  String get arInvoices => 'AR Invoices';
+
+  @override
+  String get customerLedger => 'Customer Ledger';
+
+  @override
+  String get newARInvoice => 'New AR Invoice';
+
+  @override
+  String get arInvoiceAdded => 'AR Invoice added successfully';
+
+  @override
+  String get agingReport => 'Aging Report';
+
+  @override
+  String get current => 'Current';
+
+  @override
+  String get days30 => '30 Days';
+
+  @override
+  String get days60 => '60 Days';
+
+  @override
+  String get days90Plus => '90+ Days';
+
+  @override
+  String get totalDue => 'Total Due';
+
+  @override
+  String get selectType => 'Select Type';
+
+  @override
+  String get cashFlowForecast => 'Cash Flow Forecast';
+
+  @override
+  String get inflow => 'Cash Inflow (AR)';
+
+  @override
+  String get outflow => 'Cash Outflow (AP)';
+
+  @override
+  String get netCash => 'Net Cash';
+
+  @override
+  String get next30Days => 'Next 30 Days';
+
+  @override
+  String get next60Days => 'Next 60 Days';
+
+  @override
+  String get next90Days => 'Next 90 Days';
+
+  @override
+  String get period => 'Period';
 }

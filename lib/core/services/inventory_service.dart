@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
@@ -128,6 +129,37 @@ class InventoryService {
     return db.watchLowStockProducts();
   }
 
+  /// Watch product batches that are expiring within the next [days]
+  Stream<List<BatchReport>> watchExpiringSoonBatches({int days = 30}) {
+    final now = DateTime.now();
+    final threshold = now.add(Duration(days: days));
+
+    final query = db.select(db.productBatches).join([
+      drift.innerJoin(
+        db.products,
+        db.products.id.equalsExp(db.productBatches.productId),
+      ),
+      drift.leftOuterJoin(
+        db.warehouses,
+        db.warehouses.id.equalsExp(db.productBatches.warehouseId),
+      ),
+    ])..where(
+      db.productBatches.expiryDate.isBiggerOrEqual(Variable(now)) &
+      db.productBatches.expiryDate.isSmallerOrEqual(Variable(threshold)) &
+      db.productBatches.quantity.isBiggerThan(Variable(0))
+    );
+
+    return query.watch().map((rows) {
+      return rows.map((row) {
+        return BatchReport(
+          batch: row.readTable(db.productBatches),
+          product: row.readTable(db.products),
+          warehouse: row.readTableOrNull(db.warehouses),
+        );
+      }).toList();
+    });
+  }
+
   /// تنفيذ عملية جرد وتسوية للمخزون
   /// [auditCompanion] رأس الجرد (التاريخ، الملاحظات)
   /// [items] قائمة بالأصناف المجردة (الكمية الفعلية، معرف المنتج)
@@ -177,7 +209,7 @@ class InventoryService {
                       ..where(
                         (b) =>
                             b.productId.equals(productId) &
-                            b.quantity.isBiggerThanValue(0),
+                            b.quantity.isBiggerThan(Variable(0)),
                       )
                       ..orderBy([
                         (b) => drift.OrderingTerm(
@@ -347,5 +379,114 @@ class InventoryService {
             referenceId: drift.Value(referenceId),
           ),
         );
+  }
+
+  /// تحويل مخزون بين مستودعين (أو فرعين)
+  Future<void> transferStock({
+    required String fromWarehouseId,
+    required String toWarehouseId,
+    required List<StockTransferItemsCompanion> items,
+    String? note,
+    String? userId,
+  }) async {
+    await db.transaction(() async {
+      final transferId = const Uuid().v4();
+
+      // 1. تسجيل رأس التحويل
+      await db.into(db.stockTransfers).insert(
+            StockTransfersCompanion.insert(
+              id: drift.Value(transferId),
+              fromWarehouseId: fromWarehouseId,
+              toWarehouseId: toWarehouseId,
+              transferDate: drift.Value(DateTime.now()),
+              note: drift.Value(note),
+              status: const drift.Value('COMPLETED'),
+            ),
+          );
+
+      for (var itemCompanion in items) {
+        final productId = itemCompanion.productId.value;
+        final batchId = itemCompanion.batchId.value;
+        final qty = itemCompanion.quantity.value;
+
+        // 2. تحديث الدفعة المصدر (Batch Out)
+        final sourceBatch = await (db.select(db.productBatches)
+              ..where((b) => b.id.equals(batchId)))
+            .getSingle();
+
+        if (sourceBatch.quantity < qty) {
+          throw Exception('الكمية غير كافية في الدفعة المصدر لمستودع ${sourceBatch.warehouseId}');
+        }
+
+        await (db.update(db.productBatches)..where((b) => b.id.equals(batchId)))
+            .write(ProductBatchesCompanion(quantity: drift.Value(sourceBatch.quantity - qty)));
+
+        // 3. تحديث أو إنشاء الدفعة في المستودع الهدف (Batch In)
+        // نحاول البحث عن دفعة بنفس رقم التشغيلة وتاريخ الانتهاء في المستودع الهدف
+        final targetBatch = await (db.select(db.productBatches)
+              ..where(
+                (b) =>
+                    b.productId.equals(productId) &
+                    b.warehouseId.equals(toWarehouseId) &
+                    b.batchNumber.equals(sourceBatch.batchNumber),
+              ))
+            .getSingleOrNull();
+
+        if (targetBatch != null) {
+          await (db.update(db.productBatches)..where((b) => b.id.equals(targetBatch.id)))
+              .write(ProductBatchesCompanion(quantity: drift.Value(targetBatch.quantity + qty)));
+        } else {
+          // إنشاء دفعة جديدة في المستودع الهدف
+          await db.into(db.productBatches).insert(
+                ProductBatchesCompanion.insert(
+                  productId: productId,
+                  warehouseId: toWarehouseId,
+                  batchNumber: sourceBatch.batchNumber,
+                  expiryDate: drift.Value(sourceBatch.expiryDate),
+                  quantity: drift.Value(qty),
+                  initialQuantity: drift.Value(qty),
+                  costPrice: drift.Value(sourceBatch.costPrice),
+                ),
+              );
+        }
+
+        // 4. تسجيل بنود التحويل
+        await db.into(db.stockTransferItems).insert(
+              itemCompanion.copyWith(transferId: drift.Value(transferId)),
+            );
+
+        // 5. تسجيل حركات المخزون (Inventory Transactions)
+        await db.into(db.inventoryTransactions).insert(
+              InventoryTransactionsCompanion.insert(
+                productId: productId,
+                warehouseId: fromWarehouseId,
+                batchId: drift.Value(batchId),
+                quantity: -qty,
+                type: 'TRANSFER_OUT',
+                referenceId: transferId,
+              ),
+            );
+
+        await db.into(db.inventoryTransactions).insert(
+              InventoryTransactionsCompanion.insert(
+                productId: productId,
+                warehouseId: toWarehouseId,
+                batchId: drift.Value(batchId), // نستخدم نفس المعرف المرجعي أو نحدثه لاحقاً
+                quantity: qty,
+                type: 'TRANSFER_IN',
+                referenceId: transferId,
+              ),
+            );
+      }
+
+      // 6. توثيق العملية
+      await _auditService.log(
+        action: 'STOCK_TRANSFER',
+        targetEntity: 'StockTransfers',
+        entityId: transferId,
+        userId: userId,
+        details: 'Transferred stock from $fromWarehouseId to $toWarehouseId',
+      );
+    });
   }
 }

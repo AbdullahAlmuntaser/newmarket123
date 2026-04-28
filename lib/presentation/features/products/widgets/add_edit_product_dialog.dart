@@ -31,6 +31,9 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   late String _unit;
   late String _cartonUnit;
   late int _piecesPerCarton;
+  late String _valuationMethod;
+  late bool _allowFreeQty;
+  late bool _isService;
   final MobileScannerController _scannerController = MobileScannerController();
   List<ProductUnit> _extraUnits = []; // إضافة قائمة الوحدات الإضافية
 
@@ -48,6 +51,9 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     _unit = widget.product?.unit ?? 'pcs';
     _cartonUnit = widget.product?.cartonUnit ?? 'carton';
     _piecesPerCarton = widget.product?.piecesPerCarton ?? 1;
+    _valuationMethod = widget.product?.valuationMethod ?? 'FIFO';
+    _allowFreeQty = widget.product?.allowFreeQty ?? false;
+    _isService = widget.product?.isService ?? false;
     _loadExtraUnits();
   }
 
@@ -200,8 +206,23 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 initialValue: _piecesPerCarton.toString(),
                 decoration: InputDecoration(labelText: l10n.piecesPerCarton),
                 keyboardType: TextInputType.number,
-                onSaved: (value) =>
-                    _piecesPerCarton = int.tryParse(value!) ?? 1,
+                onSaved: (value) => _piecesPerCarton = int.tryParse(value!) ?? 1,
+              ),
+              DropdownButtonFormField<String>(
+                initialValue: _valuationMethod,
+                decoration: const InputDecoration(labelText: 'طريقة التقييم'),
+                items: ['FIFO', 'AVCO'].map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                onChanged: (val) => setState(() => _valuationMethod = val!),
+              ),
+              SwitchListTile(
+                title: const Text('صنف خدمي'),
+                value: _isService,
+                onChanged: (val) => setState(() => _isService = val),
+              ),
+              SwitchListTile(
+                title: const Text('يسمح بكميات مجانية'),
+                value: _allowFreeQty,
+                onChanged: (val) => setState(() => _allowFreeQty = val),
               ),
               const Divider(),
               Text('الوحدات الإضافية', style: Theme.of(context).textTheme.titleMedium),
@@ -273,14 +294,26 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
           String productId;
           if (widget.product == null) {
             productId = await db.into(db.products).insertReturning(ProductsCompanion.insert(
-              name: _name, sku: _skuController.text, unit: Value(_unit),
-              cartonUnit: Value(_cartonUnit), piecesPerCarton: Value(_piecesPerCarton),
+              name: _name, 
+              sku: _skuController.text, 
+              unit: Value(_unit),
+              cartonUnit: Value(_cartonUnit), 
+              piecesPerCarton: Value(_piecesPerCarton),
+              valuationMethod: Value(_valuationMethod),
+              allowFreeQty: Value(_allowFreeQty),
+              isService: Value(_isService),
             )).then((p) => p.id);
           } else {
             productId = widget.product!.id;
             await db.update(db.products).replace(widget.product!.copyWith(
-              name: _name, sku: _skuController.text, unit: _unit,
-              cartonUnit: _cartonUnit, piecesPerCarton: _piecesPerCarton,
+              name: _name, 
+              sku: _skuController.text, 
+              unit: _unit,
+              cartonUnit: _cartonUnit, 
+              piecesPerCarton: _piecesPerCarton,
+              valuationMethod: _valuationMethod,
+              allowFreeQty: _allowFreeQty,
+              isService: _isService,
             ));
           }
           await (db.delete(db.productUnits)..where((t) => t.productId.equals(productId))).go();

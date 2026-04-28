@@ -23,8 +23,8 @@ class ReportingService {
       innerJoin(db.gLAccounts, db.gLAccounts.id.equalsExp(db.gLLines.accountId)),
       innerJoin(db.gLEntries, db.gLEntries.id.equalsExp(db.gLLines.entryId)),
     ])..where(db.gLAccounts.type.equals(type))
-      ..where(db.gLEntries.date.isBiggerOrEqualValue(from))
-      ..where(db.gLEntries.date.isSmallerOrEqualValue(to));
+      ..where(db.gLEntries.date.isBiggerOrEqual(Variable(from)))
+      ..where(db.gLEntries.date.isSmallerOrEqual(Variable(to)));
 
     final results = await query.get();
     double total = 0.0;

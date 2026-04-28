@@ -45,6 +45,7 @@ class CustomerTransaction {
     GLAccounts,
     GLEntries,
     GLLines,
+    ARInvoices,
   ],
 )
 class CustomersDao extends DatabaseAccessor<AppDatabase>
@@ -63,6 +64,35 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
 
   Future<Customer?> getCustomerById(String id) {
     return (select(customers)..where((c) => c.id.equals(id))).getSingleOrNull();
+  }
+
+  // AR Invoices
+  Stream<List<ARInvoice>> watchARInvoices(String customerId) {
+    return (select(aRInvoices)..where((t) => t.customerId.equals(customerId))).watch();
+  }
+
+  Stream<List<ARInvoice>> watchAllARInvoices() {
+    return (select(aRInvoices)..orderBy([(t) => OrderingTerm(expression: t.invoiceDate, mode: OrderingMode.desc)])).watch();
+  }
+
+  Future<int> createARInvoice(ARInvoicesCompanion entry) {
+    return into(aRInvoices).insert(entry);
+  }
+
+  Future<List<ARInvoice>> getUnpaidARInvoices(String customerId) {
+    return (select(aRInvoices)
+          ..where((t) =>
+              t.customerId.equals(customerId) &
+              t.status.isIn(['POSTED', 'PARTIAL'])))
+        .get();
+  }
+
+  Future<List<ARInvoice>> getDueARInvoices(DateTime endDate) {
+    return (select(aRInvoices)
+          ..where((t) =>
+              t.status.isIn(['POSTED', 'PARTIAL']) &
+              t.dueDate.isSmallerOrEqual(Variable(endDate))))
+        .get();
   }
 
   /// إدراج عميل مع إنشاء حساب محاسبي له تلقائياً
@@ -160,7 +190,22 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
       );
     }
 
-    // 2. جلب المدفوعات
+    // 2. جلب فواتير الذمم المدينة (AR Invoices)
+    final arInvoicesList = await (select(aRInvoices)..where((t) => t.customerId.equals(customerId))).get();
+    for (var inv in arInvoicesList) {
+      allTransactions.add(
+        CustomerTransaction(
+          date: inv.invoiceDate,
+          description: 'فاتورة AR رقم ${inv.invoiceNumber}',
+          debit: inv.totalAmount,
+          credit: 0,
+          referenceId: inv.id,
+          type: 'AR_INVOICE',
+        ),
+      );
+    }
+
+    // 3. جلب المدفوعات
     final payments = await (select(
       db.customerPayments,
     )..where((p) => p.customerId.equals(customerId))).get();
@@ -178,7 +223,7 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
       );
     }
 
-    // 3. جلب المرتجعات
+    // 4. جلب المرتجعات
     final returnsQuery = select(db.salesReturns).join([
       innerJoin(db.sales, db.sales.id.equalsExp(db.salesReturns.saleId)),
     ])..where(db.sales.customerId.equals(customerId));

@@ -70,7 +70,9 @@ class _CurrencyRatesPageState extends State<CurrencyRatesPage> {
     final codeController = TextEditingController();
     final nameController = TextEditingController();
     final rateController = TextEditingController();
-    bool isBase = false; // Local state for checkbox
+    final fractionalUnitController = TextEditingController(); // جديد
+    final decimalPlacesController = TextEditingController(text: '2'); // جديد
+    bool isBase = false;
 
     showDialog(
       context: context,
@@ -82,34 +84,31 @@ class _CurrencyRatesPageState extends State<CurrencyRatesPage> {
             children: [
               TextField(
                 controller: codeController,
-                decoration: const InputDecoration(
-                  labelText: 'رمز العملة (USD)',
-                ),
+                decoration: const InputDecoration(labelText: 'رمز العملة (USD)'),
               ),
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'اسم العملة (دولار أمريكي)',
-                ),
+                decoration: const InputDecoration(labelText: 'اسم العملة (دولار أمريكي)'),
+              ),
+              TextField(
+                controller: fractionalUnitController,
+                decoration: const InputDecoration(labelText: 'فكة العملة (سنت)'),
+              ),
+              TextField(
+                controller: decimalPlacesController,
+                decoration: const InputDecoration(labelText: 'عدد الكسور'),
+                keyboardType: TextInputType.number,
               ),
               TextField(
                 controller: rateController,
-                decoration: const InputDecoration(
-                  labelText: 'سعر الصرف مقابل الأساسي',
-                ),
+                decoration: const InputDecoration(labelText: 'سعر الصرف مقابل الأساسي'),
                 keyboardType: TextInputType.number,
               ),
               Row(
                 children: [
                   Checkbox(
                     value: isBase,
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          isBase = value;
-                        }); // Update local state
-                      }
-                    },
+                    onChanged: (value) => setState(() => isBase = value ?? false),
                   ),
                   const Text('عملة أساسية'),
                 ],
@@ -124,23 +123,20 @@ class _CurrencyRatesPageState extends State<CurrencyRatesPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (codeController.text.isNotEmpty &&
-                  nameController.text.isNotEmpty &&
-                  rateController.text.isNotEmpty) {
-                final rate = double.tryParse(rateController.text);
-                if (rate != null) {
-                  await db
-                      .into(db.currencies)
-                      .insert(
-                        CurrenciesCompanion.insert(
-                          code: codeController.text,
-                          name: nameController.text,
-                          exchangeRate: drift.Value(rate),
-                          isBase: drift.Value(isBase),
-                        ),
-                      );
-                  if (context.mounted) Navigator.pop(context);
-                }
+              final rate = double.tryParse(rateController.text);
+              final decimals = int.tryParse(decimalPlacesController.text);
+              if (codeController.text.isNotEmpty && nameController.text.isNotEmpty && rate != null) {
+                await db.into(db.currencies).insert(
+                  CurrenciesCompanion.insert(
+                    code: codeController.text,
+                    name: nameController.text,
+                    fractionalUnit: drift.Value(fractionalUnitController.text),
+                    decimalPlaces: drift.Value(decimals ?? 2),
+                    exchangeRate: drift.Value(rate),
+                    isBase: drift.Value(isBase),
+                  ),
+                );
+                if (context.mounted) Navigator.pop(context);
               }
             },
             child: const Text('حفظ'),
@@ -150,55 +146,29 @@ class _CurrencyRatesPageState extends State<CurrencyRatesPage> {
     );
   }
 
-  void _showEditCurrencyDialog(
-    BuildContext context,
-    AppDatabase db,
-    Currency currency,
-  ) {
-    final codeController = TextEditingController(text: currency.code);
+  void _showEditCurrencyDialog(BuildContext context, AppDatabase db, Currency currency) {
     final nameController = TextEditingController(text: currency.name);
-    final rateController = TextEditingController(
-      text: currency.exchangeRate.toString(),
-    );
-    bool isBase = currency.isBase; // Initialize local state from currency
+    final rateController = TextEditingController(text: currency.exchangeRate.toString());
+    final fractionalUnitController = TextEditingController(text: currency.fractionalUnit ?? '');
+    final decimalPlacesController = TextEditingController(text: currency.decimalPlaces.toString());
+    bool isBase = currency.isBase;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('تعديل سعر الصرف'),
+        title: const Text('تعديل العملة'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: codeController,
-                decoration: const InputDecoration(labelText: 'رمز العملة'),
-                readOnly: true,
-              ),
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'اسم العملة'),
-                readOnly: true,
-              ),
-              TextField(
-                controller: rateController,
-                decoration: const InputDecoration(
-                  labelText: 'سعر الصرف مقابل الأساسي',
-                ),
-                keyboardType: TextInputType.number,
-              ),
+              TextField(controller: TextEditingController(text: currency.code), decoration: const InputDecoration(labelText: 'رمز العملة'), readOnly: true),
+              TextField(controller: nameController, decoration: const InputDecoration(labelText: 'اسم العملة')),
+              TextField(controller: fractionalUnitController, decoration: const InputDecoration(labelText: 'فكة العملة')),
+              TextField(controller: decimalPlacesController, decoration: const InputDecoration(labelText: 'عدد الكسور'), keyboardType: TextInputType.number),
+              TextField(controller: rateController, decoration: const InputDecoration(labelText: 'سعر الصرف'), keyboardType: TextInputType.number),
               Row(
                 children: [
-                  Checkbox(
-                    value: isBase,
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          isBase = value;
-                        }); // Update local state
-                      }
-                    },
-                  ),
+                  Checkbox(value: isBase, onChanged: (value) => setState(() => isBase = value ?? false)),
                   const Text('عملة أساسية'),
                 ],
               ),
@@ -206,22 +176,22 @@ class _CurrencyRatesPageState extends State<CurrencyRatesPage> {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
           ElevatedButton(
             onPressed: () async {
-              if (rateController.text.isNotEmpty) {
-                final rate = double.tryParse(rateController.text);
-                if (rate != null) {
-                  await db
-                      .update(db.currencies)
-                      .replace(
-                        currency.copyWith(exchangeRate: rate, isBase: isBase),
-                      );
-                  if (context.mounted) Navigator.pop(context);
-                }
+              final rate = double.tryParse(rateController.text);
+              final decimals = int.tryParse(decimalPlacesController.text);
+              if (rate != null) {
+                await db.update(db.currencies).replace(
+                  currency.copyWith(
+                    name: nameController.text,
+                    fractionalUnit: drift.Value(fractionalUnitController.text),
+                    decimalPlaces: decimals ?? 2,
+                    exchangeRate: rate,
+                    isBase: isBase,
+                  ),
+                );
+                if (context.mounted) Navigator.pop(context);
               }
             },
             child: const Text('حفظ'),

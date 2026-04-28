@@ -5,9 +5,10 @@ abstract class AppEvent {}
 class SaleCreatedEvent extends AppEvent {
   final Sale sale;
   final List<SaleItem> items;
+  final double cogs;
   final String? userId;
 
-  SaleCreatedEvent(this.sale, this.items, {this.userId});
+  SaleCreatedEvent(this.sale, this.items, {required this.cogs, this.userId});
 }
 
 class SaleReturnCreatedEvent extends AppEvent {

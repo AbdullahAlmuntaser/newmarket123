@@ -4,6 +4,7 @@ part of 'suppliers_dao.dart';
 
 // ignore_for_file: type=lint
 mixin _$SuppliersDaoMixin on DatabaseAccessor<AppDatabase> {
+  $BranchesTable get branches => attachedDatabase.branches;
   $GLAccountsTable get gLAccounts => attachedDatabase.gLAccounts;
   $SuppliersTable get suppliers => attachedDatabase.suppliers;
   $SupplierPaymentsTable get supplierPayments =>
@@ -15,12 +16,15 @@ mixin _$SuppliersDaoMixin on DatabaseAccessor<AppDatabase> {
   $CostCentersTable get costCenters => attachedDatabase.costCenters;
   $CurrenciesTable get currencies => attachedDatabase.currencies;
   $GLLinesTable get gLLines => attachedDatabase.gLLines;
+  $APInvoicesTable get aPInvoices => attachedDatabase.aPInvoices;
   SuppliersDaoManager get managers => SuppliersDaoManager(this);
 }
 
 class SuppliersDaoManager {
   final _$SuppliersDaoMixin _db;
   SuppliersDaoManager(this._db);
+  $$BranchesTableTableManager get branches =>
+      $$BranchesTableTableManager(_db.attachedDatabase, _db.branches);
   $$GLAccountsTableTableManager get gLAccounts =>
       $$GLAccountsTableTableManager(_db.attachedDatabase, _db.gLAccounts);
   $$SuppliersTableTableManager get suppliers =>
@@ -47,4 +51,6 @@ class SuppliersDaoManager {
       $$CurrenciesTableTableManager(_db.attachedDatabase, _db.currencies);
   $$GLLinesTableTableManager get gLLines =>
       $$GLLinesTableTableManager(_db.attachedDatabase, _db.gLLines);
+  $$APInvoicesTableTableManager get aPInvoices =>
+      $$APInvoicesTableTableManager(_db.attachedDatabase, _db.aPInvoices);
 }

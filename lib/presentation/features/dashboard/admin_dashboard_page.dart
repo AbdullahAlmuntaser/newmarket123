@@ -289,17 +289,17 @@ class AdminDashboardPage extends StatelessWidget {
           children: [
             _buildKPICard(
               context,
-              l10n.revenue,
-              data.totalRevenue,
+              'مبيعات اليوم',
+              data.dailyRevenue.isNotEmpty ? data.dailyRevenue.last.value : 0.0,
               Icons.trending_up,
               Colors.green,
             ),
             _buildKPICard(
               context,
-              l10n.expenses,
-              data.totalExpenses,
-              Icons.trending_down,
-              Colors.red,
+              'مشتريات اليوم',
+              data.dailyExpenses.isNotEmpty ? data.dailyExpenses.last.value : 0.0,
+              Icons.shopping_cart,
+              Colors.blue,
             ),
             _buildKPICard(
               context,

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:supermarket/presentation/features/inventory/stock_transfer_provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
+import 'package:supermarket/core/utils/printer_helper.dart';
 
 class StockTransferPage extends StatefulWidget {
   const StockTransferPage({super.key});
@@ -135,10 +136,23 @@ class _StockTransferPageState extends State<StockTransferPage> {
                   : () async {
                       final messenger = ScaffoldMessenger.of(context);
                       try {
+                        // حفظ أول صنف للطباعة
+                        final firstItem = provider.transferItems.first;
+                        final product = await (context.read<AppDatabase>().select(
+                          context.read<AppDatabase>().products,
+                        )..where((t) => t.id.equals(firstItem.productId))).getSingle();
+
                         await provider.submitTransfer(_noteController.text);
                         messenger.showSnackBar(
                           const SnackBar(content: Text('تم التحويل بنجاح')),
                         );
+                        
+                        await PrinterHelper.printStockMovement(
+                            itemName: product.name,
+                            quantity: firstItem.quantity,
+                            reference: 'TRN-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}'
+                        );
+
                         _noteController.clear();
                       } catch (e) {
                         messenger.showSnackBar(
@@ -184,7 +198,7 @@ class _StockTransferPageState extends State<StockTransferPage> {
                                 ..where((t) => t.id.equals(b.productId)))
                               .getSingleOrNull(),
                       builder: (context, snapshot) => Text(
-                        '${snapshot.data?.name} (Batch: ${b.batchNumber}, Qty: ${b.quantity})',
+                        '${snapshot.data?.name ?? 'Unknown'} (Batch: ${b.batchNumber}, Qty: ${b.quantity})',
                       ),
                     ),
                   );

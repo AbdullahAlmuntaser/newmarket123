@@ -38,6 +38,7 @@ class AccountingProvider with ChangeNotifier {
     required String code,
     required String name,
     required String type,
+    String? analyticType,
     bool isHeader = false,
   }) async {
     await db.accountingDao.createAccount(
@@ -45,6 +46,7 @@ class AccountingProvider with ChangeNotifier {
         code: code,
         name: name,
         type: type,
+        analyticType: Value(analyticType),
         isHeader: Value(isHeader),
       ),
     );

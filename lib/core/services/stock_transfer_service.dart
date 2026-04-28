@@ -1,17 +1,22 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/services/audit_service.dart';
 import 'package:uuid/uuid.dart';
 
 class StockTransferService {
   final AppDatabase db;
+  late final AuditService _auditService;
 
-  StockTransferService(this.db);
+  StockTransferService(this.db) {
+    _auditService = AuditService(db);
+  }
 
   Future<void> processTransfer({
     required String fromWarehouseId,
     required String toWarehouseId,
     required List<TransferItemData> items,
     String? note,
+    String? userId,
   }) async {
     if (fromWarehouseId == toWarehouseId) {
       throw Exception('Source and destination warehouses must be different.');
@@ -54,9 +59,20 @@ class StockTransferService {
             quantity: Value(sourceBatch.quantity - item.quantity),
           ),
         );
+        
+        // Record Deduct Transaction
+        await db.into(db.inventoryTransactions).insert(
+          InventoryTransactionsCompanion.insert(
+            productId: item.productId,
+            warehouseId: fromWarehouseId,
+            batchId: Value(item.batchId),
+            quantity: -item.quantity,
+            type: 'TRANSFER_OUT',
+            referenceId: transferId,
+          ),
+        );
 
         // 4. Create or Update Destination Batch
-        // Check if a batch with same number and expiry exists in destination warehouse
         final existingDestBatch =
             await (db.select(db.productBatches)
                   ..where(
@@ -68,20 +84,23 @@ class StockTransferService {
                   ..limit(1))
                 .getSingleOrNull();
 
+        String destBatchId;
         if (existingDestBatch != null) {
+          destBatchId = existingDestBatch.id;
           await (db.update(
             db.productBatches,
-          )..where((t) => t.id.equals(existingDestBatch.id))).write(
+          )..where((t) => t.id.equals(destBatchId))).write(
             ProductBatchesCompanion(
               quantity: Value(existingDestBatch.quantity + item.quantity),
             ),
           );
         } else {
+          destBatchId = const Uuid().v4();
           await db
               .into(db.productBatches)
               .insert(
                 ProductBatchesCompanion.insert(
-                  id: Value(const Uuid().v4()),
+                  id: Value(destBatchId),
                   productId: item.productId,
                   warehouseId: toWarehouseId,
                   batchNumber: sourceBatch.batchNumber,
@@ -92,6 +111,18 @@ class StockTransferService {
                 ),
               );
         }
+        
+        // Record Add Transaction
+        await db.into(db.inventoryTransactions).insert(
+          InventoryTransactionsCompanion.insert(
+            productId: item.productId,
+            warehouseId: toWarehouseId,
+            batchId: Value(destBatchId),
+            quantity: item.quantity,
+            type: 'TRANSFER_IN',
+            referenceId: transferId,
+          ),
+        );
 
         // 5. Record Transfer Item
         await db
@@ -106,6 +137,15 @@ class StockTransferService {
               ),
             );
       }
+
+      // 6. Log Audit
+      await _auditService.log(
+        action: 'STOCK_TRANSFER',
+        targetEntity: 'StockTransfers',
+        entityId: transferId,
+        userId: userId,
+        details: 'Transferred ${items.length} items from $fromWarehouseId to $toWarehouseId',
+      );
     });
   }
 
@@ -117,7 +157,7 @@ class StockTransferService {
     return await (db.select(db.productBatches)..where(
           (t) =>
               t.warehouseId.equals(warehouseId) &
-              t.quantity.isBiggerThanValue(0),
+              t.quantity.isBiggerThan(Variable(0)),
         ))
         .get();
   }

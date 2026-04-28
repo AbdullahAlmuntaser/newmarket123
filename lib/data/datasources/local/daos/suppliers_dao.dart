@@ -32,6 +32,7 @@ class SupplierTransaction {
     GLAccounts,
     GLEntries,
     GLLines,
+    APInvoices,
   ],
 )
 class SuppliersDao extends DatabaseAccessor<AppDatabase>
@@ -43,6 +44,35 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
 
   Future<Supplier?> getSupplierById(String id) {
     return (select(suppliers)..where((s) => s.id.equals(id))).getSingleOrNull();
+  }
+
+  // AP Invoices
+  Stream<List<APInvoice>> watchAPInvoices(String supplierId) {
+    return (select(aPInvoices)..where((t) => t.supplierId.equals(supplierId))).watch();
+  }
+
+  Stream<List<APInvoice>> watchAllAPInvoices() {
+    return (select(aPInvoices)..orderBy([(t) => OrderingTerm(expression: t.invoiceDate, mode: OrderingMode.desc)])).watch();
+  }
+
+  Future<int> createAPInvoice(APInvoicesCompanion entry) {
+    return into(aPInvoices).insert(entry);
+  }
+
+  Future<List<APInvoice>> getUnpaidAPInvoices(String supplierId) {
+    return (select(aPInvoices)
+          ..where((t) =>
+              t.supplierId.equals(supplierId) &
+              t.status.isIn(['POSTED', 'PARTIAL'])))
+        .get();
+  }
+
+  Future<List<APInvoice>> getDueAPInvoices(DateTime endDate) {
+    return (select(aPInvoices)
+          ..where((t) =>
+              t.status.isIn(['POSTED', 'PARTIAL']) &
+              t.dueDate.isSmallerOrEqual(Variable(endDate))))
+        .get();
   }
 
   /// إدراج مورد مع إنشاء حساب محاسبي له تلقائياً
@@ -131,7 +161,22 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
       );
     }
 
-    // 2. جلب المدفوعات للمورد (سند صرف)
+    // 2. جلب فواتير الذمم الدائنة (AP Invoices)
+    final apInvoicesList = await (select(aPInvoices)..where((t) => t.supplierId.equals(supplierId))).get();
+    for (var inv in apInvoicesList) {
+      allTransactions.add(
+        SupplierTransaction(
+          date: inv.invoiceDate,
+          description: 'فاتورة AP رقم ${inv.invoiceNumber}',
+          debit: inv.totalAmount, // له
+          credit: 0,
+          referenceId: inv.id,
+          type: 'AP_INVOICE',
+        ),
+      );
+    }
+
+    // 3. جلب المدفوعات للمورد (سند صرف)
     final payments = await (select(
       db.supplierPayments,
     )..where((p) => p.supplierId.equals(supplierId))).get();
@@ -149,7 +194,7 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
       );
     }
 
-    // 3. جلب المرتجعات للمورد
+    // 4. جلب المرتجعات للمورد
     final returnsQuery = select(db.purchaseReturns).join([
       innerJoin(
         db.purchases,

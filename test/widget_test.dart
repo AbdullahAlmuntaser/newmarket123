@@ -12,7 +12,7 @@ import 'package:supermarket/core/theme/theme_provider.dart';
 import 'package:supermarket/presentation/features/products/products_provider.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
 import 'package:supermarket/core/services/event_bus_service.dart';
-import 'package:supermarket/core/services/role_permissions_service.dart';
+import 'package:supermarket/core/services/permission_service.dart';
 
 void main() {
   late AppDatabase appDatabase;
@@ -28,7 +28,7 @@ void main() {
     prefs = await SharedPreferences.getInstance();
 
     appDatabase = AppDatabase(NativeDatabase.memory());
-    permissionsService = PermissionService();
+    permissionsService = PermissionService(appDatabase);
     authProvider = AuthProvider(appDatabase, permissionsService);
     eventBus = EventBusService();
     accountingService = AccountingService(appDatabase, eventBus);

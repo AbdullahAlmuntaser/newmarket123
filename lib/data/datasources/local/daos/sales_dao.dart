@@ -55,7 +55,7 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
     final query = select(saleItems).join([
       innerJoin(sales, sales.id.equalsExp(saleItems.saleId)),
       innerJoin(products, products.id.equalsExp(saleItems.productId)),
-    ])..where(sales.createdAt.isBiggerOrEqualValue(startOfDay));
+    ])..where(sales.createdAt.isBiggerOrEqual(Variable(startOfDay)));
 
     return query.watch().map((rows) {
       double profit = 0;
@@ -163,7 +163,7 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
     final query = select(saleItems).join([
       innerJoin(sales, sales.id.equalsExp(saleItems.saleId)),
       innerJoin(products, products.id.equalsExp(saleItems.productId)),
-    ])..where(sales.createdAt.isBetweenValues(reportStartDate, reportEndDate));
+    ])..where(sales.createdAt.isBetween(Variable(reportStartDate), Variable(reportEndDate)));
 
     final rows = await query.get();
     final Map<String, ProductProfitability> profitabilityMap = {};

@@ -27,7 +27,7 @@ class ProfitabilityService {
     // 1. Get all posted sales in the range
     final sales =
         await (db.select(db.sales)
-              ..where((s) => s.createdAt.isBetweenValues(start, end))
+              ..where((s) => s.createdAt.isBetween(Variable(start), Variable(end)))
               ..where((s) => s.status.equals('POSTED')))
             .get();
 

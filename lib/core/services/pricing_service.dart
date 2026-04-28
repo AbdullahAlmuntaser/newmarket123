@@ -45,21 +45,31 @@ class PricingService {
     return Decimal.parse((product?.sellPrice ?? 0.0).toString());
   }
 
-  /// Integrated price calculation including promotions and tax (if applicable).
+  /// Integrated price calculation including promotions and customer discounts.
   Future<Decimal> calculatePrice({
     required String productId,
     required Decimal quantity,
     String? priceListId,
+    String? customerId,
   }) async {
     // 1. Get base price (from list or product default)
-    final basePrice = await getPriceForProduct(
+    var finalPrice = await getPriceForProduct(
       productId,
       priceListId,
       quantity,
     );
 
-    // 2. Apply promotions
-    final finalPrice = await applyPromotions(productId, basePrice, quantity);
+    // 2. Apply customer-specific discount
+    if (customerId != null) {
+      final customer = await (db.select(db.customers)..where((c) => c.id.equals(customerId))).getSingleOrNull();
+      if (customer != null && customer.discountRate > 0) {
+        final customerDiscountFactor = Decimal.parse((customer.discountRate / 100).toString());
+        finalPrice -= (finalPrice * customerDiscountFactor);
+      }
+    }
+
+    // 3. Apply promotions
+    finalPrice = await applyPromotions(productId, finalPrice, quantity);
 
     return finalPrice;
   }
@@ -75,8 +85,8 @@ class PricingService {
         await (db.select(db.promotions)..where(
               (p) =>
                   p.isActive.equals(true) &
-                  p.startDate.isSmallerOrEqualValue(now) &
-                  p.endDate.isBiggerOrEqualValue(now) &
+                  p.startDate.isSmallerOrEqual(Variable(now)) &
+                  p.endDate.isBiggerOrEqual(Variable(now)) &
                   (p.productId.equals(productId) | p.productId.isNull()),
             ))
             .get();

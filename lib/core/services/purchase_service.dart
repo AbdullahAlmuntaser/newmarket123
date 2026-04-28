@@ -39,8 +39,22 @@ class PurchaseService {
   }
 
   Future<void> postPurchase(String purchaseId) async {
-    final purchase = await (db.select(db.purchases)..where((p) => p.id.equals(purchaseId))).getSingle();
-    final items = await (db.select(db.purchaseItems)..where((i) => i.purchaseId.equals(purchaseId))).get();
+    // 1. Verify that GRN exists for this purchase
+    final grn = await (db.select(db.goodReceivedNotes)
+          ..where((g) => g.purchaseOrderId.equals(purchaseId))
+          ..where((g) => g.status.equals('POSTED')))
+        .getSingleOrNull();
+
+    if (grn == null) {
+      throw Exception('لا يمكن ترحيل الفاتورة قبل استلام البضاعة (GRN غير موجود أو غير مرحل).');
+    }
+
+    final purchase = await (db.select(db.purchases)
+          ..where((p) => p.id.equals(purchaseId)))
+        .getSingle();
+    final items = await (db.select(db.purchaseItems)
+          ..where((i) => i.purchaseId.equals(purchaseId)))
+        .get();
 
     double subtotal = 0;
     for (var item in items) {
@@ -49,22 +63,6 @@ class PurchaseService {
 
     // حساب إجمالي المصاريف الإضافية
     double totalExpenses = (purchase.shippingCost + purchase.otherExpenses);
-    
-    for (var item in items) {
-      // حساب نصيب الصنف من المصاريف (توزيع نسبي حسب القيمة)
-      double itemSubtotal = (item.quantity * item.unitFactor * item.unitPrice);
-      double itemExpenseShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalExpenses : 0;
-      double landedCostPerUnit = (item.unitPrice + (itemExpenseShare / (item.quantity * item.unitFactor)));
-
-      // تحديث المخزون بالتكلفة الجديدة (شاملة المصاريف)
-      await inventoryCostingService.returnToInventory(
-        item.productId,
-        item.quantity * item.unitFactor,
-        landedCostPerUnit,
-        InventoryTransactionType.purchase,
-        transactionId: purchaseId,
-      );
-    }
 
     double discount = purchase.discount;
     double tax = (subtotal - discount) * 0.15;
@@ -79,8 +77,14 @@ class PurchaseService {
         'expenses': totalExpenses,
         'total': subtotal - discount + tax + totalExpenses,
         'supplierId': purchase.supplierId,
-        'description': 'Purchase Invoice #${purchase.invoiceNumber ?? purchase.id.substring(0, 8)}',
+        'description':
+            'Purchase Invoice #${purchase.invoiceNumber ?? purchase.id.substring(0, 8)}',
       },
+    );
+
+    // Update Purchase status to COMPLETED
+    await (db.update(db.purchases)..where((p) => p.id.equals(purchaseId))).write(
+      const PurchasesCompanion(status: Value('COMPLETED')),
     );
   }
 }

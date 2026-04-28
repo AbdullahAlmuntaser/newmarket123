@@ -1,7 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:supermarket/injection_container.dart' as di;
 import 'package:supermarket/core/auth/auth_provider.dart';
-import 'package:supermarket/core/services/role_permissions_service.dart';
+import 'package:supermarket/core/services/permission_service.dart';
 import 'package:supermarket/presentation/features/home/home_page.dart';
 import 'package:supermarket/presentation/features/auth/login_page.dart';
 import 'package:supermarket/presentation/features/dashboard/dashboard_page.dart';
@@ -29,6 +29,7 @@ import 'package:supermarket/presentation/features/customers/customer_statement_p
 import 'package:supermarket/presentation/features/suppliers/suppliers_page.dart';
 import 'package:supermarket/presentation/features/suppliers/supplier_statement_page.dart';
 import 'package:supermarket/presentation/features/suppliers/add_supplier_payment_page.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/purchases/purchases_page.dart';
 import 'package:supermarket/presentation/features/purchases/add_purchase_page.dart';
 import 'package:supermarket/presentation/features/purchases/purchase_orders_page.dart';
@@ -50,6 +51,10 @@ import 'package:supermarket/presentation/features/accounting/accounting_periods_
 import 'package:supermarket/presentation/features/accounting/shifts_page.dart';
 import 'package:supermarket/presentation/features/accounting/checks_page.dart';
 import 'package:supermarket/presentation/features/accounting/cost_centers_page.dart';
+import 'package:supermarket/presentation/features/accounting/ap_invoices_page.dart';
+import 'package:supermarket/presentation/features/accounting/supplier_ledger_page.dart';
+import 'package:supermarket/presentation/features/accounting/ar_invoices_page.dart';
+import 'package:supermarket/presentation/features/accounting/customer_ledger_page.dart';
 import 'package:supermarket/presentation/features/reports/sales_reports_page.dart';
 import 'package:supermarket/presentation/features/reports/product_profitability_page.dart';
 import 'package:supermarket/presentation/features/reports/profitability_report_page.dart';
@@ -57,6 +62,8 @@ import 'package:supermarket/presentation/features/reports/inventory_reports_scre
 import 'package:supermarket/presentation/features/reports/inventory_audit_page.dart';
 import 'package:supermarket/presentation/features/reports/vat_report_page.dart';
 import 'package:supermarket/presentation/features/reports/audit_log_page.dart';
+import 'package:supermarket/presentation/features/reports/aging_report_page.dart';
+import 'package:supermarket/presentation/features/reports/cash_flow_forecast_page.dart';
 import 'package:supermarket/presentation/features/auth/staff_management_page.dart';
 import 'package:supermarket/presentation/features/settings/backup_page.dart';
 import 'package:supermarket/presentation/features/settings/permissions_management_page.dart';
@@ -64,12 +71,11 @@ import 'package:supermarket/presentation/features/settings/currency_rates_page.d
 import 'package:supermarket/presentation/features/reports/printer_settings_page.dart';
 import 'package:supermarket/presentation/features/home/low_stock_products_page.dart';
 import 'package:supermarket/presentation/features/purchases/supplier_performance_page.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
   refreshListenable: di.sl<AuthProvider>(),
-  redirect: (context, state) {
+  redirect: (context, state) async {
     final authProvider = di.sl<AuthProvider>();
     final permService = di.sl<PermissionService>();
     
@@ -79,8 +85,18 @@ final GoRouter appRouter = GoRouter(
     if (!isAuthenticated && !isLoggingIn) return '/login';
     if (isAuthenticated && isLoggingIn) return '/';
 
-    if (state.matchedLocation.startsWith('/reports') && !permService.hasPermission('view_reports')) return '/';
-    if ((state.matchedLocation == '/users' || state.matchedLocation == '/settings/permissions') && !permService.hasPermission('manage_users')) return '/';
+    if (isAuthenticated) {
+      final userId = authProvider.currentUser!.id;
+      if (state.matchedLocation.startsWith('/reports') && 
+          !await permService.hasPermission(userId, PermissionService.reportsFinancial)) {
+        return '/';
+      }
+      
+      if ((state.matchedLocation == '/users' || state.matchedLocation == '/settings/permissions') && 
+          !await permService.hasPermission(userId, PermissionService.userManagement)) {
+        return '/';
+      }
+    }
     
     return null;
   },
@@ -135,12 +151,18 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/accounting/shifts', builder: (context, state) => const ShiftsPage()),
     GoRoute(path: '/accounting/checks', builder: (context, state) => const ChecksPage()),
     GoRoute(path: '/accounting/cost-centers', builder: (context, state) => const CostCentersPage()),
+    GoRoute(path: '/accounting/ap-invoices', builder: (context, state) => const APInvoicesPage()),
+    GoRoute(path: '/accounting/supplier-ledger', builder: (context, state) => const SupplierLedgerPage()),
+    GoRoute(path: '/accounting/ar-invoices', builder: (context, state) => const ARInvoicesPage()),
+    GoRoute(path: '/accounting/customer-ledger', builder: (context, state) => const CustomerLedgerPage()),
     GoRoute(path: '/reports/sales', builder: (context, state) => const SalesReportsPage()),
     GoRoute(path: '/reports/profitability', builder: (context, state) => const ProductProfitabilityPage()),
     GoRoute(path: '/reports/gross-profit', builder: (context, state) => const ProfitabilityReportPage()),
     GoRoute(path: '/reports/inventory', builder: (context, state) => const InventoryReportsScreen()),
     GoRoute(path: '/reports/inventory-audit', builder: (context, state) => const InventoryAuditPage()),
     GoRoute(path: '/reports/vat', builder: (context, state) => const VatReportPage()),
+    GoRoute(path: '/reports/aging', builder: (context, state) => const AgingReportPage()),
+    GoRoute(path: '/reports/cash-flow', builder: (context, state) => const CashFlowForecastPage()),
     GoRoute(path: '/reports/audit', builder: (context, state) => const AuditLogPage()),
     GoRoute(path: '/users', builder: (context, state) => const StaffManagementPage()),
     GoRoute(path: '/settings/backup', builder: (context, state) => const BackupPage()),

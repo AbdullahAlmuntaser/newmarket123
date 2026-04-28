@@ -128,8 +128,8 @@ class PostingEngine {
     final period =
         await (db.select(db.accountingPeriods)
               ..where((p) => p.isClosed.equals(false))
-              ..where((p) => p.startDate.isSmallerOrEqualValue(now))
-              ..where((p) => p.endDate.isBiggerOrEqualValue(now)))
+              ..where((p) => p.startDate.isSmallerOrEqual(Variable(now)))
+              ..where((p) => p.endDate.isBiggerOrEqual(Variable(now))))
             .getSingleOrNull();
 
     if (period == null) throw Exception('Period is locked or closed.');

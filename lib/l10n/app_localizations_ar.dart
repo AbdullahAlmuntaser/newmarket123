@@ -1117,4 +1117,94 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get isCarton => 'كرتون؟';
+
+  @override
+  String get accountsPayable => 'الذمم الدائنة';
+
+  @override
+  String get apInvoices => 'فواتير الذمم الدائنة';
+
+  @override
+  String get supplierLedger => 'كشف حساب المورد';
+
+  @override
+  String get newAPInvoice => 'فاتورة ذمم دائنة جديدة';
+
+  @override
+  String get invoiceDate => 'تاريخ الفاتورة';
+
+  @override
+  String get dueDate => 'تاريخ الاستحقاق';
+
+  @override
+  String get totalAmount => 'إجمالي المبلغ';
+
+  @override
+  String get taxAmount => 'مبلغ الضريبة';
+
+  @override
+  String get paidAmount => 'المبلغ المدفوع';
+
+  @override
+  String get apInvoiceAdded => 'تم إضافة فاتورة الذمم الدائنة بنجاح';
+
+  @override
+  String get accountsReceivable => 'الذمم المدينة';
+
+  @override
+  String get arInvoices => 'فواتير الذمم المدينة';
+
+  @override
+  String get customerLedger => 'كشف حساب العميل';
+
+  @override
+  String get newARInvoice => 'فاتورة ذمم مدينة جديدة';
+
+  @override
+  String get arInvoiceAdded => 'تم إضافة فاتورة الذمم المدينة بنجاح';
+
+  @override
+  String get agingReport => 'تقرير أعمار الديون';
+
+  @override
+  String get current => 'حالياً';
+
+  @override
+  String get days30 => '30 يوم';
+
+  @override
+  String get days60 => '60 يوم';
+
+  @override
+  String get days90Plus => '90+ يوم';
+
+  @override
+  String get totalDue => 'إجمالي المستحق';
+
+  @override
+  String get selectType => 'اختر النوع';
+
+  @override
+  String get cashFlowForecast => 'توقعات التدفق النقدي';
+
+  @override
+  String get inflow => 'التدفقات الداخلة (AR)';
+
+  @override
+  String get outflow => 'التدفقات الخارجة (AP)';
+
+  @override
+  String get netCash => 'صافي النقد';
+
+  @override
+  String get next30Days => '30 يوم القادمة';
+
+  @override
+  String get next60Days => '60 يوم القادمة';
+
+  @override
+  String get next90Days => '90 يوم القادمة';
+
+  @override
+  String get period => 'الفترة';
 }

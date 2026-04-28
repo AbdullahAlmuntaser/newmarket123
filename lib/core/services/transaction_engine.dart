@@ -2,13 +2,17 @@ import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/events/app_events.dart';
 import 'package:supermarket/core/services/event_bus_service.dart';
+import 'package:supermarket/core/services/audit_service.dart';
 import 'package:uuid/uuid.dart';
 
 class TransactionEngine {
   final AppDatabase db;
   final EventBusService eventBus;
+  late final AuditService _auditService;
 
-  TransactionEngine(this.db, this.eventBus);
+  TransactionEngine(this.db, this.eventBus) {
+    _auditService = AuditService(db);
+  }
 
   /// Checks if the current accounting period is open
   /// Throws an exception if no open period exists or if the current date is outside the open period
@@ -17,8 +21,8 @@ class TransactionEngine {
     final openPeriod =
         await (db.select(db.accountingPeriods)
               ..where((p) => p.isClosed.equals(false))
-              ..where((p) => p.startDate.isSmallerOrEqualValue(now))
-              ..where((p) => p.endDate.isBiggerOrEqualValue(now)))
+              ..where((p) => p.startDate.isSmallerOrEqual(Variable(now)))
+              ..where((p) => p.endDate.isBiggerOrEqual(Variable(now))))
             .getSingleOrNull();
 
     if (openPeriod == null) {
@@ -149,6 +153,14 @@ class TransactionEngine {
 
       // 6. Trigger Accounting & Events
       eventBus.fire(PurchasePostedEvent(purchase, items, userId: userId));
+
+      await _auditService.log(
+        action: 'POST_PURCHASE',
+        targetEntity: 'Purchases',
+        entityId: purchaseId,
+        userId: userId,
+        details: 'Posted purchase invoice $purchaseId',
+      );
     });
   }
 
@@ -157,12 +169,22 @@ class TransactionEngine {
   Future<void> postSale(String saleId, {String? userId}) async {
     // Check if accounting period is open before posting
     await _checkAccountingPeriodOpen();
+    
+    // NEW: Check if there is an active shift for cash sales
+    final saleHeader = await (db.select(db.sales)..where((s) => s.id.equals(saleId))).getSingle();
+    if (saleHeader.paymentMethod == 'cash' && userId != null) {
+      final activeShift = await (db.select(db.shifts)
+            ..where((s) => s.userId.equals(userId) & s.isOpen.equals(true)))
+          .getSingleOrNull();
+      if (activeShift == null) {
+        throw Exception('لا يمكن إجراء عملية بيع نقدي بدون فتح وردية عمل.');
+      }
+    }
+
     await db.transaction(() async {
       // 1. Get Sale and Items
-      final sale = await (db.select(
-        db.sales,
-      )..where((s) => s.id.equals(saleId))).getSingle();
-
+      final sale = saleHeader; // Already fetched above
+      
       if (sale.status == 'POSTED') {
         throw Exception('هذه الفاتورة تم ترحيلها بالفعل.');
       }
@@ -176,6 +198,7 @@ class TransactionEngine {
       }
 
       // 2. Process each item (Inventory Update - FEFO)
+      double saleCogs = 0.0;
       for (var item in items) {
         if (item.quantity <= 0) {
           throw Exception('الكمية يجب أن تكون أكبر من الصفر.');
@@ -199,7 +222,7 @@ class TransactionEngine {
         final batches =
             await (db.select(db.productBatches)
                   ..where((b) => b.productId.equals(item.productId))
-                  ..where((b) => b.quantity.isBiggerThanValue(0))
+                  ..where((b) => b.quantity.isBiggerThan(Variable(0)))
                   ..orderBy([
                     (b) => OrderingTerm(
                       expression: b.expiryDate
@@ -250,6 +273,8 @@ class TransactionEngine {
 
           remainingToDeduct -= deductFromThisBatch;
           totalDeducted += deductFromThisBatch;
+          // Calculate COGS for this part of the batch
+          saleCogs += (deductFromThisBatch * batch.costPrice);
         }
 
         // Update Product Total Stock
@@ -278,7 +303,17 @@ class TransactionEngine {
       }
 
       // 5. Trigger Accounting & Events
-      eventBus.fire(SaleCreatedEvent(sale, items, userId: userId));
+      eventBus.fire(
+        SaleCreatedEvent(sale, items, cogs: saleCogs, userId: userId),
+      );
+
+      await _auditService.log(
+        action: 'POST_SALE',
+        targetEntity: 'Sales',
+        entityId: saleId,
+        userId: userId,
+        details: 'Posted sale invoice $saleId',
+      );
     });
   }
 
@@ -286,12 +321,13 @@ class TransactionEngine {
 
   /// This updates inventory batches (re-adds stock), records inventory transactions, and triggers accounting.
 
+  /// Posts a sale return
+  /// This updates inventory batches (re-adds stock), records inventory transactions, and triggers accounting.
   Future<void> postSaleReturn(String returnId, {String? userId}) async {
     // Check if accounting period is open before posting
     await _checkAccountingPeriodOpen();
     await db.transaction(() async {
       // 1. Get Return and Items
-
       final saleReturn = await (db.select(
         db.salesReturns,
       )..where((r) => r.id.equals(returnId))).getSingle();
@@ -305,84 +341,66 @@ class TransactionEngine {
       )..where((s) => s.id.equals(saleReturn.saleId))).getSingle();
 
       // 2. Process each item (Inventory Update - Return to Batch)
-
       for (var item in items) {
-        // Find latest batch for this product to return stock to (or create new adjustment batch)
+        // Return stock to the specific batch or create/update based on batchId
+        // In a real scenario, the return item should carry the batchId of the original sale
+        // For now, we update the existing batch if found, otherwise adjust total stock
+        final batchId = item.batchId;
+        final batch = batchId != null
+            ? await (db.select(db.productBatches)
+                  ..where((b) => b.id.equals(batchId)))
+                .getSingleOrNull()
+            : null;
 
-        final latestBatch =
-            await (db.select(db.productBatches)
-                  ..where((b) => b.productId.equals(item.productId))
-                  ..orderBy([
-                    (b) => OrderingTerm(
-                      expression: b.createdAt,
-
-                      mode: OrderingMode.desc,
-                    ),
-                  ])
-                  ..limit(1))
-                .getSingleOrNull();
-
-        if (latestBatch != null) {
-          await (db.update(
-            db.productBatches,
-          )..where((b) => b.id.equals(latestBatch.id))).write(
+        if (batch != null) {
+          await (db.update(db.productBatches)
+                ..where((b) => b.id.equals(batch.id)))
+              .write(
             ProductBatchesCompanion(
-              quantity: Value(latestBatch.quantity + item.quantity),
+              quantity: Value(batch.quantity + item.quantity),
             ),
           );
-
-          // Record Inventory Transaction
-
-          await db
-              .into(db.inventoryTransactions)
-              .insert(
-                InventoryTransactionsCompanion.insert(
-                  productId: item.productId,
-
-                  warehouseId: latestBatch.warehouseId,
-
-                  batchId: Value(latestBatch.id),
-
-                  quantity: item.quantity,
-
-                  type: 'RETURN',
-
-                  referenceId: returnId,
-                ),
-              );
+        } else {
+          // Fallback if batch not found (e.g., deleted), add to stock directly
+          final product = await (db.select(db.products)
+                ..where((p) => p.id.equals(item.productId))).getSingle();
+          await (db.update(db.products)
+                ..where((p) => p.id.equals(item.productId)))
+              .write(ProductsCompanion(stock: Value(product.stock + item.quantity)));
         }
 
+        // Record Inventory Transaction
+        await db.into(db.inventoryTransactions).insert(
+              InventoryTransactionsCompanion.insert(
+                productId: item.productId,
+                warehouseId: batch?.warehouseId ?? '',
+                batchId: Value(batch?.id ?? ''),
+                quantity: item.quantity,
+                type: 'RETURN',
+                referenceId: returnId,
+              ),
+            );
+
         // Update Product Total Stock
-
-        final product = await (db.select(
-          db.products,
-        )..where((p) => p.id.equals(item.productId))).getSingle();
-
-        await (db.update(
-          db.products,
-        )..where((p) => p.id.equals(item.productId))).write(
-          ProductsCompanion(stock: Value(product.stock + item.quantity)),
-        );
+        final product = await (db.select(db.products)
+              ..where((p) => p.id.equals(item.productId))).getSingle();
+        await (db.update(db.products)
+              ..where((p) => p.id.equals(item.productId)))
+            .write(ProductsCompanion(stock: Value(product.stock + item.quantity)));
       }
 
       // 3. Update Customer Balance if Credit
-
       if (sale.isCredit && sale.customerId != null) {
-        final customer = await (db.select(
-          db.customers,
-        )..where((c) => c.id.equals(sale.customerId!))).getSingle();
-
-        await (db.update(
-          db.customers,
-        )..where((c) => c.id.equals(customer.id))).write(
-          CustomersCompanion(
-            balance: Value(customer.balance - saleReturn.amountReturned),
-          ),
-        );
+        final customer = await (db.select(db.customers)
+              ..where((c) => c.id.equals(sale.customerId!))).getSingle();
+        await (db.update(db.customers)
+              ..where((c) => c.id.equals(customer.id)))
+            .write(CustomersCompanion(
+          balance: Value(customer.balance - saleReturn.amountReturned),
+        ));
       }
 
       // 4. Trigger Accounting & Events
-
       eventBus.fire(SaleReturnCreatedEvent(saleReturn, items, userId: userId));
     });
   }
@@ -417,7 +435,7 @@ class TransactionEngine {
         final batches =
             await (db.select(db.productBatches)
                   ..where((b) => b.productId.equals(item.productId))
-                  ..where((b) => b.quantity.isBiggerThanValue(0))
+                  ..where((b) => b.quantity.isBiggerThan(Variable(0)))
                   ..orderBy([
                     (b) => OrderingTerm(
                       expression: b.expiryDate,

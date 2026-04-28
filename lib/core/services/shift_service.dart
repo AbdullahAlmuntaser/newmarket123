@@ -46,8 +46,8 @@ class ShiftService {
     final cashSales =
         await (db.select(db.sales)..where(
               (t) =>
-                  t.createdAt.isBiggerOrEqualValue(startTime) &
-                  t.createdAt.isSmallerOrEqualValue(endTime) &
+                  t.createdAt.isBiggerOrEqual(Variable(startTime)) &
+                  t.createdAt.isSmallerOrEqual(Variable(endTime)) &
                   t.paymentMethod.equals('cash'),
             ))
             .get();
@@ -57,8 +57,8 @@ class ShiftService {
     final customerPayments =
         await (db.select(db.customerPayments)..where(
               (t) =>
-                  t.paymentDate.isBiggerOrEqualValue(startTime) &
-                  t.paymentDate.isSmallerOrEqualValue(endTime),
+                  t.paymentDate.isBiggerOrEqual(Variable(startTime)) &
+                  t.paymentDate.isSmallerOrEqual(Variable(endTime)),
             ))
             .get();
     final totalCustomerPayments = customerPayments.fold(
@@ -70,8 +70,8 @@ class ShiftService {
     final supplierPayments =
         await (db.select(db.supplierPayments)..where(
               (t) =>
-                  t.paymentDate.isBiggerOrEqualValue(startTime) &
-                  t.paymentDate.isSmallerOrEqualValue(endTime),
+                  t.paymentDate.isBiggerOrEqual(Variable(startTime)) &
+                  t.paymentDate.isSmallerOrEqual(Variable(endTime)),
             ))
             .get();
     final totalSupplierPayments = supplierPayments.fold(

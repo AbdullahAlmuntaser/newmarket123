@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:drift/drift.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class DashboardData {
   final double totalSalesToday;
@@ -39,7 +39,7 @@ class DashboardProvider with ChangeNotifier {
 
     // 1. المبيعات اليومية
     final sales = await (db.select(db.sales)
-          ..where((s) => s.createdAt.isBiggerOrEqualValue(startOfDay)))
+          ..where((s) => s.createdAt.isBiggerOrEqual(Variable(startOfDay))))
         .get();
     double totalSales = sales.fold(0.0, (sum, s) => sum + s.total);
 

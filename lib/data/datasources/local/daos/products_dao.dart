@@ -36,6 +36,10 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
     with _$ProductsDaoMixin {
   ProductsDao(super.db);
 
+  Stream<List<Product>> watchAllProducts() {
+    return select(products).watch();
+  }
+
   // ========== Warehouse & Batch Management ==========
   Stream<List<Warehouse>> watchWarehouses() {
     return select(warehouses).watch();
@@ -53,7 +57,7 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
           (b) =>
               b.productId.equals(productId) &
               b.warehouseId.equals(warehouseId) &
-              b.quantity.isBiggerThanValue(0),
+              b.quantity.isBiggerThan(Variable(0)),
         ))
         .get();
   }
@@ -256,8 +260,8 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
     return (select(productBatches)
           ..where(
             (b) =>
-                b.expiryDate.isSmallerOrEqualValue(thresholdDate) &
-                b.quantity.isBiggerThanValue(0),
+                b.expiryDate.isSmallerOrEqual(Variable(thresholdDate)) &
+                b.quantity.isBiggerThan(Variable(0)),
           )
           ..orderBy([
             (t) =>
@@ -273,8 +277,8 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
     return (select(productBatches)
           ..where(
             (b) =>
-                b.expiryDate.isSmallerOrEqualValue(thresholdDate) &
-                b.quantity.isBiggerThanValue(0),
+                b.expiryDate.isSmallerOrEqual(Variable(thresholdDate)) &
+                b.quantity.isBiggerThan(Variable(0)),
           )
           ..orderBy([
             (t) =>

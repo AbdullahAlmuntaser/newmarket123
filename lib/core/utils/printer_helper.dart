@@ -1,10 +1,39 @@
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:printing/printing.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class PrinterHelper {
   // Mocking bluetooth for now since the library is problematic
   static dynamic bluetooth;
+
+  static Future<void> printStockMovement({
+    required String itemName,
+    required double quantity,
+    required String reference,
+  }) async {
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Text('سند صرف مخزني', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+            pw.Divider(),
+            pw.SizedBox(height: 10),
+            pw.Text('الصنف: $itemName'),
+            pw.Text('الكمية: ${quantity.toString()}'),
+            pw.Text('رقم المرجع: $reference'),
+            pw.Text('التاريخ: ${DateTime.now().toString()}'),
+          ],
+        ),
+      ),
+    );
+
+    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+  }
 
   static Future<bool> isConnected() async {
     return false;

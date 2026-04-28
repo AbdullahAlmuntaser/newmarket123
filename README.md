@@ -1,16 +1,22 @@
-# myapp
+# نظام إدارة الموارد (System Market ERP)
 
-A new Flutter project.
+نظام ERP متكامل مبني على معايير "محاضرات الأونكس" لإدارة الشركات التجارية والمحلات.
 
-## Getting Started
+## الميزات التقنية
+- **إدارة المحاسبة:** دليل محاسبي شجري، قيود يومية، مراكز تكلفة، وتقارير مالية (ميزانية، أرباح وخسائر).
+- **إدارة المخازن:** دعم تعدد الفروع والمستودعات، تتبع دفعات الأصناف، وتنبيهات حد الطلب.
+- **إدارة المشتريات والمبيعات:** دعم الفواتير النقدية والآجلة، ربط آلي مع المخزون والمحاسبة، وتعدد مستويات التسعير.
+- **الرقابة والأمان:** نظام `AuditLogs` لتوثيق كافة العمليات، وحماية الواجهات الحساسة عبر `PermissionGuard`.
+- **الطباعة:** محرك إصدار سندات (PDF) آلي يدعم طباعة سندات الصرف والتحويل المخزني.
+- **دعم الفروع:** إمكانية إدارة فروع متعددة مع ربطها بمستودعاتها وحساباتها المستقلة.
 
-This project is a starting point for a Flutter application.
+## التقنيات المستخدمة
+- **Flutter:** واجهات المستخدم.
+- **Drift:** قاعدة بيانات محلية (SQLite).
+- **Bloc:** إدارة الحالة.
+- **Printing:** توليد المستندات والمطبوعات.
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## الهيكل الفني (Schema)
+تم ضبط كافة الجداول (Products, Sales, Purchases, GLAccounts) لتشمل الحقول التحليلية والربط المحاسبي الآلي.
+---
+تم التحديث بواسطة Gemini CLI - 27/04/2026.

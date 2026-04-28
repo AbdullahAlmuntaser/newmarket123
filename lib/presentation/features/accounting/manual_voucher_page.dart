@@ -21,6 +21,8 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _checkNumberController = TextEditingController();
+  DateTime _checkDueDate = DateTime.now();
   DateTime _selectedDate = DateTime.now();
   bool _isSaving = false;
 
@@ -35,6 +37,7 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
     _amountController.dispose();
     _noteController.dispose();
     _dateController.dispose();
+    _checkNumberController.dispose();
     super.dispose();
   }
 
@@ -159,11 +162,34 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
                         if (val != null) setState(() => _paymentMethod = val);
                       },
                     ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
+                    if (_paymentMethod == 'check') ...[
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _checkNumberController,
+                        decoration: const InputDecoration(
+                          labelText: 'رقم الشيك',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ListTile(
+                        title: Text('تاريخ استحقاق الشيك: ${_formatDate(_checkDueDate)}'),
+                        leading: const Icon(Icons.calendar_today),
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: _checkDueDate,
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime(2030),
+                          );
+                          if (date != null) setState(() => _checkDueDate = date);
+                        },
+                      ),
+                    ],
+                    ],
+                    ),
+                    ),
+                    ),            const SizedBox(height: 16),
 
             // التاريخ
             Card(
