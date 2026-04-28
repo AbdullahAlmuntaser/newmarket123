@@ -167,7 +167,7 @@ class QuickCustomerService {
 
       for (final customer in oldQuickCustomers) {
         await (db.update(db.customers)..where((c) => c.id.equals(customer.id)))
-            .write(CustomersCompanion(isActive: const Value(false)));
+            .write(const CustomersCompanion(isActive: Value(false)));
       }
 
       return oldQuickCustomers.length;

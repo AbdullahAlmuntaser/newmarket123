@@ -146,7 +146,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 builder: (context, snapshot) {
                   final categories = snapshot.data ?? [];
                   return DropdownButtonFormField<String>(
-                    initialValue: _categoryId,
+                    value: _categoryId,
                     decoration: InputDecoration(labelText: l10n.category),
                     items: categories.map((category) {
                       return DropdownMenuItem(
@@ -209,7 +209,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 onSaved: (value) => _piecesPerCarton = int.tryParse(value!) ?? 1,
               ),
               DropdownButtonFormField<String>(
-                initialValue: _valuationMethod,
+                value: _valuationMethod,
                 decoration: const InputDecoration(labelText: 'طريقة التقييم'),
                 items: ['FIFO', 'AVCO'].map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
                 onChanged: (val) => setState(() => _valuationMethod = val!),

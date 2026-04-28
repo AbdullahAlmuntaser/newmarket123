@@ -76,7 +76,7 @@ class CategoriesPage extends StatelessWidget {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
                       gradient: LinearGradient(
-                        colors: [color.withValues(alpha: 0.7), color],
+                        colors: [color.withOpacity(0.7), color],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -101,7 +101,7 @@ class CategoriesPage extends StatelessWidget {
                           Text(
                             category.code!,
                             style: TextStyle(
-                              color: textColor.withValues(alpha: 0.8),
+                              color: textColor.withOpacity(0.8),
                               fontSize: 12,
                             ),
                           ),

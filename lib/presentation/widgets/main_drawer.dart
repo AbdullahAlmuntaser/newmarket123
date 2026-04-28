@@ -19,9 +19,9 @@ class MainDrawer extends StatelessWidget {
       authProvider = Provider.of<AuthProvider>(context, listen: false);
       l10n = AppLocalizations.of(context);
     } catch (e) {
-      return Drawer(
+      return const Drawer(
         backgroundColor: drawerBgColor,
-        child: const Center(
+        child: Center(
           child: Icon(Icons.error_outline, color: Colors.white24, size: 40),
         ),
       );

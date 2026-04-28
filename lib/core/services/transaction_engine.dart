@@ -222,7 +222,7 @@ class TransactionEngine {
         final batches =
             await (db.select(db.productBatches)
                   ..where((b) => b.productId.equals(item.productId))
-                  ..where((b) => b.quantity.isBiggerThan(Variable(0)))
+                  ..where((b) => b.quantity.isBiggerThan(const Variable(0)))
                   ..orderBy([
                     (b) => OrderingTerm(
                       expression: b.expiryDate
@@ -435,7 +435,7 @@ class TransactionEngine {
         final batches =
             await (db.select(db.productBatches)
                   ..where((b) => b.productId.equals(item.productId))
-                  ..where((b) => b.quantity.isBiggerThan(Variable(0)))
+                  ..where((b) => b.quantity.isBiggerThan(const Variable(0)))
                   ..orderBy([
                     (b) => OrderingTerm(
                       expression: b.expiryDate,

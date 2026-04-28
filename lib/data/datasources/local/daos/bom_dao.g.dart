@@ -10,25 +10,4 @@ mixin _$BomDaoMixin on DatabaseAccessor<AppDatabase> {
   $SuppliersTable get suppliers => attachedDatabase.suppliers;
   $ProductsTable get products => attachedDatabase.products;
   $BillOfMaterialsTable get billOfMaterials => attachedDatabase.billOfMaterials;
-  BomDaoManager get managers => BomDaoManager(this);
-}
-
-class BomDaoManager {
-  final _$BomDaoMixin _db;
-  BomDaoManager(this._db);
-  $$BranchesTableTableManager get branches =>
-      $$BranchesTableTableManager(_db.attachedDatabase, _db.branches);
-  $$CategoriesTableTableManager get categories =>
-      $$CategoriesTableTableManager(_db.attachedDatabase, _db.categories);
-  $$GLAccountsTableTableManager get gLAccounts =>
-      $$GLAccountsTableTableManager(_db.attachedDatabase, _db.gLAccounts);
-  $$SuppliersTableTableManager get suppliers =>
-      $$SuppliersTableTableManager(_db.attachedDatabase, _db.suppliers);
-  $$ProductsTableTableManager get products =>
-      $$ProductsTableTableManager(_db.attachedDatabase, _db.products);
-  $$BillOfMaterialsTableTableManager get billOfMaterials =>
-      $$BillOfMaterialsTableTableManager(
-        _db.attachedDatabase,
-        _db.billOfMaterials,
-      );
 }

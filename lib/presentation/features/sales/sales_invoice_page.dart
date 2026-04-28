@@ -196,7 +196,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
                             _isSplitPayment = (value == 'split');
                           });
                         },
-                        initialValue: _paymentType,
+                        value: _paymentType,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -211,7 +211,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
                             .map((l) => DropdownMenuItem(value: l, child: Text(l)))
                             .toList(),
                         onChanged: (value) => setState(() => _priceLevel = value!),
-                        initialValue: _priceLevel,
+                        value: _priceLevel,
                       ),
                     ),
                   ],
@@ -225,7 +225,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
                   ),
                   items: const [DropdownMenuItem(value: '1', child: Text('مندوب عام'))],
                   onChanged: (value) => setState(() => _representativeId = value),
-                  initialValue: _representativeId,
+                  value: _representativeId,
                 ),                if (_isSplitPayment) _buildSplitPaymentFields(),
                 const SizedBox(height: 12),
                 Row(
@@ -520,11 +520,11 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Colors.black12,
             blurRadius: 4,
-            offset: const Offset(0, -2),
+            offset: Offset(0, -2),
           ),
         ],
       ),

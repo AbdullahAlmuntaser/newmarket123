@@ -71,7 +71,7 @@ class _ReconciliationPageState extends State<ReconciliationPage> {
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const CircularProgressIndicator();
         return DropdownButtonFormField<String>(
-          initialValue: _selectedAccountId,
+          value: _selectedAccountId,
           decoration: const InputDecoration(
             labelText: 'اختر الحساب المراد تسويته',
           ),

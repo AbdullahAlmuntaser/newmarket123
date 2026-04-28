@@ -58,7 +58,7 @@ class _StockTransferPageState extends State<StockTransferPage> {
       child: Column(
         children: [
           DropdownButtonFormField<String>(
-            initialValue: provider.selectedFromWarehouseId,
+            value: provider.selectedFromWarehouseId,
             decoration: const InputDecoration(labelText: 'من مستودع'),
             items: provider.warehouses
                 .map((w) => DropdownMenuItem(value: w.id, child: Text(w.name)))
@@ -67,7 +67,7 @@ class _StockTransferPageState extends State<StockTransferPage> {
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
-            initialValue: provider.selectedToWarehouseId,
+            value: provider.selectedToWarehouseId,
             decoration: const InputDecoration(labelText: 'إلى مستودع'),
             items: provider.warehouses
                 .map((w) => DropdownMenuItem(value: w.id, child: Text(w.name)))
@@ -185,7 +185,7 @@ class _StockTransferPageState extends State<StockTransferPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<ProductBatch>(
-                initialValue: selectedBatch,
+                value: selectedBatch,
                 decoration: const InputDecoration(
                   labelText: 'اختر الدفعة/المنتج',
                 ),

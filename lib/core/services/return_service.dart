@@ -230,7 +230,7 @@ class ReturnService {
                   ..where(
                     (t) =>
                         t.productId.equals(item.productId) &
-                        t.quantity.isBiggerThan(Variable(0)),
+                        t.quantity.isBiggerThan(const Variable(0)),
                   )
                   ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
                 .get();

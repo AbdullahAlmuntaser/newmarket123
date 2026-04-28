@@ -149,7 +149,7 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
-                      initialValue: _paymentMethod,
+                      value: _paymentMethod,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                       ),
@@ -308,7 +308,7 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
           builder: (context, snapshot) {
             final customers = snapshot.data ?? [];
             return DropdownButtonFormField<Customer>(
-              initialValue: _selectedCustomer,
+              value: _selectedCustomer,
               decoration: const InputDecoration(
                 labelText: 'اختر العميل',
                 border: OutlineInputBorder(),
@@ -338,7 +338,7 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
           builder: (context, snapshot) {
             final suppliers = snapshot.data ?? [];
             return DropdownButtonFormField<Supplier>(
-              initialValue: _selectedSupplier,
+              value: _selectedSupplier,
               decoration: const InputDecoration(
                 labelText: 'اختر المورد',
                 border: OutlineInputBorder(),

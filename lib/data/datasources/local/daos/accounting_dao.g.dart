@@ -13,34 +13,6 @@ mixin _$AccountingDaoMixin on DatabaseAccessor<AppDatabase> {
   $ReconciliationsTable get reconciliations => attachedDatabase.reconciliations;
   $AccountingPeriodsTable get accountingPeriods =>
       attachedDatabase.accountingPeriods;
-  AccountingDaoManager get managers => AccountingDaoManager(this);
-}
-
-class AccountingDaoManager {
-  final _$AccountingDaoMixin _db;
-  AccountingDaoManager(this._db);
-  $$BranchesTableTableManager get branches =>
-      $$BranchesTableTableManager(_db.attachedDatabase, _db.branches);
-  $$GLAccountsTableTableManager get gLAccounts =>
-      $$GLAccountsTableTableManager(_db.attachedDatabase, _db.gLAccounts);
-  $$CostCentersTableTableManager get costCenters =>
-      $$CostCentersTableTableManager(_db.attachedDatabase, _db.costCenters);
-  $$GLEntriesTableTableManager get gLEntries =>
-      $$GLEntriesTableTableManager(_db.attachedDatabase, _db.gLEntries);
-  $$CurrenciesTableTableManager get currencies =>
-      $$CurrenciesTableTableManager(_db.attachedDatabase, _db.currencies);
-  $$GLLinesTableTableManager get gLLines =>
-      $$GLLinesTableTableManager(_db.attachedDatabase, _db.gLLines);
-  $$ReconciliationsTableTableManager get reconciliations =>
-      $$ReconciliationsTableTableManager(
-        _db.attachedDatabase,
-        _db.reconciliations,
-      );
-  $$AccountingPeriodsTableTableManager get accountingPeriods =>
-      $$AccountingPeriodsTableTableManager(
-        _db.attachedDatabase,
-        _db.accountingPeriods,
-      );
 }
 
 // **************************************************************************
@@ -49,9 +21,8 @@ class AccountingDaoManager {
 
 TrialBalanceItem _$TrialBalanceItemFromJson(Map<String, dynamic> json) =>
     TrialBalanceItem(
-      const GLAccountConverter().fromJson(
-        json['account'] as Map<String, dynamic>,
-      ),
+      const GLAccountConverter()
+          .fromJson(json['account'] as Map<String, dynamic>),
       (json['totalDebit'] as num).toDouble(),
       (json['totalCredit'] as num).toDouble(),
     );

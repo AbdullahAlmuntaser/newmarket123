@@ -17,40 +17,4 @@ mixin _$SuppliersDaoMixin on DatabaseAccessor<AppDatabase> {
   $CurrenciesTable get currencies => attachedDatabase.currencies;
   $GLLinesTable get gLLines => attachedDatabase.gLLines;
   $APInvoicesTable get aPInvoices => attachedDatabase.aPInvoices;
-  SuppliersDaoManager get managers => SuppliersDaoManager(this);
-}
-
-class SuppliersDaoManager {
-  final _$SuppliersDaoMixin _db;
-  SuppliersDaoManager(this._db);
-  $$BranchesTableTableManager get branches =>
-      $$BranchesTableTableManager(_db.attachedDatabase, _db.branches);
-  $$GLAccountsTableTableManager get gLAccounts =>
-      $$GLAccountsTableTableManager(_db.attachedDatabase, _db.gLAccounts);
-  $$SuppliersTableTableManager get suppliers =>
-      $$SuppliersTableTableManager(_db.attachedDatabase, _db.suppliers);
-  $$SupplierPaymentsTableTableManager get supplierPayments =>
-      $$SupplierPaymentsTableTableManager(
-        _db.attachedDatabase,
-        _db.supplierPayments,
-      );
-  $$WarehousesTableTableManager get warehouses =>
-      $$WarehousesTableTableManager(_db.attachedDatabase, _db.warehouses);
-  $$PurchasesTableTableManager get purchases =>
-      $$PurchasesTableTableManager(_db.attachedDatabase, _db.purchases);
-  $$PurchaseReturnsTableTableManager get purchaseReturns =>
-      $$PurchaseReturnsTableTableManager(
-        _db.attachedDatabase,
-        _db.purchaseReturns,
-      );
-  $$GLEntriesTableTableManager get gLEntries =>
-      $$GLEntriesTableTableManager(_db.attachedDatabase, _db.gLEntries);
-  $$CostCentersTableTableManager get costCenters =>
-      $$CostCentersTableTableManager(_db.attachedDatabase, _db.costCenters);
-  $$CurrenciesTableTableManager get currencies =>
-      $$CurrenciesTableTableManager(_db.attachedDatabase, _db.currencies);
-  $$GLLinesTableTableManager get gLLines =>
-      $$GLLinesTableTableManager(_db.attachedDatabase, _db.gLLines);
-  $$APInvoicesTableTableManager get aPInvoices =>
-      $$APInvoicesTableTableManager(_db.attachedDatabase, _db.aPInvoices);
 }

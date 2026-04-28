@@ -7,52 +7,54 @@ part of 'accounting_service.dart';
 // **************************************************************************
 
 AccountingDashboardData _$AccountingDashboardDataFromJson(
-  Map<String, dynamic> json,
-) => AccountingDashboardData(
-  totalRevenue: (json['totalRevenue'] as num).toDouble(),
-  totalExpenses: (json['totalExpenses'] as num).toDouble(),
-  netIncome: (json['netIncome'] as num).toDouble(),
-  totalAssets: (json['totalAssets'] as num).toDouble(),
-  totalLiabilities: (json['totalLiabilities'] as num).toDouble(),
-  topExpenses: (json['topExpenses'] as List<dynamic>)
-      .map((e) => TrialBalanceItem.fromJson(e as Map<String, dynamic>))
-      .toList(),
-  recentTransactions: (json['recentTransactions'] as List<dynamic>)
-      .map((e) => const GLEntryConverter().fromJson(e as Map<String, dynamic>))
-      .toList(),
-  dailyRevenue: (json['dailyRevenue'] as List<dynamic>)
-      .map((e) => DailyValue.fromJson(e as Map<String, dynamic>))
-      .toList(),
-  dailyExpenses: (json['dailyExpenses'] as List<dynamic>)
-      .map((e) => DailyValue.fromJson(e as Map<String, dynamic>))
-      .toList(),
-  topSellingProducts: (json['topSellingProducts'] as List<dynamic>)
-      .map((e) => DashboardTopProduct.fromJson(e as Map<String, dynamic>))
-      .toList(),
-  expiringBatchesCount: (json['expiringBatchesCount'] as num?)?.toInt() ?? 0,
-  ratios: FinancialRatiosData.fromJson(json['ratios'] as Map<String, dynamic>),
-);
+        Map<String, dynamic> json) =>
+    AccountingDashboardData(
+      totalRevenue: (json['totalRevenue'] as num).toDouble(),
+      totalExpenses: (json['totalExpenses'] as num).toDouble(),
+      netIncome: (json['netIncome'] as num).toDouble(),
+      totalAssets: (json['totalAssets'] as num).toDouble(),
+      totalLiabilities: (json['totalLiabilities'] as num).toDouble(),
+      topExpenses: (json['topExpenses'] as List<dynamic>)
+          .map((e) => TrialBalanceItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      recentTransactions: (json['recentTransactions'] as List<dynamic>)
+          .map((e) =>
+              const GLEntryConverter().fromJson(e as Map<String, dynamic>))
+          .toList(),
+      dailyRevenue: (json['dailyRevenue'] as List<dynamic>)
+          .map((e) => DailyValue.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      dailyExpenses: (json['dailyExpenses'] as List<dynamic>)
+          .map((e) => DailyValue.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      topSellingProducts: (json['topSellingProducts'] as List<dynamic>)
+          .map((e) => DashboardTopProduct.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      expiringBatchesCount:
+          (json['expiringBatchesCount'] as num?)?.toInt() ?? 0,
+      ratios:
+          FinancialRatiosData.fromJson(json['ratios'] as Map<String, dynamic>),
+    );
 
 Map<String, dynamic> _$AccountingDashboardDataToJson(
-  AccountingDashboardData instance,
-) => <String, dynamic>{
-  'totalRevenue': instance.totalRevenue,
-  'totalExpenses': instance.totalExpenses,
-  'netIncome': instance.netIncome,
-  'totalAssets': instance.totalAssets,
-  'totalLiabilities': instance.totalLiabilities,
-  'topExpenses': instance.topExpenses.map((e) => e.toJson()).toList(),
-  'recentTransactions': instance.recentTransactions
-      .map(const GLEntryConverter().toJson)
-      .toList(),
-  'dailyRevenue': instance.dailyRevenue.map((e) => e.toJson()).toList(),
-  'dailyExpenses': instance.dailyExpenses.map((e) => e.toJson()).toList(),
-  'topSellingProducts': instance.topSellingProducts
-      .map((e) => e.toJson())
-      .toList(),
-  'expiringBatchesCount': instance.expiringBatchesCount,
-  'ratios': instance.ratios.toJson(),
-};
+        AccountingDashboardData instance) =>
+    <String, dynamic>{
+      'totalRevenue': instance.totalRevenue,
+      'totalExpenses': instance.totalExpenses,
+      'netIncome': instance.netIncome,
+      'totalAssets': instance.totalAssets,
+      'totalLiabilities': instance.totalLiabilities,
+      'topExpenses': instance.topExpenses.map((e) => e.toJson()).toList(),
+      'recentTransactions': instance.recentTransactions
+          .map(const GLEntryConverter().toJson)
+          .toList(),
+      'dailyRevenue': instance.dailyRevenue.map((e) => e.toJson()).toList(),
+      'dailyExpenses': instance.dailyExpenses.map((e) => e.toJson()).toList(),
+      'topSellingProducts':
+          instance.topSellingProducts.map((e) => e.toJson()).toList(),
+      'expiringBatchesCount': instance.expiringBatchesCount,
+      'ratios': instance.ratios.toJson(),
+    };
 
 DashboardTopProduct _$DashboardTopProductFromJson(Map<String, dynamic> json) =>
     DashboardTopProduct(
@@ -61,16 +63,16 @@ DashboardTopProduct _$DashboardTopProductFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$DashboardTopProductToJson(
-  DashboardTopProduct instance,
-) => <String, dynamic>{
-  'productName': instance.productName,
-  'quantity': instance.quantity,
-};
+        DashboardTopProduct instance) =>
+    <String, dynamic>{
+      'productName': instance.productName,
+      'quantity': instance.quantity,
+    };
 
 DailyValue _$DailyValueFromJson(Map<String, dynamic> json) => DailyValue(
-  DateTime.parse(json['date'] as String),
-  (json['value'] as num).toDouble(),
-);
+      DateTime.parse(json['date'] as String),
+      (json['value'] as num).toDouble(),
+    );
 
 Map<String, dynamic> _$DailyValueToJson(DailyValue instance) =>
     <String, dynamic>{
@@ -79,17 +81,17 @@ Map<String, dynamic> _$DailyValueToJson(DailyValue instance) =>
     };
 
 CashFlowData _$CashFlowDataFromJson(Map<String, dynamic> json) => CashFlowData(
-  operatingActivities: (json['operatingActivities'] as num).toDouble(),
-  investingActivities: (json['investingActivities'] as num).toDouble(),
-  financingActivities: (json['financingActivities'] as num).toDouble(),
-  netCashFlow: (json['netCashFlow'] as num).toDouble(),
-  beginningCashBalance: (json['beginningCashBalance'] as num).toDouble(),
-  endingCashBalance: (json['endingCashBalance'] as num).toDouble(),
-  startDate: json['startDate'] == null
-      ? null
-      : DateTime.parse(json['startDate'] as String),
-  endDate: DateTime.parse(json['endDate'] as String),
-);
+      operatingActivities: (json['operatingActivities'] as num).toDouble(),
+      investingActivities: (json['investingActivities'] as num).toDouble(),
+      financingActivities: (json['financingActivities'] as num).toDouble(),
+      netCashFlow: (json['netCashFlow'] as num).toDouble(),
+      beginningCashBalance: (json['beginningCashBalance'] as num).toDouble(),
+      endingCashBalance: (json['endingCashBalance'] as num).toDouble(),
+      startDate: json['startDate'] == null
+          ? null
+          : DateTime.parse(json['startDate'] as String),
+      endDate: DateTime.parse(json['endDate'] as String),
+    );
 
 Map<String, dynamic> _$CashFlowDataToJson(CashFlowData instance) =>
     <String, dynamic>{
@@ -111,12 +113,12 @@ FinancialRatiosData _$FinancialRatiosDataFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$FinancialRatiosDataToJson(
-  FinancialRatiosData instance,
-) => <String, dynamic>{
-  'grossProfitMargin': instance.grossProfitMargin,
-  'netProfitMargin': instance.netProfitMargin,
-  'currentRatio': instance.currentRatio,
-};
+        FinancialRatiosData instance) =>
+    <String, dynamic>{
+      'grossProfitMargin': instance.grossProfitMargin,
+      'netProfitMargin': instance.netProfitMargin,
+      'currentRatio': instance.currentRatio,
+    };
 
 VatReportData _$VatReportDataFromJson(Map<String, dynamic> json) =>
     VatReportData(
@@ -154,16 +156,16 @@ IncomeStatementData _$IncomeStatementDataFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$IncomeStatementDataToJson(
-  IncomeStatementData instance,
-) => <String, dynamic>{
-  'revenues': instance.revenues.map((e) => e.toJson()).toList(),
-  'expenses': instance.expenses.map((e) => e.toJson()).toList(),
-  'totalRevenue': instance.totalRevenue,
-  'totalExpense': instance.totalExpense,
-  'netIncome': instance.netIncome,
-  'startDate': instance.startDate?.toIso8601String(),
-  'endDate': instance.endDate.toIso8601String(),
-};
+        IncomeStatementData instance) =>
+    <String, dynamic>{
+      'revenues': instance.revenues.map((e) => e.toJson()).toList(),
+      'expenses': instance.expenses.map((e) => e.toJson()).toList(),
+      'totalRevenue': instance.totalRevenue,
+      'totalExpense': instance.totalExpense,
+      'netIncome': instance.netIncome,
+      'startDate': instance.startDate?.toIso8601String(),
+      'endDate': instance.endDate.toIso8601String(),
+    };
 
 BalanceSheetData _$BalanceSheetDataFromJson(Map<String, dynamic> json) =>
     BalanceSheetData(
@@ -197,9 +199,8 @@ Map<String, dynamic> _$BalanceSheetDataToJson(BalanceSheetData instance) =>
 
 BalanceSheetItem _$BalanceSheetItemFromJson(Map<String, dynamic> json) =>
     BalanceSheetItem(
-      const GLAccountConverter().fromJson(
-        json['account'] as Map<String, dynamic>,
-      ),
+      const GLAccountConverter()
+          .fromJson(json['account'] as Map<String, dynamic>),
       (json['balance'] as num).toDouble(),
     );
 

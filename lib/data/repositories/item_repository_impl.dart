@@ -54,7 +54,7 @@ class ItemRepositoryImpl implements ItemRepository {
           ),
         );
       } else {
-        return Left(DatabaseFailure('Item not found'));
+        return const Left(DatabaseFailure('Item not found'));
       }
     } catch (e) {
       return Left(DatabaseFailure(e.toString()));

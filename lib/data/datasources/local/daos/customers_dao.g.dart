@@ -16,35 +16,4 @@ mixin _$CustomersDaoMixin on DatabaseAccessor<AppDatabase> {
   $CostCentersTable get costCenters => attachedDatabase.costCenters;
   $GLLinesTable get gLLines => attachedDatabase.gLLines;
   $ARInvoicesTable get aRInvoices => attachedDatabase.aRInvoices;
-  CustomersDaoManager get managers => CustomersDaoManager(this);
-}
-
-class CustomersDaoManager {
-  final _$CustomersDaoMixin _db;
-  CustomersDaoManager(this._db);
-  $$BranchesTableTableManager get branches =>
-      $$BranchesTableTableManager(_db.attachedDatabase, _db.branches);
-  $$GLAccountsTableTableManager get gLAccounts =>
-      $$GLAccountsTableTableManager(_db.attachedDatabase, _db.gLAccounts);
-  $$CurrenciesTableTableManager get currencies =>
-      $$CurrenciesTableTableManager(_db.attachedDatabase, _db.currencies);
-  $$CustomersTableTableManager get customers =>
-      $$CustomersTableTableManager(_db.attachedDatabase, _db.customers);
-  $$CustomerPaymentsTableTableManager get customerPayments =>
-      $$CustomerPaymentsTableTableManager(
-        _db.attachedDatabase,
-        _db.customerPayments,
-      );
-  $$SalesTableTableManager get sales =>
-      $$SalesTableTableManager(_db.attachedDatabase, _db.sales);
-  $$SalesReturnsTableTableManager get salesReturns =>
-      $$SalesReturnsTableTableManager(_db.attachedDatabase, _db.salesReturns);
-  $$GLEntriesTableTableManager get gLEntries =>
-      $$GLEntriesTableTableManager(_db.attachedDatabase, _db.gLEntries);
-  $$CostCentersTableTableManager get costCenters =>
-      $$CostCentersTableTableManager(_db.attachedDatabase, _db.costCenters);
-  $$GLLinesTableTableManager get gLLines =>
-      $$GLLinesTableTableManager(_db.attachedDatabase, _db.gLLines);
-  $$ARInvoicesTableTableManager get aRInvoices =>
-      $$ARInvoicesTableTableManager(_db.attachedDatabase, _db.aRInvoices);
 }

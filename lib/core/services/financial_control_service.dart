@@ -325,7 +325,7 @@ class FinancialControlService {
       );
 
       await (db.update(db.sales)..where((s) => s.id.equals(saleId))).write(
-        SalesCompanion(status: const Value('VOID')),
+        const SalesCompanion(status: Value('VOID')),
       );
 
       await _auditService.logCreate(
@@ -405,7 +405,7 @@ class FinancialControlService {
       );
 
       await (db.update(db.purchases)..where((p) => p.id.equals(purchaseId)))
-          .write(PurchasesCompanion(status: const Value('VOID')));
+          .write(const PurchasesCompanion(status: Value('VOID')));
 
       await _auditService.logCreate(
         'Purchase',

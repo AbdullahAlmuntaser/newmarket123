@@ -28,7 +28,7 @@ class _AgingReportPageState extends State<AgingReportPage> {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: DropdownButtonFormField<String>(
-              initialValue: _type,
+              value: _type,
               items: const [
                 DropdownMenuItem(value: 'CUSTOMER', child: Text('العملاء')),
                 DropdownMenuItem(value: 'SUPPLIER', child: Text('الموردين')),

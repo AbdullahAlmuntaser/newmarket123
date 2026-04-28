@@ -172,8 +172,8 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: amount >= 0
-            ? Colors.green.withValues(alpha: 0.1)
-            : Colors.red.withValues(alpha: 0.1),
+            ? Colors.green.withOpacity(0.1)
+            : Colors.red.withOpacity(0.1),
         border: Border.all(color: amount >= 0 ? Colors.green : Colors.red),
         borderRadius: BorderRadius.circular(8),
       ),

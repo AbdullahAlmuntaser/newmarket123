@@ -152,7 +152,7 @@ class _BomManagementPageState extends State<BomManagementPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
-                initialValue: finishedProduct,
+                value: finishedProduct,
                 decoration: InputDecoration(
                   labelText: l10n.localeName == 'ar'
                       ? 'المنتج المُصنَّع'
@@ -168,7 +168,7 @@ class _BomManagementPageState extends State<BomManagementPage> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                initialValue: component,
+                value: component,
                 decoration: InputDecoration(
                   labelText: l10n.localeName == 'ar'
                       ? 'المادة الخام'
@@ -349,7 +349,7 @@ class _BomAssemblyPageState extends State<BomAssemblyPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             DropdownButtonFormField<String>(
-              initialValue: _selectedProductId,
+              value: _selectedProductId,
               decoration: InputDecoration(
                 labelText: l10n.localeName == 'ar'
                     ? 'المنتج المُصنَّع'
@@ -368,7 +368,7 @@ class _BomAssemblyPageState extends State<BomAssemblyPage> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              initialValue: _selectedWarehouseId,
+              value: _selectedWarehouseId,
               decoration: InputDecoration(
                 labelText: l10n.localeName == 'ar' ? 'المستودع' : 'Warehouse',
                 border: const OutlineInputBorder(),

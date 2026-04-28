@@ -216,7 +216,7 @@ class _PermissionsManagementPageState extends State<PermissionsManagementPage>
             Padding(
               padding: const EdgeInsets.all(16),
               child: DropdownButtonFormField<String>(
-                initialValue: _selectedRole,
+                value: _selectedRole,
                 decoration: const InputDecoration(
                   labelText: 'اختر الدور',
                   border: OutlineInputBorder(),

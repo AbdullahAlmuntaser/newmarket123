@@ -120,7 +120,7 @@ class _SalesItemRowState extends State<SalesItemRow> {
                     builder: (context, snapshot) {
                       final units = snapshot.data ?? [];
                       return DropdownButtonFormField<String>(
-                        initialValue: widget.item.selectedUnit,
+                        value: widget.item.selectedUnit,
                         decoration: const InputDecoration(labelText: 'الوحدة'),
                         items: [
                           DropdownMenuItem(value: widget.item.product?.unit ?? 'حبة', child: Text(widget.item.product?.unit ?? 'حبة')),
@@ -254,13 +254,13 @@ class _SalesItemRowState extends State<SalesItemRow> {
               ),
             ),
           if (isStockLow)
-            Padding(
-              padding: const EdgeInsets.only(top: 4.0),
+            const Padding(
+              padding: EdgeInsets.only(top: 4.0),
               child: Row(
                 children: [
-                  const Icon(Icons.error, color: Colors.red, size: 16),
-                  const SizedBox(width: 4),
-                  const Text(
+                  Icon(Icons.error, color: Colors.red, size: 16),
+                  SizedBox(width: 4),
+                  Text(
                     'الكمية المطلوبة أكبر من المخزون المتاح',
                     style: TextStyle(
                       color: Colors.red,

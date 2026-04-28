@@ -39,7 +39,7 @@ class SupplierStatementPage extends StatelessWidget {
                     final tx = transactions[index];
                     if (tx is Purchase) {
                       return ListTile(
-                        leading: CircleAvatar(
+                        leading: const CircleAvatar(
                           backgroundColor: Colors.orangeAccent,
                           child: Icon(Icons.receipt, color: Colors.white),
                         ),
@@ -59,7 +59,7 @@ class SupplierStatementPage extends StatelessWidget {
                       );
                     } else if (tx is SupplierPayment) {
                       return ListTile(
-                        leading: CircleAvatar(
+                        leading: const CircleAvatar(
                           backgroundColor: Colors.green,
                           child: Icon(Icons.payment, color: Colors.white),
                         ),

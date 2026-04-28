@@ -120,7 +120,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
         Icon(
           Icons.lock_open,
           size: 100,
-          color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+          color: Theme.of(context).primaryColor.withOpacity(0.2),
         ),
         const SizedBox(height: 24),
         Text(l10n.noOpenShift, style: Theme.of(context).textTheme.titleLarge),

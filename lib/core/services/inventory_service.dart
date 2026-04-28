@@ -146,7 +146,7 @@ class InventoryService {
     ])..where(
       db.productBatches.expiryDate.isBiggerOrEqual(Variable(now)) &
       db.productBatches.expiryDate.isSmallerOrEqual(Variable(threshold)) &
-      db.productBatches.quantity.isBiggerThan(Variable(0))
+      db.productBatches.quantity.isBiggerThan(const Variable(0))
     );
 
     return query.watch().map((rows) {
@@ -209,7 +209,7 @@ class InventoryService {
                       ..where(
                         (b) =>
                             b.productId.equals(productId) &
-                            b.quantity.isBiggerThan(Variable(0)),
+                            b.quantity.isBiggerThan(const Variable(0)),
                       )
                       ..orderBy([
                         (b) => drift.OrderingTerm(

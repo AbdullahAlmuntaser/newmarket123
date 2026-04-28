@@ -166,7 +166,7 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                initialValue: _selectedCurrencyId,
+                value: _selectedCurrencyId,
                 decoration: InputDecoration(
                   labelText: "عملة العميل",
                   prefixIcon: const Icon(Icons.attach_money),
@@ -227,7 +227,7 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                initialValue: _customerType,
+                value: _customerType,
                 decoration: InputDecoration(
                   labelText: "نوع العميل",
                   prefixIcon: const Icon(Icons.category),

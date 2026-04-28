@@ -89,7 +89,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
                     ),
                     DropdownButtonFormField<String>(
                       key: ValueKey(selectedRole), // Unique key forces rebuild
-                      initialValue: selectedRole,
+                      value: selectedRole,
                       onChanged: (value) => setState(() => selectedRole = value!),
                       items: ['admin', 'manager', 'cashier']
                           .map((role) => DropdownMenuItem(value: role, child: Text(role)))

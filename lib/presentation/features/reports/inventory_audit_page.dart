@@ -75,7 +75,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
               }
 
               return DropdownButtonFormField<Warehouse>(
-                initialValue: _selectedWarehouse,
+                value: _selectedWarehouse,
                 decoration: InputDecoration(
                   labelText: l10n.warehouse,
                   border: const OutlineInputBorder(),

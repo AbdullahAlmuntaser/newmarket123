@@ -103,8 +103,8 @@ class BalanceSheetPage extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isBalanced
-            ? Colors.green.withValues(alpha: 0.1)
-            : Colors.red.withValues(alpha: 0.1),
+            ? Colors.green.withOpacity(0.1)
+            : Colors.red.withOpacity(0.1),
         border: Border.all(color: isBalanced ? Colors.green : Colors.red),
         borderRadius: BorderRadius.circular(8),
       ),

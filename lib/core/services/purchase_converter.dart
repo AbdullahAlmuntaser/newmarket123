@@ -36,8 +36,8 @@ class PurchaseConverter {
       }
 
       // 4. تحديث حالة أمر الشراء
-      await (db.update(db.purchaseOrders)..where((o) => o.id.equals(orderId))).write(PurchaseOrdersCompanion(
-        status: const Value('CONVERTED'),
+      await (db.update(db.purchaseOrders)..where((o) => o.id.equals(orderId))).write(const PurchaseOrdersCompanion(
+        status: Value('CONVERTED'),
       ));
     });
   }

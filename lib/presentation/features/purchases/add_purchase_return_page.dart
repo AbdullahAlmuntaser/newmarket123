@@ -44,7 +44,7 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
                     labelText: l10n.selectPurchase,
                     border: const OutlineInputBorder(),
                   ),
-                  initialValue: _selectedPurchase,
+                  value: _selectedPurchase,
                   items: purchases
                       .map(
                         (p) => DropdownMenuItem(

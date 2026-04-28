@@ -150,7 +150,7 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    initialValue: line.accountId,
+                    value: line.accountId,
                     decoration: const InputDecoration(
                       labelText: 'الحساب',
                       isDense: true,
@@ -218,11 +218,11 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Colors.black12,
             blurRadius: 4,
-            offset: const Offset(0, -2),
+            offset: Offset(0, -2),
           ),
         ],
       ),

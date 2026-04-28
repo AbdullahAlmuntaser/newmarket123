@@ -57,7 +57,7 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
           (b) =>
               b.productId.equals(productId) &
               b.warehouseId.equals(warehouseId) &
-              b.quantity.isBiggerThan(Variable(0)),
+              b.quantity.isBiggerThan(const Variable(0)),
         ))
         .get();
   }
@@ -261,7 +261,7 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
           ..where(
             (b) =>
                 b.expiryDate.isSmallerOrEqual(Variable(thresholdDate)) &
-                b.quantity.isBiggerThan(Variable(0)),
+                b.quantity.isBiggerThan(const Variable(0)),
           )
           ..orderBy([
             (t) =>
@@ -278,7 +278,7 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
           ..where(
             (b) =>
                 b.expiryDate.isSmallerOrEqual(Variable(thresholdDate)) &
-                b.quantity.isBiggerThan(Variable(0)),
+                b.quantity.isBiggerThan(const Variable(0)),
           )
           ..orderBy([
             (t) =>

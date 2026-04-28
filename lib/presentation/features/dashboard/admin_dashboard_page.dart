@@ -161,7 +161,7 @@ class AdminDashboardPage extends StatelessWidget {
               child: CircularProgressIndicator(
                 value: progress,
                 strokeWidth: 8,
-                backgroundColor: color.withValues(alpha: 0.1),
+                backgroundColor: color.withOpacity(0.1),
                 valueColor: AlwaysStoppedAnimation<Color>(color),
               ),
             ),
@@ -189,9 +189,9 @@ class AdminDashboardPage extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.amber.withValues(alpha: 0.1),
+        color: Colors.amber.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+        border: Border.all(color: Colors.amber.withOpacity(0.5)),
       ),
       child: Row(
         children: [
@@ -221,11 +221,11 @@ class AdminDashboardPage extends StatelessWidget {
       elevation: 0,
       color: Theme.of(
         context,
-      ).colorScheme.primaryContainer.withValues(alpha: 0.3),
+      ).colorScheme.primaryContainer.withOpacity(0.3),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
         ),
       ),
       child: Padding(
@@ -259,7 +259,7 @@ class AdminDashboardPage extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(
                         context,
-                      ).colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                      ).colorScheme.onPrimaryContainer.withOpacity(0.7),
                     ),
                   ),
                 ],
@@ -339,7 +339,7 @@ class AdminDashboardPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
+                color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 28),
@@ -449,7 +449,7 @@ class AdminDashboardPage extends StatelessWidget {
                       dotData: const FlDotData(show: true),
                       belowBarData: BarAreaData(
                         show: true,
-                        color: Colors.blue.withValues(alpha: 0.1),
+                        color: Colors.blue.withOpacity(0.1),
                       ),
                     ),
                   ],
@@ -891,7 +891,7 @@ class AdminDashboardPage extends StatelessWidget {
                 leading: CircleAvatar(
                   backgroundColor: _getEntryColor(
                     entry.referenceType,
-                  ).withValues(alpha: 0.1),
+                  ).withOpacity(0.1),
                   child: Icon(
                     _getEntryIcon(entry.referenceType),
                     color: _getEntryColor(entry.referenceType),

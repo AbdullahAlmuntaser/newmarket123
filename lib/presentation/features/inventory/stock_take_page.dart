@@ -93,7 +93,7 @@ class _StockTakePageState extends State<StockTakePage> {
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
       ),
       child: DropdownButtonFormField<String>(
-        initialValue: _selectedWarehouseId,
+        value: _selectedWarehouseId,
         decoration: const InputDecoration(
           labelText: 'المستودع المستهدف',
           border: OutlineInputBorder(),
@@ -354,11 +354,11 @@ class _StockTakePageState extends State<StockTakePage> {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Colors.black12,
             blurRadius: 10,
-            offset: const Offset(0, -5),
+            offset: Offset(0, -5),
           ),
         ],
       ),

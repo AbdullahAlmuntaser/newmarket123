@@ -67,7 +67,7 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
                     labelText: l10n.selectSale,
                     border: const OutlineInputBorder(),
                   ),
-                  initialValue: _selectedSale,
+                  value: _selectedSale,
                   items: salesList
                       .map(
                         (s) => DropdownMenuItem(

@@ -126,7 +126,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                   decoration: InputDecoration(labelText: l10n.total),
                 ),
                 DropdownButtonFormField<GLAccount>(
-                  initialValue: selectedExpenseAccount,
+                  value: selectedExpenseAccount,
                   items: expenseAccounts
                       .map(
                         (a) => DropdownMenuItem(value: a, child: Text(a.name)),
@@ -137,7 +137,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                   decoration: InputDecoration(labelText: l10n.accountType),
                 ),
                 DropdownButtonFormField<GLAccount>(
-                  initialValue: selectedPaymentAccount,
+                  value: selectedPaymentAccount,
                   items: paymentAccounts
                       .map(
                         (a) => DropdownMenuItem(value: a, child: Text(a.name)),

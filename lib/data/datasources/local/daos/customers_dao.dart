@@ -118,8 +118,8 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
           parentId: parentAccount?.id != null
               ? Value(parentAccount!.id)
               : const Value.absent(),
-          isHeader: Value(false),
-          balance: Value(0.0),
+          isHeader: const Value(false),
+          balance: const Value(0.0),
         ),
       );
 

@@ -157,7 +157,7 @@ class StockTransferService {
     return await (db.select(db.productBatches)..where(
           (t) =>
               t.warehouseId.equals(warehouseId) &
-              t.quantity.isBiggerThan(Variable(0)),
+              t.quantity.isBiggerThan(const Variable(0)),
         ))
         .get();
   }

@@ -229,7 +229,7 @@ class _SalesReportsPageState extends State<SalesReportsPage> {
                     show: true,
                     color: Theme.of(
                       context,
-                    ).primaryColor.withValues(alpha: 0.1),
+                    ).primaryColor.withOpacity(0.1),
                   ),
                 ),
               ],

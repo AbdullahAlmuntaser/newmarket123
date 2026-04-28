@@ -250,7 +250,7 @@ class _EntityPickerDropdownState extends State<EntityPickerDropdown> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: DropdownButtonFormField<dynamic>(
-                  initialValue: widget.value,
+                  value: widget.value,
                   decoration: InputDecoration(
                     labelText: widget.labelText,
                     border: InputBorder.none,

@@ -229,7 +229,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
 
       // Check if product was found
       if (product == null) {
-        emit(PosError("المنتج غير موجود"));
+        emit(const PosError("المنتج غير موجود"));
         return;
       }
 

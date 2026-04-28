@@ -110,7 +110,7 @@ class _ChecksPageState extends State<ChecksPage> {
                 child: Column(
                   children: [
                     DropdownButtonFormField<String>(
-                      initialValue: _selectedType,
+                      value: _selectedType,
                       decoration: const InputDecoration(
                         labelText: 'نوع الشيك',
                         border: OutlineInputBorder(),
@@ -207,7 +207,7 @@ class _ChecksPageState extends State<ChecksPage> {
         builder: (context, snapshot) {
           final customers = snapshot.data ?? [];
           return DropdownButtonFormField<String>(
-            initialValue: _selectedPartnerId,
+            value: _selectedPartnerId,
             decoration: const InputDecoration(
               labelText: 'العميل',
               border: OutlineInputBorder(),
@@ -226,7 +226,7 @@ class _ChecksPageState extends State<ChecksPage> {
         builder: (context, snapshot) {
           final suppliers = snapshot.data ?? [];
           return DropdownButtonFormField<String>(
-            initialValue: _selectedPartnerId,
+            value: _selectedPartnerId,
             decoration: const InputDecoration(
               labelText: 'المورد',
               border: OutlineInputBorder(),
@@ -254,7 +254,7 @@ class _ChecksPageState extends State<ChecksPage> {
       builder: (context, snapshot) {
         final accounts = snapshot.data ?? [];
         return DropdownButtonFormField<String>(
-          initialValue: _selectedAccountId,
+          value: _selectedAccountId,
           decoration: const InputDecoration(
             labelText: 'حساب الدفع/التحصيل',
             border: OutlineInputBorder(),

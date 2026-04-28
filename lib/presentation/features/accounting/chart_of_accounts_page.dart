@@ -216,7 +216,7 @@ class _ChartOfAccountsPageState extends State<ChartOfAccountsPage> {
                   decoration: InputDecoration(labelText: l10n.accountName),
                 ),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedType,
+                  value: selectedType,
                   items: ['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE']
                       .map((t) => DropdownMenuItem(value: t, child: Text(t)))
                       .toList(),
@@ -224,7 +224,7 @@ class _ChartOfAccountsPageState extends State<ChartOfAccountsPage> {
                   decoration: InputDecoration(labelText: l10n.accountType),
                 ),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedAnalyticType,
+                  value: selectedAnalyticType,
                   hint: const Text('اختياري'),
                   items: ['صندوق', 'بنك', 'عميل', 'مورد', 'موظف', 'مركز تكلفة']
                       .map((t) => DropdownMenuItem(value: t, child: Text(t)))
