@@ -62,7 +62,7 @@ class MainDrawer extends StatelessWidget {
                     icon: Icons.history_rounded,
                     title: l10n?.sales ?? 'المبيعات',
                     children: [
-                      _buildSubItem(context, 'سجل المبيعات', '/sales'),
+                      _buildSubItem(context, l10n?.sales ?? 'سجل المبيعات', '/sales'),
                       _buildSubItem(
                         context,
                         'فاتورة مبيعات جديدة',
@@ -121,7 +121,7 @@ class MainDrawer extends StatelessWidget {
                       _buildSubItem(context, 'قائمة المشتريات', '/purchases'),
                       _buildSubItem(
                         context,
-                        'إضافة عملية شراء',
+                        l10n?.newPurchase ?? 'إضافة عملية شراء',
                         '/purchases/new',
                       ),
                       _buildSubItem(
@@ -133,6 +133,11 @@ class MainDrawer extends StatelessWidget {
                         context,
                         'دفعات الموردين',
                         '/suppliers/payment',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'أداء الموردين',
+                        '/purchases/performance',
                       ),
                     ],
                   ),
@@ -180,7 +185,7 @@ class MainDrawer extends StatelessWidget {
                     children: [
                       _buildSubItem(
                         context,
-                        'المستودعات',
+                        l10n?.noWarehousesFound ?? 'المستودعات',
                         '/inventory/warehouses',
                       ),
                       _buildSubItem(
@@ -190,8 +195,18 @@ class MainDrawer extends StatelessWidget {
                       ),
                       _buildSubItem(
                         context,
-                        'جرد المخزون',
+                        l10n?.inventoryAudit ?? 'جرد المخزون',
                         '/inventory/stock-take',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'تنبيهات المخزون',
+                        '/inventory/low-stock-alert',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'إدارة الورديات',
+                        '/inventory/shifts',
                       ),
                     ],
                   ),
@@ -207,7 +222,7 @@ class MainDrawer extends StatelessWidget {
                   _buildExpansionGroup(
                     context,
                     icon: Icons.assessment_rounded,
-                    title: 'التقارير',
+                    title: l10n?.reports ?? 'التقارير',
                     children: [
                       _buildSubItem(
                         context,
@@ -221,7 +236,7 @@ class MainDrawer extends StatelessWidget {
                       ),
                       _buildSubItem(
                         context,
-                        'تقارير المخزون',
+                        l10n?.inventoryReports ?? 'تقارير المخزون',
                         '/reports/inventory',
                       ),
                       _buildSubItem(
@@ -231,7 +246,7 @@ class MainDrawer extends StatelessWidget {
                       ),
                       _buildSubItem(
                         context,
-                        'تقرير ضريبة القيمة المضافة',
+                        l10n?.vatReport ?? 'تقرير ضريبة القيمة المضافة',
                         '/reports/vat',
                       ),
                       _buildSubItem(
@@ -244,7 +259,7 @@ class MainDrawer extends StatelessWidget {
                         l10n?.cashFlowForecast ?? 'توقعات التدفق النقدي',
                         '/reports/cash-flow',
                       ),
-                      _buildSubItem(context, 'سجل التدقيق', '/reports/audit'),
+                      _buildSubItem(context, l10n?.auditLog ?? 'سجل التدقيق', '/reports/audit'),
                     ],
                   ),
                 ],
@@ -267,27 +282,27 @@ class MainDrawer extends StatelessWidget {
                       ),
                       _buildSubItem(
                         context,
-                        'الميزانية العمومية',
+                        l10n?.balanceSheet ?? 'الميزانية العمومية',
                         '/accounting/balance-sheet',
                       ),
                       _buildSubItem(
                         context,
-                        'قائمة الدخل',
+                        l10n?.incomeStatement ?? 'قائمة الدخل',
                         '/accounting/income-statement',
                       ),
                       _buildSubItem(
                         context,
-                        'التدفقات النقدية',
+                        l10n?.cashFlow ?? 'التدفقات النقدية',
                         '/accounting/cash-flow',
                       ),
                       _buildSubItem(
                         context,
-                        'ميزان المراجعة',
+                        l10n?.trialBalance ?? 'ميزان المراجعة',
                         '/accounting/trial-balance',
                       ),
                       _buildSubItem(
                         context,
-                        'المصروفات',
+                        l10n?.expenses ?? 'المصروفات',
                         '/accounting/expenses',
                       ),
                       _buildSubItem(
@@ -297,7 +312,7 @@ class MainDrawer extends StatelessWidget {
                       ),
                       _buildSubItem(
                         context,
-                        'الأصول الثابتة',
+                        l10n?.fixedAssets ?? 'الأصول الثابتة',
                         '/accounting/fixed-assets',
                       ),
                       _buildSubItem(
@@ -312,7 +327,7 @@ class MainDrawer extends StatelessWidget {
                       ),
                       _buildSubItem(
                         context,
-                        'التسويات',
+                        l10n?.reconciliation ?? 'التسويات',
                         '/accounting/reconciliation',
                       ),
                       _buildSubItem(
@@ -351,7 +366,7 @@ class MainDrawer extends StatelessWidget {
                     icon: Icons.settings_rounded,
                     title: 'الإعدادات',
                     children: [
-                      _buildSubItem(context, 'إدارة المستخدمين', '/users'),
+                      _buildSubItem(context, l10n?.staffManagement ?? 'إدارة المستخدمين', '/users'),
                       _buildSubItem(
                         context,
                         'أسعار العملات',
@@ -359,10 +374,10 @@ class MainDrawer extends StatelessWidget {
                       ),
                       _buildSubItem(
                         context,
-                        'النسخ الاحتياطي',
+                        l10n?.backupAndSync ?? 'النسخ الاحتياطي',
                         '/settings/backup',
                       ),
-                      _buildSubItem(context, 'المزامنة', '/sync'),
+                      _buildSubItem(context, l10n?.cloudSync ?? 'المزامنة', '/sync'),
                       _buildSubItem(
                         context,
                         'إعدادات الطابعة',

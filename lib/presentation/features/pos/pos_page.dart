@@ -45,19 +45,12 @@ class _PosViewState extends State<PosView> {
       listener: (context, state) {
         if (state is PosCheckoutSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('تمت عملية البيع بنجاح'),
-              backgroundColor: Colors.green,
-            ),
+            const SnackBar(content: Text('تمت عملية البيع بنجاح'), backgroundColor: Colors.green),
           );
-          // Clear cart and reset to PosLoaded
           context.read<PosBloc>().add(ClearCart());
         } else if (state is PosError) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
           );
         }
       },
@@ -65,55 +58,43 @@ class _PosViewState extends State<PosView> {
         appBar: AppBar(
           title: const Text('نقطة البيع السريع'),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.history),
-              onPressed: () => context.push('/sales'),
-              tooltip: 'سجل المبيعات',
-            ),
-            BlocBuilder<PosBloc, PosState>(
-              builder: (context, state) {
-                if (state is! PosLoaded) return const SizedBox.shrink();
-                return Row(
-                  children: [
-                    const Text('جملة'),
-                    Switch(
-                      value: state.isWholesaleMode,
-                      onChanged: (value) {
-                        context.read<PosBloc>().add(ToggleWholesaleMode(value));
-                      },
-                    ),
-                  ],
-                );
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.qr_code_scanner),
-              onPressed: () => _openScanner(context),
-            ),
+            IconButton(icon: const Icon(Icons.history), onPressed: () => context.push('/sales')),
+            IconButton(icon: const Icon(Icons.qr_code_scanner), onPressed: () => _openScanner(context)),
           ],
         ),
-        body: Row(
-          children: [
-            // Left Side: Cart & Checkout
-            const Expanded(flex: 2, child: CartWidget()),
-            // Right Side: Products & Search
-            Expanded(
-              flex: 3,
-              child: Column(
+        body: BlocBuilder<PosBloc, PosState>(
+          builder: (context, state) {
+            if (state is PosLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (state is PosError) {
+              return Center(child: Text('خطأ في تحميل البيانات: ${state.message}'));
+            }
+            if (state is PosLoaded) {
+              return Row(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ProductSearchWidget(controller: _barcodeController),
+                  const Expanded(flex: 2, child: CartWidget()),
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: ProductSearchWidget(controller: _barcodeController),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8.0),
+                          child: CategorySelector(),
+                        ),
+                        const Expanded(child: ProductGrid()),
+                      ],
+                    ),
                   ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8.0),
-                    child: CategorySelector(),
-                  ),
-                  const Expanded(child: ProductGrid()),
                 ],
-              ),
-            ),
-          ],
+              );
+            }
+            return const Center(child: Text('بدء نقطة البيع...'));
+          },
         ),
       ),
     );

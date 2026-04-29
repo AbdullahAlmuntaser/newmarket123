@@ -68,6 +68,7 @@ import 'package:supermarket/presentation/features/auth/staff_management_page.dar
 import 'package:supermarket/presentation/features/settings/backup_page.dart';
 import 'package:supermarket/presentation/features/settings/permissions_management_page.dart';
 import 'package:supermarket/presentation/features/settings/currency_rates_page.dart';
+import 'package:supermarket/presentation/features/settings/sync_page.dart';
 import 'package:supermarket/presentation/features/reports/printer_settings_page.dart';
 import 'package:supermarket/presentation/features/home/low_stock_products_page.dart';
 import 'package:supermarket/presentation/features/purchases/supplier_performance_page.dart';
@@ -92,7 +93,7 @@ final GoRouter appRouter = GoRouter(
         return '/';
       }
       
-      if ((state.matchedLocation == '/users' || state.matchedLocation == '/settings/permissions') && 
+      if ((state.matchedLocation == '/users' || state.matchedLocation == '/settings/permissions' || state.matchedLocation == '/sync') && 
           !await permService.hasPermission(userId, PermissionService.userManagement)) {
         return '/';
       }
@@ -121,6 +122,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/inventory/stock-take', builder: (context, state) => const StockTakePage()),
     GoRoute(path: '/inventory/low-stock-alert', builder: (context, state) => const LowStockAlertPage()),
     GoRoute(path: '/inventory/warehouse-manager', builder: (context, state) => const WarehouseManagerPage()),
+    GoRoute(path: '/inventory/shifts', builder: (context, state) => const ShiftsPage()),
     GoRoute(path: '/manufacturing/bom', builder: (context, state) => const BomManagementPage()),
     GoRoute(path: '/hr/employees', builder: (context, state) => const EmployeesPage()),
     GoRoute(path: '/hr/payroll', builder: (context, state) => const PayrollPage()),
@@ -165,6 +167,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/reports/cash-flow', builder: (context, state) => const CashFlowForecastPage()),
     GoRoute(path: '/reports/audit', builder: (context, state) => const AuditLogPage()),
     GoRoute(path: '/users', builder: (context, state) => const StaffManagementPage()),
+    GoRoute(path: '/sync', builder: (context, state) => const SyncPage()),
     GoRoute(path: '/settings/backup', builder: (context, state) => const BackupPage()),
     GoRoute(path: '/settings/permissions', builder: (context, state) => const PermissionsManagementPage()),
     GoRoute(path: '/settings/currency-rates', builder: (context, state) => const CurrencyRatesPage()),

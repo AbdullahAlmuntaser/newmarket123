@@ -3,15 +3,21 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/events/app_events.dart';
 import 'package:supermarket/core/services/event_bus_service.dart';
 import 'package:supermarket/core/services/audit_service.dart';
+import 'package:supermarket/core/services/inventory_costing_service.dart';
 import 'package:uuid/uuid.dart';
 
 class TransactionEngine {
   final AppDatabase db;
   final EventBusService eventBus;
   late final AuditService _auditService;
+  InventoryCostingService? _costingService;
 
   TransactionEngine(this.db, this.eventBus) {
     _auditService = AuditService(db);
+  }
+
+  void setCostingService(InventoryCostingService costingService) {
+    _costingService = costingService;
   }
 
   /// Checks if the current accounting period is open
@@ -197,7 +203,7 @@ class TransactionEngine {
         throw Exception('لا يمكن ترحيل فاتورة مبيعات بدون أصناف.');
       }
 
-      // 2. Process each item (Inventory Update - FEFO)
+// 2. Process each item (Inventory Update - FEFO)
       double saleCogs = 0.0;
       for (var item in items) {
         if (item.quantity <= 0) {
@@ -217,72 +223,116 @@ class TransactionEngine {
           );
         }
 
-        // Get Batches ordered by expiry date (FEFO)
-        // Batches with expiry dates come first (ordered by date), then batches without expiry dates (FIFO)
-        final batches =
-            await (db.select(db.productBatches)
-                  ..where((b) => b.productId.equals(item.productId))
-                  ..where((b) => b.quantity.isBiggerThan(const Variable(0)))
-                  ..orderBy([
-                    (b) => OrderingTerm(
-                      expression: b.expiryDate
-                          .isNull(), // False (0) comes before True (1) in many SQLites, but let's be explicit
-                      mode: OrderingMode.asc,
-                    ),
-                    (b) => OrderingTerm(
-                      expression: b.expiryDate,
-                      mode: OrderingMode.asc,
-                    ),
-                    (b) => OrderingTerm(
-                      expression: b.createdAt,
-                      mode: OrderingMode.asc,
-                    ),
-                  ]))
-                .get();
-
-        double totalDeducted = 0;
-        for (var batch in batches) {
-          if (remainingToDeduct <= 0) break;
-
-          double deductFromThisBatch = batch.quantity >= remainingToDeduct
-              ? remainingToDeduct
-              : batch.quantity;
-
-          // Update Batch Quantity
-          await (db.update(
-            db.productBatches,
-          )..where((b) => b.id.equals(batch.id))).write(
-            ProductBatchesCompanion(
-              quantity: Value(batch.quantity - deductFromThisBatch),
-            ),
+        // استخدم InventoryCostingService إذا كان متاحاً
+        if (_costingService != null) {
+          final batches = await _costingService!.getBatchesForSale(
+            item.productId,
+            remainingToDeduct,
           );
+          
+          double totalDeducted = 0;
+          for (var batchData in batches) {
+            if (batchData.remainingQuantity <= 0) continue;
+            
+            // Update Batch Quantity
+            await (db.update(
+              db.productBatches,
+            )..where((b) => b.id.equals(batchData.batch.id))).write(
+              ProductBatchesCompanion(
+                quantity: Value(batchData.batch.quantity - batchData.remainingQuantity),
+              ),
+            );
 
-          // Record Inventory Transaction
-          await db
-              .into(db.inventoryTransactions)
-              .insert(
-                InventoryTransactionsCompanion.insert(
-                  productId: item.productId,
-                  warehouseId: batch.warehouseId,
-                  batchId: Value(batch.id),
-                  quantity: -deductFromThisBatch,
-                  type: 'SALE',
-                  referenceId: saleId,
-                ),
-              );
+            // Record Inventory Transaction
+            await db
+                .into(db.inventoryTransactions)
+                .insert(
+                  InventoryTransactionsCompanion.insert(
+                    productId: item.productId,
+                    warehouseId: batchData.batch.warehouseId,
+                    batchId: Value(batchData.batch.id),
+                    quantity: -batchData.remainingQuantity,
+                    type: 'SALE',
+                    referenceId: saleId,
+                  ),
+                );
 
-          remainingToDeduct -= deductFromThisBatch;
-          totalDeducted += deductFromThisBatch;
-          // Calculate COGS for this part of the batch
-          saleCogs += (deductFromThisBatch * batch.costPrice);
+            totalDeducted += batchData.remainingQuantity;
+            saleCogs += (batchData.remainingQuantity * batchData.costPerUnit);
+          }
+
+          // Update Product Total Stock
+          await (db.update(
+            db.products,
+          )..where((p) => p.id.equals(item.productId))).write(
+            ProductsCompanion(stock: Value(product.stock - totalDeducted)),
+          );
+        } else {
+          // Fallback: استخدام المنطق الأصلي FEFO
+          final batches =
+              await (db.select(db.productBatches)
+                    ..where((b) => b.productId.equals(item.productId))
+                    ..where((b) => b.quantity.isBiggerThan(const Variable(0)))
+                    ..orderBy([
+                      (b) => OrderingTerm(
+                        expression: b.expiryDate
+                            .isNull(),
+                        mode: OrderingMode.asc,
+                      ),
+                      (b) => OrderingTerm(
+                        expression: b.expiryDate,
+                        mode: OrderingMode.asc,
+                      ),
+                      (b) => OrderingTerm(
+                        expression: b.createdAt,
+                        mode: OrderingMode.asc,
+                      ),
+                    ]))
+                  .get();
+
+          double totalDeducted = 0;
+          for (var batch in batches) {
+            if (remainingToDeduct <= 0) break;
+
+            double deductFromThisBatch = batch.quantity >= remainingToDeduct
+                ? remainingToDeduct
+                : batch.quantity;
+
+            // Update Batch Quantity
+            await (db.update(
+              db.productBatches,
+            )..where((b) => b.id.equals(batch.id))).write(
+              ProductBatchesCompanion(
+                quantity: Value(batch.quantity - deductFromThisBatch),
+              ),
+            );
+
+            // Record Inventory Transaction
+            await db
+                .into(db.inventoryTransactions)
+                .insert(
+                  InventoryTransactionsCompanion.insert(
+                    productId: item.productId,
+                    warehouseId: batch.warehouseId,
+                    batchId: Value(batch.id),
+                    quantity: -deductFromThisBatch,
+                    type: 'SALE',
+                    referenceId: saleId,
+                  ),
+                );
+
+            remainingToDeduct -= deductFromThisBatch;
+            totalDeducted += deductFromThisBatch;
+            saleCogs += (deductFromThisBatch * batch.costPrice);
+          }
+
+          // Update Product Total Stock
+          await (db.update(
+            db.products,
+          )..where((p) => p.id.equals(item.productId))).write(
+            ProductsCompanion(stock: Value(product.stock - totalDeducted)),
+          );
         }
-
-        // Update Product Total Stock
-        await (db.update(
-          db.products,
-        )..where((p) => p.id.equals(item.productId))).write(
-          ProductsCompanion(stock: Value(product.stock - totalDeducted)),
-        );
       }
       // 3. Update Sale Status
       await (db.update(db.sales)..where((s) => s.id.equals(saleId))).write(

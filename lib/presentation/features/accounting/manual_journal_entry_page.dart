@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/presentation/widgets/permission_guard.dart';
-import 'package:drift/drift.dart' hide Column;
+import 'package:drift/drift.dart' as drift;
 import 'package:intl/intl.dart';
 
 class ManualJournalEntryPage extends StatefulWidget {
@@ -26,20 +25,41 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AccountingProvider>();
+    final db = context.watch<AppDatabase>();
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(title: const Text('قيد يومية يدوي'), elevation: 0),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            _buildHeader(colorScheme),
-            const SizedBox(height: 16),
-            _buildLinesList(provider, colorScheme),
-            const SizedBox(height: 100), // Space for bottom bar
-          ],
-        ),
+      body: StreamBuilder<List<GLAccount>>(
+        stream: provider.watchAccounts(),
+        builder: (context, accSnapshot) {
+          return StreamBuilder<List<CostCenter>>(
+            stream: db.select(db.costCenters).watch(),
+            builder: (context, ccSnapshot) {
+              final accounts = (accSnapshot.data ?? []).where((a) => !a.isHeader).toList();
+              final costCenters = ccSnapshot.data ?? [];
+              
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  children: [
+                    _buildHeader(colorScheme),
+                    const SizedBox(height: 16),
+                    ..._lines.asMap().entries.map(
+                      (entry) => _buildLineCard(entry.key, entry.value, accounts, costCenters, colorScheme),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () => setState(() => _lines.add(ManualLine())),
+                      icon: const Icon(Icons.add),
+                      label: const Text('إضافة حساب للقيد'),
+                    ),
+                    const SizedBox(height: 150),
+                  ],
+                ),
+              );
+            },
+          );
+        },
       ),
       bottomSheet: _buildPersistentFooter(provider),
     );
@@ -96,38 +116,11 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
     );
   }
 
-  Widget _buildLinesList(AccountingProvider provider, ColorScheme colorScheme) {
-    return StreamBuilder<List<GLAccount>>(
-      stream: provider.watchAccounts(),
-      builder: (context, snapshot) {
-        final accounts = (snapshot.data ?? [])
-            .where((a) => !a.isHeader)
-            .toList();
-        return Column(
-          children: [
-            ..._lines.asMap().entries.map(
-              (entry) =>
-                  _buildLineCard(entry.key, entry.value, accounts, colorScheme),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: () => setState(() => _lines.add(ManualLine())),
-              icon: const Icon(Icons.add),
-              label: const Text('إضافة حساب للقيد'),
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   Widget _buildLineCard(
     int index,
     ManualLine line,
     List<GLAccount> accounts,
+    List<CostCenter> costCenters,
     ColorScheme colorScheme,
   ) {
     return Card(
@@ -139,36 +132,24 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  radius: 12,
-                  backgroundColor: colorScheme.primary,
-                  child: Text(
-                    '${index + 1}',
-                    style: const TextStyle(fontSize: 10, color: Colors.white),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: line.accountId,
+                    decoration: const InputDecoration(labelText: 'الحساب', isDense: true),
+                    items: accounts.map((a) => DropdownMenuItem(value: a.id, child: Text('${a.code} - ${a.name}'))).toList(),
+                    onChanged: (val) => setState(() => line.accountId = val),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: line.accountId,
-                    decoration: const InputDecoration(
-                      labelText: 'الحساب',
-                      isDense: true,
-                      border: UnderlineInputBorder(),
-                    ),
-                    isExpanded: true,
-                    items: accounts
-                        .map(
-                          (a) => DropdownMenuItem(
-                            value: a.id,
-                            child: Text(
-                              '${a.code} - ${a.name}',
-                              style: const TextStyle(fontSize: 13),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (val) => setState(() => line.accountId = val),
+                  child: DropdownButtonFormField<String?>(
+                    value: line.costCenterId,
+                    decoration: const InputDecoration(labelText: 'مركز التكلفة', isDense: true),
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('بدون مركز')),
+                      ...costCenters.map((cc) => DropdownMenuItem(value: cc.id, child: Text(cc.name))),
+                    ],
+                    onChanged: (val) => setState(() => line.costCenterId = val),
                   ),
                 ),
                 IconButton(
@@ -177,32 +158,21 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
                   child: TextField(
-                    decoration: const InputDecoration(
-                      labelText: 'مدين (Debit)',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
+                    decoration: const InputDecoration(labelText: 'مدين'),
                     keyboardType: TextInputType.number,
-                    onChanged: (val) =>
-                        setState(() => line.debit = double.tryParse(val) ?? 0),
+                    onChanged: (val) => setState(() => line.debit = double.tryParse(val) ?? 0),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
-                    decoration: const InputDecoration(
-                      labelText: 'دائن (Credit)',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
+                    decoration: const InputDecoration(labelText: 'دائن'),
                     keyboardType: TextInputType.number,
-                    onChanged: (val) =>
-                        setState(() => line.credit = double.tryParse(val) ?? 0),
+                    onChanged: (val) => setState(() => line.credit = double.tryParse(val) ?? 0),
                   ),
                 ),
               ],
@@ -216,54 +186,21 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
   Widget _buildPersistentFooter(AccountingProvider provider) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 4,
-            offset: Offset(0, -2),
-          ),
-        ],
-      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _summaryItem('إجمالي المدين', _totalDebit, Colors.green),
-              const VerticalDivider(),
-              _summaryItem('إجمالي الدائن', _totalCredit, Colors.red),
+              Text('المدين: $_totalDebit'),
+              Text('الدائن: $_totalCredit'),
             ],
           ),
-          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
-            child: PermissionGuard(
-              permission: 'accounting.edit_journal',
-              child: ElevatedButton(
-                onPressed: _isBalanced ? () => _saveEntry(provider) : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _isBalanced
-                      ? Colors.green
-                      : Colors.grey.shade300,
-                  foregroundColor: _isBalanced
-                      ? Colors.white
-                      : Colors.grey.shade600,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  _isBalanced ? 'حفظ وترحيل القيد' : 'القيد غير متزن',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+            child: ElevatedButton(
+              onPressed: _isBalanced ? () => _saveEntry(provider) : null,
+              child: Text(_isBalanced ? 'حفظ وترحيل' : 'القيد غير متزن'),
             ),
           ),
         ],
@@ -271,54 +208,29 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
     );
   }
 
-  Widget _summaryItem(String label, double val, Color color) {
-    return Column(
-      children: [
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-        Text(
-          val.toStringAsFixed(2),
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            color: color,
-          ),
-        ),
-      ],
-    );
-  }
-
   void _saveEntry(AccountingProvider provider) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
-    try {
-      final lines = _lines
-          .where((l) => l.accountId != null)
-          .map(
-            (l) => GLLinesCompanion.insert(
+    final lines = _lines
+        .where((l) => l.accountId != null)
+        .map((l) => GLLinesCompanion.insert(
               entryId: '',
               accountId: l.accountId!,
-              debit: Value(l.debit),
-              credit: Value(l.credit),
-            ),
-          )
-          .toList();
-      await provider.createManualEntry(
-        description: _descriptionController.text,
-        date: _selectedDate,
-        lines: lines,
-      );
-      messenger.showSnackBar(
-        const SnackBar(content: Text('تم حفظ القيد بنجاح')),
-      );
-      navigator.pop();
-    } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.toString())));
-    }
+              costCenterId: drift.Value(l.costCenterId),
+              debit: drift.Value(l.debit),
+              credit: drift.Value(l.credit),
+            ))
+        .toList();
+    await provider.createManualEntry(
+      description: _descriptionController.text,
+      date: _selectedDate,
+      lines: lines,
+    );
+    if(mounted) Navigator.pop(context);
   }
 }
 
 class ManualLine {
   String? accountId;
+  String? costCenterId;
   double debit = 0;
   double credit = 0;
 }

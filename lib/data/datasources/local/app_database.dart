@@ -186,6 +186,7 @@ class SaleItems extends Table with SyncableTable {
   RealColumn get unitFactor => real().withDefault(const Constant(1.0))();
   TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
   TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
+  TextColumn get costCenterId => text().nullable().references(CostCenters, #id)(); // الحقل المضاف
 }
 
 class StockMovements extends Table with SyncableTable {
@@ -273,6 +274,7 @@ class PurchaseItems extends Table with SyncableTable {
 class Warehouses extends Table with SyncableTable {
   TextColumn get name => text()();
   TextColumn get location => text().nullable()();
+  TextColumn get accountId => text().nullable().references(GLAccounts, #id)(); // ربط المستودع بالحساب المحاسبي
   @override
   TextColumn get branchId => text().nullable().references(Branches, #id)();
   BoolColumn get isDefault => boolean().withDefault(const Constant(false))();

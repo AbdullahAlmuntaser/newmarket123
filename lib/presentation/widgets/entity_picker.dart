@@ -437,3 +437,51 @@ class SupplierPicker extends StatelessWidget {
     );
   }
 }
+
+class WarehousePicker extends StatelessWidget {
+  final AppDatabase db;
+  final Warehouse? value;
+  final void Function(Warehouse?)? onChanged;
+
+  const WarehousePicker({super.key, required this.db, this.value, this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return EntityPickerDropdown(
+      db: db,
+      streamBuilder: (database) => database.select(database.warehouses).watch(),
+      labelText: 'المستودع',
+      hintText: 'بحث...',
+      selectLabel: 'اختيار مستودع',
+      addNewLabel: 'مستودع جديد',
+      itemText: (w) => (w as Warehouse).name,
+      value: value,
+      onChanged: onChanged != null ? (v) => onChanged!(v as Warehouse?) : null,
+      entityTypeLabel: 'مستودع',
+    );
+  }
+}
+
+class CurrencyPicker extends StatelessWidget {
+  final AppDatabase db;
+  final Currency? value;
+  final void Function(Currency?)? onChanged;
+
+  const CurrencyPicker({super.key, required this.db, this.value, this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return EntityPickerDropdown(
+      db: db,
+      streamBuilder: (database) => database.select(database.currencies).watch(),
+      labelText: 'العملة',
+      hintText: 'بحث...',
+      selectLabel: 'اختيار عملة',
+      addNewLabel: 'عملة جديدة',
+      itemText: (c) => (c as Currency).name,
+      value: value,
+      onChanged: onChanged != null ? (v) => onChanged!(v as Currency?) : null,
+      entityTypeLabel: 'عملة',
+    );
+  }
+}

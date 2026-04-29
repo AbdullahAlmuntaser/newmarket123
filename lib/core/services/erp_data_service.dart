@@ -68,15 +68,12 @@ class ErpDataService {
     )..where((p) => p.id.equals(productId))).getSingleOrNull();
 
     try {
-      final valuation = await costingService.getInventoryValuation();
-      final productValuation = valuation.firstWhere(
-        (v) => v.productId == productId,
-      );
-      stock = productValuation.totalQuantity;
-      avgCost = productValuation.averageCost;
+      final valuation = await costingService.getInventoryValuation(productId);
+      stock = valuation.totalQuantity;
+      avgCost = valuation.averageCost;
     } catch (_) {
       stock = product?.stock ?? 0;
-      avgCost = product?.buyPrice ?? 0; // Fallback to buyPrice
+      avgCost = product?.buyPrice ?? 0;
     }
 
     // Last purchase info from PurchasesDao

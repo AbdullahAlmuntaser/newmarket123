@@ -1,8 +1,6 @@
-import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/core/services/erp_data_service.dart';
-import 'package:supermarket/injection_container.dart';
+import 'package:provider/provider.dart';
 
 class SalesItemRow extends StatefulWidget {
   final int index;
@@ -27,41 +25,9 @@ class SalesItemRow extends StatefulWidget {
 }
 
 class _SalesItemRowState extends State<SalesItemRow> {
-  ProductSmartData? _smartData;
-  CustomerSmartData? _customerSmartData;
-  bool _isLoadingSmartData = false;
-
-  Future<void> _fetchSmartData(String productId) async {
-    setState(() => _isLoadingSmartData = true);
-    try {
-      final erpService = sl<ErpDataService>();
-      final data = await erpService.getProductSmartData(productId);
-
-      CustomerSmartData? customerData;
-      if (widget.customerId != null) {
-        customerData = await erpService.getCustomerSmartData(
-          widget.customerId!,
-          productId: productId,
-        );
-      }
-
-      setState(() {
-        _smartData = data;
-        _customerSmartData = customerData;
-        _isLoadingSmartData = false;
-
-        // Auto-set price if not set
-        if (widget.item.price == 0) {
-          widget.item.price = data.retailPrice;
-        }
-      });
-    } catch (e) {
-      setState(() => _isLoadingSmartData = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final db = context.watch<AppDatabase>();
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: Padding(
@@ -70,232 +36,40 @@ class _SalesItemRowState extends State<SalesItemRow> {
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: Colors.green,
-                  child: Text(
-                    '${widget.index + 1}',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
+                CircleAvatar(backgroundColor: Colors.green, child: Text('${widget.index + 1}', style: const TextStyle(color: Colors.white))),
                 const SizedBox(width: 12),
-                Expanded(
-                  flex: 3,
-                  child: Autocomplete<Product>(
-                    displayStringForOption: (p) => p.name,
-                    initialValue: TextEditingValue(
-                      text: widget.item.product?.name ?? '',
-                    ),
-                    optionsBuilder: (TextEditingValue textEditingValue) {
-                      if (textEditingValue.text.isEmpty) {
-                        return widget.products;
-                      }
-                      return widget.products.where((p) {
-                        return p.name.toLowerCase().contains(
-                              textEditingValue.text.toLowerCase(),
-                            ) ||
-                            (p.sku.toLowerCase().contains(
-                              textEditingValue.text.toLowerCase(),
-                            )) ||
-                            (p.barcode?.contains(textEditingValue.text) ??
-                                false);
-                      });
-                    },
-                    onSelected: (Product selection) {
-                      setState(() {
-                        widget.item.product = selection;
-                        widget.item.selectedUnit = selection.unit;
-                        widget.item.price = selection.sellPrice;
-                      });
-                      _fetchSmartData(selection.id);
-                      widget.onChanged();
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 1,
-                  child: StreamBuilder<List<UnitConversion>>(
-                    stream: (sl<AppDatabase>().select(sl<AppDatabase>().unitConversions)
-                      ..where((t) => t.productId.equals(widget.item.product?.id ?? ''))).watch(),
-                    builder: (context, snapshot) {
-                      final units = snapshot.data ?? [];
-                      return DropdownButtonFormField<String>(
-                        value: widget.item.selectedUnit,
-                        decoration: const InputDecoration(labelText: 'الوحدة'),
-                        items: [
-                          DropdownMenuItem(value: widget.item.product?.unit ?? 'حبة', child: Text(widget.item.product?.unit ?? 'حبة')),
-                          ...units.map((u) => DropdownMenuItem(value: u.unitName, child: Text(u.unitName))),
-                        ],
-                        onChanged: (value) async {
-                          final unit = units.firstWhere((u) => u.unitName == value, orElse: () => UnitConversion(
-                              id: const Uuid().v4(),
-                              productId: '',
-                              unitName: widget.item.product?.unit ?? 'حبة',
-                              factor: 1,
-                              isBaseUnit: true,
-                              createdAt: DateTime.now(),
-                              updatedAt: DateTime.now(),
-                              syncStatus: 1,
-                          ));
-                          setState(() {
-                            widget.item.selectedUnit = value!;
-                            widget.item.unitFactor = unit.factor;
-                            widget.item.price = (unit.sellPrice ?? widget.item.product?.sellPrice ?? 0.0);
-                          });
-                          widget.onChanged();
-                        },
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 1,
-                  child: TextFormField(
-                    initialValue: widget.item.discount.toString(),
-                    decoration: const InputDecoration(labelText: 'خصم'),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      widget.item.discount = double.tryParse(value) ?? 0.0;
-                      widget.onChanged();
-                    },
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: widget.onDelete,
-                ),
-              ],
-            ),
-            if (widget.item.product != null) ...[
-              const SizedBox(height: 8),
-              _buildSmartInfoArea(),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSmartInfoArea() {
-    if (_isLoadingSmartData) {
-      return const LinearProgressIndicator();
-    }
-
-    if (_smartData == null) return const SizedBox.shrink();
-
-    final isPriceLow =
-        widget.item.price < _smartData!.averageCost &&
-        _smartData!.averageCost > 0;
-    final isStockLow = _smartData!.currentStock < widget.item.quantity;
-
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.green.withAlpha(20),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _infoTile(
-                'المتوفر',
-                '${_smartData!.currentStock}',
-                color: isStockLow ? Colors.red : null,
-              ),
-              _infoTile(
-                'سعر التجزئة',
-                _smartData!.retailPrice.toStringAsFixed(2),
-                onTap: () {
-                  setState(() => widget.item.price = _smartData!.retailPrice);
-                  widget.onChanged();
-                },
-              ),
-              _infoTile(
-                'سعر الجملة',
-                _smartData!.wholesalePrice.toStringAsFixed(2),
-                onTap: () {
-                  setState(
-                    () => widget.item.price = _smartData!.wholesalePrice,
-                  );
-                  widget.onChanged();
-                },
-              ),
-              if (_customerSmartData != null)
-                _infoTile(
-                  'آخر سعر (العميل)',
-                  _customerSmartData!.lastSalePriceForProduct.toStringAsFixed(
-                    2,
-                  ),
-                  onTap: () {
-                    setState(
-                      () => widget.item.price =
-                          _customerSmartData!.lastSalePriceForProduct,
-                    );
+                Expanded(flex: 3, child: Autocomplete<Product>(
+                  displayStringForOption: (p) => p.name,
+                  initialValue: TextEditingValue(text: widget.item.product?.name ?? ''),
+                  optionsBuilder: (v) => widget.products.where((p) => p.name.toLowerCase().contains(v.text.toLowerCase())),
+                  onSelected: (p) {
+                    setState(() { widget.item.product = p; widget.item.selectedUnit = p.unit; widget.item.price = p.sellPrice; });
                     widget.onChanged();
                   },
-                ),
-            ],
-          ),
-          if (isPriceLow)
-            Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: Row(
-                children: [
-                  const Icon(Icons.warning, color: Colors.red, size: 16),
-                  const SizedBox(width: 4),
-                  Text(
-                    'السعر أقل من التكلفة (${_smartData!.averageCost.toStringAsFixed(2)})',
-                    style: const TextStyle(color: Colors.red, fontSize: 12),
-                  ),
-                ],
-              ),
+                )),
+                const SizedBox(width: 8),
+                Expanded(flex: 1, child: TextFormField(
+                  initialValue: widget.item.quantity.toString(),
+                  decoration: const InputDecoration(labelText: 'الكمية'),
+                  onChanged: (v) { widget.item.quantity = double.tryParse(v) ?? 0.0; widget.onChanged(); },
+                )),
+                const SizedBox(width: 8),
+                Expanded(flex: 1, child: StreamBuilder<List<CostCenter>>(
+                  stream: db.select(db.costCenters).watch(),
+                  builder: (context, snapshot) {
+                    return DropdownButtonFormField<String?>(
+                      value: widget.item.costCenterId,
+                      decoration: const InputDecoration(labelText: 'مركز التكلفة'),
+                      items: [const DropdownMenuItem(value: null, child: Text('لا يوجد')), ...snapshot.data?.map((cc) => DropdownMenuItem(value: cc.id, child: Text(cc.name))) ?? []],
+                      onChanged: (val) { setState(() => widget.item.costCenterId = val); widget.onChanged(); },
+                    );
+                  },
+                )),
+                IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: widget.onDelete),
+              ],
             ),
-          if (isStockLow)
-            const Padding(
-              padding: EdgeInsets.only(top: 4.0),
-              child: Row(
-                children: [
-                  Icon(Icons.error, color: Colors.red, size: 16),
-                  SizedBox(width: 4),
-                  Text(
-                    'الكمية المطلوبة أكبر من المخزون المتاح',
-                    style: TextStyle(
-                      color: Colors.red,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoTile(
-    String label,
-    String value, {
-    Color? color,
-    VoidCallback? onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -309,6 +83,7 @@ class SalesLineItem {
   double discount;
   double taxRate;
   double unitFactor;
+  String? costCenterId;
 
   double get lineTotal {
     final subtotal = quantity * price;
@@ -324,5 +99,6 @@ class SalesLineItem {
     this.discount = 0.0,
     this.taxRate = 0.0,
     this.unitFactor = 1.0,
+    this.costCenterId,
   });
 }

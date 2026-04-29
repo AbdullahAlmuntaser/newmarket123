@@ -198,9 +198,12 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
           ],
           onChanged: (value) {
             setState(() {
+              final newFactor = value?.factor ?? 1.0;
+              
+              // تحديث السعر بناءً على الوحدة الجديدة (السعر = السعر الأساسي * عامل التحويل)
+              // يفترض أن السعر الأساسي (buyPrice) هو للوحدة الأساسية
+              widget.item.unitPrice = widget.item.product.buyPrice * newFactor;
               widget.item.selectedUnit = value;
-              // If a new unit is selected, you might want to adjust the price
-              // based on the factor, for now we just update the unit reference.
             });
             widget.onChanged();
           },

@@ -7328,6 +7328,15 @@ class $WarehousesTable extends Warehouses
   late final GeneratedColumn<String> location = GeneratedColumn<String>(
       'location', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _accountIdMeta =
+      const VerificationMeta('accountId');
+  @override
+  late final GeneratedColumn<String> accountId = GeneratedColumn<String>(
+      'account_id', aliasedName, true,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES g_l_accounts (id)'));
   static const VerificationMeta _isDefaultMeta =
       const VerificationMeta('isDefault');
   @override
@@ -7348,6 +7357,7 @@ class $WarehousesTable extends Warehouses
         branchId,
         name,
         location,
+        accountId,
         isDefault
       ];
   @override
@@ -7395,6 +7405,10 @@ class $WarehousesTable extends Warehouses
       context.handle(_locationMeta,
           location.isAcceptableOrUnknown(data['location']!, _locationMeta));
     }
+    if (data.containsKey('account_id')) {
+      context.handle(_accountIdMeta,
+          accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta));
+    }
     if (data.containsKey('is_default')) {
       context.handle(_isDefaultMeta,
           isDefault.isAcceptableOrUnknown(data['is_default']!, _isDefaultMeta));
@@ -7424,6 +7438,8 @@ class $WarehousesTable extends Warehouses
           .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
       location: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}location']),
+      accountId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}account_id']),
       isDefault: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_default'])!,
     );
@@ -7444,6 +7460,7 @@ class Warehouse extends DataClass implements Insertable<Warehouse> {
   final String? branchId;
   final String name;
   final String? location;
+  final String? accountId;
   final bool isDefault;
   const Warehouse(
       {required this.id,
@@ -7454,6 +7471,7 @@ class Warehouse extends DataClass implements Insertable<Warehouse> {
       this.branchId,
       required this.name,
       this.location,
+      this.accountId,
       required this.isDefault});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -7471,6 +7489,9 @@ class Warehouse extends DataClass implements Insertable<Warehouse> {
     map['name'] = Variable<String>(name);
     if (!nullToAbsent || location != null) {
       map['location'] = Variable<String>(location);
+    }
+    if (!nullToAbsent || accountId != null) {
+      map['account_id'] = Variable<String>(accountId);
     }
     map['is_default'] = Variable<bool>(isDefault);
     return map;
@@ -7492,6 +7513,9 @@ class Warehouse extends DataClass implements Insertable<Warehouse> {
       location: location == null && nullToAbsent
           ? const Value.absent()
           : Value(location),
+      accountId: accountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accountId),
       isDefault: Value(isDefault),
     );
   }
@@ -7508,6 +7532,7 @@ class Warehouse extends DataClass implements Insertable<Warehouse> {
       branchId: serializer.fromJson<String?>(json['branchId']),
       name: serializer.fromJson<String>(json['name']),
       location: serializer.fromJson<String?>(json['location']),
+      accountId: serializer.fromJson<String?>(json['accountId']),
       isDefault: serializer.fromJson<bool>(json['isDefault']),
     );
   }
@@ -7523,6 +7548,7 @@ class Warehouse extends DataClass implements Insertable<Warehouse> {
       'branchId': serializer.toJson<String?>(branchId),
       'name': serializer.toJson<String>(name),
       'location': serializer.toJson<String?>(location),
+      'accountId': serializer.toJson<String?>(accountId),
       'isDefault': serializer.toJson<bool>(isDefault),
     };
   }
@@ -7536,6 +7562,7 @@ class Warehouse extends DataClass implements Insertable<Warehouse> {
           Value<String?> branchId = const Value.absent(),
           String? name,
           Value<String?> location = const Value.absent(),
+          Value<String?> accountId = const Value.absent(),
           bool? isDefault}) =>
       Warehouse(
         id: id ?? this.id,
@@ -7546,6 +7573,7 @@ class Warehouse extends DataClass implements Insertable<Warehouse> {
         branchId: branchId.present ? branchId.value : this.branchId,
         name: name ?? this.name,
         location: location.present ? location.value : this.location,
+        accountId: accountId.present ? accountId.value : this.accountId,
         isDefault: isDefault ?? this.isDefault,
       );
   Warehouse copyWithCompanion(WarehousesCompanion data) {
@@ -7559,6 +7587,7 @@ class Warehouse extends DataClass implements Insertable<Warehouse> {
       branchId: data.branchId.present ? data.branchId.value : this.branchId,
       name: data.name.present ? data.name.value : this.name,
       location: data.location.present ? data.location.value : this.location,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
       isDefault: data.isDefault.present ? data.isDefault.value : this.isDefault,
     );
   }
@@ -7574,6 +7603,7 @@ class Warehouse extends DataClass implements Insertable<Warehouse> {
           ..write('branchId: $branchId, ')
           ..write('name: $name, ')
           ..write('location: $location, ')
+          ..write('accountId: $accountId, ')
           ..write('isDefault: $isDefault')
           ..write(')'))
         .toString();
@@ -7581,7 +7611,7 @@ class Warehouse extends DataClass implements Insertable<Warehouse> {
 
   @override
   int get hashCode => Object.hash(id, createdAt, updatedAt, deviceId,
-      syncStatus, branchId, name, location, isDefault);
+      syncStatus, branchId, name, location, accountId, isDefault);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -7594,6 +7624,7 @@ class Warehouse extends DataClass implements Insertable<Warehouse> {
           other.branchId == this.branchId &&
           other.name == this.name &&
           other.location == this.location &&
+          other.accountId == this.accountId &&
           other.isDefault == this.isDefault);
 }
 
@@ -7606,6 +7637,7 @@ class WarehousesCompanion extends UpdateCompanion<Warehouse> {
   final Value<String?> branchId;
   final Value<String> name;
   final Value<String?> location;
+  final Value<String?> accountId;
   final Value<bool> isDefault;
   final Value<int> rowid;
   const WarehousesCompanion({
@@ -7617,6 +7649,7 @@ class WarehousesCompanion extends UpdateCompanion<Warehouse> {
     this.branchId = const Value.absent(),
     this.name = const Value.absent(),
     this.location = const Value.absent(),
+    this.accountId = const Value.absent(),
     this.isDefault = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -7629,6 +7662,7 @@ class WarehousesCompanion extends UpdateCompanion<Warehouse> {
     this.branchId = const Value.absent(),
     required String name,
     this.location = const Value.absent(),
+    this.accountId = const Value.absent(),
     this.isDefault = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : name = Value(name);
@@ -7641,6 +7675,7 @@ class WarehousesCompanion extends UpdateCompanion<Warehouse> {
     Expression<String>? branchId,
     Expression<String>? name,
     Expression<String>? location,
+    Expression<String>? accountId,
     Expression<bool>? isDefault,
     Expression<int>? rowid,
   }) {
@@ -7653,6 +7688,7 @@ class WarehousesCompanion extends UpdateCompanion<Warehouse> {
       if (branchId != null) 'branch_id': branchId,
       if (name != null) 'name': name,
       if (location != null) 'location': location,
+      if (accountId != null) 'account_id': accountId,
       if (isDefault != null) 'is_default': isDefault,
       if (rowid != null) 'rowid': rowid,
     });
@@ -7667,6 +7703,7 @@ class WarehousesCompanion extends UpdateCompanion<Warehouse> {
       Value<String?>? branchId,
       Value<String>? name,
       Value<String?>? location,
+      Value<String?>? accountId,
       Value<bool>? isDefault,
       Value<int>? rowid}) {
     return WarehousesCompanion(
@@ -7678,6 +7715,7 @@ class WarehousesCompanion extends UpdateCompanion<Warehouse> {
       branchId: branchId ?? this.branchId,
       name: name ?? this.name,
       location: location ?? this.location,
+      accountId: accountId ?? this.accountId,
       isDefault: isDefault ?? this.isDefault,
       rowid: rowid ?? this.rowid,
     );
@@ -7710,6 +7748,9 @@ class WarehousesCompanion extends UpdateCompanion<Warehouse> {
     if (location.present) {
       map['location'] = Variable<String>(location.value);
     }
+    if (accountId.present) {
+      map['account_id'] = Variable<String>(accountId.value);
+    }
     if (isDefault.present) {
       map['is_default'] = Variable<bool>(isDefault.value);
     }
@@ -7730,6 +7771,7 @@ class WarehousesCompanion extends UpdateCompanion<Warehouse> {
           ..write('branchId: $branchId, ')
           ..write('name: $name, ')
           ..write('location: $location, ')
+          ..write('accountId: $accountId, ')
           ..write('isDefault: $isDefault, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -8389,6 +8431,478 @@ class ProductBatchesCompanion extends UpdateCompanion<ProductBatch> {
   }
 }
 
+class $CostCentersTable extends CostCenters
+    with TableInfo<$CostCentersTable, CostCenter> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CostCentersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      clientDefault: () => const Uuid().v4());
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _deviceIdMeta =
+      const VerificationMeta('deviceId');
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+      'device_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _syncStatusMeta =
+      const VerificationMeta('syncStatus');
+  @override
+  late final GeneratedColumn<int> syncStatus = GeneratedColumn<int>(
+      'sync_status', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _branchIdMeta =
+      const VerificationMeta('branchId');
+  @override
+  late final GeneratedColumn<String> branchId = GeneratedColumn<String>(
+      'branch_id', aliasedName, true,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES branches (id)'));
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  @override
+  late final GeneratedColumn<String> code = GeneratedColumn<String>(
+      'code', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'));
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _isActiveMeta =
+      const VerificationMeta('isActive');
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+      'is_active', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        createdAt,
+        updatedAt,
+        deviceId,
+        syncStatus,
+        branchId,
+        code,
+        name,
+        isActive
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cost_centers';
+  @override
+  VerificationContext validateIntegrity(Insertable<CostCenter> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(_deviceIdMeta,
+          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+          _syncStatusMeta,
+          syncStatus.isAcceptableOrUnknown(
+              data['sync_status']!, _syncStatusMeta));
+    }
+    if (data.containsKey('branch_id')) {
+      context.handle(_branchIdMeta,
+          branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta));
+    }
+    if (data.containsKey('code')) {
+      context.handle(
+          _codeMeta, code.isAcceptableOrUnknown(data['code']!, _codeMeta));
+    } else if (isInserting) {
+      context.missing(_codeMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(_isActiveMeta,
+          isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CostCenter map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CostCenter(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deviceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}device_id']),
+      syncStatus: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}sync_status'])!,
+      branchId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}branch_id']),
+      code: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}code'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      isActive: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
+    );
+  }
+
+  @override
+  $CostCentersTable createAlias(String alias) {
+    return $CostCentersTable(attachedDatabase, alias);
+  }
+}
+
+class CostCenter extends DataClass implements Insertable<CostCenter> {
+  final String id;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? deviceId;
+  final int syncStatus;
+  final String? branchId;
+  final String code;
+  final String name;
+  final bool isActive;
+  const CostCenter(
+      {required this.id,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deviceId,
+      required this.syncStatus,
+      this.branchId,
+      required this.code,
+      required this.name,
+      required this.isActive});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
+    map['sync_status'] = Variable<int>(syncStatus);
+    if (!nullToAbsent || branchId != null) {
+      map['branch_id'] = Variable<String>(branchId);
+    }
+    map['code'] = Variable<String>(code);
+    map['name'] = Variable<String>(name);
+    map['is_active'] = Variable<bool>(isActive);
+    return map;
+  }
+
+  CostCentersCompanion toCompanion(bool nullToAbsent) {
+    return CostCentersCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
+      syncStatus: Value(syncStatus),
+      branchId: branchId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(branchId),
+      code: Value(code),
+      name: Value(name),
+      isActive: Value(isActive),
+    );
+  }
+
+  factory CostCenter.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CostCenter(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
+      syncStatus: serializer.fromJson<int>(json['syncStatus']),
+      branchId: serializer.fromJson<String?>(json['branchId']),
+      code: serializer.fromJson<String>(json['code']),
+      name: serializer.fromJson<String>(json['name']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deviceId': serializer.toJson<String?>(deviceId),
+      'syncStatus': serializer.toJson<int>(syncStatus),
+      'branchId': serializer.toJson<String?>(branchId),
+      'code': serializer.toJson<String>(code),
+      'name': serializer.toJson<String>(name),
+      'isActive': serializer.toJson<bool>(isActive),
+    };
+  }
+
+  CostCenter copyWith(
+          {String? id,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<String?> deviceId = const Value.absent(),
+          int? syncStatus,
+          Value<String?> branchId = const Value.absent(),
+          String? code,
+          String? name,
+          bool? isActive}) =>
+      CostCenter(
+        id: id ?? this.id,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deviceId: deviceId.present ? deviceId.value : this.deviceId,
+        syncStatus: syncStatus ?? this.syncStatus,
+        branchId: branchId.present ? branchId.value : this.branchId,
+        code: code ?? this.code,
+        name: name ?? this.name,
+        isActive: isActive ?? this.isActive,
+      );
+  CostCenter copyWithCompanion(CostCentersCompanion data) {
+    return CostCenter(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      syncStatus:
+          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
+      branchId: data.branchId.present ? data.branchId.value : this.branchId,
+      code: data.code.present ? data.code.value : this.code,
+      name: data.name.present ? data.name.value : this.name,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CostCenter(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('branchId: $branchId, ')
+          ..write('code: $code, ')
+          ..write('name: $name, ')
+          ..write('isActive: $isActive')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, createdAt, updatedAt, deviceId,
+      syncStatus, branchId, code, name, isActive);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CostCenter &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deviceId == this.deviceId &&
+          other.syncStatus == this.syncStatus &&
+          other.branchId == this.branchId &&
+          other.code == this.code &&
+          other.name == this.name &&
+          other.isActive == this.isActive);
+}
+
+class CostCentersCompanion extends UpdateCompanion<CostCenter> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String?> deviceId;
+  final Value<int> syncStatus;
+  final Value<String?> branchId;
+  final Value<String> code;
+  final Value<String> name;
+  final Value<bool> isActive;
+  final Value<int> rowid;
+  const CostCentersCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.branchId = const Value.absent(),
+    this.code = const Value.absent(),
+    this.name = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CostCentersCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.branchId = const Value.absent(),
+    required String code,
+    required String name,
+    this.isActive = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : code = Value(code),
+        name = Value(name);
+  static Insertable<CostCenter> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? deviceId,
+    Expression<int>? syncStatus,
+    Expression<String>? branchId,
+    Expression<String>? code,
+    Expression<String>? name,
+    Expression<bool>? isActive,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deviceId != null) 'device_id': deviceId,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (branchId != null) 'branch_id': branchId,
+      if (code != null) 'code': code,
+      if (name != null) 'name': name,
+      if (isActive != null) 'is_active': isActive,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CostCentersCompanion copyWith(
+      {Value<String>? id,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<String?>? deviceId,
+      Value<int>? syncStatus,
+      Value<String?>? branchId,
+      Value<String>? code,
+      Value<String>? name,
+      Value<bool>? isActive,
+      Value<int>? rowid}) {
+    return CostCentersCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deviceId: deviceId ?? this.deviceId,
+      syncStatus: syncStatus ?? this.syncStatus,
+      branchId: branchId ?? this.branchId,
+      code: code ?? this.code,
+      name: name ?? this.name,
+      isActive: isActive ?? this.isActive,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<int>(syncStatus.value);
+    }
+    if (branchId.present) {
+      map['branch_id'] = Variable<String>(branchId.value);
+    }
+    if (code.present) {
+      map['code'] = Variable<String>(code.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CostCentersCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('branchId: $branchId, ')
+          ..write('code: $code, ')
+          ..write('name: $name, ')
+          ..write('isActive: $isActive, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $SaleItemsTable extends SaleItems
     with TableInfo<$SaleItemsTable, SaleItem> {
   @override
@@ -8511,6 +9025,15 @@ class $SaleItemsTable extends SaleItems
       requiredDuringInsert: false,
       defaultConstraints: GeneratedColumn.constraintIsAlways(
           'REFERENCES product_batches (id)'));
+  static const VerificationMeta _costCenterIdMeta =
+      const VerificationMeta('costCenterId');
+  @override
+  late final GeneratedColumn<String> costCenterId = GeneratedColumn<String>(
+      'cost_center_id', aliasedName, true,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES cost_centers (id)'));
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -8527,7 +9050,8 @@ class $SaleItemsTable extends SaleItems
         unitName,
         unitFactor,
         warehouseId,
-        batchId
+        batchId,
+        costCenterId
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -8612,6 +9136,12 @@ class $SaleItemsTable extends SaleItems
       context.handle(_batchIdMeta,
           batchId.isAcceptableOrUnknown(data['batch_id']!, _batchIdMeta));
     }
+    if (data.containsKey('cost_center_id')) {
+      context.handle(
+          _costCenterIdMeta,
+          costCenterId.isAcceptableOrUnknown(
+              data['cost_center_id']!, _costCenterIdMeta));
+    }
     return context;
   }
 
@@ -8651,6 +9181,8 @@ class $SaleItemsTable extends SaleItems
           .read(DriftSqlType.string, data['${effectivePrefix}warehouse_id']),
       batchId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}batch_id']),
+      costCenterId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}cost_center_id']),
     );
   }
 
@@ -8676,6 +9208,7 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
   final double unitFactor;
   final String? warehouseId;
   final String? batchId;
+  final String? costCenterId;
   const SaleItem(
       {required this.id,
       required this.createdAt,
@@ -8691,7 +9224,8 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       required this.unitName,
       required this.unitFactor,
       this.warehouseId,
-      this.batchId});
+      this.batchId,
+      this.costCenterId});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -8719,6 +9253,9 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
     }
     if (!nullToAbsent || batchId != null) {
       map['batch_id'] = Variable<String>(batchId);
+    }
+    if (!nullToAbsent || costCenterId != null) {
+      map['cost_center_id'] = Variable<String>(costCenterId);
     }
     return map;
   }
@@ -8749,6 +9286,9 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       batchId: batchId == null && nullToAbsent
           ? const Value.absent()
           : Value(batchId),
+      costCenterId: costCenterId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(costCenterId),
     );
   }
 
@@ -8771,6 +9311,7 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       unitFactor: serializer.fromJson<double>(json['unitFactor']),
       warehouseId: serializer.fromJson<String?>(json['warehouseId']),
       batchId: serializer.fromJson<String?>(json['batchId']),
+      costCenterId: serializer.fromJson<String?>(json['costCenterId']),
     );
   }
   @override
@@ -8792,6 +9333,7 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       'unitFactor': serializer.toJson<double>(unitFactor),
       'warehouseId': serializer.toJson<String?>(warehouseId),
       'batchId': serializer.toJson<String?>(batchId),
+      'costCenterId': serializer.toJson<String?>(costCenterId),
     };
   }
 
@@ -8810,7 +9352,8 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
           String? unitName,
           double? unitFactor,
           Value<String?> warehouseId = const Value.absent(),
-          Value<String?> batchId = const Value.absent()}) =>
+          Value<String?> batchId = const Value.absent(),
+          Value<String?> costCenterId = const Value.absent()}) =>
       SaleItem(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -8827,6 +9370,8 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
         unitFactor: unitFactor ?? this.unitFactor,
         warehouseId: warehouseId.present ? warehouseId.value : this.warehouseId,
         batchId: batchId.present ? batchId.value : this.batchId,
+        costCenterId:
+            costCenterId.present ? costCenterId.value : this.costCenterId,
       );
   SaleItem copyWithCompanion(SaleItemsCompanion data) {
     return SaleItem(
@@ -8848,6 +9393,9 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       warehouseId:
           data.warehouseId.present ? data.warehouseId.value : this.warehouseId,
       batchId: data.batchId.present ? data.batchId.value : this.batchId,
+      costCenterId: data.costCenterId.present
+          ? data.costCenterId.value
+          : this.costCenterId,
     );
   }
 
@@ -8868,7 +9416,8 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
           ..write('unitName: $unitName, ')
           ..write('unitFactor: $unitFactor, ')
           ..write('warehouseId: $warehouseId, ')
-          ..write('batchId: $batchId')
+          ..write('batchId: $batchId, ')
+          ..write('costCenterId: $costCenterId')
           ..write(')'))
         .toString();
   }
@@ -8889,7 +9438,8 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       unitName,
       unitFactor,
       warehouseId,
-      batchId);
+      batchId,
+      costCenterId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -8908,7 +9458,8 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
           other.unitName == this.unitName &&
           other.unitFactor == this.unitFactor &&
           other.warehouseId == this.warehouseId &&
-          other.batchId == this.batchId);
+          other.batchId == this.batchId &&
+          other.costCenterId == this.costCenterId);
 }
 
 class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
@@ -8927,6 +9478,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
   final Value<double> unitFactor;
   final Value<String?> warehouseId;
   final Value<String?> batchId;
+  final Value<String?> costCenterId;
   final Value<int> rowid;
   const SaleItemsCompanion({
     this.id = const Value.absent(),
@@ -8944,6 +9496,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     this.unitFactor = const Value.absent(),
     this.warehouseId = const Value.absent(),
     this.batchId = const Value.absent(),
+    this.costCenterId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SaleItemsCompanion.insert({
@@ -8962,6 +9515,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     this.unitFactor = const Value.absent(),
     this.warehouseId = const Value.absent(),
     this.batchId = const Value.absent(),
+    this.costCenterId = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : saleId = Value(saleId),
         productId = Value(productId),
@@ -8983,6 +9537,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     Expression<double>? unitFactor,
     Expression<String>? warehouseId,
     Expression<String>? batchId,
+    Expression<String>? costCenterId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -9001,6 +9556,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
       if (unitFactor != null) 'unit_factor': unitFactor,
       if (warehouseId != null) 'warehouse_id': warehouseId,
       if (batchId != null) 'batch_id': batchId,
+      if (costCenterId != null) 'cost_center_id': costCenterId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -9021,6 +9577,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
       Value<double>? unitFactor,
       Value<String?>? warehouseId,
       Value<String?>? batchId,
+      Value<String?>? costCenterId,
       Value<int>? rowid}) {
     return SaleItemsCompanion(
       id: id ?? this.id,
@@ -9038,6 +9595,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
       unitFactor: unitFactor ?? this.unitFactor,
       warehouseId: warehouseId ?? this.warehouseId,
       batchId: batchId ?? this.batchId,
+      costCenterId: costCenterId ?? this.costCenterId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -9090,6 +9648,9 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     if (batchId.present) {
       map['batch_id'] = Variable<String>(batchId.value);
     }
+    if (costCenterId.present) {
+      map['cost_center_id'] = Variable<String>(costCenterId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -9114,6 +9675,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
           ..write('unitFactor: $unitFactor, ')
           ..write('warehouseId: $warehouseId, ')
           ..write('batchId: $batchId, ')
+          ..write('costCenterId: $costCenterId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -17773,478 +18335,6 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
           ..write('createdAt: $createdAt, ')
           ..write('status: $status, ')
           ..write('deviceId: $deviceId')
-          ..write(')'))
-        .toString();
-  }
-}
-
-class $CostCentersTable extends CostCenters
-    with TableInfo<$CostCentersTable, CostCenter> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $CostCentersTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-      'id', aliasedName, false,
-      type: DriftSqlType.string,
-      requiredDuringInsert: false,
-      clientDefault: () => const Uuid().v4());
-  static const VerificationMeta _createdAtMeta =
-      const VerificationMeta('createdAt');
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-      'created_at', aliasedName, false,
-      type: DriftSqlType.dateTime,
-      requiredDuringInsert: false,
-      defaultValue: currentDateAndTime);
-  static const VerificationMeta _updatedAtMeta =
-      const VerificationMeta('updatedAt');
-  @override
-  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
-      'updated_at', aliasedName, false,
-      type: DriftSqlType.dateTime,
-      requiredDuringInsert: false,
-      defaultValue: currentDateAndTime);
-  static const VerificationMeta _deviceIdMeta =
-      const VerificationMeta('deviceId');
-  @override
-  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
-      'device_id', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _syncStatusMeta =
-      const VerificationMeta('syncStatus');
-  @override
-  late final GeneratedColumn<int> syncStatus = GeneratedColumn<int>(
-      'sync_status', aliasedName, false,
-      type: DriftSqlType.int,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(1));
-  static const VerificationMeta _branchIdMeta =
-      const VerificationMeta('branchId');
-  @override
-  late final GeneratedColumn<String> branchId = GeneratedColumn<String>(
-      'branch_id', aliasedName, true,
-      type: DriftSqlType.string,
-      requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES branches (id)'));
-  static const VerificationMeta _codeMeta = const VerificationMeta('code');
-  @override
-  late final GeneratedColumn<String> code = GeneratedColumn<String>(
-      'code', aliasedName, false,
-      type: DriftSqlType.string,
-      requiredDuringInsert: true,
-      defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'));
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
-  @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-      'name', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _isActiveMeta =
-      const VerificationMeta('isActive');
-  @override
-  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
-      'is_active', aliasedName, false,
-      type: DriftSqlType.bool,
-      requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'),
-      defaultValue: const Constant(true));
-  @override
-  List<GeneratedColumn> get $columns => [
-        id,
-        createdAt,
-        updatedAt,
-        deviceId,
-        syncStatus,
-        branchId,
-        code,
-        name,
-        isActive
-      ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'cost_centers';
-  @override
-  VerificationContext validateIntegrity(Insertable<CostCenter> instance,
-      {bool isInserting = false}) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta,
-          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(_updatedAtMeta,
-          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
-    }
-    if (data.containsKey('device_id')) {
-      context.handle(_deviceIdMeta,
-          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
-    }
-    if (data.containsKey('sync_status')) {
-      context.handle(
-          _syncStatusMeta,
-          syncStatus.isAcceptableOrUnknown(
-              data['sync_status']!, _syncStatusMeta));
-    }
-    if (data.containsKey('branch_id')) {
-      context.handle(_branchIdMeta,
-          branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta));
-    }
-    if (data.containsKey('code')) {
-      context.handle(
-          _codeMeta, code.isAcceptableOrUnknown(data['code']!, _codeMeta));
-    } else if (isInserting) {
-      context.missing(_codeMeta);
-    }
-    if (data.containsKey('name')) {
-      context.handle(
-          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
-    } else if (isInserting) {
-      context.missing(_nameMeta);
-    }
-    if (data.containsKey('is_active')) {
-      context.handle(_isActiveMeta,
-          isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  CostCenter map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return CostCenter(
-      id: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      createdAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
-      updatedAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
-      deviceId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}device_id']),
-      syncStatus: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}sync_status'])!,
-      branchId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}branch_id']),
-      code: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}code'])!,
-      name: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
-      isActive: attachedDatabase.typeMapping
-          .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
-    );
-  }
-
-  @override
-  $CostCentersTable createAlias(String alias) {
-    return $CostCentersTable(attachedDatabase, alias);
-  }
-}
-
-class CostCenter extends DataClass implements Insertable<CostCenter> {
-  final String id;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final String? deviceId;
-  final int syncStatus;
-  final String? branchId;
-  final String code;
-  final String name;
-  final bool isActive;
-  const CostCenter(
-      {required this.id,
-      required this.createdAt,
-      required this.updatedAt,
-      this.deviceId,
-      required this.syncStatus,
-      this.branchId,
-      required this.code,
-      required this.name,
-      required this.isActive});
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    map['created_at'] = Variable<DateTime>(createdAt);
-    map['updated_at'] = Variable<DateTime>(updatedAt);
-    if (!nullToAbsent || deviceId != null) {
-      map['device_id'] = Variable<String>(deviceId);
-    }
-    map['sync_status'] = Variable<int>(syncStatus);
-    if (!nullToAbsent || branchId != null) {
-      map['branch_id'] = Variable<String>(branchId);
-    }
-    map['code'] = Variable<String>(code);
-    map['name'] = Variable<String>(name);
-    map['is_active'] = Variable<bool>(isActive);
-    return map;
-  }
-
-  CostCentersCompanion toCompanion(bool nullToAbsent) {
-    return CostCentersCompanion(
-      id: Value(id),
-      createdAt: Value(createdAt),
-      updatedAt: Value(updatedAt),
-      deviceId: deviceId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(deviceId),
-      syncStatus: Value(syncStatus),
-      branchId: branchId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(branchId),
-      code: Value(code),
-      name: Value(name),
-      isActive: Value(isActive),
-    );
-  }
-
-  factory CostCenter.fromJson(Map<String, dynamic> json,
-      {ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return CostCenter(
-      id: serializer.fromJson<String>(json['id']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-      deviceId: serializer.fromJson<String?>(json['deviceId']),
-      syncStatus: serializer.fromJson<int>(json['syncStatus']),
-      branchId: serializer.fromJson<String?>(json['branchId']),
-      code: serializer.fromJson<String>(json['code']),
-      name: serializer.fromJson<String>(json['name']),
-      isActive: serializer.fromJson<bool>(json['isActive']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-      'updatedAt': serializer.toJson<DateTime>(updatedAt),
-      'deviceId': serializer.toJson<String?>(deviceId),
-      'syncStatus': serializer.toJson<int>(syncStatus),
-      'branchId': serializer.toJson<String?>(branchId),
-      'code': serializer.toJson<String>(code),
-      'name': serializer.toJson<String>(name),
-      'isActive': serializer.toJson<bool>(isActive),
-    };
-  }
-
-  CostCenter copyWith(
-          {String? id,
-          DateTime? createdAt,
-          DateTime? updatedAt,
-          Value<String?> deviceId = const Value.absent(),
-          int? syncStatus,
-          Value<String?> branchId = const Value.absent(),
-          String? code,
-          String? name,
-          bool? isActive}) =>
-      CostCenter(
-        id: id ?? this.id,
-        createdAt: createdAt ?? this.createdAt,
-        updatedAt: updatedAt ?? this.updatedAt,
-        deviceId: deviceId.present ? deviceId.value : this.deviceId,
-        syncStatus: syncStatus ?? this.syncStatus,
-        branchId: branchId.present ? branchId.value : this.branchId,
-        code: code ?? this.code,
-        name: name ?? this.name,
-        isActive: isActive ?? this.isActive,
-      );
-  CostCenter copyWithCompanion(CostCentersCompanion data) {
-    return CostCenter(
-      id: data.id.present ? data.id.value : this.id,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
-      syncStatus:
-          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
-      branchId: data.branchId.present ? data.branchId.value : this.branchId,
-      code: data.code.present ? data.code.value : this.code,
-      name: data.name.present ? data.name.value : this.name,
-      isActive: data.isActive.present ? data.isActive.value : this.isActive,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('CostCenter(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('deviceId: $deviceId, ')
-          ..write('syncStatus: $syncStatus, ')
-          ..write('branchId: $branchId, ')
-          ..write('code: $code, ')
-          ..write('name: $name, ')
-          ..write('isActive: $isActive')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(id, createdAt, updatedAt, deviceId,
-      syncStatus, branchId, code, name, isActive);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is CostCenter &&
-          other.id == this.id &&
-          other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt &&
-          other.deviceId == this.deviceId &&
-          other.syncStatus == this.syncStatus &&
-          other.branchId == this.branchId &&
-          other.code == this.code &&
-          other.name == this.name &&
-          other.isActive == this.isActive);
-}
-
-class CostCentersCompanion extends UpdateCompanion<CostCenter> {
-  final Value<String> id;
-  final Value<DateTime> createdAt;
-  final Value<DateTime> updatedAt;
-  final Value<String?> deviceId;
-  final Value<int> syncStatus;
-  final Value<String?> branchId;
-  final Value<String> code;
-  final Value<String> name;
-  final Value<bool> isActive;
-  final Value<int> rowid;
-  const CostCentersCompanion({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.deviceId = const Value.absent(),
-    this.syncStatus = const Value.absent(),
-    this.branchId = const Value.absent(),
-    this.code = const Value.absent(),
-    this.name = const Value.absent(),
-    this.isActive = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  CostCentersCompanion.insert({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.deviceId = const Value.absent(),
-    this.syncStatus = const Value.absent(),
-    this.branchId = const Value.absent(),
-    required String code,
-    required String name,
-    this.isActive = const Value.absent(),
-    this.rowid = const Value.absent(),
-  })  : code = Value(code),
-        name = Value(name);
-  static Insertable<CostCenter> custom({
-    Expression<String>? id,
-    Expression<DateTime>? createdAt,
-    Expression<DateTime>? updatedAt,
-    Expression<String>? deviceId,
-    Expression<int>? syncStatus,
-    Expression<String>? branchId,
-    Expression<String>? code,
-    Expression<String>? name,
-    Expression<bool>? isActive,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-      if (deviceId != null) 'device_id': deviceId,
-      if (syncStatus != null) 'sync_status': syncStatus,
-      if (branchId != null) 'branch_id': branchId,
-      if (code != null) 'code': code,
-      if (name != null) 'name': name,
-      if (isActive != null) 'is_active': isActive,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  CostCentersCompanion copyWith(
-      {Value<String>? id,
-      Value<DateTime>? createdAt,
-      Value<DateTime>? updatedAt,
-      Value<String?>? deviceId,
-      Value<int>? syncStatus,
-      Value<String?>? branchId,
-      Value<String>? code,
-      Value<String>? name,
-      Value<bool>? isActive,
-      Value<int>? rowid}) {
-    return CostCentersCompanion(
-      id: id ?? this.id,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      deviceId: deviceId ?? this.deviceId,
-      syncStatus: syncStatus ?? this.syncStatus,
-      branchId: branchId ?? this.branchId,
-      code: code ?? this.code,
-      name: name ?? this.name,
-      isActive: isActive ?? this.isActive,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<DateTime>(updatedAt.value);
-    }
-    if (deviceId.present) {
-      map['device_id'] = Variable<String>(deviceId.value);
-    }
-    if (syncStatus.present) {
-      map['sync_status'] = Variable<int>(syncStatus.value);
-    }
-    if (branchId.present) {
-      map['branch_id'] = Variable<String>(branchId.value);
-    }
-    if (code.present) {
-      map['code'] = Variable<String>(code.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
-    }
-    if (isActive.present) {
-      map['is_active'] = Variable<bool>(isActive.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('CostCentersCompanion(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('deviceId: $deviceId, ')
-          ..write('syncStatus: $syncStatus, ')
-          ..write('branchId: $branchId, ')
-          ..write('code: $code, ')
-          ..write('name: $name, ')
-          ..write('isActive: $isActive, ')
-          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -41370,6 +41460,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $GlobalUnitsTable globalUnits = $GlobalUnitsTable(this);
   late final $WarehousesTable warehouses = $WarehousesTable(this);
   late final $ProductBatchesTable productBatches = $ProductBatchesTable(this);
+  late final $CostCentersTable costCenters = $CostCentersTable(this);
   late final $SaleItemsTable saleItems = $SaleItemsTable(this);
   late final $PurchasesTable purchases = $PurchasesTable(this);
   late final $PurchaseItemsTable purchaseItems = $PurchaseItemsTable(this);
@@ -41393,7 +41484,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PurchasePaymentLinksTable purchasePaymentLinks =
       $PurchasePaymentLinksTable(this);
   late final $SyncQueueTable syncQueue = $SyncQueueTable(this);
-  late final $CostCentersTable costCenters = $CostCentersTable(this);
   late final $GLEntriesTable gLEntries = $GLEntriesTable(this);
   late final $GLLinesTable gLLines = $GLLinesTable(this);
   late final $AccountingPeriodsTable accountingPeriods =
@@ -41480,6 +41570,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         globalUnits,
         warehouses,
         productBatches,
+        costCenters,
         saleItems,
         purchases,
         purchaseItems,
@@ -41495,7 +41586,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         supplierPayments,
         purchasePaymentLinks,
         syncQueue,
-        costCenters,
         gLEntries,
         gLLines,
         accountingPeriods,
@@ -41849,6 +41939,19 @@ class $$BranchesTableFilterComposer
     return f(composer);
   }
 
+  ComposableFilter costCentersRefs(
+      ComposableFilter Function($$CostCentersTableFilterComposer f) f) {
+    final $$CostCentersTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $state.db.costCenters,
+        getReferencedColumn: (t) => t.branchId,
+        builder: (joinBuilder, parentComposers) =>
+            $$CostCentersTableFilterComposer(ComposerState($state.db,
+                $state.db.costCenters, joinBuilder, parentComposers)));
+    return f(composer);
+  }
+
   ComposableFilter saleItemsRefs(
       ComposableFilter Function($$SaleItemsTableFilterComposer f) f) {
     final $$SaleItemsTableFilterComposer composer = $state.composerBuilder(
@@ -42046,19 +42149,6 @@ class $$BranchesTableFilterComposer
                     $state.db.purchasePaymentLinks,
                     joinBuilder,
                     parentComposers)));
-    return f(composer);
-  }
-
-  ComposableFilter costCentersRefs(
-      ComposableFilter Function($$CostCentersTableFilterComposer f) f) {
-    final $$CostCentersTableFilterComposer composer = $state.composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.id,
-        referencedTable: $state.db.costCenters,
-        getReferencedColumn: (t) => t.branchId,
-        builder: (joinBuilder, parentComposers) =>
-            $$CostCentersTableFilterComposer(ComposerState($state.db,
-                $state.db.costCenters, joinBuilder, parentComposers)));
     return f(composer);
   }
 
@@ -43338,6 +43428,19 @@ class $$GLAccountsTableFilterComposer
         builder: (joinBuilder, parentComposers) =>
             $$CustomersTableFilterComposer(ComposerState(
                 $state.db, $state.db.customers, joinBuilder, parentComposers)));
+    return f(composer);
+  }
+
+  ComposableFilter warehousesRefs(
+      ComposableFilter Function($$WarehousesTableFilterComposer f) f) {
+    final $$WarehousesTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $state.db.warehouses,
+        getReferencedColumn: (t) => t.accountId,
+        builder: (joinBuilder, parentComposers) =>
+            $$WarehousesTableFilterComposer(ComposerState($state.db,
+                $state.db.warehouses, joinBuilder, parentComposers)));
     return f(composer);
   }
 
@@ -46212,6 +46315,7 @@ typedef $$WarehousesTableCreateCompanionBuilder = WarehousesCompanion Function({
   Value<String?> branchId,
   required String name,
   Value<String?> location,
+  Value<String?> accountId,
   Value<bool> isDefault,
   Value<int> rowid,
 });
@@ -46224,6 +46328,7 @@ typedef $$WarehousesTableUpdateCompanionBuilder = WarehousesCompanion Function({
   Value<String?> branchId,
   Value<String> name,
   Value<String?> location,
+  Value<String?> accountId,
   Value<bool> isDefault,
   Value<int> rowid,
 });
@@ -46253,6 +46358,7 @@ class $$WarehousesTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             Value<String> name = const Value.absent(),
             Value<String?> location = const Value.absent(),
+            Value<String?> accountId = const Value.absent(),
             Value<bool> isDefault = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -46265,6 +46371,7 @@ class $$WarehousesTableTableManager extends RootTableManager<
             branchId: branchId,
             name: name,
             location: location,
+            accountId: accountId,
             isDefault: isDefault,
             rowid: rowid,
           ),
@@ -46277,6 +46384,7 @@ class $$WarehousesTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             required String name,
             Value<String?> location = const Value.absent(),
+            Value<String?> accountId = const Value.absent(),
             Value<bool> isDefault = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -46289,6 +46397,7 @@ class $$WarehousesTableTableManager extends RootTableManager<
             branchId: branchId,
             name: name,
             location: location,
+            accountId: accountId,
             isDefault: isDefault,
             rowid: rowid,
           ),
@@ -46347,6 +46456,18 @@ class $$WarehousesTableFilterComposer
         builder: (joinBuilder, parentComposers) =>
             $$BranchesTableFilterComposer(ComposerState(
                 $state.db, $state.db.branches, joinBuilder, parentComposers)));
+    return composer;
+  }
+
+  $$GLAccountsTableFilterComposer get accountId {
+    final $$GLAccountsTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.accountId,
+        referencedTable: $state.db.gLAccounts,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) =>
+            $$GLAccountsTableFilterComposer(ComposerState($state.db,
+                $state.db.gLAccounts, joinBuilder, parentComposers)));
     return composer;
   }
 
@@ -46542,6 +46663,18 @@ class $$WarehousesTableOrderingComposer
         builder: (joinBuilder, parentComposers) =>
             $$BranchesTableOrderingComposer(ComposerState(
                 $state.db, $state.db.branches, joinBuilder, parentComposers)));
+    return composer;
+  }
+
+  $$GLAccountsTableOrderingComposer get accountId {
+    final $$GLAccountsTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.accountId,
+        referencedTable: $state.db.gLAccounts,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) =>
+            $$GLAccountsTableOrderingComposer(ComposerState($state.db,
+                $state.db.gLAccounts, joinBuilder, parentComposers)));
     return composer;
   }
 }
@@ -46950,6 +47083,238 @@ class $$ProductBatchesTableOrderingComposer
   }
 }
 
+typedef $$CostCentersTableCreateCompanionBuilder = CostCentersCompanion
+    Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<String?> deviceId,
+  Value<int> syncStatus,
+  Value<String?> branchId,
+  required String code,
+  required String name,
+  Value<bool> isActive,
+  Value<int> rowid,
+});
+typedef $$CostCentersTableUpdateCompanionBuilder = CostCentersCompanion
+    Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<String?> deviceId,
+  Value<int> syncStatus,
+  Value<String?> branchId,
+  Value<String> code,
+  Value<String> name,
+  Value<bool> isActive,
+  Value<int> rowid,
+});
+
+class $$CostCentersTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $CostCentersTable,
+    CostCenter,
+    $$CostCentersTableFilterComposer,
+    $$CostCentersTableOrderingComposer,
+    $$CostCentersTableCreateCompanionBuilder,
+    $$CostCentersTableUpdateCompanionBuilder> {
+  $$CostCentersTableTableManager(_$AppDatabase db, $CostCentersTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          filteringComposer:
+              $$CostCentersTableFilterComposer(ComposerState(db, table)),
+          orderingComposer:
+              $$CostCentersTableOrderingComposer(ComposerState(db, table)),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<String?> deviceId = const Value.absent(),
+            Value<int> syncStatus = const Value.absent(),
+            Value<String?> branchId = const Value.absent(),
+            Value<String> code = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<bool> isActive = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CostCentersCompanion(
+            id: id,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deviceId: deviceId,
+            syncStatus: syncStatus,
+            branchId: branchId,
+            code: code,
+            name: name,
+            isActive: isActive,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<String?> deviceId = const Value.absent(),
+            Value<int> syncStatus = const Value.absent(),
+            Value<String?> branchId = const Value.absent(),
+            required String code,
+            required String name,
+            Value<bool> isActive = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CostCentersCompanion.insert(
+            id: id,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deviceId: deviceId,
+            syncStatus: syncStatus,
+            branchId: branchId,
+            code: code,
+            name: name,
+            isActive: isActive,
+            rowid: rowid,
+          ),
+        ));
+}
+
+class $$CostCentersTableFilterComposer
+    extends FilterComposer<_$AppDatabase, $CostCentersTable> {
+  $$CostCentersTableFilterComposer(super.$state);
+  ColumnFilters<String> get id => $state.composableBuilder(
+      column: $state.table.id,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<DateTime> get createdAt => $state.composableBuilder(
+      column: $state.table.createdAt,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<DateTime> get updatedAt => $state.composableBuilder(
+      column: $state.table.updatedAt,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<String> get deviceId => $state.composableBuilder(
+      column: $state.table.deviceId,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<int> get syncStatus => $state.composableBuilder(
+      column: $state.table.syncStatus,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<String> get code => $state.composableBuilder(
+      column: $state.table.code,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<String> get name => $state.composableBuilder(
+      column: $state.table.name,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<bool> get isActive => $state.composableBuilder(
+      column: $state.table.isActive,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  $$BranchesTableFilterComposer get branchId {
+    final $$BranchesTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.branchId,
+        referencedTable: $state.db.branches,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) =>
+            $$BranchesTableFilterComposer(ComposerState(
+                $state.db, $state.db.branches, joinBuilder, parentComposers)));
+    return composer;
+  }
+
+  ComposableFilter saleItemsRefs(
+      ComposableFilter Function($$SaleItemsTableFilterComposer f) f) {
+    final $$SaleItemsTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $state.db.saleItems,
+        getReferencedColumn: (t) => t.costCenterId,
+        builder: (joinBuilder, parentComposers) =>
+            $$SaleItemsTableFilterComposer(ComposerState(
+                $state.db, $state.db.saleItems, joinBuilder, parentComposers)));
+    return f(composer);
+  }
+
+  ComposableFilter gLLinesRefs(
+      ComposableFilter Function($$GLLinesTableFilterComposer f) f) {
+    final $$GLLinesTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $state.db.gLLines,
+        getReferencedColumn: (t) => t.costCenterId,
+        builder: (joinBuilder, parentComposers) => $$GLLinesTableFilterComposer(
+            ComposerState(
+                $state.db, $state.db.gLLines, joinBuilder, parentComposers)));
+    return f(composer);
+  }
+}
+
+class $$CostCentersTableOrderingComposer
+    extends OrderingComposer<_$AppDatabase, $CostCentersTable> {
+  $$CostCentersTableOrderingComposer(super.$state);
+  ColumnOrderings<String> get id => $state.composableBuilder(
+      column: $state.table.id,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<DateTime> get createdAt => $state.composableBuilder(
+      column: $state.table.createdAt,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<DateTime> get updatedAt => $state.composableBuilder(
+      column: $state.table.updatedAt,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<String> get deviceId => $state.composableBuilder(
+      column: $state.table.deviceId,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<int> get syncStatus => $state.composableBuilder(
+      column: $state.table.syncStatus,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<String> get code => $state.composableBuilder(
+      column: $state.table.code,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<String> get name => $state.composableBuilder(
+      column: $state.table.name,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<bool> get isActive => $state.composableBuilder(
+      column: $state.table.isActive,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  $$BranchesTableOrderingComposer get branchId {
+    final $$BranchesTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.branchId,
+        referencedTable: $state.db.branches,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) =>
+            $$BranchesTableOrderingComposer(ComposerState(
+                $state.db, $state.db.branches, joinBuilder, parentComposers)));
+    return composer;
+  }
+}
+
 typedef $$SaleItemsTableCreateCompanionBuilder = SaleItemsCompanion Function({
   Value<String> id,
   Value<DateTime> createdAt,
@@ -46966,6 +47331,7 @@ typedef $$SaleItemsTableCreateCompanionBuilder = SaleItemsCompanion Function({
   Value<double> unitFactor,
   Value<String?> warehouseId,
   Value<String?> batchId,
+  Value<String?> costCenterId,
   Value<int> rowid,
 });
 typedef $$SaleItemsTableUpdateCompanionBuilder = SaleItemsCompanion Function({
@@ -46984,6 +47350,7 @@ typedef $$SaleItemsTableUpdateCompanionBuilder = SaleItemsCompanion Function({
   Value<double> unitFactor,
   Value<String?> warehouseId,
   Value<String?> batchId,
+  Value<String?> costCenterId,
   Value<int> rowid,
 });
 
@@ -47019,6 +47386,7 @@ class $$SaleItemsTableTableManager extends RootTableManager<
             Value<double> unitFactor = const Value.absent(),
             Value<String?> warehouseId = const Value.absent(),
             Value<String?> batchId = const Value.absent(),
+            Value<String?> costCenterId = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               SaleItemsCompanion(
@@ -47037,6 +47405,7 @@ class $$SaleItemsTableTableManager extends RootTableManager<
             unitFactor: unitFactor,
             warehouseId: warehouseId,
             batchId: batchId,
+            costCenterId: costCenterId,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -47055,6 +47424,7 @@ class $$SaleItemsTableTableManager extends RootTableManager<
             Value<double> unitFactor = const Value.absent(),
             Value<String?> warehouseId = const Value.absent(),
             Value<String?> batchId = const Value.absent(),
+            Value<String?> costCenterId = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               SaleItemsCompanion.insert(
@@ -47073,6 +47443,7 @@ class $$SaleItemsTableTableManager extends RootTableManager<
             unitFactor: unitFactor,
             warehouseId: warehouseId,
             batchId: batchId,
+            costCenterId: costCenterId,
             rowid: rowid,
           ),
         ));
@@ -47197,6 +47568,18 @@ class $$SaleItemsTableFilterComposer
                 $state.db.productBatches, joinBuilder, parentComposers)));
     return composer;
   }
+
+  $$CostCentersTableFilterComposer get costCenterId {
+    final $$CostCentersTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.costCenterId,
+        referencedTable: $state.db.costCenters,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) =>
+            $$CostCentersTableFilterComposer(ComposerState($state.db,
+                $state.db.costCenters, joinBuilder, parentComposers)));
+    return composer;
+  }
 }
 
 class $$SaleItemsTableOrderingComposer
@@ -47317,6 +47700,18 @@ class $$SaleItemsTableOrderingComposer
             builder: (joinBuilder, parentComposers) =>
                 $$ProductBatchesTableOrderingComposer(ComposerState($state.db,
                     $state.db.productBatches, joinBuilder, parentComposers)));
+    return composer;
+  }
+
+  $$CostCentersTableOrderingComposer get costCenterId {
+    final $$CostCentersTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.costCenterId,
+        referencedTable: $state.db.costCenters,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) =>
+            $$CostCentersTableOrderingComposer(ComposerState($state.db,
+                $state.db.costCenters, joinBuilder, parentComposers)));
     return composer;
   }
 }
@@ -51454,225 +51849,6 @@ class $$SyncQueueTableOrderingComposer
       column: $state.table.deviceId,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
-}
-
-typedef $$CostCentersTableCreateCompanionBuilder = CostCentersCompanion
-    Function({
-  Value<String> id,
-  Value<DateTime> createdAt,
-  Value<DateTime> updatedAt,
-  Value<String?> deviceId,
-  Value<int> syncStatus,
-  Value<String?> branchId,
-  required String code,
-  required String name,
-  Value<bool> isActive,
-  Value<int> rowid,
-});
-typedef $$CostCentersTableUpdateCompanionBuilder = CostCentersCompanion
-    Function({
-  Value<String> id,
-  Value<DateTime> createdAt,
-  Value<DateTime> updatedAt,
-  Value<String?> deviceId,
-  Value<int> syncStatus,
-  Value<String?> branchId,
-  Value<String> code,
-  Value<String> name,
-  Value<bool> isActive,
-  Value<int> rowid,
-});
-
-class $$CostCentersTableTableManager extends RootTableManager<
-    _$AppDatabase,
-    $CostCentersTable,
-    CostCenter,
-    $$CostCentersTableFilterComposer,
-    $$CostCentersTableOrderingComposer,
-    $$CostCentersTableCreateCompanionBuilder,
-    $$CostCentersTableUpdateCompanionBuilder> {
-  $$CostCentersTableTableManager(_$AppDatabase db, $CostCentersTable table)
-      : super(TableManagerState(
-          db: db,
-          table: table,
-          filteringComposer:
-              $$CostCentersTableFilterComposer(ComposerState(db, table)),
-          orderingComposer:
-              $$CostCentersTableOrderingComposer(ComposerState(db, table)),
-          updateCompanionCallback: ({
-            Value<String> id = const Value.absent(),
-            Value<DateTime> createdAt = const Value.absent(),
-            Value<DateTime> updatedAt = const Value.absent(),
-            Value<String?> deviceId = const Value.absent(),
-            Value<int> syncStatus = const Value.absent(),
-            Value<String?> branchId = const Value.absent(),
-            Value<String> code = const Value.absent(),
-            Value<String> name = const Value.absent(),
-            Value<bool> isActive = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              CostCentersCompanion(
-            id: id,
-            createdAt: createdAt,
-            updatedAt: updatedAt,
-            deviceId: deviceId,
-            syncStatus: syncStatus,
-            branchId: branchId,
-            code: code,
-            name: name,
-            isActive: isActive,
-            rowid: rowid,
-          ),
-          createCompanionCallback: ({
-            Value<String> id = const Value.absent(),
-            Value<DateTime> createdAt = const Value.absent(),
-            Value<DateTime> updatedAt = const Value.absent(),
-            Value<String?> deviceId = const Value.absent(),
-            Value<int> syncStatus = const Value.absent(),
-            Value<String?> branchId = const Value.absent(),
-            required String code,
-            required String name,
-            Value<bool> isActive = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              CostCentersCompanion.insert(
-            id: id,
-            createdAt: createdAt,
-            updatedAt: updatedAt,
-            deviceId: deviceId,
-            syncStatus: syncStatus,
-            branchId: branchId,
-            code: code,
-            name: name,
-            isActive: isActive,
-            rowid: rowid,
-          ),
-        ));
-}
-
-class $$CostCentersTableFilterComposer
-    extends FilterComposer<_$AppDatabase, $CostCentersTable> {
-  $$CostCentersTableFilterComposer(super.$state);
-  ColumnFilters<String> get id => $state.composableBuilder(
-      column: $state.table.id,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<DateTime> get createdAt => $state.composableBuilder(
-      column: $state.table.createdAt,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<DateTime> get updatedAt => $state.composableBuilder(
-      column: $state.table.updatedAt,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<String> get deviceId => $state.composableBuilder(
-      column: $state.table.deviceId,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<int> get syncStatus => $state.composableBuilder(
-      column: $state.table.syncStatus,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<String> get code => $state.composableBuilder(
-      column: $state.table.code,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<String> get name => $state.composableBuilder(
-      column: $state.table.name,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<bool> get isActive => $state.composableBuilder(
-      column: $state.table.isActive,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  $$BranchesTableFilterComposer get branchId {
-    final $$BranchesTableFilterComposer composer = $state.composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.branchId,
-        referencedTable: $state.db.branches,
-        getReferencedColumn: (t) => t.id,
-        builder: (joinBuilder, parentComposers) =>
-            $$BranchesTableFilterComposer(ComposerState(
-                $state.db, $state.db.branches, joinBuilder, parentComposers)));
-    return composer;
-  }
-
-  ComposableFilter gLLinesRefs(
-      ComposableFilter Function($$GLLinesTableFilterComposer f) f) {
-    final $$GLLinesTableFilterComposer composer = $state.composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.id,
-        referencedTable: $state.db.gLLines,
-        getReferencedColumn: (t) => t.costCenterId,
-        builder: (joinBuilder, parentComposers) => $$GLLinesTableFilterComposer(
-            ComposerState(
-                $state.db, $state.db.gLLines, joinBuilder, parentComposers)));
-    return f(composer);
-  }
-}
-
-class $$CostCentersTableOrderingComposer
-    extends OrderingComposer<_$AppDatabase, $CostCentersTable> {
-  $$CostCentersTableOrderingComposer(super.$state);
-  ColumnOrderings<String> get id => $state.composableBuilder(
-      column: $state.table.id,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<DateTime> get createdAt => $state.composableBuilder(
-      column: $state.table.createdAt,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<DateTime> get updatedAt => $state.composableBuilder(
-      column: $state.table.updatedAt,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<String> get deviceId => $state.composableBuilder(
-      column: $state.table.deviceId,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<int> get syncStatus => $state.composableBuilder(
-      column: $state.table.syncStatus,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<String> get code => $state.composableBuilder(
-      column: $state.table.code,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<String> get name => $state.composableBuilder(
-      column: $state.table.name,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<bool> get isActive => $state.composableBuilder(
-      column: $state.table.isActive,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  $$BranchesTableOrderingComposer get branchId {
-    final $$BranchesTableOrderingComposer composer = $state.composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.branchId,
-        referencedTable: $state.db.branches,
-        getReferencedColumn: (t) => t.id,
-        builder: (joinBuilder, parentComposers) =>
-            $$BranchesTableOrderingComposer(ComposerState(
-                $state.db, $state.db.branches, joinBuilder, parentComposers)));
-    return composer;
-  }
 }
 
 typedef $$GLEntriesTableCreateCompanionBuilder = GLEntriesCompanion Function({
@@ -62309,6 +62485,8 @@ class $AppDatabaseManager {
       $$WarehousesTableTableManager(_db, _db.warehouses);
   $$ProductBatchesTableTableManager get productBatches =>
       $$ProductBatchesTableTableManager(_db, _db.productBatches);
+  $$CostCentersTableTableManager get costCenters =>
+      $$CostCentersTableTableManager(_db, _db.costCenters);
   $$SaleItemsTableTableManager get saleItems =>
       $$SaleItemsTableTableManager(_db, _db.saleItems);
   $$PurchasesTableTableManager get purchases =>
@@ -62339,8 +62517,6 @@ class $AppDatabaseManager {
       $$PurchasePaymentLinksTableTableManager(_db, _db.purchasePaymentLinks);
   $$SyncQueueTableTableManager get syncQueue =>
       $$SyncQueueTableTableManager(_db, _db.syncQueue);
-  $$CostCentersTableTableManager get costCenters =>
-      $$CostCentersTableTableManager(_db, _db.costCenters);
   $$GLEntriesTableTableManager get gLEntries =>
       $$GLEntriesTableTableManager(_db, _db.gLEntries);
   $$GLLinesTableTableManager get gLLines =>

@@ -42,6 +42,9 @@ dependencies:
   freezed_annotation: ^2.4.4
   sqlite3: ^2.4.3
   csv: ^6.0.0
+  googleapis: ^12.0.0
+  google_sign_in: ^6.2.1
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:

@@ -627,6 +627,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
               price: item.price,
               unitName: drift.Value(item.selectedUnit),
               unitFactor: drift.Value(item.unitFactor),
+              costCenterId: drift.Value(item.costCenterId), // الربط المطلوب
             ),
           );
         }

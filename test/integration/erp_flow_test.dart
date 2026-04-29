@@ -17,7 +17,7 @@ void main() {
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
     postingEngine = PostingEngine(db);
-    inventoryCostingService = InventoryCostingService(StockMovementDao(db));
+    inventoryCostingService = InventoryCostingService(StockMovementDao(db), db);
     purchaseService = PurchaseService(
       db,
       postingEngine,

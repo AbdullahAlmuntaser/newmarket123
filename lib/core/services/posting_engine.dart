@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/services/inventory_costing_service.dart';
 import 'package:uuid/uuid.dart';
 
 enum TransactionType {
@@ -24,8 +25,9 @@ class PostingLine {
 
 class PostingEngine {
   final AppDatabase db;
+  final InventoryCostingService? costingService;
 
-  PostingEngine(this.db);
+  PostingEngine(this.db, {this.costingService});
 
   Future<void> postEntry({
     required List<PostingLine> entries,

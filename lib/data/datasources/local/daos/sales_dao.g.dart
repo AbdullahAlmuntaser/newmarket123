@@ -15,6 +15,7 @@ mixin _$SalesDaoMixin on DatabaseAccessor<AppDatabase> {
   $GlobalUnitsTable get globalUnits => attachedDatabase.globalUnits;
   $WarehousesTable get warehouses => attachedDatabase.warehouses;
   $ProductBatchesTable get productBatches => attachedDatabase.productBatches;
+  $CostCentersTable get costCenters => attachedDatabase.costCenters;
   $SaleItemsTable get saleItems => attachedDatabase.saleItems;
   $SalesOrdersTable get salesOrders => attachedDatabase.salesOrders;
   $SalesOrderItemsTable get salesOrderItems => attachedDatabase.salesOrderItems;

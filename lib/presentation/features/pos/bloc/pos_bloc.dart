@@ -16,7 +16,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
   late StreamSubscription _productSubscription;
 
   PosBloc(this.db, this.pricingService, this.transactionEngine)
-    : super(PosLoaded()) {
+    : super(PosLoading()) {
     on<LoadCategories>(_onLoadCategories);
     on<SelectCategory>(_onSelectCategory);
     on<AddProductBySku>(_onAddProduct);

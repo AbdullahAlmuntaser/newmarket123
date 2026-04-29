@@ -31,12 +31,11 @@ class ValidationResult {
 
 class FinancialControlService {
   final AppDatabase db;
+  final InventoryCostingService? costingService;
   late final AuditService _auditService;
-  late final InventoryCostingService _inventoryCostingService;
 
-  FinancialControlService(this.db) {
+  FinancialControlService(this.db, {this.costingService}) {
     _auditService = AuditService(db);
-    _inventoryCostingService = InventoryCostingService(db.stockMovementDao);
   }
 
   Future<ValidationResult> validateSale(String saleId) async {
@@ -176,6 +175,31 @@ class FinancialControlService {
     return ValidationResult(isValid: errors.isEmpty, errors: errors);
   }
 
+  Future<ValidationResult> validateInventory(String productId) async {
+    final List<String> errors = [];
+
+    if (costingService == null) {
+      errors.add('خدمة تقييم المخزون غير مُهيأة');
+      return ValidationResult(isValid: false, errors: errors);
+    }
+
+    try {
+      final valuation = await costingService!.getInventoryValuation(productId);
+      
+      if (valuation.totalQuantity < 0) {
+        errors.add('الكمية السالبة غير مسموحة: ${valuation.totalQuantity}');
+      }
+      
+      if (valuation.totalQuantity == 0 && valuation.totalValue != 0) {
+        errors.add('تناقض في تقييم المخزون - الكمية صفر لكن القيمة: ${valuation.totalValue}');
+      }
+    } catch (e) {
+      errors.add('خطأ في جلب تقييم المخزون: $e');
+    }
+
+    return ValidationResult(isValid: errors.isEmpty, errors: errors);
+  }
+
   Future<AccountingPeriod?> _getOpenPeriod(DateTime date) async {
     return await (db.select(db.accountingPeriods)
           ..where((p) => p.isClosed.equals(false))
@@ -306,12 +330,14 @@ class FinancialControlService {
       )..where((si) => si.saleId.equals(saleId))).get();
 
       for (var item in items) {
-        await _inventoryCostingService.returnToInventory(
-          item.productId,
-          item.quantity * item.unitFactor,
-          item.price, // Assuming cost is the sale price for the return
-          InventoryTransactionType.saleReturn,
-          transactionId: saleId,
+        await db.into(db.inventoryTransactions).insert(
+          InventoryTransactionsCompanion.insert(
+            productId: item.productId,
+            warehouseId: '',
+            quantity: item.quantity * item.unitFactor,
+            type: 'RETURN',
+            referenceId: saleId,
+          ),
         );
       }
 
@@ -386,11 +412,14 @@ class FinancialControlService {
       )..where((pi) => pi.purchaseId.equals(purchaseId))).get();
 
       for (var item in items) {
-        await _inventoryCostingService.deductFromInventory(
-          item.productId,
-          item.quantity,
-          InventoryTransactionType.purchaseReturn,
-          transactionId: purchaseId,
+        await db.into(db.inventoryTransactions).insert(
+          InventoryTransactionsCompanion.insert(
+            productId: item.productId,
+            warehouseId: '',
+            quantity: -item.quantity,
+            type: 'PURCHASE_RETURN',
+            referenceId: purchaseId,
+          ),
         );
       }
 
