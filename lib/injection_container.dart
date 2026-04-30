@@ -26,48 +26,57 @@ import 'core/services/sales_service.dart';
 import 'core/services/purchase_service.dart';
 import 'core/services/statement_service.dart';
 import 'core/services/report_service.dart';
+import 'core/services/pricing_service.dart';
+import 'core/services/transaction_engine.dart';
+import 'presentation/features/pos/bloc/pos_bloc.dart';
+import 'presentation/features/products/products_provider.dart';
 
 final sl = GetIt.instance;
 
 Future<void> init() async {
   final db = AppDatabase();
   sl.registerLazySingleton<AppDatabase>(() => db);
-sl.registerLazySingleton<AuditDao>(() => AuditDao(db));
-sl.registerLazySingleton<StockMovementDao>(() => StockMovementDao(db));
-sl.registerLazySingleton<ProductsDao>(() => ProductsDao(db));
+  sl.registerLazySingleton<AuditDao>(() => AuditDao(db));
+  sl.registerLazySingleton<StockMovementDao>(() => StockMovementDao(db));
+  sl.registerLazySingleton<ProductsDao>(() => ProductsDao(db));
 
-sl.registerLazySingleton<AccountingService>(
-  () => AccountingService(db, sl<EventBusService>()),
-);
-sl.registerLazySingleton<PostingEngine>(() => PostingEngine(db, costingService: sl<InventoryCostingService>()));
+  sl.registerLazySingleton<AccountingService>(
+    () => AccountingService(db, sl<EventBusService>()),
+  );
+  sl.registerLazySingleton<PostingEngine>(
+    () => PostingEngine(db, costingService: sl<InventoryCostingService>()),
+  );
   sl.registerLazySingleton<InventoryCostingService>(
     () => InventoryCostingService(sl<StockMovementDao>(), sl<AppDatabase>()),
   );
-sl.registerLazySingleton<PermissionService>(() => PermissionService(db));
-sl.registerLazySingleton<AuditService>(() => AuditService(db));
-sl.registerLazySingleton<InventoryService>(() => InventoryService(db));
-sl.registerLazySingleton<EventBusService>(() => EventBusService());
-sl.registerLazySingleton<PurchaseService>(
-  () =>
-      PurchaseService(db, sl<PostingEngine>(), sl<InventoryCostingService>()),
-);
-sl.registerLazySingleton<SalesService>(
-  () => SalesService(sl<PostingEngine>(), sl<InventoryService>()),
-);
-sl.registerLazySingleton<StatementService>(
-  () => StatementService(sl<PostingEngine>()),
-);
-sl.registerLazySingleton<ReportService>(() => ReportService(sl<PostingEngine>()));
+  sl.registerLazySingleton<PermissionService>(() => PermissionService(db));
+  sl.registerLazySingleton<AuditService>(() => AuditService(db));
+  sl.registerLazySingleton<InventoryService>(() => InventoryService(db));
+  sl.registerLazySingleton<EventBusService>(() => EventBusService());
+  sl.registerLazySingleton<PurchaseService>(
+    () =>
+        PurchaseService(db, sl<PostingEngine>(), sl<InventoryCostingService>()),
+  );
+  sl.registerLazySingleton<SalesService>(
+    () => SalesService(sl<PostingEngine>(), sl<InventoryService>()),
+  );
+  sl.registerLazySingleton<StatementService>(
+    () => StatementService(sl<PostingEngine>()),
+  );
+  sl.registerLazySingleton<ReportService>(
+    () => ReportService(sl<PostingEngine>()),
+  );
 
-sl.registerLazySingleton<AuthProvider>(() => AuthProvider(
-  sl<AppDatabase>(),
-  sl<PermissionService>(),
-));
+  sl.registerLazySingleton<AuthProvider>(
+    () => AuthProvider(sl<AppDatabase>(), sl<PermissionService>()),
+  );
 
-sl.registerLazySingleton<ItemRepository>(() => ItemRepositoryImpl(sl<ProductsDao>()));sl.registerLazySingleton<InventoryRepository>(() => InventoryRepositoryImpl(
-  sl<StockMovementDao>(),
-  sl<ProductsDao>(),
-));
+  sl.registerLazySingleton<ItemRepository>(
+    () => ItemRepositoryImpl(sl<ProductsDao>()),
+  );
+  sl.registerLazySingleton<InventoryRepository>(
+    () => InventoryRepositoryImpl(sl<StockMovementDao>(), sl<ProductsDao>()),
+  );
 
   sl.registerLazySingleton<CreateItemUseCase>(
     () => CreateItemUseCase(sl<ItemRepository>()),
@@ -80,6 +89,23 @@ sl.registerLazySingleton<ItemRepository>(() => ItemRepositoryImpl(sl<ProductsDao
   sl.registerLazySingleton<GrnService>(() => GrnService(db));
   sl.registerLazySingleton<DriveBackupService>(() => DriveBackupService(db));
   sl.registerLazySingleton<FinancialControlService>(
-    () => FinancialControlService(db, costingService: sl<InventoryCostingService>()),
+    () => FinancialControlService(
+      db,
+      costingService: sl<InventoryCostingService>(),
+    ),
+  );
+
+  // New Services
+  sl.registerLazySingleton<PricingService>(() => PricingService(db));
+  sl.registerLazySingleton<TransactionEngine>(() {
+    final engine = TransactionEngine(db, sl<EventBusService>());
+    engine.setCostingService(sl<InventoryCostingService>());
+    return engine;
+  });
+
+  // Providers & Blocs
+  sl.registerLazySingleton<ProductsProvider>(() => ProductsProvider(db));
+  sl.registerFactory<PosBloc>(
+    () => PosBloc(db, sl<PricingService>(), sl<TransactionEngine>()),
   );
 }

@@ -950,7 +950,7 @@ class AppDatabase extends _$AppDatabase {
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON;');
       if (details.wasCreated) {
-        // seeding logic
+        await seedData();
       }
     },
   );
@@ -959,7 +959,109 @@ class AppDatabase extends _$AppDatabase {
       (select(syncQueue)).get().then((v) => v.length);
 
   Future<void> seedData() async {
-    // Add seed logic here in the future
+    // 1. Branches
+    final branchesCount = await (select(branches)).get().then((v) => v.length);
+    if (branchesCount == 0) {
+      await into(branches).insert(
+        BranchesCompanion.insert(
+          name: 'الفرع الرئيسي',
+          code: 'MAIN',
+          isActive: const Value(true),
+        ),
+      );
+    }
+
+    // 2. Currencies
+    final currenciesCount =
+        await (select(currencies)).get().then((v) => v.length);
+    if (currenciesCount == 0) {
+      await into(currencies).insert(
+        CurrenciesCompanion.insert(
+          code: 'SAR',
+          name: 'ريال سعودي',
+          isBase: const Value(true),
+          exchangeRate: const Value(1.0),
+        ),
+      );
+      await into(currencies).insert(
+        CurrenciesCompanion.insert(
+          code: 'USD',
+          name: 'دولار أمريكي',
+          isBase: const Value(false),
+          exchangeRate: const Value(3.75),
+        ),
+      );
+    }
+
+    // 3. Warehouses
+    final warehousesCount =
+        await (select(warehouses)).get().then((v) => v.length);
+    if (warehousesCount == 0) {
+      await into(warehouses).insert(
+        WarehousesCompanion.insert(
+          name: 'المستودع الرئيسي',
+          isDefault: const Value(true),
+        ),
+      );
+    }
+
+    // 4. Categories
+    final categoriesCount =
+        await (select(categories)).get().then((v) => v.length);
+    if (categoriesCount == 0) {
+      await into(categories).insert(
+        CategoriesCompanion.insert(
+          name: 'مواد غذائية',
+          code: const Value('FOOD'),
+        ),
+      );
+      await into(categories).insert(
+        CategoriesCompanion.insert(name: 'منظفات', code: const Value('CLEAN')),
+      );
+    }
+
+    // 5. Suppliers
+    final suppliersCount =
+        await (select(suppliers)).get().then((v) => v.length);
+    if (suppliersCount == 0) {
+      await into(suppliers).insert(
+        SuppliersCompanion.insert(name: 'مورد عام', isActive: const Value(true)),
+      );
+    }
+
+    // 6. Customers
+    final customersCount =
+        await (select(customers)).get().then((v) => v.length);
+    if (customersCount == 0) {
+      await into(customers).insert(
+        CustomersCompanion.insert(
+          name: 'عميل نقدي',
+          isQuickCustomer: const Value(true),
+          isActive: const Value(true),
+        ),
+      );
+    }
+
+    // 7. Products (Demo Data)
+    final productsCount = await (select(products)).get().then((v) => v.length);
+    if (productsCount == 0) {
+      final catList = await (select(categories)..limit(1)).get();
+      if (catList.isNotEmpty) {
+        final cat = catList.first;
+        await into(products).insert(
+          ProductsCompanion.insert(
+            name: 'حليب نيدو 400 جرام',
+            sku: '123456789',
+            barcode: const Value('123456789'),
+            categoryId: Value(cat.id),
+            buyPrice: const Value(25.0),
+            sellPrice: const Value(30.0),
+            stock: const Value(100.0),
+            isActive: const Value(true),
+          ),
+        );
+      }
+    }
   }
 
   Future<double> calculateTotalInventoryValue() async {
