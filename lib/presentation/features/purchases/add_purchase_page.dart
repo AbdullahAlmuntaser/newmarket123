@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 import 'purchase_provider.dart';
 import '../../widgets/entity_picker.dart';
 import 'widgets/purchase_item_row.dart';
+import 'widgets/quick_product_add_dialog.dart';
 
 class AddPurchasePage extends StatefulWidget {
   const AddPurchasePage({super.key});
@@ -70,11 +71,34 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
                 onDelete: () => setState(() => _items.removeAt(i)),
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.add_circle_outline),
-              onPressed: () => _showProductPicker(db),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () => _showProductPicker(db),
+                  icon: const Icon(Icons.search),
+                  label: const Text('إضافة صنف موجود'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                    foregroundColor: Theme.of(context).colorScheme.onSecondaryContainer,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  onPressed: () => _showQuickAddProduct(db),
+                  icon: const Icon(Icons.add_circle_outline),
+                  label: const Text('إضافة صنف جديد'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 16),
             _buildSummary(),
+
           ],
         ),
       ),
@@ -129,6 +153,23 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
     }
   }
 
+  void _showQuickAddProduct(AppDatabase db) {
+    showDialog(
+      context: context,
+      builder: (context) => QuickProductAddDialog(
+        onProductCreated: (product) {
+          setState(() {
+            _items.add(PurchaseItemData(
+              product: product,
+              quantity: 1.0,
+              unitPrice: product.buyPrice,
+            ));
+          });
+        },
+      ),
+    );
+  }
+
   Widget _buildSummary() => Card(
     margin: const EdgeInsets.all(8),
     child: Padding(
@@ -177,6 +218,10 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   );
 
   Future<void> _savePurchase(AppDatabase db, {required bool post}) async {
+    if (_selectedSupplier == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء اختيار مورد')));
+      return;
+    }
     if (_items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء إضافة أصناف')));
       return;
