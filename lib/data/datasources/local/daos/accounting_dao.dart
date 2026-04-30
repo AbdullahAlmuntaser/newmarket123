@@ -169,9 +169,13 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
 
       final entryRow = await into(gLEntries).insertReturning(entry);
       for (var line in lines) {
-        final lineRow = await into(
-          gLLines,
-        ).insertReturning(line.copyWith(entryId: Value(entryRow.id)));
+        // Propagate branchId from entry if not present in line
+        final lineToInsert = line.copyWith(
+          entryId: Value(entryRow.id),
+          branchId: line.branchId.present ? line.branchId : Value(entryRow.branchId),
+        );
+        
+        final lineRow = await into(gLLines).insertReturning(lineToInsert);
 
         // Update AccountTransactions for running balance
         await _updateAccountRunningBalance(lineRow, entryRow);
@@ -219,6 +223,7 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
         credit: Value(line.credit),
         runningBalance: Value(newBalance),
         date: Value(entry.date),
+        branchId: Value(entry.branchId),
       ),
     );
   }
@@ -341,7 +346,7 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
 
     final query =
         selectOnly(gLLines).join([
-            innerJoin(gLEntries, gLEntries.id.equalsExp(gLLines.entryId)),
+            innerJoin(gLEntries, gLEntries.id.equalsExp(db.gLLines.entryId)),
           ])
           ..addColumns([debitSum, creditSum]);
     
@@ -386,7 +391,7 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
 
     final query =
         selectOnly(gLLines).join([
-            innerJoin(gLEntries, gLEntries.id.equalsExp(gLLines.entryId)),
+            innerJoin(gLEntries, gLEntries.id.equalsExp(db.gLLines.entryId)),
           ])
           ..addColumns([debitSum, creditSum]);
     
@@ -426,7 +431,7 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     final creditSum = gLLines.credit.sum();
 
     final query = selectOnly(gLLines).join([
-      innerJoin(gLEntries, gLEntries.id.equalsExp(gLLines.entryId)),
+      innerJoin(gLEntries, gLEntries.id.equalsExp(db.gLLines.entryId)),
     ])
       ..addColumns([gLLines.accountId, debitSum, creditSum]);
     
@@ -468,7 +473,7 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     }
 
     return (select(gLLines).join([
-          innerJoin(gLEntries, gLEntries.id.equalsExp(gLLines.entryId)),
+          innerJoin(gLEntries, gLEntries.id.equalsExp(db.gLLines.entryId)),
         ])..where(predicate))
         .map((row) => row.readTable(gLLines))
         .get();
@@ -487,8 +492,8 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     }
 
     final query = select(gLLines).join([
-      innerJoin(gLEntries, gLEntries.id.equalsExp(gLLines.entryId)),
-      innerJoin(gLAccounts, gLAccounts.id.equalsExp(gLLines.accountId)),
+      innerJoin(gLEntries, gLEntries.id.equalsExp(db.gLLines.entryId)),
+      innerJoin(gLAccounts, gLAccounts.id.equalsExp(db.gLLines.accountId)),
     ])..where(predicate);
 
     final rows = await query.get();

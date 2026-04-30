@@ -11,6 +11,9 @@ void main() {
 
   setUp(() async {
     db = AppDatabase(NativeDatabase.memory());
+    // Clear all tables to be absolutely sure
+    await db.delete(db.products).go();
+    await db.delete(db.warehouses).go();
     service = InventoryService(db);
   });
 
@@ -50,7 +53,8 @@ void main() {
           );
 
       final totalValue = await service.getTotalInventoryValue();
-      expect(totalValue, (10.0 * 5.0) + (20.0 * 3.0));
+      
+      expect(totalValue, 110.0);
     },
   );
 
