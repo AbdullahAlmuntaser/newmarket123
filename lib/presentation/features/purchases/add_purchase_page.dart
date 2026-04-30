@@ -11,6 +11,8 @@ import '../../widgets/entity_picker.dart';
 import 'widgets/purchase_item_row.dart';
 import 'widgets/quick_product_add_dialog.dart';
 
+import 'package:supermarket/core/services/grn_service.dart';
+
 class AddPurchasePage extends StatefulWidget {
   const AddPurchasePage({super.key});
 
@@ -229,6 +231,9 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
     setState(() => _isSaving = true);
     final purchaseId = const Uuid().v4();
     try {
+      final purchaseService = sl<PurchaseService>();
+      final grnService = sl<GrnService>();
+
       await db.transaction(() async {
         final itemsCompanions = _items.map((item) => PurchaseItemsCompanion.insert(
           purchaseId: purchaseId,
@@ -237,6 +242,8 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
           unitPrice: item.unitPrice,
           unitFactor: drift.Value(item.selectedUnit?.factor ?? 1.0),
           price: item.subtotal,
+          batchNumber: drift.Value(item.batchNumber),
+          expiryDate: drift.Value(item.expiryDate),
         )).toList();
 
         await db.purchasesDao.createPurchase(
@@ -247,15 +254,31 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
             total: _total,
             discount: drift.Value(_discount),
             tax: drift.Value(_tax),
+            shippingCost: drift.Value(_shippingCost),
+            otherExpenses: drift.Value(_otherExpenses),
             date: drift.Value(_selectedDate),
             status: const drift.Value('DRAFT'),
           ),
           itemsCompanions: itemsCompanions,
           userId: null,
         );
-        if (post) await sl<PurchaseService>().postPurchase(purchaseId);
+
+        if (post) {
+          // 1. Create GRN (Automatically updates Inventory Stock and BuyPrice)
+          await grnService.createGrnFromPurchase(
+            purchaseId: purchaseId,
+            warehouseId: _selectedWarehouse?.id ?? 'default_warehouse', // Fallback or handle null
+            notes: 'Auto-generated from Invoice',
+          );
+
+          // 2. Post Purchase (Updates Accounting/GLEntries)
+          await purchaseService.postPurchase(purchaseId);
+        }
       });
-      if (mounted) context.pop();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ وترحيل الفاتورة وتحديث المخزون بنجاح')));
+        context.pop();
+      }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل: $e')));
     } finally {
