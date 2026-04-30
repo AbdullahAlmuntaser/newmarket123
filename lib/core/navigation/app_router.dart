@@ -29,6 +29,7 @@ import 'package:supermarket/presentation/features/customers/customer_statement_p
 import 'package:supermarket/presentation/features/suppliers/suppliers_page.dart';
 import 'package:supermarket/presentation/features/suppliers/supplier_statement_page.dart';
 import 'package:supermarket/presentation/features/suppliers/add_supplier_payment_page.dart';
+import 'package:supermarket/presentation/features/suppliers/supplier_payments_page.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/purchases/purchases_page.dart';
 import 'package:supermarket/presentation/features/purchases/add_purchase_page.dart';
@@ -130,6 +131,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/customers/statement/:id', builder: (context, state) => CustomerStatementPage(customerId: state.pathParameters['id']!)),
     GoRoute(path: '/suppliers', builder: (context, state) => const SuppliersPage()),
     GoRoute(path: '/suppliers/statement/:id', builder: (context, state) => SupplierStatementPage(supplier: state.extra as Supplier)),
+    GoRoute(path: '/suppliers/payments', builder: (context, state) => const SupplierPaymentsPage()),
     GoRoute(path: '/suppliers/payment', builder: (context, state) => AddSupplierPaymentPage(supplier: state.extra as Supplier)),
     GoRoute(path: '/purchases', builder: (context, state) => const PurchasesPage()),
     GoRoute(path: '/purchases/new', builder: (context, state) => const AddPurchasePage()),

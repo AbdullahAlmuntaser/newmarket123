@@ -24,6 +24,8 @@ import 'domain/usecases/add_stock.dart';
 import 'core/services/bom_service.dart';
 import 'core/services/sales_service.dart';
 import 'core/services/purchase_service.dart';
+import 'core/services/reorder_service.dart';
+import 'core/services/supplier_analytics_service.dart';
 import 'core/services/statement_service.dart';
 import 'core/services/report_service.dart';
 import 'core/services/pricing_service.dart';
@@ -87,6 +89,8 @@ Future<void> init() async {
   sl.registerLazySingleton<ThemeProvider>(() => ThemeProvider());
   sl.registerLazySingleton(() => BomService(db, sl<AccountingService>()));
   sl.registerLazySingleton<GrnService>(() => GrnService(db));
+  sl.registerLazySingleton<ReorderService>(() => ReorderService(db));
+  sl.registerLazySingleton<SupplierAnalyticsService>(() => SupplierAnalyticsService(db));
   sl.registerLazySingleton<DriveBackupService>(() => DriveBackupService(db));
   sl.registerLazySingleton<FinancialControlService>(
     () => FinancialControlService(

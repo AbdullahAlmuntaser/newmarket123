@@ -26,10 +26,16 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
           leftOuterJoin(db.suppliers, db.suppliers.id.equalsExp(db.purchaseOrders.supplierId)),
         ])).watch(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          final rows = snapshot.data!;
+          if (snapshot.hasError) {
+            return Center(child: Text('خطأ: ${snapshot.error}'));
+          }
+          final rows = snapshot.data ?? [];
+          if (rows.isEmpty) {
+            return const Center(child: Text('لا توجد أوامر شراء'));
+          }
           return ListView.builder(
             itemCount: rows.length,
             itemBuilder: (context, index) {

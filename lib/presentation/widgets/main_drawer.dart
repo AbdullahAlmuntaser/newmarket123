@@ -132,7 +132,7 @@ class MainDrawer extends StatelessWidget {
                       _buildSubItem(
                         context,
                         'دفعات الموردين',
-                        '/suppliers/payment',
+                        '/suppliers/payments',
                       ),
                       _buildSubItem(
                         context,
