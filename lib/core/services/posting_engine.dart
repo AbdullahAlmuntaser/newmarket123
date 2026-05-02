@@ -36,6 +36,19 @@ class PostingEngine {
   }) async {
     await _checkPeriodOpen();
 
+    // Validate entries before posting
+    if (entries.isEmpty) {
+      throw Exception('لا يمكن الترحيل بدون قيود محاسبية.');
+    }
+    for (var entry in entries) {
+      if (entry.account.isEmpty) {
+        throw Exception('الحساب المحاسبي غير محدد.');
+      }
+      if (entry.debit < 0 || entry.credit < 0) {
+        throw Exception('المبلغ يجب أن يكون أكبر من أو يساوي الصفر.');
+      }
+    }
+
     final entryId = const Uuid().v4();
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),

@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/utils/debouncer.dart';
 import 'package:uuid/uuid.dart';
 
 /// A generic dialog for picking an entity from a stream
@@ -24,6 +25,13 @@ class EntityPicker<T> extends StatefulWidget {
 
 class _EntityPickerState<T> extends State<EntityPicker<T>> {
   String _searchQuery = '';
+  final Debouncer _debouncer = Debouncer(delay: const Duration(milliseconds: 300));
+
+  @override
+  void dispose() {
+    _debouncer.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,15 +47,25 @@ class _EntityPickerState<T> extends State<EntityPicker<T>> {
                 hintText: 'بحث...',
                 prefixIcon: Icon(Icons.search),
               ),
-              onChanged: (v) => setState(() => _searchQuery = v),
+              onChanged: (v) {
+                _debouncer.run(() {
+                  if (mounted) setState(() => _searchQuery = v);
+                });
+              },
             ),
             const SizedBox(height: 8),
             Flexible(
               child: StreamBuilder<List<T>>(
                 stream: widget.stream,
                 builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text('خطأ: ${snapshot.error}'));
+                  }
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(child: Text('لا توجد بيانات'));
                   }
                   var items = snapshot.data!;
                   if (_searchQuery.isNotEmpty && widget.filter != null) {
@@ -125,11 +143,13 @@ class _EntityPickerDropdownState extends State<EntityPickerDropdown> {
   String _searchQuery = '';
   bool _isAddingNew = false;
   final TextEditingController _newEntityController = TextEditingController();
+  final Debouncer _debouncer = Debouncer(delay: const Duration(milliseconds: 300));
 
   @override
   void dispose() {
     _searchController.dispose();
     _newEntityController.dispose();
+    _debouncer.dispose();
     super.dispose();
   }
 
@@ -225,13 +245,23 @@ class _EntityPickerDropdownState extends State<EntityPickerDropdown> {
                     )
                   : null,
             ),
-            onChanged: (v) => setState(() => _searchQuery = v),
+            onChanged: (v) {
+                _debouncer.run(() {
+                  if (mounted) setState(() => _searchQuery = v);
+                });
+              },
           ),
           const SizedBox(height: 8),
 
           StreamBuilder<List<dynamic>>(
             stream: widget.streamBuilder(widget.db),
             builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
               final allItems = snapshot.data ?? [];
               final filtered = _searchQuery.isEmpty
                   ? allItems

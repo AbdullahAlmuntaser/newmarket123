@@ -28,6 +28,37 @@ class AccountingPeriodService {
     });
   }
 
+  /// Ensures there's an open accounting period for the current month
+  Future<void> ensureOpenPeriod() async {
+    final now = DateTime.now();
+    final period = await (db.select(db.accountingPeriods)
+          ..where((p) => p.isClosed.equals(false))
+          ..where((p) => p.startDate.isSmallerOrEqual(Variable(now)))
+          ..where((p) => p.endDate.isBiggerOrEqual(Variable(now))))
+        .getSingleOrNull();
+
+    if (period == null) {
+      final startOfMonth = DateTime(now.year, now.month, 1);
+      final endOfMonth = DateTime(now.year, now.month + 1, 0);
+      await db.into(db.accountingPeriods).insert(
+        AccountingPeriodsCompanion.insert(
+          name: '${_getMonthName(now.month)} ${now.year}',
+          startDate: startOfMonth,
+          endDate: endOfMonth,
+          status: const Value('OPEN'),
+        ),
+      );
+    }
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      '', 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+    ];
+    return months[month];
+  }
+
   /// Checks if a transaction date is allowed (must not be in a closed period)
   Future<bool> isDateAllowed(DateTime date) async {
     final closedPeriods = await (db.select(db.accountingPeriods)

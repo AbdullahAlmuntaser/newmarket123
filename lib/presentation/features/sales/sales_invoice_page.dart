@@ -576,8 +576,23 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
 
   Future<void> _saveInvoice(AppDatabase db, {required bool post}) async {
     if (_items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الفاتورة فارغة')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الفاتورة فارغة - الرجاء إضافة أصناف')));
       return;
+    }
+    
+    for (var item in _items) {
+      if (item.product == null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء اختيار منتج لكل صنف')));
+        return;
+      }
+      if (item.quantity <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الكمية يجب أن تكون أكبر من صفر')));
+        return;
+      }
+      if (item.price < 0) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('السعر يجب أن يكون أكبر من أو يساوي صفر')));
+        return;
+      }
     }
     
     if (!_formKey.currentState!.validate()) return;

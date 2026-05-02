@@ -41,133 +41,147 @@ class TransactionEngine {
   /// Posts a purchase invoice (Draft -> Received)
   /// This updates inventory, creates batches, allocates landed costs, and triggers accounting.
   Future<void> postPurchase(String purchaseId, {String? userId}) async {
+    if (purchaseId.isEmpty) {
+      throw Exception('معرف الفاتورة غير صالح.');
+    }
+    
     // Check if accounting period is open before posting
     await _checkAccountingPeriodOpen();
-    await db.transaction(() async {
-      // 1. Get Purchase and Items
-      final purchase = await (db.select(
-        db.purchases,
-      )..where((p) => p.id.equals(purchaseId))).getSingle();
 
-      if (purchase.status == 'RECEIVED') {
-        throw Exception('هذه الفاتورة تم استلامها بالفعل.');
-      }
+    try {
+      await db.transaction(() async {
+        // 1. Get Purchase and Items
+        final purchase = await (db.select(
+          db.purchases,
+        )..where((p) => p.id.equals(purchaseId))).getSingle();
 
-      final items = await (db.select(
-        db.purchaseItems,
-      )..where((pi) => pi.purchaseId.equals(purchaseId))).get();
-
-      if (items.isEmpty) {
-        throw Exception('لا يمكن ترحيل فاتورة مشتريات بدون أصناف.');
-      }
-
-      // 2. Calculate Subtotal for Landed Cost Allocation
-      double subtotal = 0;
-      for (var item in items) {
-        if (item.quantity <= 0) {
-          throw Exception('كمية الشراء يجب أن تكون أكبر من الصفر.');
+        // Validate supplier if credit purchase
+        if (purchase.isCredit && purchase.supplierId == null) {
+          throw Exception('يجب اختيار مورد لفاتورة الشراء الآجل.');
         }
-        subtotal += item.quantity * item.price;
-      }
 
-      // 3. Process each item
-      for (var item in items) {
-        // Landed Cost Allocation (by value proportion)
-        double itemValue = item.quantity * item.price;
-        double proportion = subtotal > 0 ? itemValue / subtotal : 0;
-        double allocatedLandedCost = purchase.landedCosts * proportion;
-        double landedCostPerUnit = item.quantity > 0
-            ? allocatedLandedCost / item.quantity
-            : 0;
-        double finalUnitCost = item.price + landedCostPerUnit;
+        if (purchase.status == 'RECEIVED') {
+          throw Exception('هذه الفاتورة تم استلامها بالفعل.');
+        }
 
-        final product = await (db.select(
-          db.products,
-        )..where((p) => p.id.equals(item.productId))).getSingle();
+        final items = await (db.select(
+          db.purchaseItems,
+        )..where((pi) => pi.purchaseId.equals(purchaseId))).get();
 
-        double qtyInBaseUnit = item.quantity * item.unitFactor;
+        if (items.isEmpty) {
+          throw Exception('لا يمكن ترحيل فاتورة مشتريات بدون أصناف.');
+        }
 
-        // A. Create Product Batch
-        final batchId = const Uuid().v4();
-        await db
-            .into(db.productBatches)
-            .insert(
-              ProductBatchesCompanion.insert(
-                id: Value(batchId),
-                productId: item.productId,
-                warehouseId: purchase.warehouseId ?? '',
-                batchNumber:
-                    item.batchNumber != null && item.batchNumber!.isNotEmpty
-                    ? item.batchNumber!
-                    : 'PUR-${purchase.id.substring(0, 8)}',
-                expiryDate: Value(item.expiryDate),
-                quantity: Value(qtyInBaseUnit),
-                initialQuantity: Value(qtyInBaseUnit),
-                costPrice: Value(
-                  finalUnitCost / item.unitFactor,
-                ), // Cost per base unit
-                syncStatus: const Value(1),
-              ),
-            );
+        // 2. Calculate Subtotal for Landed Cost Allocation
+        double subtotal = 0;
+        for (var item in items) {
+          if (item.quantity <= 0) {
+            throw Exception('كمية الشراء يجب أن تكون أكبر من الصفر.');
+          }
+          subtotal += item.quantity * item.price;
+        }
 
-        // B. Update Purchase Item with Batch ID
-        await (db.update(db.purchaseItems)
-              ..where((pi) => pi.id.equals(item.id)))
-            .write(PurchaseItemsCompanion(batchId: Value(batchId)));
+        // 3. Process each item
+        for (var item in items) {
+          // Landed Cost Allocation (by value proportion)
+          double itemValue = item.quantity * item.price;
+          double proportion = subtotal > 0 ? itemValue / subtotal : 0;
+          double allocatedLandedCost = purchase.landedCosts * proportion;
+          double landedCostPerUnit = item.quantity > 0
+              ? allocatedLandedCost / item.quantity
+              : 0;
+          double finalUnitCost = item.price + landedCostPerUnit;
 
-        // C. Record Inventory Transaction
-        await db
-            .into(db.inventoryTransactions)
-            .insert(
-              InventoryTransactionsCompanion.insert(
-                productId: item.productId,
-                warehouseId: purchase.warehouseId ?? '',
-                batchId: Value(batchId),
-                quantity: qtyInBaseUnit,
-                type: 'PURCHASE',
-                referenceId: purchaseId,
-              ),
-            );
+          final product = await (db.select(
+            db.products,
+          )..where((p) => p.id.equals(item.productId))).getSingle();
 
-        // D. Update Product Total Stock & Buy Price
-        await (db.update(
-          db.products,
-        )..where((p) => p.id.equals(item.productId))).write(
-          ProductsCompanion(
-            stock: Value(product.stock + qtyInBaseUnit),
-            buyPrice: Value(finalUnitCost),
-          ),
+          double qtyInBaseUnit = item.quantity * item.unitFactor;
+
+          // A. Create Product Batch
+          final batchId = const Uuid().v4();
+          await db
+              .into(db.productBatches)
+              .insert(
+                ProductBatchesCompanion.insert(
+                  id: Value(batchId),
+                  productId: item.productId,
+                  warehouseId: purchase.warehouseId ?? '',
+                  batchNumber:
+                      item.batchNumber != null && item.batchNumber!.isNotEmpty
+                      ? item.batchNumber!
+                      : 'PUR-${purchase.id.substring(0, 8)}',
+                  expiryDate: Value(item.expiryDate),
+                  quantity: Value(qtyInBaseUnit),
+                  initialQuantity: Value(qtyInBaseUnit),
+                  costPrice: Value(
+                    finalUnitCost / item.unitFactor,
+                  ), // Cost per base unit
+                  syncStatus: const Value(1),
+                ),
+              );
+
+          // B. Update Purchase Item with Batch ID
+          await (db.update(db.purchaseItems)
+                ..where((pi) => pi.id.equals(item.id)))
+              .write(PurchaseItemsCompanion(batchId: Value(batchId)));
+
+          // C. Record Inventory Transaction
+          await db
+              .into(db.inventoryTransactions)
+              .insert(
+                InventoryTransactionsCompanion.insert(
+                  productId: item.productId,
+                  warehouseId: purchase.warehouseId ?? '',
+                  batchId: Value(batchId),
+                  quantity: qtyInBaseUnit,
+                  type: 'PURCHASE',
+                  referenceId: purchaseId,
+                ),
+              );
+
+          // D. Update Product Total Stock & Buy Price
+          await (db.update(
+            db.products,
+          )..where((p) => p.id.equals(item.productId))).write(
+            ProductsCompanion(
+              stock: Value(product.stock + qtyInBaseUnit),
+              buyPrice: Value(finalUnitCost),
+            ),
+          );
+        }
+
+        // 4. Update Purchase Status
+        await (db.update(db.purchases)..where((p) => p.id.equals(purchaseId)))
+            .write(const PurchasesCompanion(status: Value('RECEIVED')));
+
+        // 5. Update Supplier Balance if Credit
+        if (purchase.isCredit && purchase.supplierId != null) {
+          final supplier = await (db.select(
+            db.suppliers,
+          )..where((s) => s.id.equals(purchase.supplierId!))).getSingle();
+
+          await (db.update(
+            db.suppliers,
+          )..where((s) => s.id.equals(supplier.id))).write(
+            SuppliersCompanion(balance: Value(supplier.balance + purchase.total)),
+          );
+        }
+
+        // 6. Trigger Accounting & Events
+        eventBus.fire(PurchasePostedEvent(purchase, items, userId: userId));
+
+        await _auditService.log(
+          action: 'POST_PURCHASE',
+          targetEntity: 'Purchases',
+          entityId: purchaseId,
+          userId: userId,
+          details: 'Posted purchase invoice $purchaseId',
         );
-      }
-
-      // 4. Update Purchase Status
-      await (db.update(db.purchases)..where((p) => p.id.equals(purchaseId)))
-          .write(const PurchasesCompanion(status: Value('RECEIVED')));
-
-      // 5. Update Supplier Balance if Credit
-      if (purchase.isCredit && purchase.supplierId != null) {
-        final supplier = await (db.select(
-          db.suppliers,
-        )..where((s) => s.id.equals(purchase.supplierId!))).getSingle();
-
-        await (db.update(
-          db.suppliers,
-        )..where((s) => s.id.equals(supplier.id))).write(
-          SuppliersCompanion(balance: Value(supplier.balance + purchase.total)),
-        );
-      }
-
-      // 6. Trigger Accounting & Events
-      eventBus.fire(PurchasePostedEvent(purchase, items, userId: userId));
-
-      await _auditService.log(
-        action: 'POST_PURCHASE',
-        targetEntity: 'Purchases',
-        entityId: purchaseId,
-        userId: userId,
-        details: 'Posted purchase invoice $purchaseId',
-      );
-    });
+      });
+    } catch (e) {
+      throw Exception('خطأ في العملية: $e');
+    }
   }
 
   /// Posts a sale (Draft -> Posted)
@@ -203,11 +217,15 @@ class TransactionEngine {
         throw Exception('لا يمكن ترحيل فاتورة مبيعات بدون أصناف.');
       }
 
-// 2. Process each item (Inventory Update - FEFO)
+      // 2. Process each item (Inventory Update - FEFO)
       double saleCogs = 0.0;
       for (var item in items) {
         if (item.quantity <= 0) {
           throw Exception('الكمية يجب أن تكون أكبر من الصفر.');
+        }
+        
+        if (item.price < 0) {
+          throw Exception('السعر يجب أن يكون أكبر من أو يساوي الصفر.');
         }
 
         double remainingToDeduct = item.quantity * item.unitFactor;
@@ -368,10 +386,6 @@ class TransactionEngine {
   }
 
   /// Posts a sale return
-
-  /// This updates inventory batches (re-adds stock), records inventory transactions, and triggers accounting.
-
-  /// Posts a sale return
   /// This updates inventory batches (re-adds stock), records inventory transactions, and triggers accounting.
   Future<void> postSaleReturn(String returnId, {String? userId}) async {
     // Check if accounting period is open before posting
@@ -393,8 +407,6 @@ class TransactionEngine {
       // 2. Process each item (Inventory Update - Return to Batch)
       for (var item in items) {
         // Return stock to the specific batch or create/update based on batchId
-        // In a real scenario, the return item should carry the batchId of the original sale
-        // For now, we update the existing batch if found, otherwise adjust total stock
         final batchId = item.batchId;
         final batch = batchId != null
             ? await (db.select(db.productBatches)
@@ -456,13 +468,11 @@ class TransactionEngine {
   }
 
   /// Posts a purchase return
-
   Future<void> postPurchaseReturn(String returnId, {String? userId}) async {
     // Check if accounting period is open before posting
     await _checkAccountingPeriodOpen();
     await db.transaction(() async {
       // 1. Get Return and Items
-
       final purchaseReturn = await (db.select(
         db.purchaseReturns,
       )..where((r) => r.id.equals(returnId))).getSingle();
@@ -476,12 +486,10 @@ class TransactionEngine {
       )..where((p) => p.id.equals(purchaseReturn.purchaseId))).getSingle();
 
       // 2. Process each item (Inventory Update - Remove from Batch)
-
       for (var item in items) {
         double remainingToDeduct = item.quantity;
 
         // FEFO Logic for purchase return
-
         final batches =
             await (db.select(db.productBatches)
                   ..where((b) => b.productId.equals(item.productId))
@@ -489,7 +497,6 @@ class TransactionEngine {
                   ..orderBy([
                     (b) => OrderingTerm(
                       expression: b.expiryDate,
-
                       mode: OrderingMode.asc,
                     ),
                   ]))
@@ -509,21 +516,15 @@ class TransactionEngine {
           );
 
           // Record Inventory Transaction
-
           await db
               .into(db.inventoryTransactions)
               .insert(
                 InventoryTransactionsCompanion.insert(
                   productId: item.productId,
-
                   warehouseId: batch.warehouseId,
-
                   batchId: Value(batch.id),
-
                   quantity: -deduct,
-
                   type: 'PURCHASE_RETURN',
-
                   referenceId: returnId,
                 ),
               );
@@ -532,7 +533,6 @@ class TransactionEngine {
         }
 
         // Update Product Total Stock
-
         final product = await (db.select(
           db.products,
         )..where((p) => p.id.equals(item.productId))).getSingle();
@@ -545,7 +545,6 @@ class TransactionEngine {
       }
 
       // 3. Update Supplier Balance if Credit
-
       if (purchase.isCredit && purchase.supplierId != null) {
         final supplier = await (db.select(
           db.suppliers,
@@ -561,7 +560,6 @@ class TransactionEngine {
       }
 
       // 4. Trigger Accounting & Events
-
       eventBus.fire(
         PurchaseReturnCreatedEvent(purchaseReturn, items, userId: userId),
       );
@@ -569,21 +567,15 @@ class TransactionEngine {
   }
 
   /// Posts a customer payment (Receipt)
-
   Future<void> postCustomerPayment({
     required String customerId,
-
     required double amount,
-
     required String paymentMethod, // cash, bank, check
-
     String? note,
-
     String? userId,
   }) async {
     await db.transaction(() async {
       // 1. Create Payment Record
-
       final paymentId = const Uuid().v4();
 
       await db
@@ -591,21 +583,15 @@ class TransactionEngine {
           .insert(
             CustomerPaymentsCompanion.insert(
               id: Value(paymentId),
-
               customerId: customerId,
-
               amount: amount,
-
               paymentDate: Value(DateTime.now()),
-
               note: Value(note),
-
               syncStatus: const Value(1),
             ),
           );
 
       // 2. Update Customer Balance
-
       final customer = await (db.select(
         db.customers,
       )..where((c) => c.id.equals(customerId))).getSingle();
@@ -614,21 +600,13 @@ class TransactionEngine {
           .write(CustomersCompanion(balance: Value(customer.balance - amount)));
 
       // 3. Trigger Accounting
-
-      // We'll fire a specialized event that the AccountingService will listen to
-
       eventBus.fire(
         CustomerPaymentEvent(
           customerId: customerId,
-
           amount: amount,
-
           paymentMethod: paymentMethod,
-
           note: note,
-
           paymentId: paymentId,
-
           userId: userId,
         ),
       );
@@ -636,21 +614,15 @@ class TransactionEngine {
   }
 
   /// Posts a supplier payment (Payment)
-
   Future<void> postSupplierPayment({
     required String supplierId,
-
     required double amount,
-
     required String paymentMethod,
-
     String? note,
-
     String? userId,
   }) async {
     await db.transaction(() async {
       // 1. Create Payment Record
-
       final paymentId = const Uuid().v4();
 
       await db
@@ -658,21 +630,15 @@ class TransactionEngine {
           .insert(
             SupplierPaymentsCompanion.insert(
               id: Value(paymentId),
-
               supplierId: supplierId,
-
               amount: amount,
-
               paymentDate: Value(DateTime.now()),
-
               note: Value(note),
-
               syncStatus: const Value(1),
             ),
           );
 
       // 2. Update Supplier Balance
-
       final supplier = await (db.select(
         db.suppliers,
       )..where((s) => s.id.equals(supplierId))).getSingle();
@@ -681,24 +647,16 @@ class TransactionEngine {
           .write(SuppliersCompanion(balance: Value(supplier.balance - amount)));
 
       // 3. Trigger Accounting
-
       eventBus.fire(
         SupplierPaymentEvent(
           supplierId: supplierId,
-
           amount: amount,
-
           paymentMethod: paymentMethod,
-
           note: note,
-
           paymentId: paymentId,
-
           userId: userId,
         ),
       );
     });
   }
-
-  /// Logic for other transactions like payments, transfers, etc.
 }

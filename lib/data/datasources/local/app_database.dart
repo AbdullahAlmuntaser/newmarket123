@@ -1062,6 +1062,132 @@ class AppDatabase extends _$AppDatabase {
         );
       }
     }
+
+    // 8. GL Accounts
+    await _seedGLAccounts();
+
+    // 9. Posting Profiles
+    await _seedPostingProfiles();
+
+    // 10. Accounting Periods
+    final periodsCount = await (select(accountingPeriods)).get().then((v) => v.length);
+    if (periodsCount == 0) {
+      await into(accountingPeriods).insert(
+        AccountingPeriodsCompanion.insert(
+          name: 'مايو 2026',
+          startDate: DateTime(2026, 5, 1),
+          endDate: DateTime(2026, 5, 31),
+          status: const Value('OPEN'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _seedGLAccounts() async {
+    final accountsCount = await (select(gLAccounts)).get().then((v) => v.length);
+    if (accountsCount > 0) return;
+
+    final accounts = [
+      GLAccountsCompanion.insert(code: '1000', name: 'الأصول المتداولة', type: 'ASSET', isHeader: const Value(true)),
+      GLAccountsCompanion.insert(code: '1010', name: 'الصندوق', type: 'ASSET'),
+      GLAccountsCompanion.insert(code: '1020', name: 'البنك', type: 'ASSET'),
+      GLAccountsCompanion.insert(code: '1030', name: 'العملاء', type: 'ASSET', analyticType: const Value('CLIENT')),
+      GLAccountsCompanion.insert(code: '1200', name: 'مخزون البضاعة', type: 'ASSET', isHeader: const Value(true)),
+      GLAccountsCompanion.insert(code: '1210', name: 'مخزون البضاعة', type: 'ASSET'),
+      GLAccountsCompanion.insert(code: '2000', name: 'الخصوم المتداولة', type: 'LIABILITY', isHeader: const Value(true)),
+      GLAccountsCompanion.insert(code: '2010', name: 'الموردون', type: 'LIABILITY', analyticType: const Value('SUPPLIER')),
+      GLAccountsCompanion.insert(code: '2020', name: 'ضريبة القيمة المضافة', type: 'LIABILITY'),
+      GLAccountsCompanion.insert(code: '3000', name: 'حقوق الملكية', type: 'EQUITY', isHeader: const Value(true)),
+      GLAccountsCompanion.insert(code: '3010', name: 'رأس المال', type: 'EQUITY'),
+      GLAccountsCompanion.insert(code: '3020', name: 'الأرباح المحتجزة', type: 'EQUITY'),
+      GLAccountsCompanion.insert(code: '4000', name: 'الإيرادات', type: 'REVENUE', isHeader: const Value(true)),
+      GLAccountsCompanion.insert(code: '4010', name: 'مبيعات البضاعة', type: 'REVENUE'),
+      GLAccountsCompanion.insert(code: '4020', name: 'مردودات المبيعات', type: 'REVENUE'),
+      GLAccountsCompanion.insert(code: '5000', name: 'تكلفة البضاعة المباعة', type: 'EXPENSE', isHeader: const Value(true)),
+      GLAccountsCompanion.insert(code: '5010', name: 'تكلفة البضاعة المباعة', type: 'EXPENSE'),
+      GLAccountsCompanion.insert(code: '5020', name: 'فرق صندوق', type: 'EXPENSE'),
+      GLAccountsCompanion.insert(code: '6000', name: 'المصروفات', type: 'EXPENSE', isHeader: const Value(true)),
+      GLAccountsCompanion.insert(code: '6010', name: 'مصروفات التشغيل', type: 'EXPENSE'),
+    ];
+
+    for (var acc in accounts) {
+      await into(gLAccounts).insert(acc);
+    }
+  }
+
+  Future<void> _seedPostingProfiles() async {
+    final profilesCount = await (select(postingProfiles)).get().then((v) => v.length);
+    if (profilesCount > 0) return;
+
+    final gLAccountsList = await (select(gLAccounts)).get();
+    Map<String, String> accountIdByCode = {for (var acc in gLAccountsList) acc.code: acc.id};
+
+    if (accountIdByCode['1010'] == null || accountIdByCode['4010'] == null || accountIdByCode['5010'] == null) {
+      return;
+    }
+
+    final profiles = [
+      PostingProfilesCompanion.insert(
+        operationType: 'SALE',
+        accountType: 'CASH',
+        accountId: Value(accountIdByCode['1010']),
+        isActive: const Value(true),
+        sequence: const Value(1),
+        side: 'DEBIT',
+      ),
+      PostingProfilesCompanion.insert(
+        operationType: 'SALE',
+        accountType: 'REVENUE',
+        accountId: Value(accountIdByCode['4010']),
+        isActive: const Value(true),
+        sequence: const Value(2),
+        side: 'CREDIT',
+      ),
+      PostingProfilesCompanion.insert(
+        operationType: 'SALE',
+        accountType: 'COGS',
+        accountId: Value(accountIdByCode['5010']),
+        isActive: const Value(true),
+        sequence: const Value(3),
+        side: 'DEBIT',
+      ),
+      PostingProfilesCompanion.insert(
+        operationType: 'SALE',
+        accountType: 'INVENTORY',
+        accountId: Value(accountIdByCode['1210']),
+        isActive: const Value(true),
+        sequence: const Value(4),
+        side: 'CREDIT',
+      ),
+      PostingProfilesCompanion.insert(
+        operationType: 'PURCHASE',
+        accountType: 'INVENTORY',
+        accountId: Value(accountIdByCode['1210']),
+        isActive: const Value(true),
+        sequence: const Value(1),
+        side: 'DEBIT',
+      ),
+      PostingProfilesCompanion.insert(
+        operationType: 'PURCHASE',
+        accountType: 'CASH',
+        accountId: Value(accountIdByCode['1010']),
+        isActive: const Value(true),
+        sequence: const Value(2),
+        side: 'CREDIT',
+      ),
+      PostingProfilesCompanion.insert(
+        operationType: 'PURCHASE',
+        accountType: 'PAYABLE',
+        accountId: Value(accountIdByCode['2010']),
+        isActive: const Value(true),
+        sequence: const Value(3),
+        side: 'CREDIT',
+      ),
+    ];
+
+    for (var profile in profiles) {
+      await into(postingProfiles).insert(profile);
+    }
   }
 
   Future<double> calculateTotalInventoryValue() async {

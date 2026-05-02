@@ -221,13 +221,29 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
 
   Future<void> _savePurchase(AppDatabase db, {required bool post}) async {
     if (_selectedSupplier == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء اختيار مورد')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء اختيار المورد')));
+      return;
+    }
+    if (_selectedWarehouse == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء اختيار المستودع')));
       return;
     }
     if (_items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء إضافة أصناف')));
       return;
     }
+    
+    for (var item in _items) {
+      if (item.quantity <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الكمية يجب أن تكون أكبر من صفر')));
+        return;
+      }
+      if (item.unitPrice < 0) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('السعر يجب أن يكون أكبر من أو يساوي صفر')));
+        return;
+      }
+    }
+    
     setState(() => _isSaving = true);
     final purchaseId = const Uuid().v4();
     try {
@@ -249,8 +265,8 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         await db.purchasesDao.createPurchase(
           purchaseCompanion: PurchasesCompanion.insert(
             id: drift.Value(purchaseId),
-            supplierId: drift.Value(_selectedSupplier?.id ?? ''),
-            warehouseId: drift.Value(_selectedWarehouse?.id),
+            supplierId: drift.Value(_selectedSupplier!.id),
+            warehouseId: drift.Value(_selectedWarehouse!.id),
             total: _total,
             discount: drift.Value(_discount),
             tax: drift.Value(_tax),
@@ -267,7 +283,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
           // 1. Create GRN (Automatically updates Inventory Stock and BuyPrice)
           await grnService.createGrnFromPurchase(
             purchaseId: purchaseId,
-            warehouseId: _selectedWarehouse?.id ?? 'default_warehouse', // Fallback or handle null
+            warehouseId: _selectedWarehouse!.id, 
             notes: 'Auto-generated from Invoice',
           );
 
@@ -275,12 +291,15 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
           await purchaseService.postPurchase(purchaseId);
         }
       });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ وترحيل الفاتورة وتحديث المخزون بنجاح')));
+if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(post ? 'تم حفظ وترحيل الفاتورة وتحديث المخزون بنجاح' : 'تم حفظ المسودة بنجاح')));
         context.pop();
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل: $e')));
+      debugPrint('خطأ في حفظ الفاتورة: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل الحفظ: $e')));
+      }
     } finally {
       setState(() => _isSaving = false);
     }

@@ -51,7 +51,18 @@ class _SalesItemRowState extends State<SalesItemRow> {
                 Expanded(flex: 1, child: TextFormField(
                   initialValue: widget.item.quantity.toString(),
                   decoration: const InputDecoration(labelText: 'الكمية'),
-                  onChanged: (v) { widget.item.quantity = double.tryParse(v) ?? 0.0; widget.onChanged(); },
+                  keyboardType: TextInputType.number,
+                  onChanged: (v) {
+                    final qty = double.tryParse(v) ?? 0.0;
+                    if (qty <= 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('الكمية يجب أن تكون أكبر من الصفر')),
+                      );
+                      return;
+                    }
+                    widget.item.quantity = qty;
+                    widget.onChanged();
+                  },
                 )),
                 const SizedBox(width: 8),
                 Expanded(flex: 1, child: StreamBuilder<List<CostCenter>>(
@@ -78,8 +89,8 @@ class _SalesItemRowState extends State<SalesItemRow> {
 class SalesLineItem {
   Product? product;
   String selectedUnit;
-  double quantity;
-  double price;
+  double _quantity;
+  double _price;
   double discount;
   double taxRate;
   double unitFactor;
@@ -91,14 +102,30 @@ class SalesLineItem {
     return afterDiscount + (afterDiscount * (taxRate / 100));
   }
 
+  double get quantity => _quantity;
+  set quantity(double value) {
+    if (value <= 0) {
+      throw Exception('الكمية يجب أن تكون أكبر من الصفر.');
+    }
+    _quantity = value;
+  }
+
+  double get price => _price;
+  set price(double value) {
+    if (value < 0) {
+      throw Exception('السعر يجب أن يكون أكبر من أو يساوي الصفر.');
+    }
+    _price = value;
+  }
+
   SalesLineItem({
     this.product,
     this.selectedUnit = 'حبة',
-    this.quantity = 1.0,
-    this.price = 0.0,
+    double quantity = 1.0,
+    double price = 0.0,
     this.discount = 0.0,
     this.taxRate = 0.0,
     this.unitFactor = 1.0,
     this.costCenterId,
-  });
+  }) : _quantity = quantity, _price = price;
 }

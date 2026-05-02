@@ -77,8 +77,8 @@ class PurchaseAlert {
 
 class PurchaseItemData {
   final Product product;
-  double quantity;
-  double unitPrice;
+  double _quantity;
+  double _unitPrice;
   double discountAmount;
   double taxPercent;
   DateTime? expiryDate;
@@ -87,16 +87,32 @@ class PurchaseItemData {
 
   PurchaseItemData({
     required this.product,
-    this.quantity = 1,
-    this.unitPrice = 0,
+    double quantity = 1,
+    double unitPrice = 0,
     this.discountAmount = 0,
     this.taxPercent = 0,
     this.expiryDate,
     this.batchNumber,
     this.selectedUnit,
-  });
+  }) : _quantity = quantity, _unitPrice = unitPrice;
 
-  double get subtotal => quantity * unitPrice;
+  double get quantity => _quantity;
+  set quantity(double value) {
+    if (value <= 0) {
+      throw Exception('الكمية يجب أن تكون أكبر من الصفر.');
+    }
+    _quantity = value;
+  }
+
+  double get unitPrice => _unitPrice;
+  set unitPrice(double value) {
+    if (value < 0) {
+      throw Exception('السعر يجب أن يكون أكبر من أو يساوي الصفر.');
+    }
+    _unitPrice = value;
+  }
+
+  double get subtotal => _quantity * _unitPrice;
   double get total =>
       subtotal -
       discountAmount +
@@ -154,6 +170,13 @@ class PurchaseProvider with ChangeNotifier {
       landedCosts;
 
   void addItem(Product product) {
+    // Validate quantity > 0 and price >= 0
+    if (product.stock < 0) {
+      throw Exception('الكمية يجب أن تكون أكبر من الصفر.');
+    }
+    if (product.buyPrice < 0) {
+      throw Exception('السعر يجب أن يكون أكبر من أو يساوي الصفر.');
+    }
     items.add(
       PurchaseItemData(
         product: product,
