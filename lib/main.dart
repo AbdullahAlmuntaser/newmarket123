@@ -54,15 +54,19 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _initializeApp() async {
     try {
       _updateStatus("جاري تهيئة النظام...");
+      debugPrint("INIT: Starting dependency injection initialization...");
       await di.init();
+      debugPrint("INIT: DI initialization completed successfully.");
       
       if (mounted) {
+        debugPrint("INIT: Navigating to MyApp...");
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const MyApp()),
         );
       }
     } catch (e, stack) {
       debugPrint("INIT ERROR: $e");
+      debugPrintStack(stackTrace: stack);
       if (mounted) {
         _showError("تعذر تهيئة النظام: ${e.toString()}\n\n$stack");
       }
