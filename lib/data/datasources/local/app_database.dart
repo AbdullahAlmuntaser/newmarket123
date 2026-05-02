@@ -1245,17 +1245,30 @@ class AppDatabase extends _$AppDatabase {
 }
 
 LazyDatabase _openConnection() {
+  debugPrint("DB: _openConnection started");
   return LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'app_db.sqlite'));
+    try {
+      debugPrint("DB: Getting application documents directory...");
+      final dbFolder = await getApplicationDocumentsDirectory();
+      debugPrint("DB: Documents directory: ${dbFolder.path}");
+      
+      final file = File(p.join(dbFolder.path, 'app_db.sqlite'));
+      debugPrint("DB: Database file path: ${file.path}");
 
-    await applyWorkaroundToOpenSqlite3OnOldAndroidVersions();
+      debugPrint("DB: Applying SQLite workaround...");
+      await applyWorkaroundToOpenSqlite3OnOldAndroidVersions();
 
-    final cachebase = (await getTemporaryDirectory()).path;
-    sqlite.sqlite3.tempDirectory = cachebase;
+      final cachebase = (await getTemporaryDirectory()).path;
+      sqlite.sqlite3.tempDirectory = cachebase;
 
-    return NativeDatabase.createInBackground(
-      file,
-    );
+      debugPrint("DB: Creating NativeDatabase...");
+      final db = await NativeDatabase.createInBackground(file);
+      debugPrint("DB: NativeDatabase created successfully");
+      return db;
+    } catch (e, stack) {
+      debugPrint("DB ERROR in _openConnection: $e");
+      debugPrintStack(stackTrace: stack);
+      rethrow;
+    }
   });
 }

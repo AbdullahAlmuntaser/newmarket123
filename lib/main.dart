@@ -28,6 +28,7 @@ import 'package:supermarket/core/services/purchase_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  debugPrint("MAIN: Starting app...");
   runApp(const SplashScreen());
 }
 
@@ -54,9 +55,17 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _initializeApp() async {
     try {
       _updateStatus("جاري تهيئة النظام...");
-      debugPrint("INIT: Starting dependency injection initialization...");
-      await di.init();
-      debugPrint("INIT: DI initialization completed successfully.");
+      debugPrint("INIT: Starting dependency injection...");
+      
+      final initFuture = di.init();
+      final timeoutFuture = Future.delayed(const Duration(seconds: 30));
+      
+      final result = await Future.any([initFuture, timeoutFuture]);
+      
+      debugPrint("INIT: DI completed, result type: ${result.runtimeType}");
+      
+      _updateStatus("جاري تحميل الواجهة...");
+      debugPrint("INIT: Loading main interface...");
       
       if (mounted) {
         debugPrint("INIT: Navigating to MyApp...");
