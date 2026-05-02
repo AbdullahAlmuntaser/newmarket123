@@ -35,100 +35,118 @@ import 'presentation/features/pos/bloc/pos_bloc.dart';
 import 'presentation/features/products/products_provider.dart';
 
 final sl = GetIt.instance;
+AppDatabase? _database;
 
-Future<void> init() async {
+Future<void> initDatabase() async {
+  debugPrint("DI: ==== Opening Database ====");
   try {
-    debugPrint("DI: Step 1 - Starting initialization...");
-    
-    debugPrint("DI: Step 2 - Creating database...");
-    final db = AppDatabase();
-    sl.registerLazySingleton<AppDatabase>(() => db);
-    debugPrint("DI: Step 3 - Database registered.");
-    
-    sl.registerLazySingleton<AuditDao>(() => AuditDao(db));
-    sl.registerLazySingleton<StockMovementDao>(() => StockMovementDao(db));
-    sl.registerLazySingleton<ProductsDao>(() => ProductsDao(db));
-    debugPrint("DI: Step 4 - DAOs registered.");
-
-  // Register core services first
-  sl.registerLazySingleton<EventBusService>(() => EventBusService());
-  sl.registerLazySingleton<InventoryCostingService>(
-    () => InventoryCostingService(sl<StockMovementDao>(), sl<AppDatabase>()),
-  );
-  sl.registerLazySingleton<PostingEngine>(
-    () => PostingEngine(db, costingService: sl<InventoryCostingService>()),
-  );
-  sl.registerLazySingleton<AccountingService>(
-    () => AccountingService(db, sl<EventBusService>()),
-  );
-  sl.registerLazySingleton<PermissionService>(() => PermissionService(db));
-  sl.registerLazySingleton<AuditService>(() => AuditService(db));
-  sl.registerLazySingleton<InventoryService>(() => InventoryService(db));
-  debugPrint("DI: Core services registered.");
-
-  sl.registerLazySingleton<PurchaseService>(
-    () =>
-        PurchaseService(db, sl<PostingEngine>(), sl<InventoryCostingService>()),
-  );
-  sl.registerLazySingleton<SalesService>(
-    () => SalesService(sl<PostingEngine>(), sl<InventoryService>()),
-  );
-  sl.registerLazySingleton<StatementService>(
-    () => StatementService(sl<PostingEngine>()),
-  );
-  sl.registerLazySingleton<ReportService>(
-    () => ReportService(sl<PostingEngine>()),
-  );
-  debugPrint("DI: Business services registered.");
-
-  sl.registerLazySingleton<AuthProvider>(
-    () => AuthProvider(sl<AppDatabase>(), sl<PermissionService>()),
-  );
-
-  sl.registerLazySingleton<ItemRepository>(
-    () => ItemRepositoryImpl(sl<ProductsDao>()),
-  );
-  sl.registerLazySingleton<InventoryRepository>(
-    () => InventoryRepositoryImpl(sl<StockMovementDao>(), sl<ProductsDao>()),
-  );
-
-  sl.registerLazySingleton<CreateItemUseCase>(
-    () => CreateItemUseCase(sl<ItemRepository>()),
-  );
-  sl.registerLazySingleton<AddStockUseCase>(
-    () => AddStockUseCase(sl<InventoryRepository>()),
-  );
-  sl.registerLazySingleton<ThemeProvider>(() => ThemeProvider());
-  sl.registerLazySingleton(() => BomService(db, sl<AccountingService>()));
-  sl.registerLazySingleton<GrnService>(() => GrnService(db));
-  sl.registerLazySingleton<ReorderService>(() => ReorderService(db));
-  sl.registerLazySingleton<SupplierAnalyticsService>(() => SupplierAnalyticsService(db));
-  sl.registerLazySingleton<DriveBackupService>(() => DriveBackupService(db));
-  sl.registerLazySingleton<FinancialControlService>(
-    () => FinancialControlService(
-      db,
-      costingService: sl<InventoryCostingService>(),
-    ),
-  );
-  debugPrint("DI: UseCases and additional services registered.");
-
-  // New Services
-  sl.registerLazySingleton<PricingService>(() => PricingService(db));
-  sl.registerLazySingleton<TransactionEngine>(() {
-    final engine = TransactionEngine(db, sl<EventBusService>());
-    engine.setCostingService(sl<InventoryCostingService>());
-    return engine;
-  });
-
-  // Providers & Blocs
-  sl.registerLazySingleton<ProductsProvider>(() => ProductsProvider(db));
-  sl.registerFactory<PosBloc>(
-    () => PosBloc(db, sl<PricingService>(), sl<TransactionEngine>()),
-  );
-  debugPrint("DI: Step 5 - Initialization completed.");
+    _database = AppDatabase();
+    sl.registerLazySingleton<AppDatabase>(() => _database!);
+    debugPrint("DI: Database opened successfully");
   } catch (e, stack) {
-    debugPrint("DI ERROR: $e");
+    debugPrint("DI: Database opening error: $e");
     debugPrintStack(stackTrace: stack);
     rethrow;
   }
+}
+
+Future<void> initServices() async {
+  debugPrint("DI: ==== Initializing Services ====");
+  try {
+    final db = sl<AppDatabase>();
+    
+    debugPrint("DI: Registering DAOs...");
+    sl.registerLazySingleton<AuditDao>(() => AuditDao(db));
+    sl.registerLazySingleton<StockMovementDao>(() => StockMovementDao(db));
+    sl.registerLazySingleton<ProductsDao>(() => ProductsDao(db));
+    debugPrint("DI: DAOs registered");
+
+    debugPrint("DI: Registering core services...");
+    sl.registerLazySingleton<EventBusService>(() => EventBusService());
+    sl.registerLazySingleton<InventoryCostingService>(
+      () => InventoryCostingService(sl<StockMovementDao>(), sl<AppDatabase>()),
+    );
+    sl.registerLazySingleton<PostingEngine>(
+      () => PostingEngine(db, costingService: sl<InventoryCostingService>()),
+    );
+    sl.registerLazySingleton<AccountingService>(
+      () => AccountingService(db, sl<EventBusService>()),
+    );
+    sl.registerLazySingleton<PermissionService>(() => PermissionService(db));
+    sl.registerLazySingleton<AuditService>(() => AuditService(db));
+    sl.registerLazySingleton<InventoryService>(() => InventoryService(db));
+    debugPrint("DI: Core services registered");
+
+    debugPrint("DI: Registering business services...");
+    sl.registerLazySingleton<PurchaseService>(
+      () => PurchaseService(db, sl<PostingEngine>(), sl<InventoryCostingService>()),
+    );
+    sl.registerLazySingleton<SalesService>(
+      () => SalesService(sl<PostingEngine>(), sl<InventoryService>()),
+    );
+    sl.registerLazySingleton<StatementService>(
+      () => StatementService(sl<PostingEngine>()),
+    );
+    sl.registerLazySingleton<ReportService>(
+      () => ReportService(sl<PostingEngine>()),
+    );
+    debugPrint("DI: Business services registered");
+
+    debugPrint("DI: Registering repositories...");
+    sl.registerLazySingleton<AuthProvider>(
+      () => AuthProvider(sl<AppDatabase>(), sl<PermissionService>()),
+    );
+    sl.registerLazySingleton<ItemRepository>(
+      () => ItemRepositoryImpl(sl<ProductsDao>()),
+    );
+    sl.registerLazySingleton<InventoryRepository>(
+      () => InventoryRepositoryImpl(sl<StockMovementDao>(), sl<ProductsDao>()),
+    );
+    sl.registerLazySingleton<CreateItemUseCase>(
+      () => CreateItemUseCase(sl<ItemRepository>()),
+    );
+    sl.registerLazySingleton<AddStockUseCase>(
+      () => AddStockUseCase(sl<InventoryRepository>()),
+    );
+    debugPrint("DI: Repositories registered");
+
+    debugPrint("DI: Registering additional services...");
+    sl.registerLazySingleton<ThemeProvider>(() => ThemeProvider());
+    sl.registerLazySingleton(() => BomService(db, sl<AccountingService>()));
+    sl.registerLazySingleton<GrnService>(() => GrnService(db));
+    sl.registerLazySingleton<ReorderService>(() => ReorderService(db));
+    sl.registerLazySingleton<SupplierAnalyticsService>(() => SupplierAnalyticsService(db));
+    sl.registerLazySingleton<DriveBackupService>(() => DriveBackupService(db));
+    sl.registerLazySingleton<FinancialControlService>(
+      () => FinancialControlService(
+        db,
+        costingService: sl<InventoryCostingService>(),
+      ),
+    );
+    sl.registerLazySingleton<PricingService>(() => PricingService(db));
+    sl.registerLazySingleton<TransactionEngine>(() {
+      final engine = TransactionEngine(db, sl<EventBusService>());
+      engine.setCostingService(sl<InventoryCostingService>());
+      return engine;
+    });
+    debugPrint("DI: Additional services registered");
+
+    debugPrint("DI: Registering providers...");
+    sl.registerLazySingleton<ProductsProvider>(() => ProductsProvider(db));
+    sl.registerFactory<PosBloc>(
+      () => PosBloc(db, sl<PricingService>(), sl<TransactionEngine>()),
+    );
+    debugPrint("DI: Providers registered");
+    
+    debugPrint("DI: ==== Services Initialization Complete ====");
+  } catch (e, stack) {
+    debugPrint("DI: Services initialization error: $e");
+    debugPrintStack(stackTrace: stack);
+    rethrow;
+  }
+}
+
+Future<void> init() async {
+  await initDatabase();
+  await initServices();
 }
