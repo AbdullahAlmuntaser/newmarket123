@@ -879,8 +879,8 @@ class AppDatabase extends _$AppDatabase {
       await m.createAll();
     },
     onUpgrade: (Migrator m, int from, int to) async {
+      // Direct migration instead of metadata-heavy reflection
       if (from < 32) {
-        // Create indexes added in version 32
         await m.createIndex(Index('products_sku_idx', 'CREATE INDEX products_sku_idx ON products (sku)'));
         await m.createIndex(Index('products_barcode_idx', 'CREATE INDEX products_barcode_idx ON products (barcode)'));
         await m.createIndex(Index('sale_items_sale_id_idx', 'CREATE INDEX sale_items_sale_id_idx ON sale_items (sale_id)'));
@@ -890,75 +890,13 @@ class AppDatabase extends _$AppDatabase {
         await m.createIndex(Index('stock_movements_product_id_idx', 'CREATE INDEX stock_movements_product_id_idx ON stock_movements (product_id)'));
       }
       if (from < 33) {
-        await m.addColumn(products, products.valuationMethod);
-        await m.addColumn(products, products.allowFreeQty);
-        await m.addColumn(products, products.isService);
+        try { await m.addColumn(products, products.valuationMethod); } catch (_) {}
+        try { await m.addColumn(products, products.allowFreeQty); } catch (_) {}
+        try { await m.addColumn(products, products.isService); } catch (_) {}
       }
-      
-      final db = m.database;
-
-      // 1. Get all table and index names from the database schema
-      final schema = await db
-          .customSelect(
-            "SELECT type, name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' AND name NOT LIKE 'android_%'",
-          )
-          .get();
-      final existingTables = <String>{};
-      final existingIndices = <String>{};
-
-      for (final row in schema) {
-        final type = row.read<String>('type');
-        final name = row.read<String>('name');
-        if (type == 'table') {
-          existingTables.add(name);
-        } else if (type == 'index') {
-          existingIndices.add(name);
-        }
-      }
-
-      // 2. Create missing tables and their columns
-      for (final table in allTables) {
-        if (!existingTables.contains(table.actualTableName)) {
-          await m.createTable(table);
-          debugPrint('Created missing table: ${table.actualTableName}');
-        } else {
-          final columns = await db
-              .customSelect('PRAGMA table_info(${table.actualTableName})')
-              .get();
-          final existingColumnNames = columns
-              .map((col) => col.read<String>('name'))
-              .toSet();
-
-          for (final column in table.$columns) {
-            if (!existingColumnNames.contains(column.name)) {
-              await m.addColumn(table, column);
-              debugPrint(
-                'Added missing column ${column.name} to table ${table.actualTableName}',
-              );
-            }
-          }
-        }
-      }
-
-      // 3. Create missing indices by issuing custom commands
-      // This is a robust way to ensure all indices from your app's definition exist.
-      // We skip index creation in migration as drift handles it automatically
-      // Manually create specific indices that might not be attached to a table entity directly
-      // Commented out as these should be handled by drift's automatic index creation
-      /*
-       if (!existingIndices.contains('products_category_idx')){
-            await m.createIndex(TableIndex(name: 'products_category_idx', columns: {products.categoryId}));
-       }
-        if (!existingIndices.contains('sale_items_product_idx')){
-            await m.createIndex(TableIndex(name: 'sale_items_product_idx', columns: {saleItems.productId}));
-       }
-       */
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON;');
-      if (details.wasCreated) {
-        await seedData();
-      }
     },
   );
 
@@ -1213,6 +1151,13 @@ class AppDatabase extends _$AppDatabase {
     return (select(
       products,
     )..where((p) => p.stock.isSmallerOrEqual(p.alertLimit))).watch();
+  }
+
+  Future<void> ensureInitialized() async {
+    final tables = await customSelect("SELECT count(*) FROM sqlite_master WHERE type='table'").getSingle();
+    if (tables.read<int>('count(*)') == 0) {
+      await seedData();
+    }
   }
 
   // DAO getters
