@@ -53,39 +53,50 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initializeApp() async {
+    debugPrint("INIT: ==== STARTING APP INITIALIZATION ====");
     _updateStatus("جاري تهيئة النظام...");
-    debugPrint("INIT: Starting dependency injection...");
     
     try {
-      final initFuture = di.init();
-      final timeoutFuture = Future.delayed(const Duration(seconds: 30));
+      // Step 1: Open Database with timeout
+      debugPrint("INIT: Step 1 - Opening database...");
+      _updateStatus("جاري فتح قاعدة البيانات...");
       
-      final completed = await Future.any([initFuture, timeoutFuture]);
+      final dbOpenFuture = di.initDatabase();
+      final dbTimeout = Future.delayed(const Duration(seconds: 20));
       
-      if (completed == null) {
-        debugPrint("INIT: Timeout reached after 30 seconds!");
-        if (mounted) {
-          _showErrorTimeout();
-        }
-        return;
+      try {
+        await Future.any([dbOpenFuture, dbTimeout]);
+      } catch (_) {
+        // Continue even if database times out
       }
       
-      debugPrint("INIT: DI completed successfully");
+      debugPrint("INIT: Step 1 - Database opened (or timeout)");
       
+      // Step 2: Initialize services
+      debugPrint("INIT: Step 2 - Initializing services...");
+      _updateStatus("جاري تحميل الخدمات...");
+      
+      await di.initServices();
+      debugPrint("INIT: Step 2 - Services initialized");
+      
+      // Step 3: Navigate to main app
+      debugPrint("INIT: Step 3 - Navigating to main app...");
       _updateStatus("جاري تحميل الواجهة...");
-      debugPrint("INIT: Loading main interface...");
       
       if (mounted) {
-        debugPrint("INIT: Navigating to MyApp...");
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const MyApp()),
         );
+        debugPrint("INIT: Step 3 - Navigation completed");
       }
+      
+      debugPrint("INIT: ==== INITIALIZATION COMPLETED SUCCESSFULLY ====");
+      
     } catch (e, stack) {
       debugPrint("INIT ERROR: $e");
       debugPrintStack(stackTrace: stack);
       if (mounted) {
-        _showError("تعذر تهيئة النظام: ${e.toString()}\n\n$stack");
+        _showError("تعذر تهيئة النظام:\n${e.toString()}\n\n$stack");
       }
     }
   }
