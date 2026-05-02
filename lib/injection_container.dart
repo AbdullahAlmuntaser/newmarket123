@@ -37,14 +37,18 @@ import 'presentation/features/products/products_provider.dart';
 final sl = GetIt.instance;
 
 Future<void> init() async {
-  debugPrint("DI: Starting initialization...");
-  final db = AppDatabase();
-  sl.registerLazySingleton<AppDatabase>(() => db);
-  debugPrint("DI: Database registered.");
-  sl.registerLazySingleton<AuditDao>(() => AuditDao(db));
-  sl.registerLazySingleton<StockMovementDao>(() => StockMovementDao(db));
-  sl.registerLazySingleton<ProductsDao>(() => ProductsDao(db));
-  debugPrint("DI: DAOs registered.");
+  try {
+    debugPrint("DI: Step 1 - Starting initialization...");
+    
+    debugPrint("DI: Step 2 - Creating database...");
+    final db = AppDatabase();
+    sl.registerLazySingleton<AppDatabase>(() => db);
+    debugPrint("DI: Step 3 - Database registered.");
+    
+    sl.registerLazySingleton<AuditDao>(() => AuditDao(db));
+    sl.registerLazySingleton<StockMovementDao>(() => StockMovementDao(db));
+    sl.registerLazySingleton<ProductsDao>(() => ProductsDao(db));
+    debugPrint("DI: Step 4 - DAOs registered.");
 
   // Register core services first
   sl.registerLazySingleton<EventBusService>(() => EventBusService());
@@ -121,5 +125,10 @@ Future<void> init() async {
   sl.registerFactory<PosBloc>(
     () => PosBloc(db, sl<PricingService>(), sl<TransactionEngine>()),
   );
-  debugPrint("DI: Initialization completed.");
+  debugPrint("DI: Step 5 - Initialization completed.");
+  } catch (e, stack) {
+    debugPrint("DI ERROR: $e");
+    debugPrintStack(stackTrace: stack);
+    rethrow;
+  }
 }
