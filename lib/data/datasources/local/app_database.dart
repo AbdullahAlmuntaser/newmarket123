@@ -56,6 +56,12 @@ class Categories extends Table with SyncableTable {
   TextColumn get code => text().unique().nullable()();
 }
 
+class AccountingPeriods extends Table with SyncableTable {
+  DateTimeColumn get startDate => dateTime()();
+  DateTimeColumn get endDate => dateTime()();
+  TextColumn get status => text()(); // OPEN, CLOSED
+}
+
 class Products extends Table with SyncableTable {
   TextColumn get name => text()();
   TextColumn get sku => text().unique()();
