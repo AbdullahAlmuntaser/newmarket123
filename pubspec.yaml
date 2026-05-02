@@ -34,7 +34,7 @@ dependencies:
   pdf: ^3.11.1
   barcode: ^2.2.8
   path: ^1.9.0
-  sqlite3_flutter_libs: ^0.5.25
+  sqlite3_flutter_libs: 0.5.24
   flutter_localizations:
     sdk: flutter
   bcrypt: ^1.1.3
