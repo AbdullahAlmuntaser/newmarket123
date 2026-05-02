@@ -42,19 +42,20 @@ Future<void> init() async {
   sl.registerLazySingleton<StockMovementDao>(() => StockMovementDao(db));
   sl.registerLazySingleton<ProductsDao>(() => ProductsDao(db));
 
-  sl.registerLazySingleton<AccountingService>(
-    () => AccountingService(db, sl<EventBusService>()),
+  // Register core services first
+  sl.registerLazySingleton<EventBusService>(() => EventBusService());
+  sl.registerLazySingleton<InventoryCostingService>(
+    () => InventoryCostingService(sl<StockMovementDao>(), sl<AppDatabase>()),
   );
   sl.registerLazySingleton<PostingEngine>(
     () => PostingEngine(db, costingService: sl<InventoryCostingService>()),
   );
-  sl.registerLazySingleton<InventoryCostingService>(
-    () => InventoryCostingService(sl<StockMovementDao>(), sl<AppDatabase>()),
+  sl.registerLazySingleton<AccountingService>(
+    () => AccountingService(db, sl<EventBusService>()),
   );
   sl.registerLazySingleton<PermissionService>(() => PermissionService(db));
   sl.registerLazySingleton<AuditService>(() => AuditService(db));
   sl.registerLazySingleton<InventoryService>(() => InventoryService(db));
-  sl.registerLazySingleton<EventBusService>(() => EventBusService());
   sl.registerLazySingleton<PurchaseService>(
     () =>
         PurchaseService(db, sl<PostingEngine>(), sl<InventoryCostingService>()),

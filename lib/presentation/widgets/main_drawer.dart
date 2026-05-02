@@ -50,6 +50,8 @@ class MainDrawer extends StatelessWidget {
                   title: l10n?.dashboard ?? 'لوحة التحكم',
                   onTap: () => context.go('/'),
                 ),
+                if (isAdmin)
+                  _buildSubItem(context, 'لوحة تحكم المدير', '/admin-dashboard'),
                 _buildDrawerItem(
                   context,
                   icon: Icons.point_of_sale_rounded,
@@ -139,6 +141,11 @@ class MainDrawer extends StatelessWidget {
                         'أداء الموردين',
                         '/purchases/performance',
                       ),
+                      _buildSubItem(
+                        context,
+                        'مرتجعات المشتريات',
+                        '/purchases/returns',
+                      ),
                     ],
                   ),
                   _buildDrawerItem(
@@ -157,7 +164,6 @@ class MainDrawer extends StatelessWidget {
                   title: l10n?.customers ?? 'العملاء',
                   children: [
                     _buildSubItem(context, 'قائمة العملاء', '/customers'),
-                    _buildSubItem(context, 'كشوفات حساب العملاء', '/customers'),
                   ],
                 ),
 
@@ -168,11 +174,6 @@ class MainDrawer extends StatelessWidget {
                     title: l10n?.suppliers ?? 'الموردين',
                     children: [
                       _buildSubItem(context, 'قائمة الموردين', '/suppliers'),
-                      _buildSubItem(
-                        context,
-                        'كشوفات حساب الموردين',
-                        '/suppliers',
-                      ),
                     ],
                   ),
                 ],
@@ -187,6 +188,11 @@ class MainDrawer extends StatelessWidget {
                         context,
                         l10n?.noWarehousesFound ?? 'المستودعات',
                         '/inventory/warehouses',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'مدير المستودع',
+                        '/inventory/warehouse-manager',
                       ),
                       _buildSubItem(
                         context,
@@ -236,6 +242,11 @@ class MainDrawer extends StatelessWidget {
                       ),
                       _buildSubItem(
                         context,
+                        'إجمالي الربح',
+                        '/reports/gross-profit',
+                      ),
+                      _buildSubItem(
+                        context,
                         l10n?.inventoryReports ?? 'تقارير المخزون',
                         '/reports/inventory',
                       ),
@@ -270,6 +281,11 @@ class MainDrawer extends StatelessWidget {
                     icon: Icons.account_balance_rounded,
                     title: l10n?.accounting ?? 'المحاسبة',
                     children: [
+                      _buildSubItem(
+                        context,
+                        'الفترات المحاسبية',
+                        '/accounting/periods',
+                      ),
                       _buildSubItem(
                         context,
                         l10n?.chartOfAccounts ?? 'شجرة الحسابات',
@@ -371,6 +387,11 @@ class MainDrawer extends StatelessWidget {
                         context,
                         'أسعار العملات',
                         '/settings/currency-rates',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'الصلاحيات',
+                        '/settings/permissions',
                       ),
                       _buildSubItem(
                         context,

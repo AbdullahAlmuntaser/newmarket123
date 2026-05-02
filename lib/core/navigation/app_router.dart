@@ -1,7 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supermarket/injection_container.dart' as di;
 import 'package:supermarket/core/auth/auth_provider.dart';
-import 'package:supermarket/core/services/permission_service.dart';
 import 'package:supermarket/presentation/features/home/home_page.dart';
 import 'package:supermarket/presentation/features/auth/login_page.dart';
 import 'package:supermarket/presentation/features/dashboard/dashboard_page.dart';
@@ -75,32 +75,36 @@ import 'package:supermarket/presentation/features/home/low_stock_products_page.d
 import 'package:supermarket/presentation/features/purchases/supplier_performance_page.dart';
 
 final GoRouter appRouter = GoRouter(
-  initialLocation: '/',
+  initialLocation: '/login',
   refreshListenable: di.sl<AuthProvider>(),
-  redirect: (context, state) async {
-    final authProvider = di.sl<AuthProvider>();
-    final permService = di.sl<PermissionService>();
-    
-    final isAuthenticated = authProvider.isAuthenticated;
-    final isLoggingIn = state.matchedLocation == '/login';
+  redirect: (context, state) {
+    try {
+      final authProvider = di.sl<AuthProvider>();
+      
+      final isAuthenticated = authProvider.isAuthenticated;
+      final isLoggingIn = state.matchedLocation == '/login';
 
-    if (!isAuthenticated && !isLoggingIn) return '/login';
-    if (isAuthenticated && isLoggingIn) return '/';
+      if (!isAuthenticated && !isLoggingIn) return '/login';
+      if (isAuthenticated && isLoggingIn) return '/';
 
-    if (isAuthenticated) {
-      final userId = authProvider.currentUser!.id;
-      if (state.matchedLocation.startsWith('/reports') && 
-          !await permService.hasPermission(userId, PermissionService.reportsFinancial)) {
-        return '/';
+      if (isAuthenticated && authProvider.currentUser != null) {
+        final userId = authProvider.currentUser!.id;
+        final location = state.matchedLocation;
+        
+        if (location.startsWith('/reports') && userId.isNotEmpty) {
+          return '/';
+        }
+        
+        if ((location == '/users' || location == '/settings/permissions' || location == '/sync') && userId.isNotEmpty) {
+          return '/';
+        }
       }
       
-      if ((state.matchedLocation == '/users' || state.matchedLocation == '/settings/permissions' || state.matchedLocation == '/sync') && 
-          !await permService.hasPermission(userId, PermissionService.userManagement)) {
-        return '/';
-      }
+      return null;
+    } catch (e) {
+      debugPrint('Router redirect error: $e');
+      return '/login';
     }
-    
-    return null;
   },
   routes: [
     GoRoute(path: '/', builder: (context, state) => const HomePage()),

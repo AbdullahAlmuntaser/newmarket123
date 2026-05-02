@@ -1256,9 +1256,6 @@ LazyDatabase _openConnection() {
 
     return NativeDatabase.createInBackground(
       file,
-      setup: (db) {
-        db.execute("PRAGMA key = 'supermarket_secret_key';");
-      },
     );
   });
 }
