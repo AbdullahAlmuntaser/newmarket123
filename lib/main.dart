@@ -27,14 +27,11 @@ import 'package:supermarket/core/services/purchase_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  debugPrint("MAIN: Starting app...");
   runApp(const SplashScreen());
 }
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
-
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
@@ -53,51 +50,16 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initializeApp() async {
-    debugPrint("INIT: ==== STARTING APP INITIALIZATION ====");
     _updateStatus("جاري تهيئة النظام...");
-    
     try {
-      // Step 1: Open Database with timeout
-      debugPrint("INIT: Step 1 - Opening database...");
-      _updateStatus("جاري فتح قاعدة البيانات...");
-      
-      final dbOpenFuture = di.initDatabase();
-      final dbTimeout = Future.delayed(const Duration(seconds: 20));
-      
-      try {
-        await Future.any([dbOpenFuture, dbTimeout]);
-      } catch (_) {
-        // Continue even if database times out
-      }
-      
-      debugPrint("INIT: Step 1 - Database opened (or timeout)");
-      
-      // Step 2: Initialize services
-      debugPrint("INIT: Step 2 - Initializing services...");
-      _updateStatus("جاري تحميل الخدمات...");
-      
-      await di.initServices();
-      debugPrint("INIT: Step 2 - Services initialized");
-      
-      // Step 3: Navigate to main app
-      debugPrint("INIT: Step 3 - Navigating to main app...");
-      _updateStatus("جاري تحميل الواجهة...");
-      
+      await di.init();
+      final db = di.sl<AppDatabase>();
+      await db.ensureInitialized();
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const MyApp()),
-        );
-        debugPrint("INIT: Step 3 - Navigation completed");
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const MyApp()));
       }
-      
-      debugPrint("INIT: ==== INITIALIZATION COMPLETED SUCCESSFULLY ====");
-      
-    } catch (e, stack) {
-      debugPrint("INIT ERROR: $e");
-      debugPrintStack(stackTrace: stack);
-      if (mounted) {
-        _showError("تعذر تهيئة النظام:\n${e.toString()}\n\n$stack");
-      }
+    } catch (e) {
+      if (mounted) _showError("خطأ في التهيئة: ${e.toString()}");
     }
   }
 
@@ -108,66 +70,10 @@ class _SplashScreenState extends State<SplashScreen> {
         builder: (_) => MaterialApp(
           debugShowCheckedModeBanner: false,
           home: Scaffold(
-            appBar: AppBar(title: const Text("خطأ في التهيئة")),
-            body: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                children: [
-                  const Icon(Icons.error, color: Colors.red, size: 80),
-                  const SizedBox(height: 20),
-                  Text(error, textAlign: TextAlign.center),
-                  const SizedBox(height: 30),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const SplashScreen()),
-                      );
-                    },
-                    icon: const Icon(Icons.refresh),
-                    label: const Text("إعادة المحاولة"),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showErrorTimeout() {
-    if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => MaterialApp(
-          debugShowCheckedModeBanner: false,
-          home: Scaffold(
-            appBar: AppBar(title: const Text("مهلة التهيئة انتهت")),
             body: Center(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.warning, color: Colors.orange, size: 80),
-                    const SizedBox(height: 20),
-                    const Text(
-                      "استغرقت تهيئة النظام أكثر من 30 ثانية",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    const SizedBox(height: 30),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(builder: (_) => const SplashScreen()),
-                        );
-                      },
-                      icon: const Icon(Icons.refresh),
-                      label: const Text("إعادة المحاولة"),
-                    ),
-                  ],
-                ),
+                child: Text(error, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
               ),
             ),
           ),
