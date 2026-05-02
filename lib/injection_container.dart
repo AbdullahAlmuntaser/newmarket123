@@ -36,11 +36,14 @@ import 'presentation/features/products/products_provider.dart';
 final sl = GetIt.instance;
 
 Future<void> init() async {
+  debugPrint("DI: Starting initialization...");
   final db = AppDatabase();
   sl.registerLazySingleton<AppDatabase>(() => db);
+  debugPrint("DI: Database registered.");
   sl.registerLazySingleton<AuditDao>(() => AuditDao(db));
   sl.registerLazySingleton<StockMovementDao>(() => StockMovementDao(db));
   sl.registerLazySingleton<ProductsDao>(() => ProductsDao(db));
+  debugPrint("DI: DAOs registered.");
 
   // Register core services first
   sl.registerLazySingleton<EventBusService>(() => EventBusService());
@@ -56,6 +59,8 @@ Future<void> init() async {
   sl.registerLazySingleton<PermissionService>(() => PermissionService(db));
   sl.registerLazySingleton<AuditService>(() => AuditService(db));
   sl.registerLazySingleton<InventoryService>(() => InventoryService(db));
+  debugPrint("DI: Core services registered.");
+
   sl.registerLazySingleton<PurchaseService>(
     () =>
         PurchaseService(db, sl<PostingEngine>(), sl<InventoryCostingService>()),
@@ -69,6 +74,7 @@ Future<void> init() async {
   sl.registerLazySingleton<ReportService>(
     () => ReportService(sl<PostingEngine>()),
   );
+  debugPrint("DI: Business services registered.");
 
   sl.registerLazySingleton<AuthProvider>(
     () => AuthProvider(sl<AppDatabase>(), sl<PermissionService>()),
@@ -99,6 +105,7 @@ Future<void> init() async {
       costingService: sl<InventoryCostingService>(),
     ),
   );
+  debugPrint("DI: UseCases and additional services registered.");
 
   // New Services
   sl.registerLazySingleton<PricingService>(() => PricingService(db));
@@ -113,4 +120,5 @@ Future<void> init() async {
   sl.registerFactory<PosBloc>(
     () => PosBloc(db, sl<PricingService>(), sl<TransactionEngine>()),
   );
+  debugPrint("DI: Initialization completed.");
 }
