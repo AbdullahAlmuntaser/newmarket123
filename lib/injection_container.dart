@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'core/auth/auth_provider.dart';
 import 'core/services/permission_service.dart';
