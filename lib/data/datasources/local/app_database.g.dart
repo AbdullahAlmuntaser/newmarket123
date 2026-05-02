@@ -44632,6 +44632,34 @@ class $$ProductsTableFilterComposer
     return f(composer);
   }
 
+  ComposableFilter finishedProduct(
+      ComposableFilter Function($$BillOfMaterialsTableFilterComposer f) f) {
+    final $$BillOfMaterialsTableFilterComposer composer =
+        $state.composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $state.db.billOfMaterials,
+            getReferencedColumn: (t) => t.finishedProductId,
+            builder: (joinBuilder, parentComposers) =>
+                $$BillOfMaterialsTableFilterComposer(ComposerState($state.db,
+                    $state.db.billOfMaterials, joinBuilder, parentComposers)));
+    return f(composer);
+  }
+
+  ComposableFilter componentProduct(
+      ComposableFilter Function($$BillOfMaterialsTableFilterComposer f) f) {
+    final $$BillOfMaterialsTableFilterComposer composer =
+        $state.composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $state.db.billOfMaterials,
+            getReferencedColumn: (t) => t.componentProductId,
+            builder: (joinBuilder, parentComposers) =>
+                $$BillOfMaterialsTableFilterComposer(ComposerState($state.db,
+                    $state.db.billOfMaterials, joinBuilder, parentComposers)));
+    return f(composer);
+  }
+
   ComposableFilter inventoryTransactionsRefs(
       ComposableFilter Function($$InventoryTransactionsTableFilterComposer f)
           f) {
@@ -44650,7 +44678,7 @@ class $$ProductsTableFilterComposer
     return f(composer);
   }
 
-  ComposableFilter stockMovementsRefs(
+  ComposableFilter productStockMovements(
       ComposableFilter Function($$StockMovementsTableFilterComposer f) f) {
     final $$StockMovementsTableFilterComposer composer = $state.composerBuilder(
         composer: this,
@@ -46536,6 +46564,32 @@ class $$WarehousesTableFilterComposer
     return f(composer);
   }
 
+  ComposableFilter fromWarehouseStockTransfers(
+      ComposableFilter Function($$StockTransfersTableFilterComposer f) f) {
+    final $$StockTransfersTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $state.db.stockTransfers,
+        getReferencedColumn: (t) => t.fromWarehouseId,
+        builder: (joinBuilder, parentComposers) =>
+            $$StockTransfersTableFilterComposer(ComposerState($state.db,
+                $state.db.stockTransfers, joinBuilder, parentComposers)));
+    return f(composer);
+  }
+
+  ComposableFilter toWarehouseStockTransfers(
+      ComposableFilter Function($$StockTransfersTableFilterComposer f) f) {
+    final $$StockTransfersTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $state.db.stockTransfers,
+        getReferencedColumn: (t) => t.toWarehouseId,
+        builder: (joinBuilder, parentComposers) =>
+            $$StockTransfersTableFilterComposer(ComposerState($state.db,
+                $state.db.stockTransfers, joinBuilder, parentComposers)));
+    return f(composer);
+  }
+
   ComposableFilter employeesRefs(
       ComposableFilter Function($$EmployeesTableFilterComposer f) f) {
     final $$EmployeesTableFilterComposer composer = $state.composerBuilder(
@@ -46577,6 +46631,32 @@ class $$WarehousesTableFilterComposer
                     $state.db.inventoryTransactions,
                     joinBuilder,
                     parentComposers)));
+    return f(composer);
+  }
+
+  ComposableFilter fromWarehouseStockMovements(
+      ComposableFilter Function($$StockMovementsTableFilterComposer f) f) {
+    final $$StockMovementsTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $state.db.stockMovements,
+        getReferencedColumn: (t) => t.fromWarehouseId,
+        builder: (joinBuilder, parentComposers) =>
+            $$StockMovementsTableFilterComposer(ComposerState($state.db,
+                $state.db.stockMovements, joinBuilder, parentComposers)));
+    return f(composer);
+  }
+
+  ComposableFilter toWarehouseStockMovements(
+      ComposableFilter Function($$StockMovementsTableFilterComposer f) f) {
+    final $$StockMovementsTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $state.db.stockMovements,
+        getReferencedColumn: (t) => t.toWarehouseId,
+        builder: (joinBuilder, parentComposers) =>
+            $$StockMovementsTableFilterComposer(ComposerState($state.db,
+                $state.db.stockMovements, joinBuilder, parentComposers)));
     return f(composer);
   }
 

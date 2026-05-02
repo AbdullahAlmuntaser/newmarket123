@@ -56,12 +56,6 @@ class Categories extends Table with SyncableTable {
   TextColumn get code => text().unique().nullable()();
 }
 
-class AccountingPeriods extends Table with SyncableTable {
-  DateTimeColumn get startDate => dateTime()();
-  DateTimeColumn get endDate => dateTime()();
-  TextColumn get status => text()(); // OPEN, CLOSED
-}
-
 class Products extends Table with SyncableTable {
   TextColumn get name => text()();
   TextColumn get sku => text().unique()();
@@ -196,9 +190,12 @@ class SaleItems extends Table with SyncableTable {
 }
 
 class StockMovements extends Table with SyncableTable {
+  @ReferenceName('productStockMovements')
   TextColumn get productId => text().references(Products, #id)();
+  @ReferenceName('fromWarehouseStockMovements')
   TextColumn get fromWarehouseId =>
       text().nullable().references(Warehouses, #id)();
+  @ReferenceName('toWarehouseStockMovements')
   TextColumn get toWarehouseId =>
       text().nullable().references(Warehouses, #id)();
   RealColumn get quantity => real()();
@@ -478,7 +475,9 @@ class AuditLogs extends Table with SyncableTable {
 }
 
 class StockTransfers extends Table with SyncableTable {
+  @ReferenceName('fromWarehouseStockTransfers')
   TextColumn get fromWarehouseId => text().references(Warehouses, #id)();
+  @ReferenceName('toWarehouseStockTransfers')
   TextColumn get toWarehouseId => text().references(Warehouses, #id)();
   DateTimeColumn get transferDate =>
       dateTime().withDefault(currentDateAndTime)();
@@ -736,7 +735,9 @@ class Checks extends Table with SyncableTable {
 }
 
 class BillOfMaterials extends Table with SyncableTable {
+  @ReferenceName('finishedProduct')
   TextColumn get finishedProductId => text().references(Products, #id)();
+  @ReferenceName('componentProduct')
   TextColumn get componentProductId => text().references(Products, #id)();
   RealColumn get quantity =>
       real()(); // الكمية المطلوبة من المادة الخام لإنتاج وحدة واحدة
