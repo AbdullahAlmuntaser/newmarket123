@@ -39,21 +39,22 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  String _status = "جاري التحميل...";
+
   @override
   void initState() {
     super.initState();
     _initializeApp();
   }
 
+  void _updateStatus(String status) {
+    if (mounted) setState(() => _status = status);
+  }
+
   Future<void> _initializeApp() async {
     try {
+      _updateStatus("جاري تهيئة النظام...");
       await di.init();
-      
-      final authProvider = di.sl<AuthProvider>();
-      await authProvider.seedAdmin();
-      
-      final accountingService = di.sl<AccountingService>();
-      await accountingService.seedDefaultAccounts();
       
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -61,10 +62,9 @@ class _SplashScreenState extends State<SplashScreen> {
         );
       }
     } catch (e, stack) {
-      debugPrint("Critical startup error: $e");
-      debugPrint(stack.toString());
+      debugPrint("INIT ERROR: $e");
       if (mounted) {
-        _showError(e.toString());
+        _showError("تعذر تهيئة النظام: ${e.toString()}\n\n$stack");
       }
     }
   }
@@ -74,27 +74,14 @@ class _SplashScreenState extends State<SplashScreen> {
       MaterialPageRoute(
         builder: (_) => MaterialApp(
           home: Scaffold(
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline, color: Colors.red, size: 64),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'خطأ في تشغيل التطبيق',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(error, textAlign: TextAlign.center),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () => main(),
-                      child: const Text('إعادة المحاولة'),
-                    ),
-                  ],
-                ),
+            body: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                children: [
+                  const Icon(Icons.error, color: Colors.red, size: 60),
+                  const SizedBox(height: 20),
+                  Text(error),
+                ],
               ),
             ),
           ),
@@ -105,23 +92,16 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.store, size: 80, color: Colors.teal),
-              SizedBox(height: 24),
-              Text(
-                'نظام سوبرماركت',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 32),
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('جاري التحميل...'),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 20),
+              Text(_status, style: const TextStyle(fontSize: 16)),
             ],
           ),
         ),
