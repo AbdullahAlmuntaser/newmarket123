@@ -63,8 +63,8 @@ void main() {
     // A map of account codes to their expected names
     final requiredAccounts = {
       AccountingService.codeCash: 'الصندوق',
-      AccountingService.codeSalesRevenue: 'إيرادات المبيعات',
-      AccountingService.codeOutputVAT: 'ضريبة المخرجات (المبيعات)',
+      AccountingService.codeSalesRevenue: 'مبيعات البضاعة',
+      AccountingService.codeOutputVAT: 'ضريبة القيمة المضافة',
       AccountingService.codeCOGS: 'تكلفة البضاعة المباعة',
       AccountingService.codeInventory: 'المخزون',
     };

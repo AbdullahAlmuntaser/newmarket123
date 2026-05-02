@@ -16,19 +16,6 @@ void main() {
     db = AppDatabase(NativeDatabase.memory());
     eventBus = EventBusService();
     engine = TransactionEngine(db, eventBus);
-
-    // Seed some basic data
-    await db
-        .into(db.accountingPeriods)
-        .insert(
-          AccountingPeriodsCompanion.insert(
-            id: Value(const Uuid().v4()),
-            name: 'Test Period',
-            startDate: DateTime.now().subtract(const Duration(days: 30)),
-            endDate: DateTime.now().add(const Duration(days: 30)),
-            isClosed: const Value(false),
-          ),
-        );
   });
 
   tearDown(() async {

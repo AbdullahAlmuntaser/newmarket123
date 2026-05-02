@@ -539,6 +539,8 @@ class AccountingService {
       final existing = await dao.getAccountByCode(acc.code.value);
       if (existing == null) {
         await dao.createAccount(acc);
+      } else if (existing.branchId == null && branchId != null) {
+        await dao.updateAccount(existing.copyWith(branchId: Value(branchId)));
       }
     }
   }
