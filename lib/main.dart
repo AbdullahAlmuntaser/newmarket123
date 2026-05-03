@@ -50,15 +50,23 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initializeApp() async {
-    _updateStatus("جاري تهيئة النظام...");
     try {
+      _updateStatus("جاري تهيئة الخدمات...");
       await di.init();
+      
+      _updateStatus("جاري فتح قاعدة البيانات...");
       final db = di.sl<AppDatabase>();
+      
+      _updateStatus("جاري فحص وتحديث قاعدة البيانات...");
       await db.ensureInitialized();
+      
+      _updateStatus("جاري التحميل النهائي...");
       if (mounted) {
         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const MyApp()));
       }
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint("INITIALIZATION ERROR: $e");
+      debugPrintStack(stackTrace: stack);
       if (mounted) _showError("خطأ في التهيئة: ${e.toString()}");
     }
   }

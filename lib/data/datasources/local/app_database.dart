@@ -877,6 +877,8 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (Migrator m) async {
       await m.createAll();
+      // Seed data immediately after creation in the same transaction
+      await seedData();
     },
     onUpgrade: (Migrator m, int from, int to) async {
       // Direct migration instead of metadata-heavy reflection
@@ -897,140 +899,133 @@ class AppDatabase extends _$AppDatabase {
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON;');
+      await customStatement('PRAGMA journal_mode = WAL;');
+      await customStatement('PRAGMA synchronous = NORMAL;');
     },
   );
 
-  Future<int> getUnsyncedCount() async =>
-      (select(syncQueue)).get().then((v) => v.length);
+  Future<int> getUnsyncedCount() async {
+    final countExp = syncQueue.id.count();
+    final query = selectOnly(syncQueue)..addColumns([countExp]);
+    final result = await query.map((row) => row.read(countExp)).getSingle();
+    return result ?? 0;
+  }
+
+  Future<double> calculateTotalInventoryValue() async {
+    final query = selectOnly(productBatches)..addColumns([productBatches.quantity, productBatches.costPrice]);
+    final rows = await query.get();
+    double total = 0.0;
+    for (final row in rows) {
+      final qty = row.read(productBatches.quantity) ?? 0.0;
+      final cost = row.read(productBatches.costPrice) ?? 0.0;
+      total += qty * cost;
+    }
+    return total;
+  }
+
+  Stream<List<Product>> watchLowStockProducts() {
+    return (select(products)..where((p) => p.stock.isSmallerOrEqual(p.alertLimit))).watch();
+  }
 
   Future<void> seedData() async {
-    // 1. Branches
-    final branchesCount = await (select(branches)).get().then((v) => v.length);
-    if (branchesCount == 0) {
-      await into(branches).insert(
-        BranchesCompanion.insert(
-          name: 'الفرع الرئيسي',
-          code: 'MAIN',
-          isActive: const Value(true),
-        ),
-      );
-    }
-
-    // 2. Currencies
-    final currenciesCount =
-        await (select(currencies)).get().then((v) => v.length);
-    if (currenciesCount == 0) {
-      await into(currencies).insert(
-        CurrenciesCompanion.insert(
-          code: 'SAR',
-          name: 'ريال سعودي',
-          isBase: const Value(true),
-          exchangeRate: const Value(1.0),
-        ),
-      );
-      await into(currencies).insert(
-        CurrenciesCompanion.insert(
-          code: 'USD',
-          name: 'دولار أمريكي',
-          isBase: const Value(false),
-          exchangeRate: const Value(3.75),
-        ),
-      );
-    }
-
-    // 3. Warehouses
-    final warehousesCount =
-        await (select(warehouses)).get().then((v) => v.length);
-    if (warehousesCount == 0) {
-      await into(warehouses).insert(
-        WarehousesCompanion.insert(
-          name: 'المستودع الرئيسي',
-          isDefault: const Value(true),
-        ),
-      );
-    }
-
-    // 4. Categories
-    final categoriesCount =
-        await (select(categories)).get().then((v) => v.length);
-    if (categoriesCount == 0) {
-      await into(categories).insert(
-        CategoriesCompanion.insert(
-          name: 'مواد غذائية',
-          code: const Value('FOOD'),
-        ),
-      );
-      await into(categories).insert(
-        CategoriesCompanion.insert(name: 'منظفات', code: const Value('CLEAN')),
-      );
-    }
-
-    // 5. Suppliers
-    final suppliersCount =
-        await (select(suppliers)).get().then((v) => v.length);
-    if (suppliersCount == 0) {
-      await into(suppliers).insert(
-        SuppliersCompanion.insert(name: 'مورد عام', isActive: const Value(true)),
-      );
-    }
-
-    // 6. Customers
-    final customersCount =
-        await (select(customers)).get().then((v) => v.length);
-    if (customersCount == 0) {
-      await into(customers).insert(
-        CustomersCompanion.insert(
-          name: 'عميل نقدي',
-          isQuickCustomer: const Value(true),
-          isActive: const Value(true),
-        ),
-      );
-    }
-
-    // 7. Products (Demo Data)
-    final productsCount = await (select(products)).get().then((v) => v.length);
-    if (productsCount == 0) {
-      final catList = await (select(categories)..limit(1)).get();
-      if (catList.isNotEmpty) {
-        final cat = catList.first;
-        await into(products).insert(
-          ProductsCompanion.insert(
-            name: 'حليب نيدو 400 جرام',
-            sku: '123456789',
-            barcode: const Value('123456789'),
-            categoryId: Value(cat.id),
-            buyPrice: const Value(25.0),
-            sellPrice: const Value(30.0),
-            stock: const Value(100.0),
+    await transaction(() async {
+      // 1. Branches
+      final branchesCount = await (selectOnly(branches)..addColumns([branches.id.count()])).map((row) => row.read(branches.id.count())).getSingle();
+      if ((branchesCount ?? 0) == 0) {
+        await into(branches).insert(
+          BranchesCompanion.insert(
+            name: 'الفرع الرئيسي',
+            code: 'MAIN',
             isActive: const Value(true),
           ),
         );
       }
-    }
 
-    // 8. GL Accounts
-    await _seedGLAccounts();
+      // 2. Currencies
+      final currenciesCount = await (selectOnly(currencies)..addColumns([currencies.id.count()])).map((row) => row.read(currencies.id.count())).getSingle();
+      if ((currenciesCount ?? 0) == 0) {
+        await batch((b) {
+          b.insert(currencies, CurrenciesCompanion.insert(
+            code: 'SAR',
+            name: 'ريال سعودي',
+            isBase: const Value(true),
+            exchangeRate: const Value(1.0),
+          ));
+          b.insert(currencies, CurrenciesCompanion.insert(
+            code: 'USD',
+            name: 'دولار أمريكي',
+            isBase: const Value(false),
+            exchangeRate: const Value(3.75),
+          ));
+        });
+      }
 
-    // 9. Posting Profiles
-    await _seedPostingProfiles();
+      // 3. Warehouses
+      final warehousesCount = await (selectOnly(warehouses)..addColumns([warehouses.id.count()])).map((row) => row.read(warehouses.id.count())).getSingle();
+      if ((warehousesCount ?? 0) == 0) {
+        await into(warehouses).insert(
+          WarehousesCompanion.insert(
+            name: 'المستودع الرئيسي',
+            isDefault: const Value(true),
+          ),
+        );
+      }
 
-    // 10. Accounting Periods
-    final periodsCount = await (select(accountingPeriods)).get().then((v) => v.length);
-    if (periodsCount == 0) {
-      await into(accountingPeriods).insert(
-        AccountingPeriodsCompanion.insert(
-          name: 'مايو 2026',
-          startDate: DateTime(2026, 5, 1),
-          endDate: DateTime(2026, 5, 31),
-          status: const Value('OPEN'),
-        ),
-      );
-    }
+      // 4. Categories
+      final categoriesCount = await (selectOnly(categories)..addColumns([categories.id.count()])).map((row) => row.read(categories.id.count())).getSingle();
+      if ((categoriesCount ?? 0) == 0) {
+        await batch((b) {
+          b.insert(categories, CategoriesCompanion.insert(name: 'مواد غذائية', code: const Value('FOOD')));
+          b.insert(categories, CategoriesCompanion.insert(name: 'منظفات', code: const Value('CLEAN')));
+        });
+      }
+
+      // 5. Suppliers
+      final suppliersCount = await (selectOnly(suppliers)..addColumns([suppliers.id.count()])).map((row) => row.read(suppliers.id.count())).getSingle();
+      if ((suppliersCount ?? 0) == 0) {
+        await into(suppliers).insert(
+          SuppliersCompanion.insert(name: 'مورد عام', isActive: const Value(true)),
+        );
+      }
+
+      // 6. Customers
+      final customersCount = await (selectOnly(customers)..addColumns([customers.id.count()])).map((row) => row.read(customers.id.count())).getSingle();
+      if ((customersCount ?? 0) == 0) {
+        await into(customers).insert(
+          CustomersCompanion.insert(
+            name: 'عميل نقدي',
+            isQuickCustomer: const Value(true),
+            isActive: const Value(true),
+          ),
+        );
+      }
+
+      // 8. GL Accounts
+      await _seedGLAccounts();
+
+      // 9. Posting Profiles
+      await _seedPostingProfiles();
+
+      // 10. Accounting Periods
+      final periodsCount = await (selectOnly(accountingPeriods)..addColumns([accountingPeriods.id.count()])).map((row) => row.read(accountingPeriods.id.count())).getSingle();
+      if ((periodsCount ?? 0) == 0) {
+        await into(accountingPeriods).insert(
+          AccountingPeriodsCompanion.insert(
+            name: 'مايو 2026',
+            startDate: DateTime(2026, 5, 1),
+            endDate: DateTime(2026, 5, 31),
+            status: const Value('OPEN'),
+          ),
+        );
+      }
+    });
   }
 
   Future<void> _seedGLAccounts() async {
-    final accountsCount = await (select(gLAccounts)).get().then((v) => v.length);
-    if (accountsCount > 0) return;
+    final countExp = gLAccounts.id.count();
+    final countQuery = selectOnly(gLAccounts)..addColumns([countExp]);
+    final accountsCount = await countQuery.map((row) => row.read(countExp)).getSingle();
+    if ((accountsCount ?? 0) > 0) return;
 
     final accounts = [
       GLAccountsCompanion.insert(code: '1000', name: 'الأصول المتداولة', type: 'ASSET', isHeader: const Value(true)),
@@ -1055,16 +1050,20 @@ class AppDatabase extends _$AppDatabase {
       GLAccountsCompanion.insert(code: '6010', name: 'مصروفات التشغيل', type: 'EXPENSE'),
     ];
 
-    for (var acc in accounts) {
-      await into(gLAccounts).insert(acc);
-    }
+    await batch((b) {
+      for (var acc in accounts) {
+        b.insert(gLAccounts, acc);
+      }
+    });
   }
 
   Future<void> _seedPostingProfiles() async {
-    final profilesCount = await (select(postingProfiles)).get().then((v) => v.length);
-    if (profilesCount > 0) return;
+    final countExp = postingProfiles.id.count();
+    final countQuery = selectOnly(postingProfiles)..addColumns([countExp]);
+    final profilesCount = await countQuery.map((row) => row.read(countExp)).getSingle();
+    if ((profilesCount ?? 0) > 0) return;
 
-    final gLAccountsList = await (select(gLAccounts)).get();
+    final gLAccountsList = await select(gLAccounts).get();
     Map<String, String> accountIdByCode = {for (var acc in gLAccountsList) acc.code: acc.id};
 
     if (accountIdByCode['1010'] == null || accountIdByCode['4010'] == null || accountIdByCode['5010'] == null) {
@@ -1130,34 +1129,16 @@ class AppDatabase extends _$AppDatabase {
       ),
     ];
 
-    for (var profile in profiles) {
-      await into(postingProfiles).insert(profile);
-    }
-  }
-
-  Future<double> calculateTotalInventoryValue() async {
-    final List<Product> products = await select(this.products).get();
-
-    double totalValue = 0.0;
-    for (final product in products) {
-      final stock = product.stock;
-      final buyPrice = product.buyPrice;
-      totalValue += stock * buyPrice;
-    }
-    return totalValue;
-  }
-
-  Stream<List<Product>> watchLowStockProducts() {
-    return (select(
-      products,
-    )..where((p) => p.stock.isSmallerOrEqual(p.alertLimit))).watch();
+    await batch((b) {
+      for (var profile in profiles) {
+        b.insert(postingProfiles, profile);
+      }
+    });
   }
 
   Future<void> ensureInitialized() async {
-    final tables = await customSelect("SELECT count(*) FROM sqlite_master WHERE type='table'").getSingle();
-    if (tables.read<int>('count(*)') == 0) {
-      await seedData();
-    }
+    // Just trigger a simple query to ensure connection and migrations are run
+    selectOnly(branches)..limit(1)..get();
   }
 
   // DAO getters
