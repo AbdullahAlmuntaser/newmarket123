@@ -27,7 +27,19 @@ import 'package:supermarket/core/services/purchase_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const SplashScreen());
+  runApp(const RootWidget());
+}
+
+class RootWidget extends StatelessWidget {
+  const RootWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: SplashScreen(),
+    );
+  }
 }
 
 class SplashScreen extends StatefulWidget {
@@ -38,72 +50,162 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   String _status = "جاري التحميل...";
+  String _detailStatus = "";
+  bool _isNavigating = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeApp();
+    _startInitialization();
   }
 
-  void _updateStatus(String status) {
-    if (mounted) setState(() => _status = status);
+  Future<void> _startInitialization() async {
+    try {
+      // Global timeout for initialization
+      await Future.any([
+        _initializeApp(),
+        Future.delayed(const Duration(seconds: 25), () {
+          throw Exception("Initialization timed out after 25 seconds");
+        }),
+      ]);
+    } catch (e, stack) {
+      debugPrint("FATAL INITIALIZATION ERROR: $e");
+      debugPrintStack(stackTrace: stack);
+      if (mounted) {
+        _showError("خطأ حرج في تشغيل التطبيق: $e");
+      }
+    }
+  }
+
+  void _updateStatus(String status, [String detail = ""]) {
+    if (mounted) {
+      setState(() {
+        _status = status;
+        _detailStatus = detail;
+      });
+    }
   }
 
   Future<void> _initializeApp() async {
     try {
-      _updateStatus("جاري تهيئة الخدمات...");
+      _updateStatus("جاري تهيئة الخدمات...", "1/4");
       await di.init();
       
-      _updateStatus("جاري فتح قاعدة البيانات...");
+      _updateStatus("جاري فتح قاعدة البيانات...", "2/4");
       final db = di.sl<AppDatabase>();
       
-      _updateStatus("جاري فحص وتحديث قاعدة البيانات...");
-      await db.ensureInitialized();
+      _updateStatus("جاري فحص قاعدة البيانات...", "3/4");
+      try {
+        // Just trigger a simple query to ensure connection
+        await db.select(db.users).get().timeout(const Duration(seconds: 10));
+        _updateStatus("✓ تم الاتصال بقاعدة البيانات", "4/4");
+      } catch (e) {
+        debugPrint("DB CHECK WARNING: $e");
+        _updateStatus("⚠ تنبيه: مشكلة في فحص قاعدة البيانات", "سيتم المحاولة على أي حال");
+        await Future.delayed(const Duration(seconds: 1));
+      }
       
-      _updateStatus("جاري التحميل النهائي...");
+      _updateStatus("جاري التحميل النهائي...", "✅");
+      await Future.delayed(const Duration(milliseconds: 500));
+      
       if (mounted) {
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const MyApp()));
+        _navigateToMain();
       }
     } catch (e, stack) {
-      debugPrint("INITIALIZATION ERROR: $e");
+      debugPrint("INITIALIZATION STEP ERROR: $e");
       debugPrintStack(stackTrace: stack);
-      if (mounted) _showError("خطأ في التهيئة: ${e.toString()}");
+      rethrow; // Caught by _startInitialization
     }
   }
 
-  void _showError(String error) {
-    if (!mounted) return;
+  void _navigateToMain() {
+    if (_isNavigating || !mounted) return;
+    _isNavigating = true;
+
+    debugPrint("NAVIGATE: Transitioning to MyApp");
+    
+    // Use the RootWidget's Navigator context
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => MaterialApp(
-          debugShowCheckedModeBanner: false,
-          home: Scaffold(
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Text(error, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
-              ),
-            ),
-          ),
-        ),
-      ),
+      MaterialPageRoute(builder: (_) => const MyApp()),
     );
+  }
+
+  void _showError(String error) {
+    debugPrint("SHOW_ERROR: $error");
+    if (!mounted) return;
+
+    _updateStatus("⚠ حدث خطأ", error);
+
+    // After a delay, show a dialog or button to try anyway
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Text("تنبيه"),
+            content: Text(error),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _startInitialization();
+                },
+                child: const Text("إعادة المحاولة"),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _navigateToMain();
+                },
+                child: const Text("الدخول على أي حال"),
+              ),
+            ],
+          ),
+        );
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 20),
-              Text(_status, style: const TextStyle(fontSize: 16)),
-            ],
+    // Return only Scaffold here, RootWidget provides MaterialApp
+    return Scaffold(
+      body: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.teal.shade50, Colors.white],
           ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.account_balance, size: 100, color: Colors.teal),
+            const SizedBox(height: 40),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 24),
+            Text(
+              _status,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.teal),
+            ),
+            if (_detailStatus.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                _detailStatus,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+            ],
+            const SizedBox(height: 40),
+            const Text(
+              "نظام إدارة السوبر ماركت",
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
         ),
       ),
     );
@@ -137,13 +239,18 @@ class MyApp extends StatelessWidget {
       ],
       child: Builder(
         builder: (context) {
+          debugPrint("MYAPP: Building MaterialApp.router");
           final themeProvider = Provider.of<ThemeProvider>(context);
+          debugPrint("MYAPP: ThemeProvider gotten: ${themeProvider.themeMode}");
+          debugPrint("MYAPP: Building router config");
+          
           return MaterialApp.router(
             title: 'Supermarket ERP',
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
             routerConfig: appRouter,
+            debugShowCheckedModeBanner: false,
             localizationsDelegates: const [
               AppLocalizations.delegate,
               GlobalMaterialLocalizations.delegate,
