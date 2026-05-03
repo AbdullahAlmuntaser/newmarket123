@@ -1,3 +1,4 @@
+import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supermarket/injection_container.dart' as di;
@@ -30,7 +31,6 @@ import 'package:supermarket/presentation/features/suppliers/suppliers_page.dart'
 import 'package:supermarket/presentation/features/suppliers/supplier_statement_page.dart';
 import 'package:supermarket/presentation/features/suppliers/add_supplier_payment_page.dart';
 import 'package:supermarket/presentation/features/suppliers/supplier_payments_page.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/purchases/purchases_page.dart';
 import 'package:supermarket/presentation/features/purchases/add_purchase_page.dart';
 import 'package:supermarket/presentation/features/purchases/purchase_orders_page.dart';

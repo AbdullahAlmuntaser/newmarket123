@@ -1,8 +1,8 @@
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:intl/intl.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:supermarket/data/datasources/local/app_database.dart' show Sale, SaleItem, Product;
 
 class PrinterHelper {
   // Mocking bluetooth for now since the library is problematic

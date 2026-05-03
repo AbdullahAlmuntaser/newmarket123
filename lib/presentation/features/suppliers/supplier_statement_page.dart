@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:intl/intl.dart';
-import 'package:drift/drift.dart' hide Column;
 
 class SupplierStatementPage extends StatelessWidget {
   final Supplier supplier;
@@ -113,17 +112,15 @@ class SupplierStatementPage extends StatelessWidget {
 
   Stream<List<dynamic>> _getCombinedStatementStream(AppDatabase db) {
     final purchasesStream =
-        (db.select(db.purchases)..where(
-              (t) => t.supplierId.equals(supplier.id) & t.isCredit.equals(true),
-            ))
-            .watch();
+        db.select(db.purchases).watch();
 
     return purchasesStream.asyncMap((purchases) async {
+      final filteredPurchases = purchases.where((p) => p.supplierId == supplier.id && p.isCredit).toList();
       final payments = await (db.select(
         db.supplierPayments,
       )..where((t) => t.supplierId.equals(supplier.id))).get();
 
-      final List<dynamic> combined = [...purchases, ...payments];
+      final List<dynamic> combined = [...filteredPurchases, ...payments];
       combined.sort((a, b) {
         final dateA = a is Purchase
             ? a.date
@@ -131,7 +128,7 @@ class SupplierStatementPage extends StatelessWidget {
         final dateB = b is Purchase
             ? b.date
             : (b as SupplierPayment).paymentDate;
-        return dateB.compareTo(dateA); // Newest first
+        return dateB.compareTo(dateA);
       });
       return combined;
     });

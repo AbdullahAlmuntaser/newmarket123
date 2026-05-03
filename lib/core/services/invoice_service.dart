@@ -1,7 +1,7 @@
+import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:intl/intl.dart';
 import 'package:barcode/barcode.dart';
 

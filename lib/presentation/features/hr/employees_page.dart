@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/presentation/features/hr/hr_provider.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:uuid/uuid.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart' show Employee, EmployeesCompanion;
 
 class EmployeesPage extends StatefulWidget {
   const EmployeesPage({super.key});

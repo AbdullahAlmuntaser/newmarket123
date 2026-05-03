@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/data/datasources/local/daos/products_dao.dart';
 import 'package:supermarket/data/datasources/local/daos/product_units_dao.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart' show ProductUnit, ProductUnitsCompanion;
 
 /// Service for handling unit conversions across the system.
 /// All quantities are stored in base units internally.
