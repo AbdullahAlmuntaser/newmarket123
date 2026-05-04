@@ -6,6 +6,7 @@ import 'audit_service.dart';
 import 'package:supermarket/core/events/app_events.dart';
 import 'event_bus_service.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'dart:developer' as developer;
 
 part 'accounting_service.g.dart';
 
@@ -230,6 +231,7 @@ class AccountingService {
 
   void _listenToEvents() {
     eventBus.stream.listen((event) {
+      developer.log('AccountingService: Received event ${event.runtimeType}', name: 'accounting.service');
       if (event is SaleCreatedEvent) {
         postSale(event.sale, event.items, cogs: event.cogs);
       } else if (event is PurchasePostedEvent) {
@@ -876,6 +878,8 @@ class AccountingService {
             date: Value(sale.createdAt),
             referenceType: const Value('COGS'),
             referenceId: Value(sale.id),
+            status: const Value('POSTED'),
+            postedAt: Value(DateTime.now()),
             branchId: Value(sale.branchId ?? 'BR001'),
           );
 
@@ -883,7 +887,7 @@ class AccountingService {
             GLLinesCompanion.insert(
               entryId: cogsEntryId,
               accountId: cogsAccount.id,
-              debit: Value(totalCost),
+              debit: Value(finalCost),
               credit: const Value(0.0),
               branchId: Value(sale.branchId ?? 'BR001'),
             ),
@@ -891,7 +895,7 @@ class AccountingService {
               entryId: cogsEntryId,
               accountId: inventoryAccount.id,
               debit: const Value(0.0),
-              credit: Value(totalCost),
+              credit: Value(finalCost),
               branchId: Value(sale.branchId ?? 'BR001'),
             ),
           ];
@@ -1301,9 +1305,33 @@ class AccountingService {
 
     double totalCostReversed = 0;
     for (var item in items) {
-      final product = await db.productsDao.getProductById(item.productId);
-      if (product != null) {
-        totalCostReversed += item.quantity * product.buyPrice;
+      final batches = await (db.select(db.productBatches)
+            ..where((b) => b.productId.equals(item.productId))
+            ..where((b) => b.quantity.isBiggerThan(const Variable(0)))
+            ..orderBy([
+              (b) => OrderingTerm(
+                expression: b.expiryDate.isNull(),
+                mode: OrderingMode.asc,
+              ),
+              (b) => OrderingTerm(
+                expression: b.expiryDate,
+                mode: OrderingMode.asc,
+              ),
+              (b) => OrderingTerm(
+                expression: b.createdAt,
+                mode: OrderingMode.asc,
+              ),
+            ]))
+          .get();
+      
+      double remainingQty = item.quantity;
+      for (var batch in batches) {
+        if (remainingQty <= 0) break;
+        double deductFromBatch = batch.quantity >= remainingQty
+            ? remainingQty
+            : batch.quantity;
+        totalCostReversed += deductFromBatch * batch.costPrice;
+        remainingQty -= deductFromBatch;
       }
     }
 

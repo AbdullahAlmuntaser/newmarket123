@@ -5,6 +5,7 @@ import 'package:supermarket/core/services/event_bus_service.dart';
 import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/core/services/inventory_costing_service.dart';
 import 'package:uuid/uuid.dart';
+import 'dart:developer' as developer;
 
 class TransactionEngine {
   final AppDatabase db;
@@ -287,11 +288,16 @@ class TransactionEngine {
           );
         } else {
           // Fallback: استخدام المنطق الأصلي FEFO
+          // Prioritize: expiryDate ASC (nulls last), then createdAt ASC
           final batches =
               await (db.select(db.productBatches)
                     ..where((b) => b.productId.equals(item.productId))
                     ..where((b) => b.quantity.isBiggerThan(const Variable(0)))
                     ..orderBy([
+                      (b) => OrderingTerm(
+                        expression: b.expiryDate.isNull(),
+                        mode: OrderingMode.asc,
+                      ),
                       (b) => OrderingTerm(
                         expression: b.expiryDate,
                         mode: OrderingMode.asc,
@@ -385,6 +391,16 @@ class TransactionEngine {
   Future<void> postSaleReturn(String returnId, {String? userId}) async {
     // Check if accounting period is open before posting
     await _checkAccountingPeriodOpen();
+    
+    // Check if already processed by looking for existing inventory transactions
+    final existingTransactions = await (db.select(db.inventoryTransactions)
+          ..where((t) => t.referenceId.equals(returnId))
+          ..where((t) => t.type.equals('RETURN')))
+        .get();
+    if (existingTransactions.isNotEmpty) {
+      throw Exception('تم معالجة مردود المبيعات بالفعل');
+    }
+    
     await db.transaction(() async {
       // 1. Get Return and Items
       final saleReturn = await (db.select(
@@ -427,11 +443,15 @@ class TransactionEngine {
             ),
           );
         } else {
-          // Find or create batch - use FEFO logic to find existing batch first
+          // Find or create batch - use FEFO logic to find existing batch first (nulls last)
           final existingBatches = await (db.select(db.productBatches)
                 ..where((b) => b.productId.equals(item.productId))
                 ..where((b) => b.quantity.isBiggerThan(const Variable(0)))
                 ..orderBy([
+                  (b) => OrderingTerm(
+                    expression: b.expiryDate.isNull(),
+                    mode: OrderingMode.asc,
+                  ),
                   (b) => OrderingTerm(
                     expression: b.expiryDate,
                     mode: OrderingMode.asc,
@@ -472,6 +492,22 @@ class TransactionEngine {
               ..where((p) => p.id.equals(item.productId)))
             .write(ProductsCompanion(stock: Value(product.stock + qtyInBaseUnit)));
 
+        // Validate batch integrity: ensure product.stock == sum(batches)
+        final batchesAfterReturn = await (db.select(db.productBatches)
+              ..where((b) => b.productId.equals(item.productId)))
+            .get();
+        double batchSum = 0;
+        for (var b in batchesAfterReturn) {
+          batchSum += b.quantity;
+        }
+        final newStock = product.stock + qtyInBaseUnit;
+        if ((batchSum - newStock).abs() > 0.01) {
+          developer.log(
+            'WARNING: Stock/Batch mismatch after return. Product stock: $newStock, Batch sum: $batchSum',
+            name: 'transaction_engine',
+          );
+        }
+
         // Record Inventory Transaction
         await db.into(db.inventoryTransactions).insert(
               InventoryTransactionsCompanion.insert(
@@ -505,6 +541,16 @@ class TransactionEngine {
   Future<void> postPurchaseReturn(String returnId, {String? userId}) async {
     // Check if accounting period is open before posting
     await _checkAccountingPeriodOpen();
+    
+    // Check if already processed by looking for existing inventory transactions
+    final existingTransactions = await (db.select(db.inventoryTransactions)
+          ..where((t) => t.referenceId.equals(returnId))
+          ..where((t) => t.type.equals('PURCHASE_RETURN')))
+        .get();
+    if (existingTransactions.isNotEmpty) {
+      throw Exception('تم معالجة مردود المشتريات بالفعل');
+    }
+    
     await db.transaction(() async {
       // 1. Get Return and Items
       final purchaseReturn = await (db.select(
@@ -523,12 +569,16 @@ class TransactionEngine {
       for (var item in items) {
         double remainingToDeduct = item.quantity;
 
-        // FEFO Logic for purchase return
+        // FEFO Logic for purchase return - nulls last
         final batches =
             await (db.select(db.productBatches)
                   ..where((b) => b.productId.equals(item.productId))
                   ..where((b) => b.quantity.isBiggerThan(const Variable(0)))
                   ..orderBy([
+                    (b) => OrderingTerm(
+                      expression: b.expiryDate.isNull(),
+                      mode: OrderingMode.asc,
+                    ),
                     (b) => OrderingTerm(
                       expression: b.expiryDate,
                       mode: OrderingMode.asc,
