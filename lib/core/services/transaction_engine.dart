@@ -293,11 +293,6 @@ class TransactionEngine {
                     ..where((b) => b.quantity.isBiggerThan(const Variable(0)))
                     ..orderBy([
                       (b) => OrderingTerm(
-                        expression: b.expiryDate
-                            .isNull(),
-                        mode: OrderingMode.asc,
-                      ),
-                      (b) => OrderingTerm(
                         expression: b.expiryDate,
                         mode: OrderingMode.asc,
                       ),
@@ -406,7 +401,15 @@ class TransactionEngine {
 
       // 2. Process each item (Inventory Update - Return to Batch)
       for (var item in items) {
-        // Return stock to the specific batch or create/update based on batchId
+        double returnQty = item.quantity;
+        const defaultWarehouse = 'WH001';
+        
+        // Get current product
+        final product = await (db.select(db.products)
+              ..where((p) => p.id.equals(item.productId))).getSingle();
+        double qtyInBaseUnit = returnQty;
+        
+        // Return stock to the specific batch or create new batch if none
         final batchId = item.batchId;
         final batch = batchId != null
             ? await (db.select(db.productBatches)
@@ -414,31 +417,68 @@ class TransactionEngine {
                 .getSingleOrNull()
             : null;
 
-        // Update Batch Quantity (if batch exists)
         if (batch != null) {
+          // Update existing batch
           await (db.update(db.productBatches)
                 ..where((b) => b.id.equals(batch.id)))
               .write(
             ProductBatchesCompanion(
-              quantity: Value(batch.quantity + item.quantity),
+              quantity: Value(batch.quantity + qtyInBaseUnit),
             ),
           );
+        } else {
+          // Find or create batch - use FEFO logic to find existing batch first
+          final existingBatches = await (db.select(db.productBatches)
+                ..where((b) => b.productId.equals(item.productId))
+                ..where((b) => b.quantity.isBiggerThan(const Variable(0)))
+                ..orderBy([
+                  (b) => OrderingTerm(
+                    expression: b.expiryDate,
+                    mode: OrderingMode.asc,
+                  ),
+                ]))
+              .get();
+          
+          if (existingBatches.isNotEmpty) {
+            // Add to oldest batch (FEFO)
+            final targetBatch = existingBatches.first;
+            await (db.update(db.productBatches)
+                  ..where((b) => b.id.equals(targetBatch.id)))
+                .write(
+              ProductBatchesCompanion(
+                quantity: Value(targetBatch.quantity + qtyInBaseUnit),
+              ),
+            );
+          } else {
+            // Create new batch for the return
+            final newBatchId = const Uuid().v4();
+            await db.into(db.productBatches).insert(
+              ProductBatchesCompanion.insert(
+                id: Value(newBatchId),
+                productId: item.productId,
+                warehouseId: defaultWarehouse,
+                batchNumber: 'RETURN-${returnId.substring(0, 8)}',
+                expiryDate: const Value(null),
+                quantity: Value(qtyInBaseUnit),
+                initialQuantity: Value(qtyInBaseUnit),
+                costPrice: Value(product.buyPrice),
+              ),
+            );
+          }
         }
 
         // Update Product Total Stock (Only once)
-        final product = await (db.select(db.products)
-              ..where((p) => p.id.equals(item.productId))).getSingle();
         await (db.update(db.products)
               ..where((p) => p.id.equals(item.productId)))
-            .write(ProductsCompanion(stock: Value(product.stock + item.quantity)));
+            .write(ProductsCompanion(stock: Value(product.stock + qtyInBaseUnit)));
 
         // Record Inventory Transaction
         await db.into(db.inventoryTransactions).insert(
               InventoryTransactionsCompanion.insert(
                 productId: item.productId,
-                warehouseId: batch?.warehouseId ?? '',
+                warehouseId: batch?.warehouseId ?? defaultWarehouse,
                 batchId: Value(batch?.id ?? ''),
-                quantity: item.quantity,
+                quantity: qtyInBaseUnit,
                 type: 'RETURN',
                 referenceId: returnId,
               ),
