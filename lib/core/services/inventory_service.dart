@@ -238,29 +238,22 @@ class InventoryService {
             }
           } else {
             // فائض
-            final latestBatch =
-                await (db.select(db.productBatches)
-                      ..where((b) => b.productId.equals(productId))
-                      ..orderBy([
-                        (b) => drift.OrderingTerm(
-                          expression: b.createdAt,
-                          mode: drift.OrderingMode.desc,
-                        ),
-                      ])
-                      ..limit(1))
-                    .getSingleOrNull();
-
-            if (latestBatch != null) {
-              await (db.update(
-                db.productBatches,
-              )..where((b) => b.id.equals(latestBatch.id))).write(
-                ProductBatchesCompanion(
-                  quantity: drift.Value(latestBatch.quantity + difference),
-                ),
-              );
-              totalInventoryAdjustmentValue +=
-                  difference * latestBatch.costPrice;
-            }
+            // إنشاء دفعة جديدة إذا لم تكن هناك دفعة سابقة
+            const uuid = Uuid();
+            final averageCost = product.buyPrice;
+            await db.into(db.productBatches).insert(
+              ProductBatchesCompanion(
+                id: drift.Value(uuid.v4()),
+                productId: drift.Value(productId),
+                warehouseId: const drift.Value('WH001'),
+                batchNumber: drift.Value('AUDIT-${auditId.toString().substring(0, 8)}'),
+                expiryDate: const drift.Value(null),
+                quantity: drift.Value(difference),
+                initialQuantity: drift.Value(difference),
+                costPrice: drift.Value(averageCost),
+              ),
+            );
+            totalInventoryAdjustmentValue += difference * averageCost;
           }
         }
       }

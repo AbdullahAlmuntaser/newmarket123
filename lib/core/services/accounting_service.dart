@@ -231,7 +231,7 @@ class AccountingService {
   void _listenToEvents() {
     eventBus.stream.listen((event) {
       if (event is SaleCreatedEvent) {
-        postSale(event.sale, event.items);
+        postSale(event.sale, event.items, cogs: event.cogs);
       } else if (event is PurchasePostedEvent) {
         postPurchase(event.purchase, event.items);
       } else if (event is SaleReturnCreatedEvent) {
@@ -249,7 +249,7 @@ class AccountingService {
   /// New: Generic journal entry creation from events
   Future<void> createJournalEntry(AppEvent event) async {
     if (event is SaleCreatedEvent) {
-      await postSale(event.sale, event.items);
+      await postSale(event.sale, event.items, cogs: event.cogs);
     }
   }
 
@@ -731,7 +731,7 @@ class AccountingService {
     return id;
   }
 
-  Future<void> postSale(Sale sale, List<SaleItem> items) async {
+  Future<void> postSale(Sale sale, List<SaleItem> items, {double? cogs}) async {
     if (await db.accountingDao.isDateInClosedPeriod(sale.createdAt)) {
       throw Exception('Cannot post sale in a closed accounting period.');
     }
@@ -827,16 +827,44 @@ class AccountingService {
         details: 'Revenue entry for Sale #${sale.id.substring(0, 8)}',
       );
 
-      // Calculate total cost for COGS
-      double totalCost = 0.0;
-      for (var item in items) {
-        final product = await db.productsDao.getProductById(item.productId);
-        if (product != null) {
-          totalCost += (item.quantity * item.unitFactor) * product.buyPrice;
+      // Use actual COGS from event (calculated from batches) or calculate from batch costs
+      final double totalCost = cogs ?? 0.0;
+      double calculatedCost = 0.0;
+      if (totalCost == 0.0) {
+        for (var item in items) {
+          final batches = await (db.select(db.productBatches)
+                ..where((b) => b.productId.equals(item.productId))
+                ..where((b) => b.quantity.isBiggerThan(const Variable(0)))
+                ..orderBy([
+                  (b) => OrderingTerm(
+                    expression: b.expiryDate.isNull(),
+                    mode: OrderingMode.asc,
+                  ),
+                  (b) => OrderingTerm(
+                    expression: b.expiryDate,
+                    mode: OrderingMode.asc,
+                  ),
+                  (b) => OrderingTerm(
+                    expression: b.createdAt,
+                    mode: OrderingMode.asc,
+                  ),
+                ]))
+              .get();
+          double remainingQty = item.quantity * item.unitFactor;
+          for (var batch in batches) {
+            if (remainingQty <= 0) break;
+            double deductFromBatch = batch.quantity >= remainingQty
+                ? remainingQty
+                : batch.quantity;
+            calculatedCost += deductFromBatch * batch.costPrice;
+            remainingQty -= deductFromBatch;
+          }
         }
       }
 
-      if (totalCost > 0) {
+      final double finalCost = totalCost > 0 ? totalCost : calculatedCost;
+
+      if (finalCost > 0) {
         final cogsEntryId = const Uuid().v4();
         final cogsAccount = await dao.getAccountByCode(codeCOGS);
         final inventoryAccount = await dao.getAccountByCode(codeInventory);
