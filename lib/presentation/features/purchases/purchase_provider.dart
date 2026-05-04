@@ -242,6 +242,7 @@ class PurchaseProvider with ChangeNotifier {
       supplierId: selectedSupplier!.id,
       items: itemCompanions,
       total: grandTotal,
+      warehouseId: selectedWarehouse?.id,
     );
 
     if (post) {

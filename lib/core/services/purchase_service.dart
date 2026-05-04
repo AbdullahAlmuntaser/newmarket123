@@ -15,6 +15,7 @@ class PurchaseService {
     required String supplierId,
     required List<PurchaseItemsCompanion> items,
     required double total,
+    String? warehouseId,
   }) async {
     final purchaseId = const Uuid().v4();
     final purchase = PurchasesCompanion.insert(
@@ -23,6 +24,7 @@ class PurchaseService {
       date: Value(DateTime.now()),
       total: total,
       status: const Value('draft'),
+      warehouseId: Value(warehouseId),
     );
 
     await db.into(db.purchases).insert(purchase);

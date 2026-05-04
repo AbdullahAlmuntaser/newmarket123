@@ -297,8 +297,23 @@ if (mounted) {
       }
     } catch (e) {
       debugPrint('خطأ في حفظ الفاتورة: $e');
+      String errorMessage = 'حدث خطأ غير متوقع أثناء الحفظ.';
+      if (e.toString().contains('FOREIGN KEY constraint failed')) {
+        errorMessage = 'خطأ في الربط: تأكد من صحة البيانات المختارة (المستودع أو المورد أو الأصناف).';
+      } else if (e.toString().contains('UNIQUE constraint failed')) {
+        errorMessage = 'خطأ في التكرار: رقم الفاتورة أو بيانات أخرى موجودة مسبقاً.';
+      } else {
+        errorMessage = 'فشل الحفظ: $e';
+      }
+      
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل الحفظ: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage, style: const TextStyle(color: Colors.white)),
+            backgroundColor: Colors.red.shade700,
+            duration: const Duration(seconds: 5),
+          ),
+        );
       }
     } finally {
       setState(() => _isSaving = false);

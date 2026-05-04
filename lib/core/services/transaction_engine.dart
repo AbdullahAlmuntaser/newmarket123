@@ -414,6 +414,7 @@ class TransactionEngine {
                 .getSingleOrNull()
             : null;
 
+        // Update Batch Quantity (if batch exists)
         if (batch != null) {
           await (db.update(db.productBatches)
                 ..where((b) => b.id.equals(batch.id)))
@@ -422,14 +423,14 @@ class TransactionEngine {
               quantity: Value(batch.quantity + item.quantity),
             ),
           );
-        } else {
-          // Fallback if batch not found (e.g., deleted), add to stock directly
-          final product = await (db.select(db.products)
-                ..where((p) => p.id.equals(item.productId))).getSingle();
-          await (db.update(db.products)
-                ..where((p) => p.id.equals(item.productId)))
-              .write(ProductsCompanion(stock: Value(product.stock + item.quantity)));
         }
+
+        // Update Product Total Stock (Only once)
+        final product = await (db.select(db.products)
+              ..where((p) => p.id.equals(item.productId))).getSingle();
+        await (db.update(db.products)
+              ..where((p) => p.id.equals(item.productId)))
+            .write(ProductsCompanion(stock: Value(product.stock + item.quantity)));
 
         // Record Inventory Transaction
         await db.into(db.inventoryTransactions).insert(
@@ -442,13 +443,6 @@ class TransactionEngine {
                 referenceId: returnId,
               ),
             );
-
-        // Update Product Total Stock
-        final product = await (db.select(db.products)
-              ..where((p) => p.id.equals(item.productId))).getSingle();
-        await (db.update(db.products)
-              ..where((p) => p.id.equals(item.productId)))
-            .write(ProductsCompanion(stock: Value(product.stock + item.quantity)));
       }
 
       // 3. Update Customer Balance if Credit
