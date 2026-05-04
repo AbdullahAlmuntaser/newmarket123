@@ -357,28 +357,28 @@ class InventoryService {
     required String warehouseId,
     String? referenceId,
   }) async {
-    final product = await (db.select(
-      db.products,
-    )..where((p) => p.id.equals(itemId))).getSingleOrNull();
-    if (product == null) throw Exception('Product not found');
+    await db.transaction(() async {
+      final product = await (db.select(
+        db.products,
+      )..where((p) => p.id.equals(itemId))).getSingle();
+      
+      if (product.stock < quantity) throw Exception('Insufficient stock');
 
-    final newStock = product.stock - quantity;
-    if (newStock < 0) throw Exception('Insufficient stock');
+      await (db.update(db.products)..where((p) => p.id.equals(itemId))).write(
+        ProductsCompanion(stock: drift.Value(product.stock - quantity)),
+      );
 
-    await (db.update(db.products)..where((p) => p.id.equals(itemId))).write(
-      ProductsCompanion(stock: drift.Value(newStock)),
-    );
-
-    await db
-        .into(db.stockMovements)
-        .insert(
-          StockMovementsCompanion.insert(
-            productId: itemId,
-            quantity: -quantity,
-            type: 'SALE',
-            referenceId: drift.Value(referenceId),
-          ),
-        );
+      await db
+          .into(db.stockMovements)
+          .insert(
+            StockMovementsCompanion.insert(
+              productId: itemId,
+              quantity: -quantity,
+              type: 'SALE',
+              referenceId: drift.Value(referenceId),
+            ),
+          );
+    });
   }
 
   /// تحويل مخزون بين مستودعين (أو فرعين)
