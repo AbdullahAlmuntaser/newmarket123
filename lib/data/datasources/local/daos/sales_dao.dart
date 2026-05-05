@@ -7,8 +7,6 @@ part 'sales_dao.g.dart';
   tables: [
     Sales,
     SaleItems,
-    SalesOrders,
-    SalesOrderItems,
     Products,
     Customers,
     SyncQueue,
@@ -16,6 +14,8 @@ part 'sales_dao.g.dart';
     SalesReturns,
     SalesReturnItems,
     ProductBatches,
+    SalesOrders,
+    SalesOrderItems,
   ],
 )
 class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
@@ -230,6 +230,91 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
       ..sort((a, b) => b.totalQuantity.compareTo(a.totalQuantity));
 
     return list.take(limit).toList();
+  }
+
+  // ==================== Sales Orders Management ====================
+  // إدارة طلبات المبيعات (Sales Orders)
+
+  Future<List<SalesOrder>> getAllSalesOrders() async {
+    return (select(salesOrders)).get();
+  }
+
+  Future<SalesOrder?> getSalesOrderById(String orderId) async {
+    return (select(salesOrders)..where((o) => o.id.equals(orderId))).getSingleOrNull();
+  }
+
+  Future<List<SalesOrderItem>> getSalesOrderItems(String orderId) async {
+    return (select(salesOrderItems)..where((i) => i.orderId.equals(orderId))).get();
+  }
+
+  Future<void> createSalesOrder({
+    required SalesOrdersCompanion orderCompanion,
+    required List<SalesOrderItemsCompanion> itemsCompanions,
+    required String? userId,
+  }) async {
+    if (itemsCompanions.isEmpty) {
+      throw Exception('لا يمكن إنشاء طلب بيع بدون أصناف.');
+    }
+
+    return transaction(() async {
+      final orderId = orderCompanion.id.value;
+      await into(salesOrders).insert(orderCompanion);
+
+      for (var item in itemsCompanions) {
+        await into(salesOrderItems).insert(item);
+      }
+
+      await into(auditLogs).insert(
+        AuditLogsCompanion.insert(
+          userId: Value(userId),
+          action: 'CREATE',
+          targetEntity: 'SALES_ORDER',
+          entityId: orderId,
+          details: Value('Created sales order: $orderId'),
+        ),
+      );
+    });
+  }
+
+  Future<void> updateSalesOrderStatus(String orderId, String newStatus) async {
+    return transaction(() async {
+      await (update(salesOrders)..where((o) => o.id.equals(orderId))).write(
+        SalesOrdersCompanion(status: Value(newStatus)),
+      );
+
+      await into(auditLogs).insert(
+        AuditLogsCompanion.insert(
+          action: 'UPDATE',
+          targetEntity: 'SALES_ORDER',
+          entityId: orderId,
+          details: Value('Updated status to: $newStatus'),
+        ),
+      );
+    });
+  }
+
+  Future<void> deleteSalesOrder(String orderId) async {
+    return transaction(() async {
+      await (delete(salesOrderItems)..where((i) => i.orderId.equals(orderId))).go();
+      await (delete(salesOrders)..where((o) => o.id.equals(orderId))).go();
+
+      await into(auditLogs).insert(
+        AuditLogsCompanion.insert(
+          action: 'DELETE',
+          targetEntity: 'SALES_ORDER',
+          entityId: orderId,
+          details: Value('Deleted sales order'),
+        ),
+      );
+    });
+  }
+
+  Future<List<SalesOrder>> getSalesOrdersByCustomer(String customerId) async {
+    return (select(salesOrders)..where((o) => o.customerId.equals(customerId))).get();
+  }
+
+  Future<List<SalesOrder>> getSalesOrdersByStatus(String status) async {
+    return (select(salesOrders)..where((o) => o.status.equals(status))).get();
   }
 }
 
