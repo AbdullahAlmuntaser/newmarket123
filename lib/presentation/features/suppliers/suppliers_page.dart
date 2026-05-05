@@ -10,6 +10,7 @@ import 'package:supermarket/core/services/accounting_service.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
 import 'package:supermarket/injection_container.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
+import 'package:supermarket/core/services/communication_service.dart';
 
 class SuppliersPage extends StatefulWidget {
   const SuppliersPage({super.key});
@@ -96,6 +97,7 @@ class _SuppliersPageState extends State<SuppliersPage> {
     ColorScheme colorScheme,
   ) {
     final bool hasDebt = supplier.balance > 0;
+    final commService = sl<CommunicationService>();
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -168,12 +170,33 @@ class _SuppliersPageState extends State<SuppliersPage> {
                   ),
                   Row(
                     children: [
+                      // زر الاتصال الهاتفي
+                      if (supplier.phone != null && supplier.phone!.isNotEmpty)
+                        IconButton.filledTonal(
+                          icon: const Icon(Icons.phone),
+                          onPressed: () => commService.makePhoneCall(supplier.phone!),
+                          tooltip: 'اتصال',
+                        ),
+                      const SizedBox(width: 4),
+                      // زر WhatsApp
+                      if (supplier.phone != null && supplier.phone!.isNotEmpty)
+                        IconButton.filledTonal(
+                          icon: const Icon(Icons.message, color: Colors.green),
+                          onPressed: () => commService.sendWhatsAppMessage(
+                            phoneNumber: supplier.phone!,
+                            message: 'مرحباً، نود التواصل بخصوص الطلبات.',
+                          ),
+                          tooltip: 'WhatsApp',
+                        ),
+                      const SizedBox(width: 4),
+                      // زر الدفع
                       IconButton.filledTonal(
                         icon: const Icon(Icons.payment),
                         onPressed: () => _payAmount(db, supplier),
                         tooltip: l10n.payAmount,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 4),
+                      // زر كشف الحساب
                       IconButton.filledTonal(
                         icon: const Icon(Icons.receipt_long),
                         onPressed: () => context.push(

@@ -20,6 +20,7 @@ import 'daos/global_units_dao.dart';
 import 'daos/product_units_dao.dart';
 import 'daos/audit_dao.dart';
 import 'daos/stock_movement_dao.dart';
+import 'tables/app_config_table.dart';
 import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 
 part 'app_database.g.dart';
@@ -682,7 +683,8 @@ class PostingProfiles extends Table {
 }
 
 class GoodReceivedNotes extends Table with SyncableTable {
-  TextColumn get purchaseOrderId => text().references(PurchaseOrders, #id)();
+  TextColumn get purchaseId => text().nullable().references(Purchases, #id)();
+  TextColumn get supplierId => text().nullable().references(Suppliers, #id)();
   TextColumn get warehouseId => text().references(Warehouses, #id)();
   TextColumn get grnNumber => text().unique()();
   DateTimeColumn get receivedDate => dateTime().withDefault(currentDateAndTime)();
@@ -850,6 +852,7 @@ class SalesOrderItems extends Table with SyncableTable {
     GoodReceivedNoteItems,
     DeliveryNotes,
     DeliveryNoteItems,
+    AppConfigTable,
   ],
   daos: [
     ProductsDao,
@@ -871,7 +874,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 33;
+  int get schemaVersion => 35;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -895,6 +898,20 @@ class AppDatabase extends _$AppDatabase {
         try { await m.addColumn(products, products.valuationMethod); } catch (_) {}
         try { await m.addColumn(products, products.allowFreeQty); } catch (_) {}
         try { await m.addColumn(products, products.isService); } catch (_) {}
+      }
+      if (from < 34) {
+        // Version 34: Update GRN table - add purchaseId and supplierId columns
+        try { 
+          await m.addColumn(goodReceivedNotes, goodReceivedNotes.purchaseId); 
+        } catch (_) {}
+        try { 
+          await m.addColumn(goodReceivedNotes, goodReceivedNotes.supplierId); 
+        } catch (_) {}
+        // Note: purchaseOrderId will be kept for backward compatibility but deprecated
+      }
+      if (from < 35) {
+        // Version 35: Add AppConfigTable for dynamic settings
+        try { await m.createTable(appConfigTable); } catch (_) {}
       }
     },
     beforeOpen: (details) async {
