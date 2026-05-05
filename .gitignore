@@ -1,33 +1,33 @@
 ```
 # Dependencies
+.pub/
 .dart_tool/
-.packages
-
-# Build
-build/
+.build/
 
 # Logs
 *.log
+**/logs
+
+# Coverage
+coverage/
+lcov.info
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
 
 # Environment
 .env
 .env.local
 *.env.*
 
-# Editor
-.vscode/
+# IDE files
 .idea/
+.vscode/
 *.swp
 *.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
 
 # Compressed files
 *.zip
