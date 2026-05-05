@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/services/communication_service.dart';
+import 'package:supermarket/injection_container.dart';
 
 class CustomerTrailingWidgets extends StatelessWidget {
   final Customer customer;
@@ -20,6 +22,7 @@ class CustomerTrailingWidgets extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
+    final commService = sl<CommunicationService>();
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -46,13 +49,36 @@ class CustomerTrailingWidgets extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 4),
+        // زر الاتصال الهاتفي
+        if (customer.phone != null && customer.phone!.isNotEmpty)
+          IconButton(
+            icon: const Icon(Icons.phone),
+            color: colorScheme.primary,
+            tooltip: 'اتصال',
+            onPressed: () => commService.makePhoneCall(customer.phone!),
+          ),
+        const SizedBox(width: 4),
+        // زر WhatsApp
+        if (customer.phone != null && customer.phone!.isNotEmpty)
+          IconButton(
+            icon: const Icon(Icons.message, color: Colors.green),
+            tooltip: 'WhatsApp',
+            onPressed: () => commService.sendWhatsAppMessage(
+              phoneNumber: customer.phone!,
+              message: 'مرحباً $customerName، نشكرك على ثقتكم بنا.',
+            ),
+          ),
+        const SizedBox(width: 4),
+        // زر الدفع
         IconButton(
           icon: const Icon(Icons.payment),
           color: colorScheme.primary, // Themed color
           tooltip: l10n.payAmount,
           onPressed: () => onPayAmount(db, customer),
         ),
+        const SizedBox(width: 4),
+        // زر كشف الحساب
         IconButton(
           icon: const Icon(Icons.receipt_long),
           color: colorScheme.secondary, // Themed color
