@@ -31,6 +31,7 @@ import 'core/services/statement_service.dart';
 import 'core/services/report_service.dart';
 import 'core/services/pricing_service.dart';
 import 'core/services/transaction_engine.dart';
+import 'core/services/communication_service.dart';
 import 'presentation/features/pos/bloc/pos_bloc.dart';
 import 'presentation/features/products/products_provider.dart';
 
@@ -129,6 +130,7 @@ Future<void> initServices() async {
       engine.setCostingService(sl<InventoryCostingService>());
       return engine;
     });
+    sl.registerLazySingleton<CommunicationService>(() => CommunicationService());
     debugPrint("DI: Additional services registered");
 
     debugPrint("DI: Registering providers...");
