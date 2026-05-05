@@ -43,7 +43,19 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
 
   double get _subtotal => _items.fold(0.0, (sum, item) => sum + item.lineTotal);
   double get _discount => double.tryParse(_discountController.text) ?? 0.0;
-  double get _total => _subtotal - _discount;
+  
+  double _calculateTotalTax() {
+    double totalTax = 0;
+    for (var item in _items) {
+      if (item.product != null && item.product!.taxRate > 0) {
+        totalTax += item.lineTotal * (item.product!.taxRate / 100);
+      }
+    }
+    return totalTax;
+  }
+  
+  double get _totalTax => _calculateTotalTax();
+  double get _total => _subtotal + _totalTax - _discount;
 
   @override
   void initState() {
@@ -414,6 +426,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       child: Column(
         children: [
           _row('المجموع الفرعي', _subtotal),
+          _row('الضريبة', _totalTax),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -603,6 +616,20 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       );
       return;
     }
+    
+    // التحقق من الحد الائتماني للعميل ومنع الحفظ عند التجاوز
+    if (_paymentType == 'credit' && _selectedCustomer != null && _customerSmartData != null) {
+      final newBalance = _customerSmartData!.currentBalance + _total;
+      if (newBalance > _customerSmartData!.creditLimit && _customerSmartData!.creditLimit > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('لا يمكن حفظ الفاتورة: العميل تجاوز الحد الائتماني المسموح به'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
 
     setState(() => _isSaving = true);
     
@@ -613,8 +640,9 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
         double totalItemDiscount = 0; // خصم الأصناف المجمع
         for (var item in _items) {
           totalItemDiscount += item.discount;
-          if (item.product != null) {
-            totalTax += (item.lineTotal / (1 + (item.product!.taxRate / 100))) * (item.product!.taxRate / 100);
+          if (item.product != null && item.product!.taxRate > 0) {
+            // حساب الضريبة بشكل صحيح: الضريبة = المبلغ × نسبة الضريبة
+            totalTax += item.lineTotal * (item.product!.taxRate / 100);
           }
         }
         final saleCompanion = SalesCompanion.insert(
