@@ -10,6 +10,7 @@ import 'package:supermarket/presentation/features/pos/widgets/product_search_wid
 import 'package:supermarket/presentation/features/pos/widgets/barcode_scanner_dialog.dart';
 import 'package:supermarket/presentation/features/pos/widgets/category_selector.dart';
 import 'package:supermarket/injection_container.dart';
+import 'package:supermarket/core/services/communication_service.dart';
 
 class PosPage extends StatelessWidget {
   const PosPage({super.key});
@@ -41,13 +42,13 @@ class _PosViewState extends State<PosView> {
 
   @override
   Widget build(BuildContext context) {
+    final commService = sl<CommunicationService>();
+    
     return BlocListener<PosBloc, PosState>(
       listener: (context, state) {
         if (state is PosCheckoutSuccess) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تمت عملية البيع بنجاح'), backgroundColor: Colors.green),
-          );
-          context.read<PosBloc>().add(ClearCart());
+          // عرض خيارات إرسال الفاتورة
+          _showInvoiceOptions(context, state, commService);
         } else if (state is PosError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message), backgroundColor: Colors.red),
@@ -110,5 +111,88 @@ class _PosViewState extends State<PosView> {
     if (result != null && mounted) {
       posBloc.add(AddProductBySku(result));
     }
+  }
+
+  void _showInvoiceOptions(
+    BuildContext context,
+    PosCheckoutSuccess state,
+    CommunicationService commService,
+  ) async {
+    // أولاً إظهار رسالة النجاح
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('تمت عملية البيع بنجاح'), backgroundColor: Colors.green),
+    );
+    
+    // مسح السلة
+    context.read<PosBloc>().add(ClearCart());
+    
+    // عرض خيارات إرسال الفاتورة بعد قليل
+    if (!mounted) return;
+    
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    if (!mounted) return;
+    
+    final customerName = state.sale.customerId ?? 'عميل نقدي';
+    final hasCustomerPhone = state.sale.customerId != null;
+    
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('🧾 الفاتورة #${state.sale.id.substring(0, 8)}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('الإجمالي: ${state.sale.totalAmount.toStringAsFixed(2)} ر.س'),
+            const SizedBox(height: 16),
+            const Text('كيف تريد إرسال الفاتورة؟'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('لاحقاً'),
+          ),
+          // زر طباعة
+          IconButton.filledTonal(
+            icon: const Icon(Icons.print),
+            tooltip: 'طباعة',
+            onPressed: () {
+              // TODO: تنفيذ الطباعة
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('جاري التحضير للطباعة...')),
+              );
+            },
+          ),
+          // زر WhatsApp إذا كان هناك عميل
+          if (hasCustomerPhone)
+            IconButton.filledTonal(
+              icon: const Icon(Icons.message, color: Colors.green),
+              tooltip: 'WhatsApp',
+              onPressed: () async {
+                Navigator.pop(ctx);
+                // ملاحظة: نحتاج لجلب رقم هاتف العميل من قاعدة البيانات
+                // هذا مثال مبسط
+                await commService.sendInvoiceViaWhatsApp(
+                  phoneNumber: '966500000000', // TODO: جلب الرقم الفعلي
+                  invoiceNumber: state.sale.id.substring(0, 8),
+                  total: state.sale.totalAmount,
+                  customerName: customerName,
+                );
+              },
+            ),
+          // زر مشاركة
+          IconButton.filledTonal(
+            icon: const Icon(Icons.share),
+            tooltip: 'مشاركة',
+            onPressed: () {
+              Navigator.pop(ctx);
+              // TODO: تنفيذ المشاركة
+            },
+          ),
+        ],
+      ),
+    );
   }
 }
