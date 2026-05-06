@@ -1,37 +1,43 @@
 ```
-# Flutter/Dart specific
+# Dart/Flutter specific
 .dart_tool/
 .packages
-.pub-cache/
+pubspec.lock
 *.g.dart
 *.freezed.dart
 
 # Build outputs
 build/
-**/ios/Flutter/.last_build_id
+*.apk
+*.aab
+*.app
+*.exe
+*.dll
+*.so
+*.dylib
 
-# Android
-**/android/**/gradle-wrapper.jar
-**/android/.gradle
-**/android/captures/
-**/android/gradlew
-**/android/gradlew.bat
-**/android/local.properties
-**/android/**/GeneratedPluginRegistrant.java
-
-# iOS
-**/ios/Frameworks/App.framework
-**/ios/Flutter/**
-**/ios/Runner/Assets.xcassets/**
-**/ios/Runner/Base.lproj/**
-**/ios/Runner/AppDelegate.*
-**/ios/Runner/Runner-Bridging-Header.h
-**/ios/Runner.xcodeproj/**
-**/ios/Runner.xcworkspace/**
+# Dependencies
+vendor/
+.externalNativeBuild/
 
 # Logs
 *.log
 **/logs
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
 
 # Environment variables
 .env
@@ -39,18 +45,24 @@ build/
 .env.*
 !.env.example
 
-# Dependencies
-**/node_modules/
-**/vendor/
-
 # IDE files
-.vscode/
 .idea/
+*.iml
+*.iws
+.vscode/
 *.swp
 *.swo
-*~
 
-# OS generated files
-.DS_Store
-Thumbs.db
+# Testing
+coverage/
+*.coverage
+.jest/
+
+# CI
+.github/
+.gitlab/
+
+# Distribution
+dist/
+bin/
 ```
