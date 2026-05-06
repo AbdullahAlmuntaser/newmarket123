@@ -268,15 +268,16 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     )..where((tbl) => tbl.date.isBetween(Variable(startDate), Variable(endDate)))).get();
   }
 
-  // --- Reconciliations ---
-  Future<int> createReconciliation(ReconciliationsCompanion rec) =>
-      into(reconciliations).insert(rec);
+  // --- Posting Profiles ---
+  Future<List<PostingProfile>> getAllPostingProfiles() => select(db.postingProfiles).get();
 
-  Stream<List<Reconciliation>> watchReconciliations() =>
-      (select(reconciliations)..orderBy([
-            (t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc),
-          ]))
-          .watch();
+  Stream<List<PostingProfile>> watchPostingProfiles() => select(db.postingProfiles).watch();
+
+  Future<bool> updatePostingProfile(PostingProfile profile) => update(db.postingProfiles).replace(profile);
+
+  Future<int> createPostingProfile(PostingProfilesCompanion profile) => into(db.postingProfiles).insert(profile);
+
+  Future<int> deletePostingProfile(String id) => (delete(db.postingProfiles)..where((t) => t.id.equals(id))).go();
 
   // --- Reports ---
   Future<List<TrialBalanceItem>> getTrialBalance({String? branchId}) async {
