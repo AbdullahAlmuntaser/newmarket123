@@ -8,12 +8,12 @@ mixin _$SalesDaoMixin on DatabaseAccessor<AppDatabase> {
   $GLAccountsTable get gLAccounts => attachedDatabase.gLAccounts;
   $CurrenciesTable get currencies => attachedDatabase.currencies;
   $CustomersTable get customers => attachedDatabase.customers;
+  $WarehousesTable get warehouses => attachedDatabase.warehouses;
   $SalesTable get sales => attachedDatabase.sales;
   $CategoriesTable get categories => attachedDatabase.categories;
   $SuppliersTable get suppliers => attachedDatabase.suppliers;
   $ProductsTable get products => attachedDatabase.products;
   $GlobalUnitsTable get globalUnits => attachedDatabase.globalUnits;
-  $WarehousesTable get warehouses => attachedDatabase.warehouses;
   $ProductBatchesTable get productBatches => attachedDatabase.productBatches;
   $CostCentersTable get costCenters => attachedDatabase.costCenters;
   $SaleItemsTable get saleItems => attachedDatabase.saleItems;

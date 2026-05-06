@@ -174,6 +174,10 @@ class Sales extends Table with SyncableTable {
       text().withDefault(const Constant('retail'))(); // retail / wholesale
   TextColumn get currencyId => text().nullable()();
   RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
+  RealColumn get shippingCost => real().withDefault(const Constant(0.0))();
+  RealColumn get otherExpenses => real().withDefault(const Constant(0.0))();
+  TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
+  TextColumn get representativeId => text().nullable()();
   // ZATCA Fields
   TextColumn get qrCode => text().nullable()();
   TextColumn get hash => text().nullable()();

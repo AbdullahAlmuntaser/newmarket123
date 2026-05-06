@@ -24,6 +24,7 @@ class SalesInvoicePage extends StatefulWidget {
 class _SalesInvoicePageState extends State<SalesInvoicePage> {
   Customer? _selectedCustomer;
   CustomerSmartData? _customerSmartData;
+  Warehouse? _selectedWarehouse;
   final DateTime _selectedDate = DateTime.now();
   String _paymentType = 'cash'; // cash / credit
   String? _representativeId;
@@ -34,6 +35,9 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _referenceController = TextEditingController();
   final TextEditingController _termsController = TextEditingController();
+  final TextEditingController _taxController = TextEditingController();
+  final TextEditingController _shippingCostController = TextEditingController();
+  final TextEditingController _otherExpensesController = TextEditingController();
   bool _isSaving = false;
   bool _isHeaderExpanded = true;
 
@@ -43,24 +47,21 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
 
   double get _subtotal => _items.fold(0.0, (sum, item) => sum + item.lineTotal);
   double get _discount => double.tryParse(_discountController.text) ?? 0.0;
+  double get _shippingCost => double.tryParse(_shippingCostController.text) ?? 0.0;
+  double get _otherExpenses => double.tryParse(_otherExpensesController.text) ?? 0.0;
+  double get _tax => double.tryParse(_taxController.text) ?? 0.0;
   
-  double _calculateTotalTax() {
-    double totalTax = 0;
-    for (var item in _items) {
-      if (item.product != null && item.product!.taxRate > 0) {
-        totalTax += item.lineTotal * (item.product!.taxRate / 100);
-      }
-    }
-    return totalTax;
-  }
+  double get _totalTax => _tax;
   
-  double get _totalTax => _calculateTotalTax();
-  double get _total => _subtotal + _totalTax - _discount;
+  double get _total => _subtotal + _totalTax - _discount + _shippingCost + _otherExpenses;
 
   @override
   void initState() {
     super.initState();
     _discountController.addListener(() => setState(() {}));
+    _taxController.addListener(() => setState(() {}));
+    _shippingCostController.addListener(() => setState(() {}));
+    _otherExpensesController.addListener(() => setState(() {}));
   }
 
   @override
@@ -68,6 +69,9 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     _barcodeController.dispose();
     _discountController.dispose();
     _notesController.dispose();
+    _taxController.dispose();
+    _shippingCostController.dispose();
+    _otherExpensesController.dispose();
     super.dispose();
   }
 
@@ -185,6 +189,12 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
                     setState(() => _selectedCustomer = value);
                     if (value != null) _fetchCustomerSmartData(value.id);
                   },
+                ),
+                const SizedBox(height: 12),
+                WarehousePicker(
+                  db: db,
+                  value: _selectedWarehouse,
+                  onChanged: (value) => setState(() => _selectedWarehouse = value),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -426,21 +436,10 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       child: Column(
         children: [
           _row('المجموع الفرعي', _subtotal),
-          _row('الضريبة', _totalTax),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('الخصم الإجمالي'),
-              SizedBox(
-                width: 80,
-                child: TextField(
-                  controller: _discountController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(isDense: true),
-                ),
-              ),
-            ],
-          ),
+          _editableRow('الضريبة', _taxController),
+          _editableRow('الخصم', _discountController),
+          _editableRow('الشحن', _shippingCostController),
+          _editableRow('مصاريف أخرى', _otherExpensesController),
           const Divider(),
           _row(
             'الصافي المستحق',
@@ -450,6 +449,24 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _editableRow(String label, TextEditingController controller) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label),
+        SizedBox(
+          width: 100,
+          child: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(isDense: true),
+            onChanged: (_) => setState(() {}),
+          ),
+        ),
+      ],
     );
   }
 
@@ -636,24 +653,24 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     try {
       await db.transaction(() async {
         final saleId = const Uuid().v4();
-        double totalTax = 0;
-        double totalItemDiscount = 0; // خصم الأصناف المجمع
+        double totalItemDiscount = 0;
         for (var item in _items) {
           totalItemDiscount += item.discount;
-          if (item.product != null && item.product!.taxRate > 0) {
-            // حساب الضريبة بشكل صحيح: الضريبة = المبلغ × نسبة الضريبة
-            totalTax += item.lineTotal * (item.product!.taxRate / 100);
-          }
         }
+        
         final saleCompanion = SalesCompanion.insert(
           id: drift.Value(saleId),
           customerId: drift.Value(_selectedCustomer?.id),
           total: _total,
-          tax: drift.Value(totalTax),
+          tax: drift.Value(_totalTax),
           discount: drift.Value(_discount + totalItemDiscount),
           paymentMethod: _paymentType,
           isCredit: drift.Value(_paymentType == 'credit'),
           status: const drift.Value('DRAFT'),
+          shippingCost: drift.Value(_shippingCost),
+          otherExpenses: drift.Value(_otherExpenses),
+          warehouseId: drift.Value(_selectedWarehouse?.id),
+          representativeId: drift.Value(_representativeId),
         );
         final itemsCompanions = <SaleItemsCompanion>[];
         for (var item in _items) {
