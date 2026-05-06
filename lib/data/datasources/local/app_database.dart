@@ -897,7 +897,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 35;
+  int get schemaVersion => 36;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -935,6 +935,13 @@ class AppDatabase extends _$AppDatabase {
       if (from < 35) {
         // Version 35: Add AppConfigTable for dynamic settings
         try { await m.createTable(appConfigTable); } catch (_) {}
+      }
+      if (from < 36) {
+        // Version 36: Add shippingCost, otherExpenses, warehouseId, representativeId to Sales
+        try { await m.addColumn(sales, sales.shippingCost); } catch (_) {}
+        try { await m.addColumn(sales, sales.otherExpenses); } catch (_) {}
+        try { await m.addColumn(sales, sales.warehouseId); } catch (_) {}
+        try { await m.addColumn(sales, sales.representativeId); } catch (_) {}
       }
     },
     beforeOpen: (details) async {
