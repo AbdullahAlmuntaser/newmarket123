@@ -169,10 +169,21 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase>
         .watch();
   }
 
-  Future<List<PurchaseOrderItem>> getPurchaseOrderItems(String orderId) {
+Future<List<PurchaseOrderItem>> getPurchaseOrderItems(String orderId) {
     return (select(
       purchaseOrderItems,
-    )..where((pi) => pi.orderId.equals(orderId))).get();
+    )..where((pi) => pi.orderId.equals(orderId)))
+    .get();
+  }
+
+  Future<List<PurchaseOrder>> getInvoicesByDateRange({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) {
+    return (select(purchaseOrders)
+      ..where((p) => p.date.isBiggerOrEqualValue(startDate) & p.date.isSmallerOrEqualValue(endDate))
+      ..orderBy([(p) => OrderingTerm.desc(p.date)]))
+    .get();
   }
 
   Future<void> createPurchaseOrder({

@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 
 // جدول فئات الأصول الثابتة
-class AssetCategories extends Table {
+class AccAssetCategories extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text().withLength(min: 2, max: 100)();
   TextColumn get code => text().withLength(min: 2, max: 50)();
@@ -10,11 +10,11 @@ class AssetCategories extends Table {
 }
 
 // جدول الأصول الثابتة
-class FixedAssets extends Table {
+class AccFixedAssets extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text().withLength(min: 2, max: 150)();
   TextColumn get serialNumber => text().nullable()();
-  IntColumn get categoryId => integer().references(AssetCategories, #id)();
+  IntColumn get categoryId => integer().references(AccAssetCategories, #id)();
   RealColumn get purchaseCost => real()(); // تكلفة الشراء
   DateTimeColumn get purchaseDate => dateTime()();
   DateTimeColumn get acquisitionDate => dateTime()(); // تاريخ البدء في الإهلاك
@@ -29,25 +29,25 @@ class FixedAssets extends Table {
 }
 
 // جدول حركات إهلاك الأصول
-class AssetDepreciationLogs extends Table {
+class AccAssetDepreciationLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get assetId => integer().references(FixedAssets, #id)();
+  IntColumn get assetId => integer().references(AccFixedAssets, #id)();
   RealColumn get depreciationAmount => real()();
   DateTimeColumn get depreciationDate => dateTime()();
-  IntColumn get journalEntryId => integer().nullable(); // ربط بالقيد المحاسبي (سيتم الربط يدوياً أو عبر خدمة)
+  IntColumn get journalEntryId => integer().nullable()(); // ربط بالقيد المحاسبي (سيتم الربط يدوياً أو عبر خدمة)
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
 // جدول بيع أو خروج الأصول
-class AssetDisposals extends Table {
+class AccAssetDisposals extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get assetId => integer().references(FixedAssets, #id)();
+  IntColumn get assetId => integer().references(AccFixedAssets, #id)();
   DateTimeColumn get disposalDate => dateTime()();
   RealColumn get salePrice => real().nullable()();
   TextColumn get disposalType => text()(); // sold, scrapped
   RealColumn get gainOrLoss => real().nullable()(); // الربح أو الخسارة
-  IntColumn get journalEntryId => integer().nullable();
+  IntColumn get journalEntryId => integer().nullable()();
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }

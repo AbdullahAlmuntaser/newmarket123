@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:newmarket/core/services/backup/backup_service.dart';
-import 'package:newmarket/core/services/reports/financial_reports_service.dart';
+import 'package:supermarket/core/services/backup/backup_service.dart';
 
 void main() {
   group('Backup Service Tests', () {
@@ -63,9 +62,9 @@ void main() {
       const double totalPurchasesExcludingVAT = 6000.0;
 
       // Act
-      final totalVATCollected = totalSalesExcludingVAT * vatRate;
-      final totalVATPaid = totalPurchasesExcludingVAT * vatRate;
-      final netVATPayable = totalVATCollected - totalVATPaid;
+      const totalVATCollected = totalSalesExcludingVAT * vatRate;
+      const totalVATPaid = totalPurchasesExcludingVAT * vatRate;
+      const netVATPayable = totalVATCollected - totalVATPaid;
 
       // Assert
       expect(totalVATCollected, equals(1500.0));
@@ -80,10 +79,10 @@ void main() {
       const double operatingExpenses = 10000.0;
 
       // Act
-      final grossProfit = totalRevenue - costOfGoodsSold;
-      final netProfit = grossProfit - operatingExpenses;
-      final grossProfitMargin = (grossProfit / totalRevenue) * 100;
-      final netProfitMargin = (netProfit / totalRevenue) * 100;
+      const grossProfit = totalRevenue - costOfGoodsSold;
+      const netProfit = grossProfit - operatingExpenses;
+      const grossProfitMargin = (grossProfit / totalRevenue) * 100;
+      const netProfitMargin = (netProfit / totalRevenue) * 100;
 
       // Assert
       expect(grossProfit, equals(20000.0));
@@ -158,8 +157,8 @@ void main() {
       final DateTime endDate = DateTime(2025, 1, 31);
 
       // Assert
-      expect(startDate, isBefore(endDate));
-      expect(endDate, isAfter(startDate));
+      expect(startDate.isBefore(endDate), true);
+      expect(endDate.isAfter(startDate), true);
     });
 
     test('Should handle zero values correctly', () async {
@@ -168,7 +167,7 @@ void main() {
       const double amount = 100.0;
 
       // Act
-      final totalWithZeroTax = amount + zeroTax;
+      const totalWithZeroTax = amount + zeroTax;
 
       // Assert
       expect(zeroTax, equals(0.0));

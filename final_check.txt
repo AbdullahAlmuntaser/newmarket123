@@ -1,0 +1,396 @@
+Analyzing systemmarket...                                       
+
+warning • Duplicate import • lib/core/navigation/app_router.dart:60:8 • duplicate_import
+warning • Duplicate import • lib/core/navigation/app_router.dart:61:8 • duplicate_import
+warning • Duplicate import • lib/core/navigation/app_router.dart:62:8 • duplicate_import
+warning • Duplicate import • lib/core/navigation/app_router.dart:63:8 • duplicate_import
+warning • Duplicate import • lib/core/navigation/app_router.dart:64:8 • duplicate_import
+  error • The named parameter 'targetEntity' is required, but there's no corresponding argument • lib/core/services/audit_log_service.dart:21:7 • missing_required_argument
+  error • The argument type 'String' can't be assigned to the parameter type 'Value<String?>'.  • lib/core/services/audit_log_service.dart:22:17 • argument_type_not_assignable
+  error • The named parameter 'entityType' isn't defined • lib/core/services/audit_log_service.dart:24:9 • undefined_named_parameter
+  error • The named parameter 'oldValues' isn't defined • lib/core/services/audit_log_service.dart:26:9 • undefined_named_parameter
+  error • The named parameter 'newValues' isn't defined • lib/core/services/audit_log_service.dart:27:9 • undefined_named_parameter
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/audit_log_service.dart:34:12 • use_of_void_result
+  error • The getter 'entityType' isn't defined for the type '$AuditLogsTable' • lib/core/services/audit_log_service.dart:35:28 • undefined_getter
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/audit_log_service.dart:42:12 • use_of_void_result
+   info • Don't invoke 'print' in production code • lib/core/services/backup/backup_service.dart:142:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/core/services/backup/backup_service.dart:164:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/core/services/backup/backup_service.dart:211:7 • avoid_print
+warning • Unused import: 'package:supermarket/data/datasources/local/daos/accounting_dao.dart' • lib/core/services/fixed_assets_service.dart:3:8 • unused_import
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/fixed_assets_service.dart:13:25 • use_of_void_result
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/fixed_assets_service.dart:13:76 • argument_type_not_assignable
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/fixed_assets_service.dart:34:26 • use_of_void_result
+  error • The getter 'status' isn't defined for the type '$FixedAssetsTable' • lib/core/services/fixed_assets_service.dart:35:25 • undefined_getter
+  error • The getter 'assetDepreciationLogs' isn't defined for the type 'AppDatabase' • lib/core/services/fixed_assets_service.dart:51:26 • undefined_getter
+  error • Undefined name 'AssetDepreciationLogsCompanion' • lib/core/services/fixed_assets_service.dart:52:11 • undefined_identifier
+  error • The getter 'assetDepreciationLogs' isn't defined for the type 'AppDatabase' • lib/core/services/fixed_assets_service.dart:76:28 • undefined_getter
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/fixed_assets_service.dart:77:18 • use_of_void_result
+  error • The getter 'assetDepreciationLogs' isn't defined for the type 'AppDatabase' • lib/core/services/fixed_assets_service.dart:77:31 • undefined_getter
+  error • The getter 'id' isn't defined for the type 'HasResultSet' • lib/core/services/fixed_assets_service.dart:78:52 • undefined_getter
+  error • The getter 'glEntries' isn't defined for the type 'AppDatabase' • lib/core/services/fixed_assets_service.dart:109:38 • undefined_getter
+  error • The argument type 'DateTime' can't be assigned to the parameter type 'Value<DateTime>'.  • lib/core/services/fixed_assets_service.dart:111:15 • argument_type_not_assignable
+  error • The argument type 'Value<String>' can't be assigned to the parameter type 'String'.  • lib/core/services/fixed_assets_service.dart:112:22 • argument_type_not_assignable
+  error • The named parameter 'reference' isn't defined • lib/core/services/fixed_assets_service.dart:113:9 • undefined_named_parameter
+  error • The named parameter 'isPosted' isn't defined • lib/core/services/fixed_assets_service.dart:114:9 • undefined_named_parameter
+   info • Use 'const' with the constructor to improve performance • lib/core/services/fixed_assets_service.dart:114:19 • prefer_const_constructors
+  error • The getter 'glLines' isn't defined for the type 'AppDatabase' • lib/core/services/fixed_assets_service.dart:119:22 • undefined_getter
+  error • The method 'insertAll' isn't defined for the type 'InsertStatement' • lib/core/services/fixed_assets_service.dart:119:31 • undefined_method
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/fixed_assets_service.dart:121:18 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/fixed_assets_service.dart:122:20 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Value<double>'.  • lib/core/services/fixed_assets_service.dart:123:16 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Value<double>'.  • lib/core/services/fixed_assets_service.dart:124:17 • argument_type_not_assignable
+  error • The named parameter 'description' isn't defined • lib/core/services/fixed_assets_service.dart:125:9 • undefined_named_parameter
+   info • Use 'const' with the constructor to improve performance • lib/core/services/fixed_assets_service.dart:125:22 • prefer_const_constructors
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/fixed_assets_service.dart:128:18 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/fixed_assets_service.dart:129:20 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Value<double>'.  • lib/core/services/fixed_assets_service.dart:130:16 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Value<double>'.  • lib/core/services/fixed_assets_service.dart:131:17 • argument_type_not_assignable
+  error • The named parameter 'description' isn't defined • lib/core/services/fixed_assets_service.dart:132:9 • undefined_named_parameter
+   info • Use 'const' with the constructor to improve performance • lib/core/services/fixed_assets_service.dart:132:22 • prefer_const_constructors
+  error • The method 'postJournalEntry' isn't defined for the type 'AccountingDao' • lib/core/services/fixed_assets_service.dart:137:28 • undefined_method
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/fixed_assets_service.dart:145:28 • use_of_void_result
+  error • The getter 'glAccounts' isn't defined for the type 'AppDatabase' • lib/core/services/fixed_assets_service.dart:145:41 • undefined_getter
+  error • The getter 'accountCode' isn't defined for the type 'HasResultSet' • lib/core/services/fixed_assets_service.dart:146:25 • undefined_getter
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/fixed_assets_service.dart:158:28 • use_of_void_result
+  error • The getter 'glAccounts' isn't defined for the type 'AppDatabase' • lib/core/services/fixed_assets_service.dart:158:41 • undefined_getter
+  error • The getter 'accountCode' isn't defined for the type 'HasResultSet' • lib/core/services/fixed_assets_service.dart:159:25 • undefined_getter
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/fixed_assets_service.dart:177:25 • use_of_void_result
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/fixed_assets_service.dart:178:35 • argument_type_not_assignable
+  error • The getter 'assetDisposals' isn't defined for the type 'AppDatabase' • lib/core/services/fixed_assets_service.dart:191:41 • undefined_getter
+  error • Undefined name 'AssetDisposalsCompanion' • lib/core/services/fixed_assets_service.dart:192:7 • undefined_identifier
+  error • The getter 'assetDisposals' isn't defined for the type 'AppDatabase' • lib/core/services/fixed_assets_service.dart:213:24 • undefined_getter
+  error • The getter 'assetDisposals' isn't defined for the type 'AppDatabase' • lib/core/services/fixed_assets_service.dart:214:10 • undefined_getter
+  error • Too many positional arguments: 1 expected, but 2 found • lib/core/services/fixed_assets_service.dart:215:7 • extra_positional_arguments_could_be_named
+  error • Undefined name 'AssetDisposalsCompanion' • lib/core/services/fixed_assets_service.dart:215:7 • undefined_identifier
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/fixed_assets_service.dart:239:25 • use_of_void_result
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/fixed_assets_service.dart:240:35 • argument_type_not_assignable
+  error • The getter 'glEntries' isn't defined for the type 'AppDatabase' • lib/core/services/fixed_assets_service.dart:243:38 • undefined_getter
+  error • The argument type 'DateTime' can't be assigned to the parameter type 'Value<DateTime>'.  • lib/core/services/fixed_assets_service.dart:245:15 • argument_type_not_assignable
+  error • The argument type 'Value<String>' can't be assigned to the parameter type 'String'.  • lib/core/services/fixed_assets_service.dart:246:22 • argument_type_not_assignable
+  error • The named parameter 'reference' isn't defined • lib/core/services/fixed_assets_service.dart:247:9 • undefined_named_parameter
+  error • The named parameter 'isPosted' isn't defined • lib/core/services/fixed_assets_service.dart:248:9 • undefined_named_parameter
+   info • Use 'const' with the constructor to improve performance • lib/core/services/fixed_assets_service.dart:248:19 • prefer_const_constructors
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/fixed_assets_service.dart:256:16 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/fixed_assets_service.dart:257:18 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Value<double>'.  • lib/core/services/fixed_assets_service.dart:259:15 • argument_type_not_assignable
+  error • The named parameter 'description' isn't defined • lib/core/services/fixed_assets_service.dart:260:7 • undefined_named_parameter
+   info • Use 'const' with the constructor to improve performance • lib/core/services/fixed_assets_service.dart:260:20 • prefer_const_constructors
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/fixed_assets_service.dart:266:18 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/fixed_assets_service.dart:267:20 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Value<double>'.  • lib/core/services/fixed_assets_service.dart:268:16 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Value<double>'.  • lib/core/services/fixed_assets_service.dart:269:17 • argument_type_not_assignable
+  error • The named parameter 'description' isn't defined • lib/core/services/fixed_assets_service.dart:270:9 • undefined_named_parameter
+   info • Use 'const' with the constructor to improve performance • lib/core/services/fixed_assets_service.dart:270:22 • prefer_const_constructors
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/fixed_assets_service.dart:276:16 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/fixed_assets_service.dart:277:18 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Value<double>'.  • lib/core/services/fixed_assets_service.dart:278:14 • argument_type_not_assignable
+  error • The named parameter 'description' isn't defined • lib/core/services/fixed_assets_service.dart:280:7 • undefined_named_parameter
+   info • Use 'const' with the constructor to improve performance • lib/core/services/fixed_assets_service.dart:280:20 • prefer_const_constructors
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/fixed_assets_service.dart:290:18 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/fixed_assets_service.dart:291:20 • argument_type_not_assignable
+  error • The argument type 'num' can't be assigned to the parameter type 'Value<double>'.  • lib/core/services/fixed_assets_service.dart:292:16 • argument_type_not_assignable
+  error • The argument type 'num' can't be assigned to the parameter type 'Value<double>'.  • lib/core/services/fixed_assets_service.dart:293:17 • argument_type_not_assignable
+  error • The named parameter 'description' isn't defined • lib/core/services/fixed_assets_service.dart:294:9 • undefined_named_parameter
+  error • The getter 'glLines' isn't defined for the type 'AppDatabase' • lib/core/services/fixed_assets_service.dart:298:22 • undefined_getter
+  error • The method 'insertAll' isn't defined for the type 'InsertStatement' • lib/core/services/fixed_assets_service.dart:298:31 • undefined_method
+  error • The method 'postJournalEntry' isn't defined for the type 'AccountingDao' • lib/core/services/fixed_assets_service.dart:299:28 • undefined_method
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/fixed_assets_service.dart:305:28 • use_of_void_result
+  error • The getter 'glAccounts' isn't defined for the type 'AppDatabase' • lib/core/services/fixed_assets_service.dart:305:41 • undefined_getter
+  error • The getter 'accountCode' isn't defined for the type 'HasResultSet' • lib/core/services/fixed_assets_service.dart:306:25 • undefined_getter
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/fixed_assets_service.dart:312:28 • use_of_void_result
+  error • The getter 'glAccounts' isn't defined for the type 'AppDatabase' • lib/core/services/fixed_assets_service.dart:312:41 • undefined_getter
+  error • The getter 'accountCode' isn't defined for the type 'HasResultSet' • lib/core/services/fixed_assets_service.dart:313:25 • undefined_getter
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/fixed_assets_service.dart:319:28 • use_of_void_result
+  error • The getter 'glAccounts' isn't defined for the type 'AppDatabase' • lib/core/services/fixed_assets_service.dart:319:41 • undefined_getter
+  error • The getter 'accountCode' isn't defined for the type 'HasResultSet' • lib/core/services/fixed_assets_service.dart:320:25 • undefined_getter
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/fixed_assets_service.dart:326:28 • use_of_void_result
+  error • The getter 'glAccounts' isn't defined for the type 'AppDatabase' • lib/core/services/fixed_assets_service.dart:326:41 • undefined_getter
+  error • The getter 'accountCode' isn't defined for the type 'HasResultSet' • lib/core/services/fixed_assets_service.dart:327:25 • undefined_getter
+warning • Unused import: 'package:supermarket/data/datasources/local/daos/accounting_dao.dart' • lib/core/services/payroll_service.dart:3:8 • unused_import
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/payroll_service.dart:13:29 • use_of_void_result
+  error • The getter 'status' isn't defined for the type '$EmployeesTable' • lib/core/services/payroll_service.dart:14:25 • undefined_getter
+  error • The name 'PayrollDetailsCompanion' isn't a type, so it can't be used as a type argument • lib/core/services/payroll_service.dart:22:29 • non_type_as_type_argument
+  error • Undefined name 'PayrollDetailsCompanion' • lib/core/services/payroll_service.dart:42:26 • undefined_identifier
+  error • The getter 'payrollRuns' isn't defined for the type 'AppDatabase' • lib/core/services/payroll_service.dart:60:43 • undefined_getter
+  error • Undefined name 'PayrollRunsCompanion' • lib/core/services/payroll_service.dart:61:7 • undefined_identifier
+  error • The getter 'payrollDetails' isn't defined for the type 'AppDatabase' • lib/core/services/payroll_service.dart:73:24 • undefined_getter
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/payroll_service.dart:94:30 • use_of_void_result
+  error • The getter 'additionalDeductions' isn't defined for the type 'AppDatabase' • lib/core/services/payroll_service.dart:94:43 • undefined_getter
+  error • The getter 'employeeId' isn't defined for the type 'HasResultSet' • lib/core/services/payroll_service.dart:95:25 • undefined_getter
+  error • The getter 'additionalDeductions' isn't defined for the type 'AppDatabase' • lib/core/services/payroll_service.dart:105:30 • undefined_getter
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/payroll_service.dart:111:19 • use_of_void_result
+  error • The getter 'additionalDeductions' isn't defined for the type 'AppDatabase' • lib/core/services/payroll_service.dart:111:32 • undefined_getter
+  error • The getter 'id' isn't defined for the type 'Table' • lib/core/services/payroll_service.dart:112:33 • undefined_getter
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/payroll_service.dart:124:30 • use_of_void_result
+  error • The getter 'payrollRuns' isn't defined for the type 'AppDatabase' • lib/core/services/payroll_service.dart:124:43 • undefined_getter
+  error • The getter 'id' isn't defined for the type 'HasResultSet' • lib/core/services/payroll_service.dart:125:25 • undefined_getter
+  error • The getter 'glEntries' isn't defined for the type 'AppDatabase' • lib/core/services/payroll_service.dart:133:38 • undefined_getter
+  error • The argument type 'DateTime' can't be assigned to the parameter type 'Value<DateTime>'.  • lib/core/services/payroll_service.dart:135:15 • argument_type_not_assignable
+  error • The argument type 'Value<String>' can't be assigned to the parameter type 'String'.  • lib/core/services/payroll_service.dart:136:22 • argument_type_not_assignable
+  error • The named parameter 'reference' isn't defined • lib/core/services/payroll_service.dart:137:9 • undefined_named_parameter
+  error • The named parameter 'isPosted' isn't defined • lib/core/services/payroll_service.dart:138:9 • undefined_named_parameter
+   info • Use 'const' with the constructor to improve performance • lib/core/services/payroll_service.dart:138:19 • prefer_const_constructors
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/payroll_service.dart:147:16 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/payroll_service.dart:148:18 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Value<double>'.  • lib/core/services/payroll_service.dart:150:15 • argument_type_not_assignable
+  error • The named parameter 'description' isn't defined • lib/core/services/payroll_service.dart:151:7 • undefined_named_parameter
+   info • Use 'const' with the constructor to improve performance • lib/core/services/payroll_service.dart:151:20 • prefer_const_constructors
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/payroll_service.dart:157:16 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/payroll_service.dart:158:18 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Value<double>'.  • lib/core/services/payroll_service.dart:159:14 • argument_type_not_assignable
+  error • The named parameter 'description' isn't defined • lib/core/services/payroll_service.dart:161:7 • undefined_named_parameter
+   info • Use 'const' with the constructor to improve performance • lib/core/services/payroll_service.dart:161:20 • prefer_const_constructors
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/payroll_service.dart:167:16 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/payroll_service.dart:168:18 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Value<double>'.  • lib/core/services/payroll_service.dart:169:14 • argument_type_not_assignable
+  error • The named parameter 'description' isn't defined • lib/core/services/payroll_service.dart:171:7 • undefined_named_parameter
+   info • Use 'const' with the constructor to improve performance • lib/core/services/payroll_service.dart:171:20 • prefer_const_constructors
+  error • The getter 'glLines' isn't defined for the type 'AppDatabase' • lib/core/services/payroll_service.dart:174:22 • undefined_getter
+  error • The method 'insertAll' isn't defined for the type 'InsertStatement' • lib/core/services/payroll_service.dart:174:31 • undefined_method
+  error • The method 'postJournalEntry' isn't defined for the type 'AccountingDao' • lib/core/services/payroll_service.dart:177:28 • undefined_method
+  error • The getter 'payrollRuns' isn't defined for the type 'AppDatabase' • lib/core/services/payroll_service.dart:180:24 • undefined_getter
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/payroll_service.dart:189:30 • use_of_void_result
+  error • The getter 'payrollRuns' isn't defined for the type 'AppDatabase' • lib/core/services/payroll_service.dart:189:43 • undefined_getter
+  error • The getter 'id' isn't defined for the type 'HasResultSet' • lib/core/services/payroll_service.dart:190:25 • undefined_getter
+  error • The getter 'glEntries' isn't defined for the type 'AppDatabase' • lib/core/services/payroll_service.dart:198:45 • undefined_getter
+  error • The argument type 'DateTime' can't be assigned to the parameter type 'Value<DateTime>'.  • lib/core/services/payroll_service.dart:200:15 • argument_type_not_assignable
+  error • The argument type 'Value<String>' can't be assigned to the parameter type 'String'.  • lib/core/services/payroll_service.dart:201:22 • argument_type_not_assignable
+  error • The named parameter 'reference' isn't defined • lib/core/services/payroll_service.dart:202:9 • undefined_named_parameter
+  error • The named parameter 'isPosted' isn't defined • lib/core/services/payroll_service.dart:203:9 • undefined_named_parameter
+   info • Use 'const' with the constructor to improve performance • lib/core/services/payroll_service.dart:203:19 • prefer_const_constructors
+  error • The getter 'glLines' isn't defined for the type 'AppDatabase' • lib/core/services/payroll_service.dart:210:22 • undefined_getter
+  error • The method 'insertAll' isn't defined for the type 'InsertStatement' • lib/core/services/payroll_service.dart:210:31 • undefined_method
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/payroll_service.dart:212:18 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/payroll_service.dart:213:20 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Value<double>'.  • lib/core/services/payroll_service.dart:215:17 • argument_type_not_assignable
+  error • The named parameter 'description' isn't defined • lib/core/services/payroll_service.dart:216:9 • undefined_named_parameter
+   info • Use 'const' with the constructor to improve performance • lib/core/services/payroll_service.dart:216:22 • prefer_const_constructors
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/payroll_service.dart:219:18 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • lib/core/services/payroll_service.dart:220:20 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Value<double>'.  • lib/core/services/payroll_service.dart:221:16 • argument_type_not_assignable
+  error • The named parameter 'description' isn't defined • lib/core/services/payroll_service.dart:223:9 • undefined_named_parameter
+   info • Use 'const' with the constructor to improve performance • lib/core/services/payroll_service.dart:223:22 • prefer_const_constructors
+  error • The method 'postJournalEntry' isn't defined for the type 'AccountingDao' • lib/core/services/payroll_service.dart:227:28 • undefined_method
+  error • The getter 'payrollRuns' isn't defined for the type 'AppDatabase' • lib/core/services/payroll_service.dart:230:24 • undefined_getter
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/payroll_service.dart:235:27 • use_of_void_result
+  error • The getter 'payrollDetails' isn't defined for the type 'AppDatabase' • lib/core/services/payroll_service.dart:235:40 • undefined_getter
+  error • The getter 'payrollRunId' isn't defined for the type 'HasResultSet' • lib/core/services/payroll_service.dart:236:25 • undefined_getter
+  error • The getter 'payrollDetails' isn't defined for the type 'AppDatabase' • lib/core/services/payroll_service.dart:240:26 • undefined_getter
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/payroll_service.dart:247:28 • use_of_void_result
+  error • The getter 'glAccounts' isn't defined for the type 'AppDatabase' • lib/core/services/payroll_service.dart:247:41 • undefined_getter
+  error • The getter 'accountCode' isn't defined for the type 'HasResultSet' • lib/core/services/payroll_service.dart:248:25 • undefined_getter
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/payroll_service.dart:254:28 • use_of_void_result
+  error • The getter 'glAccounts' isn't defined for the type 'AppDatabase' • lib/core/services/payroll_service.dart:254:41 • undefined_getter
+  error • The getter 'accountCode' isn't defined for the type 'HasResultSet' • lib/core/services/payroll_service.dart:255:25 • undefined_getter
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/payroll_service.dart:261:28 • use_of_void_result
+  error • The getter 'glAccounts' isn't defined for the type 'AppDatabase' • lib/core/services/payroll_service.dart:261:41 • undefined_getter
+  error • The getter 'accountCode' isn't defined for the type 'HasResultSet' • lib/core/services/payroll_service.dart:262:25 • undefined_getter
+  error • This expression has a type of 'void' so its value can't be used • lib/core/services/payroll_service.dart:268:28 • use_of_void_result
+  error • The getter 'glAccounts' isn't defined for the type 'AppDatabase' • lib/core/services/payroll_service.dart:268:41 • undefined_getter
+  error • The getter 'accountCode' isn't defined for the type 'HasResultSet' • lib/core/services/payroll_service.dart:269:25 • undefined_getter
+  error • Target of URI doesn't exist: 'package:supermarket/data/datasources/local/daos/purchase_dao.dart' • lib/core/services/reports/financial_reports_service.dart:4:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: 'package:supermarket/data/datasources/local/daos/inventory_dao.dart' • lib/core/services/reports/financial_reports_service.dart:5:8 • uri_does_not_exist
+  error • Undefined class 'PurchaseDao' • lib/core/services/reports/financial_reports_service.dart:12:14 • undefined_class
+  error • Undefined class 'InventoryDao' • lib/core/services/reports/financial_reports_service.dart:13:14 • undefined_class
+  error • The method 'PurchaseDao' isn't defined for the type 'FinancialReportsService' • lib/core/services/reports/financial_reports_service.dart:17:19 • undefined_method
+  error • The method 'InventoryDao' isn't defined for the type 'FinancialReportsService' • lib/core/services/reports/financial_reports_service.dart:18:20 • undefined_method
+  error • The method 'getInvoicesByDateRange' isn't defined for the type 'SalesDao' • lib/core/services/reports/financial_reports_service.dart:29:44 • undefined_method
+  error • The method 'getInvoicesByDateRange' isn't defined for the type 'SalesDao' • lib/core/services/reports/financial_reports_service.dart:91:37 • undefined_method
+  error • The method 'getInvoiceItems' isn't defined for the type 'SalesDao' • lib/core/services/reports/financial_reports_service.dart:121:38 • undefined_method
+  error • A value of type 'double' can't be assigned to a variable of type 'int' • lib/core/services/reports/financial_reports_service.dart:123:28 • invalid_assignment
+   info • Use 'const' for final variables initialized to a constant value • lib/core/services/reports/financial_reports_service.dart:216:7 • prefer_const_declarations
+  error • The name 'Budget' isn't a type, so it can't be used as a type argument • lib/data/datasources/local/daos/accounting_dao.dart:562:15 • non_type_as_type_argument
+  error • Undefined name 'budgets' • lib/data/datasources/local/daos/accounting_dao.dart:563:20 • undefined_identifier
+  error • The getter 'createdAt' isn't defined for the type 'HasResultSet' • lib/data/datasources/local/daos/accounting_dao.dart:563:66 • undefined_getter
+  error • The name 'Budget' isn't a type, so it can't be used as a type argument • lib/data/datasources/local/daos/accounting_dao.dart:567:10 • non_type_as_type_argument
+  error • Undefined name 'budgets' • lib/data/datasources/local/daos/accounting_dao.dart:568:20 • undefined_identifier
+  error • The getter 'id' isn't defined for the type 'HasResultSet' • lib/data/datasources/local/daos/accounting_dao.dart:568:45 • undefined_getter
+  error • The name 'Budget' isn't a type, so it can't be used as a type argument • lib/data/datasources/local/daos/accounting_dao.dart:571:15 • non_type_as_type_argument
+  error • Undefined name 'budgets' • lib/data/datasources/local/daos/accounting_dao.dart:572:20 • undefined_identifier
+  error • The getter 'period' isn't defined for the type 'HasResultSet' • lib/data/datasources/local/daos/accounting_dao.dart:572:45 • undefined_getter
+  error • Undefined class 'BudgetsCompanion' • lib/data/datasources/local/daos/accounting_dao.dart:576:28 • undefined_class
+  error • Undefined name 'budgets' • lib/data/datasources/local/daos/accounting_dao.dart:577:17 • undefined_identifier
+  error • Undefined class 'BudgetsCompanion' • lib/data/datasources/local/daos/accounting_dao.dart:580:37 • undefined_class
+  error • A value of type 'Future<int>' can't be returned from the method 'updateBudget' because it has a return type of 'Future<bool>' • lib/data/datasources/local/daos/accounting_dao.dart:581:12 • return_of_invalid_type
+  error • Undefined name 'budgets' • lib/data/datasources/local/daos/accounting_dao.dart:581:20 • undefined_identifier
+  error • The getter 'id' isn't defined for the type 'Table' • lib/data/datasources/local/daos/accounting_dao.dart:581:45 • undefined_getter
+  error • Undefined name 'budgets' • lib/data/datasources/local/daos/accounting_dao.dart:585:20 • undefined_identifier
+  error • The getter 'id' isn't defined for the type 'Table' • lib/data/datasources/local/daos/accounting_dao.dart:585:45 • undefined_getter
+  error • The operator '>' isn't defined for the type 'Future<int>' • lib/data/datasources/local/daos/accounting_dao.dart:585:66 • undefined_operator
+  error • Undefined name 'budgets' • lib/data/datasources/local/daos/accounting_dao.dart:589:19 • undefined_identifier
+  error • The getter 'id' isn't defined for the type 'Table' • lib/data/datasources/local/daos/accounting_dao.dart:589:44 • undefined_getter
+  error • The method 'BudgetsCompanion' isn't defined for the type 'AccountingDao' • lib/data/datasources/local/daos/accounting_dao.dart:590:16 • undefined_method
+  error • The name 'getAllCostCenters' is already defined • lib/data/datasources/local/daos/accounting_dao.dart:594:28 • duplicate_definition
+  error • The name 'createCostCenter' is already defined • lib/data/datasources/local/daos/accounting_dao.dart:599:15 • duplicate_definition
+  error • Undefined name 'exchangeRates' • lib/data/datasources/local/daos/accounting_dao.dart:623:34 • undefined_identifier
+  error • The getter 'fromCurrencyId' isn't defined for the type 'HasResultSet' • lib/data/datasources/local/daos/accounting_dao.dart:625:17 • undefined_getter
+  error • The getter 'toCurrencyId' isn't defined for the type 'HasResultSet' • lib/data/datasources/local/daos/accounting_dao.dart:626:17 • undefined_getter
+  error • The getter 'effectiveDate' isn't defined for the type 'HasResultSet' • lib/data/datasources/local/daos/accounting_dao.dart:627:17 • undefined_getter
+  error • The getter 'effectiveDate' isn't defined for the type 'HasResultSet' • lib/data/datasources/local/daos/accounting_dao.dart:628:49 • undefined_getter
+  error • The name 'BankStatement' isn't a type, so it can't be used as a type argument • lib/data/datasources/local/daos/accounting_dao.dart:635:15 • non_type_as_type_argument
+  error • Undefined name 'bankStatements' • lib/data/datasources/local/daos/accounting_dao.dart:636:20 • undefined_identifier
+  error • The getter 'statementDate' isn't defined for the type 'HasResultSet' • lib/data/datasources/local/daos/accounting_dao.dart:636:73 • undefined_getter
+  error • Undefined class 'BankStatementsCompanion' • lib/data/datasources/local/daos/accounting_dao.dart:640:35 • undefined_class
+  error • Undefined name 'bankStatements' • lib/data/datasources/local/daos/accounting_dao.dart:641:17 • undefined_identifier
+  error • The name 'BankStatementLine' isn't a type, so it can't be used as a type argument • lib/data/datasources/local/daos/accounting_dao.dart:644:15 • non_type_as_type_argument
+  error • Undefined name 'bankStatementLines' • lib/data/datasources/local/daos/accounting_dao.dart:645:20 • undefined_identifier
+  error • The getter 'statementId' isn't defined for the type 'HasResultSet' • lib/data/datasources/local/daos/accounting_dao.dart:646:28 • undefined_getter
+  error • The getter 'transactionDate' isn't defined for the type 'HasResultSet' • lib/data/datasources/local/daos/accounting_dao.dart:647:48 • undefined_getter
+  error • Undefined class 'BankStatementLinesCompanion' • lib/data/datasources/local/daos/accounting_dao.dart:651:39 • undefined_class
+  error • Undefined name 'bankStatementLines' • lib/data/datasources/local/daos/accounting_dao.dart:652:17 • undefined_identifier
+  error • A value of type 'Future<int>' can't be returned from the method 'matchBankLineWithJournal' because it has a return type of 'Future<bool>' • lib/data/datasources/local/daos/accounting_dao.dart:659:12 • return_of_invalid_type
+  error • Undefined name 'bankStatementLines' • lib/data/datasources/local/daos/accounting_dao.dart:659:20 • undefined_identifier
+  error • The getter 'id' isn't defined for the type 'Table' • lib/data/datasources/local/daos/accounting_dao.dart:659:56 • undefined_getter
+  error • The method 'BankStatementLinesCompanion' isn't defined for the type 'AccountingDao' • lib/data/datasources/local/daos/accounting_dao.dart:660:16 • undefined_method
+   info • Use 'const' with the constructor to improve performance • lib/data/datasources/local/daos/accounting_dao.dart:662:33 • prefer_const_constructors
+  error • Undefined name 'auditLogs' • lib/data/datasources/local/daos/accounting_dao.dart:673:24 • undefined_identifier
+  error • The getter 'tableName' isn't defined for the type 'HasResultSet' • lib/data/datasources/local/daos/accounting_dao.dart:676:37 • undefined_getter
+  error • The getter 'recordId' isn't defined for the type 'HasResultSet' • lib/data/datasources/local/daos/accounting_dao.dart:679:37 • undefined_getter
+  error • The getter 'timestamp' isn't defined for the type 'HasResultSet' • lib/data/datasources/local/daos/accounting_dao.dart:682:37 • undefined_getter
+  error • A value of type 'Future<List<dynamic>>' can't be returned from the method 'getAuditLogs' because it has a return type of 'Future<List<AuditLog>>' • lib/data/datasources/local/daos/accounting_dao.dart:685:12 • return_of_invalid_type
+  error • The getter 'timestamp' isn't defined for the type 'HasResultSet' • lib/data/datasources/local/daos/accounting_dao.dart:685:56 • undefined_getter
+  error • Undefined name 'auditLogs' • lib/data/datasources/local/daos/accounting_dao.dart:689:17 • undefined_identifier
+   info • Use 'const' with the constructor to improve performance • lib/data/datasources/local/daos/sales_dao.dart:306:20 • prefer_const_constructors
+  error • The method 'asComputed' isn't defined for the type 'ColumnBuilder' • lib/data/datasources/local/tables/advanced_accounting_tables.dart:44:37 • undefined_method
+  error • The name 'Budget' isn't a type, so it can't be used as a type argument • lib/presentation/features/accounting/budgets_page.dart:15:8 • non_type_as_type_argument
+warning • Unused import: 'package:drift/native.dart' • test/advanced_accounting_test.dart:3:8 • unused_import
+   info • Can't use a relative path to import a library in 'lib' • test/advanced_accounting_test.dart:4:8 • avoid_relative_lib_imports
+   info • Can't use a relative path to import a library in 'lib' • test/advanced_accounting_test.dart:5:8 • avoid_relative_lib_imports
+   info • Can't use a relative path to import a library in 'lib' • test/advanced_accounting_test.dart:6:8 • avoid_relative_lib_imports
+   info • Can't use a relative path to import a library in 'lib' • test/advanced_accounting_test.dart:7:8 • avoid_relative_lib_imports
+  error • The method 'connect' isn't defined for the type 'AppDatabase' • test/advanced_accounting_test.dart:16:22 • undefined_method
+  error • The method 'inMemory' isn't defined for the type 'DatabaseConnection' • test/advanced_accounting_test.dart:16:49 • undefined_method
+  error • The getter 'assetCategories' isn't defined for the type 'AppDatabase' • test/advanced_accounting_test.dart:32:43 • undefined_getter
+  error • Undefined name 'AssetCategoriesCompanion' • test/advanced_accounting_test.dart:33:9 • undefined_identifier
+  error • The named parameter 'cost' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:41:9 • missing_required_argument
+  error • The named parameter 'usefulLifeYears' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:41:9 • missing_required_argument
+  error • The named parameter 'categoryId' isn't defined • test/advanced_accounting_test.dart:43:11 • undefined_named_parameter
+  error • The named parameter 'purchaseCost' isn't defined • test/advanced_accounting_test.dart:44:11 • undefined_named_parameter
+  error • The named parameter 'acquisitionDate' isn't defined • test/advanced_accounting_test.dart:46:11 • undefined_named_parameter
+  error • The argument type 'int' can't be assigned to the parameter type 'Value<double>'.  • test/advanced_accounting_test.dart:47:25 • argument_type_not_assignable
+  error • The named parameter 'usefulLifeMonths' isn't defined • test/advanced_accounting_test.dart:48:11 • undefined_named_parameter
+  error • The named parameter 'depreciationMethod' isn't defined • test/advanced_accounting_test.dart:49:11 • undefined_named_parameter
+  error • The getter 'assetCategories' isn't defined for the type 'AppDatabase' • test/advanced_accounting_test.dart:61:43 • undefined_getter
+  error • Undefined name 'AssetCategoriesCompanion' • test/advanced_accounting_test.dart:62:9 • undefined_identifier
+  error • The named parameter 'cost' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:66:9 • missing_required_argument
+  error • The named parameter 'usefulLifeYears' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:66:9 • missing_required_argument
+  error • The named parameter 'categoryId' isn't defined • test/advanced_accounting_test.dart:68:11 • undefined_named_parameter
+  error • The named parameter 'purchaseCost' isn't defined • test/advanced_accounting_test.dart:69:11 • undefined_named_parameter
+  error • The named parameter 'acquisitionDate' isn't defined • test/advanced_accounting_test.dart:71:11 • undefined_named_parameter
+  error • The argument type 'int' can't be assigned to the parameter type 'Value<double>'.  • test/advanced_accounting_test.dart:72:25 • argument_type_not_assignable
+  error • The named parameter 'usefulLifeMonths' isn't defined • test/advanced_accounting_test.dart:73:11 • undefined_named_parameter
+  error • The named parameter 'depreciationMethod' isn't defined • test/advanced_accounting_test.dart:74:11 • undefined_named_parameter
+  error • This expression has a type of 'void' so its value can't be used • test/advanced_accounting_test.dart:85:34 • use_of_void_result
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • test/advanced_accounting_test.dart:86:37 • argument_type_not_assignable
+  error • The name 'isNotNull' is defined in the libraries 'package:drift/src/runtime/query_builder/query_builder.dart (via package:drift/drift.dart)' and 'package:matcher/src/core_matchers.dart' • test/advanced_accounting_test.dart:90:49 • ambiguous_import
+  error • The named parameter 'employeeCode' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:98:9 • missing_required_argument
+  error • The named parameter 'code' isn't defined • test/advanced_accounting_test.dart:100:11 • undefined_named_parameter
+  error • The argument type 'DateTime' can't be assigned to the parameter type 'Value<DateTime?>'.  • test/advanced_accounting_test.dart:101:21 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Value<double>'.  • test/advanced_accounting_test.dart:102:24 • argument_type_not_assignable
+  error • The named parameter 'housingAllowance' isn't defined • test/advanced_accounting_test.dart:103:11 • undefined_named_parameter
+  error • The named parameter 'transportAllowance' isn't defined • test/advanced_accounting_test.dart:104:11 • undefined_named_parameter
+  error • The named parameter 'otherAllowances' isn't defined • test/advanced_accounting_test.dart:105:11 • undefined_named_parameter
+  error • The named parameter 'totalDeductions' isn't defined • test/advanced_accounting_test.dart:106:11 • undefined_named_parameter
+  error • The named parameter 'employeeCode' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:121:9 • missing_required_argument
+  error • The named parameter 'code' isn't defined • test/advanced_accounting_test.dart:123:11 • undefined_named_parameter
+  error • The argument type 'DateTime' can't be assigned to the parameter type 'Value<DateTime?>'.  • test/advanced_accounting_test.dart:124:21 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Value<double>'.  • test/advanced_accounting_test.dart:125:24 • argument_type_not_assignable
+  error • The named parameter 'housingAllowance' isn't defined • test/advanced_accounting_test.dart:126:11 • undefined_named_parameter
+  error • The named parameter 'totalDeductions' isn't defined • test/advanced_accounting_test.dart:127:11 • undefined_named_parameter
+  error • The getter 'additionalDeductions' isn't defined for the type 'AppDatabase' • test/advanced_accounting_test.dart:132:24 • undefined_getter
+  error • Undefined name 'AdditionalDeductionsCompanion' • test/advanced_accounting_test.dart:133:9 • undefined_identifier
+  error • The method 'logUpdate' isn't defined for the type 'AuditLogService' • test/advanced_accounting_test.dart:172:29 • undefined_method
+  error • The method 'getAuditLogForTable' isn't defined for the type 'AuditLogService' • test/advanced_accounting_test.dart:180:42 • undefined_method
+   info • Use 'const' for final variables initialized to a constant value • test/advanced_accounting_test.dart:191:7 • prefer_const_declarations
+  error • The method 'logInsert' isn't defined for the type 'AuditLogService' • test/advanced_accounting_test.dart:194:29 • undefined_method
+  error • The method 'logUpdate' isn't defined for the type 'AuditLogService' • test/advanced_accounting_test.dart:200:29 • undefined_method
+  error • The method 'getRecordChangeHistory' isn't defined for the type 'AuditLogService' • test/advanced_accounting_test.dart:207:45 • undefined_method
+  error • The getter 'assetCategories' isn't defined for the type 'AppDatabase' • test/advanced_accounting_test.dart:218:43 • undefined_getter
+  error • Undefined name 'AssetCategoriesCompanion' • test/advanced_accounting_test.dart:219:9 • undefined_identifier
+  error • The named parameter 'cost' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:224:9 • missing_required_argument
+  error • The named parameter 'usefulLifeYears' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:224:9 • missing_required_argument
+  error • The named parameter 'categoryId' isn't defined • test/advanced_accounting_test.dart:226:11 • undefined_named_parameter
+  error • The named parameter 'purchaseCost' isn't defined • test/advanced_accounting_test.dart:227:11 • undefined_named_parameter
+  error • The named parameter 'acquisitionDate' isn't defined • test/advanced_accounting_test.dart:229:11 • undefined_named_parameter
+  error • The named parameter 'usefulLifeMonths' isn't defined • test/advanced_accounting_test.dart:230:11 • undefined_named_parameter
+  error • The named parameter 'depreciationMethod' isn't defined • test/advanced_accounting_test.dart:231:11 • undefined_named_parameter
+  error • This expression has a type of 'void' so its value can't be used • test/advanced_accounting_test.dart:240:27 • use_of_void_result
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • test/advanced_accounting_test.dart:241:37 • argument_type_not_assignable
+  error • This expression has a type of 'void' so its value can't be used • test/advanced_accounting_test.dart:261:35 • use_of_void_result
+  error • The argument type 'int' can't be assigned to the parameter type 'String'.  • test/advanced_accounting_test.dart:262:37 • argument_type_not_assignable
+  error • Undefined name 'db' • test/advanced_accounting_test.dart:272:9 • undefined_identifier
+  error • Undefined name 'db' • test/advanced_accounting_test.dart:272:17 • undefined_identifier
+  error • The named parameter 'code' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:273:5 • missing_required_argument
+  error • The named parameter 'name' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:273:5 • missing_required_argument
+  error • The named parameter 'type' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:273:5 • missing_required_argument
+  error • The named parameter 'accountCode' isn't defined • test/advanced_accounting_test.dart:274:7 • undefined_named_parameter
+  error • The named parameter 'accountName' isn't defined • test/advanced_accounting_test.dart:275:7 • undefined_named_parameter
+  error • The named parameter 'accountType' isn't defined • test/advanced_accounting_test.dart:276:7 • undefined_named_parameter
+  error • The named parameter 'code' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:278:5 • missing_required_argument
+  error • The named parameter 'name' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:278:5 • missing_required_argument
+  error • The named parameter 'type' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:278:5 • missing_required_argument
+  error • The named parameter 'accountCode' isn't defined • test/advanced_accounting_test.dart:279:7 • undefined_named_parameter
+  error • The named parameter 'accountName' isn't defined • test/advanced_accounting_test.dart:280:7 • undefined_named_parameter
+  error • The named parameter 'accountType' isn't defined • test/advanced_accounting_test.dart:281:7 • undefined_named_parameter
+  error • The named parameter 'code' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:283:5 • missing_required_argument
+  error • The named parameter 'name' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:283:5 • missing_required_argument
+  error • The named parameter 'type' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:283:5 • missing_required_argument
+  error • The named parameter 'accountCode' isn't defined • test/advanced_accounting_test.dart:284:7 • undefined_named_parameter
+  error • The named parameter 'accountName' isn't defined • test/advanced_accounting_test.dart:285:7 • undefined_named_parameter
+  error • The named parameter 'accountType' isn't defined • test/advanced_accounting_test.dart:286:7 • undefined_named_parameter
+  error • The named parameter 'code' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:288:5 • missing_required_argument
+  error • The named parameter 'name' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:288:5 • missing_required_argument
+  error • The named parameter 'type' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:288:5 • missing_required_argument
+  error • The named parameter 'accountCode' isn't defined • test/advanced_accounting_test.dart:289:7 • undefined_named_parameter
+  error • The named parameter 'accountName' isn't defined • test/advanced_accounting_test.dart:290:7 • undefined_named_parameter
+  error • The named parameter 'accountType' isn't defined • test/advanced_accounting_test.dart:291:7 • undefined_named_parameter
+  error • The named parameter 'code' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:293:5 • missing_required_argument
+  error • The named parameter 'name' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:293:5 • missing_required_argument
+  error • The named parameter 'type' is required, but there's no corresponding argument • test/advanced_accounting_test.dart:293:5 • missing_required_argument
+  error • The named parameter 'accountCode' isn't defined • test/advanced_accounting_test.dart:294:7 • undefined_named_parameter
+  error • The named parameter 'accountName' isn't defined • test/advanced_accounting_test.dart:295:7 • undefined_named_parameter
+  error • The named parameter 'accountType' isn't defined • test/advanced_accounting_test.dart:296:7 • undefined_named_parameter
+warning • Unused import: 'package:supermarket/domain/entities/sales_invoice.dart' • test/logic/sales_logic_test.dart:4:8 • unused_import
+  error • Target of URI doesn't exist: 'package:supermarket/domain/entities/customer.dart' • test/logic/sales_logic_test.dart:5:8 • uri_does_not_exist
+warning • Unused import: 'package:mockito/mockito.dart' • test/logic/sales_logic_test.dart:6:8 • unused_import
+warning • The value of the local variable 'salesDao' isn't used • test/logic/sales_logic_test.dart:13:19 • unused_local_variable
+  error • The function 'MockAppDatabase' isn't defined • test/logic/sales_logic_test.dart:16:18 • undefined_function
+   info • Use 'const' for final variables initialized to a constant value • test/logic/sales_logic_test.dart:26:7 • prefer_const_declarations
+   info • Use 'const' for final variables initialized to a constant value • test/logic/sales_logic_test.dart:27:7 • prefer_const_declarations
+   info • Use 'const' for final variables initialized to a constant value • test/logic/sales_logic_test.dart:34:7 • prefer_const_declarations
+   info • Use 'const' for final variables initialized to a constant value • test/logic/sales_logic_test.dart:46:7 • prefer_const_declarations
+   info • Use 'const' for final variables initialized to a constant value • test/logic/sales_logic_test.dart:58:7 • prefer_const_declarations
+   info • Use 'const' for final variables initialized to a constant value • test/logic/sales_logic_test.dart:73:7 • prefer_const_declarations
+   info • Use 'const' for final variables initialized to a constant value • test/logic/sales_logic_test.dart:87:7 • prefer_const_declarations
+warning • The value of the local variable 'currentBalance' isn't used • test/logic/sales_logic_test.dart:97:20 • unused_local_variable
+warning • The value of the local variable 'newInvoiceTotal' isn't used • test/logic/sales_logic_test.dart:99:20 • unused_local_variable
+   info • Use 'const' for final variables initialized to a constant value • test/logic/sales_logic_test.dart:102:7 • prefer_const_declarations
+  error • The function 'MockAppDatabase' isn't defined • test/logic/sales_logic_test.dart:114:18 • undefined_function
+warning • The member 'StreamQueryStore' can only be used within its package • test/logic/sales_logic_test.mocks.dart:1158:21 • invalid_use_of_internal_member
+warning • The member 'StreamQueryStore' can only be used within its package • test/logic/sales_logic_test.mocks.dart:2237:8 • invalid_use_of_internal_member
+warning • The member 'StreamQueryStore' can only be used within its package • test/logic/sales_logic_test.mocks.dart:2243:17 • invalid_use_of_internal_member
+warning • The member 'QueryStreamFetcher' can only be used within its package • test/logic/sales_logic_test.mocks.dart:2346:16 • invalid_use_of_internal_member
+warning • Unused import: 'package:mockito/mockito.dart' • test/services/accounting_service_test.dart:5:8 • unused_import
+warning • The value of the local variable 'database' isn't used • test/services/accounting_service_test.dart:11:22 • unused_local_variable
+warning • The value of the local variable 'postingEngine' isn't used • test/services/accounting_service_test.dart:12:24 • unused_local_variable
+warning • The value of the local variable 'transactionEngine' isn't used • test/services/accounting_service_test.dart:13:28 • unused_local_variable
+  error • The function 'MockAppDatabase' isn't defined • test/services/accounting_service_test.dart:16:18 • undefined_function
+  error • The function 'MockPostingEngine' isn't defined • test/services/accounting_service_test.dart:17:23 • undefined_function
+  error • The function 'MockTransactionEngine' isn't defined • test/services/accounting_service_test.dart:18:27 • undefined_function
+   info • Use 'const' for final variables initialized to a constant value • test/services/accounting_service_test.dart:57:7 • prefer_const_declarations
+   info • Use 'const' for final variables initialized to a constant value • test/services/accounting_service_test.dart:70:7 • prefer_const_declarations
+  error • A value of type 'num' can't be assigned to a variable of type 'int' • test/services/accounting_service_test.dart:100:28 • invalid_assignment
+  error • A value of type 'num' can't be assigned to a variable of type 'int' • test/services/accounting_service_test.dart:131:28 • invalid_assignment
+warning • The member 'StreamQueryStore' can only be used within its package • test/services/accounting_service_test.mocks.dart:1163:21 • invalid_use_of_internal_member
+warning • The member 'StreamQueryStore' can only be used within its package • test/services/accounting_service_test.mocks.dart:2263:8 • invalid_use_of_internal_member
+warning • The member 'StreamQueryStore' can only be used within its package • test/services/accounting_service_test.mocks.dart:2269:17 • invalid_use_of_internal_member
+warning • The member 'QueryStreamFetcher' can only be used within its package • test/services/accounting_service_test.mocks.dart:2372:16 • invalid_use_of_internal_member
+warning • Unused import: 'package:supermarket/core/services/reports/financial_reports_service.dart' • test/services/post_development_test.dart:3:8 • unused_import
+   info • Use 'const' for final variables initialized to a constant value • test/services/post_development_test.dart:66:7 • prefer_const_declarations
+   info • Use 'const' for final variables initialized to a constant value • test/services/post_development_test.dart:67:7 • prefer_const_declarations
+   info • Use 'const' for final variables initialized to a constant value • test/services/post_development_test.dart:83:7 • prefer_const_declarations
+  error • The function 'isBefore' isn't defined • test/services/post_development_test.dart:161:25 • undefined_function
+  error • The function 'isAfter' isn't defined • test/services/post_development_test.dart:162:23 • undefined_function
+   info • Use 'const' for final variables initialized to a constant value • test/services/post_development_test.dart:171:7 • prefer_const_declarations
+
+392 issues found. (ran in 2.6s)

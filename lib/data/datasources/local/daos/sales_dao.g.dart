@@ -17,11 +17,11 @@ mixin _$SalesDaoMixin on DatabaseAccessor<AppDatabase> {
   $ProductBatchesTable get productBatches => attachedDatabase.productBatches;
   $CostCentersTable get costCenters => attachedDatabase.costCenters;
   $SaleItemsTable get saleItems => attachedDatabase.saleItems;
-  $SalesOrdersTable get salesOrders => attachedDatabase.salesOrders;
-  $SalesOrderItemsTable get salesOrderItems => attachedDatabase.salesOrderItems;
   $SyncQueueTable get syncQueue => attachedDatabase.syncQueue;
   $AuditLogsTable get auditLogs => attachedDatabase.auditLogs;
   $SalesReturnsTable get salesReturns => attachedDatabase.salesReturns;
   $SalesReturnItemsTable get salesReturnItems =>
       attachedDatabase.salesReturnItems;
+  $SalesOrdersTable get salesOrders => attachedDatabase.salesOrders;
+  $SalesOrderItemsTable get salesOrderItems => attachedDatabase.salesOrderItems;
 }
