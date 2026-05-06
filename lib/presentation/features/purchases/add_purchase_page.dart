@@ -25,6 +25,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   Warehouse? _selectedWarehouse;
   String _paymentMethod = 'cash';
   Currency? _selectedCurrency;
+  String? _representativeId;
   
   final DateTime _selectedDate = DateTime.now();
   final List<PurchaseItemData> _items = [];
@@ -129,6 +130,22 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
               ),
             ),
             Expanded(child: CurrencyPicker(db: db, value: _selectedCurrency, onChanged: (v) => setState(() => _selectedCurrency = v))),
+          ],
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: 'المندوب',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                items: const [DropdownMenuItem(value: '1', child: Text('مندوب عام'))],
+                onChanged: (value) => setState(() => _representativeId = value),
+                value: _representativeId,
+              ),
+            ),
           ],
         ),
       ],
