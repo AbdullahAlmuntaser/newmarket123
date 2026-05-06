@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/inventory_costing_service.dart';
@@ -105,13 +106,20 @@ class PostingEngine {
     required Map<String, dynamic> context,
   }) async {
     await _checkPeriodOpen();
+    
+    // Log the attempt
+    developer.log('Posting transaction: $type, Reference: $referenceId', name: 'PostingEngine');
+
     final profile =
         await (db.select(db.postingProfiles)
-              ..where((p) => p.operationType.equals(type.name))
+              ..where((p) => p.operationType.equals(type.name.toUpperCase()))
               ..where((p) => p.isActive.equals(true)))
             .get();
 
-    if (profile.isEmpty) throw Exception('No posting profile found for $type');
+    if (profile.isEmpty) {
+      developer.log('No posting profile found for: ${type.name.toUpperCase()}', name: 'PostingEngine', level: 1000);
+      throw Exception('No posting profile found for: ${type.name}');
+    }
 
     final entryId = const Uuid().v4();
     final entry = GLEntriesCompanion.insert(
@@ -135,6 +143,8 @@ class PostingEngine {
         ),
       );
     }
+    
+    developer.log('Successfully found profile and created lines for ${type.name}', name: 'PostingEngine');
     await db.accountingDao.createEntry(entry, lines);
   }
 
