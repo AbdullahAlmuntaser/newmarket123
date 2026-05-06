@@ -1,25 +1,20 @@
 import 'package:drift/drift.dart';
-import '../../datasources/local/app_database.dart';
-import '../../datasources/local/daos/accounting_dao.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 
-/// خدمة إدارة الأصول الثابتة وحساب الإهلاك
 class FixedAssetsService {
   final AppDatabase db;
 
   FixedAssetsService(this.db);
 
-  /// حساب الإهلاك الشهري لأصل معين
   Future<double> calculateMonthlyDepreciation(int assetId) async {
-    final asset = await db.select(db.fixedAssets).where((t) => t.id.equals(assetId)).getSingle();
+    final asset = await (db.select(db.accFixedAssets)..where((t) => t.id.equals(assetId))).getSingle();
     
     double depreciableAmount = asset.purchaseCost - asset.salvageValue;
     
     if (asset.depreciationMethod == 'straight_line') {
-      // طريقة القسط الثابت
       return depreciableAmount / asset.usefulLifeMonths;
     } else if (asset.depreciationMethod == 'declining') {
-      // طريقة الرصيد المتناقص
-      final annualRate = 2.0 / asset.usefulLifeMonths * 12; // مضاعفة المعدل
+      final annualRate = 2.0 / asset.usefulLifeMonths * 12;
       final monthlyRate = annualRate / 12;
       final bookValue = asset.purchaseCost - asset.accumulatedDepreciation;
       return bookValue * monthlyRate;
@@ -28,43 +23,38 @@ class FixedAssetsService {
     return 0.0;
   }
 
-  /// تشغيل الإهلاك الشهري لجميع الأصول النشطة
   Future<List<Map<String, dynamic>>> runMonthlyDepreciation(DateTime runDate) async {
     final results = <Map<String, dynamic>>[];
-    final assets = await db.select(db.fixedAssets)
-        .where((t) => t.status.equals('active'))
+    final assets = await (db.select(db.accFixedAssets)
+        ..where((t) => t.status.equals('active')))
         .get();
 
     for (var asset in assets) {
-      // التحقق من آخر تاريخ إهلاك
       if (asset.lastDepreciationDate != null) {
         final lastRun = asset.lastDepreciationDate!;
         if (runDate.month == lastRun.month && runDate.year == lastRun.year) {
-          continue; // تم تشغيل الإهلاك لهذا الشهر بالفعل
+          continue;
         }
       }
 
       final depreciationAmount = await calculateMonthlyDepreciation(asset.id);
       
       if (depreciationAmount > 0) {
-        // تسجيل حركة الإهلاك
-        await db.into(db.assetDepreciationLogs).insert(
-          AssetDepreciationLogsCompanion.insert(
+        await db.into(db.accAssetDepreciationLogs).insert(
+          AccAssetDepreciationLogsCompanion.insert(
             assetId: asset.id,
             depreciationAmount: depreciationAmount,
             depreciationDate: runDate,
           ),
         );
 
-        // تحديث الأصل
-        await db.update(db.fixedAssets).replace(
-          asset.copyWith(
-            accumulatedDepreciation: asset.accumulatedDepreciation + depreciationAmount.toInt(),
-            lastDepreciationDate: runDate,
+        await (db.update(db.accFixedAssets)..where((t) => t.id.equals(asset.id))).write(
+          AccFixedAssetsCompanion(
+            accumulatedDepreciation: Value(asset.accumulatedDepreciation + depreciationAmount.toInt()),
+            lastDepreciationDate: Value(runDate),
           ),
         );
 
-        // إنشاء قيد محاسبي تلقائي
         final journalEntryId = await _createDepreciationJournalEntry(
           asset.id,
           depreciationAmount,
@@ -72,13 +62,12 @@ class FixedAssetsService {
           asset.categoryId,
         );
 
-        // تحديث سجل الإهلاك برقم القيد
-        await db.update(db.assetDepreciationLogs).replace(
-          (await db.select(db.assetDepreciationLogs)
-              .orderBy([(t) => OrderingTerm.desc(t.id)])
-              .limit(1)
-              .getSingle())
-          .copyWith(journalEntryId: journalEntryId),
+        final log = await (db.select(db.accAssetDepreciationLogs)
+              ..orderBy([(t) => OrderingTerm.desc(t.id)])
+              ..limit(1))
+              .getSingle();
+        await (db.update(db.accAssetDepreciationLogs)..where((t) => t.id.equals(log.id))).write(
+          AccAssetDepreciationLogsCompanion(journalEntryId: Value(journalEntryId)),
         );
 
         results.add({
@@ -93,80 +82,69 @@ class FixedAssetsService {
     return results;
   }
 
-  /// إنشاء قيد محاسبي للإهلاك
   Future<int> _createDepreciationJournalEntry(
     int assetId,
     double amount,
     DateTime date,
     int categoryId,
   ) async {
-    // الحصول على حسابات الإهلاك من دليل الحسابات أو إعدادات النظام
-    // هنا نفترض وجود حسابات افتراضية
     final expenseAccountId = await _getDepreciationExpenseAccount(categoryId);
     final accumulatedDepreciationAccountId = await _getAccumulatedDepreciationAccount(assetId);
 
-    // إنشاء القيد
-    final entryId = await db.into(db.glEntries).insert(
+    final entryId = await db.into(db.gLEntries).insert(
       GLEntriesCompanion.insert(
-        date: date,
-        description: Value('قيد إهلاك شهرى للأصل #$assetId'),
-        reference: Value('DEP-${date.toString().substring(0, 7)}-$assetId'),
-        isPosted: Value(false),
+        description: 'قيد إهلاك شهرى للأصل',
+        date: Value(date),
+        referenceType: const Value('DEPRECIATION'),
+        referenceId: Value('DEP-${date.toString().substring(0, 7)}-$assetId'),
+        status: const Value('DRAFT'),
       ),
     );
 
-    // أسطر القيد
-    await db.into(db.glLines).insertAll([
-      GLLinesCompanion.insert(
-        entryId: entryId,
+    await db.batch((batch) {
+      batch.insert(db.gLLines, GLLinesCompanion.insert(
+        entryId: entryId.toString(),
         accountId: expenseAccountId,
-        debit: amount,
-        credit: 0,
-        description: Value('مصروف إهلاك'),
-      ),
-      GLLinesCompanion.insert(
-        entryId: entryId,
+        debit: Value(amount),
+        credit: const Value(0.0),
+        memo: const Value('مصروف إهلاك'),
+      ));
+      batch.insert(db.gLLines, GLLinesCompanion.insert(
+        entryId: entryId.toString(),
         accountId: accumulatedDepreciationAccountId,
-        debit: 0,
-        credit: amount,
-        description: Value('مجمع إهلاك'),
-      ),
-    ]);
+        debit: const Value(0.0),
+        credit: Value(amount),
+        memo: const Value('مجمع إهلاك'),
+      ));
+    });
 
-    // ترحيل القيد
-    await db.accountingDao.postJournalEntry(entryId);
+    await _postGLEntry(entryId);
 
     return entryId;
   }
 
-  Future<int> _getDepreciationExpenseAccount(int categoryId) async {
-    // البحث عن حساب مصروف الإهلاك في شجرة الحسابات
-    // هذا تبسيط - في الواقع يتم جلبه من إعدادات النظام
-    final accounts = await db.select(db.glAccounts)
-        .where((t) => t.accountCode.like('6%')) // مصروفات
+  Future<String> _getDepreciationExpenseAccount(int categoryId) async {
+    final accounts = await (db.select(db.gLAccounts)
+        ..where((t) => t.code.like('6%')))
         .get();
     
     if (accounts.isNotEmpty) {
       return accounts.first.id;
     }
-    
     throw Exception('لم يتم العثور على حساب مصروف الإهلاك');
   }
-
-  Future<int> _getAccumulatedDepreciationAccount(int assetId) async {
-    // البحث عن حساب مجمع الإهلاك
-    final accounts = await db.select(db.glAccounts)
-        .where((t) => t.accountCode.like('16%')) // أصول ثابتة - مجمع إهلاك
+  
+  Future<String> _getAccumulatedDepreciationAccount(int assetId) async {
+    final accounts = await (db.select(db.gLAccounts)
+        ..where((t) => t.code.like('16%')))
         .get();
     
     if (accounts.isNotEmpty) {
       return accounts.first.id;
     }
-    
     throw Exception('لم يتم العثور على حساب مجمع الإهلاك');
   }
 
-  /// بيع أو خروج أصل
   Future<Map<String, dynamic>> disposeAsset({
     required int assetId,
     required DateTime disposalDate,
@@ -174,22 +152,15 @@ class FixedAssetsService {
     double? salePrice,
     String? notes,
   }) async {
-    final asset = await db.select(db.fixedAssets)
-        .where((t) => t.id.equals(assetId))
+    final asset = await (db.select(db.accFixedAssets)
+        ..where((t) => t.id.equals(assetId)))
         .getSingle();
 
-    final bookValue = asset.purchaseCost - asset.accumulatedDepreciation;
-    double gainOrLoss = 0;
+    double bookValue = asset.purchaseCost - asset.accumulatedDepreciation;
+    double gainOrLoss = salePrice != null ? salePrice - bookValue : -bookValue;
 
-    if (disposalType == 'sold' && salePrice != null) {
-      gainOrLoss = salePrice - bookValue;
-    } else if (disposalType == 'scrapped') {
-      gainOrLoss = -bookValue; // خسارة كاملة
-    }
-
-    // تسجيل عملية الخروج
-    final disposalId = await db.into(db.assetDisposals).insert(
-      AssetDisposalsCompanion.insert(
+    final disposalId = await db.into(db.accAssetDisposals).insert(
+      AccAssetDisposalsCompanion.insert(
         assetId: assetId,
         disposalDate: disposalDate,
         disposalType: disposalType,
@@ -199,7 +170,6 @@ class FixedAssetsService {
       ),
     );
 
-    // إنشاء قيد محاسبي للخروج
     final journalEntryId = await _createDisposalJournalEntry(
       assetId,
       bookValue,
@@ -209,15 +179,12 @@ class FixedAssetsService {
       disposalType,
     );
 
-    // تحديث سجل الخروج برقم القيد
-    await db.update(db.assetDisposals).write(
-      db.assetDisposals.id.equals(disposalId),
-      AssetDisposalsCompanion.insert(journalEntryId: journalEntryId),
+    await (db.update(db.accAssetDisposals)..where((t) => t.id.equals(disposalId))).write(
+      AccAssetDisposalsCompanion(journalEntryId: Value(journalEntryId)),
     );
 
-    // تحديث حالة الأصل
-    await db.update(db.fixedAssets).replace(
-      asset.copyWith(status: disposalType == 'sold' ? 'sold' : 'scrapped'),
+    await (db.update(db.accFixedAssets)..where((t) => t.id.equals(assetId))).write(
+      AccFixedAssetsCompanion(status: Value(disposalType == 'sold' ? 'sold' : 'scrapped')),
     );
 
     return {
@@ -236,96 +203,111 @@ class FixedAssetsService {
     DateTime date,
     String disposalType,
   ) async {
-    final asset = await db.select(db.fixedAssets)
-        .where((t) => t.id.equals(assetId))
+    final asset = await (db.select(db.accFixedAssets)
+        ..where((t) => t.id.equals(assetId)))
         .getSingle();
 
-    final entryId = await db.into(db.glEntries).insert(
+    final accumulatedDepId = await _getAccumulatedDepreciationAccount(assetId);
+    final cashBankId = disposalType == 'sold' ? await _getCashOrBankAccount() : '';
+    final fixedAssetId = await _getFixedAssetAccount(assetId);
+    String? gainLossId;
+    if (gainOrLoss != 0) {
+      gainLossId = gainOrLoss > 0 
+          ? await _getGainOnDisposalAccount()
+          : await _getLossOnDisposalAccount();
+    }
+
+    final entryId = await db.into(db.gLEntries).insert(
       GLEntriesCompanion.insert(
-        date: date,
-        description: Value('قيد خروج أصل #$assetId - $disposalType'),
-        reference: Value('DISP-$disposalType-$assetId'),
-        isPosted: Value(false),
+        description: 'قيد خروج أصل',
+        date: Value(date),
+        referenceType: const Value('DISPOSAL'),
+        referenceId: Value('DISP-$disposalType-$assetId'),
+        status: const Value('DRAFT'),
       ),
     );
 
-    final lines = <GLLinesCompanion>[];
-
-    // قيد إهلاك المجمع
-    lines.add(GLLinesCompanion.insert(
-      entryId: entryId,
-      accountId: await _getAccumulatedDepreciationAccount(assetId),
-      debit: asset.accumulatedDepreciation.toDouble(),
-      credit: 0,
-      description: Value('إلغاء مجمع الإهلاك'),
-    ));
-
-    if (disposalType == 'sold' && salePrice > 0) {
-      // قيد القبض
-      lines.add(GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: await _getCashOrBankAccount(),
-        debit: salePrice,
-        credit: 0,
-        description: Value('تحصيل بيع الأصل'),
+    await db.batch((batch) {
+      batch.insert(db.gLLines, GLLinesCompanion.insert(
+        entryId: entryId.toString(),
+        accountId: accumulatedDepId,
+        debit: Value(asset.accumulatedDepreciation.toDouble()),
+        credit: const Value(0.0),
+        memo: const Value('إلغاء مجمع الإهلاك'),
       ));
-    }
 
-    // قيد إلغاء قيمة الأصل
-    lines.add(GLLinesCompanion.insert(
-      entryId: entryId,
-      accountId: await _getFixedAssetAccount(assetId),
-      debit: 0,
-      credit: asset.purchaseCost,
-      description: Value('إلغاء قيمة الأصل'),
-    ));
+      if (disposalType == 'sold' && salePrice > 0) {
+        batch.insert(db.gLLines, GLLinesCompanion.insert(
+          entryId: entryId.toString(),
+          accountId: cashBankId,
+          debit: Value(salePrice),
+          credit: const Value(0.0),
+          memo: const Value('تحصيل بيع الأصل'),
+        ));
+      }
 
-    // قيد الربح أو الخسارة
-    if (gainOrLoss != 0) {
-      final gainLossAccountId = gainOrLoss > 0 
-          ? await _getGainOnDisposalAccount()
-          : await _getLossOnDisposalAccount();
-      
-      lines.add(GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: gainLossAccountId,
-        debit: gainOrLoss > 0 ? 0 : -gainOrLoss,
-        credit: gainOrLoss > 0 ? gainOrLoss : 0,
-        description: Value(gainOrLoss > 0 ? 'ربح بيع أصل' : 'خسارة بيع أصل'),
+      batch.insert(db.gLLines, GLLinesCompanion.insert(
+        entryId: entryId.toString(),
+        accountId: fixedAssetId,
+        debit: const Value(0.0),
+        credit: Value(asset.purchaseCost),
+        memo: const Value('إلغاء قيمة الأصل'),
       ));
-    }
 
-    await db.into(db.glLines).insertAll(lines);
-    await db.accountingDao.postJournalEntry(entryId);
+      if (gainOrLoss != 0 && gainLossId != null) {
+        batch.insert(db.gLLines, GLLinesCompanion.insert(
+          entryId: entryId.toString(),
+          accountId: gainLossId,
+          debit: Value(gainOrLoss > 0 ? 0.0 : -gainOrLoss),
+          credit: Value(gainOrLoss > 0 ? gainOrLoss : 0.0),
+          memo: Value(gainOrLoss > 0 ? 'ربح بيع أصل' : 'خسارة بيع أصل'),
+        ));
+      }
+    });
+
+    await _postGLEntry(entryId);
 
     return entryId;
   }
 
-  Future<int> _getCashOrBankAccount() async {
-    final accounts = await db.select(db.glAccounts)
-        .where((t) => t.accountCode.like('10%')) // نقدية وبنوك
+  Future<String> _getCashOrBankAccount() async {
+    final accounts = await (db.select(db.gLAccounts)
+        ..where((t) => t.code.like('10%')))
         .get();
+    if (accounts.isEmpty) throw Exception('لم يتم العثور على حساب الصندوق');
     return accounts.first.id;
   }
 
-  Future<int> _getFixedAssetAccount(int assetId) async {
-    final accounts = await db.select(db.glAccounts)
-        .where((t) => t.accountCode.like('15%')) // أصول ثابتة
+  Future<String> _getFixedAssetAccount(int assetId) async {
+    final accounts = await (db.select(db.gLAccounts)
+        ..where((t) => t.code.like('15%')))
         .get();
+    if (accounts.isEmpty) throw Exception('لم يتم العثور على حساب الأصول الثابتة');
     return accounts.first.id;
   }
 
-  Future<int> _getGainOnDisposalAccount() async {
-    final accounts = await db.select(db.glAccounts)
-        .where((t) => t.accountCode.like('4%')) // إيرادات أخرى
+  Future<String> _getGainOnDisposalAccount() async {
+    final accounts = await (db.select(db.gLAccounts)
+        ..where((t) => t.code.like('4%')))
         .get();
+    if (accounts.isEmpty) throw Exception('لم يتم العثور على حساب الإيرادات');
     return accounts.first.id;
   }
 
-  Future<int> _getLossOnDisposalAccount() async {
-    final accounts = await db.select(db.glAccounts)
-        .where((t) => t.accountCode.like('6%')) // مصروفات أخرى
+  Future<String> _getLossOnDisposalAccount() async {
+    final accounts = await (db.select(db.gLAccounts)
+        ..where((t) => t.code.like('6%')))
         .get();
+    if (accounts.isEmpty) throw Exception('لم يتم العثور على حساب المصروفات');
     return accounts.first.id;
+  }
+
+  Future<void> _postGLEntry(int entryId) async {
+    await (db.update(db.gLEntries)..where((t) => t.id.equals(entryId.toString()))).write(
+      GLEntriesCompanion(
+        status: const Value('POSTED'),
+        postedAt: Value(DateTime.now()),
+      ),
+    );
   }
 }

@@ -1,21 +1,22 @@
 import 'package:intl/intl.dart';
-import 'package:newmarket/data/local/db/app_database.dart';
-import 'package:newmarket/data/datasources/local/daos/sales_dao.dart';
-import 'package:newmarket/data/datasources/local/daos/purchase_dao.dart';
-import 'package:newmarket/data/datasources/local/daos/inventory_dao.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/data/datasources/local/daos/sales_dao.dart';
+import 'package:supermarket/data/datasources/local/daos/purchases_dao.dart';
+import 'package:supermarket/data/datasources/local/daos/products_dao.dart';
+import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart';
 
 /// خدمة التقارير المالية والضريبية
 /// Financial and Tax Reports Service
 class FinancialReportsService {
   final AppDatabase database;
   late final SalesDao salesDao;
-  late final PurchaseDao purchaseDao;
-  late final InventoryDao inventoryDao;
+  late final PurchasesDao purchasesDao;
+  late final ProductsDao productsDao;
 
   FinancialReportsService(this.database) {
     salesDao = SalesDao(database);
-    purchaseDao = PurchaseDao(database);
-    inventoryDao = InventoryDao(database);
+    purchasesDao = PurchasesDao(database);
+    productsDao = ProductsDao(database);
   }
 
   /// تقرير ضريبة القيمة المضافة (VAT Report)
@@ -32,7 +33,7 @@ class FinancialReportsService {
       );
 
       // Get purchase invoices in period
-      final purchaseInvoices = await purchaseDao.getInvoicesByDateRange(
+      final purchaseInvoices = await purchasesDao.getInvoicesByDateRange(
         startDate: startDate,
         endDate: endDate,
       );
@@ -44,17 +45,17 @@ class FinancialReportsService {
 
       // Calculate sales VAT
       for (var invoice in salesInvoices) {
-        final subtotal = invoice.subtotal ?? 0.0;
-        final tax = invoice.taxAmount ?? 0.0;
+        final subtotal = invoice.total - invoice.tax;
+        final tax = invoice.tax;
         
         totalSalesExcludingVAT += subtotal;
         totalVATCollected += tax;
       }
 
-      // Calculate purchases VAT
+      // Calculate purchases VAT (PurchaseOrder doesn't have tax field)
       for (var invoice in purchaseInvoices) {
-        final subtotal = invoice.subtotal ?? 0.0;
-        final tax = invoice.taxAmount ?? 0.0;
+        final subtotal = invoice.total;
+        const tax = 0.0; // PurchaseOrder doesn't have tax field
         
         totalPurchasesExcludingVAT += subtotal;
         totalVATPaid += tax;
@@ -98,11 +99,6 @@ class FinancialReportsService {
         invoices = invoices.where((inv) => inv.customerId == customerId).toList();
       }
 
-      // Filter by salesperson if specified
-      if (salespersonId != null) {
-        invoices = invoices.where((inv) => inv.salespersonId == salespersonId).toList();
-      }
-
       double totalRevenue = 0.0;
       double totalDiscount = 0.0;
       double totalTax = 0.0;
@@ -110,17 +106,18 @@ class FinancialReportsService {
       int totalQuantity = 0;
 
       for (var invoice in invoices) {
-        totalRevenue += invoice.subtotal ?? 0.0;
-        totalDiscount += invoice.discountAmount ?? 0.0;
-        totalTax += invoice.taxAmount ?? 0.0;
-        totalNet += invoice.totalAmount ?? 0.0;
+        final subtotal = invoice.total - invoice.tax;
+        totalRevenue += subtotal;
+        totalDiscount += invoice.discount;
+        totalTax += invoice.tax;
+        totalNet += invoice.total;
       }
 
       // Get items count
       for (var invoice in invoices) {
-        final items = await salesDao.getInvoiceItems(invoice.id!);
+        final items = await salesDao.getInvoiceItems(invoice.id);
         for (var item in items) {
-          totalQuantity += item.quantity ?? 0;
+          totalQuantity += item.quantity.toInt();
         }
       }
 
@@ -150,7 +147,7 @@ class FinancialReportsService {
     String? supplierId,
   }) async {
     try {
-      var invoices = await purchaseDao.getInvoicesByDateRange(
+      var invoices = await purchasesDao.getInvoicesByDateRange(
         startDate: startDate,
         endDate: endDate,
       );
@@ -167,10 +164,10 @@ class FinancialReportsService {
       int totalQuantity = 0;
 
       for (var invoice in invoices) {
-        totalPurchases += invoice.subtotal ?? 0.0;
-        totalDiscount += invoice.discountAmount ?? 0.0;
-        totalTax += invoice.taxAmount ?? 0.0;
-        totalNet += invoice.totalAmount ?? 0.0;
+        totalPurchases += invoice.total;
+        totalDiscount += 0.0; // PurchaseOrder doesn't have discount field
+        totalTax += 0.0; // PurchaseOrder doesn't have tax field
+        totalNet += invoice.total;
       }
 
       return PurchaseReport(
@@ -212,8 +209,20 @@ class FinancialReportsService {
       // Calculate gross profit
       final grossProfit = salesReport.totalRevenue - purchaseReport.totalPurchases;
       
-      // TODO: Add operating expenses when implemented
-      final operatingExpenses = 0.0;
+      // Calculate operating expenses
+      final accountingDao = AccountingDao(database);
+      final expenseAccounts = await accountingDao.getAccountsByType('EXPENSE');
+      double operatingExpenses = 0.0;
+      for (final account in expenseAccounts) {
+        // Exclude COGS account if it is considered an expense account (usually 5010)
+        if (account.code != '5010') {
+          operatingExpenses += await accountingDao.getAccountBalanceInRange(
+            account.id,
+            startDate,
+            endDate,
+          );
+        }
+      }
       
       final netProfit = grossProfit - operatingExpenses;
 

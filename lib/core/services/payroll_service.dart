@@ -1,273 +1,162 @@
 import 'package:drift/drift.dart';
-import '../../datasources/local/app_database.dart';
-import '../../datasources/local/daos/accounting_dao.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 
-/// خدمة إدارة الرواتب وحسابها
 class PayrollService {
   final AppDatabase db;
 
   PayrollService(this.db);
 
-  /// حساب رواتب شهر معين
-  Future<Map<String, dynamic>> calculatePayroll(String period) async {
-    final employees = await db.select(db.employees)
-        .where((t) => t.status.equals('active'))
-        .get();
-
-    double totalSalaries = 0;
-    double totalAllowances = 0;
-    double totalDeductions = 0;
-    double netPayable = 0;
-
-    final payrollDetails = <PayrollDetailsCompanion>[];
-
-    for (var emp in employees) {
-      // حساب إجمالي البدلات
-      final allowances = emp.housingAllowance + 
-                        emp.transportAllowance + 
-                        emp.otherAllowances;
-      
-      // حساب إجمالي الراتب قبل الخصومات
-      final grossSalary = emp.basicSalary + allowances;
-      
-      // الحصول على الخصومات الإضافية لهذا الشهر
-      final additionalDeductions = await _getAdditionalDeductionsForMonth(emp.id, period);
-      
-      // صافي الخصومات
-      final totalEmpDeductions = emp.totalDeductions + additionalDeductions;
-      
-      // صافي الراتب
-      final netSalary = grossSalary - totalEmpDeductions;
-
-      payrollDetails.add(PayrollDetailsCompanion.insert(
-        employeeId: emp.id,
-        basicSalary: emp.basicSalary,
-        housingAllowance: emp.housingAllowance,
-        transportAllowance: emp.transportAllowance,
-        otherAllowances: emp.otherAllowances,
-        grossSalary: grossSalary,
-        deductions: totalEmpDeductions,
-        netSalary: netSalary,
-      ));
-
-      totalSalaries += emp.basicSalary;
-      totalAllowances += allowances;
-      totalDeductions += totalEmpDeductions;
-      netPayable += netSalary;
-    }
-
-    // إنشاء سجل الرواتب الشهري
-    final payrollRunId = await db.into(db.payrollRuns).insert(
-      PayrollRunsCompanion.insert(
-        period: period,
-        totalSalaries: totalSalaries,
-        totalAllowances: totalAllowances,
-        totalDeductions: totalDeductions,
-        netPayable: netPayable,
-        status: 'draft',
-      ),
-    );
-
-    // إضافة تفاصيل الرواتب
-    for (var detail in payrollDetails) {
-      await db.into(db.payrollDetails).insert(
-        detail.copyWith(payrollRunId: Value(payrollRunId)),
-      );
-    }
-
-    return {
-      'payrollRunId': payrollRunId,
-      'period': period,
-      'totalSalaries': totalSalaries,
-      'totalAllowances': totalAllowances,
-      'totalDeductions': totalDeductions,
-      'netPayable': netPayable,
-      'employeeCount': employees.length,
-    };
-  }
-
-  /// الحصول على الخصومات الإضافية لشهر معين
-  Future<double> _getAdditionalDeductionsForMonth(int employeeId, String period) async {
-    final year = int.parse(period.substring(0, 4));
-    final month = int.parse(period.substring(5));
-    
-    final deductions = await db.select(db.additionalDeductions)
-        .where((t) => t.employeeId.equals(employeeId))
-        .get();
-
-    double total = 0;
-    for (var ded in deductions) {
-      if (ded.deductionDate.year == year && ded.deductionDate.month == month) {
-        total += ded.amount;
-        
-        // إذا كانت خصومة متكررة، إنقاص عدد الأقساط
-        if (ded.isRecurring && ded.remainingInstallments > 0) {
-          await db.update(db.additionalDeductions).replace(
-            ded.copyWith(remainingInstallments: ded.remainingInstallments - 1),
-          );
-          
-          // إذا انتهت الأقساط، حذف الخصم
-          if (ded.remainingInstallments - 1 <= 0) {
-            await db.delete(db.additionalDeductions)
-                .where((t) => t.id.equals(ded.id))
-                .go();
-          }
-        }
-      }
-    }
-
-    return total;
-  }
-
-  /// ترحيل قيد الرواتب
   Future<int> postPayrollJournalEntry(int payrollRunId) async {
-    final payrollRun = await db.select(db.payrollRuns)
-        .where((t) => t.id.equals(payrollRunId))
+    final payrollRun = await (db.select(db.hRPayrollRuns)
+        ..where((t) => t.id.equals(payrollRunId)))
         .getSingle();
 
-    if (payrollRun.status != 'draft') {
-      throw Exception('سجل الرواتب هذا قد تم ترحيله بالفعل');
-    }
+    final salaryExpenseAccountId = await _getSalaryExpenseAccount();
+    final deductionsLiabilityAccountId = await _getDeductionsLiabilityAccount();
+    final salariesPayableAccountId = await _getSalariesPayableAccount();
 
-    // إنشاء القيد المحاسبي
-    final entryId = await db.into(db.glEntries).insert(
+    final entryId = await db.into(db.gLEntries).insert(
       GLEntriesCompanion.insert(
-        date: DateTime.now(),
-        description: Value('قيد رواتب فترة ${payrollRun.period}'),
-        reference: Value('PAY-${payrollRun.period}'),
-        isPosted: Value(false),
+        description: 'قيد رواتب فترة ${payrollRun.period}',
+        date: Value(DateTime.now()),
+        referenceType: const Value('PAYROLL'),
+        referenceId: Value('PAY-${payrollRun.period}'),
+        status: const Value('DRAFT'),
       ),
     );
 
-    final lines = <GLLinesCompanion>[];
+    await db.batch((batch) {
+      batch.insert(db.gLLines, GLLinesCompanion.insert(
+        entryId: entryId.toString(),
+        accountId: salaryExpenseAccountId,
+        debit: Value(payrollRun.totalSalaries + payrollRun.totalAllowances),
+        credit: const Value(0.0),
+        memo: const Value('مصروف الرواتب والبدلات'),
+      ));
 
-    // قيد مصروف الرواتب (إجمالي الرواتب والبدلات)
-    final salaryExpenseAccountId = await _getSalaryExpenseAccount();
-    lines.add(GLLinesCompanion.insert(
-      entryId: entryId,
-      accountId: salaryExpenseAccountId,
-      debit: payrollRun.totalSalaries + payrollRun.totalAllowances,
-      credit: 0,
-      description: Value('مصروف الرواتب والبدلات'),
-    ));
+      batch.insert(db.gLLines, GLLinesCompanion.insert(
+        entryId: entryId.toString(),
+        accountId: deductionsLiabilityAccountId,
+        debit: const Value(0.0),
+        credit: Value(payrollRun.totalDeductions),
+        memo: const Value('الخصومات المستحقة'),
+      ));
 
-    // قيد الخصومات المستحقة
-    final deductionsLiabilityAccountId = await _getDeductionsLiabilityAccount();
-    lines.add(GLLinesCompanion.insert(
-      entryId: entryId,
-      accountId: deductionsLiabilityAccountId,
-      debit: 0,
-      credit: payrollRun.totalDeductions,
-      description: Value('الخصومات المستحقة'),
-    ));
+      batch.insert(db.gLLines, GLLinesCompanion.insert(
+        entryId: entryId.toString(),
+        accountId: salariesPayableAccountId,
+        debit: const Value(0.0),
+        credit: Value(payrollRun.netPayable),
+        memo: const Value('رواتب مستحقة الدفع'),
+      ));
+    });
 
-    // قيد صافي الرواتب المستحقة الدفع
-    final salariesPayableAccountId = await _getSalariesPayableAccount();
-    lines.add(GLLinesCompanion.insert(
-      entryId: entryId,
-      accountId: salariesPayableAccountId,
-      debit: 0,
-      credit: payrollRun.netPayable,
-      description: Value('رواتب مستحقة الدفع'),
-    ));
+    await _postGLEntry(entryId);
 
-    await db.into(db.glLines).insertAll(lines);
-
-    // ترحيل القيد
-    await db.accountingDao.postJournalEntry(entryId);
-
-    // تحديث حالة سجل الرواتب
-    await db.update(db.payrollRuns).replace(
-      payrollRun.copyWith(status: 'posted', journalEntryId: entryId),
+    await (db.update(db.hRPayrollRuns)..where((t) => t.id.equals(payrollRunId))).write(
+      HRPayrollRunsCompanion(
+        status: const Value('posted'),
+        journalEntryId: Value(entryId),
+      ),
     );
 
     return entryId;
   }
 
-  /// سداد الرواتب
   Future<void> paySalaries(int payrollRunId) async {
-    final payrollRun = await db.select(db.payrollRuns)
-        .where((t) => t.id.equals(payrollRunId))
+    final payrollRun = await (db.select(db.hRPayrollRuns)
+        ..where((t) => t.id.equals(payrollRunId)))
         .getSingle();
 
     if (payrollRun.status != 'posted') {
       throw Exception('يجب ترحيل قيد الرواتب أولاً');
     }
 
-    // إنشاء قيد السداد
-    final paymentEntryId = await db.into(db.glEntries).insert(
-      GLEntriesCompanion.insert(
-        date: DateTime.now(),
-        description: Value('سداد رواتب فترة ${payrollRun.period}'),
-        reference: Value('PAY-PMT-${payrollRun.period}'),
-        isPosted: Value(false),
-      ),
-    );
-
     final salariesPayableAccountId = await _getSalariesPayableAccount();
     final bankAccountId = await _getBankAccount();
 
-    await db.into(db.glLines).insertAll([
-      GLLinesCompanion.insert(
-        entryId: paymentEntryId,
-        accountId: salariesPayableAccountId,
-        debit: payrollRun.netPayable,
-        credit: 0,
-        description: Value('سداد الرواتب المستحقة'),
+    final paymentEntryId = await db.into(db.gLEntries).insert(
+      GLEntriesCompanion.insert(
+        description: 'سداد رواتب فترة ${payrollRun.period}',
+        date: Value(DateTime.now()),
+        referenceType: const Value('PAYROLL_PAYMENT'),
+        referenceId: Value('PAY-PMT-${payrollRun.period}'),
+        status: const Value('DRAFT'),
       ),
-      GLLinesCompanion.insert(
-        entryId: paymentEntryId,
-        accountId: bankAccountId,
-        debit: 0,
-        credit: payrollRun.netPayable,
-        description: Value('خروج من البنك'),
-      ),
-    ]);
-
-    await db.accountingDao.postJournalEntry(paymentEntryId);
-
-    // تحديث حالة سجل الرواتب
-    await db.update(db.payrollRuns).replace(
-      payrollRun.copyWith(status: 'paid'),
     );
 
-    // تحديث حالة تفاصيل الرواتب
-    final details = await db.select(db.payrollDetails)
-        .where((t) => t.payrollRunId.equals(payrollRunId))
+    await db.batch((batch) {
+      batch.insert(db.gLLines, GLLinesCompanion.insert(
+        entryId: paymentEntryId.toString(),
+        accountId: salariesPayableAccountId,
+        debit: Value(payrollRun.netPayable),
+        credit: const Value(0.0),
+        memo: const Value('سداد الرواتب المستحقة'),
+      ));
+      batch.insert(db.gLLines, GLLinesCompanion.insert(
+        entryId: paymentEntryId.toString(),
+        accountId: bankAccountId,
+        debit: const Value(0.0),
+        credit: Value(payrollRun.netPayable),
+        memo: const Value('خروج من البنك'),
+      ));
+    });
+
+    await _postGLEntry(paymentEntryId);
+
+    await (db.update(db.hRPayrollRuns)..where((t) => t.id.equals(payrollRunId))).write(
+      const HRPayrollRunsCompanion(status: Value('paid')),
+    );
+
+    final details = await (db.select(db.hRPayrollDetails)
+        ..where((t) => t.payrollRunId.equals(payrollRunId)))
         .get();
 
     for (var detail in details) {
-      await db.update(db.payrollDetails).replace(
-        detail.copyWith(paymentStatus: 'paid'),
+      await (db.update(db.hRPayrollDetails)..where((t) => t.id.equals(detail.id))).write(
+        const HRPayrollDetailsCompanion(paymentStatus: Value('paid')),
       );
     }
   }
 
-  Future<int> _getSalaryExpenseAccount() async {
-    final accounts = await db.select(db.glAccounts)
-        .where((t) => t.accountCode.like('60%')) // مصروفات الرواتب
+  Future<String> _getSalaryExpenseAccount() async {
+    final accounts = await (db.select(db.gLAccounts)
+        ..where((t) => t.code.like('60%')))
         .get();
-    return accounts.isNotEmpty ? accounts.first.id : 1;
+    if (accounts.isEmpty) throw Exception('لم يتم العثور على حساب مصروفات الرواتب');
+    return accounts.first.id;
   }
 
-  Future<int> _getDeductionsLiabilityAccount() async {
-    final accounts = await db.select(db.glAccounts)
-        .where((t) => t.accountCode.like('2%')) // خصوم
+  Future<String> _getDeductionsLiabilityAccount() async {
+    final accounts = await (db.select(db.gLAccounts)
+        ..where((t) => t.code.like('2%')))
         .get();
-    return accounts.isNotEmpty ? accounts.first.id : 1;
+    if (accounts.isEmpty) throw Exception('لم يتم العثور على حساب الخصوم');
+    return accounts.first.id;
   }
 
-  Future<int> _getSalariesPayableAccount() async {
-    final accounts = await db.select(db.glAccounts)
-        .where((t) => t.accountCode.like('21%')) // مستحقات
+  Future<String> _getSalariesPayableAccount() async {
+    final accounts = await (db.select(db.gLAccounts)
+        ..where((t) => t.code.like('21%')))
         .get();
-    return accounts.isNotEmpty ? accounts.first.id : 1;
+    if (accounts.isEmpty) throw Exception('لم يتم العثور على حساب المستحقات');
+    return accounts.first.id;
   }
 
-  Future<int> _getBankAccount() async {
-    final accounts = await db.select(db.glAccounts)
-        .where((t) => t.accountCode.like('10%')) // بنوك
+  Future<String> _getBankAccount() async {
+    final accounts = await (db.select(db.gLAccounts)
+        ..where((t) => t.code.like('10%')))
         .get();
-    return accounts.isNotEmpty ? accounts.first.id : 1;
+    if (accounts.isEmpty) throw Exception('لم يتم العثور على حساب البنك');
+    return accounts.first.id;
+  }
+
+  Future<void> _postGLEntry(int entryId) async {
+    await (db.update(db.gLEntries)..where((t) => t.id.equals(entryId.toString()))).write(
+      GLEntriesCompanion(
+        status: const Value('POSTED'),
+        postedAt: Value(DateTime.now()),
+      ),
+    );
   }
 }

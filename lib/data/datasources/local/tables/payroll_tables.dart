@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 
 // جدول الموظفين
-class Employees extends Table {
+class HREmployees extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text().withLength(min: 2, max: 150)();
   TextColumn get code => text().withLength(min: 2, max: 50)();
@@ -20,25 +20,25 @@ class Employees extends Table {
 }
 
 // جدول الرواتب الشهرية
-class PayrollRuns extends Table {
+class HRPayrollRuns extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get period => text()(); // مثال: "2024-01"
-  DateTimeColumn runDate => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get runDate => dateTime().withDefault(currentDateAndTime)();
   RealColumn get totalSalaries => real().withDefault(const Constant(0.0))();
   RealColumn get totalAllowances => real().withDefault(const Constant(0.0))();
   RealColumn get totalDeductions => real().withDefault(const Constant(0.0))();
   RealColumn get netPayable => real().withDefault(const Constant(0.0))();
-  IntColumn get journalEntryId => integer().nullable(); // ربط بالقيد المحاسبي
+  IntColumn get journalEntryId => integer().nullable()(); // ربط بالقيد المحاسبي
   TextColumn get status => text().withDefault(const Constant('draft'))(); // draft, posted, paid
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
 // جدول تفاصيل الرواتب لكل موظف
-class PayrollDetails extends Table {
+class HRPayrollDetails extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get payrollRunId => integer().references(PayrollRuns, #id)();
-  IntColumn get employeeId => integer().references(Employees, #id)();
+  IntColumn get payrollRunId => integer().references(HRPayrollRuns, #id)();
+  IntColumn get employeeId => integer().references(HREmployees, #id)();
   RealColumn get basicSalary => real()();
   RealColumn get housingAllowance => real().withDefault(const Constant(0.0))();
   RealColumn get transportAllowance => real().withDefault(const Constant(0.0))();
@@ -46,15 +46,15 @@ class PayrollDetails extends Table {
   RealColumn get grossSalary => real()(); // إجمالي الراتب قبل الخصومات
   RealColumn get deductions => real().withDefault(const Constant(0.0))(); // صافي الخصومات لهذا الشهر
   RealColumn get netSalary => real()(); // صافي الراتب
-  IntColumn? get paymentJournalEntryId => integer().nullable(); // قيد السداد الفردي (اختياري)
+  IntColumn get paymentJournalEntryId => integer().nullable()(); // قيد السداد الفردي (اختياري)
   TextColumn get paymentStatus => text().withDefault(const Constant('pending'))(); // pending, paid
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
 // جدول أنواع الخصومات الإضافية (سلف، غياب، إلخ)
-class AdditionalDeductions extends Table {
+class HRAdditionalDeductions extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get employeeId => integer().references(Employees, #id)();
+  IntColumn get employeeId => integer().references(HREmployees, #id)();
   TextColumn get type => text()(); // loan, absence, advance
   RealColumn get amount => real()();
   DateTimeColumn get deductionDate => dateTime()();

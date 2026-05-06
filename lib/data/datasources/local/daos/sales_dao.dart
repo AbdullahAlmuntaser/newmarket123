@@ -73,6 +73,20 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
     return (select(sales)..where((s) => s.customerId.equals(customerId))).get();
   }
 
+  Future<List<Sale>> getInvoicesByDateRange({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) {
+    return (select(sales)
+      ..where((s) => s.createdAt.isBiggerOrEqualValue(startDate) & s.createdAt.isSmallerOrEqualValue(endDate))
+      ..orderBy([(s) => OrderingTerm.desc(s.createdAt)]))
+    .get();
+  }
+
+  Future<List<SaleItem>> getInvoiceItems(String saleId) {
+    return (select(saleItems)..where((si) => si.saleId.equals(saleId))).get();
+  }
+
   Future<Sale?> getSaleById(String id) {
     return (select(sales)..where((s) => s.id.equals(id))).getSingleOrNull();
   }
@@ -303,7 +317,7 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
           action: 'DELETE',
           targetEntity: 'SALES_ORDER',
           entityId: orderId,
-          details: Value('Deleted sales order'),
+          details: const Value('Deleted sales order'),
         ),
       );
     });

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'core/auth/auth_provider.dart';
 import 'core/services/permission_service.dart';
+import 'core/services/app_settings_service.dart';
 import 'core/services/inventory_service.dart';
 import 'core/services/accounting_service.dart';
 import 'core/services/event_bus_service.dart';
@@ -83,7 +84,7 @@ Future<void> initServices() async {
       () => PurchaseService(db, sl<PostingEngine>(), sl<InventoryCostingService>()),
     );
     sl.registerLazySingleton<SalesService>(
-      () => SalesService(sl<PostingEngine>(), sl<InventoryService>()),
+      () => SalesService(sl<PostingEngine>(), sl<InventoryService>(), sl<AppSettingsService>(), sl<PermissionService>()),
     );
     sl.registerLazySingleton<StatementService>(
       () => StatementService(sl<PostingEngine>()),
