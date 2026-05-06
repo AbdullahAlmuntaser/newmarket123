@@ -71,6 +71,9 @@ import 'package:supermarket/presentation/features/settings/backup_page.dart';
 import 'package:supermarket/presentation/features/settings/permissions_management_page.dart';
 import 'package:supermarket/presentation/features/settings/currency_rates_page.dart';
 import 'package:supermarket/presentation/features/settings/sync_page.dart';
+import 'package:supermarket/core/auth/user_role.dart';
+import 'package:supermarket/core/auth/access_guard.dart';
+import 'package:supermarket/presentation/features/auth/access_denied_page.dart';
 import 'package:supermarket/presentation/features/reports/printer_settings_page.dart';
 import 'package:supermarket/presentation/features/home/low_stock_products_page.dart';
 import 'package:supermarket/presentation/features/purchases/supplier_performance_page.dart';
@@ -89,15 +92,11 @@ final GoRouter appRouter = GoRouter(
       if (isAuthenticated && isLoggingIn) return '/';
 
       if (isAuthenticated && authProvider.currentUser != null) {
-        final userId = authProvider.currentUser!.id;
+        final role = UserRole.fromString(authProvider.currentUser!.role);
         final location = state.matchedLocation;
         
-        if (location.startsWith('/reports') && userId.isNotEmpty) {
-          return '/';
-        }
-        
-        if ((location == '/users' || location == '/settings/permissions' || location == '/sync') && userId.isNotEmpty) {
-          return '/';
+        if (!AccessGuard.canAccess(location, role)) {
+          return '/access-denied';
         }
       }
       
@@ -110,6 +109,7 @@ final GoRouter appRouter = GoRouter(
   routes: [
     GoRoute(path: '/', builder: (context, state) => const HomePage()),
     GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+    GoRoute(path: '/access-denied', builder: (context, state) => const AccessDeniedPage()),
     GoRoute(path: '/dashboard', builder: (context, state) => const DashboardPage(currentUserId: 'admin')),
     GoRoute(path: '/admin-dashboard', builder: (context, state) => const AdminDashboardPage()),
     GoRoute(path: '/pos', builder: (context, state) => const PosPage()),
