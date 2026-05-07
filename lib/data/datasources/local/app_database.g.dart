@@ -6512,9 +6512,10 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
   static const VerificationMeta _paymentMethodMeta =
       const VerificationMeta('paymentMethod');
   @override
-  late final GeneratedColumn<String> paymentMethod = GeneratedColumn<String>(
-      'payment_method', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<PaymentMethod, int>
+      paymentMethod = GeneratedColumn<int>('payment_method', aliasedName, false,
+              type: DriftSqlType.int, requiredDuringInsert: true)
+          .withConverter<PaymentMethod>($SalesTable.$converterpaymentMethod);
   static const VerificationMeta _isCreditMeta =
       const VerificationMeta('isCredit');
   @override
@@ -6527,11 +6528,12 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
       defaultValue: const Constant(false));
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
-  late final GeneratedColumn<String> status = GeneratedColumn<String>(
-      'status', aliasedName, false,
-      type: DriftSqlType.string,
-      requiredDuringInsert: false,
-      defaultValue: const Constant('POSTED'));
+  late final GeneratedColumnWithTypeConverter<DocumentStatus, int> status =
+      GeneratedColumn<int>('status', aliasedName, false,
+              type: DriftSqlType.int,
+              requiredDuringInsert: false,
+              defaultValue: const Constant(1))
+          .withConverter<DocumentStatus>($SalesTable.$converterstatus);
   static const VerificationMeta _saleTypeMeta =
       const VerificationMeta('saleType');
   @override
@@ -6682,22 +6684,12 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
       context.handle(
           _taxMeta, tax.isAcceptableOrUnknown(data['tax']!, _taxMeta));
     }
-    if (data.containsKey('payment_method')) {
-      context.handle(
-          _paymentMethodMeta,
-          paymentMethod.isAcceptableOrUnknown(
-              data['payment_method']!, _paymentMethodMeta));
-    } else if (isInserting) {
-      context.missing(_paymentMethodMeta);
-    }
+    context.handle(_paymentMethodMeta, const VerificationResult.success());
     if (data.containsKey('is_credit')) {
       context.handle(_isCreditMeta,
           isCredit.isAcceptableOrUnknown(data['is_credit']!, _isCreditMeta));
     }
-    if (data.containsKey('status')) {
-      context.handle(_statusMeta,
-          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
-    }
+    context.handle(_statusMeta, const VerificationResult.success());
     if (data.containsKey('sale_type')) {
       context.handle(_saleTypeMeta,
           saleType.isAcceptableOrUnknown(data['sale_type']!, _saleTypeMeta));
@@ -6779,12 +6771,13 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
           .read(DriftSqlType.double, data['${effectivePrefix}discount'])!,
       tax: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}tax'])!,
-      paymentMethod: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}payment_method'])!,
+      paymentMethod: $SalesTable.$converterpaymentMethod.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.int, data['${effectivePrefix}payment_method'])!),
       isCredit: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_credit'])!,
-      status: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      status: $SalesTable.$converterstatus.fromSql(attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}status'])!),
       saleType: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}sale_type'])!,
       currencyId: attachedDatabase.typeMapping
@@ -6812,6 +6805,11 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
   $SalesTable createAlias(String alias) {
     return $SalesTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<PaymentMethod, int> $converterpaymentMethod =
+      const PaymentMethodConverter();
+  static TypeConverter<DocumentStatus, int> $converterstatus =
+      const DocumentStatusConverter();
 }
 
 class Sale extends DataClass implements Insertable<Sale> {
@@ -6825,9 +6823,9 @@ class Sale extends DataClass implements Insertable<Sale> {
   final double total;
   final double discount;
   final double tax;
-  final String paymentMethod;
+  final PaymentMethod paymentMethod;
   final bool isCredit;
-  final String status;
+  final DocumentStatus status;
   final String saleType;
   final String? currencyId;
   final double exchangeRate;
@@ -6881,9 +6879,14 @@ class Sale extends DataClass implements Insertable<Sale> {
     map['total'] = Variable<double>(total);
     map['discount'] = Variable<double>(discount);
     map['tax'] = Variable<double>(tax);
-    map['payment_method'] = Variable<String>(paymentMethod);
+    {
+      map['payment_method'] = Variable<int>(
+          $SalesTable.$converterpaymentMethod.toSql(paymentMethod));
+    }
     map['is_credit'] = Variable<bool>(isCredit);
-    map['status'] = Variable<String>(status);
+    {
+      map['status'] = Variable<int>($SalesTable.$converterstatus.toSql(status));
+    }
     map['sale_type'] = Variable<String>(saleType);
     if (!nullToAbsent || currencyId != null) {
       map['currency_id'] = Variable<String>(currencyId);
@@ -6966,9 +6969,9 @@ class Sale extends DataClass implements Insertable<Sale> {
       total: serializer.fromJson<double>(json['total']),
       discount: serializer.fromJson<double>(json['discount']),
       tax: serializer.fromJson<double>(json['tax']),
-      paymentMethod: serializer.fromJson<String>(json['paymentMethod']),
+      paymentMethod: serializer.fromJson<PaymentMethod>(json['paymentMethod']),
       isCredit: serializer.fromJson<bool>(json['isCredit']),
-      status: serializer.fromJson<String>(json['status']),
+      status: serializer.fromJson<DocumentStatus>(json['status']),
       saleType: serializer.fromJson<String>(json['saleType']),
       currencyId: serializer.fromJson<String?>(json['currencyId']),
       exchangeRate: serializer.fromJson<double>(json['exchangeRate']),
@@ -6995,9 +6998,9 @@ class Sale extends DataClass implements Insertable<Sale> {
       'total': serializer.toJson<double>(total),
       'discount': serializer.toJson<double>(discount),
       'tax': serializer.toJson<double>(tax),
-      'paymentMethod': serializer.toJson<String>(paymentMethod),
+      'paymentMethod': serializer.toJson<PaymentMethod>(paymentMethod),
       'isCredit': serializer.toJson<bool>(isCredit),
-      'status': serializer.toJson<String>(status),
+      'status': serializer.toJson<DocumentStatus>(status),
       'saleType': serializer.toJson<String>(saleType),
       'currencyId': serializer.toJson<String?>(currencyId),
       'exchangeRate': serializer.toJson<double>(exchangeRate),
@@ -7022,9 +7025,9 @@ class Sale extends DataClass implements Insertable<Sale> {
           double? total,
           double? discount,
           double? tax,
-          String? paymentMethod,
+          PaymentMethod? paymentMethod,
           bool? isCredit,
-          String? status,
+          DocumentStatus? status,
           String? saleType,
           Value<String?> currencyId = const Value.absent(),
           double? exchangeRate,
@@ -7200,9 +7203,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
   final Value<double> total;
   final Value<double> discount;
   final Value<double> tax;
-  final Value<String> paymentMethod;
+  final Value<PaymentMethod> paymentMethod;
   final Value<bool> isCredit;
-  final Value<String> status;
+  final Value<DocumentStatus> status;
   final Value<String> saleType;
   final Value<String?> currencyId;
   final Value<double> exchangeRate;
@@ -7251,7 +7254,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     required double total,
     this.discount = const Value.absent(),
     this.tax = const Value.absent(),
-    required String paymentMethod,
+    required PaymentMethod paymentMethod,
     this.isCredit = const Value.absent(),
     this.status = const Value.absent(),
     this.saleType = const Value.absent(),
@@ -7278,9 +7281,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     Expression<double>? total,
     Expression<double>? discount,
     Expression<double>? tax,
-    Expression<String>? paymentMethod,
+    Expression<int>? paymentMethod,
     Expression<bool>? isCredit,
-    Expression<String>? status,
+    Expression<int>? status,
     Expression<String>? saleType,
     Expression<String>? currencyId,
     Expression<double>? exchangeRate,
@@ -7332,9 +7335,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       Value<double>? total,
       Value<double>? discount,
       Value<double>? tax,
-      Value<String>? paymentMethod,
+      Value<PaymentMethod>? paymentMethod,
       Value<bool>? isCredit,
-      Value<String>? status,
+      Value<DocumentStatus>? status,
       Value<String>? saleType,
       Value<String?>? currencyId,
       Value<double>? exchangeRate,
@@ -7408,13 +7411,15 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       map['tax'] = Variable<double>(tax.value);
     }
     if (paymentMethod.present) {
-      map['payment_method'] = Variable<String>(paymentMethod.value);
+      map['payment_method'] = Variable<int>(
+          $SalesTable.$converterpaymentMethod.toSql(paymentMethod.value));
     }
     if (isCredit.present) {
       map['is_credit'] = Variable<bool>(isCredit.value);
     }
     if (status.present) {
-      map['status'] = Variable<String>(status.value);
+      map['status'] =
+          Variable<int>($SalesTable.$converterstatus.toSql(status.value));
     }
     if (saleType.present) {
       map['sale_type'] = Variable<String>(saleType.value);
@@ -10002,11 +10007,12 @@ class $PurchasesTable extends Purchases
       defaultValue: const Constant(false));
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
-  late final GeneratedColumn<String> status = GeneratedColumn<String>(
-      'status', aliasedName, false,
-      type: DriftSqlType.string,
-      requiredDuringInsert: false,
-      defaultValue: const Constant('DRAFT'));
+  late final GeneratedColumnWithTypeConverter<DocumentStatus, int> status =
+      GeneratedColumn<int>('status', aliasedName, false,
+              type: DriftSqlType.int,
+              requiredDuringInsert: false,
+              defaultValue: const Constant(0))
+          .withConverter<DocumentStatus>($PurchasesTable.$converterstatus);
   static const VerificationMeta _warehouseIdMeta =
       const VerificationMeta('warehouseId');
   @override
@@ -10172,10 +10178,7 @@ class $PurchasesTable extends Purchases
       context.handle(_isCreditMeta,
           isCredit.isAcceptableOrUnknown(data['is_credit']!, _isCreditMeta));
     }
-    if (data.containsKey('status')) {
-      context.handle(_statusMeta,
-          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
-    }
+    context.handle(_statusMeta, const VerificationResult.success());
     if (data.containsKey('warehouse_id')) {
       context.handle(
           _warehouseIdMeta,
@@ -10255,8 +10258,9 @@ class $PurchasesTable extends Purchases
           .read(DriftSqlType.dateTime, data['${effectivePrefix}time']),
       isCredit: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_credit'])!,
-      status: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      status: $PurchasesTable.$converterstatus.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}status'])!),
       warehouseId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}warehouse_id']),
       currencyId: attachedDatabase.typeMapping
@@ -10276,6 +10280,9 @@ class $PurchasesTable extends Purchases
   $PurchasesTable createAlias(String alias) {
     return $PurchasesTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<DocumentStatus, int> $converterstatus =
+      const DocumentStatusConverter();
 }
 
 class Purchase extends DataClass implements Insertable<Purchase> {
@@ -10297,7 +10304,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
   final DateTime date;
   final DateTime? time;
   final bool isCredit;
-  final String status;
+  final DocumentStatus status;
   final String? warehouseId;
   final String? currencyId;
   final double exchangeRate;
@@ -10361,7 +10368,10 @@ class Purchase extends DataClass implements Insertable<Purchase> {
       map['time'] = Variable<DateTime>(time);
     }
     map['is_credit'] = Variable<bool>(isCredit);
-    map['status'] = Variable<String>(status);
+    {
+      map['status'] =
+          Variable<int>($PurchasesTable.$converterstatus.toSql(status));
+    }
     if (!nullToAbsent || warehouseId != null) {
       map['warehouse_id'] = Variable<String>(warehouseId);
     }
@@ -10450,7 +10460,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
       date: serializer.fromJson<DateTime>(json['date']),
       time: serializer.fromJson<DateTime?>(json['time']),
       isCredit: serializer.fromJson<bool>(json['isCredit']),
-      status: serializer.fromJson<String>(json['status']),
+      status: serializer.fromJson<DocumentStatus>(json['status']),
       warehouseId: serializer.fromJson<String?>(json['warehouseId']),
       currencyId: serializer.fromJson<String?>(json['currencyId']),
       exchangeRate: serializer.fromJson<double>(json['exchangeRate']),
@@ -10482,7 +10492,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
       'date': serializer.toJson<DateTime>(date),
       'time': serializer.toJson<DateTime?>(time),
       'isCredit': serializer.toJson<bool>(isCredit),
-      'status': serializer.toJson<String>(status),
+      'status': serializer.toJson<DocumentStatus>(status),
       'warehouseId': serializer.toJson<String?>(warehouseId),
       'currencyId': serializer.toJson<String?>(currencyId),
       'exchangeRate': serializer.toJson<double>(exchangeRate),
@@ -10511,7 +10521,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
           DateTime? date,
           Value<DateTime?> time = const Value.absent(),
           bool? isCredit,
-          String? status,
+          DocumentStatus? status,
           Value<String?> warehouseId = const Value.absent(),
           Value<String?> currencyId = const Value.absent(),
           double? exchangeRate,
@@ -10708,7 +10718,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
   final Value<DateTime> date;
   final Value<DateTime?> time;
   final Value<bool> isCredit;
-  final Value<String> status;
+  final Value<DocumentStatus> status;
   final Value<String?> warehouseId;
   final Value<String?> currencyId;
   final Value<double> exchangeRate;
@@ -10791,7 +10801,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
     Expression<DateTime>? date,
     Expression<DateTime>? time,
     Expression<bool>? isCredit,
-    Expression<String>? status,
+    Expression<int>? status,
     Expression<String>? warehouseId,
     Expression<String>? currencyId,
     Expression<double>? exchangeRate,
@@ -10849,7 +10859,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
       Value<DateTime>? date,
       Value<DateTime?>? time,
       Value<bool>? isCredit,
-      Value<String>? status,
+      Value<DocumentStatus>? status,
       Value<String?>? warehouseId,
       Value<String?>? currencyId,
       Value<double>? exchangeRate,
@@ -10945,7 +10955,8 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
       map['is_credit'] = Variable<bool>(isCredit.value);
     }
     if (status.present) {
-      map['status'] = Variable<String>(status.value);
+      map['status'] =
+          Variable<int>($PurchasesTable.$converterstatus.toSql(status.value));
     }
     if (warehouseId.present) {
       map['warehouse_id'] = Variable<String>(warehouseId.value);
@@ -54753,9 +54764,9 @@ typedef $$SalesTableCreateCompanionBuilder = SalesCompanion Function({
   required double total,
   Value<double> discount,
   Value<double> tax,
-  required String paymentMethod,
+  required PaymentMethod paymentMethod,
   Value<bool> isCredit,
-  Value<String> status,
+  Value<DocumentStatus> status,
   Value<String> saleType,
   Value<String?> currencyId,
   Value<double> exchangeRate,
@@ -54779,9 +54790,9 @@ typedef $$SalesTableUpdateCompanionBuilder = SalesCompanion Function({
   Value<double> total,
   Value<double> discount,
   Value<double> tax,
-  Value<String> paymentMethod,
+  Value<PaymentMethod> paymentMethod,
   Value<bool> isCredit,
-  Value<String> status,
+  Value<DocumentStatus> status,
   Value<String> saleType,
   Value<String?> currencyId,
   Value<double> exchangeRate,
@@ -54822,9 +54833,9 @@ class $$SalesTableTableManager extends RootTableManager<
             Value<double> total = const Value.absent(),
             Value<double> discount = const Value.absent(),
             Value<double> tax = const Value.absent(),
-            Value<String> paymentMethod = const Value.absent(),
+            Value<PaymentMethod> paymentMethod = const Value.absent(),
             Value<bool> isCredit = const Value.absent(),
-            Value<String> status = const Value.absent(),
+            Value<DocumentStatus> status = const Value.absent(),
             Value<String> saleType = const Value.absent(),
             Value<String?> currencyId = const Value.absent(),
             Value<double> exchangeRate = const Value.absent(),
@@ -54874,9 +54885,9 @@ class $$SalesTableTableManager extends RootTableManager<
             required double total,
             Value<double> discount = const Value.absent(),
             Value<double> tax = const Value.absent(),
-            required String paymentMethod,
+            required PaymentMethod paymentMethod,
             Value<bool> isCredit = const Value.absent(),
-            Value<String> status = const Value.absent(),
+            Value<DocumentStatus> status = const Value.absent(),
             Value<String> saleType = const Value.absent(),
             Value<String?> currencyId = const Value.absent(),
             Value<double> exchangeRate = const Value.absent(),
@@ -54961,20 +54972,24 @@ class $$SalesTableFilterComposer
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
-  ColumnFilters<String> get paymentMethod => $state.composableBuilder(
-      column: $state.table.paymentMethod,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
+  ColumnWithTypeConverterFilters<PaymentMethod, PaymentMethod, int>
+      get paymentMethod => $state.composableBuilder(
+          column: $state.table.paymentMethod,
+          builder: (column, joinBuilders) => ColumnWithTypeConverterFilters(
+              column,
+              joinBuilders: joinBuilders));
 
   ColumnFilters<bool> get isCredit => $state.composableBuilder(
       column: $state.table.isCredit,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
-  ColumnFilters<String> get status => $state.composableBuilder(
-      column: $state.table.status,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
+  ColumnWithTypeConverterFilters<DocumentStatus, DocumentStatus, int>
+      get status => $state.composableBuilder(
+          column: $state.table.status,
+          builder: (column, joinBuilders) => ColumnWithTypeConverterFilters(
+              column,
+              joinBuilders: joinBuilders));
 
   ColumnFilters<String> get saleType => $state.composableBuilder(
       column: $state.table.saleType,
@@ -55145,7 +55160,7 @@ class $$SalesTableOrderingComposer
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
-  ColumnOrderings<String> get paymentMethod => $state.composableBuilder(
+  ColumnOrderings<int> get paymentMethod => $state.composableBuilder(
       column: $state.table.paymentMethod,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
@@ -55155,7 +55170,7 @@ class $$SalesTableOrderingComposer
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
-  ColumnOrderings<String> get status => $state.composableBuilder(
+  ColumnOrderings<int> get status => $state.composableBuilder(
       column: $state.table.status,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
@@ -56517,7 +56532,7 @@ typedef $$PurchasesTableCreateCompanionBuilder = PurchasesCompanion Function({
   Value<DateTime> date,
   Value<DateTime?> time,
   Value<bool> isCredit,
-  Value<String> status,
+  Value<DocumentStatus> status,
   Value<String?> warehouseId,
   Value<String?> currencyId,
   Value<double> exchangeRate,
@@ -56545,7 +56560,7 @@ typedef $$PurchasesTableUpdateCompanionBuilder = PurchasesCompanion Function({
   Value<DateTime> date,
   Value<DateTime?> time,
   Value<bool> isCredit,
-  Value<String> status,
+  Value<DocumentStatus> status,
   Value<String?> warehouseId,
   Value<String?> currencyId,
   Value<double> exchangeRate,
@@ -56590,7 +56605,7 @@ class $$PurchasesTableTableManager extends RootTableManager<
             Value<DateTime> date = const Value.absent(),
             Value<DateTime?> time = const Value.absent(),
             Value<bool> isCredit = const Value.absent(),
-            Value<String> status = const Value.absent(),
+            Value<DocumentStatus> status = const Value.absent(),
             Value<String?> warehouseId = const Value.absent(),
             Value<String?> currencyId = const Value.absent(),
             Value<double> exchangeRate = const Value.absent(),
@@ -56646,7 +56661,7 @@ class $$PurchasesTableTableManager extends RootTableManager<
             Value<DateTime> date = const Value.absent(),
             Value<DateTime?> time = const Value.absent(),
             Value<bool> isCredit = const Value.absent(),
-            Value<String> status = const Value.absent(),
+            Value<DocumentStatus> status = const Value.absent(),
             Value<String?> warehouseId = const Value.absent(),
             Value<String?> currencyId = const Value.absent(),
             Value<double> exchangeRate = const Value.absent(),
@@ -56769,10 +56784,12 @@ class $$PurchasesTableFilterComposer
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
-  ColumnFilters<String> get status => $state.composableBuilder(
-      column: $state.table.status,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
+  ColumnWithTypeConverterFilters<DocumentStatus, DocumentStatus, int>
+      get status => $state.composableBuilder(
+          column: $state.table.status,
+          builder: (column, joinBuilders) => ColumnWithTypeConverterFilters(
+              column,
+              joinBuilders: joinBuilders));
 
   ColumnFilters<String> get currencyId => $state.composableBuilder(
       column: $state.table.currencyId,
@@ -56981,7 +56998,7 @@ class $$PurchasesTableOrderingComposer
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
-  ColumnOrderings<String> get status => $state.composableBuilder(
+  ColumnOrderings<int> get status => $state.composableBuilder(
       column: $state.table.status,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));

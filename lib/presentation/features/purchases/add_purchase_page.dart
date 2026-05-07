@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:supermarket/core/services/purchase_service.dart';
 import 'package:supermarket/injection_container.dart';
 import 'package:uuid/uuid.dart';
@@ -290,7 +291,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
             shippingCost: drift.Value(_shippingCost),
             otherExpenses: drift.Value(_otherExpenses),
             date: drift.Value(_selectedDate),
-            status: const drift.Value('DRAFT'),
+            status: const drift.Value(DocumentStatus.draft),
           ),
           itemsCompanions: itemsCompanions,
           userId: null,

@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
 import 'package:supermarket/core/services/event_bus_service.dart';
@@ -74,14 +75,14 @@ class FinancialClosingService {
 
     final draftSales = await (db.select(
       db.sales,
-    )..where((s) => s.status.equals('DRAFT'))).get();
+    )..where((s) => s.status.equals(DocumentStatus.draft.index))).get();
     if (draftSales.isNotEmpty) {
       warnings.add('يوجد ${draftSales.length} فاتورة مبيعات كمسودة');
     }
 
     final draftEntries = await (db.select(
       db.gLEntries,
-    )..where((e) => e.status.equals('DRAFT'))).get();
+    )..where((e) => e.status.equals(DocumentStatus.draft.name.toUpperCase()))).get();
     if (draftEntries.isNotEmpty) {
       errors.add('يوجد ${draftEntries.length} قيد محاسبي كمسودة');
     }

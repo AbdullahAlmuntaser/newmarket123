@@ -74,7 +74,7 @@ class PurchaseDetailsPage extends StatelessWidget {
               l10n.invoiceNumberLabel,
               purchase.invoiceNumber ?? '-',
             ),
-            _buildInfoRow(l10n.status, purchase.status),
+            _buildInfoRow(l10n.status, purchase.status.name),
             _buildInfoRow(
               l10n.paymentMethod,
               purchase.isCredit ? l10n.credit : l10n.cash,

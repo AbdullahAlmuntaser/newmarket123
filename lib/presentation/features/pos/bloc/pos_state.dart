@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:decimal/decimal.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart' show Product, UnitConversion, Category, Sale, SaleItem;
+import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class CartItem extends Equatable {
   final Product product;

@@ -2,16 +2,8 @@ import 'dart:developer' as developer;
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/inventory_costing_service.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:uuid/uuid.dart';
-
-enum TransactionType {
-  sale,
-  purchase,
-  returnSale,
-  returnPurchase,
-  paymentIn,
-  paymentOut,
-}
 
 class PostingLine {
   final String account;

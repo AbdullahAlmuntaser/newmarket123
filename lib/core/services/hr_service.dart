@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/core/services/posting_engine.dart';
 import 'package:uuid/uuid.dart';

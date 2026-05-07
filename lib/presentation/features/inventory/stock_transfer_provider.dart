@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supermarket/core/services/stock_transfer_service.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart' show Warehouse, ProductBatch;
+import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class StockTransferProvider with ChangeNotifier {
   final StockTransferService _service;

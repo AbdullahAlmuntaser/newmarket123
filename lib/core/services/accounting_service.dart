@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 import 'dart:developer' as developer;
 import 'app_config_service.dart';
 import 'permission_service.dart';
-export 'permission_service.dart' show PermissionCode;
 
 part 'accounting_service.g.dart';
 

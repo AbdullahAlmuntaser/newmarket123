@@ -2,9 +2,8 @@ import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/inventory_costing_service.dart';
 import 'package:supermarket/core/services/audit_service.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:uuid/uuid.dart';
-
-enum DocumentStatus { draft, posted, voided }
 
 enum VoidReason { errorInEntry, customerReturn, duplicateEntry, other }
 
@@ -49,10 +48,10 @@ class FinancialControlService {
       return ValidationResult(isValid: false, errors: errors);
     }
 
-    if (sale.status == 'posted') {
+    if (sale.status == DocumentStatus.posted) {
       errors.add('الفاتورة مرحّلة مسبقاً');
     }
-    if (sale.status == 'void') {
+    if (sale.status == DocumentStatus.voided) {
       errors.add('الفاتورة ملغاة');
     }
 
@@ -90,10 +89,10 @@ class FinancialControlService {
       return ValidationResult(isValid: false, errors: errors);
     }
 
-    if (purchase.status == 'posted') {
+    if (purchase.status == DocumentStatus.posted) {
       errors.add('الفاتورة مرحّلة مسبقاً');
     }
-    if (purchase.status == 'void') {
+    if (purchase.status == DocumentStatus.voided) {
       errors.add('الفاتورة ملغاة');
     }
 
@@ -238,7 +237,7 @@ class FinancialControlService {
     );
 
     await (db.update(db.sales)..where((s) => s.id.equals(saleId))).write(
-      const SalesCompanion(status: Value('POSTED')),
+      const SalesCompanion(status: Value(DocumentStatus.posted)),
     );
 
     return FinancialControlResult(
@@ -277,7 +276,7 @@ class FinancialControlService {
     );
 
     await (db.update(db.purchases)..where((p) => p.id.equals(purchaseId)))
-        .write(const PurchasesCompanion(status: Value('POSTED')));
+        .write(const PurchasesCompanion(status: Value(DocumentStatus.posted)));
 
     return FinancialControlResult(
       success: true,
@@ -302,14 +301,14 @@ class FinancialControlService {
       );
     }
 
-    if (sale.status != 'posted') {
+    if (sale.status != DocumentStatus.posted) {
       return FinancialControlResult(
         success: false,
         error: 'الفاتورة غير مرحّلة - لا يمكن إلغاؤها',
       );
     }
 
-    if (sale.status == 'void') {
+    if (sale.status == DocumentStatus.voided) {
       return FinancialControlResult(
         success: false,
         error: 'الفاتورة ملغاة مسبقاً',
@@ -351,7 +350,7 @@ class FinancialControlService {
       );
 
       await (db.update(db.sales)..where((s) => s.id.equals(saleId))).write(
-        const SalesCompanion(status: Value('VOID')),
+        const SalesCompanion(status: Value(DocumentStatus.voided)),
       );
 
       await _auditService.logCreate(
@@ -384,14 +383,14 @@ class FinancialControlService {
       );
     }
 
-    if (purchase.status != 'posted') {
+    if (purchase.status != DocumentStatus.posted) {
       return FinancialControlResult(
         success: false,
         error: 'الفاتورة غير مرحّلة - لا يمكن إلغاؤها',
       );
     }
 
-    if (purchase.status == 'void') {
+    if (purchase.status == DocumentStatus.voided) {
       return FinancialControlResult(
         success: false,
         error: 'الفاتورة ملغاة مسبقاً',
@@ -434,7 +433,7 @@ class FinancialControlService {
       );
 
       await (db.update(db.purchases)..where((p) => p.id.equals(purchaseId)))
-          .write(const PurchasesCompanion(status: Value('VOID')));
+          .write(const PurchasesCompanion(status: Value(DocumentStatus.voided)));
 
       await _auditService.logCreate(
         'Purchase',
@@ -505,7 +504,7 @@ class FinancialControlService {
       );
     }
 
-    final entry = GLEntriesCompanion.insert(
+final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
       description: description,
       date: Value(date),
@@ -609,14 +608,14 @@ class FinancialControlService {
     final sale = await (db.select(
       db.sales,
     )..where((s) => s.id.equals(saleId))).getSingleOrNull();
-    return sale != null && sale.status == 'draft';
+    return sale != null && sale.status == DocumentStatus.draft;
   }
 
   Future<bool> canEditPurchase(String purchaseId) async {
     final purchase = await (db.select(
       db.purchases,
     )..where((p) => p.id.equals(purchaseId))).getSingleOrNull();
-    return purchase != null && purchase.status == 'draft';
+    return purchase != null && purchase.status == DocumentStatus.draft;
   }
 
   Future<bool> canEditGLEntry(String entryId) async {

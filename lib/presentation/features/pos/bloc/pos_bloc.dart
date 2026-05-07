@@ -8,6 +8,7 @@ import 'package:supermarket/presentation/features/pos/bloc/pos_event.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_state.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
 import 'package:uuid/uuid.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 
 class PosBloc extends Bloc<PosEvent, PosState> {
   final AppDatabase db;
@@ -411,13 +412,20 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       );
       final totalDiscount = currentState.discount + itemDiscountSum;
 
-      final saleCompanion = SalesCompanion.insert(
+      PaymentMethod method = PaymentMethod.cash;
+      if (event.paymentMethod == 'bank') {
+        method = PaymentMethod.bank;
+      } else if (event.paymentMethod == 'check') {
+        method = PaymentMethod.check;
+      }
+
+       final saleCompanion = SalesCompanion.insert(
         id: Value(saleId),
         customerId: Value(event.customerId),
         total: total.toDouble(),
         discount: Value(totalDiscount.toDouble()),
         tax: Value(tax.toDouble()),
-        paymentMethod: event.paymentMethod,
+        paymentMethod: method,
         isCredit: Value(event.paymentMethod == 'credit'),
         syncStatus: const Value(1),
         currencyId: Value(currencyId),

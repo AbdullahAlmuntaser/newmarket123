@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:intl/intl.dart';
 import '../../data/datasources/local/app_database.dart';
+import '../constants/app_enums.dart';
 
 /// محرك تقارير متقدم لتوليد التقارير المالية والمخزنية
 class ReportEngineService {
@@ -225,7 +226,7 @@ class ReportEngineService {
       dailySales[dateKey]!['totalSales'] += sale.total;
       dailySales[dateKey]!['totalTransactions']++;
       
-      if (sale.paymentMethod == 'cash') {
+      if (sale.paymentMethod == PaymentMethod.cash) {
         dailySales[dateKey]!['cashSales'] += sale.total;
       } else {
         dailySales[dateKey]!['cardSales'] += sale.total;

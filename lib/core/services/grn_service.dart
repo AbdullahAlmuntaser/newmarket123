@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/core/services/inventory_costing_service.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:uuid/uuid.dart';
 
 class GrnService {
@@ -30,19 +31,19 @@ class GrnService {
       String grnId = const Uuid().v4();
       String grnNumber = 'GRN-${DateTime.now().millisecondsSinceEpoch.toString().substring(6)}';
 
-      await db.into(db.goodReceivedNotes).insert(
-        GoodReceivedNotesCompanion.insert(
-          id: Value(grnId),
-          purchaseId: Value(purchaseId),
-          supplierId: Value(purchase.supplierId),
-          warehouseId: warehouseId,
-          grnNumber: grnNumber,
-          receivedBy: Value(receivedBy),
-          notes: Value(notes ?? 'From Purchase: ${purchase.invoiceNumber}'),
-          status: const Value('POSTED'),
-          receivedDate: Value(DateTime.now()),
-        ),
-      );
+       await db.into(db.goodReceivedNotes).insert(
+         GoodReceivedNotesCompanion.insert(
+           id: Value(grnId),
+           purchaseId: Value(purchaseId),
+           supplierId: Value(purchase.supplierId),
+           warehouseId: warehouseId,
+           grnNumber: grnNumber,
+           receivedBy: Value(receivedBy),
+           notes: Value(notes ?? 'From Purchase: ${purchase.invoiceNumber}'),
+           status: const Value('POSTED'),
+           receivedDate: Value(DateTime.now()),
+         ),
+       );
 
       final landedCosts = purchase.landedCosts + purchase.shippingCost + purchase.otherExpenses;
       double itemsSubtotal = 0;
@@ -118,7 +119,7 @@ class GrnService {
       }
 
       await (db.update(db.purchases)..where((p) => p.id.equals(purchaseId)))
-          .write(const PurchasesCompanion(status: Value('RECEIVED')));
+          .write(const PurchasesCompanion(status: Value(DocumentStatus.received)));
 
       await _auditService.log(
         action: 'CREATE_GRN_FROM_PURCHASE',
