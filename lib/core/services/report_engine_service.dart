@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:drift/drift.dart';
-import '../datasources/local/app_database.dart';
+import 'package:intl/intl.dart';
+import '../../data/datasources/local/app_database.dart';
 
 /// محرك تقارير متقدم لتوليد التقارير المالية والمخزنية
 class ReportEngineService {
@@ -26,10 +27,10 @@ class ReportEngineService {
     ]);
 
     if (startDate != null) {
-      query.addWhere((_db.sales.createdAt.isBiggerOrEqualValue(startDate)));
+      query.where(_db.sales.createdAt.isBiggerOrEqualValue(startDate));
     }
     if (endDate != null) {
-      query.addWhere((_db.sales.createdAt.isSmallerOrEqualValue(endDate)));
+      query.where(_db.sales.createdAt.isSmallerOrEqualValue(endDate));
     }
 
     final results = await query.get();
@@ -62,22 +63,22 @@ class ReportEngineService {
     return report.take(limit).toList();
   }
 
-  /// تقرير هامش الربح
+/// تقرير هامش الربح
   Future<List<Map<String, dynamic>>> getProfitMarginReport({
     DateTime? startDate,
     DateTime? endDate,
   }) async {
-    final salesQuery = _db.select(_db.sales);
+    final report = <Map<String, dynamic>>[];
     
+    var query = _db.select(_db.sales);
     if (startDate != null) {
-      salesQuery.addWhere((s) => s.createdAt.isBiggerOrEqualValue(startDate));
+      query = query..where((s) => s.createdAt.isBiggerOrEqualValue(startDate));
     }
     if (endDate != null) {
-      salesQuery.addWhere((s) => s.createdAt.isSmallerOrEqualValue(endDate));
+      query = query..where((s) => s.createdAt.isSmallerOrEqualValue(endDate));
     }
-
-    final sales = await salesQuery.get();
-    final report = <Map<String, dynamic>>[];
+    
+    final sales = await query.get();
 
     for (final sale in sales) {
       final items = await (_db.select(_db.saleItems)
@@ -92,7 +93,7 @@ class ReportEngineService {
               ..where((p) => p.id.equals(item.productId)))
             .getSingle();
         
-        totalCost += (product.costPrice * item.quantity);
+        totalCost += (product.buyPrice * item.quantity);
       }
 
       final profit = totalRevenue - totalCost;
@@ -162,8 +163,8 @@ class ReportEngineService {
 
     for (final movement in stockMovements) {
       movements.add({
-        'type': movement.movementType,
-        'date': movement.date,
+        'type': movement.type,
+        'date': movement.movementDate,
         'quantity': movement.quantity,
         'reference': movement.id,
         'balance': 0,
@@ -184,7 +185,7 @@ class ReportEngineService {
 
   /// تصدير التقرير إلى JSON
   String exportToJson(List<Map<String, dynamic>> data) {
-    return JsonEncoder.withIndent('  ').convert(data);
+    return const JsonEncoder.withIndent('  ').convert(data);
   }
 
   /// تصدير التقرير إلى CSV
@@ -240,13 +241,13 @@ class ReportEngineService {
     final products = await _db.select(_db.products).get();
     
     double totalValue = 0;
-    int totalItems = 0;
+    double totalItems = 0;
     final categories = <String, double>{};
 
     for (final product in products) {
-      final value = product.costPrice * product.stockQuantity;
+      final value = product.buyPrice * product.stock;
       totalValue += value;
-      totalItems += product.stockQuantity;
+      totalItems += product.stock;
 
       final categoryName = product.categoryId ?? 'Uncategorized';
       categories[categoryName] = (categories[categoryName] ?? 0) + value;

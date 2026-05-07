@@ -166,7 +166,7 @@ class SaleDetailsBottomSheet extends StatelessWidget {
     try {
       if (!context.mounted) return;
 
-      final invoiceService = InvoiceService();
+      final invoiceService = InvoiceService(db);
       final pdfData = await invoiceService.generateInvoice(
         sale: sale,
         items: items,
