@@ -18097,6 +18097,484 @@ class PurchasePaymentLinksCompanion
   }
 }
 
+class $CustomerPaymentLinksTable extends CustomerPaymentLinks
+    with TableInfo<$CustomerPaymentLinksTable, CustomerPaymentLink> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CustomerPaymentLinksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      clientDefault: () => const Uuid().v4());
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _deviceIdMeta =
+      const VerificationMeta('deviceId');
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+      'device_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _syncStatusMeta =
+      const VerificationMeta('syncStatus');
+  @override
+  late final GeneratedColumn<int> syncStatus = GeneratedColumn<int>(
+      'sync_status', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _branchIdMeta =
+      const VerificationMeta('branchId');
+  @override
+  late final GeneratedColumn<String> branchId = GeneratedColumn<String>(
+      'branch_id', aliasedName, true,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES branches (id)'));
+  static const VerificationMeta _paymentIdMeta =
+      const VerificationMeta('paymentId');
+  @override
+  late final GeneratedColumn<String> paymentId = GeneratedColumn<String>(
+      'payment_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES customer_payments (id)'));
+  static const VerificationMeta _saleIdMeta = const VerificationMeta('saleId');
+  @override
+  late final GeneratedColumn<String> saleId = GeneratedColumn<String>(
+      'sale_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES sales (id)'));
+  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
+  @override
+  late final GeneratedColumn<double> amount = GeneratedColumn<double>(
+      'amount', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        createdAt,
+        updatedAt,
+        deviceId,
+        syncStatus,
+        branchId,
+        paymentId,
+        saleId,
+        amount
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'customer_payment_links';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<CustomerPaymentLink> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(_deviceIdMeta,
+          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+          _syncStatusMeta,
+          syncStatus.isAcceptableOrUnknown(
+              data['sync_status']!, _syncStatusMeta));
+    }
+    if (data.containsKey('branch_id')) {
+      context.handle(_branchIdMeta,
+          branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta));
+    }
+    if (data.containsKey('payment_id')) {
+      context.handle(_paymentIdMeta,
+          paymentId.isAcceptableOrUnknown(data['payment_id']!, _paymentIdMeta));
+    } else if (isInserting) {
+      context.missing(_paymentIdMeta);
+    }
+    if (data.containsKey('sale_id')) {
+      context.handle(_saleIdMeta,
+          saleId.isAcceptableOrUnknown(data['sale_id']!, _saleIdMeta));
+    } else if (isInserting) {
+      context.missing(_saleIdMeta);
+    }
+    if (data.containsKey('amount')) {
+      context.handle(_amountMeta,
+          amount.isAcceptableOrUnknown(data['amount']!, _amountMeta));
+    } else if (isInserting) {
+      context.missing(_amountMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CustomerPaymentLink map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CustomerPaymentLink(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deviceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}device_id']),
+      syncStatus: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}sync_status'])!,
+      branchId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}branch_id']),
+      paymentId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}payment_id'])!,
+      saleId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}sale_id'])!,
+      amount: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}amount'])!,
+    );
+  }
+
+  @override
+  $CustomerPaymentLinksTable createAlias(String alias) {
+    return $CustomerPaymentLinksTable(attachedDatabase, alias);
+  }
+}
+
+class CustomerPaymentLink extends DataClass
+    implements Insertable<CustomerPaymentLink> {
+  final String id;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? deviceId;
+  final int syncStatus;
+  final String? branchId;
+  final String paymentId;
+  final String saleId;
+  final double amount;
+  const CustomerPaymentLink(
+      {required this.id,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deviceId,
+      required this.syncStatus,
+      this.branchId,
+      required this.paymentId,
+      required this.saleId,
+      required this.amount});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
+    map['sync_status'] = Variable<int>(syncStatus);
+    if (!nullToAbsent || branchId != null) {
+      map['branch_id'] = Variable<String>(branchId);
+    }
+    map['payment_id'] = Variable<String>(paymentId);
+    map['sale_id'] = Variable<String>(saleId);
+    map['amount'] = Variable<double>(amount);
+    return map;
+  }
+
+  CustomerPaymentLinksCompanion toCompanion(bool nullToAbsent) {
+    return CustomerPaymentLinksCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
+      syncStatus: Value(syncStatus),
+      branchId: branchId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(branchId),
+      paymentId: Value(paymentId),
+      saleId: Value(saleId),
+      amount: Value(amount),
+    );
+  }
+
+  factory CustomerPaymentLink.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CustomerPaymentLink(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
+      syncStatus: serializer.fromJson<int>(json['syncStatus']),
+      branchId: serializer.fromJson<String?>(json['branchId']),
+      paymentId: serializer.fromJson<String>(json['paymentId']),
+      saleId: serializer.fromJson<String>(json['saleId']),
+      amount: serializer.fromJson<double>(json['amount']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deviceId': serializer.toJson<String?>(deviceId),
+      'syncStatus': serializer.toJson<int>(syncStatus),
+      'branchId': serializer.toJson<String?>(branchId),
+      'paymentId': serializer.toJson<String>(paymentId),
+      'saleId': serializer.toJson<String>(saleId),
+      'amount': serializer.toJson<double>(amount),
+    };
+  }
+
+  CustomerPaymentLink copyWith(
+          {String? id,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<String?> deviceId = const Value.absent(),
+          int? syncStatus,
+          Value<String?> branchId = const Value.absent(),
+          String? paymentId,
+          String? saleId,
+          double? amount}) =>
+      CustomerPaymentLink(
+        id: id ?? this.id,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deviceId: deviceId.present ? deviceId.value : this.deviceId,
+        syncStatus: syncStatus ?? this.syncStatus,
+        branchId: branchId.present ? branchId.value : this.branchId,
+        paymentId: paymentId ?? this.paymentId,
+        saleId: saleId ?? this.saleId,
+        amount: amount ?? this.amount,
+      );
+  CustomerPaymentLink copyWithCompanion(CustomerPaymentLinksCompanion data) {
+    return CustomerPaymentLink(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      syncStatus:
+          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
+      branchId: data.branchId.present ? data.branchId.value : this.branchId,
+      paymentId: data.paymentId.present ? data.paymentId.value : this.paymentId,
+      saleId: data.saleId.present ? data.saleId.value : this.saleId,
+      amount: data.amount.present ? data.amount.value : this.amount,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomerPaymentLink(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('branchId: $branchId, ')
+          ..write('paymentId: $paymentId, ')
+          ..write('saleId: $saleId, ')
+          ..write('amount: $amount')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, createdAt, updatedAt, deviceId,
+      syncStatus, branchId, paymentId, saleId, amount);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CustomerPaymentLink &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deviceId == this.deviceId &&
+          other.syncStatus == this.syncStatus &&
+          other.branchId == this.branchId &&
+          other.paymentId == this.paymentId &&
+          other.saleId == this.saleId &&
+          other.amount == this.amount);
+}
+
+class CustomerPaymentLinksCompanion
+    extends UpdateCompanion<CustomerPaymentLink> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String?> deviceId;
+  final Value<int> syncStatus;
+  final Value<String?> branchId;
+  final Value<String> paymentId;
+  final Value<String> saleId;
+  final Value<double> amount;
+  final Value<int> rowid;
+  const CustomerPaymentLinksCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.branchId = const Value.absent(),
+    this.paymentId = const Value.absent(),
+    this.saleId = const Value.absent(),
+    this.amount = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CustomerPaymentLinksCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.branchId = const Value.absent(),
+    required String paymentId,
+    required String saleId,
+    required double amount,
+    this.rowid = const Value.absent(),
+  })  : paymentId = Value(paymentId),
+        saleId = Value(saleId),
+        amount = Value(amount);
+  static Insertable<CustomerPaymentLink> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? deviceId,
+    Expression<int>? syncStatus,
+    Expression<String>? branchId,
+    Expression<String>? paymentId,
+    Expression<String>? saleId,
+    Expression<double>? amount,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deviceId != null) 'device_id': deviceId,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (branchId != null) 'branch_id': branchId,
+      if (paymentId != null) 'payment_id': paymentId,
+      if (saleId != null) 'sale_id': saleId,
+      if (amount != null) 'amount': amount,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CustomerPaymentLinksCompanion copyWith(
+      {Value<String>? id,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<String?>? deviceId,
+      Value<int>? syncStatus,
+      Value<String?>? branchId,
+      Value<String>? paymentId,
+      Value<String>? saleId,
+      Value<double>? amount,
+      Value<int>? rowid}) {
+    return CustomerPaymentLinksCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deviceId: deviceId ?? this.deviceId,
+      syncStatus: syncStatus ?? this.syncStatus,
+      branchId: branchId ?? this.branchId,
+      paymentId: paymentId ?? this.paymentId,
+      saleId: saleId ?? this.saleId,
+      amount: amount ?? this.amount,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<int>(syncStatus.value);
+    }
+    if (branchId.present) {
+      map['branch_id'] = Variable<String>(branchId.value);
+    }
+    if (paymentId.present) {
+      map['payment_id'] = Variable<String>(paymentId.value);
+    }
+    if (saleId.present) {
+      map['sale_id'] = Variable<String>(saleId.value);
+    }
+    if (amount.present) {
+      map['amount'] = Variable<double>(amount.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomerPaymentLinksCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('branchId: $branchId, ')
+          ..write('paymentId: $paymentId, ')
+          ..write('saleId: $saleId, ')
+          ..write('amount: $amount, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $SyncQueueTable extends SyncQueue
     with TableInfo<$SyncQueueTable, SyncQueueData> {
   @override
@@ -49469,6 +49947,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $SupplierPaymentsTable(this);
   late final $PurchasePaymentLinksTable purchasePaymentLinks =
       $PurchasePaymentLinksTable(this);
+  late final $CustomerPaymentLinksTable customerPaymentLinks =
+      $CustomerPaymentLinksTable(this);
   late final $SyncQueueTable syncQueue = $SyncQueueTable(this);
   late final $GLEntriesTable gLEntries = $GLEntriesTable(this);
   late final $GLLinesTable gLLines = $GLLinesTable(this);
@@ -49595,6 +50075,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         customerPayments,
         supplierPayments,
         purchasePaymentLinks,
+        customerPaymentLinks,
         syncQueue,
         gLEntries,
         gLLines,
@@ -50173,6 +50654,24 @@ class $$BranchesTableFilterComposer
                 $$PurchasePaymentLinksTableFilterComposer(ComposerState(
                     $state.db,
                     $state.db.purchasePaymentLinks,
+                    joinBuilder,
+                    parentComposers)));
+    return f(composer);
+  }
+
+  ComposableFilter customerPaymentLinksRefs(
+      ComposableFilter Function($$CustomerPaymentLinksTableFilterComposer f)
+          f) {
+    final $$CustomerPaymentLinksTableFilterComposer composer =
+        $state.composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $state.db.customerPaymentLinks,
+            getReferencedColumn: (t) => t.branchId,
+            builder: (joinBuilder, parentComposers) =>
+                $$CustomerPaymentLinksTableFilterComposer(ComposerState(
+                    $state.db,
+                    $state.db.customerPaymentLinks,
                     joinBuilder,
                     parentComposers)));
     return f(composer);
@@ -54530,6 +55029,24 @@ class $$SalesTableFilterComposer
         builder: (joinBuilder, parentComposers) =>
             $$SalesReturnsTableFilterComposer(ComposerState($state.db,
                 $state.db.salesReturns, joinBuilder, parentComposers)));
+    return f(composer);
+  }
+
+  ComposableFilter customerPaymentLinksRefs(
+      ComposableFilter Function($$CustomerPaymentLinksTableFilterComposer f)
+          f) {
+    final $$CustomerPaymentLinksTableFilterComposer composer =
+        $state.composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $state.db.customerPaymentLinks,
+            getReferencedColumn: (t) => t.saleId,
+            builder: (joinBuilder, parentComposers) =>
+                $$CustomerPaymentLinksTableFilterComposer(ComposerState(
+                    $state.db,
+                    $state.db.customerPaymentLinks,
+                    joinBuilder,
+                    parentComposers)));
     return f(composer);
   }
 }
@@ -59303,6 +59820,24 @@ class $$CustomerPaymentsTableFilterComposer
                 $state.db, $state.db.customers, joinBuilder, parentComposers)));
     return composer;
   }
+
+  ComposableFilter customerPaymentLinksRefs(
+      ComposableFilter Function($$CustomerPaymentLinksTableFilterComposer f)
+          f) {
+    final $$CustomerPaymentLinksTableFilterComposer composer =
+        $state.composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $state.db.customerPaymentLinks,
+            getReferencedColumn: (t) => t.paymentId,
+            builder: (joinBuilder, parentComposers) =>
+                $$CustomerPaymentLinksTableFilterComposer(ComposerState(
+                    $state.db,
+                    $state.db.customerPaymentLinks,
+                    joinBuilder,
+                    parentComposers)));
+    return f(composer);
+  }
 }
 
 class $$CustomerPaymentsTableOrderingComposer
@@ -59893,6 +60428,243 @@ class $$PurchasePaymentLinksTableOrderingComposer
         builder: (joinBuilder, parentComposers) =>
             $$PurchasesTableOrderingComposer(ComposerState(
                 $state.db, $state.db.purchases, joinBuilder, parentComposers)));
+    return composer;
+  }
+}
+
+typedef $$CustomerPaymentLinksTableCreateCompanionBuilder
+    = CustomerPaymentLinksCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<String?> deviceId,
+  Value<int> syncStatus,
+  Value<String?> branchId,
+  required String paymentId,
+  required String saleId,
+  required double amount,
+  Value<int> rowid,
+});
+typedef $$CustomerPaymentLinksTableUpdateCompanionBuilder
+    = CustomerPaymentLinksCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<String?> deviceId,
+  Value<int> syncStatus,
+  Value<String?> branchId,
+  Value<String> paymentId,
+  Value<String> saleId,
+  Value<double> amount,
+  Value<int> rowid,
+});
+
+class $$CustomerPaymentLinksTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $CustomerPaymentLinksTable,
+    CustomerPaymentLink,
+    $$CustomerPaymentLinksTableFilterComposer,
+    $$CustomerPaymentLinksTableOrderingComposer,
+    $$CustomerPaymentLinksTableCreateCompanionBuilder,
+    $$CustomerPaymentLinksTableUpdateCompanionBuilder> {
+  $$CustomerPaymentLinksTableTableManager(
+      _$AppDatabase db, $CustomerPaymentLinksTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          filteringComposer: $$CustomerPaymentLinksTableFilterComposer(
+              ComposerState(db, table)),
+          orderingComposer: $$CustomerPaymentLinksTableOrderingComposer(
+              ComposerState(db, table)),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<String?> deviceId = const Value.absent(),
+            Value<int> syncStatus = const Value.absent(),
+            Value<String?> branchId = const Value.absent(),
+            Value<String> paymentId = const Value.absent(),
+            Value<String> saleId = const Value.absent(),
+            Value<double> amount = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CustomerPaymentLinksCompanion(
+            id: id,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deviceId: deviceId,
+            syncStatus: syncStatus,
+            branchId: branchId,
+            paymentId: paymentId,
+            saleId: saleId,
+            amount: amount,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<String?> deviceId = const Value.absent(),
+            Value<int> syncStatus = const Value.absent(),
+            Value<String?> branchId = const Value.absent(),
+            required String paymentId,
+            required String saleId,
+            required double amount,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CustomerPaymentLinksCompanion.insert(
+            id: id,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deviceId: deviceId,
+            syncStatus: syncStatus,
+            branchId: branchId,
+            paymentId: paymentId,
+            saleId: saleId,
+            amount: amount,
+            rowid: rowid,
+          ),
+        ));
+}
+
+class $$CustomerPaymentLinksTableFilterComposer
+    extends FilterComposer<_$AppDatabase, $CustomerPaymentLinksTable> {
+  $$CustomerPaymentLinksTableFilterComposer(super.$state);
+  ColumnFilters<String> get id => $state.composableBuilder(
+      column: $state.table.id,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<DateTime> get createdAt => $state.composableBuilder(
+      column: $state.table.createdAt,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<DateTime> get updatedAt => $state.composableBuilder(
+      column: $state.table.updatedAt,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<String> get deviceId => $state.composableBuilder(
+      column: $state.table.deviceId,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<int> get syncStatus => $state.composableBuilder(
+      column: $state.table.syncStatus,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<double> get amount => $state.composableBuilder(
+      column: $state.table.amount,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  $$BranchesTableFilterComposer get branchId {
+    final $$BranchesTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.branchId,
+        referencedTable: $state.db.branches,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) =>
+            $$BranchesTableFilterComposer(ComposerState(
+                $state.db, $state.db.branches, joinBuilder, parentComposers)));
+    return composer;
+  }
+
+  $$CustomerPaymentsTableFilterComposer get paymentId {
+    final $$CustomerPaymentsTableFilterComposer composer =
+        $state.composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.paymentId,
+            referencedTable: $state.db.customerPayments,
+            getReferencedColumn: (t) => t.id,
+            builder: (joinBuilder, parentComposers) =>
+                $$CustomerPaymentsTableFilterComposer(ComposerState($state.db,
+                    $state.db.customerPayments, joinBuilder, parentComposers)));
+    return composer;
+  }
+
+  $$SalesTableFilterComposer get saleId {
+    final $$SalesTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.saleId,
+        referencedTable: $state.db.sales,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) => $$SalesTableFilterComposer(
+            ComposerState(
+                $state.db, $state.db.sales, joinBuilder, parentComposers)));
+    return composer;
+  }
+}
+
+class $$CustomerPaymentLinksTableOrderingComposer
+    extends OrderingComposer<_$AppDatabase, $CustomerPaymentLinksTable> {
+  $$CustomerPaymentLinksTableOrderingComposer(super.$state);
+  ColumnOrderings<String> get id => $state.composableBuilder(
+      column: $state.table.id,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<DateTime> get createdAt => $state.composableBuilder(
+      column: $state.table.createdAt,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<DateTime> get updatedAt => $state.composableBuilder(
+      column: $state.table.updatedAt,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<String> get deviceId => $state.composableBuilder(
+      column: $state.table.deviceId,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<int> get syncStatus => $state.composableBuilder(
+      column: $state.table.syncStatus,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<double> get amount => $state.composableBuilder(
+      column: $state.table.amount,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  $$BranchesTableOrderingComposer get branchId {
+    final $$BranchesTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.branchId,
+        referencedTable: $state.db.branches,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) =>
+            $$BranchesTableOrderingComposer(ComposerState(
+                $state.db, $state.db.branches, joinBuilder, parentComposers)));
+    return composer;
+  }
+
+  $$CustomerPaymentsTableOrderingComposer get paymentId {
+    final $$CustomerPaymentsTableOrderingComposer composer = $state
+        .composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.paymentId,
+            referencedTable: $state.db.customerPayments,
+            getReferencedColumn: (t) => t.id,
+            builder: (joinBuilder, parentComposers) =>
+                $$CustomerPaymentsTableOrderingComposer(ComposerState($state.db,
+                    $state.db.customerPayments, joinBuilder, parentComposers)));
+    return composer;
+  }
+
+  $$SalesTableOrderingComposer get saleId {
+    final $$SalesTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.saleId,
+        referencedTable: $state.db.sales,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) => $$SalesTableOrderingComposer(
+            ComposerState(
+                $state.db, $state.db.sales, joinBuilder, parentComposers)));
     return composer;
   }
 }
@@ -74085,6 +74857,8 @@ class $AppDatabaseManager {
       $$SupplierPaymentsTableTableManager(_db, _db.supplierPayments);
   $$PurchasePaymentLinksTableTableManager get purchasePaymentLinks =>
       $$PurchasePaymentLinksTableTableManager(_db, _db.purchasePaymentLinks);
+  $$CustomerPaymentLinksTableTableManager get customerPaymentLinks =>
+      $$CustomerPaymentLinksTableTableManager(_db, _db.customerPaymentLinks);
   $$SyncQueueTableTableManager get syncQueue =>
       $$SyncQueueTableTableManager(_db, _db.syncQueue);
   $$GLEntriesTableTableManager get gLEntries =>

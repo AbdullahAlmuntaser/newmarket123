@@ -791,6 +791,13 @@ class SalesOrderItems extends Table with SyncableTable {
   TextColumn get unitId => text().nullable()();
 }
 
+class CustomerPaymentLinks extends Table with SyncableTable {
+  // Links customer payments to sales for invoice-wise tracking
+  TextColumn get paymentId => text().references(CustomerPayments, #id)();
+  TextColumn get saleId => text().references(Sales, #id)();
+  RealColumn get amount => real()(); // Amount applied to this sale
+}
+
 @DriftDatabase(
   tables: [
     Branches,
@@ -814,6 +821,7 @@ class SalesOrderItems extends Table with SyncableTable {
     CustomerPayments,
     SupplierPayments,
     PurchasePaymentLinks,
+    CustomerPaymentLinks,
     SyncQueue,
     GLAccounts,
     CostCenters,

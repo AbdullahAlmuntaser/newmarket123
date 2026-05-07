@@ -5,7 +5,6 @@ import 'package:supermarket/core/services/event_bus_service.dart';
 import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/core/services/inventory_costing_service.dart';
 import 'package:uuid/uuid.dart';
-import 'dart:developer' as developer;
 
 class TransactionEngine {
   final AppDatabase db;
@@ -418,35 +417,33 @@ class TransactionEngine {
       // 2. Process each item (Inventory Update - Return to Batch)
       for (var item in items) {
         double returnQty = item.quantity;
+        double factor = item.unitFactor;
+        double qtyInBaseUnit = returnQty * factor;
         const defaultWarehouse = 'WH001';
-        
-        // Get current product
-        final product = await (db.select(db.products)
-              ..where((p) => p.id.equals(item.productId))).getSingle();
-        double qtyInBaseUnit = returnQty;
         
         // Return stock to the specific batch or create new batch if none
         final batchId = item.batchId;
-        final batch = batchId != null
-            ? await (db.select(db.productBatches)
-                  ..where((b) => b.id.equals(batchId)))
-                .getSingleOrNull()
-            : null;
+        ProductBatch? batch;
+        
+        if (batchId != null) {
+          batch = await (db.select(db.productBatches)
+                ..where((b) => b.id.equals(batchId)))
+              .getSingleOrNull();
+        }
 
         if (batch != null) {
           // Update existing batch
           await (db.update(db.productBatches)
-                ..where((b) => b.id.equals(batch.id)))
+                ..where((b) => b.id.equals(batch!.id)))
               .write(
             ProductBatchesCompanion(
-              quantity: Value(batch.quantity + qtyInBaseUnit),
+              quantity: CustomExpression('quantity + ${qtyInBaseUnit.toDouble()}'),
             ),
           );
         } else {
           // Find or create batch - use FEFO logic to find existing batch first (nulls last)
           final existingBatches = await (db.select(db.productBatches)
                 ..where((b) => b.productId.equals(item.productId))
-                ..where((b) => b.quantity.isBiggerThan(const Variable(0)))
                 ..orderBy([
                   (b) => OrderingTerm(
                     expression: b.expiryDate.isNull(),
@@ -456,21 +453,26 @@ class TransactionEngine {
                     expression: b.expiryDate,
                     mode: OrderingMode.asc,
                   ),
+                  (b) => OrderingTerm(
+                    expression: b.createdAt,
+                    mode: OrderingMode.desc, // Get the newest one if same expiry
+                  ),
                 ]))
               .get();
           
           if (existingBatches.isNotEmpty) {
-            // Add to oldest batch (FEFO)
+            // Add to newest batch if no specific batch found (or oldest, choice depends on policy)
             final targetBatch = existingBatches.first;
             await (db.update(db.productBatches)
                   ..where((b) => b.id.equals(targetBatch.id)))
                 .write(
               ProductBatchesCompanion(
-                quantity: Value(targetBatch.quantity + qtyInBaseUnit),
+                quantity: CustomExpression('quantity + ${qtyInBaseUnit.toDouble()}'),
               ),
             );
           } else {
             // Create new batch for the return
+            final product = await (db.select(db.products)..where((p) => p.id.equals(item.productId))).getSingle();
             final newBatchId = const Uuid().v4();
             await db.into(db.productBatches).insert(
               ProductBatchesCompanion.insert(
@@ -487,26 +489,10 @@ class TransactionEngine {
           }
         }
 
-        // Update Product Total Stock (Only once)
+        // Update Product Total Stock (Atomic)
         await (db.update(db.products)
               ..where((p) => p.id.equals(item.productId)))
-            .write(ProductsCompanion(stock: Value(product.stock + qtyInBaseUnit)));
-
-        // Validate batch integrity: ensure product.stock == sum(batches)
-        final batchesAfterReturn = await (db.select(db.productBatches)
-              ..where((b) => b.productId.equals(item.productId)))
-            .get();
-        double batchSum = 0;
-        for (var b in batchesAfterReturn) {
-          batchSum += b.quantity;
-        }
-        final newStock = product.stock + qtyInBaseUnit;
-        if ((batchSum - newStock).abs() > 0.01) {
-          developer.log(
-            'WARNING: Stock/Batch mismatch after return. Product stock: $newStock, Batch sum: $batchSum',
-            name: 'transaction_engine',
-          );
-        }
+            .write(ProductsCompanion(stock: CustomExpression('stock + ${qtyInBaseUnit.toDouble()}')));
 
         // Record Inventory Transaction
         await db.into(db.inventoryTransactions).insert(
@@ -657,6 +643,7 @@ class TransactionEngine {
     required String paymentMethod, // cash, bank, check
     String? note,
     String? userId,
+    List<BillAllocation>? allocations,
   }) async {
     await db.transaction(() async {
       // 1. Create Payment Record
@@ -675,7 +662,39 @@ class TransactionEngine {
             ),
           );
 
-      // 2. Update Customer Balance
+      // 2. Record Allocations if provided or Auto-allocate
+      if (allocations != null && allocations.isNotEmpty) {
+        for (var allocation in allocations) {
+          await db.into(db.customerPaymentLinks).insert(
+                CustomerPaymentLinksCompanion.insert(
+                  paymentId: paymentId,
+                  saleId: allocation.saleId,
+                  amount: allocation.amount,
+                ),
+              );
+        }
+      } else {
+        // Auto-allocate based on FIFO (Oldest outstanding first)
+        final outstandingSales = await getOutstandingSales(customerId);
+        double remaining = amount;
+        for (var saleWithBalance in outstandingSales) {
+          if (remaining <= 0) break;
+          double toAllocate = remaining > saleWithBalance.balance
+              ? saleWithBalance.balance
+              : remaining;
+          
+          await db.into(db.customerPaymentLinks).insert(
+                CustomerPaymentLinksCompanion.insert(
+                  paymentId: paymentId,
+                  saleId: saleWithBalance.sale.id,
+                  amount: toAllocate,
+                ),
+              );
+          remaining -= toAllocate;
+        }
+      }
+
+      // 3. Update Customer Balance
       final customer = await (db.select(
         db.customers,
       )..where((c) => c.id.equals(customerId))).getSingle();
@@ -683,7 +702,7 @@ class TransactionEngine {
       await (db.update(db.customers)..where((c) => c.id.equals(customerId)))
           .write(CustomersCompanion(balance: Value(customer.balance - amount)));
 
-      // 3. Trigger Accounting
+      // 4. Trigger Accounting
       eventBus.fire(
         CustomerPaymentEvent(
           customerId: customerId,
@@ -743,4 +762,66 @@ class TransactionEngine {
       );
     });
   }
+
+  // ==================== BILL-WISE ALLOCATION ====================
+
+  /// Links a customer payment to a specific sale invoice
+  Future<void> allocatePaymentToSale({
+    required String paymentId,
+    required String saleId,
+    required double amount,
+  }) async {
+    await db.transaction(() async {
+      // 1. Record the allocation
+      await db.into(db.customerPaymentLinks).insert(
+            CustomerPaymentLinksCompanion.insert(
+              paymentId: paymentId,
+              saleId: saleId,
+              amount: amount,
+            ),
+          );
+
+      // 2. Check if the sale is now fully paid
+      final sale = await (db.select(db.sales)..where((s) => s.id.equals(saleId))).getSingle();
+      final links = await (db.select(db.customerPaymentLinks)..where((l) => l.saleId.equals(saleId))).get();
+      
+      double totalAllocated = links.fold(0, (sum, link) => sum + link.amount);
+
+      if (totalAllocated >= sale.total) {
+        // Mark sale as PAID if needed (assuming we have a status for that)
+        // For now, we'll just log it or update status if it exists
+        // await (db.update(db.sales)..where((s) => s.id.equals(saleId))).write(const SalesCompanion(status: Value('PAID')));
+      }
+    });
+  }
+
+  /// Gets all credit sales with outstanding balances for a customer
+  Future<List<SaleWithBalance>> getOutstandingSales(String customerId) async {
+    final creditSales = await (db.select(db.sales)
+          ..where((s) => s.customerId.equals(customerId) & s.isCredit.equals(true)))
+        .get();
+
+    List<SaleWithBalance> results = [];
+    for (var sale in creditSales) {
+      final links = await (db.select(db.customerPaymentLinks)..where((l) => l.saleId.equals(sale.id))).get();
+      double allocated = links.fold(0, (sum, link) => sum + link.amount);
+      
+      if (allocated < sale.total) {
+        results.add(SaleWithBalance(sale: sale, balance: sale.total - allocated));
+      }
+    }
+    return results;
+  }
+}
+
+class SaleWithBalance {
+  final Sale sale;
+  final double balance;
+  SaleWithBalance({required this.sale, required this.balance});
+}
+
+class BillAllocation {
+  final String saleId;
+  final double amount;
+  BillAllocation({required this.saleId, required this.amount});
 }

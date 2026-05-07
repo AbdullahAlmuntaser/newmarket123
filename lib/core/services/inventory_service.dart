@@ -351,14 +351,17 @@ class InventoryService {
     String? referenceId,
   }) async {
     await db.transaction(() async {
-      final product = await (db.select(
-        db.products,
-      )..where((p) => p.id.equals(itemId))).getSingle();
+      // Use atomic update to prevent race conditions
+      final updateQuery = db.update(db.products)..where((p) => p.id.equals(itemId));
       
-      if (product.stock < quantity) throw Exception('Insufficient stock');
+      // We still check for stock existence/availability first
+      final product = await (db.select(db.products)..where((p) => p.id.equals(itemId))).getSingle();
+      if (product.stock < quantity) throw Exception('Insufficient stock for ${product.name}');
 
-      await (db.update(db.products)..where((p) => p.id.equals(itemId))).write(
-        ProductsCompanion(stock: drift.Value(product.stock - quantity)),
+      await updateQuery.write(
+        ProductsCompanion(
+          stock: CustomExpression('stock - ${quantity.toDouble()}'),
+        ),
       );
 
       await db

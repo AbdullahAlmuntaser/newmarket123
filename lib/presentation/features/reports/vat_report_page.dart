@@ -34,13 +34,31 @@ class _VatReportPageState extends State<VatReportPage> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              _buildSectionTitle('المبيعات والمخرجات'),
+              _buildCard('إجمالي المبيعات الخاضعة للضريبة', data.totalTaxableSales),
               _buildCard('إجمالي ضريبة المخرجات', data.totalOutputVat),
+              const SizedBox(height: 16),
+              
+              _buildSectionTitle('المشتريات والمدخلات'),
+              _buildCard('إجمالي المشتريات الخاضعة للضريبة', data.totalTaxablePurchases),
               _buildCard('إجمالي ضريبة المدخلات', data.totalInputVat),
-              const Divider(),
-              _buildCard('صافي الضريبة المستحقة', data.netVatPayable, isHighlight: true),
+              const SizedBox(height: 16),
+              
+              const Divider(thickness: 2),
+              _buildCard('صافي الضريبة المستحقة (للدفع/للاسترداد)', data.netVatPayable, isHighlight: true),
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+      child: Text(
+        title,
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueGrey),
       ),
     );
   }
