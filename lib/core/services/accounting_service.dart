@@ -1276,7 +1276,7 @@ class AccountingService {
     List<SalesReturnItem> items,
   ) async {
     // التحقق من الصلاحيات
-    if (!await permissionService.check(PermissionCode.POST_SALE_RETURN)) {
+    if (!await _permissionService.check(PermissionCode.postSaleReturn)) {
       throw Exception('Permission denied: POST_SALE_RETURN');
     }
 
@@ -1284,8 +1284,6 @@ class AccountingService {
     final originalSale = await db.salesDao.getSaleById(saleReturn.saleId);
     if (originalSale == null) throw Exception('Original sale not found.');
     
-    try {
-
     final entryId = const Uuid().v4();
     final salesReturnAccount = await dao.getAccountByCode(codeSalesReturns);
     final taxAccount = await dao.getAccountByCode(codeOutputVAT);
@@ -1425,7 +1423,7 @@ class AccountingService {
     List<PurchaseReturnItem> items,
   ) async {
     // التحقق من الصلاحيات
-    if (!await permissionService.check(PermissionCode.POST_PURCHASE_RETURN)) {
+    if (!await _permissionService.check(PermissionCode.postPurchaseReturn)) {
       throw Exception('Permission denied: POST_PURCHASE_RETURN');
     }
 
@@ -1436,8 +1434,6 @@ class AccountingService {
     if (originalPurchase == null) {
       throw Exception('Original purchase not found.');
     }
-
-    try {
 
     final entryId = const Uuid().v4();
     final purchaseReturnAccount = await dao.getAccountByCode(

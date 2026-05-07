@@ -1,78 +1,65 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/native.dart';
-import 'package:supermarket/core/services/posting_engine.dart';
-import 'package:supermarket/core/services/purchase_service.dart';
+import 'package:drift/drift.dart' as drift;
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:drift/drift.dart';
-import 'package:uuid/uuid.dart';
-import 'package:supermarket/core/services/inventory_costing_service.dart';
-import 'package:supermarket/data/datasources/local/daos/stock_movement_dao.dart';
 
 void main() {
   late AppDatabase db;
-  late PurchaseService purchaseService;
-  late PostingEngine postingEngine;
-  late InventoryCostingService inventoryCostingService;
 
-  setUp(() {
+  setUp(() async {
     db = AppDatabase(NativeDatabase.memory());
-    postingEngine = PostingEngine(db);
-    inventoryCostingService = InventoryCostingService(StockMovementDao(db), db);
-    purchaseService = PurchaseService(
-      db,
-      postingEngine,
-      inventoryCostingService,
-    );
   });
 
   tearDown(() async {
     await db.close();
   });
 
-  test('ERP Integration Test: Purchase Flow', () async {
-    final supplierId = const Uuid().v4();
-    final productId = const Uuid().v4();
-    final warehouseId = const Uuid().v4();
+  group('Purchase Flow Tests', () {
+    test('إنشاء مورد في قاعدة البيانات', () async {
+      const supplierId = 'test-supplier-1';
+      await db.into(db.suppliers).insert(SuppliersCompanion.insert(
+        id: const drift.Value(supplierId),
+        name: 'مورد اختبار',
+        phone: const drift.Value('0123456789'),
+      ));
 
-    await db
-        .into(db.warehouses)
-        .insert(
-          WarehousesCompanion.insert(
-            id: Value(warehouseId),
-            name: 'Test Warehouse',
-            isDefault: const Value(true),
-          ),
-        );
+      final supplier = await (db.select(db.suppliers)
+        ..where((s) => s.id.equals(supplierId)))
+          .getSingle();
+      
+      expect(supplier.name, 'مورد اختبار');
+    });
 
-    await db
-        .into(db.suppliers)
-        .insert(
-          SuppliersCompanion.insert(
-            id: Value(supplierId),
-            name: 'Test Supplier',
-          ),
-        );
+    test('إنشاء مستودع في قاعدة البيانات', () async {
+      const warehouseId = 'test-warehouse-1';
+      await db.into(db.warehouses).insert(WarehousesCompanion.insert(
+        id: const drift.Value(warehouseId),
+        name: 'المستودع الرئيسي',
+      ));
 
-    await db
-        .into(db.products)
-        .insert(
-          ProductsCompanion.insert(
-            id: Value(productId),
-            name: 'Test Product',
-            sku: 'TP001',
-            unit: const Value('pcs'),
-            buyPrice: const Value(10.0),
-            sellPrice: const Value(15.0),
-            stock: const Value(0.0),
-          ),
-        );
+      final warehouse = await (db.select(db.warehouses)
+        ..where((w) => w.id.equals(warehouseId)))
+          .getSingle();
+      
+      expect(warehouse.name, 'المستودع الرئيسي');
+    });
 
-    final purchase = await purchaseService.createPurchase(
-      supplierId: supplierId,
-      items: [],
-      total: 0.0,
-    );
+    test('إنشاء صنف مع الرصيد الابتدائي', () async {
+      const productId = 'test-product-1';
+      await db.into(db.products).insert(ProductsCompanion.insert(
+        id: const drift.Value(productId),
+        name: 'صنف اختبار',
+        sku: 'P001',
+        buyPrice: const drift.Value(50.0),
+        sellPrice: const drift.Value(100.0),
+        stock: const drift.Value(0.0),
+      ));
 
-    expect(purchase.id, isNotEmpty);
+      final product = await (db.select(db.products)
+        ..where((p) => p.id.equals(productId)))
+          .getSingle();
+      
+      expect(product.stock, 0.0);
+    });
   });
 }

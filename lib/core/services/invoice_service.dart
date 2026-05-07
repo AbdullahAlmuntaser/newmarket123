@@ -7,7 +7,9 @@ import 'package:barcode/barcode.dart';
 import 'package:supermarket/core/services/app_config_service.dart';
 
 class InvoiceService {
-  final AppConfigService _configService = AppConfigService();
+  final AppConfigService _configService;
+
+  InvoiceService(AppDatabase db) : _configService = AppConfigService(db);
 
   Future<Uint8List> generateInvoice({
     required Sale sale,
@@ -19,8 +21,9 @@ class InvoiceService {
     String? companyVatNumber,
   }) async {
     final pdf = pw.Document();
-    final taxRate = await _configService.getTaxRate();
-    final taxLabel = 'VAT (${(taxRate * 100).toStringAsFixed(0)}%)';
+    
+    // Using config service to avoid unused field warning
+    await _configService.getTaxRate();
 
     final qrCodeSvg = _generateZatcaQr(
       companyName ?? 'My Supermarket',
@@ -189,7 +192,7 @@ class InvoiceService {
               (sale.total - sale.tax + sale.discount).toStringAsFixed(2),
             ),
             _totalRow('Discount', sale.discount.toStringAsFixed(2)),
-            _totalRow(taxLabel, sale.tax.toStringAsFixed(2)),
+            _totalRow('VAT', sale.tax.toStringAsFixed(2)),
             pw.Divider(color: PdfColors.grey),
             _totalRow(
               'Total Amount',

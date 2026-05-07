@@ -121,7 +121,7 @@ class TransactionEngine {
                   costPrice: Value(
                     finalUnitCost / item.unitFactor,
                   ), // Cost per base unit
-                  syncStatus: const Value(1),
+                  syncStatus: const Value.absent(),
                 ),
               );
 
@@ -674,7 +674,7 @@ class TransactionEngine {
               amount: amount,
               paymentDate: Value(DateTime.now()),
               note: Value(note),
-              syncStatus: const Value(1),
+              syncStatus: const Value.absent(),
             ),
           );
 
@@ -721,7 +721,7 @@ class TransactionEngine {
               amount: amount,
               paymentDate: Value(DateTime.now()),
               note: Value(note),
-              syncStatus: const Value(1),
+              syncStatus: const Value.absent(),
             ),
           );
 
@@ -746,4 +746,36 @@ class TransactionEngine {
       );
     });
   }
+
+  Future<List<SaleWithBalance>> getOutstandingSales(String customerId) async {
+    final sales = await (db.select(db.sales)
+      ..where((s) => s.customerId.equals(customerId))
+      ..where((s) => s.status.equals('POSTED'))
+      ..where((s) => s.isCredit.equals(true)))
+      .get();
+
+    final result = <SaleWithBalance>[];
+    for (final sale in sales) {
+      final payments = await (db.select(db.accountTransactions)
+        ..where((t) => t.referenceId.equals(sale.id)))
+        .get();
+      
+      double totalPaid = 0;
+      for (final payment in payments) {
+        totalPaid += (payment.credit - payment.debit);
+      }
+      
+      final balance = sale.total - totalPaid;
+      if (balance > 0) {
+        result.add(SaleWithBalance(sale: sale, balance: balance));
+      }
+    }
+    return result;
+  }
+}
+
+class SaleWithBalance {
+  final Sale sale;
+  final double balance;
+  SaleWithBalance({required this.sale, required this.balance});
 }

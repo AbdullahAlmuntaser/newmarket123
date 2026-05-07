@@ -17,7 +17,7 @@ class PurchasesPage extends StatefulWidget {
 class _PurchasesPageState extends State<PurchasesPage> {
   final int _pageSize = 20;
   int _currentPage = 0;
-  bool _isLoadingMore = false;
+  final bool _isLoadingMore = false;
   
   @override
   Widget build(BuildContext context) {
@@ -93,7 +93,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                   children: [
                     Text(
                       'إجمالي ${allPurchases.length} عملية شراء',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     Text(
                       'صفحة ${_currentPage + 1} من $totalPages',

@@ -3,17 +3,17 @@ import 'package:drift/drift.dart';
 
 /// أكواد الصلاحيات المستخدمة في النظام
 class PermissionCode {
-  static const String POST_SALE = 'POST_SALE';
-  static const String POST_PURCHASE = 'POST_PURCHASE';
-  static const String POST_SALE_RETURN = 'POST_SALE_RETURN';
-  static const String POST_PURCHASE_RETURN = 'POST_PURCHASE_RETURN';
-  static const String DELETE_INVOICE = 'DELETE_INVOICE';
-  static const String VOID_TRANSACTION = 'VOID_TRANSACTION';
-  static const String MANAGE_USERS = 'MANAGE_USERS';
-  static const String VIEW_REPORTS = 'VIEW_REPORTS';
-  static const String MANAGE_SETTINGS = 'MANAGE_SETTINGS';
-  static const String MANAGE_INVENTORY = 'MANAGE_INVENTORY';
-  static const String APPROVE_DISCOUNT = 'APPROVE_DISCOUNT';
+  static const String postSale = 'POST_SALE';
+  static const String postPurchase = 'POST_PURCHASE';
+  static const String postSaleReturn = 'POST_SALE_RETURN';
+  static const String postPurchaseReturn = 'POST_PURCHASE_RETURN';
+  static const String deleteInvoice = 'DELETE_INVOICE';
+  static const String voidTransaction = 'VOID_TRANSACTION';
+  static const String manageUsers = 'MANAGE_USERS';
+  static const String viewReports = 'VIEW_REPORTS';
+  static const String manageSettings = 'MANAGE_SETTINGS';
+  static const String manageInventory = 'MANAGE_INVENTORY';
+  static const String approveDiscount = 'APPROVE_DISCOUNT';
 }
 
 class PermissionService {

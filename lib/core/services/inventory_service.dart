@@ -380,10 +380,8 @@ class InventoryService {
               productId: itemId,
               quantity: -quantity,
               type: 'SALE',
-              warehouseId: warehouseId,
               referenceId: drift.Value(referenceId),
-              userId: drift.Value(userId),
-              notes: drift.Value(allowNegative && newStock < 0 ? 'تم السماح بالمخزون السلبي' : null),
+              transactionId: drift.Value(userId),
             ),
           );
 

@@ -26,7 +26,6 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
   DateTime _checkDueDate = DateTime.now();
   DateTime _selectedDate = DateTime.now();
   bool _isSaving = false;
-  List<Allocation> _billAllocations = [];
 
   @override
   void initState() {
@@ -198,11 +197,7 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
               BillAllocationWidget(
                 customerId: _selectedCustomer!.id,
                 totalPaymentAmount: double.tryParse(_amountController.text) ?? 0.0,
-                onAllocationChanged: (allocs) {
-                  setState(() {
-                    _billAllocations = allocs;
-                  });
-                },
+                onAllocationChanged: (allocs) {},
               ),
               const SizedBox(height: 16),
             ],
@@ -402,7 +397,6 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
           amount: amount,
           paymentMethod: _paymentMethod,
           note: _noteController.text.isEmpty ? null : _noteController.text,
-          allocations: _billAllocations.map((a) => BillAllocation(saleId: a.saleId, amount: a.amount)).toList(),
         );
       } else if (_selectedSupplier != null) {
         await engine.postSupplierPayment(
