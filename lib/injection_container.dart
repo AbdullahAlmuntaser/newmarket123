@@ -11,8 +11,10 @@ import 'core/services/financial_control_service.dart';
 import 'core/services/grn_service.dart';
 import 'core/utils/drive_backup_service.dart';
 import 'core/theme/theme_provider.dart';
+import 'core/services/unit_conversion_service.dart';
 import 'data/datasources/local/app_database.dart';
 import 'data/datasources/local/daos/products_dao.dart';
+import 'data/datasources/local/daos/product_units_dao.dart';
 import 'core/services/posting_engine.dart';
 import 'core/services/inventory_costing_service.dart';
 import 'data/datasources/local/daos/stock_movement_dao.dart';
@@ -62,6 +64,15 @@ Future<void> initServices() async {
     sl.registerLazySingleton<AuditDao>(() => AuditDao(db));
     sl.registerLazySingleton<StockMovementDao>(() => StockMovementDao(db));
     sl.registerLazySingleton<ProductsDao>(() => ProductsDao(db));
+    sl.registerLazySingleton<ProductUnitsDao>(() => ProductUnitsDao(db));
+    
+    debugPrint("DI: Registering UnitConversionService...");
+    sl.registerLazySingleton<UnitConversionService>(
+      () => UnitConversionService(
+        productsDao: sl<ProductsDao>(),
+        productUnitsDao: sl<ProductUnitsDao>(),
+      ),
+    );
     debugPrint("DI: DAOs registered");
 
     debugPrint("DI: Registering core services...");

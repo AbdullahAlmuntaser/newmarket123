@@ -9,6 +9,7 @@ import 'package:json_annotation/json_annotation.dart';
 import 'dart:developer' as developer;
 import 'app_config_service.dart';
 import 'permission_service.dart';
+export 'permission_service.dart' show PermissionCode;
 
 part 'accounting_service.g.dart';
 
@@ -1419,6 +1420,11 @@ class AccountingService {
     PurchaseReturn purchaseReturn,
     List<PurchaseReturnItem> items,
   ) async {
+    // التحقق من الصلاحيات
+    if (!await permissionService.check(PermissionCode.POST_PURCHASE_RETURN)) {
+      throw Exception('Permission denied: POST_PURCHASE_RETURN');
+    }
+
     final dao = db.accountingDao;
     final originalPurchase = await db.purchasesDao.getPurchaseById(
       purchaseReturn.purchaseId,
@@ -1426,6 +1432,8 @@ class AccountingService {
     if (originalPurchase == null) {
       throw Exception('Original purchase not found.');
     }
+
+    try {
 
     final entryId = const Uuid().v4();
     final purchaseReturnAccount = await dao.getAccountByCode(
