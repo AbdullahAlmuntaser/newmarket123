@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart' show Product;
+import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class PosProductCard extends StatelessWidget {
   final Product product;

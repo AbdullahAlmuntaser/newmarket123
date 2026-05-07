@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:uuid/uuid.dart';
 
 class PurchaseConverter {
@@ -19,7 +20,7 @@ class PurchaseConverter {
         id: Value(invoiceId),
         supplierId: Value(order.supplierId),
         total: order.total,
-        status: const Value('DRAFT'),
+        status: const Value(DocumentStatus.draft),
         date: Value(DateTime.now()),
         invoiceNumber: Value('INV-${order.orderNumber ?? orderId.substring(0, 8)}'),
       ));
@@ -36,9 +37,11 @@ class PurchaseConverter {
       }
 
       // 4. تحديث حالة أمر الشراء
-      await (db.update(db.purchaseOrders)..where((o) => o.id.equals(orderId))).write(const PurchaseOrdersCompanion(
-        status: Value('CONVERTED'),
-      ));
+      await (db.update(db.purchaseOrders)..where((o) => o.id.equals(orderId))).write(
+        const PurchaseOrdersCompanion(
+          status: Value('CONVERTED'),
+        ),
+      );
     });
   }
 }

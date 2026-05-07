@@ -130,7 +130,7 @@ class InvoiceService {
                 style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
               ),
               pw.Text(customerName ?? 'Walk-in Customer'),
-              pw.Text('Payment Method: ${sale.paymentMethod.toUpperCase()}'),
+              pw.Text('Payment Method: ${sale.paymentMethod.name}'),
             ],
           ),
           pw.Column(

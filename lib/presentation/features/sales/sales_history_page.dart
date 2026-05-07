@@ -7,6 +7,7 @@ import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/widgets/main_drawer.dart';
 import 'package:supermarket/presentation/features/sales/widgets/sale_details_bottom_sheet.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 
 class SalesHistoryPage extends StatefulWidget {
   const SalesHistoryPage({super.key});
@@ -66,7 +67,7 @@ class _SalesHistoryPageState extends State<SalesHistoryPage> {
                           context,
                         ).colorScheme.primary.withAlpha(26),
                         child: Icon(
-                          sale.paymentMethod == 'cash'
+                          sale.paymentMethod == PaymentMethod.cash
                               ? Icons.money
                               : Icons.credit_card,
                           color: Theme.of(context).colorScheme.primary,
@@ -88,10 +89,10 @@ class _SalesHistoryPageState extends State<SalesHistoryPage> {
                             ),
                           ),
                           Text(
-                            sale.syncStatus == 0 ? l10n.synced : l10n.pending,
+                            sale.status == DocumentStatus.posted ? l10n.synced : 'غير مرحل',
                             style: TextStyle(
                               fontSize: 10,
-                              color: sale.syncStatus == 0
+                              color: sale.status == DocumentStatus.posted
                                   ? Colors.green
                                   : Colors.orange,
                             ),

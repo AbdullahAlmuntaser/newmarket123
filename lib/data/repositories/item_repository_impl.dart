@@ -3,8 +3,8 @@ import 'package:drift/drift.dart';
 import 'package:supermarket/core/utils/failures.dart';
 import 'package:supermarket/domain/entities/item.dart' as entity;
 import 'package:supermarket/domain/repositories/item_repository.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/data/datasources/local/daos/products_dao.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart' show ProductsCompanion;
 
 class ItemRepositoryImpl implements ItemRepository {
   final ProductsDao _productsDao;

@@ -1,8 +1,8 @@
-import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supermarket/injection_container.dart' as di;
 import 'package:supermarket/core/auth/auth_provider.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/home/home_page.dart';
 import 'package:supermarket/presentation/features/auth/login_page.dart';
 import 'package:supermarket/presentation/features/dashboard/dashboard_page.dart';

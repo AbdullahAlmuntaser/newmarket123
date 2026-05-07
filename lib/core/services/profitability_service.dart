@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 
 class ProfitabilityReport {
   final double totalRevenue;
@@ -28,7 +29,7 @@ class ProfitabilityService {
     final sales =
         await (db.select(db.sales)
               ..where((s) => s.createdAt.isBetween(Variable(start), Variable(end)))
-              ..where((s) => s.status.equals('POSTED')))
+              ..where((s) => s.status.equals(DocumentStatus.posted.index)))
             .get();
 
     double totalRevenue = 0;

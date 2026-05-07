@@ -4,6 +4,7 @@ import 'package:printing/printing.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/invoice_service.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 
 class SaleDetailsBottomSheet extends StatelessWidget {
   final Sale sale;
@@ -68,7 +69,7 @@ class SaleDetailsBottomSheet extends StatelessWidget {
                         ),
                         Row(
                           children: [
-                            if (sale.status == 'POSTED')
+                            if (sale.status == DocumentStatus.posted)
                               IconButton(
                                 icon: const Icon(
                                   Icons.assignment_return,

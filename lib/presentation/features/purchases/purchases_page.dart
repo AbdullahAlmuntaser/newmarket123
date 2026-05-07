@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:supermarket/presentation/widgets/main_drawer.dart';
 
 class PurchasesPage extends StatefulWidget {
@@ -206,22 +207,22 @@ class _PurchasesPageState extends State<PurchasesPage> {
     );
   }
   
-  Color _getStatusColor(String status) {
+  Color _getStatusColor(DocumentStatus status) {
     switch (status) {
-      case 'DRAFT': return Colors.grey;
-      case 'ORDERED': return Colors.blue;
-      case 'RECEIVED': return Colors.green;
-      case 'CANCELLED': return Colors.red;
+      case DocumentStatus.draft: return Colors.grey;
+      case DocumentStatus.posted: return Colors.blue;
+      case DocumentStatus.received: return Colors.green;
+      case DocumentStatus.cancelled: return Colors.red;
       default: return Colors.grey;
     }
   }
   
-  IconData _getStatusIcon(String status) {
+  IconData _getStatusIcon(DocumentStatus status) {
     switch (status) {
-      case 'DRAFT': return Icons.edit_note;
-      case 'ORDERED': return Icons.local_shipping;
-      case 'RECEIVED': return Icons.check_circle;
-      case 'CANCELLED': return Icons.cancel;
+      case DocumentStatus.draft: return Icons.edit_note;
+      case DocumentStatus.posted: return Icons.local_shipping;
+      case DocumentStatus.received: return Icons.check_circle;
+      case DocumentStatus.cancelled: return Icons.cancel;
       default: return Icons.help_outline;
     }
   }
@@ -250,7 +251,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                 );
               },
             ),
-            if (purchase.status == 'DRAFT')
+            if (purchase.status == DocumentStatus.draft)
               ListTile(
                 leading: const Icon(Icons.edit, color: Colors.orange),
                 title: const Text('تعديل', style: TextStyle(color: Colors.orange)),
@@ -262,7 +263,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                   );
                 },
               ),
-            if (purchase.status == 'DRAFT')
+            if (purchase.status == DocumentStatus.draft)
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
                 title: const Text('حذف', style: TextStyle(color: Colors.red)),
@@ -359,29 +360,29 @@ class _PurchasesPageState extends State<PurchasesPage> {
 
   Widget _buildStatusChip(
     BuildContext context,
-    String status,
+    DocumentStatus status,
     AppLocalizations l10n,
   ) {
     Color chipColor;
     Color textColor = Colors.white;
     String label;
     switch (status) {
-      case 'DRAFT':
+      case DocumentStatus.draft:
         chipColor = Theme.of(context).colorScheme.onSurfaceVariant;
         textColor = Theme.of(context).colorScheme.onPrimary;
         label = l10n.draft;
         break;
-      case 'ORDERED':
+      case DocumentStatus.posted:
         chipColor = Theme.of(context).colorScheme.primary;
         textColor = Theme.of(context).colorScheme.onPrimary;
         label = l10n.ordered;
         break;
-      case 'RECEIVED':
+      case DocumentStatus.received:
         chipColor = Theme.of(context).colorScheme.tertiary;
         textColor = Theme.of(context).colorScheme.onTertiary;
         label = l10n.received;
         break;
-      case 'CANCELLED':
+      case DocumentStatus.cancelled:
         chipColor = Theme.of(context).colorScheme.error;
         textColor = Theme.of(context).colorScheme.onError;
         label = l10n.cancelled;
@@ -389,7 +390,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
       default:
         chipColor = Theme.of(context).colorScheme.onSurface;
         textColor = Theme.of(context).colorScheme.onPrimary;
-        label = status;
+        label = status.name;
     }
     return Chip(
       label: Text(label, style: TextStyle(color: textColor, fontSize: 10)),

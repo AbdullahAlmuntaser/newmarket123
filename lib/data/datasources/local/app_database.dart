@@ -7,6 +7,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqlite3/sqlite3.dart' as sqlite;
 import 'package:uuid/uuid.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
+
 import 'daos/products_dao.dart';
 import 'daos/sales_dao.dart';
 import 'daos/customers_dao.dart';
@@ -27,6 +29,23 @@ import 'tables/advanced_accounting_tables.dart';
 import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 
 part 'app_database.g.dart';
+
+// Type Converters
+class DocumentStatusConverter extends TypeConverter<DocumentStatus, int> {
+  const DocumentStatusConverter();
+  @override
+  DocumentStatus fromSql(int fromDb) => DocumentStatus.values[fromDb];
+  @override
+  int toSql(DocumentStatus value) => value.index;
+}
+
+class PaymentMethodConverter extends TypeConverter<PaymentMethod, int> {
+  const PaymentMethodConverter();
+  @override
+  PaymentMethod fromSql(int fromDb) => PaymentMethod.values[fromDb];
+  @override
+  int toSql(PaymentMethod value) => value.index;
+}
 
 mixin SyncableTable on Table {
   TextColumn get id => text().clientDefault(() => const Uuid().v4())();
@@ -165,11 +184,9 @@ class Sales extends Table with SyncableTable {
   RealColumn get total => real()();
   RealColumn get discount => real().withDefault(const Constant(0.0))();
   RealColumn get tax => real().withDefault(const Constant(0.0))();
-  TextColumn get paymentMethod => text()();
+  IntColumn get paymentMethod => integer().map(const PaymentMethodConverter())();
   BoolColumn get isCredit => boolean().withDefault(const Constant(false))();
-  TextColumn get status => text().withDefault(
-    const Constant('POSTED'),
-  )(); // DRAFT, POSTED, CANCELLED
+  IntColumn get status => integer().map(const DocumentStatusConverter()).withDefault(const Constant(1))();
   TextColumn get saleType =>
       text().withDefault(const Constant('retail'))(); // retail / wholesale
   TextColumn get currencyId => text().nullable()();
@@ -224,30 +241,22 @@ class Purchases extends Table with SyncableTable {
   TextColumn get supplierId => text().nullable().references(Suppliers, #id)();
   RealColumn get total => real()();
   RealColumn get tax => real().withDefault(const Constant(0.0))();
-  RealColumn get discount => real().withDefault(
-    const Constant(0.0),
-  )(); // New: Additional header discount
+  RealColumn get discount => real().withDefault(const Constant(0.0))();
   RealColumn get landedCosts => real().withDefault(const Constant(0.0))();
-  RealColumn get shippingCost =>
-      real().withDefault(const Constant(0.0))(); // New
-  RealColumn get otherExpenses =>
-      real().withDefault(const Constant(0.0))(); // New
+  RealColumn get shippingCost => real().withDefault(const Constant(0.0))();
+  RealColumn get otherExpenses => real().withDefault(const Constant(0.0))();
   TextColumn get invoiceNumber => text().nullable()();
-  TextColumn get purchaseType =>
-      text().withDefault(const Constant('cash'))(); // cash / credit
+  TextColumn get purchaseType => text().withDefault(const Constant('cash'))();
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
-  DateTimeColumn get time => dateTime().nullable()(); // New: Time field
+  DateTimeColumn get time => dateTime().nullable()();
   BoolColumn get isCredit => boolean().withDefault(const Constant(false))();
-  TextColumn get status => text().withDefault(
-    const Constant('DRAFT'),
-  )(); // DRAFT, POSTED, RECEIVED, CANCELLED
+  IntColumn get status => integer().map(const DocumentStatusConverter()).withDefault(const Constant(0))(); // 0 = DRAFT
   TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
   TextColumn get currencyId => text().nullable()();
   RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
-  TextColumn get notes => text().nullable()(); // New
-  TextColumn get referenceDocument => text().nullable()(); // جديد
-  TextColumn get attachmentPath =>
-      text().nullable()(); // New: Invoice image path
+  TextColumn get notes => text().nullable()();
+  TextColumn get referenceDocument => text().nullable()();
+  TextColumn get attachmentPath => text().nullable()();
 }
 
 class PurchaseItems extends Table with SyncableTable {

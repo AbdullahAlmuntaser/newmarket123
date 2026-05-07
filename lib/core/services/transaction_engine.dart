@@ -5,6 +5,7 @@ import 'package:supermarket/core/services/event_bus_service.dart';
 import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/core/services/inventory_costing_service.dart';
 import 'package:supermarket/core/services/app_config_service.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:developer' as developer;
 
@@ -64,7 +65,7 @@ class TransactionEngine {
           throw Exception('يجب اختيار مورد لفاتورة الشراء الآجل.');
         }
 
-        if (purchase.status == 'RECEIVED') {
+        if (purchase.status == DocumentStatus.received) {
           throw Exception('هذه الفاتورة تم استلامها بالفعل.');
         }
 
@@ -157,7 +158,7 @@ class TransactionEngine {
 
         // 4. Update Purchase Status
         await (db.update(db.purchases)..where((p) => p.id.equals(purchaseId)))
-            .write(const PurchasesCompanion(status: Value('RECEIVED')));
+            .write(const PurchasesCompanion(status: Value(DocumentStatus.received)));
 
         // 5. Update Supplier Balance if Credit
         if (purchase.isCredit && purchase.supplierId != null) {
@@ -196,7 +197,7 @@ class TransactionEngine {
     
     // NEW: Check if there is an active shift for cash sales
     final saleHeader = await (db.select(db.sales)..where((s) => s.id.equals(saleId))).getSingle();
-    if (saleHeader.paymentMethod == 'cash' && userId != null) {
+    if (saleHeader.paymentMethod == PaymentMethod.cash && userId != null) {
       final activeShift = await (db.select(db.shifts)
             ..where((s) => s.userId.equals(userId) & s.isOpen.equals(true)))
           .getSingleOrNull();
@@ -209,7 +210,7 @@ class TransactionEngine {
       // 1. Get Sale and Items
       final sale = saleHeader; // Already fetched above
       
-      if (sale.status == 'POSTED') {
+      if (sale.status == DocumentStatus.posted) {
         throw Exception('هذه الفاتورة تم ترحيلها بالفعل.');
       }
 
@@ -358,7 +359,7 @@ class TransactionEngine {
       }
       // 3. Update Sale Status
       await (db.update(db.sales)..where((s) => s.id.equals(saleId))).write(
-        const SalesCompanion(status: Value('POSTED')),
+        const SalesCompanion(status: Value(DocumentStatus.posted)),
       );
 
       // 4. Update Customer Balance if Credit
@@ -750,7 +751,7 @@ class TransactionEngine {
   Future<List<SaleWithBalance>> getOutstandingSales(String customerId) async {
     final sales = await (db.select(db.sales)
       ..where((s) => s.customerId.equals(customerId))
-      ..where((s) => s.status.equals('POSTED'))
+      ..where((s) => s.status.equals(DocumentStatus.posted.index))
       ..where((s) => s.isCredit.equals(true)))
       .get();
 

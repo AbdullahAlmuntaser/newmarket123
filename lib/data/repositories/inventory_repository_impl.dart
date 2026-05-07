@@ -3,9 +3,9 @@ import 'package:drift/drift.dart';
 import 'package:supermarket/core/utils/failures.dart';
 import 'package:supermarket/domain/entities/stock_movement.dart' as entity;
 import 'package:supermarket/domain/repositories/inventory_repository.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/data/datasources/local/daos/stock_movement_dao.dart';
 import 'package:supermarket/data/datasources/local/daos/products_dao.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart' show StockMovementsCompanion;
 
 class InventoryRepositoryImpl implements InventoryRepository {
   final StockMovementDao _stockMovementDao;

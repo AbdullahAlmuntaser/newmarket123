@@ -9,6 +9,7 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/erp_data_service.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
 import 'package:supermarket/injection_container.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:supermarket/presentation/features/sales/widgets/sales_item_row.dart';
 import 'package:supermarket/presentation/widgets/entity_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -658,15 +659,22 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
           totalItemDiscount += item.discount;
         }
         
+        PaymentMethod method = PaymentMethod.cash;
+        if (_paymentType == 'bank') {
+          method = PaymentMethod.bank;
+        } else if (_paymentType == 'check') {
+          method = PaymentMethod.check;
+        }
+
         final saleCompanion = SalesCompanion.insert(
           id: drift.Value(saleId),
           customerId: drift.Value(_selectedCustomer?.id),
           total: _total,
           tax: drift.Value(_totalTax),
           discount: drift.Value(_discount + totalItemDiscount),
-          paymentMethod: _paymentType,
+          paymentMethod: method,
           isCredit: drift.Value(_paymentType == 'credit'),
-          status: const drift.Value('DRAFT'),
+          status: const drift.Value(DocumentStatus.draft),
           shippingCost: drift.Value(_shippingCost),
           otherExpenses: drift.Value(_otherExpenses),
           warehouseId: drift.Value(_selectedWarehouse?.id),

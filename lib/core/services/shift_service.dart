@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:uuid/uuid.dart';
 
 class ShiftService {
@@ -48,7 +49,7 @@ class ShiftService {
               (t) =>
                   t.createdAt.isBiggerOrEqual(Variable(startTime)) &
                   t.createdAt.isSmallerOrEqual(Variable(endTime)) &
-                  t.paymentMethod.equals('cash'),
+                  t.paymentMethod.equals(PaymentMethod.cash.index),
             ))
             .get();
     final totalCashSales = cashSales.fold(0.0, (sum, sale) => sum + sale.total);

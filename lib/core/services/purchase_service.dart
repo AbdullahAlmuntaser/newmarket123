@@ -3,6 +3,7 @@ import 'package:supermarket/core/services/inventory_costing_service.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/posting_engine.dart';
 import 'package:supermarket/core/services/app_config_service.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:uuid/uuid.dart';
 
 class PurchaseService {
@@ -25,7 +26,7 @@ class PurchaseService {
       supplierId: Value(supplierId),
       date: Value(DateTime.now()),
       total: total,
-      status: const Value('draft'),
+      status: const Value(DocumentStatus.draft),
       warehouseId: Value(warehouseId),
     );
 
@@ -91,9 +92,9 @@ class PurchaseService {
       );
 
       // Update Purchase status to COMPLETED
-      await (db.update(db.purchases)..where((p) => p.id.equals(purchaseId))).write(
-        const PurchasesCompanion(status: Value('COMPLETED')),
-      );
+    await (db.update(db.purchases)..where((p) => p.id.equals(purchaseId))).write(
+          const PurchasesCompanion(status: Value(DocumentStatus.posted)),
+        );
     } catch (e, stackTrace) {
       throw Exception('خطأ في ترحيل فاتورة الشراء $purchaseId: $e\n$stackTrace');
     }

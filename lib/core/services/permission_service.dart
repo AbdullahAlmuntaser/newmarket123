@@ -1,7 +1,5 @@
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:drift/drift.dart';
 
-/// أكواد الصلاحيات المستخدمة في النظام
 class PermissionCode {
   static const String postSale = 'POST_SALE';
   static const String postPurchase = 'POST_PURCHASE';
@@ -29,11 +27,9 @@ class PermissionService {
       if (userData == null) return false;
 
       // الحصول على صلاحيات الدور
-      final query = db.select(db.rolePermissions)
-          ..where((rp) => rp.role.equals(userData.role) & rp.permissionCode.equals(permissionCode));
-      
-      final permission = await query.getSingleOrNull();
-      return permission != null;
+      final rolePerms = await db.select(db.rolePermissions).get();
+      final permission = rolePerms.where((rp) => rp.role == userData.role && rp.permissionCode == permissionCode);
+      return permission.isNotEmpty;
     } catch (e) {
       return false;
     }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supermarket/core/services/shift_service.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart' show Shift;
+import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class ShiftProvider with ChangeNotifier {
   final ShiftService _shiftService;
