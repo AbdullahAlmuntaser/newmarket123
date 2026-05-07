@@ -754,13 +754,14 @@ class AccountingService {
   }
 
   Future<void> postSale(Sale sale, List<SaleItem> items, {double? cogs, String? userId}) async {
-    if (userId != null) {
-      await _permissionService.executeIfAllowed(userId, 'POST_SALE', () async {});
-    }
-    if (await db.accountingDao.isDateInClosedPeriod(sale.createdAt)) {
-      throw Exception('Cannot post sale in a closed accounting period.');
-    }
-    await db.transaction(() async {
+    try {
+      if (userId != null) {
+        await _permissionService.executeIfAllowed(userId, 'POST_SALE', () async {});
+      }
+      if (await db.accountingDao.isDateInClosedPeriod(sale.createdAt)) {
+        throw Exception('Cannot post sale in a closed accounting period.');
+      }
+      await db.transaction(() async {
       final dao = db.accountingDao;
       final entryId = const Uuid().v4();
 
@@ -926,12 +927,16 @@ class AccountingService {
         }
       }
     });
+    } catch (e) {
+      throw Exception('Failed to post sale: ${e.toString()}');
+    }
   }
   Future<void> postPurchase(Purchase purchase, List<PurchaseItem> items, {String? userId}) async {
-    if (userId != null) {
-      await _permissionService.executeIfAllowed(userId, 'POST_PURCHASE', () async {});
-    }
-    if (await db.accountingDao.isDateInClosedPeriod(purchase.date)) {
+    try {
+      if (userId != null) {
+        await _permissionService.executeIfAllowed(userId, 'POST_PURCHASE', () async {});
+      }
+      if (await db.accountingDao.isDateInClosedPeriod(purchase.date)) {
       throw Exception('Cannot post purchase in a closed accounting period.');
     }
     await db.transaction(() async {
@@ -1025,6 +1030,9 @@ class AccountingService {
         details: 'Purchase entry for Purchase #${purchase.id.substring(0, 8)}',
       );
     });
+    } catch (e) {
+      throw Exception('Failed to post purchase: ${e.toString()}');
+    }
   }
   Future<void> recordCustomerPayment({
     required String customerId,
