@@ -360,7 +360,7 @@ class InventoryService {
 
       await updateQuery.write(
         ProductsCompanion(
-          stock: CustomExpression('stock - ${quantity.toDouble()}'),
+          stock: drift.Value(product.stock - quantity),
         ),
       );
 

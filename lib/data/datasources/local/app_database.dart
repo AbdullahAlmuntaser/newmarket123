@@ -319,6 +319,7 @@ class SalesReturnItems extends Table with SyncableTable {
   TextColumn get productId => text().references(Products, #id)();
   RealColumn get quantity => real()();
   RealColumn get price => real()();
+  RealColumn get unitFactor => real().withDefault(const Constant(1.0))();
   TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
 }
 

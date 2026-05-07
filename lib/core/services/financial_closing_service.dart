@@ -277,6 +277,64 @@ class FinancialClosingService {
     return entryId;
   }
 
+  /// Creates an opening entry for a new period based on previous balances
+  Future<String> createOpeningEntry({
+    required String newPeriodId,
+    required DateTime openingDate,
+  }) async {
+    final entryId = const Uuid().v4();
+    final allAccounts = await db.accountingDao.getAllAccounts();
+    
+    // Asset, Liability, and Equity accounts need opening balances
+    final permanentAccounts = allAccounts.where(
+      (a) => (a.type == 'ASSET' || a.type == 'LIABILITY' || a.type == 'EQUITY') && !a.isHeader,
+    );
+
+    final lines = <GLLinesCompanion>[];
+    for (var acc in permanentAccounts) {
+      final balance = await db.accountingDao.getAccountBalanceAsOfDate(
+        acc.id,
+        openingDate.subtract(const Duration(seconds: 1)),
+      );
+
+      if (balance == 0) continue;
+
+      if (balance > 0) {
+        lines.add(
+          GLLinesCompanion.insert(
+            entryId: entryId,
+            accountId: acc.id,
+            debit: Value(balance),
+            credit: const Value(0.0),
+          ),
+        );
+      } else {
+        lines.add(
+          GLLinesCompanion.insert(
+            entryId: entryId,
+            accountId: acc.id,
+            debit: const Value(0.0),
+            credit: Value(balance.abs()),
+          ),
+        );
+      }
+    }
+
+    if (lines.isEmpty) return '';
+
+    final entry = GLEntriesCompanion.insert(
+      id: Value(entryId),
+      description: 'قيد افتتاحي - ${openingDate.year}',
+      date: Value(openingDate),
+      referenceType: const Value('OPENING_ENTRY'),
+      status: const Value('POSTED'),
+      postedAt: Value(DateTime.now()),
+    );
+
+    await db.accountingDao.createEntry(entry, lines);
+    return entryId;
+  }
+
   Future<ClosingResult> reopenPeriod(
     String periodId,
     String userId,

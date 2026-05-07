@@ -15021,6 +15021,14 @@ class $SalesReturnItemsTable extends SalesReturnItems
   late final GeneratedColumn<double> price = GeneratedColumn<double>(
       'price', aliasedName, false,
       type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _unitFactorMeta =
+      const VerificationMeta('unitFactor');
+  @override
+  late final GeneratedColumn<double> unitFactor = GeneratedColumn<double>(
+      'unit_factor', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1.0));
   static const VerificationMeta _batchIdMeta =
       const VerificationMeta('batchId');
   @override
@@ -15042,6 +15050,7 @@ class $SalesReturnItemsTable extends SalesReturnItems
         productId,
         quantity,
         price,
+        unitFactor,
         batchId
       ];
   @override
@@ -15105,6 +15114,12 @@ class $SalesReturnItemsTable extends SalesReturnItems
     } else if (isInserting) {
       context.missing(_priceMeta);
     }
+    if (data.containsKey('unit_factor')) {
+      context.handle(
+          _unitFactorMeta,
+          unitFactor.isAcceptableOrUnknown(
+              data['unit_factor']!, _unitFactorMeta));
+    }
     if (data.containsKey('batch_id')) {
       context.handle(_batchIdMeta,
           batchId.isAcceptableOrUnknown(data['batch_id']!, _batchIdMeta));
@@ -15138,6 +15153,8 @@ class $SalesReturnItemsTable extends SalesReturnItems
           .read(DriftSqlType.double, data['${effectivePrefix}quantity'])!,
       price: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}price'])!,
+      unitFactor: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}unit_factor'])!,
       batchId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}batch_id']),
     );
@@ -15160,6 +15177,7 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
   final String productId;
   final double quantity;
   final double price;
+  final double unitFactor;
   final String? batchId;
   const SalesReturnItem(
       {required this.id,
@@ -15172,6 +15190,7 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
       required this.productId,
       required this.quantity,
       required this.price,
+      required this.unitFactor,
       this.batchId});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -15190,6 +15209,7 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
     map['product_id'] = Variable<String>(productId);
     map['quantity'] = Variable<double>(quantity);
     map['price'] = Variable<double>(price);
+    map['unit_factor'] = Variable<double>(unitFactor);
     if (!nullToAbsent || batchId != null) {
       map['batch_id'] = Variable<String>(batchId);
     }
@@ -15212,6 +15232,7 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
       productId: Value(productId),
       quantity: Value(quantity),
       price: Value(price),
+      unitFactor: Value(unitFactor),
       batchId: batchId == null && nullToAbsent
           ? const Value.absent()
           : Value(batchId),
@@ -15232,6 +15253,7 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
       productId: serializer.fromJson<String>(json['productId']),
       quantity: serializer.fromJson<double>(json['quantity']),
       price: serializer.fromJson<double>(json['price']),
+      unitFactor: serializer.fromJson<double>(json['unitFactor']),
       batchId: serializer.fromJson<String?>(json['batchId']),
     );
   }
@@ -15249,6 +15271,7 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
       'productId': serializer.toJson<String>(productId),
       'quantity': serializer.toJson<double>(quantity),
       'price': serializer.toJson<double>(price),
+      'unitFactor': serializer.toJson<double>(unitFactor),
       'batchId': serializer.toJson<String?>(batchId),
     };
   }
@@ -15264,6 +15287,7 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
           String? productId,
           double? quantity,
           double? price,
+          double? unitFactor,
           Value<String?> batchId = const Value.absent()}) =>
       SalesReturnItem(
         id: id ?? this.id,
@@ -15276,6 +15300,7 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
         productId: productId ?? this.productId,
         quantity: quantity ?? this.quantity,
         price: price ?? this.price,
+        unitFactor: unitFactor ?? this.unitFactor,
         batchId: batchId.present ? batchId.value : this.batchId,
       );
   SalesReturnItem copyWithCompanion(SalesReturnItemsCompanion data) {
@@ -15293,6 +15318,8 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
       productId: data.productId.present ? data.productId.value : this.productId,
       quantity: data.quantity.present ? data.quantity.value : this.quantity,
       price: data.price.present ? data.price.value : this.price,
+      unitFactor:
+          data.unitFactor.present ? data.unitFactor.value : this.unitFactor,
       batchId: data.batchId.present ? data.batchId.value : this.batchId,
     );
   }
@@ -15310,14 +15337,26 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
           ..write('productId: $productId, ')
           ..write('quantity: $quantity, ')
           ..write('price: $price, ')
+          ..write('unitFactor: $unitFactor, ')
           ..write('batchId: $batchId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, createdAt, updatedAt, deviceId,
-      syncStatus, branchId, salesReturnId, productId, quantity, price, batchId);
+  int get hashCode => Object.hash(
+      id,
+      createdAt,
+      updatedAt,
+      deviceId,
+      syncStatus,
+      branchId,
+      salesReturnId,
+      productId,
+      quantity,
+      price,
+      unitFactor,
+      batchId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -15332,6 +15371,7 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
           other.productId == this.productId &&
           other.quantity == this.quantity &&
           other.price == this.price &&
+          other.unitFactor == this.unitFactor &&
           other.batchId == this.batchId);
 }
 
@@ -15346,6 +15386,7 @@ class SalesReturnItemsCompanion extends UpdateCompanion<SalesReturnItem> {
   final Value<String> productId;
   final Value<double> quantity;
   final Value<double> price;
+  final Value<double> unitFactor;
   final Value<String?> batchId;
   final Value<int> rowid;
   const SalesReturnItemsCompanion({
@@ -15359,6 +15400,7 @@ class SalesReturnItemsCompanion extends UpdateCompanion<SalesReturnItem> {
     this.productId = const Value.absent(),
     this.quantity = const Value.absent(),
     this.price = const Value.absent(),
+    this.unitFactor = const Value.absent(),
     this.batchId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -15373,6 +15415,7 @@ class SalesReturnItemsCompanion extends UpdateCompanion<SalesReturnItem> {
     required String productId,
     required double quantity,
     required double price,
+    this.unitFactor = const Value.absent(),
     this.batchId = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : salesReturnId = Value(salesReturnId),
@@ -15390,6 +15433,7 @@ class SalesReturnItemsCompanion extends UpdateCompanion<SalesReturnItem> {
     Expression<String>? productId,
     Expression<double>? quantity,
     Expression<double>? price,
+    Expression<double>? unitFactor,
     Expression<String>? batchId,
     Expression<int>? rowid,
   }) {
@@ -15404,6 +15448,7 @@ class SalesReturnItemsCompanion extends UpdateCompanion<SalesReturnItem> {
       if (productId != null) 'product_id': productId,
       if (quantity != null) 'quantity': quantity,
       if (price != null) 'price': price,
+      if (unitFactor != null) 'unit_factor': unitFactor,
       if (batchId != null) 'batch_id': batchId,
       if (rowid != null) 'rowid': rowid,
     });
@@ -15420,6 +15465,7 @@ class SalesReturnItemsCompanion extends UpdateCompanion<SalesReturnItem> {
       Value<String>? productId,
       Value<double>? quantity,
       Value<double>? price,
+      Value<double>? unitFactor,
       Value<String?>? batchId,
       Value<int>? rowid}) {
     return SalesReturnItemsCompanion(
@@ -15433,6 +15479,7 @@ class SalesReturnItemsCompanion extends UpdateCompanion<SalesReturnItem> {
       productId: productId ?? this.productId,
       quantity: quantity ?? this.quantity,
       price: price ?? this.price,
+      unitFactor: unitFactor ?? this.unitFactor,
       batchId: batchId ?? this.batchId,
       rowid: rowid ?? this.rowid,
     );
@@ -15471,6 +15518,9 @@ class SalesReturnItemsCompanion extends UpdateCompanion<SalesReturnItem> {
     if (price.present) {
       map['price'] = Variable<double>(price.value);
     }
+    if (unitFactor.present) {
+      map['unit_factor'] = Variable<double>(unitFactor.value);
+    }
     if (batchId.present) {
       map['batch_id'] = Variable<String>(batchId.value);
     }
@@ -15493,6 +15543,7 @@ class SalesReturnItemsCompanion extends UpdateCompanion<SalesReturnItem> {
           ..write('productId: $productId, ')
           ..write('quantity: $quantity, ')
           ..write('price: $price, ')
+          ..write('unitFactor: $unitFactor, ')
           ..write('batchId: $batchId, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -58892,6 +58943,7 @@ typedef $$SalesReturnItemsTableCreateCompanionBuilder
   required String productId,
   required double quantity,
   required double price,
+  Value<double> unitFactor,
   Value<String?> batchId,
   Value<int> rowid,
 });
@@ -58907,6 +58959,7 @@ typedef $$SalesReturnItemsTableUpdateCompanionBuilder
   Value<String> productId,
   Value<double> quantity,
   Value<double> price,
+  Value<double> unitFactor,
   Value<String?> batchId,
   Value<int> rowid,
 });
@@ -58939,6 +58992,7 @@ class $$SalesReturnItemsTableTableManager extends RootTableManager<
             Value<String> productId = const Value.absent(),
             Value<double> quantity = const Value.absent(),
             Value<double> price = const Value.absent(),
+            Value<double> unitFactor = const Value.absent(),
             Value<String?> batchId = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -58953,6 +59007,7 @@ class $$SalesReturnItemsTableTableManager extends RootTableManager<
             productId: productId,
             quantity: quantity,
             price: price,
+            unitFactor: unitFactor,
             batchId: batchId,
             rowid: rowid,
           ),
@@ -58967,6 +59022,7 @@ class $$SalesReturnItemsTableTableManager extends RootTableManager<
             required String productId,
             required double quantity,
             required double price,
+            Value<double> unitFactor = const Value.absent(),
             Value<String?> batchId = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -58981,6 +59037,7 @@ class $$SalesReturnItemsTableTableManager extends RootTableManager<
             productId: productId,
             quantity: quantity,
             price: price,
+            unitFactor: unitFactor,
             batchId: batchId,
             rowid: rowid,
           ),
@@ -59022,6 +59079,11 @@ class $$SalesReturnItemsTableFilterComposer
 
   ColumnFilters<double> get price => $state.composableBuilder(
       column: $state.table.price,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<double> get unitFactor => $state.composableBuilder(
+      column: $state.table.unitFactor,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
@@ -59109,6 +59171,11 @@ class $$SalesReturnItemsTableOrderingComposer
 
   ColumnOrderings<double> get price => $state.composableBuilder(
       column: $state.table.price,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<double> get unitFactor => $state.composableBuilder(
+      column: $state.table.unitFactor,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 

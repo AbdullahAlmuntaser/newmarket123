@@ -437,7 +437,7 @@ class TransactionEngine {
                 ..where((b) => b.id.equals(batch!.id)))
               .write(
             ProductBatchesCompanion(
-              quantity: CustomExpression('quantity + ${qtyInBaseUnit.toDouble()}'),
+              quantity: Value(batch.quantity + qtyInBaseUnit),
             ),
           );
         } else {
@@ -467,7 +467,7 @@ class TransactionEngine {
                   ..where((b) => b.id.equals(targetBatch.id)))
                 .write(
               ProductBatchesCompanion(
-                quantity: CustomExpression('quantity + ${qtyInBaseUnit.toDouble()}'),
+                quantity: Value(targetBatch.quantity + qtyInBaseUnit),
               ),
             );
           } else {
@@ -489,10 +489,11 @@ class TransactionEngine {
           }
         }
 
-        // Update Product Total Stock (Atomic)
+        // Update Product Total Stock
+        final product = await (db.select(db.products)..where((p) => p.id.equals(item.productId))).getSingle();
         await (db.update(db.products)
               ..where((p) => p.id.equals(item.productId)))
-            .write(ProductsCompanion(stock: CustomExpression('stock + ${qtyInBaseUnit.toDouble()}')));
+            .write(ProductsCompanion(stock: Value(product.stock + qtyInBaseUnit)));
 
         // Record Inventory Transaction
         await db.into(db.inventoryTransactions).insert(
