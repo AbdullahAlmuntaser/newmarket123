@@ -114,14 +114,18 @@ class FinancialRatiosData {
 
 @JsonSerializable()
 class VatReportData {
+  final double totalTaxableSales;
   final double totalOutputVat;
+  final double totalTaxablePurchases;
   final double totalInputVat;
   final double netVatPayable;
   final DateTime startDate;
   final DateTime endDate;
 
   VatReportData({
+    required this.totalTaxableSales,
     required this.totalOutputVat,
+    required this.totalTaxablePurchases,
     required this.totalInputVat,
     required this.netVatPayable,
     required this.startDate,
@@ -1549,6 +1553,7 @@ class AccountingService {
       throw Exception('Output VAT or Input VAT accounts not found.');
     }
 
+    // 1. Output VAT (from Sales)
     final outputVatLines =
         await (db.select(db.gLLines).join([
               innerJoin(
@@ -1571,6 +1576,7 @@ class AccountingService {
           (line.read(db.gLLines.debit) ?? 0);
     }
 
+    // 2. Input VAT (from Purchases)
     final inputVatLines =
         await (db.select(db.gLLines).join([
               innerJoin(
@@ -1593,8 +1599,18 @@ class AccountingService {
           (line.read(db.gLLines.credit) ?? 0);
     }
 
+    // 3. Taxable Sales Base (Calculated from sales with VAT)
+    final taxableSales = await (db.select(db.sales)..where((s) => s.tax.isBiggerThan(const Constant(0.0)) & s.updatedAt.isBetweenValues(reportStartDate, reportEndDate))).get();
+    double totalTaxableSales = taxableSales.fold(0, (sum, s) => sum + (s.total - s.tax));
+
+    // 4. Taxable Purchases Base
+    final taxablePurchases = await (db.select(db.purchases)..where((p) => p.tax.isBiggerThan(const Constant(0.0)) & p.updatedAt.isBetweenValues(reportStartDate, reportEndDate))).get();
+    double totalTaxablePurchases = taxablePurchases.fold(0, (sum, p) => sum + (p.total - p.tax));
+
     return VatReportData(
+      totalTaxableSales: totalTaxableSales,
       totalOutputVat: totalOutputVat,
+      totalTaxablePurchases: totalTaxablePurchases,
       totalInputVat: totalInputVat,
       netVatPayable: totalOutputVat - totalInputVat,
       startDate: reportStartDate,

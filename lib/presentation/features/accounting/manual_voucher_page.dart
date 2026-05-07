@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
 import 'package:supermarket/injection_container.dart';
+import 'package:supermarket/presentation/features/accounting/widgets/bill_allocation_widget.dart';
 
 /// صفحة سند القبض/الصرف اليدوي
 class ManualVoucherPage extends StatefulWidget {
@@ -25,6 +26,7 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
   DateTime _checkDueDate = DateTime.now();
   DateTime _selectedDate = DateTime.now();
   bool _isSaving = false;
+  List<Allocation> _billAllocations = [];
 
   @override
   void initState() {
@@ -190,6 +192,20 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
                     ),
                     ),
                     ),            const SizedBox(height: 16),
+
+            // تخصيص الفواتير (فقط في سند القبض للعملاء)
+            if (widget.isReceipt && _selectedCustomer != null) ...[
+              BillAllocationWidget(
+                customerId: _selectedCustomer!.id,
+                totalPaymentAmount: double.tryParse(_amountController.text) ?? 0.0,
+                onAllocationChanged: (allocs) {
+                  setState(() {
+                    _billAllocations = allocs;
+                  });
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
 
             // التاريخ
             Card(
@@ -386,6 +402,7 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
           amount: amount,
           paymentMethod: _paymentMethod,
           note: _noteController.text.isEmpty ? null : _noteController.text,
+          allocations: _billAllocations.map((a) => BillAllocation(saleId: a.saleId, amount: a.amount)).toList(),
         );
       } else if (_selectedSupplier != null) {
         await engine.postSupplierPayment(
