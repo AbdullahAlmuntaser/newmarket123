@@ -948,8 +948,10 @@ class AccountingService {
           }
         }
       });
-    } catch (e) {
-      throw Exception('Failed to post sale: ${e.toString()}');
+    } catch (e, s) {
+      developer.log('Error posting sale', error: e, stackTrace: s);
+      final String errorMessage = e.toString();
+      throw Exception('Failed to post sale: $errorMessage \n StackTrace: $s');
     }
   }
 

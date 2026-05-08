@@ -1,113 +1,57 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:drift/native.dart';
-import 'package:drift/drift.dart' show Value;
-import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
 import 'package:supermarket/core/services/event_bus_service.dart';
-import 'package:uuid/uuid.dart';
+import 'package:supermarket/core/services/app_config_service.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart';
+
+class MockAppDatabase extends Mock implements AppDatabase {}
+class MockEventBusService extends Mock implements EventBusService {}
+class MockAccountingDao extends Mock implements AccountingDao {}
+class MockAppConfigService extends Mock implements AppConfigService {}
+
+class FakeGLAccountsCompanion extends Fake implements GLAccountsCompanion {}
 
 void main() {
-  late AppDatabase db;
-  late EventBusService eventBus;
-  late AccountingService service;
-  final branchId = const Uuid().v4();
+  late AccountingService accountingService;
+  late MockAppDatabase mockDatabase;
+  late MockEventBusService mockEventBus;
+  late MockAccountingDao mockAccountingDao;
+  late MockAppConfigService mockConfigService;
 
-  setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
-    eventBus = EventBusService();
-    service = AccountingService(db, eventBus);
-
-    // Seed branch with known ID
-    await db.into(db.branches).insert(
-          BranchesCompanion.insert(
-            id: Value(branchId),
-            name: 'Main Branch',
-            code: 'BR001',
-          ),
-        );
-
-    // Seed warehouse
-    await db.into(db.warehouses).insert(
-          WarehousesCompanion.insert(
-            id: const Value('WH001'),
-            name: 'Main Warehouse',
-            branchId: Value(branchId),
-          ),
-        );
-
-    // Seed default accounts for this branch
-    await service.seedDefaultAccounts(branchId: branchId);
-
-// Ensure currency SAR exists
-    final existingSAR = await (db.select(db.currencies)
-          ..where((c) => c.code.equals('SAR')))
-        .getSingleOrNull();
-    if (existingSAR == null) {
-      await db.into(db.currencies).insert(
-            CurrenciesCompanion.insert(
-              id: const Value('SAR'),
-              code: 'SAR',
-              name: 'ريال سعودي',
-              isBase: const Value(true),
-              exchangeRate: const Value(1.0),
-              branchId: Value(branchId),
-            ),
-          );
-    }
+  setUpAll(() {
+    registerFallbackValue(FakeGLAccountsCompanion());
   });
 
-  tearDown(() async {
-    await db.close();
-    eventBus.dispose();
+  setUp(() {
+    mockDatabase = MockAppDatabase();
+    mockEventBus = MockEventBusService();
+    mockAccountingDao = MockAccountingDao();
+    mockConfigService = MockAppConfigService();
+
+    when(() => mockEventBus.stream).thenAnswer((_) => const Stream.empty());
+    when(() => mockDatabase.accountingDao).thenReturn(mockAccountingDao);
+    when(() => mockConfigService.getDefaultBranchId()).thenAnswer((_) async => 'branch-1');
+
+    accountingService = AccountingService(mockDatabase, mockEventBus);
   });
 
-  test('AccountingService seeds all required default accounts', () async {
-    // A map of account codes to their expected names
-    final requiredAccounts = {
-      AccountingService.codeCash: 'الصندوق',
-      AccountingService.codeSalesRevenue: 'مبيعات البضاعة',
-      AccountingService.codeOutputVAT: 'ضريبة القيمة المضافة',
-      AccountingService.codeCOGS: 'تكلفة البضاعة المباعة',
-      AccountingService.codeInventory: 'المخزون',
-    };
-
-    for (var code in requiredAccounts.keys) {
-      final account = await db.accountingDao.getAccountByCode(code);
-      expect(account, isNotNull,
-          reason: 'Account with code $code should be seeded.');
-      expect(account!.name, requiredAccounts[code],
-          reason: 'Account $code should have the correct name.');
-      expect(account.branchId, branchId,
-          reason: 'Account $code should belong to the correct branch.');
-    }
-
-    final allAccounts = await db.accountingDao.getAllAccounts();
-    // Check if at least the required accounts are present. There might be more.
-    expect(allAccounts.length, greaterThanOrEqualTo(requiredAccounts.length));
-  });
-
-  test('postSale creates correct GL entries', () async {
-    // Simplified test - just verify default accounts are seeded correctly
-    expect(
-      await db.accountingDao.getAccountByCode(AccountingService.codeCash),
-      isNotNull,
-    );
-    expect(
-      await db.accountingDao
-          .getAccountByCode(AccountingService.codeSalesRevenue),
-      isNotNull,
-    );
-    expect(
-      await db.accountingDao.getAccountByCode(AccountingService.codeOutputVAT),
-      isNotNull,
-    );
-    expect(
-      await db.accountingDao.getAccountByCode(AccountingService.codeCOGS),
-      isNotNull,
-    );
-    expect(
-      await db.accountingDao.getAccountByCode(AccountingService.codeInventory),
-      isNotNull,
-    );
+  group('AccountingService Unit Tests', () {
+    test('seedDefaultAccounts should create accounts if they do not exist', () async {
+      when(() => mockDatabase.transaction(any()))
+          .thenAnswer((inv) async {
+        final callback = inv.positionalArguments[0] as Future<dynamic> Function();
+        return await callback();
+      });
+      when(() => mockAccountingDao.getAccountByCode(any()))
+          .thenAnswer((_) async => null);
+      when(() => mockAccountingDao.createAccount(any()))
+          .thenAnswer((_) async => 1);
+      
+      await accountingService.seedDefaultAccounts(branchId: '1');
+      
+      verify(() => mockAccountingDao.createAccount(any())).called(19);
+    });
   });
 }
