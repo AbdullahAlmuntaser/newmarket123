@@ -72,9 +72,8 @@ class PurchaseService {
 
       double discount = purchase.discount;
       
-      // الحصول على نسبة الضريبة من الإعدادات الديناميكية
-      final taxRate = await configService.getTaxRate();
-      double tax = (subtotal - discount) * taxRate;
+      // استخدام قيمة الضريبة الموجودة في الفاتورة مباشرة
+      double tax = (purchase.tax > 0) ? purchase.tax : 0.0;
 
       await postingEngine.post(
         type: TransactionType.purchase,
@@ -92,7 +91,7 @@ class PurchaseService {
       );
 
       // Update Purchase status to COMPLETED
-    await (db.update(db.purchases)..where((p) => p.id.equals(purchaseId))).write(
+      await (db.update(db.purchases)..where((p) => p.id.equals(purchaseId))).write(
           const PurchasesCompanion(status: Value(DocumentStatus.posted)),
         );
     } catch (e, stackTrace) {

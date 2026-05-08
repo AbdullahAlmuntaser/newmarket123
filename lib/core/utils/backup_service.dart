@@ -10,8 +10,17 @@ class BackupService {
 
   BackupService(this.db);
 
-  /// إنشاء نسخة احتياطية عبر نسخ ملف قاعدة البيانات مباشرة
+  /// إنشاء نسخة احتياطية عبر نسخ ملف قاعدة البيانات مباشرة مع فحص سلامة البيانات
   Future<String> createLocalBackup() async {
+    // 1. فحص سلامة قاعدة البيانات قبل النسخ
+    final result = await db.customSelect('PRAGMA integrity_check;').get();
+    final status = result.first.data.values.first as String;
+    
+    if (status != 'ok') {
+      AppLogger.error('Database integrity check failed: $status');
+      throw Exception('لا يمكن إنشاء نسخة احتياطية: قاعدة البيانات تالفة ($status)');
+    }
+
     final dbFolder = await getApplicationDocumentsDirectory();
     final dbFile = File(p.join(dbFolder.path, 'app_db.sqlite'));
 

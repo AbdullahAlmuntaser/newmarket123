@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
 import 'package:supermarket/core/services/event_bus_service.dart';
+import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart';
 import 'package:supermarket/injection_container.dart';
@@ -95,6 +96,7 @@ class AccountingProvider with ChangeNotifier {
     required String description,
     required DateTime date,
     required List<GLLinesCompanion> lines,
+    required String? userId,
   }) async {
     // Basic validation for balanced entry
     double totalDebit = 0;
@@ -123,7 +125,18 @@ class AccountingProvider with ChangeNotifier {
         .map((l) => l.copyWith(entryId: Value(entryId)))
         .toList();
 
-    await db.accountingDao.createEntry(entry, updatedLines);
+    await db.transaction(() async {
+      await db.accountingDao.createEntry(entry, updatedLines);
+      
+      // Audit log
+      await sl<AuditService>().logCreate(
+        'ManualJournalEntry',
+        entryId,
+        details: 'قيد يدوي: $description, الإجمالي: $totalDebit',
+        userId: userId,
+      );
+    });
+    
     notifyListeners();
   }
 

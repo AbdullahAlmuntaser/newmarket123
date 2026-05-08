@@ -35,13 +35,6 @@ class PermissionService {
     }
   }
 
-  /// التحقق من الصلاحية باستخدام كود الصلاحية (للتوافق مع الكود القديم)
-  Future<bool> check(String permissionCode) async {
-    // ملاحظة: هذه الدالة تتطلب معرفة userId من السياق
-    // يجب تمرير userId في التطبيقات الحقيقية
-    return true; // افتراضي للسماح - يجب تحسينه
-  }
-
   /// تنفيذ عملية فقط إذا كان المستخدم يملك الصلاحية
   Future<T?> executeIfAllowed<T>(
     String userId,
