@@ -88,7 +88,7 @@ Future<void> initServices() async {
     );
     sl.registerLazySingleton<PermissionService>(() => PermissionService(db));
     sl.registerLazySingleton<AuditService>(() => AuditService(db));
-    sl.registerLazySingleton<InventoryService>(() => InventoryService(db));
+    sl.registerLazySingleton<InventoryService>(() => InventoryService(db, sl<AuditService>(), sl<AppConfigService>()));
     sl.registerLazySingleton<AppConfigService>(() => AppConfigService(db));
     sl.registerLazySingleton<AppSettingsService>(() => AppSettingsService(db));
     debugPrint("DI: Core services registered");

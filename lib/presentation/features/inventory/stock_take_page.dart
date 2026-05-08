@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/inventory_service.dart';
+import 'package:supermarket/core/services/audit_service.dart';
+import 'package:supermarket/core/services/app_config_service.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
@@ -404,7 +406,11 @@ class _StockTakePageState extends State<StockTakePage> {
   void _finalizeStockTake(AppDatabase db, StockTake stockTake) async {
     setState(() => _isSaving = true);
     try {
-      final inventoryService = InventoryService(db);
+      final inventoryService = InventoryService(
+        db,
+        AuditService(db),
+        AppConfigService(db),
+      );
       final auditItems = await (db.select(db.stockTakeItems)
             ..where((t) => t.stockTakeId.equals(stockTake.id)))
           .get();

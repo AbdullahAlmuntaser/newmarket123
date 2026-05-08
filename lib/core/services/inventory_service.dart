@@ -28,13 +28,10 @@ class BatchReport {
 
 class InventoryService {
   final AppDatabase db;
-  late final AuditService _auditService;
-  late final AppConfigService _configService;
+  final AuditService _auditService;
+  final AppConfigService _configService;
 
-  InventoryService(this.db) {
-    _auditService = AuditService(db);
-    _configService = AppConfigService(db);
-  }
+  InventoryService(this.db, this._auditService, this._configService);
 
   // ==================== REPORTING ====================
 
