@@ -82,16 +82,16 @@ class _SalesReportsPageState extends State<SalesReportsPage> {
 
   Widget _buildSummaryCards(AppDatabase db, AppLocalizations l10n) {
     return FutureBuilder<List<Sale>>(
-      future:
-          (db.select(db.sales)..where((t) {
-                final dateFilter = t.createdAt.isBetween(
-                  Variable(_startDate),
-                  Variable(_endDate),
-                );
-                if (_selectedSaleType == 'all') return dateFilter;
-                return dateFilter & t.saleType.equals(_selectedSaleType);
-              }))
-              .get(),
+      future: (db.select(db.sales)
+            ..where((t) {
+              final dateFilter = t.createdAt.isBetween(
+                Variable(_startDate),
+                Variable(_endDate),
+              );
+              if (_selectedSaleType == 'all') return dateFilter;
+              return dateFilter & t.saleType.equals(_selectedSaleType);
+            }))
+          .get(),
       builder: (context, snapshot) {
         final sales = snapshot.data ?? [];
         final totalRevenue = sales.fold(0.0, (sum, sale) => sum + sale.total);
@@ -186,14 +186,14 @@ class _SalesReportsPageState extends State<SalesReportsPage> {
     return SizedBox(
       height: 250,
       child: FutureBuilder<List<Sale>>(
-        future:
-            (db.select(db.sales)..where(
-                  (t) => t.createdAt.isBetween(
-                    Variable(_startDate),
-                    Variable(_endDate),
-                  ),
-                ))
-                .get(),
+        future: (db.select(db.sales)
+              ..where(
+                (t) => t.createdAt.isBetween(
+                  Variable(_startDate),
+                  Variable(_endDate),
+                ),
+              ))
+            .get(),
         builder: (context, snapshot) {
           final sales = snapshot.data ?? [];
 
@@ -242,9 +242,7 @@ class _SalesReportsPageState extends State<SalesReportsPage> {
 
   Widget _buildTopProductsList(AppDatabase db) {
     return FutureBuilder<List<DashboardTopProduct>>(
-      future: db.salesDao
-          .getTopSellingProducts(limit: 5)
-          .then(
+      future: db.salesDao.getTopSellingProducts(limit: 5).then(
             (list) => list
                 .map(
                   (p) => DashboardTopProduct(p.product.name, p.totalQuantity),

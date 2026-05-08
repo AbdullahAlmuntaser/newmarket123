@@ -15,9 +15,11 @@ class SupplierPaymentsPage extends StatelessWidget {
       appBar: AppBar(title: const Text('دفعات الموردين')),
       body: StreamBuilder<List<drift.TypedResult>>(
         stream: (db.select(db.supplierPayments).join([
-          drift.innerJoin(db.suppliers, db.suppliers.id.equalsExp(db.supplierPayments.supplierId)),
+          drift.innerJoin(db.suppliers,
+              db.suppliers.id.equalsExp(db.supplierPayments.supplierId)),
         ])
-          ..orderBy([drift.OrderingTerm.desc(db.supplierPayments.paymentDate)]))
+              ..orderBy(
+                  [drift.OrderingTerm.desc(db.supplierPayments.paymentDate)]))
             .watch(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -36,7 +38,7 @@ class SupplierPaymentsPage extends StatelessWidget {
             itemBuilder: (context, index) {
               final payment = rows[index].readTable(db.supplierPayments);
               final supplier = rows[index].readTable(db.suppliers);
-              
+
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: ListTile(

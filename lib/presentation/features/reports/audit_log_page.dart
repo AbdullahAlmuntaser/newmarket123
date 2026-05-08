@@ -16,7 +16,8 @@ class AuditLogPage extends StatelessWidget {
       body: StreamBuilder<List<AuditLog>>(
         stream: (db.select(
           db.auditLogs,
-        )..orderBy([(t) => drift.OrderingTerm.desc(t.timestamp)])).watch(),
+        )..orderBy([(t) => drift.OrderingTerm.desc(t.timestamp)]))
+            .watch(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());

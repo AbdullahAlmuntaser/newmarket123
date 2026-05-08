@@ -96,7 +96,8 @@ class Products extends Table with SyncableTable {
   RealColumn get stock => real().withDefault(const Constant(0.0))();
   RealColumn get maxStock => real().withDefault(const Constant(1000.0))();
   TextColumn get supplierId => text().nullable().references(Suppliers, #id)();
-  TextColumn get valuationMethod => text().withDefault(const Constant('FIFO'))(); // FIFO, AVCO
+  TextColumn get valuationMethod =>
+      text().withDefault(const Constant('FIFO'))(); // FIFO, AVCO
   BoolColumn get allowFreeQty => boolean().withDefault(const Constant(false))();
   BoolColumn get isService => boolean().withDefault(const Constant(false))();
   RealColumn get alertLimit => real().withDefault(const Constant(10.0))();
@@ -105,9 +106,9 @@ class Products extends Table with SyncableTable {
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   // Variant support
   TextColumn get parentProductId => text().nullable().references(
-    Products,
-    #id,
-  )(); // Null for main items; points to parent for variants
+        Products,
+        #id,
+      )(); // Null for main items; points to parent for variants
   TextColumn get attributes =>
       text().nullable()(); // JSON: {"color":"Red","size":"XL"}
   RealColumn get additionalCost =>
@@ -139,8 +140,8 @@ class Customers extends Table with SyncableTable {
   TextColumn get address => text().nullable()(); // New: Detailed Address
   TextColumn get email => text().nullable()(); // New: Email
   TextColumn get customerType => text().withDefault(
-    const Constant('RETAIL'),
-  )(); // New: RETAIL, WHOLESALE, VIP
+        const Constant('RETAIL'),
+      )(); // New: RETAIL, WHOLESALE, VIP
   BoolColumn get isActive =>
       boolean().withDefault(const Constant(true))(); // New: Status
   RealColumn get creditLimit => real().withDefault(const Constant(0.0))();
@@ -153,7 +154,8 @@ class Customers extends Table with SyncableTable {
       boolean().withDefault(const Constant(false))(); // Quick customer flag
   BoolColumn get createdFromPOS =>
       boolean().withDefault(const Constant(false))(); // Created from POS
-  RealColumn get discountRate => real().withDefault(const Constant(0.0))(); // Customer-specific discount
+  RealColumn get discountRate =>
+      real().withDefault(const Constant(0.0))(); // Customer-specific discount
 }
 
 class Suppliers extends Table with SyncableTable {
@@ -164,8 +166,8 @@ class Suppliers extends Table with SyncableTable {
   TextColumn get address => text().nullable()(); // New: Address
   TextColumn get email => text().nullable()(); // New: Email
   TextColumn get supplierType => text().withDefault(
-    const Constant('LOCAL'),
-  )(); // New: LOCAL, INTERNATIONAL
+        const Constant('LOCAL'),
+      )(); // New: LOCAL, INTERNATIONAL
   BoolColumn get isActive =>
       boolean().withDefault(const Constant(true))(); // New: Status
   RealColumn get balance => real().withDefault(const Constant(0.0))();
@@ -184,9 +186,12 @@ class Sales extends Table with SyncableTable {
   RealColumn get total => real()();
   RealColumn get discount => real().withDefault(const Constant(0.0))();
   RealColumn get tax => real().withDefault(const Constant(0.0))();
-  IntColumn get paymentMethod => integer().map(const PaymentMethodConverter())();
+  IntColumn get paymentMethod =>
+      integer().map(const PaymentMethodConverter())();
   BoolColumn get isCredit => boolean().withDefault(const Constant(false))();
-  IntColumn get status => integer().map(const DocumentStatusConverter()).withDefault(const Constant(1))();
+  IntColumn get status => integer()
+      .map(const DocumentStatusConverter())
+      .withDefault(const Constant(1))();
   TextColumn get saleType =>
       text().withDefault(const Constant('retail'))(); // retail / wholesale
   TextColumn get currencyId => text().nullable()();
@@ -211,7 +216,8 @@ class SaleItems extends Table with SyncableTable {
   RealColumn get unitFactor => real().withDefault(const Constant(1.0))();
   TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
   TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
-  TextColumn get costCenterId => text().nullable().references(CostCenters, #id)(); // الحقل المضاف
+  TextColumn get costCenterId =>
+      text().nullable().references(CostCenters, #id)(); // الحقل المضاف
 }
 
 class StockMovements extends Table with SyncableTable {
@@ -250,7 +256,9 @@ class Purchases extends Table with SyncableTable {
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get time => dateTime().nullable()();
   BoolColumn get isCredit => boolean().withDefault(const Constant(false))();
-  IntColumn get status => integer().map(const DocumentStatusConverter()).withDefault(const Constant(0))(); // 0 = DRAFT
+  IntColumn get status => integer()
+      .map(const DocumentStatusConverter())
+      .withDefault(const Constant(0))(); // 0 = DRAFT
   TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
   TextColumn get currencyId => text().nullable()();
   RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
@@ -285,16 +293,18 @@ class PurchaseItems extends Table with SyncableTable {
   TextColumn get batchNumber => text().nullable()(); // New
   DateTimeColumn get expiryDate => dateTime().nullable()(); // New
   TextColumn get warehouseId => text().nullable().references(
-    Warehouses,
-    #id,
-  )(); // New: Override warehouse per item
+        Warehouses,
+        #id,
+      )(); // New: Override warehouse per item
   BoolColumn get isCarton => boolean().withDefault(const Constant(false))();
 }
 
 class Warehouses extends Table with SyncableTable {
   TextColumn get name => text()();
   TextColumn get location => text().nullable()();
-  TextColumn get accountId => text().nullable().references(GLAccounts, #id)(); // ربط المستودع بالحساب المحاسبي
+  TextColumn get accountId => text()
+      .nullable()
+      .references(GLAccounts, #id)(); // ربط المستودع بالحساب المحاسبي
   @override
   TextColumn get branchId => text().nullable().references(Branches, #id)();
   BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
@@ -362,8 +372,8 @@ class SupplierPayments extends Table with SyncableTable {
       dateTime().withDefault(currentDateAndTime)();
   TextColumn get note => text().nullable()();
   TextColumn get status => text().withDefault(
-    const Constant('COMPLETED'),
-  )(); // COMPLETED, PARTIAL, CANCELLED
+        const Constant('COMPLETED'),
+      )(); // COMPLETED, PARTIAL, CANCELLED
 }
 
 class PurchasePaymentLinks extends Table with SyncableTable {
@@ -377,7 +387,8 @@ class GLAccounts extends Table with SyncableTable {
   TextColumn get code => text().unique()();
   TextColumn get name => text()();
   TextColumn get type => text()(); // ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
-  TextColumn get analyticType => text().nullable()(); // جديد: صندوق، بنك، عميل، مورد، موظف، مركز تكلفة
+  TextColumn get analyticType =>
+      text().nullable()(); // جديد: صندوق، بنك، عميل، مورد، موظف، مركز تكلفة
   TextColumn get parentId => text().nullable().references(GLAccounts, #id)();
   BoolColumn get isHeader => boolean().withDefault(const Constant(false))();
   RealColumn get balance => real().withDefault(const Constant(0.0))();
@@ -396,8 +407,8 @@ class GLEntries extends Table with SyncableTable {
       text().nullable()(); // Sale, Purchase, Manual, Expense
   TextColumn get referenceId => text().nullable()();
   TextColumn get status => text().withDefault(
-    const Constant('DRAFT'),
-  )(); // New: DRAFT, POSTED, CANCELLED
+        const Constant('DRAFT'),
+      )(); // New: DRAFT, POSTED, CANCELLED
   DateTimeColumn get postedAt => dateTime().nullable()(); // New
   TextColumn get postedBy => text().nullable()(); // New
   TextColumn get currencyId => text().nullable()();
@@ -597,7 +608,8 @@ class Currencies extends Table with SyncableTable {
   TextColumn get code => text().unique()(); // e.g., USD, YER, SAR
   TextColumn get name => text()();
   TextColumn get fractionalUnit => text().nullable()(); // فكة العملة
-  IntColumn get decimalPlaces => integer().withDefault(const Constant(2))(); // عدد الكسور
+  IntColumn get decimalPlaces =>
+      integer().withDefault(const Constant(2))(); // عدد الكسور
   RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
   BoolColumn get isBase => boolean().withDefault(const Constant(false))();
 }
@@ -617,12 +629,14 @@ class UnitConversions extends Table with SyncableTable {
 class APInvoices extends Table with SyncableTable {
   TextColumn get supplierId => text().references(Suppliers, #id)();
   TextColumn get invoiceNumber => text()();
-  DateTimeColumn get invoiceDate => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get invoiceDate =>
+      dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get dueDate => dateTime().nullable()();
   RealColumn get totalAmount => real()();
   RealColumn get taxAmount => real().withDefault(const Constant(0.0))();
   RealColumn get paidAmount => real().withDefault(const Constant(0.0))();
-  TextColumn get status => text().withDefault(const Constant('DRAFT'))(); // DRAFT, POSTED, PAID, PARTIAL
+  TextColumn get status => text()
+      .withDefault(const Constant('DRAFT'))(); // DRAFT, POSTED, PAID, PARTIAL
   TextColumn get notes => text().nullable()();
   TextColumn get accountId => text().nullable().references(GLAccounts, #id)();
 }
@@ -630,12 +644,14 @@ class APInvoices extends Table with SyncableTable {
 class ARInvoices extends Table with SyncableTable {
   TextColumn get customerId => text().references(Customers, #id)();
   TextColumn get invoiceNumber => text()();
-  DateTimeColumn get invoiceDate => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get invoiceDate =>
+      dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get dueDate => dateTime().nullable()();
   RealColumn get totalAmount => real()();
   RealColumn get taxAmount => real().withDefault(const Constant(0.0))();
   RealColumn get paidAmount => real().withDefault(const Constant(0.0))();
-  TextColumn get status => text().withDefault(const Constant('DRAFT'))(); // DRAFT, POSTED, PAID, PARTIAL
+  TextColumn get status => text()
+      .withDefault(const Constant('DRAFT'))(); // DRAFT, POSTED, PAID, PARTIAL
   TextColumn get notes => text().nullable()();
   TextColumn get accountId => text().nullable().references(GLAccounts, #id)();
 }
@@ -704,10 +720,12 @@ class GoodReceivedNotes extends Table with SyncableTable {
   TextColumn get supplierId => text().nullable().references(Suppliers, #id)();
   TextColumn get warehouseId => text().references(Warehouses, #id)();
   TextColumn get grnNumber => text().unique()();
-  DateTimeColumn get receivedDate => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get receivedDate =>
+      dateTime().withDefault(currentDateAndTime)();
   TextColumn get receivedBy => text().nullable()();
   TextColumn get notes => text().nullable()();
-  TextColumn get status => text().withDefault(const Constant('DRAFT'))(); // DRAFT, POSTED
+  TextColumn get status =>
+      text().withDefault(const Constant('DRAFT'))(); // DRAFT, POSTED
 }
 
 class GoodReceivedNoteItems extends Table with SyncableTable {
@@ -722,10 +740,12 @@ class DeliveryNotes extends Table with SyncableTable {
   TextColumn get saleOrderId => text().references(SalesOrders, #id)();
   TextColumn get warehouseId => text().references(Warehouses, #id)();
   TextColumn get deliveryNumber => text().unique()();
-  DateTimeColumn get deliveryDate => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get deliveryDate =>
+      dateTime().withDefault(currentDateAndTime)();
   TextColumn get deliveredBy => text().nullable()();
   TextColumn get notes => text().nullable()();
-  TextColumn get status => text().withDefault(const Constant('DRAFT'))(); // DRAFT, POSTED
+  TextColumn get status =>
+      text().withDefault(const Constant('DRAFT'))(); // DRAFT, POSTED
 }
 
 class DeliveryNoteItems extends Table with SyncableTable {
@@ -743,8 +763,8 @@ class Checks extends Table with SyncableTable {
   TextColumn get type =>
       text()(); // RECEIVED (from customer), ISSUED (to supplier)
   TextColumn get status => text().withDefault(
-    const Constant('PENDING'),
-  )(); // PENDING, COLLECTED, BOUNCED
+        const Constant('PENDING'),
+      )(); // PENDING, COLLECTED, BOUNCED
   TextColumn get partnerId => text().nullable()(); // Customer or Supplier ID
   TextColumn get paymentAccountId =>
       text().nullable().references(GLAccounts, #id)();
@@ -768,8 +788,8 @@ class PurchaseOrders extends Table with SyncableTable {
   TextColumn get orderNumber => text().nullable()();
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
   TextColumn get status => text().withDefault(
-    const Constant('QUOTATION'),
-  )(); // QUOTATION, ORDER, DELIVERED, INVOICED, CANCELLED
+        const Constant('QUOTATION'),
+      )(); // QUOTATION, ORDER, DELIVERED, INVOICED, CANCELLED
   TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
   TextColumn get notes => text().nullable()();
 }
@@ -788,8 +808,8 @@ class SalesOrders extends Table with SyncableTable {
   TextColumn get orderNumber => text().nullable()();
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
   TextColumn get status => text().withDefault(
-    const Constant('QUOTATION'),
-  )(); // QUOTATION, ORDER, DELIVERED, INVOICED, CANCELLED
+        const Constant('QUOTATION'),
+      )(); // QUOTATION, ORDER, DELIVERED, INVOICED, CANCELLED
   TextColumn get notes => text().nullable()();
 }
 
@@ -919,55 +939,80 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (Migrator m) async {
-      await m.createAll();
-      // Seed data immediately after creation in the same transaction
-      await seedData();
-    },
-    onUpgrade: (Migrator m, int from, int to) async {
-      // Direct migration instead of metadata-heavy reflection
-      if (from < 32) {
-        await m.createIndex(Index('products_sku_idx', 'CREATE INDEX products_sku_idx ON products (sku)'));
-        await m.createIndex(Index('products_barcode_idx', 'CREATE INDEX products_barcode_idx ON products (barcode)'));
-        await m.createIndex(Index('sale_items_sale_id_idx', 'CREATE INDEX sale_items_sale_id_idx ON sale_items (sale_id)'));
-        await m.createIndex(Index('purchase_items_purchase_id_idx', 'CREATE INDEX purchase_items_purchase_id_idx ON purchase_items (purchase_id)'));
-        await m.createIndex(Index('gl_lines_entry_id_idx', 'CREATE INDEX gl_lines_entry_id_idx ON gl_lines (entry_id)'));
-        await m.createIndex(Index('gl_lines_account_id_idx', 'CREATE INDEX gl_lines_account_id_idx ON gl_lines (account_id)'));
-        await m.createIndex(Index('stock_movements_product_id_idx', 'CREATE INDEX stock_movements_product_id_idx ON stock_movements (product_id)'));
-      }
-      if (from < 33) {
-        try { await m.addColumn(products, products.valuationMethod); } catch (_) {}
-        try { await m.addColumn(products, products.allowFreeQty); } catch (_) {}
-        try { await m.addColumn(products, products.isService); } catch (_) {}
-      }
-      if (from < 34) {
-        // Version 34: Update GRN table - add purchaseId and supplierId columns
-        try { 
-          await m.addColumn(goodReceivedNotes, goodReceivedNotes.purchaseId); 
-        } catch (_) {}
-        try { 
-          await m.addColumn(goodReceivedNotes, goodReceivedNotes.supplierId); 
-        } catch (_) {}
-        // Note: purchaseOrderId will be kept for backward compatibility but deprecated
-      }
-      if (from < 35) {
-        // Version 35: Add AppConfigTable for dynamic settings
-        try { await m.createTable(appConfigTable); } catch (_) {}
-      }
-      if (from < 36) {
-        // Version 36: Add shippingCost, otherExpenses, warehouseId, representativeId to Sales
-        try { await m.addColumn(sales, sales.shippingCost); } catch (_) {}
-        try { await m.addColumn(sales, sales.otherExpenses); } catch (_) {}
-        try { await m.addColumn(sales, sales.warehouseId); } catch (_) {}
-        try { await m.addColumn(sales, sales.representativeId); } catch (_) {}
-      }
-    },
-    beforeOpen: (details) async {
-      await customStatement('PRAGMA foreign_keys = ON;');
-      await customStatement('PRAGMA journal_mode = WAL;');
-      await customStatement('PRAGMA synchronous = NORMAL;');
-    },
-  );
+        onCreate: (Migrator m) async {
+          await m.createAll();
+          // Seed data immediately after creation in the same transaction
+          await seedData();
+        },
+        onUpgrade: (Migrator m, int from, int to) async {
+          // Direct migration instead of metadata-heavy reflection
+          if (from < 32) {
+            await m.createIndex(Index('products_sku_idx',
+                'CREATE INDEX products_sku_idx ON products (sku)'));
+            await m.createIndex(Index('products_barcode_idx',
+                'CREATE INDEX products_barcode_idx ON products (barcode)'));
+            await m.createIndex(Index('sale_items_sale_id_idx',
+                'CREATE INDEX sale_items_sale_id_idx ON sale_items (sale_id)'));
+            await m.createIndex(Index('purchase_items_purchase_id_idx',
+                'CREATE INDEX purchase_items_purchase_id_idx ON purchase_items (purchase_id)'));
+            await m.createIndex(Index('gl_lines_entry_id_idx',
+                'CREATE INDEX gl_lines_entry_id_idx ON gl_lines (entry_id)'));
+            await m.createIndex(Index('gl_lines_account_id_idx',
+                'CREATE INDEX gl_lines_account_id_idx ON gl_lines (account_id)'));
+            await m.createIndex(Index('stock_movements_product_id_idx',
+                'CREATE INDEX stock_movements_product_id_idx ON stock_movements (product_id)'));
+          }
+          if (from < 33) {
+            try {
+              await m.addColumn(products, products.valuationMethod);
+            } catch (_) {}
+            try {
+              await m.addColumn(products, products.allowFreeQty);
+            } catch (_) {}
+            try {
+              await m.addColumn(products, products.isService);
+            } catch (_) {}
+          }
+          if (from < 34) {
+            // Version 34: Update GRN table - add purchaseId and supplierId columns
+            try {
+              await m.addColumn(
+                  goodReceivedNotes, goodReceivedNotes.purchaseId);
+            } catch (_) {}
+            try {
+              await m.addColumn(
+                  goodReceivedNotes, goodReceivedNotes.supplierId);
+            } catch (_) {}
+            // Note: purchaseOrderId will be kept for backward compatibility but deprecated
+          }
+          if (from < 35) {
+            // Version 35: Add AppConfigTable for dynamic settings
+            try {
+              await m.createTable(appConfigTable);
+            } catch (_) {}
+          }
+          if (from < 36) {
+            // Version 36: Add shippingCost, otherExpenses, warehouseId, representativeId to Sales
+            try {
+              await m.addColumn(sales, sales.shippingCost);
+            } catch (_) {}
+            try {
+              await m.addColumn(sales, sales.otherExpenses);
+            } catch (_) {}
+            try {
+              await m.addColumn(sales, sales.warehouseId);
+            } catch (_) {}
+            try {
+              await m.addColumn(sales, sales.representativeId);
+            } catch (_) {}
+          }
+        },
+        beforeOpen: (details) async {
+          await customStatement('PRAGMA foreign_keys = ON;');
+          await customStatement('PRAGMA journal_mode = WAL;');
+          await customStatement('PRAGMA synchronous = NORMAL;');
+        },
+      );
 
   Future<int> getUnsyncedCount() async {
     final countExp = syncQueue.id.count();
@@ -977,7 +1022,8 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<double> calculateTotalInventoryValue() async {
-    final query = selectOnly(productBatches)..addColumns([productBatches.quantity, productBatches.costPrice]);
+    final query = selectOnly(productBatches)
+      ..addColumns([productBatches.quantity, productBatches.costPrice]);
     final rows = await query.get();
     double total = 0.0;
     for (final row in rows) {
@@ -989,13 +1035,18 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Stream<List<Product>> watchLowStockProducts() {
-    return (select(products)..where((p) => p.stock.isSmallerOrEqual(p.alertLimit))).watch();
+    return (select(products)
+          ..where((p) => p.stock.isSmallerOrEqual(p.alertLimit)))
+        .watch();
   }
 
   Future<void> seedData() async {
     await transaction(() async {
       // 1. Branches
-      final branchesCount = await (selectOnly(branches)..addColumns([branches.id.count()])).map((row) => row.read(branches.id.count())).getSingle();
+      final branchesCount = await (selectOnly(branches)
+            ..addColumns([branches.id.count()]))
+          .map((row) => row.read(branches.id.count()))
+          .getSingle();
       if ((branchesCount ?? 0) == 0) {
         await into(branches).insert(
           BranchesCompanion.insert(
@@ -1007,26 +1058,36 @@ class AppDatabase extends _$AppDatabase {
       }
 
       // 2. Currencies
-      final currenciesCount = await (selectOnly(currencies)..addColumns([currencies.id.count()])).map((row) => row.read(currencies.id.count())).getSingle();
+      final currenciesCount = await (selectOnly(currencies)
+            ..addColumns([currencies.id.count()]))
+          .map((row) => row.read(currencies.id.count()))
+          .getSingle();
       if ((currenciesCount ?? 0) == 0) {
         await batch((b) {
-          b.insert(currencies, CurrenciesCompanion.insert(
-            code: 'SAR',
-            name: 'ريال سعودي',
-            isBase: const Value(true),
-            exchangeRate: const Value(1.0),
-          ));
-          b.insert(currencies, CurrenciesCompanion.insert(
-            code: 'USD',
-            name: 'دولار أمريكي',
-            isBase: const Value(false),
-            exchangeRate: const Value(3.75),
-          ));
+          b.insert(
+              currencies,
+              CurrenciesCompanion.insert(
+                code: 'SAR',
+                name: 'ريال سعودي',
+                isBase: const Value(true),
+                exchangeRate: const Value(1.0),
+              ));
+          b.insert(
+              currencies,
+              CurrenciesCompanion.insert(
+                code: 'USD',
+                name: 'دولار أمريكي',
+                isBase: const Value(false),
+                exchangeRate: const Value(3.75),
+              ));
         });
       }
 
       // 3. Warehouses
-      final warehousesCount = await (selectOnly(warehouses)..addColumns([warehouses.id.count()])).map((row) => row.read(warehouses.id.count())).getSingle();
+      final warehousesCount = await (selectOnly(warehouses)
+            ..addColumns([warehouses.id.count()]))
+          .map((row) => row.read(warehouses.id.count()))
+          .getSingle();
       if ((warehousesCount ?? 0) == 0) {
         await into(warehouses).insert(
           WarehousesCompanion.insert(
@@ -1037,24 +1098,40 @@ class AppDatabase extends _$AppDatabase {
       }
 
       // 4. Categories
-      final categoriesCount = await (selectOnly(categories)..addColumns([categories.id.count()])).map((row) => row.read(categories.id.count())).getSingle();
+      final categoriesCount = await (selectOnly(categories)
+            ..addColumns([categories.id.count()]))
+          .map((row) => row.read(categories.id.count()))
+          .getSingle();
       if ((categoriesCount ?? 0) == 0) {
         await batch((b) {
-          b.insert(categories, CategoriesCompanion.insert(name: 'مواد غذائية', code: const Value('FOOD')));
-          b.insert(categories, CategoriesCompanion.insert(name: 'منظفات', code: const Value('CLEAN')));
+          b.insert(
+              categories,
+              CategoriesCompanion.insert(
+                  name: 'مواد غذائية', code: const Value('FOOD')));
+          b.insert(
+              categories,
+              CategoriesCompanion.insert(
+                  name: 'منظفات', code: const Value('CLEAN')));
         });
       }
 
       // 5. Suppliers
-      final suppliersCount = await (selectOnly(suppliers)..addColumns([suppliers.id.count()])).map((row) => row.read(suppliers.id.count())).getSingle();
+      final suppliersCount = await (selectOnly(suppliers)
+            ..addColumns([suppliers.id.count()]))
+          .map((row) => row.read(suppliers.id.count()))
+          .getSingle();
       if ((suppliersCount ?? 0) == 0) {
         await into(suppliers).insert(
-          SuppliersCompanion.insert(name: 'مورد عام', isActive: const Value(true)),
+          SuppliersCompanion.insert(
+              name: 'مورد عام', isActive: const Value(true)),
         );
       }
 
       // 6. Customers
-      final customersCount = await (selectOnly(customers)..addColumns([customers.id.count()])).map((row) => row.read(customers.id.count())).getSingle();
+      final customersCount = await (selectOnly(customers)
+            ..addColumns([customers.id.count()]))
+          .map((row) => row.read(customers.id.count()))
+          .getSingle();
       if ((customersCount ?? 0) == 0) {
         await into(customers).insert(
           CustomersCompanion.insert(
@@ -1072,7 +1149,10 @@ class AppDatabase extends _$AppDatabase {
       await _seedPostingProfiles();
 
       // 10. Accounting Periods
-      final periodsCount = await (selectOnly(accountingPeriods)..addColumns([accountingPeriods.id.count()])).map((row) => row.read(accountingPeriods.id.count())).getSingle();
+      final periodsCount = await (selectOnly(accountingPeriods)
+            ..addColumns([accountingPeriods.id.count()]))
+          .map((row) => row.read(accountingPeriods.id.count()))
+          .getSingle();
       if ((periodsCount ?? 0) == 0) {
         await into(accountingPeriods).insert(
           AccountingPeriodsCompanion.insert(
@@ -1089,30 +1169,76 @@ class AppDatabase extends _$AppDatabase {
   Future<void> _seedGLAccounts() async {
     final countExp = gLAccounts.id.count();
     final countQuery = selectOnly(gLAccounts)..addColumns([countExp]);
-    final accountsCount = await countQuery.map((row) => row.read(countExp)).getSingle();
+    final accountsCount =
+        await countQuery.map((row) => row.read(countExp)).getSingle();
     if ((accountsCount ?? 0) > 0) return;
 
     final accounts = [
-      GLAccountsCompanion.insert(code: '1000', name: 'الأصول المتداولة', type: 'ASSET', isHeader: const Value(true)),
+      GLAccountsCompanion.insert(
+          code: '1000',
+          name: 'الأصول المتداولة',
+          type: 'ASSET',
+          isHeader: const Value(true)),
       GLAccountsCompanion.insert(code: '1010', name: 'الصندوق', type: 'ASSET'),
       GLAccountsCompanion.insert(code: '1020', name: 'البنك', type: 'ASSET'),
-      GLAccountsCompanion.insert(code: '1030', name: 'العملاء', type: 'ASSET', analyticType: const Value('CLIENT')),
-      GLAccountsCompanion.insert(code: '1200', name: 'مخزون البضاعة', type: 'ASSET', isHeader: const Value(true)),
-      GLAccountsCompanion.insert(code: '1210', name: 'مخزون البضاعة', type: 'ASSET'),
-      GLAccountsCompanion.insert(code: '2000', name: 'الخصوم المتداولة', type: 'LIABILITY', isHeader: const Value(true)),
-      GLAccountsCompanion.insert(code: '2010', name: 'الموردون', type: 'LIABILITY', analyticType: const Value('SUPPLIER')),
-      GLAccountsCompanion.insert(code: '2020', name: 'ضريبة القيمة المضافة', type: 'LIABILITY'),
-      GLAccountsCompanion.insert(code: '3000', name: 'حقوق الملكية', type: 'EQUITY', isHeader: const Value(true)),
-      GLAccountsCompanion.insert(code: '3010', name: 'رأس المال', type: 'EQUITY'),
-      GLAccountsCompanion.insert(code: '3020', name: 'الأرباح المحتجزة', type: 'EQUITY'),
-      GLAccountsCompanion.insert(code: '4000', name: 'الإيرادات', type: 'REVENUE', isHeader: const Value(true)),
-      GLAccountsCompanion.insert(code: '4010', name: 'مبيعات البضاعة', type: 'REVENUE'),
-      GLAccountsCompanion.insert(code: '4020', name: 'مردودات المبيعات', type: 'REVENUE'),
-      GLAccountsCompanion.insert(code: '5000', name: 'تكلفة البضاعة المباعة', type: 'EXPENSE', isHeader: const Value(true)),
-      GLAccountsCompanion.insert(code: '5010', name: 'تكلفة البضاعة المباعة', type: 'EXPENSE'),
-      GLAccountsCompanion.insert(code: '5020', name: 'فرق صندوق', type: 'EXPENSE'),
-      GLAccountsCompanion.insert(code: '6000', name: 'المصروفات', type: 'EXPENSE', isHeader: const Value(true)),
-      GLAccountsCompanion.insert(code: '6010', name: 'مصروفات التشغيل', type: 'EXPENSE'),
+      GLAccountsCompanion.insert(
+          code: '1030',
+          name: 'العملاء',
+          type: 'ASSET',
+          analyticType: const Value('CLIENT')),
+      GLAccountsCompanion.insert(
+          code: '1200',
+          name: 'مخزون البضاعة',
+          type: 'ASSET',
+          isHeader: const Value(true)),
+      GLAccountsCompanion.insert(
+          code: '1210', name: 'مخزون البضاعة', type: 'ASSET'),
+      GLAccountsCompanion.insert(
+          code: '2000',
+          name: 'الخصوم المتداولة',
+          type: 'LIABILITY',
+          isHeader: const Value(true)),
+      GLAccountsCompanion.insert(
+          code: '2010',
+          name: 'الموردون',
+          type: 'LIABILITY',
+          analyticType: const Value('SUPPLIER')),
+      GLAccountsCompanion.insert(
+          code: '2020', name: 'ضريبة القيمة المضافة', type: 'LIABILITY'),
+      GLAccountsCompanion.insert(
+          code: '3000',
+          name: 'حقوق الملكية',
+          type: 'EQUITY',
+          isHeader: const Value(true)),
+      GLAccountsCompanion.insert(
+          code: '3010', name: 'رأس المال', type: 'EQUITY'),
+      GLAccountsCompanion.insert(
+          code: '3020', name: 'الأرباح المحتجزة', type: 'EQUITY'),
+      GLAccountsCompanion.insert(
+          code: '4000',
+          name: 'الإيرادات',
+          type: 'REVENUE',
+          isHeader: const Value(true)),
+      GLAccountsCompanion.insert(
+          code: '4010', name: 'مبيعات البضاعة', type: 'REVENUE'),
+      GLAccountsCompanion.insert(
+          code: '4020', name: 'مردودات المبيعات', type: 'REVENUE'),
+      GLAccountsCompanion.insert(
+          code: '5000',
+          name: 'تكلفة البضاعة المباعة',
+          type: 'EXPENSE',
+          isHeader: const Value(true)),
+      GLAccountsCompanion.insert(
+          code: '5010', name: 'تكلفة البضاعة المباعة', type: 'EXPENSE'),
+      GLAccountsCompanion.insert(
+          code: '5020', name: 'فرق صندوق', type: 'EXPENSE'),
+      GLAccountsCompanion.insert(
+          code: '6000',
+          name: 'المصروفات',
+          type: 'EXPENSE',
+          isHeader: const Value(true)),
+      GLAccountsCompanion.insert(
+          code: '6010', name: 'مصروفات التشغيل', type: 'EXPENSE'),
     ];
 
     await batch((b) {
@@ -1125,13 +1251,18 @@ class AppDatabase extends _$AppDatabase {
   Future<void> _seedPostingProfiles() async {
     final countExp = postingProfiles.id.count();
     final countQuery = selectOnly(postingProfiles)..addColumns([countExp]);
-    final profilesCount = await countQuery.map((row) => row.read(countExp)).getSingle();
+    final profilesCount =
+        await countQuery.map((row) => row.read(countExp)).getSingle();
     if ((profilesCount ?? 0) > 0) return;
 
     final gLAccountsList = await select(gLAccounts).get();
-    Map<String, String> accountIdByCode = {for (var acc in gLAccountsList) acc.code: acc.id};
+    Map<String, String> accountIdByCode = {
+      for (var acc in gLAccountsList) acc.code: acc.id
+    };
 
-    if (accountIdByCode['1010'] == null || accountIdByCode['4010'] == null || accountIdByCode['5010'] == null) {
+    if (accountIdByCode['1010'] == null ||
+        accountIdByCode['4010'] == null ||
+        accountIdByCode['5010'] == null) {
       return;
     }
 
@@ -1203,7 +1334,9 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> ensureInitialized() async {
     // Just trigger a simple query to ensure connection and migrations are run
-    selectOnly(branches)..limit(1)..get();
+    selectOnly(branches)
+      ..limit(1)
+      ..get();
   }
 
   // DAO getters
@@ -1242,7 +1375,7 @@ LazyDatabase _openConnection() {
       debugPrint("DB: Getting application documents directory...");
       final dbFolder = await getApplicationDocumentsDirectory();
       debugPrint("DB: Documents directory: ${dbFolder.path}");
-      
+
       final file = File(p.join(dbFolder.path, 'app_db.sqlite'));
       debugPrint("DB: Database file path: ${file.path}");
 

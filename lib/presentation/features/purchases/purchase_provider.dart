@@ -94,7 +94,8 @@ class PurchaseItemData {
     this.expiryDate,
     this.batchNumber,
     this.selectedUnit,
-  }) : _quantity = quantity, _unitPrice = unitPrice;
+  })  : _quantity = quantity,
+        _unitPrice = unitPrice;
 
   double get quantity => _quantity;
   set quantity(double value) {
@@ -157,10 +158,11 @@ class PurchaseProvider with ChangeNotifier {
       items.fold(0.0, (sum, item) => sum + item.discountAmount) +
       headerDiscount;
   double get totalTax => items.fold(
-    0.0,
-    (sum, item) =>
-        sum + (item.subtotal - item.discountAmount) * (item.taxPercent / 100),
-  );
+        0.0,
+        (sum, item) =>
+            sum +
+            (item.subtotal - item.discountAmount) * (item.taxPercent / 100),
+      );
   double get grandTotal =>
       subtotal -
       totalDiscount +
@@ -283,11 +285,10 @@ class PurchaseProvider with ChangeNotifier {
     );
 
     // Get purchase history for this supplier
-    final purchases =
-        await (db.select(db.purchases)
-              ..where((p) => p.supplierId.equals(supplier.id))
-              ..orderBy([(p) => OrderingTerm.desc(p.date)]))
-            .get();
+    final purchases = await (db.select(db.purchases)
+          ..where((p) => p.supplierId.equals(supplier.id))
+          ..orderBy([(p) => OrderingTerm.desc(p.date)]))
+        .get();
 
     if (purchases.isNotEmpty) {
       double totalAmount = 0;
@@ -316,17 +317,16 @@ class PurchaseProvider with ChangeNotifier {
 
     for (var product in products) {
       // Get last purchase of this product from this supplier
-      final query =
-          db.select(db.purchases).join([
-              innerJoin(
-                db.purchaseItems,
-                db.purchaseItems.purchaseId.equalsExp(db.purchases.id),
-              ),
-            ])
-            ..where(db.purchases.supplierId.equals(supplierId))
-            ..where(db.purchaseItems.productId.equals(product.id))
-            ..orderBy([OrderingTerm.desc(db.purchases.date)])
-            ..limit(1);
+      final query = db.select(db.purchases).join([
+        innerJoin(
+          db.purchaseItems,
+          db.purchaseItems.purchaseId.equalsExp(db.purchases.id),
+        ),
+      ])
+        ..where(db.purchases.supplierId.equals(supplierId))
+        ..where(db.purchaseItems.productId.equals(product.id))
+        ..orderBy([OrderingTerm.desc(db.purchases.date)])
+        ..limit(1);
 
       final lastPurchase = await query.getSingleOrNull();
 
@@ -356,11 +356,10 @@ class PurchaseProvider with ChangeNotifier {
     double currentStock = product.stock;
 
     // Get inventory transactions for this product
-    final transactions =
-        await (db.select(db.inventoryTransactions)
-              ..where((t) => t.productId.equals(product.id))
-              ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
-            .get();
+    final transactions = await (db.select(db.inventoryTransactions)
+          ..where((t) => t.productId.equals(product.id))
+          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+        .get();
 
     // Calculate actual stock from transactions
     double calculatedStock = 0;
@@ -380,16 +379,15 @@ class PurchaseProvider with ChangeNotifier {
     double? lastPrice;
     DateTime? lastDate;
 
-    final query =
-        db.select(db.purchases).join([
-            innerJoin(
-              db.purchaseItems,
-              db.purchaseItems.purchaseId.equalsExp(db.purchases.id),
-            ),
-          ])
-          ..where(db.purchaseItems.productId.equals(product.id))
-          ..orderBy([OrderingTerm.desc(db.purchases.date)])
-          ..limit(1);
+    final query = db.select(db.purchases).join([
+      innerJoin(
+        db.purchaseItems,
+        db.purchaseItems.purchaseId.equalsExp(db.purchases.id),
+      ),
+    ])
+      ..where(db.purchaseItems.productId.equals(product.id))
+      ..orderBy([OrderingTerm.desc(db.purchases.date)])
+      ..limit(1);
 
     final lastPurchase = await query.getSingleOrNull();
 
@@ -418,7 +416,8 @@ class PurchaseProvider with ChangeNotifier {
   Future<double> _calculateAverageCost(String productId) async {
     final items = await (db.select(
       db.purchaseItems,
-    )..where((i) => i.productId.equals(productId))).get();
+    )..where((i) => i.productId.equals(productId)))
+        .get();
 
     if (items.isEmpty) return 0;
 
@@ -435,20 +434,19 @@ class PurchaseProvider with ChangeNotifier {
 
   /// Get price history for a product
   Future<List<ProductPriceHistory>> _getPriceHistory(String productId) async {
-    final query =
-        db.select(db.purchases).join([
-            innerJoin(
-              db.purchaseItems,
-              db.purchaseItems.purchaseId.equalsExp(db.purchases.id),
-            ),
-            leftOuterJoin(
-              db.suppliers,
-              db.suppliers.id.equalsExp(db.purchases.supplierId),
-            ),
-          ])
-          ..where(db.purchaseItems.productId.equals(productId))
-          ..orderBy([OrderingTerm.desc(db.purchases.date)])
-          ..limit(10);
+    final query = db.select(db.purchases).join([
+      innerJoin(
+        db.purchaseItems,
+        db.purchaseItems.purchaseId.equalsExp(db.purchases.id),
+      ),
+      leftOuterJoin(
+        db.suppliers,
+        db.suppliers.id.equalsExp(db.purchases.supplierId),
+      ),
+    ])
+      ..where(db.purchaseItems.productId.equals(productId))
+      ..orderBy([OrderingTerm.desc(db.purchases.date)])
+      ..limit(10);
 
     final result = await query.get();
 
@@ -483,8 +481,7 @@ class PurchaseProvider with ChangeNotifier {
         // Check if price is higher than average
         if (item.unitPrice > productInfo.averageCost &&
             productInfo.averageCost > 0) {
-          final diff =
-              ((item.unitPrice - productInfo.averageCost) /
+          final diff = ((item.unitPrice - productInfo.averageCost) /
               productInfo.averageCost *
               100);
           if (diff > 10) {

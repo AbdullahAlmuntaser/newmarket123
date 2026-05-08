@@ -30,9 +30,8 @@ class _CreateReturnPageState extends State<CreateReturnPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final title = widget.type == ReturnType.sale
-        ? l10n.fromSale
-        : l10n.fromPurchase;
+    final title =
+        widget.type == ReturnType.sale ? l10n.fromSale : l10n.fromPurchase;
 
     return Scaffold(
       appBar: AppBar(title: Text('${l10n.createReturn} - $title')),
@@ -105,14 +104,16 @@ class _CreateReturnPageState extends State<CreateReturnPage> {
       if (transaction != null) {
         items = await (db.select(
           db.saleItems,
-        )..where((t) => t.saleId.equals(id))).get();
+        )..where((t) => t.saleId.equals(id)))
+            .get();
       }
     } else {
       transaction = await db.purchasesDao.getPurchaseById(id);
       if (transaction != null) {
         items = await (db.select(
           db.purchaseItems,
-        )..where((t) => t.purchaseId.equals(id))).get();
+        )..where((t) => t.purchaseId.equals(id)))
+            .get();
       }
     }
 

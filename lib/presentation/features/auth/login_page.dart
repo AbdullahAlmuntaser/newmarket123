@@ -34,8 +34,8 @@ class _LoginPageState extends State<LoginPage> {
                 l10n.accountingSystem,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
               const SizedBox(height: 32),
               TextField(

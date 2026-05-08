@@ -22,18 +22,18 @@ void main() {
     test('Can insert and retrieve product', () async {
       const productId = 'test-product-1';
       await db.into(db.products).insert(ProductsCompanion.insert(
-        id: const drift.Value(productId),
-        name: 'منتج اختبار',
-        sku: 'TEST001',
-        buyPrice: const drift.Value(50.0),
-        sellPrice: const drift.Value(100.0),
-        stock: const drift.Value(100.0),
-      ));
+            id: const drift.Value(productId),
+            name: 'منتج اختبار',
+            sku: 'TEST001',
+            buyPrice: const drift.Value(50.0),
+            sellPrice: const drift.Value(100.0),
+            stock: const drift.Value(100.0),
+          ));
 
       final product = await (db.select(db.products)
-        ..where((p) => p.id.equals(productId)))
+            ..where((p) => p.id.equals(productId)))
           .getSingle();
-      
+
       expect(product.stock, 100.0);
       expect(product.sellPrice, 100.0);
     });
@@ -41,15 +41,15 @@ void main() {
     test('Can insert and retrieve customer', () async {
       const customerId = 'test-customer-1';
       await db.into(db.customers).insert(CustomersCompanion.insert(
-        id: const drift.Value(customerId),
-        name: 'عميل اختبار',
-        phone: const drift.Value('0123456789'),
-      ));
+            id: const drift.Value(customerId),
+            name: 'عميل اختبار',
+            phone: const drift.Value('0123456789'),
+          ));
 
       final customer = await (db.select(db.customers)
-        ..where((c) => c.id.equals(customerId)))
+            ..where((c) => c.id.equals(customerId)))
           .getSingle();
-      
+
       expect(customer.name, 'عميل اختبار');
     });
   });

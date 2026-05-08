@@ -73,12 +73,22 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
             ),
             const SizedBox(height: 16),
             // Payment Method
-            const Text('طريقة الدفع', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('طريقة الدفع',
+                style: TextStyle(fontWeight: FontWeight.bold)),
             SegmentedButton<String>(
               segments: const [
-                ButtonSegment(value: 'cash', label: Text('نقداً'), icon: Icon(Icons.money)),
-                ButtonSegment(value: 'card', label: Text('بطاقة'), icon: Icon(Icons.credit_card)),
-                ButtonSegment(value: 'credit', label: Text('آجل'), icon: Icon(Icons.timer)),
+                ButtonSegment(
+                    value: 'cash',
+                    label: Text('نقداً'),
+                    icon: Icon(Icons.money)),
+                ButtonSegment(
+                    value: 'card',
+                    label: Text('بطاقة'),
+                    icon: Icon(Icons.credit_card)),
+                ButtonSegment(
+                    value: 'credit',
+                    label: Text('آجل'),
+                    icon: Icon(Icons.timer)),
               ],
               selected: {_paymentMethod},
               onSelectionChanged: (newSelection) {
@@ -95,7 +105,8 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.payments),
                 ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 onChanged: (value) {
                   setState(() {
                     _receivedAmount = Decimal.tryParse(value) ?? Decimal.zero;
@@ -150,9 +161,9 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
 
   void _onCheckout() {
     context.read<PosBloc>().add(CheckoutEvent(
-      _paymentMethod,
-      customerId: _selectedCustomer?.id,
-    ));
+          _paymentMethod,
+          customerId: _selectedCustomer?.id,
+        ));
     Navigator.pop(context);
   }
 }

@@ -24,7 +24,9 @@ class _CashFlowForecastPageState extends State<CashFlowForecastPage> {
       body: FutureBuilder<List<ForecastData>>(
         future: _fetchForecast(db),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
           final data = snapshot.data!;
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -36,12 +38,17 @@ class _CashFlowForecastPageState extends State<CashFlowForecastPage> {
                   DataColumn(label: Text(l10n.outflow)),
                   DataColumn(label: Text(l10n.netCash)),
                 ],
-                rows: data.map((d) => DataRow(cells: [
-                  DataCell(Text(d.period)),
-                  DataCell(Text(NumberFormat.currency(symbol: '').format(d.inflow))),
-                  DataCell(Text(NumberFormat.currency(symbol: '').format(d.outflow))),
-                  DataCell(Text(NumberFormat.currency(symbol: '').format(d.inflow - d.outflow))),
-                ])).toList(),
+                rows: data
+                    .map((d) => DataRow(cells: [
+                          DataCell(Text(d.period)),
+                          DataCell(Text(NumberFormat.currency(symbol: '')
+                              .format(d.inflow))),
+                          DataCell(Text(NumberFormat.currency(symbol: '')
+                              .format(d.outflow))),
+                          DataCell(Text(NumberFormat.currency(symbol: '')
+                              .format(d.inflow - d.outflow))),
+                        ]))
+                    .toList(),
               ),
             ],
           );
@@ -54,18 +61,28 @@ class _CashFlowForecastPageState extends State<CashFlowForecastPage> {
     final now = DateTime.now();
     final periods = [
       (now, now.add(const Duration(days: 30)), '30 Days'),
-      (now.add(const Duration(days: 31)), now.add(const Duration(days: 60)), '60 Days'),
-      (now.add(const Duration(days: 61)), now.add(const Duration(days: 90)), '90 Days'),
+      (
+        now.add(const Duration(days: 31)),
+        now.add(const Duration(days: 60)),
+        '60 Days'
+      ),
+      (
+        now.add(const Duration(days: 61)),
+        now.add(const Duration(days: 90)),
+        '90 Days'
+      ),
     ];
 
     final data = <ForecastData>[];
     for (var p in periods) {
       final ar = await db.customersDao.getDueARInvoices(p.$2);
       final ap = await db.suppliersDao.getDueAPInvoices(p.$2);
-      
-      double inflow = ar.fold(0, (sum, i) => sum + (i.totalAmount - i.paidAmount));
-      double outflow = ap.fold(0, (sum, i) => sum + (i.totalAmount - i.paidAmount));
-      
+
+      double inflow =
+          ar.fold(0, (sum, i) => sum + (i.totalAmount - i.paidAmount));
+      double outflow =
+          ap.fold(0, (sum, i) => sum + (i.totalAmount - i.paidAmount));
+
       data.add(ForecastData(p.$3, inflow, outflow));
     }
     return data;

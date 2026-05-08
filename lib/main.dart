@@ -28,7 +28,7 @@ import 'package:supermarket/core/services/purchase_service.dart';
 void main() async {
   // 1. Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // 2. Run the Initialization Wrapper as the Root
   runApp(const AppRoot());
 }
@@ -57,7 +57,7 @@ class _AppRootState extends State<AppRoot> {
     try {
       // Perform DI initialization
       await di.init();
-      
+
       // Additional database health check
       final db = di.sl<AppDatabase>();
       await db.select(db.users).get().timeout(const Duration(seconds: 5));
@@ -92,9 +92,13 @@ class _AppRootState extends State<AppRoot> {
                 children: [
                   const Icon(Icons.error_outline, color: Colors.red, size: 64),
                   const SizedBox(height: 16),
-                  const Text("Critical System Error", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const Text("Critical System Error",
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  Text(_error, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
+                  Text(_error,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.grey)),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () {
@@ -152,7 +156,10 @@ class SplashScreen extends StatelessWidget {
             Text(
               "جاري تهيئة النظام...",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.teal),
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.teal),
             ),
           ],
         ),
@@ -172,18 +179,27 @@ class MyApp extends StatelessWidget {
         Provider<AccountingService>(create: (_) => di.sl<AccountingService>()),
         ChangeNotifierProvider(create: (_) => di.sl<ThemeProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<AuthProvider>()),
-        ChangeNotifierProvider(create: (_) => AccountingProvider(di.sl<AppDatabase>())),
+        ChangeNotifierProvider(
+            create: (_) => AccountingProvider(di.sl<AppDatabase>())),
         ChangeNotifierProvider(create: (_) => di.sl<ProductsProvider>()),
         ChangeNotifierProvider(
-          create: (_) => PurchaseProvider(di.sl<AppDatabase>(), di.sl<PurchaseService>()),
+          create: (_) =>
+              PurchaseProvider(di.sl<AppDatabase>(), di.sl<PurchaseService>()),
         ),
-        ChangeNotifierProvider(create: (_) => ShiftProvider(ShiftService(di.sl<AppDatabase>()))),
-        ChangeNotifierProvider(create: (_) => HRProvider(HRService(di.sl<AppDatabase>(), di.sl<PostingEngine>()))),
-        ChangeNotifierProvider(create: (_) => PayrollProvider(HRService(di.sl<AppDatabase>(), di.sl<PostingEngine>()))),
         ChangeNotifierProvider(
-          create: (_) => StockTransferProvider(StockTransferService(di.sl<AppDatabase>())),
+            create: (_) => ShiftProvider(ShiftService(di.sl<AppDatabase>()))),
+        ChangeNotifierProvider(
+            create: (_) => HRProvider(
+                HRService(di.sl<AppDatabase>(), di.sl<PostingEngine>()))),
+        ChangeNotifierProvider(
+            create: (_) => PayrollProvider(
+                HRService(di.sl<AppDatabase>(), di.sl<PostingEngine>()))),
+        ChangeNotifierProvider(
+          create: (_) =>
+              StockTransferProvider(StockTransferService(di.sl<AppDatabase>())),
         ),
-        ChangeNotifierProvider(create: (_) => AssetProvider(AssetService(di.sl<AppDatabase>()))),
+        ChangeNotifierProvider(
+            create: (_) => AssetProvider(AssetService(di.sl<AppDatabase>()))),
         ChangeNotifierProvider(create: (_) => CustomerStatementProvider()),
       ],
       child: Builder(
@@ -210,4 +226,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

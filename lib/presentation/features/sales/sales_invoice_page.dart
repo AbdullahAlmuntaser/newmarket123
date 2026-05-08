@@ -39,7 +39,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
   final TextEditingController _termsController = TextEditingController();
   final TextEditingController _taxController = TextEditingController();
   final TextEditingController _shippingCostController = TextEditingController();
-  final TextEditingController _otherExpensesController = TextEditingController();
+  final TextEditingController _otherExpensesController =
+      TextEditingController();
   bool _isSaving = false;
   bool _isHeaderExpanded = true;
 
@@ -49,13 +50,16 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
 
   double get _subtotal => _items.fold(0.0, (sum, item) => sum + item.lineTotal);
   double get _discount => double.tryParse(_discountController.text) ?? 0.0;
-  double get _shippingCost => double.tryParse(_shippingCostController.text) ?? 0.0;
-  double get _otherExpenses => double.tryParse(_otherExpensesController.text) ?? 0.0;
+  double get _shippingCost =>
+      double.tryParse(_shippingCostController.text) ?? 0.0;
+  double get _otherExpenses =>
+      double.tryParse(_otherExpensesController.text) ?? 0.0;
   double get _tax => double.tryParse(_taxController.text) ?? 0.0;
-  
+
   double get _totalTax => _tax;
-  
-  double get _total => _subtotal + _totalTax - _discount + _shippingCost + _otherExpenses;
+
+  double get _total =>
+      _subtotal + _totalTax - _discount + _shippingCost + _otherExpenses;
 
   bool get isEditMode => widget.saleId != null;
 
@@ -73,26 +77,36 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
 
   Future<void> _loadSaleData() async {
     final db = Provider.of<AppDatabase>(context, listen: false);
-    final sale = await (db.select(db.sales)..where((s) => s.id.equals(widget.saleId!))).getSingleOrNull();
+    final sale = await (db.select(db.sales)
+          ..where((s) => s.id.equals(widget.saleId!)))
+        .getSingleOrNull();
     if (sale != null && mounted) {
-      final items = await (db.select(db.saleItems)..where((i) => i.saleId.equals(widget.saleId!))).get();
-      
+      final items = await (db.select(db.saleItems)
+            ..where((i) => i.saleId.equals(widget.saleId!)))
+          .get();
+
       Customer? customer;
       if (sale.customerId != null) {
-        customer = await (db.select(db.customers)..where((c) => c.id.equals(sale.customerId!))).getSingleOrNull();
+        customer = await (db.select(db.customers)
+              ..where((c) => c.id.equals(sale.customerId!)))
+            .getSingleOrNull();
       }
-      
+
       Warehouse? warehouse;
       if (sale.warehouseId != null) {
-        warehouse = await (db.select(db.warehouses)..where((w) => w.id.equals(sale.warehouseId!))).getSingleOrNull();
+        warehouse = await (db.select(db.warehouses)
+              ..where((w) => w.id.equals(sale.warehouseId!)))
+            .getSingleOrNull();
       }
-      
+
       List<Product> products = [];
       for (var item in items) {
-        final product = await (db.select(db.products)..where((p) => p.id.equals(item.productId))).getSingleOrNull();
+        final product = await (db.select(db.products)
+              ..where((p) => p.id.equals(item.productId)))
+            .getSingleOrNull();
         if (product != null) products.add(product);
       }
-      
+
       setState(() {
         _discountController.text = sale.discount.toString();
         _shippingCostController.text = sale.shippingCost.toString();
@@ -100,8 +114,10 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
         _taxController.text = sale.tax.toString();
         _selectedCustomer = customer;
         _selectedWarehouse = warehouse;
-        _paymentType = sale.isCredit ? 'credit' : (sale.paymentMethod == PaymentMethod.bank ? 'bank' : 'cash');
-        
+        _paymentType = sale.isCredit
+            ? 'credit'
+            : (sale.paymentMethod == PaymentMethod.bank ? 'bank' : 'cash');
+
         for (int i = 0; i < items.length && i < products.length; i++) {
           _items.add(SalesLineItem(
             product: products[i],
@@ -134,11 +150,12 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
 
   Future<void> _onBarcodeSubmitted(String barcode, AppDatabase db) async {
     if (barcode.isEmpty) return;
-    
+
     // 1. Search in main products table
     final products = await (db.select(
       db.products,
-    )..where((p) => p.barcode.equals(barcode) | p.sku.equals(barcode))).get();
+    )..where((p) => p.barcode.equals(barcode) | p.sku.equals(barcode)))
+        .get();
 
     if (products.isNotEmpty) {
       final product = products.first;
@@ -149,14 +166,18 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
 
     // 2. Search in product units table (multi-unit support)
     final unitQuery = await (db.select(db.productUnits).join([
-      drift.innerJoin(db.products, db.products.id.equalsExp(db.productUnits.productId)),
-    ])..where(db.productUnits.barcode.equals(barcode))).get();
+      drift.innerJoin(
+          db.products, db.products.id.equalsExp(db.productUnits.productId)),
+    ])
+          ..where(db.productUnits.barcode.equals(barcode)))
+        .get();
 
     if (unitQuery.isNotEmpty) {
       final row = unitQuery.first;
       final product = row.readTable(db.products);
       final unit = row.readTable(db.productUnits);
-      _addItemToInvoice(product, 1, unit.sellPrice ?? product.sellPrice, unit.unitName);
+      _addItemToInvoice(
+          product, 1, unit.sellPrice ?? product.sellPrice, unit.unitName);
       _barcodeController.clear();
       return;
     }
@@ -167,7 +188,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     ).showSnackBar(SnackBar(content: Text('المنتج $barcode غير موجود')));
   }
 
-  void _addItemToInvoice(Product product, double qty, double price, String unit) {
+  void _addItemToInvoice(
+      Product product, double qty, double price, String unit) {
     setState(() {
       _items.add(
         SalesLineItem(
@@ -181,12 +203,14 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
   }
 
   final _formKey = GlobalKey<FormState>();
-  
+
   @override
   Widget build(BuildContext context) {
     final db = Provider.of<AppDatabase>(context);
     return Scaffold(
-      appBar: AppBar(title: Text(isEditMode ? 'تعديل فاتورة مبيعات' : 'فاتورة مبيعات'), elevation: 0),
+      appBar: AppBar(
+          title: Text(isEditMode ? 'تعديل فاتورة مبيعات' : 'فاتورة مبيعات'),
+          elevation: 0),
       body: Form(
         key: _formKey, // ربط النموذج للتحقق
         child: Column(
@@ -244,7 +268,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
                 WarehousePicker(
                   db: db,
                   value: _selectedWarehouse,
-                  onChanged: (value) => setState(() => _selectedWarehouse = value),
+                  onChanged: (value) =>
+                      setState(() => _selectedWarehouse = value),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -259,7 +284,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
                         items: const [
                           DropdownMenuItem(value: 'cash', child: Text('نقد')),
                           DropdownMenuItem(value: 'credit', child: Text('آجل')),
-                          DropdownMenuItem(value: 'partial', child: Text('جزئي')),
+                          DropdownMenuItem(
+                              value: 'partial', child: Text('جزئي')),
                           DropdownMenuItem(value: 'split', child: Text('مجزأ')),
                         ],
                         onChanged: (value) {
@@ -280,9 +306,11 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
                           isDense: true,
                         ),
                         items: const ['RETAIL', 'WHOLESALE', 'SPECIAL']
-                            .map((l) => DropdownMenuItem(value: l, child: Text(l)))
+                            .map((l) =>
+                                DropdownMenuItem(value: l, child: Text(l)))
                             .toList(),
-                        onChanged: (value) => setState(() => _priceLevel = value!),
+                        onChanged: (value) =>
+                            setState(() => _priceLevel = value!),
                         value: _priceLevel,
                       ),
                     ),
@@ -295,10 +323,14 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
                     border: OutlineInputBorder(),
                     isDense: true,
                   ),
-                  items: const [DropdownMenuItem(value: '1', child: Text('مندوب عام'))],
-                  onChanged: (value) => setState(() => _representativeId = value),
+                  items: const [
+                    DropdownMenuItem(value: '1', child: Text('مندوب عام'))
+                  ],
+                  onChanged: (value) =>
+                      setState(() => _representativeId = value),
                   value: _representativeId,
-                ),                if (_isSplitPayment) _buildSplitPaymentFields(),
+                ),
+                if (_isSplitPayment) _buildSplitPaymentFields(),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -377,8 +409,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     if (_selectedCustomer == null || _customerSmartData == null) {
       return const SizedBox.shrink();
     }
-    final isExceeding =
-        (_customerSmartData!.currentBalance + _total) >
+    final isExceeding = (_customerSmartData!.currentBalance + _total) >
             _customerSmartData!.creditLimit &&
         _customerSmartData!.creditLimit > 0;
 
@@ -656,41 +687,49 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
 
   Future<void> _saveInvoice(AppDatabase db, {required bool post}) async {
     if (_items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الفاتورة فارغة - الرجاء إضافة أصناف')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('الفاتورة فارغة - الرجاء إضافة أصناف')));
       return;
     }
-    
+
     for (var item in _items) {
       if (item.product == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء اختيار منتج لكل صنف')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('الرجاء اختيار منتج لكل صنف')));
         return;
       }
       if (item.quantity <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الكمية يجب أن تكون أكبر من صفر')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('الكمية يجب أن تكون أكبر من صفر')));
         return;
       }
       if (item.price < 0) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('السعر يجب أن يكون أكبر من أو يساوي صفر')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('السعر يجب أن يكون أكبر من أو يساوي صفر')));
         return;
       }
     }
-    
+
     if (!_formKey.currentState!.validate()) return;
-    
+
     if (_paymentType == 'credit' && _selectedCustomer == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يجب اختيار عميل للبيع الآجل')),
       );
       return;
     }
-    
+
     // التحقق من الحد الائتماني للعميل ومنع الحفظ عند التجاوز
-    if (_paymentType == 'credit' && _selectedCustomer != null && _customerSmartData != null) {
+    if (_paymentType == 'credit' &&
+        _selectedCustomer != null &&
+        _customerSmartData != null) {
       final newBalance = _customerSmartData!.currentBalance + _total;
-      if (newBalance > _customerSmartData!.creditLimit && _customerSmartData!.creditLimit > 0) {
+      if (newBalance > _customerSmartData!.creditLimit &&
+          _customerSmartData!.creditLimit > 0) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('لا يمكن حفظ الفاتورة: العميل تجاوز الحد الائتماني المسموح به'),
+            content: Text(
+                'لا يمكن حفظ الفاتورة: العميل تجاوز الحد الائتماني المسموح به'),
             backgroundColor: Colors.red,
           ),
         );
@@ -702,14 +741,14 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     final String saleId;
     final bool isNew = !isEditMode;
     saleId = isNew ? const Uuid().v4() : widget.saleId!;
-    
+
     try {
       await db.transaction(() async {
         double totalItemDiscount = 0;
         for (var item in _items) {
           totalItemDiscount += item.discount;
         }
-        
+
         PaymentMethod method = PaymentMethod.cash;
         if (_paymentType == 'bank') {
           method = PaymentMethod.bank;
@@ -717,12 +756,14 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
           method = PaymentMethod.check;
         }
 
-        final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
+        final currentUser =
+            Provider.of<AuthProvider>(context, listen: false).currentUser;
         final userId = currentUser?.id;
 
         final itemsCompanions = <SaleItemsCompanion>[];
         for (var item in _items) {
-          final baseQuantity = await sl<UnitConversionService>().convertToBaseUnit(
+          final baseQuantity =
+              await sl<UnitConversionService>().convertToBaseUnit(
             productId: item.product!.id,
             quantity: item.quantity,
             unitName: item.selectedUnit,
@@ -763,8 +804,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
           );
 
           await sl<AuditService>().logCreate(
-            'SalesInvoice', 
-            saleId, 
+            'SalesInvoice',
+            saleId,
             details: 'فاتورة مبيعات جديدة بقيمة ${_total.toStringAsFixed(2)}',
             userId: userId,
           );
@@ -790,8 +831,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
           );
 
           await sl<AuditService>().logUpdate(
-            'SalesInvoice', 
-            saleId, 
+            'SalesInvoice',
+            saleId,
             details: 'تم تعديل الفاتورة بقيمة ${_total.toStringAsFixed(2)}',
             userId: userId,
           );
@@ -800,21 +841,22 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
         if (post) {
           await sl<TransactionEngine>().postSale(saleId, userId: userId);
           await sl<AuditService>().logUpdate(
-            'SalesInvoice', 
-            saleId, 
+            'SalesInvoice',
+            saleId,
             details: 'تم ترحيل الفاتورة',
             userId: userId,
           );
         }
       });
-      
+
       if (!mounted) return;
       final messenger = ScaffoldMessenger.of(context);
       final nav = Navigator.of(context);
-      
+
       nav.pop();
       messenger.showSnackBar(
-        SnackBar(content: Text(post ? 'تم ترحيل الفاتورة بنجاح' : 'تم حفظ المسودة')),
+        SnackBar(
+            content: Text(post ? 'تم ترحيل الفاتورة بنجاح' : 'تم حفظ المسودة')),
       );
     } catch (e) {
       debugPrint('Error saving invoice: $e');

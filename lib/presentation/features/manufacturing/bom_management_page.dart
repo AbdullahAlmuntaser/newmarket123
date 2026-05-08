@@ -99,9 +99,8 @@ class _BomManagementPageState extends State<BomManagementPage> {
                   ? '${components.length} مكون'
                   : '${components.length} component(s)',
             ),
-            children: components
-                .map((bom) => _buildComponentTile(bom))
-                .toList(),
+            children:
+                components.map((bom) => _buildComponentTile(bom)).toList(),
           ),
         );
       },
@@ -170,9 +169,8 @@ class _BomManagementPageState extends State<BomManagementPage> {
               DropdownButtonFormField<String>(
                 value: component,
                 decoration: InputDecoration(
-                  labelText: l10n.localeName == 'ar'
-                      ? 'المادة الخام'
-                      : 'Raw Material',
+                  labelText:
+                      l10n.localeName == 'ar' ? 'المادة الخام' : 'Raw Material',
                 ),
                 items: _products
                     .map(
@@ -210,7 +208,7 @@ class _BomManagementPageState extends State<BomManagementPage> {
           ElevatedButton(
             onPressed: () async {
               if (formKey.currentState!.validate()) {
-                          final bomService = di.sl<BomService>();
+                final bomService = di.sl<BomService>();
                 await bomService.addComponent(
                   finishedProduct!,
                   component!,
@@ -249,7 +247,7 @@ class _BomManagementPageState extends State<BomManagementPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-                        final bomService = di.sl<BomService>();
+              final bomService = di.sl<BomService>();
               await bomService.updateComponentQuantity(
                 bom.id,
                 double.parse(ctrl.text),
@@ -291,7 +289,8 @@ class _BomManagementPageState extends State<BomManagementPage> {
 
     if (confirmed == true) {
       if (!mounted) return;
-      final bomService = di.sl<BomService>();      await bomService.removeComponent(bom.id);
+      final bomService = di.sl<BomService>();
+      await bomService.removeComponent(bom.id);
       await _loadData();
     }
   }
@@ -329,7 +328,7 @@ class _BomAssemblyPageState extends State<BomAssemblyPage> {
   }
 
   Future<void> _loadBom(String productId) async {
-              final bomService = di.sl<BomService>();
+    final bomService = di.sl<BomService>();
     _currentBom = await bomService.getBomForProduct(productId);
     setState(() {});
   }
@@ -418,8 +417,8 @@ class _BomAssemblyPageState extends State<BomAssemblyPage> {
               label: Text(
                 _expiryDate == null
                     ? (l10n.localeName == 'ar'
-                          ? 'اختر تاريخ الانتهاء'
-                          : 'Select Expiry Date')
+                        ? 'اختر تاريخ الانتهاء'
+                        : 'Select Expiry Date')
                     : '${l10n.localeName == 'ar' ? 'تاريخ الانتهاء' : 'Expiry'}: ${_expiryDate!.toLocal().toString().split(' ')[0]}',
               ),
             ),
@@ -485,7 +484,7 @@ class _BomAssemblyPageState extends State<BomAssemblyPage> {
     }
 
     setState(() => _isLoading = true);
-              final bomService = di.sl<BomService>();
+    final bomService = di.sl<BomService>();
 
     try {
       final result = await bomService.assemble(

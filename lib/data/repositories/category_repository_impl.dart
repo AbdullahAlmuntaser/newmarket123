@@ -15,9 +15,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
     domain_category.Category category,
   ) async {
     try {
-      await appDatabase
-          .into(appDatabase.categories)
-          .insert(
+      await appDatabase.into(appDatabase.categories).insert(
             CategoriesCompanion.insert(
               name: category.name,
               code: Value(category.code),
@@ -34,7 +32,8 @@ class CategoryRepositoryImpl implements CategoryRepository {
     try {
       await (appDatabase.delete(
         appDatabase.categories,
-      )..where((tbl) => tbl.id.equals(id))).go();
+      )..where((tbl) => tbl.id.equals(id)))
+          .go();
       return const Right(unit);
     } catch (e) {
       return Left(CacheFailure());
@@ -43,7 +42,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
 
   @override
   Future<Either<Failure, List<domain_category.Category>>>
-  getCategories() async {
+      getCategories() async {
     try {
       final categories = await appDatabase.select(appDatabase.categories).get();
       final domainCategories = categories
@@ -65,7 +64,8 @@ class CategoryRepositoryImpl implements CategoryRepository {
     try {
       await (appDatabase.update(
         appDatabase.categories,
-      )..where((tbl) => tbl.id.equals(category.id))).write(
+      )..where((tbl) => tbl.id.equals(category.id)))
+          .write(
         CategoriesCompanion(
           name: Value(category.name),
           code: Value(category.code),

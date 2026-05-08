@@ -127,11 +127,9 @@ void main() {
       final DateTime transactionDate2 = DateTime(2025, 2, 15);
 
       // Act
-      final isInPeriod1 = 
-          !transactionDate1.isBefore(startDate) && 
+      final isInPeriod1 = !transactionDate1.isBefore(startDate) &&
           !transactionDate1.isAfter(endDate);
-      final isInPeriod2 = 
-          !transactionDate2.isBefore(startDate) && 
+      final isInPeriod2 = !transactionDate2.isBefore(startDate) &&
           !transactionDate2.isAfter(endDate);
 
       // Assert

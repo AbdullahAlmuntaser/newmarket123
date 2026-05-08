@@ -11,8 +11,9 @@ class StockMovementDao extends DatabaseAccessor<AppDatabase>
   Future<int> insertStockMovement(StockMovementsCompanion entry) =>
       into(stockMovements).insert(entry);
   Future<StockMovement?> getStockMovementById(String id) => (select(
-    stockMovements,
-  )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
+        stockMovements,
+      )..where((tbl) => tbl.id.equals(id)))
+          .getSingleOrNull();
   Future<List<StockMovement>> getAllStockMovements() =>
       select(stockMovements).get();
   Future<bool> updateStockMovement(StockMovement entry) =>
@@ -22,5 +23,6 @@ class StockMovementDao extends DatabaseAccessor<AppDatabase>
   Future<List<StockMovement>> getStockMovementsByProduct(String productId) =>
       (select(
         stockMovements,
-      )..where((tbl) => tbl.productId.equals(productId))).get();
+      )..where((tbl) => tbl.productId.equals(productId)))
+          .get();
 }

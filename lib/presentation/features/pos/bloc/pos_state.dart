@@ -11,7 +11,7 @@ class CartItem extends Equatable {
   final Decimal unitPrice;
   final Decimal? discount;
   final List<UnitConversion>
-  availableUnits; // قائمة بكل الوحدات المتاحة لهذا المنتج
+      availableUnits; // قائمة بكل الوحدات المتاحة لهذا المنتج
 
   const CartItem({
     required this.product,
@@ -49,15 +49,15 @@ class CartItem extends Equatable {
 
   @override
   List<Object?> get props => [
-    product,
-    quantity,
-    isWholesale,
-    unitName,
-    unitFactor,
-    unitPrice,
-    discount,
-    availableUnits,
-  ];
+        product,
+        quantity,
+        isWholesale,
+        unitName,
+        unitFactor,
+        unitPrice,
+        discount,
+        availableUnits,
+      ];
 }
 
 abstract class PosState extends Equatable {
@@ -91,8 +91,8 @@ class PosLoaded extends PosState {
     this.selectedCategoryId,
     this.filteredProducts = const [],
     this.activePriceListId,
-  }) : discount = discount ?? Decimal.zero,
-       taxRate = taxRate ?? Decimal.zero;
+  })  : discount = discount ?? Decimal.zero,
+        taxRate = taxRate ?? Decimal.zero;
 
   Decimal get subtotal =>
       cart.fold(Decimal.zero, (sum, item) => sum + item.total);
@@ -125,16 +125,16 @@ class PosLoaded extends PosState {
 
   @override
   List<Object?> get props => [
-    cart,
-    discount,
-    taxRate,
-    isWholesaleMode,
-    searchResults,
-    categories,
-    selectedCategoryId,
-    filteredProducts,
-    activePriceListId,
-  ];
+        cart,
+        discount,
+        taxRate,
+        isWholesaleMode,
+        searchResults,
+        categories,
+        selectedCategoryId,
+        filteredProducts,
+        activePriceListId,
+      ];
 }
 
 class PosError extends PosState {

@@ -15,10 +15,11 @@ class BackupService {
     // 1. فحص سلامة قاعدة البيانات قبل النسخ
     final result = await db.customSelect('PRAGMA integrity_check;').get();
     final status = result.first.data.values.first as String;
-    
+
     if (status != 'ok') {
       AppLogger.error('Database integrity check failed: $status');
-      throw Exception('لا يمكن إنشاء نسخة احتياطية: قاعدة البيانات تالفة ($status)');
+      throw Exception(
+          'لا يمكن إنشاء نسخة احتياطية: قاعدة البيانات تالفة ($status)');
     }
 
     final dbFolder = await getApplicationDocumentsDirectory();
@@ -28,8 +29,7 @@ class BackupService {
       throw Exception('Database file not found');
     }
 
-    final backupDir =
-        await getExternalStorageDirectory() ??
+    final backupDir = await getExternalStorageDirectory() ??
         await getApplicationDocumentsDirectory();
     final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
     final backupPath = p.join(

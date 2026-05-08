@@ -156,8 +156,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
           padding: const EdgeInsets.all(16),
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed:
-                (_actualStockValues.isEmpty ||
+            onPressed: (_actualStockValues.isEmpty ||
                     _isSaving ||
                     _selectedWarehouse == null)
                 ? null
@@ -186,11 +185,10 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
     return db.select(db.products).watch().asyncMap((productsList) async {
       List<ProductWithStock> results = [];
       for (var product in productsList) {
-        final batches =
-            await (db.select(db.productBatches)
-                  ..where((b) => b.productId.equals(product.id))
-                  ..where((b) => b.warehouseId.equals(warehouseId)))
-                .get();
+        final batches = await (db.select(db.productBatches)
+              ..where((b) => b.productId.equals(product.id))
+              ..where((b) => b.warehouseId.equals(warehouseId)))
+            .get();
 
         final warehouseStock = batches.fold(0.0, (sum, b) => sum + b.quantity);
         results.add(
@@ -209,7 +207,8 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
     return StreamBuilder<List<InventoryAudit>>(
       stream: (db.select(
         db.inventoryAudits,
-      )..orderBy([(t) => OrderingTerm.desc(t.auditDate)])).watch(),
+      )..orderBy([(t) => OrderingTerm.desc(t.auditDate)]))
+          .watch(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -241,7 +240,8 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
     final db = context.read<AppDatabase>();
     final items = await (db.select(
       db.inventoryAuditItems,
-    )..where((t) => t.auditId.equals(audit.id))).get();
+    )..where((t) => t.auditId.equals(audit.id)))
+        .get();
     final products = await db.select(db.products).get();
 
     if (!context.mounted) return;
@@ -305,9 +305,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
     try {
       await db.transaction(() async {
         final auditId = const Uuid().v4();
-        await db
-            .into(db.inventoryAudits)
-            .insert(
+        await db.into(db.inventoryAudits).insert(
               InventoryAuditsCompanion.insert(
                 id: Value(auditId),
                 auditDate: Value(DateTime.now()),
@@ -321,22 +319,20 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
 
           final product = await (db.select(
             db.products,
-          )..where((p) => p.id.equals(productId))).getSingle();
+          )..where((p) => p.id.equals(productId)))
+              .getSingle();
 
-          final batches =
-              await (db.select(db.productBatches)
-                    ..where((b) => b.productId.equals(productId))
-                    ..where(
-                      (b) => b.warehouseId.equals(_selectedWarehouse!.id),
-                    ))
-                  .get();
+          final batches = await (db.select(db.productBatches)
+                ..where((b) => b.productId.equals(productId))
+                ..where(
+                  (b) => b.warehouseId.equals(_selectedWarehouse!.id),
+                ))
+              .get();
 
           final systemStock = batches.fold(0.0, (sum, b) => sum + b.quantity);
           final difference = actualStock - systemStock;
 
-          await db
-              .into(db.inventoryAuditItems)
-              .insert(
+          await db.into(db.inventoryAuditItems).insert(
                 InventoryAuditItemsCompanion.insert(
                   auditId: auditId,
                   productId: productId,
@@ -357,7 +353,8 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
                   : remainingToReduce;
               await (db.update(
                 db.productBatches,
-              )..where((b) => b.id.equals(batch.id))).write(
+              )..where((b) => b.id.equals(batch.id)))
+                  .write(
                 ProductBatchesCompanion(
                   quantity: Value(batch.quantity - reduction),
                 ),
@@ -366,9 +363,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
             }
           } else if (difference > 0) {
             // Gain: Add to a new adjustment batch
-            await db
-                .into(db.productBatches)
-                .insert(
+            await db.into(db.productBatches).insert(
                   ProductBatchesCompanion.insert(
                     id: Value(const Uuid().v4()),
                     productId: productId,
@@ -384,7 +379,8 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
           // Update product total aggregate stock
           final allBatches = await (db.select(
             db.productBatches,
-          )..where((b) => b.productId.equals(productId))).get();
+          )..where((b) => b.productId.equals(productId)))
+              .get();
           final totalStock = allBatches.fold(0.0, (sum, b) => sum + b.quantity);
           await (db.update(db.products)..where((p) => p.id.equals(productId)))
               .write(ProductsCompanion(stock: Value(totalStock)));

@@ -88,7 +88,9 @@ class _CashFlowPageState extends State<CashFlowPage> {
                         children: [
                           Text(
                             l10n.cashFlow,
-                            style: Theme.of(context).textTheme.headlineSmall
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
                                 ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           Text(
@@ -155,9 +157,9 @@ class _CashFlowPageState extends State<CashFlowPage> {
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).primaryColor,
-        ),
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).primaryColor,
+            ),
       ),
     );
   }

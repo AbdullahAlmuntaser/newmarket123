@@ -12,7 +12,7 @@ class AdvancedSettingsPage extends StatefulWidget {
 
 class AdvancedSettingsPageState extends State<AdvancedSettingsPage> {
   late AppConfigService _configService;
-  
+
   bool _allowNegativeStock = false;
   double _taxRate = 0.15;
   String _defaultWarehouse = '';
@@ -29,13 +29,13 @@ class AdvancedSettingsPageState extends State<AdvancedSettingsPage> {
 
   Future<void> _loadSettings() async {
     setState(() => _isLoading = true);
-    
+
     _allowNegativeStock = await _configService.allowNegativeStock();
     _taxRate = await _configService.getTaxRate();
     _defaultWarehouse = await _configService.getDefaultWarehouseId();
     _defaultBranch = await _configService.getDefaultBranchId();
     _lowStockThreshold = await _configService.getLowStockThreshold();
-    
+
     setState(() => _isLoading = false);
   }
 
@@ -102,7 +102,8 @@ class AdvancedSettingsPageState extends State<AdvancedSettingsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('نسبة الضريبة (${(_taxRate * 100).toStringAsFixed(1)}%)',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold)),
                   Slider(
                     value: _taxRate,
                     min: 0,
@@ -113,7 +114,8 @@ class AdvancedSettingsPageState extends State<AdvancedSettingsPage> {
                       setState(() => _taxRate = value);
                     },
                   ),
-                  const Text('تتراوح بين 0% و 25%', style: TextStyle(color: Colors.grey)),
+                  const Text('تتراوح بين 0% و 25%',
+                      style: TextStyle(color: Colors.grey)),
                 ],
               ),
             ),
@@ -126,7 +128,8 @@ class AdvancedSettingsPageState extends State<AdvancedSettingsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('حد التنبيه للمخزون المنخفض',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   Slider(
                     value: _lowStockThreshold.toDouble(),
                     min: 0,
@@ -137,7 +140,8 @@ class AdvancedSettingsPageState extends State<AdvancedSettingsPage> {
                       setState(() => _lowStockThreshold = value.toInt());
                     },
                   ),
-                  Text('سيتم التنبيه عندما يقل الرصيد عن $_lowStockThreshold وحدات',
+                  Text(
+                      'سيتم التنبيه عندما يقل الرصيد عن $_lowStockThreshold وحدات',
                       style: const TextStyle(color: Colors.grey)),
                 ],
               ),
@@ -151,7 +155,8 @@ class AdvancedSettingsPageState extends State<AdvancedSettingsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('المعرفات الافتراضية',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   ListTile(
                     leading: const Icon(Icons.warehouse),

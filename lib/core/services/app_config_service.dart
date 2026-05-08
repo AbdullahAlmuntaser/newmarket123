@@ -18,7 +18,9 @@ class AppConfigService {
 
   /// الحصول على قيمة إعداد معينة
   Future<String?> getString(String key) async {
-    final result = await (_db.select(_db.appConfigTable)..where((t) => t.key.equals(key))).getSingleOrNull();
+    final result = await (_db.select(_db.appConfigTable)
+          ..where((t) => t.key.equals(key)))
+        .getSingleOrNull();
     return result?.value;
   }
 
@@ -37,13 +39,13 @@ class AppConfigService {
   /// حفظ إعداد نصي
   Future<void> setString(String key, String value) async {
     await _db.into(_db.appConfigTable).insert(
-      AppConfigTableCompanion(
-        key: Value(key),
-        value: Value(value),
-        updatedAt: Value(DateTime.now()),
-      ),
-      mode: InsertMode.insertOrReplace,
-    );
+          AppConfigTableCompanion(
+            key: Value(key),
+            value: Value(value),
+            updatedAt: Value(DateTime.now()),
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
   }
 
   /// حفظ إعداد رقمي
@@ -60,7 +62,8 @@ class AppConfigService {
 
   /// الحصول على معرف المستودع الافتراضي
   Future<String> getDefaultWarehouseId() async {
-    return await getString(keyDefaultWarehouse) ?? 'MAIN_WAREHOUSE'; // قيمة افتراضية آمنة
+    return await getString(keyDefaultWarehouse) ??
+        'MAIN_WAREHOUSE'; // قيمة افتراضية آمنة
   }
 
   /// الحصول على معرف الفرع الافتراضي
@@ -92,8 +95,8 @@ class AppConfigService {
 
   /// الحصول على رسالة الفاتورة الافتراضية للواتساب
   Future<String> getInvoiceMessage() async {
-    return await getString(keyInvoiceMessage) ?? 
-      'شكراً لتعاملكم معنا.\nتفاصيل الفاتورة مرفقة.';
+    return await getString(keyInvoiceMessage) ??
+        'شكراً لتعاملكم معنا.\nتفاصيل الفاتورة مرفقة.';
   }
 
   /// تحديد حد التنبيه للمخزون المنخفض
@@ -103,13 +106,16 @@ class AppConfigService {
 
   /// تهيئة الإعدادات الافتراضية عند أول تشغيل
   Future<void> initializeDefaults() async {
-    final hasConfig = await (_db.select(_db.appConfigTable)..limit(1)).get().then((v) => v.isNotEmpty);
+    final hasConfig = await (_db.select(_db.appConfigTable)..limit(1))
+        .get()
+        .then((v) => v.isNotEmpty);
     if (!hasConfig) {
       await setString(keyDefaultWarehouse, 'MAIN_WAREHOUSE');
       await setString(keyDefaultBranch, 'BR001');
       await setDouble(keyTaxRate, 0.15);
       await setInt(keyLowStockThreshold, 10);
-      await setString(keyInvoiceMessage, 'شكراً لتعاملكم معنا. نقدر ثقتكم بنا.');
+      await setString(
+          keyInvoiceMessage, 'شكراً لتعاملكم معنا. نقدر ثقتكم بنا.');
     }
   }
 }

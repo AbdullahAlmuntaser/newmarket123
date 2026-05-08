@@ -22,7 +22,8 @@ class _SupplierLedgerPageState extends State<SupplierLedgerPage> {
   Future<void> _fetchStatement(AppDatabase db) async {
     if (_selectedSupplier == null) return;
     setState(() => _isLoading = true);
-    final txs = await db.suppliersDao.getSupplierStatement(_selectedSupplier!.id);
+    final txs =
+        await db.suppliersDao.getSupplierStatement(_selectedSupplier!.id);
     setState(() {
       _transactions = txs.reversed.toList();
       _isLoading = false;
@@ -63,7 +64,8 @@ class _SupplierLedgerPageState extends State<SupplierLedgerPage> {
                 itemBuilder: (context, index) {
                   final tx = _transactions[index];
                   return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     child: ListTile(
                       title: Text(tx.description),
                       subtitle: Text(DateFormat.yMMMd().format(tx.date)),
@@ -74,12 +76,16 @@ class _SupplierLedgerPageState extends State<SupplierLedgerPage> {
                           if (tx.debit > 0)
                             Text(
                               '+${NumberFormat.currency(symbol: '').format(tx.debit)}',
-                              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold),
                             ),
                           if (tx.credit > 0)
                             Text(
                               '-${NumberFormat.currency(symbol: '').format(tx.credit)}',
-                              style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold),
                             ),
                         ],
                       ),

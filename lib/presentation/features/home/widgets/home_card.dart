@@ -35,9 +35,9 @@ class HomeCard extends StatelessWidget {
                 title,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[700],
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[700],
+                    ),
               ),
               const SizedBox(height: 8),
               FittedBox(
@@ -45,9 +45,9 @@ class HomeCard extends StatelessWidget {
                 child: Text(
                   value,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
                 ),
               ),
             ],

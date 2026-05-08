@@ -16,7 +16,8 @@ class SystemAuditor {
     for (var product in products) {
       final batches = await (db.select(
         db.productBatches,
-      )..where((b) => b.productId.equals(product.id))).get();
+      )..where((b) => b.productId.equals(product.id)))
+          .get();
       final batchSum = batches.fold<double>(0, (sum, b) => sum + b.quantity);
       if ((product.stock - batchSum).abs() > 0.001) {
         inventoryOk = false;
@@ -31,7 +32,8 @@ class SystemAuditor {
     for (var entry in entries) {
       final lines = await (db.select(
         db.gLLines,
-      )..where((l) => l.entryId.equals(entry.id))).get();
+      )..where((l) => l.entryId.equals(entry.id)))
+          .get();
       double debit = lines.fold(0, (sum, l) => sum + l.debit);
       double credit = lines.fold(0, (sum, l) => sum + l.credit);
       if ((debit - credit).abs() > 0.01) {

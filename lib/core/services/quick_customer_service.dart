@@ -93,7 +93,8 @@ class QuickCustomerService {
     try {
       await (db.update(
         db.customers,
-      )..where((c) => c.id.equals(customerId))).write(
+      )..where((c) => c.id.equals(customerId)))
+          .write(
         CustomersCompanion(
           isQuickCustomer: const Value(false),
           customerType: Value(customerType),
@@ -122,7 +123,8 @@ class QuickCustomerService {
         for (final duplicateId in duplicateIds) {
           await (db.update(
             db.sales,
-          )..where((s) => s.customerId.equals(duplicateId))).write(
+          )..where((s) => s.customerId.equals(duplicateId)))
+              .write(
             SalesCompanion(
               customerId: Value(primaryCustomerId),
               updatedAt: Value(DateTime.now()),
@@ -134,7 +136,8 @@ class QuickCustomerService {
         for (final duplicateId in duplicateIds) {
           await (db.update(
             db.customers,
-          )..where((c) => c.id.equals(duplicateId))).write(
+          )..where((c) => c.id.equals(duplicateId)))
+              .write(
             CustomersCompanion(
               isActive: const Value(false),
               updatedAt: Value(DateTime.now()),
@@ -156,14 +159,13 @@ class QuickCustomerService {
     final cutoffDate = DateTime.now().subtract(olderThan);
 
     try {
-      final oldQuickCustomers =
-          await (db.select(db.customers)
-                ..where((c) => c.isQuickCustomer.equals(true))
-                ..where((c) => c.createdAt.isSmallerThanValue(cutoffDate))
-                ..where(
-                  (c) => c.balance.equals(0.0),
-                )) // Only if no outstanding balance
-              .get();
+      final oldQuickCustomers = await (db.select(db.customers)
+            ..where((c) => c.isQuickCustomer.equals(true))
+            ..where((c) => c.createdAt.isSmallerThanValue(cutoffDate))
+            ..where(
+              (c) => c.balance.equals(0.0),
+            )) // Only if no outstanding balance
+          .get();
 
       for (final customer in oldQuickCustomers) {
         await (db.update(db.customers)..where((c) => c.id.equals(customer.id)))
@@ -186,9 +188,8 @@ class QuickCustomerService {
       'quick': allCustomers.where((c) => c.isQuickCustomer).length,
       'regular': allCustomers.where((c) => !c.isQuickCustomer).length,
       'vip': allCustomers.where((c) => c.customerType == 'VIP').length,
-      'wholesale': allCustomers
-          .where((c) => c.customerType == 'WHOLESALE')
-          .length,
+      'wholesale':
+          allCustomers.where((c) => c.customerType == 'WHOLESALE').length,
     };
 
     return stats;

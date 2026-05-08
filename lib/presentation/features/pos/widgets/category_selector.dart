@@ -21,9 +21,9 @@ class CategorySelector extends StatelessWidget {
             itemBuilder: (context, index) {
               final isAll = index == 0;
               final category = isAll ? null : state.categories[index - 1];
-              final isSelected = isAll 
-                ? state.selectedCategoryId == null 
-                : state.selectedCategoryId == category?.id;
+              final isSelected = isAll
+                  ? state.selectedCategoryId == null
+                  : state.selectedCategoryId == category?.id;
 
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4.0),

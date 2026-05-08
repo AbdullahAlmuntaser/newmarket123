@@ -29,23 +29,27 @@ class _VatReportPageState extends State<VatReportPage> {
       body: FutureBuilder<VatReportData>(
         future: _fetchVatReport(db),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
           final data = snapshot.data!;
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
               _buildSectionTitle('المبيعات والمخرجات'),
-              _buildCard('إجمالي المبيعات الخاضعة للضريبة', data.totalTaxableSales),
+              _buildCard(
+                  'إجمالي المبيعات الخاضعة للضريبة', data.totalTaxableSales),
               _buildCard('إجمالي ضريبة المخرجات', data.totalOutputVat),
               const SizedBox(height: 16),
-              
               _buildSectionTitle('المشتريات والمدخلات'),
-              _buildCard('إجمالي المشتريات الخاضعة للضريبة', data.totalTaxablePurchases),
+              _buildCard('إجمالي المشتريات الخاضعة للضريبة',
+                  data.totalTaxablePurchases),
               _buildCard('إجمالي ضريبة المدخلات', data.totalInputVat),
               const SizedBox(height: 16),
-              
               const Divider(thickness: 2),
-              _buildCard('صافي الضريبة المستحقة (للدفع/للاسترداد)', data.netVatPayable, isHighlight: true),
+              _buildCard(
+                  'صافي الضريبة المستحقة (للدفع/للاسترداد)', data.netVatPayable,
+                  isHighlight: true),
             ],
           );
         },
@@ -58,13 +62,15 @@ class _VatReportPageState extends State<VatReportPage> {
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
       child: Text(
         title,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueGrey),
+        style: const TextStyle(
+            fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueGrey),
       ),
     );
   }
 
   Future<VatReportData> _fetchVatReport(AppDatabase db) async {
-    final service = AccountingService(db, Provider.of<EventBusService>(context, listen: false));
+    final service = AccountingService(
+        db, Provider.of<EventBusService>(context, listen: false));
     return await service.getVatReport(
       startDate: _range.start,
       endDate: _range.end,
@@ -80,7 +86,8 @@ class _VatReportPageState extends State<VatReportPage> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: isHighlight ? (amount >= 0 ? Colors.red : Colors.green) : null,
+            color:
+                isHighlight ? (amount >= 0 ? Colors.red : Colors.green) : null,
           ),
         ),
       ),

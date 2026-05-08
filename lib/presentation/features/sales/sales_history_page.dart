@@ -19,7 +19,7 @@ class SalesHistoryPage extends StatefulWidget {
 class _SalesHistoryPageState extends State<SalesHistoryPage> {
   final int _pageSize = 20;
   int _currentPage = 0;
-  
+
   DateTime? _startDate;
   DateTime? _endDate;
   DocumentStatus? _statusFilter;
@@ -37,7 +37,8 @@ class _SalesHistoryPageState extends State<SalesHistoryPage> {
         title: Text(l10n.sales),
         actions: [
           IconButton(
-            icon: Icon(_showFilters ? Icons.filter_list_off : Icons.filter_list),
+            icon:
+                Icon(_showFilters ? Icons.filter_list_off : Icons.filter_list),
             onPressed: () => setState(() => _showFilters = !_showFilters),
             tooltip: 'فلترة',
           ),
@@ -115,7 +116,9 @@ class _SalesHistoryPageState extends State<SalesHistoryPage> {
                             ),
                           ),
                           Text(
-                            sale.status == DocumentStatus.posted ? l10n.synced : 'غير مرحل',
+                            sale.status == DocumentStatus.posted
+                                ? l10n.synced
+                                : 'غير مرحل',
                             style: TextStyle(
                               fontSize: 10,
                               color: sale.status == DocumentStatus.posted
@@ -151,7 +154,8 @@ class _SalesHistoryPageState extends State<SalesHistoryPage> {
     );
   }
 
-  Widget _buildFiltersPanel(BuildContext context, AppDatabase db, AppLocalizations l10n) {
+  Widget _buildFiltersPanel(
+      BuildContext context, AppDatabase db, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(12),
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -163,7 +167,9 @@ class _SalesHistoryPageState extends State<SalesHistoryPage> {
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.calendar_today, size: 18),
-                  label: Text(_startDate != null ? DateFormat.yMMMd().format(_startDate!) : 'من تاريخ'),
+                  label: Text(_startDate != null
+                      ? DateFormat.yMMMd().format(_startDate!)
+                      : 'من تاريخ'),
                   onPressed: () async {
                     final date = await showDatePicker(
                       context: context,
@@ -179,7 +185,9 @@ class _SalesHistoryPageState extends State<SalesHistoryPage> {
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.calendar_today, size: 18),
-                  label: Text(_endDate != null ? DateFormat.yMMMd().format(_endDate!) : 'إلى تاريخ'),
+                  label: Text(_endDate != null
+                      ? DateFormat.yMMMd().format(_endDate!)
+                      : 'إلى تاريخ'),
                   onPressed: () async {
                     final date = await showDatePicker(
                       context: context,
@@ -201,13 +209,17 @@ class _SalesHistoryPageState extends State<SalesHistoryPage> {
                   value: _statusFilter,
                   decoration: const InputDecoration(
                     labelText: 'الحالة',
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                   items: const [
                     DropdownMenuItem(value: null, child: Text('كل الحالات')),
-                    DropdownMenuItem(value: DocumentStatus.draft, child: Text('مسودة')),
-                    DropdownMenuItem(value: DocumentStatus.posted, child: Text('مرحّل')),
-                    DropdownMenuItem(value: DocumentStatus.cancelled, child: Text('ملغي')),
+                    DropdownMenuItem(
+                        value: DocumentStatus.draft, child: Text('مسودة')),
+                    DropdownMenuItem(
+                        value: DocumentStatus.posted, child: Text('مرحّل')),
+                    DropdownMenuItem(
+                        value: DocumentStatus.cancelled, child: Text('ملغي')),
                   ],
                   onChanged: (value) => setState(() => _statusFilter = value),
                 ),
@@ -245,9 +257,10 @@ class _SalesHistoryPageState extends State<SalesHistoryPage> {
 
   Future<List<Sale>> _fetchFilteredSales(AppDatabase db) async {
     var query = db.select(db.sales);
-    
+
     if (_startDate != null) {
-      query = query..where((s) => s.createdAt.isBiggerOrEqualValue(_startDate!));
+      query = query
+        ..where((s) => s.createdAt.isBiggerOrEqualValue(_startDate!));
     }
     if (_endDate != null) {
       query = query..where((s) => s.createdAt.isSmallerOrEqualValue(_endDate!));
@@ -261,7 +274,7 @@ class _SalesHistoryPageState extends State<SalesHistoryPage> {
     if (_warehouseIdFilter != null) {
       query = query..where((s) => s.warehouseId.equals(_warehouseIdFilter!));
     }
-    
+
     query = query..orderBy([(t) => drift.OrderingTerm.desc(t.createdAt)]);
     return query.get();
   }

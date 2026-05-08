@@ -22,7 +22,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
   final int _pageSize = 20;
   int _currentPage = 0;
   final bool _isLoadingMore = false;
-  
+
   @override
   Widget build(BuildContext context) {
     final db = Provider.of<AppDatabase>(context);
@@ -42,10 +42,11 @@ class _PurchasesPageState extends State<PurchasesPage> {
       body: FutureBuilder<List<PurchasesWithSupplierAndWarehouse>>(
         future: _fetchPurchases(db),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting && _currentPage == 0) {
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              _currentPage == 0) {
             return const Center(child: CircularProgressIndicator());
           }
-          
+
           if (snapshot.hasError) {
             return Center(
               child: Column(
@@ -53,7 +54,8 @@ class _PurchasesPageState extends State<PurchasesPage> {
                 children: [
                   Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
                   const SizedBox(height: 16),
-                  Text('حدث خطأ في تحميل البيانات', style: TextStyle(color: Colors.red[700])),
+                  Text('حدث خطأ في تحميل البيانات',
+                      style: TextStyle(color: Colors.red[700])),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     onPressed: () => setState(() {}),
@@ -64,16 +66,18 @@ class _PurchasesPageState extends State<PurchasesPage> {
               ),
             );
           }
-          
+
           final allPurchases = snapshot.data ?? [];
           if (allPurchases.isEmpty && _currentPage == 0) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.grey[400]),
+                  Icon(Icons.shopping_cart_outlined,
+                      size: 64, color: Colors.grey[400]),
                   const SizedBox(height: 16),
-                  Text(l10n.noPurchasesFound, style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+                  Text(l10n.noPurchasesFound,
+                      style: TextStyle(fontSize: 16, color: Colors.grey[600])),
                 ],
               ),
             );
@@ -90,7 +94,8 @@ class _PurchasesPageState extends State<PurchasesPage> {
             children: [
               // شريط معلومات
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -106,11 +111,12 @@ class _PurchasesPageState extends State<PurchasesPage> {
                   ],
                 ),
               ),
-              
+
               Expanded(
                 child: ListView.separated(
                   itemCount: purchases.length + (_isLoadingMore ? 1 : 0),
-                  separatorBuilder: (context, index) => const Divider(height: 1),
+                  separatorBuilder: (context, index) =>
+                      const Divider(height: 1),
                   itemBuilder: (context, index) {
                     if (index >= purchases.length) {
                       return const Padding(
@@ -118,7 +124,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                         child: Center(child: CircularProgressIndicator()),
                       );
                     }
-                    
+
                     final item = purchases[index];
                     final purchase = item.purchase;
                     final supplier = item.supplier;
@@ -127,7 +133,8 @@ class _PurchasesPageState extends State<PurchasesPage> {
                       margin: EdgeInsets.zero,
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: _getStatusColor(purchase.status).withAlpha(26),
+                          backgroundColor:
+                              _getStatusColor(purchase.status).withAlpha(26),
                           child: Icon(
                             _getStatusIcon(purchase.status),
                             color: _getStatusColor(purchase.status),
@@ -138,7 +145,8 @@ class _PurchasesPageState extends State<PurchasesPage> {
                           children: [
                             Text(
                               supplier?.name ?? l10n.walkInSupplier,
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                             ),
                             _buildStatusChip(context, purchase.status, l10n),
                           ],
@@ -150,11 +158,13 @@ class _PurchasesPageState extends State<PurchasesPage> {
                             if (warehouse != null)
                               Text(
                                 '${l10n.warehouse}: ${warehouse.name}',
-                                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.grey[600]),
                               ),
                             Text(
                               '#${purchase.id.substring(0, 8)}',
-                              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                              style: TextStyle(
+                                  fontSize: 11, color: Colors.grey[500]),
                             ),
                           ],
                         ),
@@ -173,7 +183,8 @@ class _PurchasesPageState extends State<PurchasesPage> {
                             const SizedBox(height: 4),
                             if (purchase.isCredit)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
                                   color: Colors.orange[100],
                                   borderRadius: BorderRadius.circular(8),
@@ -189,14 +200,16 @@ class _PurchasesPageState extends State<PurchasesPage> {
                               ),
                           ],
                         ),
-                        onTap: () => context.push('/purchases/details/${purchase.id}'),
-                        onLongPress: () => _showPurchaseActions(context, purchase),
+                        onTap: () =>
+                            context.push('/purchases/details/${purchase.id}'),
+                        onLongPress: () =>
+                            _showPurchaseActions(context, purchase),
                       ),
                     );
                   },
                 ),
               ),
-              
+
               if (totalPages > 1) _buildPaginationControls(totalPages),
             ],
           );
@@ -209,27 +222,37 @@ class _PurchasesPageState extends State<PurchasesPage> {
       ),
     );
   }
-  
+
   Color _getStatusColor(DocumentStatus status) {
     switch (status) {
-      case DocumentStatus.draft: return Colors.grey;
-      case DocumentStatus.posted: return Colors.blue;
-      case DocumentStatus.received: return Colors.green;
-      case DocumentStatus.cancelled: return Colors.red;
-      default: return Colors.grey;
+      case DocumentStatus.draft:
+        return Colors.grey;
+      case DocumentStatus.posted:
+        return Colors.blue;
+      case DocumentStatus.received:
+        return Colors.green;
+      case DocumentStatus.cancelled:
+        return Colors.red;
+      default:
+        return Colors.grey;
     }
   }
-  
+
   IconData _getStatusIcon(DocumentStatus status) {
     switch (status) {
-      case DocumentStatus.draft: return Icons.edit_note;
-      case DocumentStatus.posted: return Icons.local_shipping;
-      case DocumentStatus.received: return Icons.check_circle;
-      case DocumentStatus.cancelled: return Icons.cancel;
-      default: return Icons.help_outline;
+      case DocumentStatus.draft:
+        return Icons.edit_note;
+      case DocumentStatus.posted:
+        return Icons.local_shipping;
+      case DocumentStatus.received:
+        return Icons.check_circle;
+      case DocumentStatus.cancelled:
+        return Icons.cancel;
+      default:
+        return Icons.help_outline;
     }
   }
-  
+
   void _showPurchaseActions(BuildContext context, Purchase purchase) {
     showModalBottomSheet(
       context: context,
@@ -257,7 +280,8 @@ class _PurchasesPageState extends State<PurchasesPage> {
             if (purchase.status == DocumentStatus.draft)
               ListTile(
                 leading: const Icon(Icons.edit, color: Colors.orange),
-                title: const Text('تعديل', style: TextStyle(color: Colors.orange)),
+                title:
+                    const Text('تعديل', style: TextStyle(color: Colors.orange)),
                 onTap: () {
                   Navigator.pop(context);
                   context.push('/purchases/edit/${purchase.id}');
@@ -277,13 +301,14 @@ class _PurchasesPageState extends State<PurchasesPage> {
       ),
     );
   }
-  
+
   void _confirmDelete(BuildContext context, Purchase purchase) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('تأكيد الحذف'),
-        content: Text('هل أنت متأكد من حذف عملية الشراء #${purchase.id.substring(0, 8)}؟'),
+        content: Text(
+            'هل أنت متأكد من حذف عملية الشراء #${purchase.id.substring(0, 8)}؟'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -293,18 +318,19 @@ class _PurchasesPageState extends State<PurchasesPage> {
             onPressed: () async {
               Navigator.pop(context);
               final db = Provider.of<AppDatabase>(context, listen: false);
-              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              final authProvider =
+                  Provider.of<AuthProvider>(context, listen: false);
               final userId = authProvider.currentUser?.id;
-              
+
               try {
                 await db.purchasesDao.deletePurchase(purchase.id);
-                
+
                 await di.sl<AuditService>().logDelete(
-                  'Purchase',
-                  purchase.id,
-                  userId: userId,
-                );
-                
+                      'Purchase',
+                      purchase.id,
+                      userId: userId,
+                    );
+
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('تم حذف عملية الشراء بنجاح')),
@@ -339,9 +365,8 @@ class _PurchasesPageState extends State<PurchasesPage> {
         children: [
           IconButton(
             icon: const Icon(Icons.chevron_left),
-            onPressed: _currentPage > 0
-                ? () => setState(() => _currentPage--)
-                : null,
+            onPressed:
+                _currentPage > 0 ? () => setState(() => _currentPage--) : null,
           ),
           Text('صفحة ${_currentPage + 1} من $totalPages'),
           const SizedBox(width: 8),
@@ -368,7 +393,8 @@ class _PurchasesPageState extends State<PurchasesPage> {
         db.warehouses,
         db.warehouses.id.equalsExp(db.purchases.warehouseId),
       ),
-    ])..orderBy([drift.OrderingTerm.desc(db.purchases.date)]);
+    ])
+      ..orderBy([drift.OrderingTerm.desc(db.purchases.date)]);
 
     final rows = await query.get();
     return rows.map((row) {

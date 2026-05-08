@@ -19,10 +19,13 @@ class PermissionGuard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
-    if (!authProvider.isAuthenticated) return fallback ?? const SizedBox.shrink();
+    if (!authProvider.isAuthenticated) {
+      return fallback ?? const SizedBox.shrink();
+    }
 
     return FutureBuilder<bool>(
-      future: sl<PermissionService>().hasPermission(authProvider.currentUser!.id, permission),
+      future: sl<PermissionService>()
+          .hasPermission(authProvider.currentUser!.id, permission),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());

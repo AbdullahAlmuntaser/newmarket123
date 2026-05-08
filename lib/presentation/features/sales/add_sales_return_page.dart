@@ -36,7 +36,8 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
     final db = Provider.of<AppDatabase>(context, listen: false);
     final sale = await (db.select(
       db.sales,
-    )..where((s) => s.id.equals(saleId))).getSingleOrNull();
+    )..where((s) => s.id.equals(saleId)))
+        .getSingleOrNull();
     if (sale != null) {
       setState(() {
         _selectedSale = sale;
@@ -120,9 +121,8 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
             : null,
         label: Text(l10n.processReturn),
         icon: const Icon(Icons.check),
-        backgroundColor: _returnedQuantities.values.any((q) => q > 0)
-            ? null
-            : Colors.grey,
+        backgroundColor:
+            _returnedQuantities.values.any((q) => q > 0) ? null : Colors.grey,
       ),
     );
   }
@@ -223,10 +223,9 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
                               icon: const Icon(Icons.remove_circle_outline),
                               onPressed: returnedQty > 0
                                   ? () => setState(
-                                      () =>
-                                          _returnedQuantities[item.productId] =
-                                              returnedQty - 1,
-                                    )
+                                        () => _returnedQuantities[
+                                            item.productId] = returnedQty - 1,
+                                      )
                                   : null,
                             ),
                             SizedBox(
@@ -244,10 +243,9 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
                               icon: const Icon(Icons.add_circle_outline),
                               onPressed: returnedQty < item.quantity
                                   ? () => setState(
-                                      () =>
-                                          _returnedQuantities[item.productId] =
-                                              returnedQty + 1,
-                                    )
+                                        () => _returnedQuantities[
+                                            item.productId] = returnedQty + 1,
+                                      )
                                   : null,
                             ),
                           ],

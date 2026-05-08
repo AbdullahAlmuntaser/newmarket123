@@ -57,12 +57,10 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
 
   Future<void> _loadCurrencies() async {
     final db = Provider.of<AppDatabase>(context, listen: false);
-    final fetchedCurrencies = await db
-        .customSelect('SELECT * FROM currencies')
-        .map((row) {
-          return Currency.fromJson(row.data);
-        })
-        .get();
+    final fetchedCurrencies =
+        await db.customSelect('SELECT * FROM currencies').map((row) {
+      return Currency.fromJson(row.data);
+    }).get();
     final baseCurrency = fetchedCurrencies.firstWhere(
       (c) => c.isBase,
       orElse: () => fetchedCurrencies.first,
@@ -200,8 +198,8 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
                             syncStatus: 1,
                           ), // Fallback
                     );
-                    _exchangeRateController.text = selectedCurrency.exchangeRate
-                        .toString();
+                    _exchangeRateController.text =
+                        selectedCurrency.exchangeRate.toString();
                   });
                 },
                 validator: (value) =>

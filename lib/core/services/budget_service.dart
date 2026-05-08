@@ -21,7 +21,7 @@ class BudgetService {
 
     for (var budget in budgets) {
       final remaining = budget.budgetedAmount - budget.actualAmount;
-      
+
       // 1. منع التجاوز
       if (expenseAmount > remaining) {
         throw Exception(
@@ -30,12 +30,13 @@ class BudgetService {
       }
 
       // 2. إرسال تنبيه إذا تجاوز الاستهلاك 90%
-      final consumption = (budget.actualAmount + expenseAmount) / budget.budgetedAmount;
+      final consumption =
+          (budget.actualAmount + expenseAmount) / budget.budgetedAmount;
       if (consumption >= 0.9) {
         await notificationService.showNotification(
           costCenterId,
           'تنبيه ميزانية',
-          'مركز التكلفة ${budget.name} استهلك ${ (consumption * 100).toStringAsFixed(0) }% من الميزانية المخصصة.',
+          'مركز التكلفة ${budget.name} استهلك ${(consumption * 100).toStringAsFixed(0)}% من الميزانية المخصصة.',
         );
       }
     }
@@ -56,7 +57,8 @@ class BudgetService {
       await (db.update(db.accBudgets)..where((b) => b.id.equals(budget.id)))
           .write(AccBudgetsCompanion(
         actualAmount: Value(budget.actualAmount + expenseAmount),
-        variance: Value(budget.budgetedAmount - (budget.actualAmount + expenseAmount)),
+        variance: Value(
+            budget.budgetedAmount - (budget.actualAmount + expenseAmount)),
       ));
     }
   }

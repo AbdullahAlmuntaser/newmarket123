@@ -10,12 +10,15 @@ class HREmployees extends Table {
   DateTimeColumn get hireDate => dateTime()();
   RealColumn get basicSalary => real()();
   RealColumn get housingAllowance => real().withDefault(const Constant(0.0))();
-  RealColumn get transportAllowance => real().withDefault(const Constant(0.0))();
+  RealColumn get transportAllowance =>
+      real().withDefault(const Constant(0.0))();
   RealColumn get otherAllowances => real().withDefault(const Constant(0.0))();
-  RealColumn get totalDeductions => real().withDefault(const Constant(0.0))(); // خصومات ثابتة
+  RealColumn get totalDeductions =>
+      real().withDefault(const Constant(0.0))(); // خصومات ثابتة
   TextColumn get bankAccountNumber => text().nullable()();
   TextColumn get bankName => text().nullable()();
-  TextColumn get status => text().withDefault(const Constant('active'))(); // active, terminated
+  TextColumn get status =>
+      text().withDefault(const Constant('active'))(); // active, terminated
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -29,7 +32,8 @@ class HRPayrollRuns extends Table {
   RealColumn get totalDeductions => real().withDefault(const Constant(0.0))();
   RealColumn get netPayable => real().withDefault(const Constant(0.0))();
   IntColumn get journalEntryId => integer().nullable()(); // ربط بالقيد المحاسبي
-  TextColumn get status => text().withDefault(const Constant('draft'))(); // draft, posted, paid
+  TextColumn get status =>
+      text().withDefault(const Constant('draft'))(); // draft, posted, paid
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
@@ -41,13 +45,17 @@ class HRPayrollDetails extends Table {
   IntColumn get employeeId => integer().references(HREmployees, #id)();
   RealColumn get basicSalary => real()();
   RealColumn get housingAllowance => real().withDefault(const Constant(0.0))();
-  RealColumn get transportAllowance => real().withDefault(const Constant(0.0))();
+  RealColumn get transportAllowance =>
+      real().withDefault(const Constant(0.0))();
   RealColumn get otherAllowances => real().withDefault(const Constant(0.0))();
   RealColumn get grossSalary => real()(); // إجمالي الراتب قبل الخصومات
-  RealColumn get deductions => real().withDefault(const Constant(0.0))(); // صافي الخصومات لهذا الشهر
+  RealColumn get deductions =>
+      real().withDefault(const Constant(0.0))(); // صافي الخصومات لهذا الشهر
   RealColumn get netSalary => real()(); // صافي الراتب
-  IntColumn get paymentJournalEntryId => integer().nullable()(); // قيد السداد الفردي (اختياري)
-  TextColumn get paymentStatus => text().withDefault(const Constant('pending'))(); // pending, paid
+  IntColumn get paymentJournalEntryId =>
+      integer().nullable()(); // قيد السداد الفردي (اختياري)
+  TextColumn get paymentStatus =>
+      text().withDefault(const Constant('pending'))(); // pending, paid
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -60,6 +68,7 @@ class HRAdditionalDeductions extends Table {
   DateTimeColumn get deductionDate => dateTime()();
   TextColumn get description => text().nullable()();
   BoolColumn get isRecurring => boolean().withDefault(const Constant(false))();
-  IntColumn get remainingInstallments => integer().withDefault(const Constant(0))(); // للأقساط
+  IntColumn get remainingInstallments =>
+      integer().withDefault(const Constant(0))(); // للأقساط
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }

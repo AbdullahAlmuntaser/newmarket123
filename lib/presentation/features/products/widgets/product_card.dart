@@ -57,9 +57,9 @@ class ProductCard extends StatelessWidget {
               child: Text(
                 '${l10n.sellPriceLabel}: ${product.sellPrice.toStringAsFixed(2)} ${l10n.currencySymbol}',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                ),
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
             ),
             const Spacer(),

@@ -56,7 +56,8 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
     final isEditing = user != null;
 
     final nameController = TextEditingController(text: user?.fullName ?? '');
-    final usernameController = TextEditingController(text: user?.username ?? '');
+    final usernameController =
+        TextEditingController(text: user?.username ?? '');
     final passwordController = TextEditingController();
     String selectedRole = user?.role ?? 'cashier';
 
@@ -83,16 +84,20 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
                       controller: passwordController,
                       decoration: InputDecoration(
                         labelText: l10n.password,
-                        hintText: isEditing ? 'اتركه فارغاً للاحتفاظ بكلمة المرور' : null,
+                        hintText: isEditing
+                            ? 'اتركه فارغاً للاحتفاظ بكلمة المرور'
+                            : null,
                       ),
                       obscureText: true,
                     ),
                     DropdownButtonFormField<String>(
                       key: ValueKey(selectedRole), // Unique key forces rebuild
                       value: selectedRole,
-                      onChanged: (value) => setState(() => selectedRole = value!),
+                      onChanged: (value) =>
+                          setState(() => selectedRole = value!),
                       items: ['admin', 'manager', 'cashier']
-                          .map((role) => DropdownMenuItem(value: role, child: Text(role)))
+                          .map((role) =>
+                              DropdownMenuItem(value: role, child: Text(role)))
                           .toList(),
                       decoration: InputDecoration(labelText: l10n.role),
                     ),
@@ -114,7 +119,8 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
                       if (isEditing) {
                         String finalPassword = user.password;
                         if (password.isNotEmpty) {
-                          finalPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+                          finalPassword =
+                              BCrypt.hashpw(password, BCrypt.gensalt());
                         }
                         await db.usersDao.updateUser(user.copyWith(
                           fullName: fullName,
@@ -152,7 +158,9 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
         title: const Text('حذف مستخدم'),
         content: Text('هل أنت متأكد من حذف ${user.fullName}؟'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('إلغاء')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),

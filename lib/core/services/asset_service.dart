@@ -43,7 +43,8 @@ class AssetService {
 
           await (db.update(
             db.fixedAssets,
-          )..where((t) => t.id.equals(asset.id))).write(
+          )..where((t) => t.id.equals(asset.id)))
+              .write(
             FixedAssetsCompanion(
               accumulatedDepreciation: Value(
                 asset.accumulatedDepreciation + monthlyDepreciation,

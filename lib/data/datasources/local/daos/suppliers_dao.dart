@@ -48,11 +48,17 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
 
   // AP Invoices
   Stream<List<APInvoice>> watchAPInvoices(String supplierId) {
-    return (select(aPInvoices)..where((t) => t.supplierId.equals(supplierId))).watch();
+    return (select(aPInvoices)..where((t) => t.supplierId.equals(supplierId)))
+        .watch();
   }
 
   Stream<List<APInvoice>> watchAllAPInvoices() {
-    return (select(aPInvoices)..orderBy([(t) => OrderingTerm(expression: t.invoiceDate, mode: OrderingMode.desc)])).watch();
+    return (select(aPInvoices)
+          ..orderBy([
+            (t) =>
+                OrderingTerm(expression: t.invoiceDate, mode: OrderingMode.desc)
+          ]))
+        .watch();
   }
 
   Future<int> createAPInvoice(APInvoicesCompanion entry) {
@@ -81,7 +87,8 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
       // 1. البحث عن الحساب الرئيسي للموردين (مثلاً '2010')
       final parentAccount = await (select(
         gLAccounts,
-      )..where((t) => t.code.equals('2010'))).getSingleOrNull();
+      )..where((t) => t.code.equals('2010')))
+          .getSingleOrNull();
 
       final accountId = const Uuid().v4();
       final supplierId = const Uuid().v4();
@@ -141,11 +148,11 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
     final List<SupplierTransaction> allTransactions = [];
 
     // 1. جلب المشتريات الآجلة
-    final supplierPurchases =
-        await (select(db.purchases)..where(
-              (p) => p.supplierId.equals(supplierId) & p.isCredit.equals(true),
-            ))
-            .get();
+    final supplierPurchases = await (select(db.purchases)
+          ..where(
+            (p) => p.supplierId.equals(supplierId) & p.isCredit.equals(true),
+          ))
+        .get();
 
     for (var purchase in supplierPurchases) {
       allTransactions.add(
@@ -162,7 +169,9 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
     }
 
     // 2. جلب فواتير الذمم الدائنة (AP Invoices)
-    final apInvoicesList = await (select(aPInvoices)..where((t) => t.supplierId.equals(supplierId))).get();
+    final apInvoicesList = await (select(aPInvoices)
+          ..where((t) => t.supplierId.equals(supplierId)))
+        .get();
     for (var inv in apInvoicesList) {
       allTransactions.add(
         SupplierTransaction(
@@ -179,7 +188,8 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
     // 3. جلب المدفوعات للمورد (سند صرف)
     final payments = await (select(
       db.supplierPayments,
-    )..where((p) => p.supplierId.equals(supplierId))).get();
+    )..where((p) => p.supplierId.equals(supplierId)))
+        .get();
 
     for (var payment in payments) {
       allTransactions.add(
@@ -200,7 +210,8 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
         db.purchases,
         db.purchases.id.equalsExp(db.purchaseReturns.purchaseId),
       ),
-    ])..where(db.purchases.supplierId.equals(supplierId));
+    ])
+      ..where(db.purchases.supplierId.equals(supplierId));
 
     final returnRows = await returnsQuery.get();
     for (var row in returnRows) {

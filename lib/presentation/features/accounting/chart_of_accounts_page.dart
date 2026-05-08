@@ -229,8 +229,10 @@ class _ChartOfAccountsPageState extends State<ChartOfAccountsPage> {
                   items: ['صندوق', 'بنك', 'عميل', 'مورد', 'موظف', 'مركز تكلفة']
                       .map((t) => DropdownMenuItem(value: t, child: Text(t)))
                       .toList(),
-                  onChanged: (val) => setState(() => selectedAnalyticType = val),
-                  decoration: const InputDecoration(labelText: 'الحساب التحليلي'),
+                  onChanged: (val) =>
+                      setState(() => selectedAnalyticType = val),
+                  decoration:
+                      const InputDecoration(labelText: 'الحساب التحليلي'),
                 ),
                 SwitchListTile(
                   title: Text(l10n.isHeader),

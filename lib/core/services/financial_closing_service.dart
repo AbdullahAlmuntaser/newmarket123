@@ -54,7 +54,8 @@ class FinancialClosingService {
 
     final period = await (db.select(
       db.accountingPeriods,
-    )..where((p) => p.id.equals(periodId))).getSingleOrNull();
+    )..where((p) => p.id.equals(periodId)))
+        .getSingleOrNull();
     if (period == null) {
       errors.add('الفترة غير موجودة');
       return ClosingValidation(
@@ -75,14 +76,16 @@ class FinancialClosingService {
 
     final draftSales = await (db.select(
       db.sales,
-    )..where((s) => s.status.equals(DocumentStatus.draft.index))).get();
+    )..where((s) => s.status.equals(DocumentStatus.draft.index)))
+        .get();
     if (draftSales.isNotEmpty) {
       warnings.add('يوجد ${draftSales.length} فاتورة مبيعات كمسودة');
     }
 
     final draftEntries = await (db.select(
       db.gLEntries,
-    )..where((e) => e.status.equals(DocumentStatus.draft.name.toUpperCase()))).get();
+    )..where((e) => e.status.equals(DocumentStatus.draft.name.toUpperCase())))
+        .get();
     if (draftEntries.isNotEmpty) {
       errors.add('يوجد ${draftEntries.length} قيد محاسبي كمسودة');
     }
@@ -110,7 +113,8 @@ class FinancialClosingService {
 
     final period = await (db.select(
       db.accountingPeriods,
-    )..where((p) => p.id.equals(periodId))).getSingle();
+    )..where((p) => p.id.equals(periodId)))
+        .getSingle();
 
     final incomeStatement = await _accountingService.getIncomeStatement(
       startDate: period.startDate,
@@ -156,7 +160,8 @@ class FinancialClosingService {
 
     final period = await (db.select(
       db.accountingPeriods,
-    )..where((p) => p.id.equals(periodId))).getSingle();
+    )..where((p) => p.id.equals(periodId)))
+        .getSingle();
 
     final incomeStatement = await _accountingService.getIncomeStatement(
       startDate: period.startDate,
@@ -285,10 +290,12 @@ class FinancialClosingService {
   }) async {
     final entryId = const Uuid().v4();
     final allAccounts = await db.accountingDao.getAllAccounts();
-    
+
     // Asset, Liability, and Equity accounts need opening balances
     final permanentAccounts = allAccounts.where(
-      (a) => (a.type == 'ASSET' || a.type == 'LIABILITY' || a.type == 'EQUITY') && !a.isHeader,
+      (a) =>
+          (a.type == 'ASSET' || a.type == 'LIABILITY' || a.type == 'EQUITY') &&
+          !a.isHeader,
     );
 
     final lines = <GLLinesCompanion>[];
@@ -343,7 +350,8 @@ class FinancialClosingService {
   ) async {
     final period = await (db.select(
       db.accountingPeriods,
-    )..where((p) => p.id.equals(periodId))).getSingleOrNull();
+    )..where((p) => p.id.equals(periodId)))
+        .getSingleOrNull();
 
     if (period == null) {
       return ClosingResult(
@@ -418,7 +426,8 @@ class FinancialClosingService {
   }) async {
     final shift = await (db.select(
       db.shifts,
-    )..where((s) => s.id.equals(shiftId))).getSingleOrNull();
+    )..where((s) => s.id.equals(shiftId)))
+        .getSingleOrNull();
 
     if (shift == null) {
       return ClosingResult(
@@ -529,7 +538,8 @@ class FinancialClosingService {
   }) async {
     final existing = await (db.select(
       db.accountingPeriods,
-    )..where((p) => p.name.equals(name))).getSingleOrNull();
+    )..where((p) => p.name.equals(name)))
+        .getSingleOrNull();
     if (existing != null) {
       return ClosingResult(
         success: false,
@@ -550,9 +560,7 @@ class FinancialClosingService {
     }
 
     final periodId = const Uuid().v4();
-    await db
-        .into(db.accountingPeriods)
-        .insert(
+    await db.into(db.accountingPeriods).insert(
           AccountingPeriodsCompanion.insert(
             id: Value(periodId),
             name: name,

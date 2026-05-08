@@ -73644,6 +73644,34 @@ class $$AccCurrenciesTableFilterComposer
       column: $state.table.createdAt,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ComposableFilter accExchangeRatesFrom(
+      ComposableFilter Function($$AccExchangeRatesTableFilterComposer f) f) {
+    final $$AccExchangeRatesTableFilterComposer composer =
+        $state.composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $state.db.accExchangeRates,
+            getReferencedColumn: (t) => t.fromCurrencyId,
+            builder: (joinBuilder, parentComposers) =>
+                $$AccExchangeRatesTableFilterComposer(ComposerState($state.db,
+                    $state.db.accExchangeRates, joinBuilder, parentComposers)));
+    return f(composer);
+  }
+
+  ComposableFilter accExchangeRatesTo(
+      ComposableFilter Function($$AccExchangeRatesTableFilterComposer f) f) {
+    final $$AccExchangeRatesTableFilterComposer composer =
+        $state.composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $state.db.accExchangeRates,
+            getReferencedColumn: (t) => t.toCurrencyId,
+            builder: (joinBuilder, parentComposers) =>
+                $$AccExchangeRatesTableFilterComposer(ComposerState($state.db,
+                    $state.db.accExchangeRates, joinBuilder, parentComposers)));
+    return f(composer);
+  }
 }
 
 class $$AccCurrenciesTableOrderingComposer

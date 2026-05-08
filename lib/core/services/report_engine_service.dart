@@ -35,16 +35,16 @@ class ReportEngineService {
     }
 
     final results = await query.get();
-    
+
     // تجميع البيانات حسب المنتج
     final Map<String, Map<String, dynamic>> productStats = {};
-    
+
     for (final row in results) {
       final productId = row.readTable(_db.saleItems).productId;
       final productName = row.readTableOrNull(_db.products)?.name ?? 'Unknown';
       final quantity = row.readTable(_db.saleItems).quantity;
       final price = row.readTable(_db.saleItems).price;
-      
+
       if (!productStats.containsKey(productId)) {
         productStats[productId] = {
           'productId': productId,
@@ -53,24 +53,25 @@ class ReportEngineService {
           'totalRevenue': 0.0,
         };
       }
-      
+
       productStats[productId]!['totalQuantity'] += quantity;
       productStats[productId]!['totalRevenue'] += (quantity * price);
     }
 
     final report = productStats.values.toList()
-      ..sort((a, b) => (b['totalQuantity'] as int).compareTo(a['totalQuantity'] as int));
+      ..sort((a, b) =>
+          (b['totalQuantity'] as int).compareTo(a['totalQuantity'] as int));
 
     return report.take(limit).toList();
   }
 
-/// تقرير هامش الربح
+  /// تقرير هامش الربح
   Future<List<Map<String, dynamic>>> getProfitMarginReport({
     DateTime? startDate,
     DateTime? endDate,
   }) async {
     final report = <Map<String, dynamic>>[];
-    
+
     var query = _db.select(_db.sales);
     if (startDate != null) {
       query = query..where((s) => s.createdAt.isBiggerOrEqualValue(startDate));
@@ -78,7 +79,7 @@ class ReportEngineService {
     if (endDate != null) {
       query = query..where((s) => s.createdAt.isSmallerOrEqualValue(endDate));
     }
-    
+
     final sales = await query.get();
 
     for (final sale in sales) {
@@ -93,7 +94,7 @@ class ReportEngineService {
         final product = await (_db.select(_db.products)
               ..where((p) => p.id.equals(item.productId)))
             .getSingle();
-        
+
         totalCost += (product.buyPrice * item.quantity);
       }
 
@@ -114,7 +115,8 @@ class ReportEngineService {
   }
 
   /// تقرير حركة صنف
-  Future<List<Map<String, dynamic>>> getProductMovementReport(String productId) async {
+  Future<List<Map<String, dynamic>>> getProductMovementReport(
+      String productId) async {
     final movements = <Map<String, dynamic>>[];
 
     // حركات المبيعات
@@ -173,8 +175,9 @@ class ReportEngineService {
     }
 
     // ترتيب حسب التاريخ وحساب الرصيد التراكمي
-    movements.sort((a, b) => (a['date'] as DateTime).compareTo(b['date'] as DateTime));
-    
+    movements.sort(
+        (a, b) => (a['date'] as DateTime).compareTo(b['date'] as DateTime));
+
     int runningBalance = 0;
     for (final movement in movements) {
       runningBalance += movement['quantity'] as int;
@@ -194,8 +197,9 @@ class ReportEngineService {
     if (data.isEmpty) return '';
 
     final headers = data.first.keys.join(',');
-    final rows = data.map((row) => row.values.map((v) => v.toString()).join(','));
-    
+    final rows =
+        data.map((row) => row.values.map((v) => v.toString()).join(','));
+
     return [headers, ...rows].join('\n');
   }
 
@@ -212,7 +216,7 @@ class ReportEngineService {
 
     for (final sale in sales) {
       final dateKey = DateFormat('yyyy-MM-dd').format(sale.createdAt);
-      
+
       if (!dailySales.containsKey(dateKey)) {
         dailySales[dateKey] = {
           'date': dateKey,
@@ -225,7 +229,7 @@ class ReportEngineService {
 
       dailySales[dateKey]!['totalSales'] += sale.total;
       dailySales[dateKey]!['totalTransactions']++;
-      
+
       if (sale.paymentMethod == PaymentMethod.cash) {
         dailySales[dateKey]!['cashSales'] += sale.total;
       } else {
@@ -240,7 +244,7 @@ class ReportEngineService {
   /// تقرير قيمة المخزون
   Future<Map<String, dynamic>> getInventoryValuationReport() async {
     final products = await _db.select(_db.products).get();
-    
+
     double totalValue = 0;
     double totalItems = 0;
     final categories = <String, double>{};

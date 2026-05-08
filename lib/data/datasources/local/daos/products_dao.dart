@@ -53,12 +53,13 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
     String productId,
     String warehouseId,
   ) {
-    return (select(productBatches)..where(
-          (b) =>
-              b.productId.equals(productId) &
-              b.warehouseId.equals(warehouseId) &
-              b.quantity.isBiggerThan(const Variable(0)),
-        ))
+    return (select(productBatches)
+          ..where(
+            (b) =>
+                b.productId.equals(productId) &
+                b.warehouseId.equals(warehouseId) &
+                b.quantity.isBiggerThan(const Variable(0)),
+          ))
         .get();
   }
 
@@ -84,7 +85,8 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
       for (var item in items) {
         final sourceBatch = await (select(
           productBatches,
-        )..where((b) => b.id.equals(item.batchId))).getSingle();
+        )..where((b) => b.id.equals(item.batchId)))
+            .getSingle();
 
         if (sourceBatch.quantity < item.quantity) {
           throw Exception('الكمية المطلوبة غير متوفرة في الدفعة المحددة');
@@ -92,25 +94,27 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
 
         await (update(
           productBatches,
-        )..where((b) => b.id.equals(item.batchId))).write(
+        )..where((b) => b.id.equals(item.batchId)))
+            .write(
           ProductBatchesCompanion(
             quantity: Value(sourceBatch.quantity - item.quantity),
           ),
         );
 
-        final targetBatch =
-            await (select(productBatches)..where(
-                  (b) =>
-                      b.productId.equals(item.productId) &
-                      b.warehouseId.equals(toWarehouseId) &
-                      b.batchNumber.equals(sourceBatch.batchNumber),
-                ))
-                .getSingleOrNull();
+        final targetBatch = await (select(productBatches)
+              ..where(
+                (b) =>
+                    b.productId.equals(item.productId) &
+                    b.warehouseId.equals(toWarehouseId) &
+                    b.batchNumber.equals(sourceBatch.batchNumber),
+              ))
+            .getSingleOrNull();
 
         if (targetBatch != null) {
           await (update(
             productBatches,
-          )..where((b) => b.id.equals(targetBatch.id))).write(
+          )..where((b) => b.id.equals(targetBatch.id)))
+              .write(
             ProductBatchesCompanion(
               quantity: Value(targetBatch.quantity + item.quantity),
             ),
@@ -177,7 +181,8 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
   Stream<List<Product>> watchLowStockProducts() {
     return (select(
       products,
-    )..where((p) => p.stock.isSmallerOrEqual(p.alertLimit))).watch();
+    )..where((p) => p.stock.isSmallerOrEqual(p.alertLimit)))
+        .watch();
   }
 
   Stream<int> watchLowStockCount() {
@@ -193,13 +198,15 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
   Future<Product?> getProductBySku(String sku) {
     return (select(
       products,
-    )..where((p) => p.sku.equals(sku))).getSingleOrNull();
+    )..where((p) => p.sku.equals(sku)))
+        .getSingleOrNull();
   }
 
   Future<Product?> getProductByBarcode(String barcode) {
     return (select(
       products,
-    )..where((p) => p.barcode.equals(barcode))).getSingleOrNull();
+    )..where((p) => p.barcode.equals(barcode)))
+        .getSingleOrNull();
   }
 
   Future<int> addProduct(ProductsCompanion entry) {
@@ -219,14 +226,16 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
   Future<List<Product>> getVariantsForProduct(String productId) {
     return (select(
       products,
-    )..where((p) => p.parentProductId.equals(productId))).get();
+    )..where((p) => p.parentProductId.equals(productId)))
+        .get();
   }
 
   /// Stream variants for a product
   Stream<List<Product>> watchVariantsForProduct(String productId) {
     return (select(
       products,
-    )..where((p) => p.parentProductId.equals(productId))).watch();
+    )..where((p) => p.parentProductId.equals(productId)))
+        .watch();
   }
 
   /// Get a product with its variants (returns the parent)

@@ -14,7 +14,8 @@ class BomService {
   Future<List<BillOfMaterial>> getBomForProduct(String productId) {
     return (db.select(
       db.billOfMaterials,
-    )..where((tbl) => tbl.finishedProductId.equals(productId))).get();
+    )..where((tbl) => tbl.finishedProductId.equals(productId)))
+        .get();
   }
 
   /// الحصول على جميع وصفات التصنيع
@@ -28,9 +29,7 @@ class BomService {
     String componentProductId,
     double quantity,
   ) async {
-    await db
-        .into(db.billOfMaterials)
-        .insert(
+    await db.into(db.billOfMaterials).insert(
           BillOfMaterialsCompanion.insert(
             finishedProductId: finishedProductId,
             componentProductId: componentProductId,
@@ -49,14 +48,16 @@ class BomService {
   Future<void> removeComponent(String id) async {
     await (db.delete(
       db.billOfMaterials,
-    )..where((tbl) => tbl.id.equals(id))).go();
+    )..where((tbl) => tbl.id.equals(id)))
+        .go();
   }
 
   /// حذف جميع المكونات لمنتج مُصنَّع
   Future<void> clearBomForProduct(String productId) async {
     await (db.delete(
       db.billOfMaterials,
-    )..where((tbl) => tbl.finishedProductId.equals(productId))).go();
+    )..where((tbl) => tbl.finishedProductId.equals(productId)))
+        .go();
   }
 
   /// تنفيذ عملية التجميع (Assembly)
@@ -78,14 +79,14 @@ class BomService {
     // التحقق من توفر المخزون
     for (final component in components) {
       final requiredQty = component.quantity * producedQuantity;
-      final available =
-          await (db.select(db.productBatches)..where(
-                (b) =>
-                    b.productId.equals(component.componentProductId) &
-                    b.warehouseId.equals(warehouseId) &
-                    b.quantity.isBiggerThan(const Constant(0)),
-              ))
-              .get();
+      final available = await (db.select(db.productBatches)
+            ..where(
+              (b) =>
+                  b.productId.equals(component.componentProductId) &
+                  b.warehouseId.equals(warehouseId) &
+                  b.quantity.isBiggerThan(const Constant(0)),
+            ))
+          .get();
 
       double totalAvailable = 0;
       for (final batch in available) {
@@ -117,9 +118,7 @@ class BomService {
       final finalBatchNumber =
           batchNumber ?? 'ASM-${DateTime.now().millisecondsSinceEpoch}';
       final cost = await _calculateAssemblyCost(components);
-      await db
-          .into(db.productBatches)
-          .insert(
+      await db.into(db.productBatches).insert(
             ProductBatchesCompanion.insert(
               productId: finishedProductId,
               warehouseId: warehouseId,
@@ -131,9 +130,7 @@ class BomService {
             ),
           );
 
-      await db
-          .into(db.inventoryTransactions)
-          .insert(
+      await db.into(db.inventoryTransactions).insert(
             InventoryTransactionsCompanion.insert(
               productId: finishedProductId,
               warehouseId: warehouseId,
@@ -159,26 +156,24 @@ class BomService {
   ) async {
     double remaining = quantity;
 
-    final batches =
-        await (db.select(db.productBatches)
-              ..where(
-                (b) =>
-                    b.productId.equals(productId) &
-                    b.warehouseId.equals(warehouseId) &
-                    b.quantity.isBiggerThan(const Constant(0)),
-              )
-              ..orderBy([
-                (b) => OrderingTerm.asc(b.expiryDate),
-                (b) => OrderingTerm.asc(b.createdAt),
-              ]))
-            .get();
+    final batches = await (db.select(db.productBatches)
+          ..where(
+            (b) =>
+                b.productId.equals(productId) &
+                b.warehouseId.equals(warehouseId) &
+                b.quantity.isBiggerThan(const Constant(0)),
+          )
+          ..orderBy([
+            (b) => OrderingTerm.asc(b.expiryDate),
+            (b) => OrderingTerm.asc(b.createdAt),
+          ]))
+        .get();
 
     for (final batch in batches) {
       if (remaining <= 0) break;
 
-      final consumeQty = batch.quantity < remaining
-          ? batch.quantity
-          : remaining;
+      final consumeQty =
+          batch.quantity < remaining ? batch.quantity : remaining;
       final newQty = batch.quantity - consumeQty;
       remaining -= consumeQty;
 
@@ -186,9 +181,7 @@ class BomService {
           .write(ProductBatchesCompanion(quantity: Value(newQty)));
 
       // تسجيل حركة المخزون
-      await db
-          .into(db.inventoryTransactions)
-          .insert(
+      await db.into(db.inventoryTransactions).insert(
             InventoryTransactionsCompanion.insert(
               productId: productId,
               warehouseId: warehouseId,
@@ -205,10 +198,9 @@ class BomService {
   Future<double> _calculateAssemblyCost(List<BillOfMaterial> components) async {
     double totalCost = 0;
     for (final component in components) {
-      final product =
-          await (db.select(db.products)
-                ..where((p) => p.id.equals(component.componentProductId)))
-              .getSingleOrNull();
+      final product = await (db.select(db.products)
+            ..where((p) => p.id.equals(component.componentProductId)))
+          .getSingleOrNull();
       if (product != null) {
         totalCost += product.buyPrice * component.quantity;
       }
@@ -219,7 +211,8 @@ class BomService {
   Future<String> _getProductName(String productId) async {
     final product = await (db.select(
       db.products,
-    )..where((p) => p.id.equals(productId))).getSingleOrNull();
+    )..where((p) => p.id.equals(productId)))
+        .getSingleOrNull();
     return product?.name ?? productId;
   }
 }

@@ -25,9 +25,7 @@ class ShiftService {
       throw Exception('There is already an active shift for this user.');
     }
 
-    await db
-        .into(db.shifts)
-        .insert(
+    await db.into(db.shifts).insert(
           ShiftsCompanion.insert(
             id: Value(const Uuid().v4()),
             userId: userId,
@@ -44,37 +42,37 @@ class ShiftService {
     final endTime = shift.endTime ?? DateTime.now();
 
     // Get all cash sales during the shift
-    final cashSales =
-        await (db.select(db.sales)..where(
-              (t) =>
-                  t.createdAt.isBiggerOrEqual(Variable(startTime)) &
-                  t.createdAt.isSmallerOrEqual(Variable(endTime)) &
-                  t.paymentMethod.equals(PaymentMethod.cash.index),
-            ))
-            .get();
+    final cashSales = await (db.select(db.sales)
+          ..where(
+            (t) =>
+                t.createdAt.isBiggerOrEqual(Variable(startTime)) &
+                t.createdAt.isSmallerOrEqual(Variable(endTime)) &
+                t.paymentMethod.equals(PaymentMethod.cash.index),
+          ))
+        .get();
     final totalCashSales = cashSales.fold(0.0, (sum, sale) => sum + sale.total);
 
     // Get all customer cash payments during the shift
-    final customerPayments =
-        await (db.select(db.customerPayments)..where(
-              (t) =>
-                  t.paymentDate.isBiggerOrEqual(Variable(startTime)) &
-                  t.paymentDate.isSmallerOrEqual(Variable(endTime)),
-            ))
-            .get();
+    final customerPayments = await (db.select(db.customerPayments)
+          ..where(
+            (t) =>
+                t.paymentDate.isBiggerOrEqual(Variable(startTime)) &
+                t.paymentDate.isSmallerOrEqual(Variable(endTime)),
+          ))
+        .get();
     final totalCustomerPayments = customerPayments.fold(
       0.0,
       (sum, p) => sum + p.amount,
     );
 
     // Get all supplier cash payments (expenses) during the shift
-    final supplierPayments =
-        await (db.select(db.supplierPayments)..where(
-              (t) =>
-                  t.paymentDate.isBiggerOrEqual(Variable(startTime)) &
-                  t.paymentDate.isSmallerOrEqual(Variable(endTime)),
-            ))
-            .get();
+    final supplierPayments = await (db.select(db.supplierPayments)
+          ..where(
+            (t) =>
+                t.paymentDate.isBiggerOrEqual(Variable(startTime)) &
+                t.paymentDate.isSmallerOrEqual(Variable(endTime)),
+          ))
+        .get();
     final totalSupplierPayments = supplierPayments.fold(
       0.0,
       (sum, p) => sum + p.amount,
@@ -93,7 +91,8 @@ class ShiftService {
   }) async {
     final shift = await (db.select(
       db.shifts,
-    )..where((t) => t.id.equals(shiftId))).getSingle();
+    )..where((t) => t.id.equals(shiftId)))
+        .getSingle();
     final expectedCash = await calculateExpectedCash(shift);
 
     await (db.update(db.shifts)..where((t) => t.id.equals(shiftId))).write(

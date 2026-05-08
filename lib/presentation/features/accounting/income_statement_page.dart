@@ -137,9 +137,9 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
       child: Text(
         title.toUpperCase(),
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).colorScheme.primary,
-        ),
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
+            ),
       ),
     );
   }

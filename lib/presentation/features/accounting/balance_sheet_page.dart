@@ -98,7 +98,7 @@ class BalanceSheetPage extends StatelessWidget {
   Widget _buildBalanceCheck(BalanceSheetData data, AppLocalizations l10n) {
     final isBalanced =
         (data.totalAssets - (data.totalLiabilities + data.totalEquity)).abs() <
-        0.01;
+            0.01;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(

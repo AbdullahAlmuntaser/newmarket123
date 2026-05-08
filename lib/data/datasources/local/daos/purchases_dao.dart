@@ -27,7 +27,8 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase>
   Stream<List<PurchaseItem>> watchPurchaseItems(String purchaseId) {
     return (select(
       purchaseItems,
-    )..where((pi) => pi.purchaseId.equals(purchaseId))).watch();
+    )..where((pi) => pi.purchaseId.equals(purchaseId)))
+        .watch();
   }
 
   Future<Purchase?> getPurchaseById(String id) {
@@ -35,16 +36,19 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase>
   }
 
   Stream<List<PurchaseReturn>> watchAllPurchaseReturns() {
-    return (select(purchaseReturns)..orderBy([
-          (t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc),
-        ]))
+    return (select(purchaseReturns)
+          ..orderBy([
+            (t) =>
+                OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc),
+          ]))
         .watch();
   }
 
   Stream<List<PurchaseReturnItem>> watchPurchaseReturnItems(String returnId) {
     return (select(
       purchaseReturnItems,
-    )..where((pi) => pi.purchaseReturnId.equals(returnId))).watch();
+    )..where((pi) => pi.purchaseReturnId.equals(returnId)))
+        .watch();
   }
 
   Future<void> createPurchase({
@@ -115,7 +119,8 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase>
   }) async {
     final query = select(purchaseItems).join([
       innerJoin(purchases, purchases.id.equalsExp(purchaseItems.purchaseId)),
-    ])..where(purchaseItems.productId.equals(productId));
+    ])
+      ..where(purchaseItems.productId.equals(productId));
 
     if (supplierId != null) {
       query.where(purchases.supplierId.equals(supplierId));
@@ -138,7 +143,8 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase>
         purchaseItems,
         purchaseItems.purchaseId.equalsExp(purchases.id),
       ),
-    ])..where(purchaseItems.productId.equals(productId));
+    ])
+      ..where(purchaseItems.productId.equals(productId));
 
     if (supplierId != null) {
       query.where(purchases.supplierId.equals(supplierId));
@@ -163,17 +169,18 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase>
 
   // --- Purchase Orders ---
   Stream<List<PurchaseOrder>> watchAllPurchaseOrders() {
-    return (select(purchaseOrders)..orderBy([
-          (t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc),
-        ]))
+    return (select(purchaseOrders)
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc),
+          ]))
         .watch();
   }
 
-Future<List<PurchaseOrderItem>> getPurchaseOrderItems(String orderId) {
+  Future<List<PurchaseOrderItem>> getPurchaseOrderItems(String orderId) {
     return (select(
       purchaseOrderItems,
     )..where((pi) => pi.orderId.equals(orderId)))
-    .get();
+        .get();
   }
 
   Future<List<PurchaseOrder>> getInvoicesByDateRange({
@@ -181,9 +188,11 @@ Future<List<PurchaseOrderItem>> getPurchaseOrderItems(String orderId) {
     required DateTime endDate,
   }) {
     return (select(purchaseOrders)
-      ..where((p) => p.date.isBiggerOrEqualValue(startDate) & p.date.isSmallerOrEqualValue(endDate))
-      ..orderBy([(p) => OrderingTerm.desc(p.date)]))
-    .get();
+          ..where((p) =>
+              p.date.isBiggerOrEqualValue(startDate) &
+              p.date.isSmallerOrEqualValue(endDate))
+          ..orderBy([(p) => OrderingTerm.desc(p.date)]))
+        .get();
   }
 
   Future<void> createPurchaseOrder({
@@ -206,7 +215,9 @@ Future<List<PurchaseOrderItem>> getPurchaseOrderItems(String orderId) {
 
   Future<void> deletePurchase(String purchaseId) async {
     return transaction(() async {
-      await (delete(purchaseItems)..where((i) => i.purchaseId.equals(purchaseId))).go();
+      await (delete(purchaseItems)
+            ..where((i) => i.purchaseId.equals(purchaseId)))
+          .go();
       await (delete(purchases)..where((p) => p.id.equals(purchaseId))).go();
 
       await into(auditLogs).insert(
@@ -227,9 +238,12 @@ Future<List<PurchaseOrderItem>> getPurchaseOrderItems(String orderId) {
     required String? userId,
   }) async {
     return transaction(() async {
-      await (update(purchases)..where((p) => p.id.equals(purchaseId))).write(purchaseCompanion);
-      
-      await (delete(purchaseItems)..where((i) => i.purchaseId.equals(purchaseId))).go();
+      await (update(purchases)..where((p) => p.id.equals(purchaseId)))
+          .write(purchaseCompanion);
+
+      await (delete(purchaseItems)
+            ..where((i) => i.purchaseId.equals(purchaseId)))
+          .go();
       for (var item in itemsCompanions) {
         await into(purchaseItems).insert(item);
       }

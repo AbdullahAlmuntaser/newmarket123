@@ -38,14 +38,16 @@ class _BillAllocationWidgetState extends State<BillAllocationWidget> {
     });
   }
 
-  double get _totalAllocated => _allocations.values.fold(0, (sum, val) => sum + val);
+  double get _totalAllocated =>
+      _allocations.values.fold(0, (sum, val) => sum + val);
   double get _remainingAmount => widget.totalPaymentAmount - _totalAllocated;
 
   void _updateAllocation(String saleId, double amount, double maxBalance) {
     if (amount > maxBalance) amount = maxBalance;
-    
+
     // Ensure we don't allocate more than the total payment
-    final currentOtherAllocations = _totalAllocated - (_allocations[saleId] ?? 0);
+    final currentOtherAllocations =
+        _totalAllocated - (_allocations[saleId] ?? 0);
     if (amount + currentOtherAllocations > widget.totalPaymentAmount) {
       amount = widget.totalPaymentAmount - currentOtherAllocations;
     }
@@ -59,18 +61,22 @@ class _BillAllocationWidgetState extends State<BillAllocationWidget> {
     });
 
     widget.onAllocationChanged(
-      _allocations.entries.map((e) => Allocation(saleId: e.key, amount: e.value)).toList(),
+      _allocations.entries
+          .map((e) => Allocation(saleId: e.key, amount: e.value))
+          .toList(),
     );
   }
 
   void _autoAllocate() {
     double remaining = widget.totalPaymentAmount;
     Map<String, double> newAllocations = {};
-    
+
     for (var saleWithBalance in _outstandingSales) {
       if (remaining <= 0) break;
-      
-      double toAllocate = remaining > saleWithBalance.balance ? saleWithBalance.balance : remaining;
+
+      double toAllocate = remaining > saleWithBalance.balance
+          ? saleWithBalance.balance
+          : remaining;
       newAllocations[saleWithBalance.sale.id] = toAllocate;
       remaining -= toAllocate;
     }
@@ -80,7 +86,9 @@ class _BillAllocationWidgetState extends State<BillAllocationWidget> {
     });
 
     widget.onAllocationChanged(
-      _allocations.entries.map((e) => Allocation(saleId: e.key, amount: e.value)).toList(),
+      _allocations.entries
+          .map((e) => Allocation(saleId: e.key, amount: e.value))
+          .toList(),
     );
   }
 
@@ -141,28 +149,41 @@ class _BillAllocationWidgetState extends State<BillAllocationWidget> {
             return Card(
               margin: const EdgeInsets.only(bottom: 8),
               child: ListTile(
-                title: Text('فاتورة #${sale.id.substring(0, 8)} - ${sale.createdAt.toString().split(' ')[0]}'),
-                subtitle: Text('الإجمالي: ${sale.total} | المتبقي: ${saleWithBalance.balance}'),
+                title: Text(
+                    'فاتورة #${sale.id.substring(0, 8)} - ${sale.createdAt.toString().split(' ')[0]}'),
+                subtitle: Text(
+                    'الإجمالي: ${sale.total} | المتبقي: ${saleWithBalance.balance}'),
                 trailing: SizedBox(
                   width: 120,
                   child: TextField(
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
                       hintText: '0.00',
-                      suffixIcon: isAllocated ? IconButton(
-                        icon: const Icon(Icons.clear, size: 16),
-                        onPressed: () => _updateAllocation(sale.id, 0, saleWithBalance.balance),
-                      ) : null,
+                      suffixIcon: isAllocated
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 16),
+                              onPressed: () => _updateAllocation(
+                                  sale.id, 0, saleWithBalance.balance),
+                            )
+                          : null,
                     ),
                     onChanged: (val) {
                       final amount = double.tryParse(val) ?? 0;
-                      _updateAllocation(sale.id, amount, saleWithBalance.balance);
+                      _updateAllocation(
+                          sale.id, amount, saleWithBalance.balance);
                     },
                     controller: TextEditingController(
-                      text: isAllocated ? _allocations[sale.id]!.toStringAsFixed(2) : '',
+                      text: isAllocated
+                          ? _allocations[sale.id]!.toStringAsFixed(2)
+                          : '',
                     )..selection = TextSelection.fromPosition(
-                      TextPosition(offset: isAllocated ? _allocations[sale.id]!.toStringAsFixed(2).length : 0),
-                    ),
+                        TextPosition(
+                            offset: isAllocated
+                                ? _allocations[sale.id]!
+                                    .toStringAsFixed(2)
+                                    .length
+                                : 0),
+                      ),
                   ),
                 ),
               ),

@@ -47,7 +47,7 @@ class FinancialReportsService {
       for (var invoice in salesInvoices) {
         final subtotal = invoice.total - invoice.tax;
         final tax = invoice.tax;
-        
+
         totalSalesExcludingVAT += subtotal;
         totalVATCollected += tax;
       }
@@ -56,7 +56,7 @@ class FinancialReportsService {
       for (var invoice in purchaseInvoices) {
         final subtotal = invoice.total;
         const tax = 0.0; // PurchaseOrder doesn't have tax field
-        
+
         totalPurchasesExcludingVAT += subtotal;
         totalVATPaid += tax;
       }
@@ -96,7 +96,8 @@ class FinancialReportsService {
 
       // Filter by customer if specified
       if (customerId != null) {
-        invoices = invoices.where((inv) => inv.customerId == customerId).toList();
+        invoices =
+            invoices.where((inv) => inv.customerId == customerId).toList();
       }
 
       double totalRevenue = 0.0;
@@ -154,7 +155,8 @@ class FinancialReportsService {
 
       // Filter by supplier if specified
       if (supplierId != null) {
-        invoices = invoices.where((inv) => inv.supplierId == supplierId).toList();
+        invoices =
+            invoices.where((inv) => inv.supplierId == supplierId).toList();
       }
 
       double totalPurchases = 0.0;
@@ -207,8 +209,9 @@ class FinancialReportsService {
       );
 
       // Calculate gross profit
-      final grossProfit = salesReport.totalRevenue - purchaseReport.totalPurchases;
-      
+      final grossProfit =
+          salesReport.totalRevenue - purchaseReport.totalPurchases;
+
       // Calculate operating expenses
       final accountingDao = AccountingDao(database);
       final expenseAccounts = await accountingDao.getAccountsByType('EXPENSE');
@@ -223,7 +226,7 @@ class FinancialReportsService {
           );
         }
       }
-      
+
       final netProfit = grossProfit - operatingExpenses;
 
       return ProfitLossReport(
@@ -234,11 +237,11 @@ class FinancialReportsService {
         grossProfit: grossProfit,
         operatingExpenses: operatingExpenses,
         netProfit: netProfit,
-        grossProfitMargin: salesReport.totalRevenue > 0 
-            ? (grossProfit / salesReport.totalRevenue * 100) 
+        grossProfitMargin: salesReport.totalRevenue > 0
+            ? (grossProfit / salesReport.totalRevenue * 100)
             : 0.0,
-        netProfitMargin: salesReport.totalRevenue > 0 
-            ? (netProfit / salesReport.totalRevenue * 100) 
+        netProfitMargin: salesReport.totalRevenue > 0
+            ? (netProfit / salesReport.totalRevenue * 100)
             : 0.0,
         generatedAt: DateTime.now(),
       );
@@ -256,11 +259,11 @@ class FinancialReportsService {
   }) async {
     try {
       final movements = <InventoryMovement>[];
-      
+
       // Get all inventory transactions in period
       // This would query the InventoryTransactions table
       // For now, we'll return a basic structure
-      
+
       return InventoryMovementReport(
         startDate: startDate,
         endDate: endDate,
@@ -277,20 +280,24 @@ class FinancialReportsService {
   /// Export report to CSV format
   String exportToCSV<T>(T report) {
     final buffer = StringBuffer();
-    
+
     if (report is VATReport) {
       buffer.writeln('تقرير ضريبة القيمة المضافة');
-      buffer.writeln('من: ${DateFormat('yyyy-MM-dd').format(report.startDate)}');
+      buffer
+          .writeln('من: ${DateFormat('yyyy-MM-dd').format(report.startDate)}');
       buffer.writeln('إلى: ${DateFormat('yyyy-MM-dd').format(report.endDate)}');
       buffer.writeln();
-      buffer.writeln('إجمالي المبيعات (بدون ضريبة),${report.totalSalesExcludingVAT}');
+      buffer.writeln(
+          'إجمالي المبيعات (بدون ضريبة),${report.totalSalesExcludingVAT}');
       buffer.writeln('إجمالي الضريبة المحصلة,${report.totalVATCollected}');
-      buffer.writeln('إجمالي المشتريات (بدون ضريبة),${report.totalPurchasesExcludingVAT}');
+      buffer.writeln(
+          'إجمالي المشتريات (بدون ضريبة),${report.totalPurchasesExcludingVAT}');
       buffer.writeln('إجمالي الضريبة المدفوعة,${report.totalVATPaid}');
       buffer.writeln('صافي الضريبة المستحقة,${report.netVATPayable}');
     } else if (report is SalesReport) {
       buffer.writeln('تقرير المبيعات');
-      buffer.writeln('من: ${DateFormat('yyyy-MM-dd').format(report.startDate)}');
+      buffer
+          .writeln('من: ${DateFormat('yyyy-MM-dd').format(report.startDate)}');
       buffer.writeln('إلى: ${DateFormat('yyyy-MM-dd').format(report.endDate)}');
       buffer.writeln();
       buffer.writeln('إجمالي الإيرادات,${report.totalRevenue}');
@@ -299,7 +306,7 @@ class FinancialReportsService {
       buffer.writeln('صافي المبيعات,${report.totalNet}');
       buffer.writeln('عدد الفواتير,${report.invoicesCount}');
     }
-    
+
     return buffer.toString();
   }
 }
@@ -330,7 +337,7 @@ class VATReport {
     required this.generatedAt,
   });
 
-  String get formattedPeriod => 
+  String get formattedPeriod =>
       '${DateFormat('yyyy-MM-dd').format(startDate)} إلى ${DateFormat('yyyy-MM-dd').format(endDate)}';
 }
 

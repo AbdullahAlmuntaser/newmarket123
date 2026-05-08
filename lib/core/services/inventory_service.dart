@@ -44,24 +44,23 @@ class InventoryService {
     String? warehouseId,
     int limit = 100,
   }) {
-    final query =
-        db.select(db.inventoryTransactions).join([
-            drift.innerJoin(
-              db.products,
-              db.products.id.equalsExp(db.inventoryTransactions.productId),
-            ),
-            drift.leftOuterJoin(
-              db.warehouses,
-              db.warehouses.id.equalsExp(db.inventoryTransactions.warehouseId),
-            ),
-          ])
-          ..orderBy([
-            drift.OrderingTerm(
-              expression: db.inventoryTransactions.date,
-              mode: drift.OrderingMode.desc,
-            ),
-          ])
-          ..limit(limit);
+    final query = db.select(db.inventoryTransactions).join([
+      drift.innerJoin(
+        db.products,
+        db.products.id.equalsExp(db.inventoryTransactions.productId),
+      ),
+      drift.leftOuterJoin(
+        db.warehouses,
+        db.warehouses.id.equalsExp(db.inventoryTransactions.warehouseId),
+      ),
+    ])
+      ..orderBy([
+        drift.OrderingTerm(
+          expression: db.inventoryTransactions.date,
+          mode: drift.OrderingMode.desc,
+        ),
+      ])
+      ..limit(limit);
 
     if (productId != null) {
       query.where(db.inventoryTransactions.productId.equals(productId));
@@ -146,11 +145,10 @@ class InventoryService {
         db.warehouses,
         db.warehouses.id.equalsExp(db.productBatches.warehouseId),
       ),
-    ])..where(
-      db.productBatches.expiryDate.isBiggerOrEqual(Variable(now)) &
-      db.productBatches.expiryDate.isSmallerOrEqual(Variable(threshold)) &
-      db.productBatches.quantity.isBiggerThan(const Variable(0))
-    );
+    ])
+      ..where(db.productBatches.expiryDate.isBiggerOrEqual(Variable(now)) &
+          db.productBatches.expiryDate.isSmallerOrEqual(Variable(threshold)) &
+          db.productBatches.quantity.isBiggerThan(const Variable(0)));
 
     return query.watch().map((rows) {
       return rows.map((row) {
@@ -184,14 +182,13 @@ class InventoryService {
         // 2. جلب المنتج الحالي لمعرفة المخزون المسجل
         final product = await (db.select(
           db.products,
-        )..where((p) => p.id.equals(productId))).getSingle();
+        )..where((p) => p.id.equals(productId)))
+            .getSingle();
         final systemStock = product.stock;
         final difference = actualStock - systemStock;
 
         // 3. تحديث سجل الجرد بالتفاصيل المحسوبة
-        await db
-            .into(db.inventoryAuditItems)
-            .insert(
+        await db.into(db.inventoryAuditItems).insert(
               item.copyWith(
                 auditId: drift.Value(auditId as String),
                 systemStock: drift.Value(systemStock),
@@ -207,20 +204,19 @@ class InventoryService {
           // 5. تحديث الدفعات (Batches) - منطق التسوية
           if (difference < 0) {
             double remainingToDeduct = difference.abs();
-            final batches =
-                await (db.select(db.productBatches)
-                      ..where(
-                        (b) =>
-                            b.productId.equals(productId) &
-                            b.quantity.isBiggerThan(const Variable(0)),
-                      )
-                      ..orderBy([
-                        (b) => drift.OrderingTerm(
+            final batches = await (db.select(db.productBatches)
+                  ..where(
+                    (b) =>
+                        b.productId.equals(productId) &
+                        b.quantity.isBiggerThan(const Variable(0)),
+                  )
+                  ..orderBy([
+                    (b) => drift.OrderingTerm(
                           expression: b.createdAt,
                           mode: drift.OrderingMode.asc,
                         ),
-                      ]))
-                    .get();
+                  ]))
+                .get();
 
             for (var batch in batches) {
               if (remainingToDeduct <= 0) break;
@@ -230,7 +226,8 @@ class InventoryService {
 
               await (db.update(
                 db.productBatches,
-              )..where((b) => b.id.equals(batch.id))).write(
+              )..where((b) => b.id.equals(batch.id)))
+                  .write(
                 ProductBatchesCompanion(
                   quantity: drift.Value(batch.quantity - deductFromThisBatch),
                 ),
@@ -242,21 +239,23 @@ class InventoryService {
           } else {
             // فائض - إنشاء دفعة جديدة
             // الحصول على المستودع الافتراضي من الإعدادات
-            final defaultWarehouseId = await _configService.getDefaultWarehouseId();
+            final defaultWarehouseId =
+                await _configService.getDefaultWarehouseId();
             const uuid = Uuid();
             final averageCost = product.buyPrice;
             await db.into(db.productBatches).insert(
-              ProductBatchesCompanion(
-                id: drift.Value(uuid.v4()),
-                productId: drift.Value(productId),
-                warehouseId: drift.Value(defaultWarehouseId),
-                batchNumber: drift.Value('AUDIT-${auditId.toString().substring(0, 8)}'),
-                expiryDate: const drift.Value(null),
-                quantity: drift.Value(difference),
-                initialQuantity: drift.Value(difference),
-                costPrice: drift.Value(averageCost),
-              ),
-            );
+                  ProductBatchesCompanion(
+                    id: drift.Value(uuid.v4()),
+                    productId: drift.Value(productId),
+                    warehouseId: drift.Value(defaultWarehouseId),
+                    batchNumber: drift.Value(
+                        'AUDIT-${auditId.toString().substring(0, 8)}'),
+                    expiryDate: const drift.Value(null),
+                    quantity: drift.Value(difference),
+                    initialQuantity: drift.Value(difference),
+                    costPrice: drift.Value(averageCost),
+                  ),
+                );
             totalInventoryAdjustmentValue += difference * averageCost;
           }
         }
@@ -358,24 +357,25 @@ class InventoryService {
     await db.transaction(() async {
       final product = await (db.select(
         db.products,
-      )..where((p) => p.id.equals(itemId))).getSingle();
-      
+      )..where((p) => p.id.equals(itemId)))
+          .getSingle();
+
       // التحقق من إعدادات السماح بالمخزون السلبي
-      final allowNegative = await _configService.getBool('allow_negative_stock', defaultValue: false);
-      
+      final allowNegative = await _configService.getBool('allow_negative_stock',
+          defaultValue: false);
+
       if (!allowNegative && product.stock < quantity) {
-        throw Exception('الرصيد الحالي (${product.stock}) غير كافٍ لخصم الكمية ($quantity). العملية مرفوضة.');
+        throw Exception(
+            'الرصيد الحالي (${product.stock}) غير كافٍ لخصم الكمية ($quantity). العملية مرفوضة.');
       }
 
       final newStock = product.stock - quantity;
-      
+
       await (db.update(db.products)..where((p) => p.id.equals(itemId))).write(
         ProductsCompanion(stock: drift.Value(newStock)),
       );
 
-      await db
-          .into(db.stockMovements)
-          .insert(
+      await db.into(db.stockMovements).insert(
             StockMovementsCompanion.insert(
               productId: itemId,
               quantity: -quantity,
@@ -392,7 +392,8 @@ class InventoryService {
           targetEntity: 'Products',
           entityId: itemId,
           userId: userId ?? 'SYSTEM',
-          details: 'تم خصم الكمية $quantity والرصيد أصبح $newStock (مسموح حسب الإعدادات)',
+          details:
+              'تم خصم الكمية $quantity والرصيد أصبح $newStock (مسموح حسب الإعدادات)',
         );
       }
     });
@@ -432,11 +433,13 @@ class InventoryService {
             .getSingle();
 
         if (sourceBatch.quantity < qty) {
-          throw Exception('الكمية غير كافية في الدفعة المصدر لمستودع ${sourceBatch.warehouseId}');
+          throw Exception(
+              'الكمية غير كافية في الدفعة المصدر لمستودع ${sourceBatch.warehouseId}');
         }
 
         await (db.update(db.productBatches)..where((b) => b.id.equals(batchId)))
-            .write(ProductBatchesCompanion(quantity: drift.Value(sourceBatch.quantity - qty)));
+            .write(ProductBatchesCompanion(
+                quantity: drift.Value(sourceBatch.quantity - qty)));
 
         // 3. تحديث أو إنشاء الدفعة في المستودع الهدف (Batch In)
         // نحاول البحث عن دفعة بنفس رقم التشغيلة وتاريخ الانتهاء في المستودع الهدف
@@ -450,8 +453,10 @@ class InventoryService {
             .getSingleOrNull();
 
         if (targetBatch != null) {
-          await (db.update(db.productBatches)..where((b) => b.id.equals(targetBatch.id)))
-              .write(ProductBatchesCompanion(quantity: drift.Value(targetBatch.quantity + qty)));
+          await (db.update(db.productBatches)
+                ..where((b) => b.id.equals(targetBatch.id)))
+              .write(ProductBatchesCompanion(
+                  quantity: drift.Value(targetBatch.quantity + qty)));
         } else {
           // إنشاء دفعة جديدة في المستودع الهدف
           await db.into(db.productBatches).insert(
@@ -488,7 +493,8 @@ class InventoryService {
               InventoryTransactionsCompanion.insert(
                 productId: productId,
                 warehouseId: toWarehouseId,
-                batchId: drift.Value(batchId), // نستخدم نفس المعرف المرجعي أو نحدثه لاحقاً
+                batchId: drift.Value(
+                    batchId), // نستخدم نفس المعرف المرجعي أو نحدثه لاحقاً
                 quantity: qty,
                 type: 'TRANSFER_IN',
                 referenceId: transferId,

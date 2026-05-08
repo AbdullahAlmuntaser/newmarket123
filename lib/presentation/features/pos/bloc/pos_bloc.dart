@@ -17,7 +17,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
   late StreamSubscription _productSubscription;
 
   PosBloc(this.db, this.pricingService, this.transactionEngine)
-    : super(PosLoading()) {
+      : super(PosLoading()) {
     on<LoadCategories>(_onLoadCategories);
     on<SelectCategory>(_onSelectCategory);
     on<AddProductBySku>(_onAddProduct);
@@ -142,13 +142,13 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     final currentState = state as PosLoaded;
 
     try {
-      final products =
-          await (db.select(db.products)..where(
-                (t) => event.categoryId != null
-                    ? t.categoryId.equals(event.categoryId!)
-                    : const Constant(true),
-              ))
-              .get();
+      final products = await (db.select(db.products)
+            ..where(
+              (t) => event.categoryId != null
+                  ? t.categoryId.equals(event.categoryId!)
+                  : const Constant(true),
+            ))
+          .get();
 
       emit(
         currentState.copyWith(
@@ -174,15 +174,14 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     }
 
     try {
-      final results =
-          await (db.select(db.products)
-                ..where(
-                  (t) =>
-                      t.name.like('%${event.query}%') |
-                      t.sku.like('%${event.query}%'),
-                )
-                ..limit(10))
-              .get();
+      final results = await (db.select(db.products)
+            ..where(
+              (t) =>
+                  t.name.like('%${event.query}%') |
+                  t.sku.like('%${event.query}%'),
+            )
+            ..limit(10))
+          .get();
 
       emit(currentState.copyWith(searchResults: results));
     } catch (e) {
@@ -202,7 +201,8 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       // 1. البحث في باركودات الوحدات أولاً (لأنه قد يكون باركود كرتون)
       final unitConv = await (db.select(
         db.unitConversions,
-      )..where((t) => t.barcode.equals(event.sku))).getSingleOrNull();
+      )..where((t) => t.barcode.equals(event.sku)))
+          .getSingleOrNull();
 
       Product? product;
       String unitName = 'حبة';
@@ -212,7 +212,8 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       if (unitConv != null) {
         product = await (db.select(
           db.products,
-        )..where((t) => t.id.equals(unitConv.productId))).getSingle();
+        )..where((t) => t.id.equals(unitConv.productId)))
+            .getSingle();
         unitName = unitConv.unitName;
         factor = Decimal.parse(unitConv.factor.toString());
         specificPrice = unitConv.sellPrice != null
@@ -222,7 +223,8 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         // 2. إذا لم يجد في الوحدات، يبحث في باركود المنتج الأساسي
         product = await (db.select(
           db.products,
-        )..where((t) => t.sku.equals(event.sku))).getSingleOrNull();
+        )..where((t) => t.sku.equals(event.sku)))
+            .getSingleOrNull();
         if (product != null) {
           unitName = product.unit;
         }
@@ -237,7 +239,8 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       // جلب كافة الوحدات المتاحة لهذا المنتج
       final allUnits = await (db.select(
         db.unitConversions,
-      )..where((t) => t.productId.equals(product!.id))).get();
+      )..where((t) => t.productId.equals(product!.id)))
+          .get();
 
       // جلب السعر الأدق عبر PricingService
       Decimal finalPrice = await pricingService.calculatePrice(
@@ -317,9 +320,9 @@ class PosBloc extends Bloc<PosEvent, PosState> {
           selectedUnit = null;
         } else {
           selectedUnit = item.availableUnits.cast<UnitConversion?>().firstWhere(
-            (u) => u?.unitName == event.unitName,
-            orElse: () => null,
-          );
+                (u) => u?.unitName == event.unitName,
+                orElse: () => null,
+              );
         }
 
         final unitName = event.unitName;
@@ -367,18 +370,17 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     final newCart = currentState.cart.map((item) {
       Decimal newPrice;
       if (event.isWholesale) {
-        newPrice =
-            Decimal.parse(item.product.wholesalePrice.toString()) *
+        newPrice = Decimal.parse(item.product.wholesalePrice.toString()) *
             item.unitFactor;
       } else {
         final unitInfo = item.availableUnits.cast<UnitConversion?>().firstWhere(
-          (u) => u?.unitName == item.unitName,
-          orElse: () => null,
-        );
+              (u) => u?.unitName == item.unitName,
+              orElse: () => null,
+            );
         newPrice = (unitInfo?.sellPrice != null)
             ? Decimal.parse(unitInfo!.sellPrice.toString())
             : Decimal.parse(item.product.sellPrice.toString()) *
-                  item.unitFactor;
+                item.unitFactor;
       }
       return item.copyWith(isWholesale: event.isWholesale, unitPrice: newPrice);
     }).toList();
@@ -419,7 +421,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         method = PaymentMethod.check;
       }
 
-       final saleCompanion = SalesCompanion.insert(
+      final saleCompanion = SalesCompanion.insert(
         id: Value(saleId),
         customerId: Value(event.customerId),
         total: total.toDouble(),
@@ -459,10 +461,12 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       // 4. Fetch final objects for success emission
       final saleObj = await (db.select(
         db.sales,
-      )..where((s) => s.id.equals(saleId))).getSingle();
+      )..where((s) => s.id.equals(saleId)))
+          .getSingle();
       final saleItemsForAccounting = await (db.select(
         db.saleItems,
-      )..where((si) => si.saleId.equals(saleId))).get();
+      )..where((si) => si.saleId.equals(saleId)))
+          .get();
 
       emit(
         PosCheckoutSuccess(

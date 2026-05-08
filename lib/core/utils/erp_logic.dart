@@ -83,9 +83,8 @@ class ErpLogic {
     double requestedQty,
     bool isCarton,
   ) {
-    double actualQty = isCarton
-        ? requestedQty * product.piecesPerCarton
-        : requestedQty;
+    double actualQty =
+        isCarton ? requestedQty * product.piecesPerCarton : requestedQty;
     return product.stock >= actualQty;
   }
 

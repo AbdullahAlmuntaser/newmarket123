@@ -55,7 +55,8 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
   Stream<List<Customer>> watchAllCustomers() {
     return (select(
       customers,
-    )..where((tbl) => tbl.isActive.equals(true))).watch();
+    )..where((tbl) => tbl.isActive.equals(true)))
+        .watch();
   }
 
   Stream<int> watchTotalCustomers() {
@@ -68,11 +69,17 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
 
   // AR Invoices
   Stream<List<ARInvoice>> watchARInvoices(String customerId) {
-    return (select(aRInvoices)..where((t) => t.customerId.equals(customerId))).watch();
+    return (select(aRInvoices)..where((t) => t.customerId.equals(customerId)))
+        .watch();
   }
 
   Stream<List<ARInvoice>> watchAllARInvoices() {
-    return (select(aRInvoices)..orderBy([(t) => OrderingTerm(expression: t.invoiceDate, mode: OrderingMode.desc)])).watch();
+    return (select(aRInvoices)
+          ..orderBy([
+            (t) =>
+                OrderingTerm(expression: t.invoiceDate, mode: OrderingMode.desc)
+          ]))
+        .watch();
   }
 
   Future<int> createARInvoice(ARInvoicesCompanion entry) {
@@ -102,7 +109,8 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
       // إذا لم يوجد، نستخدم حساب الأصول المتداولة الرئيسي
       final parentAccount = await (select(
         gLAccounts,
-      )..where((t) => t.code.equals('1201'))).getSingleOrNull();
+      )..where((t) => t.code.equals('1201')))
+          .getSingleOrNull();
 
       final accountId = const Uuid().v4();
       final customerId = const Uuid().v4();
@@ -161,7 +169,8 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
   Future<List<CustomerPayment>> getPaymentsForCustomer(String customerId) {
     return (select(
       customerPayments,
-    )..where((p) => p.customerId.equals(customerId))).get();
+    )..where((p) => p.customerId.equals(customerId)))
+        .get();
   }
 
   /// جلب كشف حساب تفصيلي للعميل مع الرصيد التراكمي
@@ -171,11 +180,11 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
     final List<CustomerTransaction> allTransactions = [];
 
     // 1. جلب المبيعات الآجلة
-    final customerSales =
-        await (select(db.sales)..where(
-              (s) => s.customerId.equals(customerId) & s.isCredit.equals(true),
-            ))
-            .get();
+    final customerSales = await (select(db.sales)
+          ..where(
+            (s) => s.customerId.equals(customerId) & s.isCredit.equals(true),
+          ))
+        .get();
 
     for (var sale in customerSales) {
       allTransactions.add(
@@ -191,7 +200,9 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
     }
 
     // 2. جلب فواتير الذمم المدينة (AR Invoices)
-    final arInvoicesList = await (select(aRInvoices)..where((t) => t.customerId.equals(customerId))).get();
+    final arInvoicesList = await (select(aRInvoices)
+          ..where((t) => t.customerId.equals(customerId)))
+        .get();
     for (var inv in arInvoicesList) {
       allTransactions.add(
         CustomerTransaction(
@@ -208,7 +219,8 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
     // 3. جلب المدفوعات
     final payments = await (select(
       db.customerPayments,
-    )..where((p) => p.customerId.equals(customerId))).get();
+    )..where((p) => p.customerId.equals(customerId)))
+        .get();
 
     for (var payment in payments) {
       allTransactions.add(
@@ -226,7 +238,8 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
     // 4. جلب المرتجعات
     final returnsQuery = select(db.salesReturns).join([
       innerJoin(db.sales, db.sales.id.equalsExp(db.salesReturns.saleId)),
-    ])..where(db.sales.customerId.equals(customerId));
+    ])
+      ..where(db.sales.customerId.equals(customerId));
 
     final returnRows = await returnsQuery.get();
     for (var row in returnRows) {
@@ -263,7 +276,8 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
     // Get all active customers
     final allCustomers = await (select(
       customers,
-    )..where((c) => c.isActive.equals(true))).get();
+    )..where((c) => c.isActive.equals(true)))
+        .get();
 
     final results = <CustomerSearchResult>[];
 

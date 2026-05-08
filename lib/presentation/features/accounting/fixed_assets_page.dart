@@ -74,100 +74,101 @@ class _FixedAssetsPageState extends State<FixedAssetsPage> {
       body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : provider.assets.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.business_center_outlined,
-                    size: 80,
-                    color: Colors.grey[400],
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.business_center_outlined,
+                        size: 80,
+                        color: Colors.grey[400],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'لا توجد أصول ثابتة مسجلة حالياً.',
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'ابدأ بإضافة أصل جديد من الزر أدناه.',
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'لا توجد أصول ثابتة مسجلة حالياً.',
-                    style: theme.textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'ابدأ بإضافة أصل جديد من الزر أدناه.',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(8.0),
-              itemCount: provider.assets.length,
-              itemBuilder: (context, index) {
-                final asset = provider.assets[index];
-                final bookValue = asset.cost - asset.accumulatedDepreciation;
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(8.0),
+                  itemCount: provider.assets.length,
+                  itemBuilder: (context, index) {
+                    final asset = provider.assets[index];
+                    final bookValue =
+                        asset.cost - asset.accumulatedDepreciation;
 
-                return Card(
-                  elevation: 3,
-                  margin: const EdgeInsets.symmetric(vertical: 8.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          asset.name,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                    return Card(
+                      elevation: 3,
+                      margin: const EdgeInsets.symmetric(vertical: 8.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              asset.name,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Divider(height: 20),
+                            _buildInfoRow(
+                              icon: Icons.calendar_today,
+                              label: 'تاريخ الشراء',
+                              value: DateFormat(
+                                'yyyy-MM-dd',
+                              ).format(asset.purchaseDate),
+                            ),
+                            const SizedBox(height: 8),
+                            _buildInfoRow(
+                              icon: Icons.monetization_on,
+                              label: 'التكلفة الأصلية',
+                              value: currencyFormat.format(asset.cost),
+                            ),
+                            const SizedBox(height: 8),
+                            _buildInfoRow(
+                              icon: Icons.hourglass_bottom,
+                              label: 'العمر الافتراضي',
+                              value: '${asset.usefulLifeYears} سنوات',
+                            ),
+                            const SizedBox(height: 8),
+                            _buildInfoRow(
+                              icon: Icons.recycling,
+                              label: 'قيمة الخردة',
+                              value: currencyFormat.format(asset.salvageValue),
+                            ),
+                            const SizedBox(height: 8),
+                            _buildInfoRow(
+                              icon: Icons.trending_down,
+                              label: 'الإهلاك المتراكم',
+                              value: currencyFormat.format(
+                                asset.accumulatedDepreciation,
+                              ),
+                              color: Colors.orange.shade700,
+                            ),
+                            const Divider(height: 20),
+                            _buildInfoRow(
+                              icon: Icons.book,
+                              label: 'صافي القيمة الدفترية',
+                              value: currencyFormat.format(bookValue),
+                              isTotal: true,
+                            ),
+                          ],
                         ),
-                        const Divider(height: 20),
-                        _buildInfoRow(
-                          icon: Icons.calendar_today,
-                          label: 'تاريخ الشراء',
-                          value: DateFormat(
-                            'yyyy-MM-dd',
-                          ).format(asset.purchaseDate),
-                        ),
-                        const SizedBox(height: 8),
-                        _buildInfoRow(
-                          icon: Icons.monetization_on,
-                          label: 'التكلفة الأصلية',
-                          value: currencyFormat.format(asset.cost),
-                        ),
-                        const SizedBox(height: 8),
-                        _buildInfoRow(
-                          icon: Icons.hourglass_bottom,
-                          label: 'العمر الافتراضي',
-                          value: '${asset.usefulLifeYears} سنوات',
-                        ),
-                        const SizedBox(height: 8),
-                        _buildInfoRow(
-                          icon: Icons.recycling,
-                          label: 'قيمة الخردة',
-                          value: currencyFormat.format(asset.salvageValue),
-                        ),
-                        const SizedBox(height: 8),
-                        _buildInfoRow(
-                          icon: Icons.trending_down,
-                          label: 'الإهلاك المتراكم',
-                          value: currencyFormat.format(
-                            asset.accumulatedDepreciation,
-                          ),
-                          color: Colors.orange.shade700,
-                        ),
-                        const Divider(height: 20),
-                        _buildInfoRow(
-                          icon: Icons.book,
-                          label: 'صافي القيمة الدفترية',
-                          value: currencyFormat.format(bookValue),
-                          isTotal: true,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
+                      ),
+                    );
+                  },
+                ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showDialog(
           context: context,
@@ -187,10 +188,10 @@ class _FixedAssetsPageState extends State<FixedAssetsPage> {
     bool isTotal = false,
   }) {
     final style = Theme.of(context).textTheme.bodyLarge?.copyWith(
-      color: color,
-      fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-      fontSize: isTotal ? 18 : 16,
-    );
+          color: color,
+          fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+          fontSize: isTotal ? 18 : 16,
+        );
     return Row(
       children: [
         Icon(icon, size: 20, color: color ?? Colors.grey.shade600),

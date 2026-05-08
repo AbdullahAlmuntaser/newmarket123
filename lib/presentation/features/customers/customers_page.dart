@@ -352,10 +352,7 @@ class _CustomersPageState extends State<CustomersPage> {
   }
 
   Stream<String> _getTotalBalance(AppDatabase db) {
-    return db
-        .select(db.customers)
-        .watch()
-        .map(
+    return db.select(db.customers).watch().map(
           (customers) => customers
               .fold(0.0, (sum, item) => sum + item.balance)
               .toStringAsFixed(2),
@@ -363,15 +360,16 @@ class _CustomersPageState extends State<CustomersPage> {
   }
 
   Stream<List<Customer>> _getFilteredStream(AppDatabase db) {
-    return (db.select(db.customers)..where((t) {
-          final matchesSearch =
-              t.name.like('%${_searchQuery.toLowerCase()}%') |
-              t.phone.like('%$_searchQuery%');
-          final matchesType = _selectedType == 'ALL'
-              ? const drift.Constant(true)
-              : t.customerType.equals(_selectedType);
-          return matchesSearch & matchesType & t.isActive.equals(true);
-        }))
+    return (db.select(db.customers)
+          ..where((t) {
+            final matchesSearch =
+                t.name.like('%${_searchQuery.toLowerCase()}%') |
+                    t.phone.like('%$_searchQuery%');
+            final matchesType = _selectedType == 'ALL'
+                ? const drift.Constant(true)
+                : t.customerType.equals(_selectedType);
+            return matchesSearch & matchesType & t.isActive.equals(true);
+          }))
         .watch();
   }
 
@@ -462,7 +460,8 @@ class _CustomersPageState extends State<CustomersPage> {
     if (companion != null) {
       await (db.update(
         db.customers,
-      )..where((t) => t.id.equals(customer.id))).write(companion);
+      )..where((t) => t.id.equals(customer.id)))
+          .write(companion);
       if (mounted) {
         ScaffoldMessenger.of(
           context,

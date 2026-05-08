@@ -61,13 +61,13 @@ class _ReconciliationPageState extends State<ReconciliationPage> {
 
   Widget _buildAccountSelector(AppDatabase db) {
     return StreamBuilder<List<GLAccount>>(
-      stream:
-          (db.select(db.gLAccounts)..where(
-                (t) =>
-                    t.code.equals(AccountingService.codeCash) |
-                    t.code.equals(AccountingService.codeBank),
-              ))
-              .watch(),
+      stream: (db.select(db.gLAccounts)
+            ..where(
+              (t) =>
+                  t.code.equals(AccountingService.codeCash) |
+                  t.code.equals(AccountingService.codeBank),
+            ))
+          .watch(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const CircularProgressIndicator();
         return DropdownButtonFormField<String>(
@@ -144,9 +144,7 @@ class _ReconciliationPageState extends State<ReconciliationPage> {
 
           if (diff == 0) {
             // No difference, just record reconciliation
-            await db
-                .into(db.reconciliations)
-                .insert(
+            await db.into(db.reconciliations).insert(
                   ReconciliationsCompanion.insert(
                     accountId: _selectedAccountId!,
                     bookBalance: _bookBalance,
@@ -193,7 +191,7 @@ class _ReconciliationPageState extends State<ReconciliationPage> {
 
             final lines = diff > 0
                 ? // Actual > Book: Cash increased (extra cash found)
-                  [
+                [
                     GLLinesCompanion.insert(
                       entryId: entryId,
                       accountId: cashAccount.id,
@@ -208,7 +206,7 @@ class _ReconciliationPageState extends State<ReconciliationPage> {
                     ),
                   ]
                 : // Actual < Book: Cash decreased (shortage)
-                  [
+                [
                     GLLinesCompanion.insert(
                       entryId: entryId,
                       accountId: cashOverShort.id,
@@ -226,9 +224,7 @@ class _ReconciliationPageState extends State<ReconciliationPage> {
             await db.accountingDao.createEntry(entry, lines);
 
             // Record reconciliation
-            await db
-                .into(db.reconciliations)
-                .insert(
+            await db.into(db.reconciliations).insert(
                   ReconciliationsCompanion.insert(
                     accountId: _selectedAccountId!,
                     bookBalance: _bookBalance,

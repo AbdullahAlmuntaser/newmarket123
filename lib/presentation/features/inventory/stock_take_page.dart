@@ -78,12 +78,12 @@ class _StockTakePageState extends State<StockTakePage> {
             ),
       floatingActionButton:
           _selectedWarehouseId != null && _currentStockTakeId.isNotEmpty
-          ? FloatingActionButton.extended(
-              onPressed: () => _navigateToAddItem(db, _currentStockTakeId),
-              label: const Text('إضافة صنف'),
-              icon: const Icon(Icons.add),
-            )
-          : null,
+              ? FloatingActionButton.extended(
+                  onPressed: () => _navigateToAddItem(db, _currentStockTakeId),
+                  label: const Text('إضافة صنف'),
+                  icon: const Icon(Icons.add),
+                )
+              : null,
     );
   }
 
@@ -135,9 +135,7 @@ class _StockTakePageState extends State<StockTakePage> {
 
   Future<void> _startNewStockTake(AppDatabase db) async {
     final id = const Uuid().v4();
-    await db
-        .into(db.stockTakes)
-        .insert(
+    await db.into(db.stockTakes).insert(
           StockTakesCompanion.insert(
             id: drift.Value(id),
             warehouseId: _selectedWarehouseId!,
@@ -154,7 +152,8 @@ class _StockTakePageState extends State<StockTakePage> {
     return StreamBuilder<List<StockTake>>(
       stream: (db.select(
         db.stockTakes,
-      )..where((st) => st.id.equals(_currentStockTakeId))).watch(),
+      )..where((st) => st.id.equals(_currentStockTakeId)))
+          .watch(),
       builder: (context, stockTakeSnapshot) {
         if (!stockTakeSnapshot.hasData || stockTakeSnapshot.data!.isEmpty) {
           return const Center(child: Text('جاري التحميل...'));
@@ -162,31 +161,31 @@ class _StockTakePageState extends State<StockTakePage> {
         final stockTake = stockTakeSnapshot.data!.first;
 
         return StreamBuilder<List<StockTakeItemData>>(
-          stream:
-              (db.select(db.stockTakeItems).join([
-                    drift.innerJoin(
-                      db.products,
-                      db.products.id.equalsExp(db.stockTakeItems.productId),
-                    ),
-                  ])..where(
-                    db.stockTakeItems.stockTakeId.equals(_currentStockTakeId),
-                  ))
-                  .watch()
-                  .map(
-                    (rows) => rows.map((row) {
-                      final item = row.readTable(db.stockTakeItems);
-                      final product = row.readTable(db.products);
-                      return StockTakeItemData(
-                        stockTakeId: item.stockTakeId,
-                        productId: item.productId,
-                        expectedQty: item.expectedQty,
-                        actualQty: item.actualQty,
-                        variance: item.variance,
-                        productName: product.name,
-                        productSku: product.sku,
-                      );
-                    }).toList(),
-                  ),
+          stream: (db.select(db.stockTakeItems).join([
+            drift.innerJoin(
+              db.products,
+              db.products.id.equalsExp(db.stockTakeItems.productId),
+            ),
+          ])
+                ..where(
+                  db.stockTakeItems.stockTakeId.equals(_currentStockTakeId),
+                ))
+              .watch()
+              .map(
+                (rows) => rows.map((row) {
+                  final item = row.readTable(db.stockTakeItems);
+                  final product = row.readTable(db.products);
+                  return StockTakeItemData(
+                    stockTakeId: item.stockTakeId,
+                    productId: item.productId,
+                    expectedQty: item.expectedQty,
+                    actualQty: item.actualQty,
+                    variance: item.variance,
+                    productName: product.name,
+                    productSku: product.sku,
+                  );
+                }).toList(),
+              ),
           builder: (context, snapshot) {
             final items = snapshot.data ?? [];
             return Column(
@@ -300,19 +299,20 @@ class _StockTakePageState extends State<StockTakePage> {
                     onChanged: (val) async {
                       final actual = double.tryParse(val);
                       if (actual != null) {
-                        await (db.update(db.stockTakeItems)..where(
-                              (t) =>
-                                  t.stockTakeId.equals(item.stockTakeId) &
-                                  t.productId.equals(item.productId),
-                            ))
+                        await (db.update(db.stockTakeItems)
+                              ..where(
+                                (t) =>
+                                    t.stockTakeId.equals(item.stockTakeId) &
+                                    t.productId.equals(item.productId),
+                              ))
                             .write(
-                              StockTakeItemsCompanion(
-                                actualQty: drift.Value(actual),
-                                variance: drift.Value(
-                                  actual - item.expectedQty,
-                                ),
-                              ),
-                            );
+                          StockTakeItemsCompanion(
+                            actualQty: drift.Value(actual),
+                            variance: drift.Value(
+                              actual - item.expectedQty,
+                            ),
+                          ),
+                        );
                       }
                     },
                   ),
@@ -385,12 +385,16 @@ class _StockTakePageState extends State<StockTakePage> {
               backgroundColor: colorScheme.primary,
               foregroundColor: Colors.white,
             ),
-            child: _isSaving 
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            child: _isSaving
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2))
                 : const Text(
-              'اعتماد وإقفال الجرد نهائياً',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+                    'اعتماد وإقفال الجرد نهائياً',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
           ),
         ],
       ),
@@ -405,13 +409,15 @@ class _StockTakePageState extends State<StockTakePage> {
             ..where((t) => t.stockTakeId.equals(stockTake.id)))
           .get();
 
-      final itemsToAudit = auditItems.map((i) => InventoryAuditItemsCompanion.insert(
-        auditId: i.stockTakeId,
-        productId: i.productId,
-        actualStock: i.actualQty,
-        systemStock: i.expectedQty,
-        difference: i.variance,
-      )).toList();
+      final itemsToAudit = auditItems
+          .map((i) => InventoryAuditItemsCompanion.insert(
+                auditId: i.stockTakeId,
+                productId: i.productId,
+                actualStock: i.actualQty,
+                systemStock: i.expectedQty,
+                difference: i.variance,
+              ))
+          .toList();
 
       await inventoryService.performInventoryAudit(
         auditCompanion: InventoryAuditsCompanion.insert(
@@ -422,17 +428,21 @@ class _StockTakePageState extends State<StockTakePage> {
 
       await (db.update(db.stockTakes)..where((t) => t.id.equals(stockTake.id)))
           .write(const StockTakesCompanion(status: drift.Value('COMPLETED')));
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم إقفال الجرد وتحديث المخزون والقيود المحاسبية بنجاح')),
+          const SnackBar(
+              content: Text(
+                  'تم إقفال الجرد وتحديث المخزون والقيود المحاسبية بنجاح')),
         );
         setState(() => _currentStockTakeId = '');
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في إقفال الجرد: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('خطأ في إقفال الجرد: $e'),
+              backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -512,9 +522,7 @@ class _StockTakePageState extends State<StockTakePage> {
             onPressed: () async {
               final actual = double.tryParse(qtyController.text);
               if (actual != null) {
-                await db
-                    .into(db.stockTakeItems)
-                    .insert(
+                await db.into(db.stockTakeItems).insert(
                       StockTakeItemsCompanion.insert(
                         stockTakeId: stockTakeId,
                         productId: product.id,

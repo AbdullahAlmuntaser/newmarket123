@@ -25,7 +25,8 @@ class EntityPicker<T> extends StatefulWidget {
 
 class _EntityPickerState<T> extends State<EntityPicker<T>> {
   String _searchQuery = '';
-  final Debouncer _debouncer = Debouncer(delay: const Duration(milliseconds: 300));
+  final Debouncer _debouncer =
+      Debouncer(delay: const Duration(milliseconds: 300));
 
   @override
   void dispose() {
@@ -143,7 +144,8 @@ class _EntityPickerDropdownState extends State<EntityPickerDropdown> {
   String _searchQuery = '';
   bool _isAddingNew = false;
   final TextEditingController _newEntityController = TextEditingController();
-  final Debouncer _debouncer = Debouncer(delay: const Duration(milliseconds: 300));
+  final Debouncer _debouncer =
+      Debouncer(delay: const Duration(milliseconds: 300));
 
   @override
   void dispose() {
@@ -198,9 +200,8 @@ class _EntityPickerDropdownState extends State<EntityPickerDropdown> {
                 icon: const Icon(Icons.search, size: 18),
                 label: Text(widget.selectLabel),
                 style: OutlinedButton.styleFrom(
-                  backgroundColor: !_isAddingNew
-                      ? theme.colorScheme.primaryContainer
-                      : null,
+                  backgroundColor:
+                      !_isAddingNew ? theme.colorScheme.primaryContainer : null,
                   foregroundColor: !_isAddingNew
                       ? theme.colorScheme.onPrimaryContainer
                       : null,
@@ -214,9 +215,8 @@ class _EntityPickerDropdownState extends State<EntityPickerDropdown> {
                 icon: const Icon(Icons.add, size: 18),
                 label: Text(widget.addNewLabel),
                 style: OutlinedButton.styleFrom(
-                  backgroundColor: _isAddingNew
-                      ? theme.colorScheme.primaryContainer
-                      : null,
+                  backgroundColor:
+                      _isAddingNew ? theme.colorScheme.primaryContainer : null,
                   foregroundColor: _isAddingNew
                       ? theme.colorScheme.onPrimaryContainer
                       : null,
@@ -226,7 +226,6 @@ class _EntityPickerDropdownState extends State<EntityPickerDropdown> {
           ],
         ),
         const SizedBox(height: 12),
-
         if (!_isAddingNew) ...[
           TextField(
             controller: _searchController,
@@ -246,13 +245,12 @@ class _EntityPickerDropdownState extends State<EntityPickerDropdown> {
                   : null,
             ),
             onChanged: (v) {
-                _debouncer.run(() {
-                  if (mounted) setState(() => _searchQuery = v);
-                });
-              },
+              _debouncer.run(() {
+                if (mounted) setState(() => _searchQuery = v);
+              });
+            },
           ),
           const SizedBox(height: 8),
-
           StreamBuilder<List<dynamic>>(
             stream: widget.streamBuilder(widget.db),
             builder: (context, snapshot) {
@@ -266,13 +264,13 @@ class _EntityPickerDropdownState extends State<EntityPickerDropdown> {
               final filtered = _searchQuery.isEmpty
                   ? allItems
                   : allItems
-                        .where(
-                          (item) => widget
-                              .itemText(item)
-                              .toLowerCase()
-                              .contains(_searchQuery.toLowerCase()),
-                        )
-                        .toList();
+                      .where(
+                        (item) => widget
+                            .itemText(item)
+                            .toLowerCase()
+                            .contains(_searchQuery.toLowerCase()),
+                      )
+                      .toList();
 
               return Container(
                 decoration: BoxDecoration(
@@ -387,9 +385,7 @@ class CustomerPicker extends StatelessWidget {
 
   Future<Customer?> _addNewCustomer(String name) async {
     final id = drift.Value(const Uuid().v4());
-    await db
-        .into(db.customers)
-        .insert(
+    await db.into(db.customers).insert(
           CustomersCompanion.insert(
             id: id,
             name: name,
@@ -398,7 +394,8 @@ class CustomerPicker extends StatelessWidget {
         );
     final result = await (db.select(
       db.customers,
-    )..where((c) => c.name.equals(name))).get();
+    )..where((c) => c.name.equals(name)))
+        .get();
     return result.isNotEmpty ? result.first : null;
   }
 
@@ -435,9 +432,7 @@ class SupplierPicker extends StatelessWidget {
 
   Future<Supplier?> _addNewSupplier(String name) async {
     final id = drift.Value(const Uuid().v4());
-    await db
-        .into(db.suppliers)
-        .insert(
+    await db.into(db.suppliers).insert(
           SuppliersCompanion.insert(
             id: id,
             name: name,
@@ -446,7 +441,8 @@ class SupplierPicker extends StatelessWidget {
         );
     final result = await (db.select(
       db.suppliers,
-    )..where((s) => s.name.equals(name))).get();
+    )..where((s) => s.name.equals(name)))
+        .get();
     return result.isNotEmpty ? result.first : null;
   }
 
@@ -473,7 +469,8 @@ class WarehousePicker extends StatelessWidget {
   final Warehouse? value;
   final void Function(Warehouse?)? onChanged;
 
-  const WarehousePicker({super.key, required this.db, this.value, this.onChanged});
+  const WarehousePicker(
+      {super.key, required this.db, this.value, this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -497,7 +494,8 @@ class CurrencyPicker extends StatelessWidget {
   final Currency? value;
   final void Function(Currency?)? onChanged;
 
-  const CurrencyPicker({super.key, required this.db, this.value, this.onChanged});
+  const CurrencyPicker(
+      {super.key, required this.db, this.value, this.onChanged});
 
   @override
   Widget build(BuildContext context) {

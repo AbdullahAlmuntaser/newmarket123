@@ -65,12 +65,10 @@ class NameNormalizer {
     // Check if one contains the other
     if (normalized1.contains(normalized2) ||
         normalized2.contains(normalized1)) {
-      final shorter = normalized1.length < normalized2.length
-          ? normalized1
-          : normalized2;
-      final longer = normalized1.length < normalized2.length
-          ? normalized2
-          : normalized1;
+      final shorter =
+          normalized1.length < normalized2.length ? normalized1 : normalized2;
+      final longer =
+          normalized1.length < normalized2.length ? normalized2 : normalized1;
       return shorter.length / longer.length;
     }
 

@@ -12,7 +12,8 @@ class PurchaseService {
   final InventoryCostingService inventoryCostingService;
   final AppConfigService configService;
 
-  PurchaseService(this.db, this.postingEngine, this.inventoryCostingService, this.configService);
+  PurchaseService(this.db, this.postingEngine, this.inventoryCostingService,
+      this.configService);
 
   Future<Purchase> createPurchase({
     required String supplierId,
@@ -40,7 +41,8 @@ class PurchaseService {
 
     return await (db.select(
       db.purchases,
-    )..where((p) => p.id.equals(purchaseId))).getSingle();
+    )..where((p) => p.id.equals(purchaseId)))
+        .getSingle();
   }
 
   Future<void> postPurchase(String purchaseId) async {
@@ -52,15 +54,16 @@ class PurchaseService {
           .getSingleOrNull();
 
       if (grn == null) {
-        throw Exception('لا يمكن ترحيل الفاتورة قبل استلام البضاعة (GRN غير موجود أو غير مرحل).');
+        throw Exception(
+            'لا يمكن ترحيل الفاتورة قبل استلام البضاعة (GRN غير موجود أو غير مرحل).');
       }
 
       final purchase = await (db.select(db.purchases)
             ..where((p) => p.id.equals(purchaseId)))
-        .getSingle();
+          .getSingle();
       final items = await (db.select(db.purchaseItems)
             ..where((i) => i.purchaseId.equals(purchaseId)))
-        .get();
+          .get();
 
       double subtotal = 0;
       for (var item in items) {
@@ -71,7 +74,7 @@ class PurchaseService {
       double totalExpenses = (purchase.shippingCost + purchase.otherExpenses);
 
       double discount = purchase.discount;
-      
+
       // استخدام قيمة الضريبة الموجودة في الفاتورة مباشرة
       double tax = (purchase.tax > 0) ? purchase.tax : 0.0;
 
@@ -91,11 +94,13 @@ class PurchaseService {
       );
 
       // Update Purchase status to COMPLETED
-      await (db.update(db.purchases)..where((p) => p.id.equals(purchaseId))).write(
-          const PurchasesCompanion(status: Value(DocumentStatus.posted)),
-        );
+      await (db.update(db.purchases)..where((p) => p.id.equals(purchaseId)))
+          .write(
+        const PurchasesCompanion(status: Value(DocumentStatus.posted)),
+      );
     } catch (e, stackTrace) {
-      throw Exception('خطأ في ترحيل فاتورة الشراء $purchaseId: $e\n$stackTrace');
+      throw Exception(
+          'خطأ في ترحيل فاتورة الشراء $purchaseId: $e\n$stackTrace');
     }
   }
 }

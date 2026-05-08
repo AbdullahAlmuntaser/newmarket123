@@ -10,19 +10,22 @@ class BomDao extends DatabaseAccessor<AppDatabase> with _$BomDaoMixin {
   Future<List<BillOfMaterial>> getBomForProduct(String productId) {
     return (select(
       billOfMaterials,
-    )..where((b) => b.finishedProductId.equals(productId))).get();
+    )..where((b) => b.finishedProductId.equals(productId)))
+        .get();
   }
 
   Future<List<BillOfMaterial>> getAllBoms() {
     return (select(
       billOfMaterials,
-    )..orderBy([(b) => OrderingTerm.asc(b.finishedProductId)])).get();
+    )..orderBy([(b) => OrderingTerm.asc(b.finishedProductId)]))
+        .get();
   }
 
   Future<List<BillOfMaterial>> getBomsWhereComponentIs(String componentId) {
     return (select(
       billOfMaterials,
-    )..where((b) => b.componentProductId.equals(componentId))).get();
+    )..where((b) => b.componentProductId.equals(componentId)))
+        .get();
   }
 
   Future<int> insertBom(
@@ -52,6 +55,7 @@ class BomDao extends DatabaseAccessor<AppDatabase> with _$BomDaoMixin {
   Future<int> deleteAllBomsForProduct(String productId) {
     return (delete(
       billOfMaterials,
-    )..where((b) => b.finishedProductId.equals(productId))).go();
+    )..where((b) => b.finishedProductId.equals(productId)))
+        .go();
   }
 }

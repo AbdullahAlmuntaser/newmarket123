@@ -18,8 +18,8 @@ class _CustomerStatementPageState extends State<CustomerStatementPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CustomerStatementProvider>().loadStatement(
-        widget.customerId,
-      );
+            widget.customerId,
+          );
     });
   }
 
@@ -117,9 +117,9 @@ class _CustomerStatementPageState extends State<CustomerStatementPage> {
         Text(
           currency.format(value),
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
         ),
       ],
     );

@@ -27,17 +27,17 @@ class SalesInvoice extends Equatable {
 
   @override
   List<Object?> get props => [
-    id,
-    customerId,
-    items,
-    subtotal,
-    taxAmount,
-    totalAmount,
-    discount,
-    paymentMethod,
-    timestamp,
-    qrCodeData,
-  ];
+        id,
+        customerId,
+        items,
+        subtotal,
+        taxAmount,
+        totalAmount,
+        discount,
+        paymentMethod,
+        timestamp,
+        qrCodeData,
+      ];
 }
 
 class InvoiceItem extends Equatable {

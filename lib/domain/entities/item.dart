@@ -15,7 +15,7 @@ class Item extends Equatable {
   final DateTime updatedAt;
   final List<ItemVariant> variants;
   final List<ItemUnit>
-  units; // Base units when no variants, or all units when variants exist
+      units; // Base units when no variants, or all units when variants exist
 
   const Item({
     required this.id,
@@ -35,20 +35,20 @@ class Item extends Equatable {
 
   @override
   List<Object?> get props => [
-    id,
-    name,
-    description,
-    sku,
-    primaryBarcode,
-    categoryId,
-    isActive,
-    alertLimit,
-    taxRate,
-    createdAt,
-    updatedAt,
-    variants,
-    units,
-  ];
+        id,
+        name,
+        description,
+        sku,
+        primaryBarcode,
+        categoryId,
+        isActive,
+        alertLimit,
+        taxRate,
+        createdAt,
+        updatedAt,
+        variants,
+        units,
+      ];
 
   /// Get the default/base unit
   ItemUnit? get defaultUnit {
@@ -104,14 +104,14 @@ class ItemVariant extends Equatable {
 
   @override
   List<Object?> get props => [
-    id,
-    itemId,
-    attributes,
-    sku,
-    barcode,
-    additionalCost,
-    units,
-  ];
+        id,
+        itemId,
+        attributes,
+        sku,
+        barcode,
+        additionalCost,
+        units,
+      ];
 
   /// Get a human-readable name for this variant
   String getVariantName() {
@@ -150,18 +150,18 @@ class ItemUnit extends Equatable {
 
   @override
   List<Object?> get props => [
-    id,
-    itemId,
-    variantId,
-    unitName,
-    barcode,
-    conversionFactor,
-    isDefault,
-    buyPrice,
-    sellPrice,
-    wholesalePrice,
-    halfWholesalePrice,
-  ];
+        id,
+        itemId,
+        variantId,
+        unitName,
+        barcode,
+        conversionFactor,
+        isDefault,
+        buyPrice,
+        sellPrice,
+        wholesalePrice,
+        halfWholesalePrice,
+      ];
 }
 
 /// Represents a price level for an item (can be used for price lists)
@@ -186,12 +186,12 @@ class ItemPrice extends Equatable {
 
   @override
   List<Object?> get props => [
-    id,
-    itemId,
-    variantId,
-    unitId,
-    priceType,
-    price,
-    minQuantity,
-  ];
+        id,
+        itemId,
+        variantId,
+        unitId,
+        priceType,
+        price,
+        minQuantity,
+      ];
 }

@@ -91,23 +91,24 @@ class _SplashScreenState extends State<SplashScreen> {
     try {
       _updateStatus("جاري تهيئة الخدمات...", "1/4");
       await di.init();
-      
+
       _updateStatus("جاري فتح قاعدة البيانات...", "2/4");
       final db = di.sl<AppDatabase>();
-      
+
       _updateStatus("جاري فحص قاعدة البيانات...", "3/4");
       try {
         await db.select(db.users).get().timeout(const Duration(seconds: 10));
         _updateStatus("✓ تم الاتصال بقاعدة البيانات", "4/4");
       } catch (e) {
         debugPrint("DB CHECK WARNING: $e");
-        _updateStatus("⚠ تنبيه: مشكلة في فحص قاعدة البيانات", "سيتم المحاولة على أي حال");
+        _updateStatus(
+            "⚠ تنبيه: مشكلة في فحص قاعدة البيانات", "سيتم المحاولة على أي حال");
         await Future.delayed(const Duration(seconds: 1));
       }
-      
+
       _updateStatus("جاري التحميل النهائي...", "✅");
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       if (mounted) {
         _navigateToMain();
       }
@@ -123,7 +124,7 @@ class _SplashScreenState extends State<SplashScreen> {
     _isNavigating = true;
 
     debugPrint("NAVIGATE: Transitioning to MyApp");
-    
+
     // 3 & 5. استخدام addPostFrameCallback لضمان استدعاء Navigator بعد اكتمال build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -193,7 +194,10 @@ class _SplashScreenState extends State<SplashScreen> {
             Text(
               _status,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.teal),
+              style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.teal),
             ),
             if (_detailStatus.isNotEmpty) ...[
               const SizedBox(height: 12),
@@ -226,18 +230,27 @@ class MyApp extends StatelessWidget {
         Provider<AccountingService>(create: (_) => di.sl<AccountingService>()),
         ChangeNotifierProvider(create: (_) => di.sl<ThemeProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<AuthProvider>()),
-        ChangeNotifierProvider(create: (_) => AccountingProvider(di.sl<AppDatabase>())),
+        ChangeNotifierProvider(
+            create: (_) => AccountingProvider(di.sl<AppDatabase>())),
         ChangeNotifierProvider(create: (_) => di.sl<ProductsProvider>()),
         ChangeNotifierProvider(
-          create: (_) => PurchaseProvider(di.sl<AppDatabase>(), di.sl<PurchaseService>()),
+          create: (_) =>
+              PurchaseProvider(di.sl<AppDatabase>(), di.sl<PurchaseService>()),
         ),
-        ChangeNotifierProvider(create: (_) => ShiftProvider(ShiftService(di.sl<AppDatabase>()))),
-        ChangeNotifierProvider(create: (_) => HRProvider(HRService(di.sl<AppDatabase>(), di.sl<PostingEngine>()))),
-        ChangeNotifierProvider(create: (_) => PayrollProvider(HRService(di.sl<AppDatabase>(), di.sl<PostingEngine>()))),
         ChangeNotifierProvider(
-          create: (_) => StockTransferProvider(StockTransferService(di.sl<AppDatabase>())),
+            create: (_) => ShiftProvider(ShiftService(di.sl<AppDatabase>()))),
+        ChangeNotifierProvider(
+            create: (_) => HRProvider(
+                HRService(di.sl<AppDatabase>(), di.sl<PostingEngine>()))),
+        ChangeNotifierProvider(
+            create: (_) => PayrollProvider(
+                HRService(di.sl<AppDatabase>(), di.sl<PostingEngine>()))),
+        ChangeNotifierProvider(
+          create: (_) =>
+              StockTransferProvider(StockTransferService(di.sl<AppDatabase>())),
         ),
-        ChangeNotifierProvider(create: (_) => AssetProvider(AssetService(di.sl<AppDatabase>()))),
+        ChangeNotifierProvider(
+            create: (_) => AssetProvider(AssetService(di.sl<AppDatabase>()))),
         ChangeNotifierProvider(create: (_) => CustomerStatementProvider()),
       ],
       child: Builder(

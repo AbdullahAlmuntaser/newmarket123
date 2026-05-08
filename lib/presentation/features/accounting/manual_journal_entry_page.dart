@@ -37,9 +37,10 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
           return StreamBuilder<List<CostCenter>>(
             stream: db.select(db.costCenters).watch(),
             builder: (context, ccSnapshot) {
-              final accounts = (accSnapshot.data ?? []).where((a) => !a.isHeader).toList();
+              final accounts =
+                  (accSnapshot.data ?? []).where((a) => !a.isHeader).toList();
               final costCenters = ccSnapshot.data ?? [];
-              
+
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(12),
                 child: Column(
@@ -47,8 +48,9 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
                     _buildHeader(colorScheme),
                     const SizedBox(height: 16),
                     ..._lines.asMap().entries.map(
-                      (entry) => _buildLineCard(entry.key, entry.value, accounts, costCenters, colorScheme),
-                    ),
+                          (entry) => _buildLineCard(entry.key, entry.value,
+                              accounts, costCenters, colorScheme),
+                        ),
                     ElevatedButton.icon(
                       onPressed: () => setState(() => _lines.add(ManualLine())),
                       icon: const Icon(Icons.add),
@@ -136,8 +138,12 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: line.accountId,
-                    decoration: const InputDecoration(labelText: 'الحساب', isDense: true),
-                    items: accounts.map((a) => DropdownMenuItem(value: a.id, child: Text('${a.code} - ${a.name}'))).toList(),
+                    decoration: const InputDecoration(
+                        labelText: 'الحساب', isDense: true),
+                    items: accounts
+                        .map((a) => DropdownMenuItem(
+                            value: a.id, child: Text('${a.code} - ${a.name}')))
+                        .toList(),
                     onChanged: (val) => setState(() => line.accountId = val),
                   ),
                 ),
@@ -145,10 +151,13 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
                 Expanded(
                   child: DropdownButtonFormField<String?>(
                     value: line.costCenterId,
-                    decoration: const InputDecoration(labelText: 'مركز التكلفة', isDense: true),
+                    decoration: const InputDecoration(
+                        labelText: 'مركز التكلفة', isDense: true),
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('بدون مركز')),
-                      ...costCenters.map((cc) => DropdownMenuItem(value: cc.id, child: Text(cc.name))),
+                      const DropdownMenuItem(
+                          value: null, child: Text('بدون مركز')),
+                      ...costCenters.map((cc) =>
+                          DropdownMenuItem(value: cc.id, child: Text(cc.name))),
                     ],
                     onChanged: (val) => setState(() => line.costCenterId = val),
                   ),
@@ -165,7 +174,8 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
                   child: TextField(
                     decoration: const InputDecoration(labelText: 'مدين'),
                     keyboardType: TextInputType.number,
-                    onChanged: (val) => setState(() => line.debit = double.tryParse(val) ?? 0),
+                    onChanged: (val) =>
+                        setState(() => line.debit = double.tryParse(val) ?? 0),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -173,7 +183,8 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
                   child: TextField(
                     decoration: const InputDecoration(labelText: 'دائن'),
                     keyboardType: TextInputType.number,
-                    onChanged: (val) => setState(() => line.credit = double.tryParse(val) ?? 0),
+                    onChanged: (val) =>
+                        setState(() => line.credit = double.tryParse(val) ?? 0),
                   ),
                 ),
               ],
@@ -210,7 +221,8 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
   }
 
   void _saveEntry(AccountingProvider provider) async {
-    final userId = Provider.of<AuthProvider>(context, listen: false).currentUser?.id;
+    final userId =
+        Provider.of<AuthProvider>(context, listen: false).currentUser?.id;
     final lines = _lines
         .where((l) => l.accountId != null)
         .map((l) => GLLinesCompanion.insert(
@@ -227,7 +239,7 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
       lines: lines,
       userId: userId,
     );
-    if(mounted) Navigator.pop(context);
+    if (mounted) Navigator.pop(context);
   }
 }
 

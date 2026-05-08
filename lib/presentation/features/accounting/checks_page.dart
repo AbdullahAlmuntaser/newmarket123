@@ -244,13 +244,13 @@ class _ChecksPageState extends State<ChecksPage> {
 
   Widget _buildAccountSelector(AppDatabase db) {
     return StreamBuilder<List<GLAccount>>(
-      stream:
-          (db.select(db.gLAccounts)..where(
-                (a) =>
-                    a.code.equals(AccountingService.codeCash) |
-                    a.code.equals(AccountingService.codeBank),
-              ))
-              .watch(),
+      stream: (db.select(db.gLAccounts)
+            ..where(
+              (a) =>
+                  a.code.equals(AccountingService.codeCash) |
+                  a.code.equals(AccountingService.codeBank),
+            ))
+          .watch(),
       builder: (context, snapshot) {
         final accounts = snapshot.data ?? [];
         return DropdownButtonFormField<String>(
@@ -272,7 +272,8 @@ class _ChecksPageState extends State<ChecksPage> {
   Widget _buildChecksList(AppDatabase db) {
     final checksStream = (db.select(
       db.checks,
-    )..where((c) => c.type.equals(_selectedType))).watch();
+    )..where((c) => c.type.equals(_selectedType)))
+        .watch();
 
     return StreamBuilder<List<Check>>(
       stream: checksStream,
@@ -337,11 +338,13 @@ class _ChecksPageState extends State<ChecksPage> {
       if (check.type == 'RECEIVED' && check.partnerId != null) {
         final customer = await (db.select(
           db.customers,
-        )..where((c) => c.id.equals(check.partnerId!))).getSingleOrNull();
+        )..where((c) => c.id.equals(check.partnerId!)))
+            .getSingleOrNull();
         if (customer != null) {
           await (db.update(
             db.customers,
-          )..where((c) => c.id.equals(customer.id))).write(
+          )..where((c) => c.id.equals(customer.id)))
+              .write(
             CustomersCompanion(
               balance: drift.Value(customer.balance + check.amount),
             ),
@@ -350,11 +353,13 @@ class _ChecksPageState extends State<ChecksPage> {
       } else if (check.type == 'ISSUED' && check.partnerId != null) {
         final supplier = await (db.select(
           db.suppliers,
-        )..where((s) => s.id.equals(check.partnerId!))).getSingleOrNull();
+        )..where((s) => s.id.equals(check.partnerId!)))
+            .getSingleOrNull();
         if (supplier != null) {
           await (db.update(
             db.suppliers,
-          )..where((s) => s.id.equals(supplier.id))).write(
+          )..where((s) => s.id.equals(supplier.id)))
+              .write(
             SuppliersCompanion(
               balance: drift.Value(supplier.balance + check.amount),
             ),

@@ -41,7 +41,8 @@ class PricingService {
   Future<Decimal> _getDefaultPrice(String productId) async {
     final product = await (db.select(
       db.products,
-    )..where((p) => p.id.equals(productId))).getSingleOrNull();
+    )..where((p) => p.id.equals(productId)))
+        .getSingleOrNull();
     return Decimal.parse((product?.sellPrice ?? 0.0).toString());
   }
 
@@ -61,9 +62,12 @@ class PricingService {
 
     // 2. Apply customer-specific discount
     if (customerId != null) {
-      final customer = await (db.select(db.customers)..where((c) => c.id.equals(customerId))).getSingleOrNull();
+      final customer = await (db.select(db.customers)
+            ..where((c) => c.id.equals(customerId)))
+          .getSingleOrNull();
       if (customer != null && customer.discountRate > 0) {
-        final customerDiscountFactor = Decimal.parse((customer.discountRate / 100).toString());
+        final customerDiscountFactor =
+            Decimal.parse((customer.discountRate / 100).toString());
         finalPrice -= (finalPrice * customerDiscountFactor);
       }
     }
@@ -81,15 +85,15 @@ class PricingService {
     Decimal quantity,
   ) async {
     final now = DateTime.now();
-    final activePromotions =
-        await (db.select(db.promotions)..where(
-              (p) =>
-                  p.isActive.equals(true) &
-                  p.startDate.isSmallerOrEqual(Variable(now)) &
-                  p.endDate.isBiggerOrEqual(Variable(now)) &
-                  (p.productId.equals(productId) | p.productId.isNull()),
-            ))
-            .get();
+    final activePromotions = await (db.select(db.promotions)
+          ..where(
+            (p) =>
+                p.isActive.equals(true) &
+                p.startDate.isSmallerOrEqual(Variable(now)) &
+                p.endDate.isBiggerOrEqual(Variable(now)) &
+                (p.productId.equals(productId) | p.productId.isNull()),
+          ))
+        .get();
 
     Decimal finalPrice = basePrice;
     for (var promo in activePromotions) {

@@ -35,9 +35,8 @@ class SyncStatusCard extends StatelessWidget {
                       ? const CircularProgressIndicator()
                       : IconButton(
                           icon: const Icon(Icons.refresh),
-                          onPressed: count > 0
-                              ? () => syncProvider.syncAll()
-                              : null,
+                          onPressed:
+                              count > 0 ? () => syncProvider.syncAll() : null,
                           tooltip: l10n.syncNow,
                         ),
                 );

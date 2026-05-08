@@ -244,7 +244,8 @@ class AccountingService {
 
   void _listenToEvents() {
     eventBus.stream.listen((event) {
-      developer.log('AccountingService: Received event ${event.runtimeType}', name: 'accounting.service');
+      developer.log('AccountingService: Received event ${event.runtimeType}',
+          name: 'accounting.service');
       if (event is SaleCreatedEvent) {
         postSale(event.sale, event.items, cogs: event.cogs);
       } else if (event is PurchasePostedEvent) {
@@ -278,21 +279,20 @@ class AccountingService {
     String? branchId,
   }) async {
     await db.transaction(() async {
-      final lastTransaction =
-          await (db.select(db.accountTransactions)
-                ..where((t) => t.accountId.equals(accountId))
-                ..orderBy([
-                  (t) =>
-                      OrderingTerm(expression: t.date, mode: OrderingMode.desc),
-                ])
-                ..limit(1))
-              .getSingleOrNull();
+      final lastTransaction = await (db.select(db.accountTransactions)
+            ..where((t) => t.accountId.equals(accountId))
+            ..orderBy([
+              (t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc),
+            ])
+            ..limit(1))
+          .getSingleOrNull();
 
       double currentBalance = lastTransaction?.runningBalance ?? 0.0;
       double newBalance = currentBalance + (debit - credit);
 
       // الحصول على معرف الفرع الافتراضي من الإعدادات
-      final effectiveBranchId = branchId ?? await _configService.getDefaultBranchId();
+      final effectiveBranchId =
+          branchId ?? await _configService.getDefaultBranchId();
 
       await db.into(db.accountTransactions).insert(
             AccountTransactionsCompanion.insert(
@@ -445,8 +445,9 @@ class AccountingService {
   Future<void> seedDefaultAccounts({String? branchId}) async {
     final dao = db.accountingDao;
     // الحصول على معرف الفرع الافتراضي من الإعدادات إذا لم يتم تحديده
-    final effectiveBranchId = branchId ?? await _configService.getDefaultBranchId();
-    
+    final effectiveBranchId =
+        branchId ?? await _configService.getDefaultBranchId();
+
     final accounts = {
       codeCash: GLAccountsCompanion.insert(
         code: codeCash,
@@ -646,9 +647,8 @@ class AccountingService {
     topExpensesFull.sort((a, b) => b.totalDebit.compareTo(a.totalDebit));
     final top5Expenses = topExpensesFull.take(5).toList();
 
-    final recentEntries = await db.accountingDao
-        .watchRecentEntries(limit: 5)
-        .first;
+    final recentEntries =
+        await db.accountingDao.watchRecentEntries(limit: 5).first;
 
     final now = DateTime.now();
     final last7Days = DateTime(
@@ -707,11 +707,12 @@ class AccountingService {
 
     final existingSubAccounts = await (db.select(
       db.gLAccounts,
-    )..where((a) => a.parentId.equals(parent.id))).get();
+    )..where((a) => a.parentId.equals(parent.id)))
+        .get();
     final nextNumber = (existingSubAccounts.length + 1).toString().padLeft(
-      4,
-      '0',
-    );
+          4,
+          '0',
+        );
     final newCode = '${parent.code}.$nextNumber';
 
     final id = const Uuid().v4();
@@ -738,11 +739,12 @@ class AccountingService {
 
     final existingSubAccounts = await (db.select(
       db.gLAccounts,
-    )..where((a) => a.parentId.equals(parent.id))).get();
+    )..where((a) => a.parentId.equals(parent.id)))
+        .get();
     final nextNumber = (existingSubAccounts.length + 1).toString().padLeft(
-      4,
-      '0',
-    );
+          4,
+          '0',
+        );
     final newCode = '${parent.code}.$nextNumber';
 
     final id = const Uuid().v4();
@@ -760,287 +762,308 @@ class AccountingService {
     return id;
   }
 
-  Future<void> postSale(Sale sale, List<SaleItem> items, {double? cogs, String? userId}) async {
+  Future<void> postSale(Sale sale, List<SaleItem> items,
+      {double? cogs, String? userId}) async {
     try {
       if (userId != null) {
-        await _permissionService.executeIfAllowed(userId, 'POST_SALE', () async {});
+        await _permissionService.executeIfAllowed(
+            userId, 'POST_SALE', () async {});
       }
       if (await db.accountingDao.isDateInClosedPeriod(sale.createdAt)) {
         throw Exception('Cannot post sale in a closed accounting period.');
       }
       await db.transaction(() async {
-      final dao = db.accountingDao;
-      final entryId = const Uuid().v4();
+        final dao = db.accountingDao;
+        final entryId = const Uuid().v4();
 
-      String debitAccountId;
-      if (sale.isCredit) {
-        if (sale.customerId == null) {
-          throw Exception('Credit sale must have a customer.');
-        }
-        final customer = await db.customersDao.getCustomerById(sale.customerId!);
-        if (customer?.accountId == null) {
-          debitAccountId = (await dao.getAccountByCode(
-            codeAccountsReceivable,
-          ))!.id;
+        String debitAccountId;
+        if (sale.isCredit) {
+          if (sale.customerId == null) {
+            throw Exception('Credit sale must have a customer.');
+          }
+          final customer =
+              await db.customersDao.getCustomerById(sale.customerId!);
+          if (customer?.accountId == null) {
+            debitAccountId = (await dao.getAccountByCode(
+              codeAccountsReceivable,
+            ))!
+                .id;
+          } else {
+            debitAccountId = customer!.accountId!;
+          }
         } else {
-          debitAccountId = customer!.accountId!;
+          debitAccountId = (await dao.getAccountByCode(codeCash))!.id;
         }
-      } else {
-        debitAccountId = (await dao.getAccountByCode(codeCash))!.id;
-      }
 
-      final revenueAccount = await dao.getAccountByCode(codeSalesRevenue);
-      final taxAccount = await dao.getAccountByCode(codeOutputVAT);
+        final revenueAccount = await dao.getAccountByCode(codeSalesRevenue);
+        final taxAccount = await dao.getAccountByCode(codeOutputVAT);
 
-      if (revenueAccount == null || taxAccount == null) {
-        throw Exception('Missing one or more required GL accounts for sale.');
-      }
+        if (revenueAccount == null || taxAccount == null) {
+          throw Exception('Missing one or more required GL accounts for sale.');
+        }
 
-      final entry = GLEntriesCompanion.insert(
-        id: Value(entryId),
-        description: 'Sale #${sale.id.substring(0, 8)}',
-        date: Value(sale.createdAt),
-        referenceType: const Value('SALE'),
-        referenceId: Value(sale.id),
-        status: const Value('POSTED'),
-        postedAt: Value(DateTime.now()),
-        currencyId: Value(sale.currencyId),
-        exchangeRate: Value(sale.exchangeRate),
-        branchId: Value(sale.branchId ?? await _configService.getDefaultBranchId()),
-      );
-
-      final lines = [
-        GLLinesCompanion.insert(
-          entryId: entryId,
-          accountId: debitAccountId,
-          debit: Value(sale.total),
-          credit: const Value(0.0),
+        final entry = GLEntriesCompanion.insert(
+          id: Value(entryId),
+          description: 'Sale #${sale.id.substring(0, 8)}',
+          date: Value(sale.createdAt),
+          referenceType: const Value('SALE'),
+          referenceId: Value(sale.id),
+          status: const Value('POSTED'),
+          postedAt: Value(DateTime.now()),
           currencyId: Value(sale.currencyId),
           exchangeRate: Value(sale.exchangeRate),
-          branchId: Value(sale.branchId ?? await _configService.getDefaultBranchId()),
-        ),
-        GLLinesCompanion.insert(
-          entryId: entryId,
-          accountId: revenueAccount.id,
-          debit: const Value(0.0),
-          credit: Value(sale.total - sale.tax),
-          currencyId: Value(sale.currencyId),
-          exchangeRate: Value(sale.exchangeRate),
-          branchId: Value(sale.branchId ?? await _configService.getDefaultBranchId()),
-        ),
-        if (sale.tax > 0)
+          branchId:
+              Value(sale.branchId ?? await _configService.getDefaultBranchId()),
+        );
+
+        final lines = [
           GLLinesCompanion.insert(
             entryId: entryId,
-            accountId: taxAccount.id,
-            debit: const Value(0.0),
-            credit: Value(sale.tax),
+            accountId: debitAccountId,
+            debit: Value(sale.total),
+            credit: const Value(0.0),
             currencyId: Value(sale.currencyId),
             exchangeRate: Value(sale.exchangeRate),
-            branchId: Value(sale.branchId ?? await _configService.getDefaultBranchId()),
+            branchId: Value(
+                sale.branchId ?? await _configService.getDefaultBranchId()),
           ),
-      ];
+          GLLinesCompanion.insert(
+            entryId: entryId,
+            accountId: revenueAccount.id,
+            debit: const Value(0.0),
+            credit: Value(sale.total - sale.tax),
+            currencyId: Value(sale.currencyId),
+            exchangeRate: Value(sale.exchangeRate),
+            branchId: Value(
+                sale.branchId ?? await _configService.getDefaultBranchId()),
+          ),
+          if (sale.tax > 0)
+            GLLinesCompanion.insert(
+              entryId: entryId,
+              accountId: taxAccount.id,
+              debit: const Value(0.0),
+              credit: Value(sale.tax),
+              currencyId: Value(sale.currencyId),
+              exchangeRate: Value(sale.exchangeRate),
+              branchId: Value(
+                  sale.branchId ?? await _configService.getDefaultBranchId()),
+            ),
+        ];
 
-      await dao.createEntry(entry, lines);
+        await dao.createEntry(entry, lines);
 
-      // Record in AccountTransactions if credit
-      if (sale.isCredit) {
-        await _recordAccountTransaction(
-          accountId: debitAccountId,
-          type: 'INVOICE',
-          referenceId: sale.id,
-          debit: sale.total,
-          date: sale.createdAt,
-          branchId: sale.branchId ?? await _configService.getDefaultBranchId(),
+        // Record in AccountTransactions if credit
+        if (sale.isCredit) {
+          await _recordAccountTransaction(
+            accountId: debitAccountId,
+            type: 'INVOICE',
+            referenceId: sale.id,
+            debit: sale.total,
+            date: sale.createdAt,
+            branchId:
+                sale.branchId ?? await _configService.getDefaultBranchId(),
+          );
+        }
+
+        await _auditService.logCreate(
+          'GLEntry',
+          entryId,
+          details: 'Revenue entry for Sale #${sale.id.substring(0, 8)}',
         );
-      }
 
-      await _auditService.logCreate(
-        'GLEntry',
-        entryId,
-        details: 'Revenue entry for Sale #${sale.id.substring(0, 8)}',
-      );
-
-      // Use actual COGS from event (calculated from batches) or calculate from batch costs
-      final double totalCost = cogs ?? 0.0;
-      double calculatedCost = 0.0;
-      if (totalCost == 0.0) {
-        for (var item in items) {
-          final batches = await (db.select(db.productBatches)
-                ..where((b) => b.productId.equals(item.productId))
-                ..where((b) => b.quantity.isBiggerThan(const Variable(0)))
-                ..orderBy([
-                  (b) => OrderingTerm(
-                    expression: b.expiryDate.isNull(),
-                    mode: OrderingMode.asc,
-                  ),
-                  (b) => OrderingTerm(
-                    expression: b.expiryDate,
-                    mode: OrderingMode.asc,
-                  ),
-                  (b) => OrderingTerm(
-                    expression: b.createdAt,
-                    mode: OrderingMode.asc,
-                  ),
-                ]))
-              .get();
-          double remainingQty = item.quantity * item.unitFactor;
-          for (var batch in batches) {
-            if (remainingQty <= 0) break;
-            double deductFromBatch = batch.quantity >= remainingQty
-                ? remainingQty
-                : batch.quantity;
-            calculatedCost += deductFromBatch * batch.costPrice;
-            remainingQty -= deductFromBatch;
+        // Use actual COGS from event (calculated from batches) or calculate from batch costs
+        final double totalCost = cogs ?? 0.0;
+        double calculatedCost = 0.0;
+        if (totalCost == 0.0) {
+          for (var item in items) {
+            final batches = await (db.select(db.productBatches)
+                  ..where((b) => b.productId.equals(item.productId))
+                  ..where((b) => b.quantity.isBiggerThan(const Variable(0)))
+                  ..orderBy([
+                    (b) => OrderingTerm(
+                          expression: b.expiryDate.isNull(),
+                          mode: OrderingMode.asc,
+                        ),
+                    (b) => OrderingTerm(
+                          expression: b.expiryDate,
+                          mode: OrderingMode.asc,
+                        ),
+                    (b) => OrderingTerm(
+                          expression: b.createdAt,
+                          mode: OrderingMode.asc,
+                        ),
+                  ]))
+                .get();
+            double remainingQty = item.quantity * item.unitFactor;
+            for (var batch in batches) {
+              if (remainingQty <= 0) break;
+              double deductFromBatch = batch.quantity >= remainingQty
+                  ? remainingQty
+                  : batch.quantity;
+              calculatedCost += deductFromBatch * batch.costPrice;
+              remainingQty -= deductFromBatch;
+            }
           }
         }
-      }
 
-      final double finalCost = totalCost > 0 ? totalCost : calculatedCost;
+        final double finalCost = totalCost > 0 ? totalCost : calculatedCost;
 
-      if (finalCost > 0) {
-        final cogsEntryId = const Uuid().v4();
-        final cogsAccount = await dao.getAccountByCode(codeCOGS);
-        final inventoryAccount = await dao.getAccountByCode(codeInventory);
+        if (finalCost > 0) {
+          final cogsEntryId = const Uuid().v4();
+          final cogsAccount = await dao.getAccountByCode(codeCOGS);
+          final inventoryAccount = await dao.getAccountByCode(codeInventory);
 
-        if (cogsAccount != null && inventoryAccount != null) {
-          final cogsEntry = GLEntriesCompanion.insert(
-            id: Value(cogsEntryId),
-            description: 'COGS for Sale #${sale.id.substring(0, 8)}',
-            date: Value(sale.createdAt),
-            referenceType: const Value('COGS'),
-            referenceId: Value(sale.id),
-            status: const Value('POSTED'),
-            postedAt: Value(DateTime.now()),
-            branchId: Value(sale.branchId ?? await _configService.getDefaultBranchId()),
-          );
+          if (cogsAccount != null && inventoryAccount != null) {
+            final cogsEntry = GLEntriesCompanion.insert(
+              id: Value(cogsEntryId),
+              description: 'COGS for Sale #${sale.id.substring(0, 8)}',
+              date: Value(sale.createdAt),
+              referenceType: const Value('COGS'),
+              referenceId: Value(sale.id),
+              status: const Value('POSTED'),
+              postedAt: Value(DateTime.now()),
+              branchId: Value(
+                  sale.branchId ?? await _configService.getDefaultBranchId()),
+            );
 
-          final cogsLines = [
-            GLLinesCompanion.insert(
-              entryId: cogsEntryId,
-              accountId: cogsAccount.id,
-              debit: Value(finalCost),
-              credit: const Value(0.0),
-              branchId: Value(sale.branchId ?? await _configService.getDefaultBranchId()),
-            ),
-            GLLinesCompanion.insert(
-              entryId: cogsEntryId,
-              accountId: inventoryAccount.id,
-              debit: const Value(0.0),
-              credit: Value(finalCost),
-              branchId: Value(sale.branchId ?? await _configService.getDefaultBranchId()),
-            ),
-          ];
-          await dao.createEntry(cogsEntry, cogsLines);
+            final cogsLines = [
+              GLLinesCompanion.insert(
+                entryId: cogsEntryId,
+                accountId: cogsAccount.id,
+                debit: Value(finalCost),
+                credit: const Value(0.0),
+                branchId: Value(
+                    sale.branchId ?? await _configService.getDefaultBranchId()),
+              ),
+              GLLinesCompanion.insert(
+                entryId: cogsEntryId,
+                accountId: inventoryAccount.id,
+                debit: const Value(0.0),
+                credit: Value(finalCost),
+                branchId: Value(
+                    sale.branchId ?? await _configService.getDefaultBranchId()),
+              ),
+            ];
+            await dao.createEntry(cogsEntry, cogsLines);
+          }
         }
-      }
-    });
+      });
     } catch (e) {
       throw Exception('Failed to post sale: ${e.toString()}');
     }
   }
-  Future<void> postPurchase(Purchase purchase, List<PurchaseItem> items, {String? userId}) async {
+
+  Future<void> postPurchase(Purchase purchase, List<PurchaseItem> items,
+      {String? userId}) async {
     try {
       if (userId != null) {
-        await _permissionService.executeIfAllowed(userId, 'POST_PURCHASE', () async {});
+        await _permissionService.executeIfAllowed(
+            userId, 'POST_PURCHASE', () async {});
       }
       if (await db.accountingDao.isDateInClosedPeriod(purchase.date)) {
-      throw Exception('Cannot post purchase in a closed accounting period.');
-    }
-    await db.transaction(() async {
-      final dao = db.accountingDao;
-      final entryId = const Uuid().v4();
+        throw Exception('Cannot post purchase in a closed accounting period.');
+      }
+      await db.transaction(() async {
+        final dao = db.accountingDao;
+        final entryId = const Uuid().v4();
 
-      final inventoryAccount = await dao.getAccountByCode(codeInventory);
-      final taxAccount = await dao.getAccountByCode(codeInputVAT);
+        final inventoryAccount = await dao.getAccountByCode(codeInventory);
+        final taxAccount = await dao.getAccountByCode(codeInputVAT);
 
-      String creditAccountId;
-      if (purchase.isCredit) {
-        if (purchase.supplierId == null) {
-          throw Exception('Credit purchase must have a supplier.');
+        String creditAccountId;
+        if (purchase.isCredit) {
+          if (purchase.supplierId == null) {
+            throw Exception('Credit purchase must have a supplier.');
+          }
+          final supplier = await db.suppliersDao.getSupplierById(
+            purchase.supplierId!,
+          );
+          creditAccountId = supplier?.accountId ??
+              (await dao.getAccountByCode(codeAccountsPayable))!.id;
+        } else {
+          creditAccountId = (await dao.getAccountByCode(codeCash))!.id;
         }
-        final supplier = await db.suppliersDao.getSupplierById(
-          purchase.supplierId!,
-        );
-        creditAccountId =
-            supplier?.accountId ??
-            (await dao.getAccountByCode(codeAccountsPayable))!.id;
-      } else {
-        creditAccountId = (await dao.getAccountByCode(codeCash))!.id;
-      }
 
-      if (inventoryAccount == null || taxAccount == null) {
-        throw Exception('Missing GL accounts for purchase.');
-      }
+        if (inventoryAccount == null || taxAccount == null) {
+          throw Exception('Missing GL accounts for purchase.');
+        }
 
-      final inventoryValue = purchase.total - purchase.tax;
+        final inventoryValue = purchase.total - purchase.tax;
 
-      final entry = GLEntriesCompanion.insert(
-        id: Value(entryId),
-        description: 'إثبات فاتورة مشتريات #${purchase.id.substring(0, 8)}',
-        date: Value(purchase.date),
-        referenceType: const Value('PURCHASE'),
-        referenceId: Value(purchase.id),
-        status: const Value('POSTED'),
-        postedAt: Value(DateTime.now()),
-        currencyId: Value(purchase.currencyId),
-        exchangeRate: Value(purchase.exchangeRate),
-        branchId: Value(purchase.branchId ?? await _configService.getDefaultBranchId()),
-      );
-
-      final lines = [
-        GLLinesCompanion.insert(
-          entryId: entryId,
-          accountId: inventoryAccount.id,
-          debit: Value(inventoryValue),
-          credit: const Value(0.0),
+        final entry = GLEntriesCompanion.insert(
+          id: Value(entryId),
+          description: 'إثبات فاتورة مشتريات #${purchase.id.substring(0, 8)}',
+          date: Value(purchase.date),
+          referenceType: const Value('PURCHASE'),
+          referenceId: Value(purchase.id),
+          status: const Value('POSTED'),
+          postedAt: Value(DateTime.now()),
           currencyId: Value(purchase.currencyId),
           exchangeRate: Value(purchase.exchangeRate),
-          branchId: Value(purchase.branchId ?? await _configService.getDefaultBranchId()),
-        ),
-        if (purchase.tax > 0)
+          branchId: Value(
+              purchase.branchId ?? await _configService.getDefaultBranchId()),
+        );
+
+        final lines = [
           GLLinesCompanion.insert(
             entryId: entryId,
-            accountId: taxAccount.id,
-            debit: Value(purchase.tax),
+            accountId: inventoryAccount.id,
+            debit: Value(inventoryValue),
             credit: const Value(0.0),
             currencyId: Value(purchase.currencyId),
             exchangeRate: Value(purchase.exchangeRate),
-            branchId: Value(purchase.branchId ?? await _configService.getDefaultBranchId()),
+            branchId: Value(
+                purchase.branchId ?? await _configService.getDefaultBranchId()),
           ),
-        GLLinesCompanion.insert(
-          entryId: entryId,
-          accountId: creditAccountId,
-          debit: const Value(0.0),
-          credit: Value(purchase.total),
-          currencyId: Value(purchase.currencyId),
-          exchangeRate: Value(purchase.exchangeRate),
-          branchId: Value(purchase.branchId ?? await _configService.getDefaultBranchId()),
-        ),
-      ];
+          if (purchase.tax > 0)
+            GLLinesCompanion.insert(
+              entryId: entryId,
+              accountId: taxAccount.id,
+              debit: Value(purchase.tax),
+              credit: const Value(0.0),
+              currencyId: Value(purchase.currencyId),
+              exchangeRate: Value(purchase.exchangeRate),
+              branchId: Value(purchase.branchId ??
+                  await _configService.getDefaultBranchId()),
+            ),
+          GLLinesCompanion.insert(
+            entryId: entryId,
+            accountId: creditAccountId,
+            debit: const Value(0.0),
+            credit: Value(purchase.total),
+            currencyId: Value(purchase.currencyId),
+            exchangeRate: Value(purchase.exchangeRate),
+            branchId: Value(
+                purchase.branchId ?? await _configService.getDefaultBranchId()),
+          ),
+        ];
 
-      await dao.createEntry(entry, lines);
+        await dao.createEntry(entry, lines);
 
-      if (purchase.isCredit) {
-        await _recordAccountTransaction(
-          accountId: creditAccountId,
-          type: 'INVOICE',
-          referenceId: purchase.id,
-          credit: purchase.total,
-          date: purchase.date,
-          branchId: purchase.branchId ?? await _configService.getDefaultBranchId(),
+        if (purchase.isCredit) {
+          await _recordAccountTransaction(
+            accountId: creditAccountId,
+            type: 'INVOICE',
+            referenceId: purchase.id,
+            credit: purchase.total,
+            date: purchase.date,
+            branchId:
+                purchase.branchId ?? await _configService.getDefaultBranchId(),
+          );
+        }
+
+        await _auditService.logCreate(
+          'GLEntry',
+          entryId,
+          details:
+              'Purchase entry for Purchase #${purchase.id.substring(0, 8)}',
         );
-      }
-
-      await _auditService.logCreate(
-        'GLEntry',
-        entryId,
-        details: 'Purchase entry for Purchase #${purchase.id.substring(0, 8)}',
-      );
-    });
+      });
     } catch (e) {
       throw Exception('Failed to post purchase: ${e.toString()}');
     }
   }
+
   Future<void> recordCustomerPayment({
     required String customerId,
     required double amount,
@@ -1285,11 +1308,12 @@ class AccountingService {
     String userId,
   ) async {
     // التحقق من الصلاحيات
-    await _permissionService.executeIfAllowed(userId, PermissionCode.postSaleReturn, () async {
+    await _permissionService
+        .executeIfAllowed(userId, PermissionCode.postSaleReturn, () async {
       final dao = db.accountingDao;
       final originalSale = await db.salesDao.getSaleById(saleReturn.saleId);
       if (originalSale == null) throw Exception('Original sale not found.');
-      
+
       final entryId = const Uuid().v4();
       final salesReturnAccount = await dao.getAccountByCode(codeSalesReturns);
       final taxAccount = await dao.getAccountByCode(codeOutputVAT);
@@ -1316,7 +1340,8 @@ class AccountingService {
         date: Value(saleReturn.createdAt),
         referenceType: const Value('SALE_RETURN'),
         referenceId: Value(saleReturn.id),
-        branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
+        branchId: Value(
+            originalSale.branchId ?? await _configService.getDefaultBranchId()),
       );
 
       final lines = [
@@ -1325,21 +1350,24 @@ class AccountingService {
           accountId: salesReturnAccount.id,
           debit: Value(revenuePortion),
           credit: const Value(0.0),
-          branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
+          branchId: Value(originalSale.branchId ??
+              await _configService.getDefaultBranchId()),
         ),
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: taxAccount.id,
           debit: Value(taxPortion),
           credit: const Value(0.0),
-          branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
+          branchId: Value(originalSale.branchId ??
+              await _configService.getDefaultBranchId()),
         ),
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: creditAccount.id,
           debit: const Value(0.0),
           credit: Value(totalReturned),
-          branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
+          branchId: Value(originalSale.branchId ??
+              await _configService.getDefaultBranchId()),
         ),
       ];
 
@@ -1353,7 +1381,8 @@ class AccountingService {
           referenceId: saleReturn.id,
           credit: totalReturned,
           date: saleReturn.createdAt,
-          branchId: originalSale.branchId ?? await _configService.getDefaultBranchId(),
+          branchId: originalSale.branchId ??
+              await _configService.getDefaultBranchId(),
         );
       }
 
@@ -1364,26 +1393,25 @@ class AccountingService {
               ..where((b) => b.quantity.isBiggerThan(const Variable(0)))
               ..orderBy([
                 (b) => OrderingTerm(
-                  expression: b.expiryDate.isNull(),
-                  mode: OrderingMode.asc,
-                ),
+                      expression: b.expiryDate.isNull(),
+                      mode: OrderingMode.asc,
+                    ),
                 (b) => OrderingTerm(
-                  expression: b.expiryDate,
-                  mode: OrderingMode.asc,
-                ),
+                      expression: b.expiryDate,
+                      mode: OrderingMode.asc,
+                    ),
                 (b) => OrderingTerm(
-                  expression: b.createdAt,
-                  mode: OrderingMode.asc,
-                ),
+                      expression: b.createdAt,
+                      mode: OrderingMode.asc,
+                    ),
               ]))
             .get();
-        
+
         double remainingQty = item.quantity;
         for (var batch in batches) {
           if (remainingQty <= 0) break;
-          double deductFromBatch = batch.quantity >= remainingQty
-              ? remainingQty
-              : batch.quantity;
+          double deductFromBatch =
+              batch.quantity >= remainingQty ? remainingQty : batch.quantity;
           totalCostReversed += deductFromBatch * batch.costPrice;
           remainingQty -= deductFromBatch;
         }
@@ -1401,7 +1429,8 @@ class AccountingService {
             date: Value(saleReturn.createdAt),
             referenceType: const Value('COGS_REVERSAL'),
             referenceId: Value(saleReturn.id),
-            branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
+            branchId: Value(originalSale.branchId ??
+                await _configService.getDefaultBranchId()),
           );
           final cogsLines = [
             GLLinesCompanion.insert(
@@ -1409,14 +1438,16 @@ class AccountingService {
               accountId: inventoryAccount.id,
               debit: Value(totalCostReversed),
               credit: const Value(0.0),
-              branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
+              branchId: Value(originalSale.branchId ??
+                  await _configService.getDefaultBranchId()),
             ),
             GLLinesCompanion.insert(
               entryId: cogsEntryId,
               accountId: cogsAccount.id,
               debit: const Value(0.0),
               credit: Value(totalCostReversed),
-              branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
+              branchId: Value(originalSale.branchId ??
+                  await _configService.getDefaultBranchId()),
             ),
           ];
           await dao.createEntry(cogsEntry, cogsLines);
@@ -1431,7 +1462,8 @@ class AccountingService {
     String userId,
   ) async {
     // التحقق من الصلاحيات
-    await _permissionService.executeIfAllowed(userId, PermissionCode.postPurchaseReturn, () async {
+    await _permissionService
+        .executeIfAllowed(userId, PermissionCode.postPurchaseReturn, () async {
       final dao = db.accountingDao;
       final originalPurchase = await db.purchasesDao.getPurchaseById(
         purchaseReturn.purchaseId,
@@ -1469,7 +1501,8 @@ class AccountingService {
         date: Value(purchaseReturn.createdAt),
         referenceType: const Value('PURCHASE_RETURN'),
         referenceId: Value(purchaseReturn.id),
-        branchId: Value(originalPurchase.branchId ?? await _configService.getDefaultBranchId()),
+        branchId: Value(originalPurchase.branchId ??
+            await _configService.getDefaultBranchId()),
       );
 
       final lines = [
@@ -1478,14 +1511,16 @@ class AccountingService {
           accountId: debitAccount.id,
           debit: Value(totalReturned),
           credit: const Value(0.0),
-          branchId: Value(originalPurchase.branchId ?? await _configService.getDefaultBranchId()),
+          branchId: Value(originalPurchase.branchId ??
+              await _configService.getDefaultBranchId()),
         ),
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: purchaseReturnAccount.id,
           debit: const Value(0.0),
           credit: Value(purchasePortion),
-          branchId: Value(originalPurchase.branchId ?? await _configService.getDefaultBranchId()),
+          branchId: Value(originalPurchase.branchId ??
+              await _configService.getDefaultBranchId()),
         ),
         if (taxPortion > 0)
           GLLinesCompanion.insert(
@@ -1493,7 +1528,8 @@ class AccountingService {
             accountId: taxAccount.id,
             debit: const Value(0.0),
             credit: Value(taxPortion),
-            branchId: Value(originalPurchase.branchId ?? await _configService.getDefaultBranchId()),
+            branchId: Value(originalPurchase.branchId ??
+                await _configService.getDefaultBranchId()),
           ),
       ];
 
@@ -1512,7 +1548,8 @@ class AccountingService {
           referenceId: purchaseReturn.id,
           debit: totalReturned,
           date: purchaseReturn.createdAt,
-          branchId: originalPurchase.branchId ?? await _configService.getDefaultBranchId(),
+          branchId: originalPurchase.branchId ??
+              await _configService.getDefaultBranchId(),
         );
       }
     });
@@ -1584,7 +1621,8 @@ class AccountingService {
 
       await (db.update(
         db.fixedAssets,
-      )..where((a) => a.id.equals(asset.id))).write(
+      )..where((a) => a.id.equals(asset.id)))
+          .write(
         FixedAssetsCompanion(
           accumulatedDepreciation: Value(
             asset.accumulatedDepreciation + depreciationAmount,
@@ -1609,58 +1647,66 @@ class AccountingService {
     }
 
     // 1. Output VAT (from Sales)
-    final outputVatLines =
-        await (db.select(db.gLLines).join([
-              innerJoin(
-                db.gLEntries,
-                db.gLEntries.id.equalsExp(db.gLLines.entryId),
-              ),
-            ])..where(
-              db.gLLines.accountId.equals(outputVatAccount.id) &
-                  db.gLEntries.date.isBetweenValues(
-                    reportStartDate,
-                    reportEndDate,
-                  ),
-            ))
-            .get();
+    final outputVatLines = await (db.select(db.gLLines).join([
+      innerJoin(
+        db.gLEntries,
+        db.gLEntries.id.equalsExp(db.gLLines.entryId),
+      ),
+    ])
+          ..where(
+            db.gLLines.accountId.equals(outputVatAccount.id) &
+                db.gLEntries.date.isBetweenValues(
+                  reportStartDate,
+                  reportEndDate,
+                ),
+          ))
+        .get();
 
     double totalOutputVat = 0.0;
     for (final line in outputVatLines) {
-      totalOutputVat +=
-          (line.read(db.gLLines.credit) ?? 0) -
+      totalOutputVat += (line.read(db.gLLines.credit) ?? 0) -
           (line.read(db.gLLines.debit) ?? 0);
     }
 
     // 2. Input VAT (from Purchases)
-    final inputVatLines =
-        await (db.select(db.gLLines).join([
-              innerJoin(
-                db.gLEntries,
-                db.gLEntries.id.equalsExp(db.gLLines.entryId),
-              ),
-            ])..where(
-              db.gLLines.accountId.equals(inputVatAccount.id) &
-                  db.gLEntries.date.isBetweenValues(
-                    reportStartDate,
-                    reportEndDate,
-                  ),
-            ))
-            .get();
+    final inputVatLines = await (db.select(db.gLLines).join([
+      innerJoin(
+        db.gLEntries,
+        db.gLEntries.id.equalsExp(db.gLLines.entryId),
+      ),
+    ])
+          ..where(
+            db.gLLines.accountId.equals(inputVatAccount.id) &
+                db.gLEntries.date.isBetweenValues(
+                  reportStartDate,
+                  reportEndDate,
+                ),
+          ))
+        .get();
 
     double totalInputVat = 0.0;
     for (final line in inputVatLines) {
-      totalInputVat +=
-          (line.read(db.gLLines.debit) ?? 0) -
+      totalInputVat += (line.read(db.gLLines.debit) ?? 0) -
           (line.read(db.gLLines.credit) ?? 0);
     }
 
     // 3. Taxable Sales Base (Calculated from sales with VAT)
-    final taxableSales = await (db.select(db.sales)..where((s) => s.tax.isBiggerThan(const Constant(0.0)) & s.updatedAt.isBetweenValues(reportStartDate, reportEndDate))).get();
-    double totalTaxableSales = taxableSales.fold(0, (sum, s) => sum + (s.total - s.tax));
+    final taxableSales = await (db.select(db.sales)
+          ..where((s) =>
+              s.tax.isBiggerThan(const Constant(0.0)) &
+              s.updatedAt.isBetweenValues(reportStartDate, reportEndDate)))
+        .get();
+    double totalTaxableSales =
+        taxableSales.fold(0, (sum, s) => sum + (s.total - s.tax));
 
     // 4. Taxable Purchases Base
-    final taxablePurchases = await (db.select(db.purchases)..where((p) => p.tax.isBiggerThan(const Constant(0.0)) & p.updatedAt.isBetweenValues(reportStartDate, reportEndDate))).get();
-    double totalTaxablePurchases = taxablePurchases.fold(0, (sum, p) => sum + (p.total - p.tax));
+    final taxablePurchases = await (db.select(db.purchases)
+          ..where((p) =>
+              p.tax.isBiggerThan(const Constant(0.0)) &
+              p.updatedAt.isBetweenValues(reportStartDate, reportEndDate)))
+        .get();
+    double totalTaxablePurchases =
+        taxablePurchases.fold(0, (sum, p) => sum + (p.total - p.tax));
 
     return VatReportData(
       totalTaxableSales: totalTaxableSales,
