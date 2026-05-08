@@ -131,9 +131,7 @@ class _AddSupplierPaymentPageState extends State<AddSupplierPaymentPage> {
 
     try {
       // 1. Record payment in database
-      await db
-          .into(db.supplierPayments)
-          .insert(
+      await db.into(db.supplierPayments).insert(
             SupplierPaymentsCompanion.insert(
               id: drift.Value(paymentId),
               supplierId: widget.supplier.id,

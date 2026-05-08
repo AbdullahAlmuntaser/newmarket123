@@ -14,7 +14,8 @@ class SalesService {
   final AppSettingsService settings;
   final PermissionService permissions;
 
-  SalesService(this.db, this.postingEngine, this.inventoryService, this.settings, this.permissions);
+  SalesService(this.db, this.postingEngine, this.inventoryService,
+      this.settings, this.permissions);
 
   Future<void> processInvoice(SalesInvoice invoice, String userId) async {
     // التحقق من الصلاحية قبل تنفيذ العملية
@@ -22,7 +23,8 @@ class SalesService {
       try {
         await db.transaction(() async {
           // جلب الإعدادات (المستودع فقط)
-          final warehouseId = await settings.getCurrentWarehouseId() ?? "MAIN_WAREHOUSE";
+          final warehouseId =
+              await settings.getCurrentWarehouseId() ?? "MAIN_WAREHOUSE";
 
           // حساب الإجماليات (استخدام الضريبة من الفاتورة مباشرة)
           double subtotal = 0;
@@ -53,7 +55,9 @@ class SalesService {
           await postingEngine.postEntry(
             entries: [
               PostingLine(
-                account: invoice.paymentMethod == 'cash' ? 'CASH_BOX' : 'CUSTOMER_AR',
+                account: invoice.paymentMethod == 'cash'
+                    ? 'CASH_BOX'
+                    : 'CUSTOMER_AR',
                 debit: total,
                 credit: 0,
               ),
@@ -75,17 +79,19 @@ class SalesService {
 
           // 3. Audit Log
           await db.into(db.auditLogs).insert(
-            AuditLogsCompanion.insert(
-              userId: Value(userId),
-              action: 'PROCESS_INVOICE',
-              targetEntity: 'SalesInvoice',
-              entityId: invoice.id,
-              details: Value('تم معالجة فاتورة المبيعات رقم ${invoice.id} بقيمة $total'),
-              timestamp: Value(DateTime.now()),
-            ),
-          );
-          });
-          } on Exception catch (e) {        debugPrint('خطأ في معالجة الفاتورة ${invoice.id}: $e');
+                AuditLogsCompanion.insert(
+                  userId: Value(userId),
+                  action: 'PROCESS_INVOICE',
+                  targetEntity: 'SalesInvoice',
+                  entityId: invoice.id,
+                  details: Value(
+                      'تم معالجة فاتورة المبيعات رقم ${invoice.id} بقيمة $total'),
+                  timestamp: Value(DateTime.now()),
+                ),
+              );
+        });
+      } on Exception catch (e) {
+        debugPrint('خطأ في معالجة الفاتورة ${invoice.id}: $e');
         rethrow;
       }
     });

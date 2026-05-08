@@ -14,13 +14,13 @@ class SystemSettingsPage extends StatefulWidget {
 
 class _SystemSettingsPageState extends State<SystemSettingsPage> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Controllers
   late TextEditingController _taxRateController;
   late TextEditingController _lowStockThresholdController;
   late TextEditingController _invoiceMessageController;
   late TextEditingController _companyPhoneController;
-  
+
   String? _defaultWarehouseId;
   String? _defaultBranchId;
   bool _isLoading = true;
@@ -38,31 +38,31 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
 
   Future<void> _loadSettings() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final db = context.read<AppDatabase>();
       final configService = AppConfigService(db);
-      
+
       // Load tax rate
       final taxRate = await configService.getTaxRate();
       _taxRateController.text = (taxRate * 100).toStringAsFixed(2);
-      
+
       // Load low stock threshold
       final threshold = await configService.getLowStockThreshold();
       _lowStockThresholdController.text = threshold.toString();
-      
+
       // Load invoice message
       final invoiceMessage = await configService.getInvoiceMessage();
       _invoiceMessageController.text = invoiceMessage;
-      
+
       // Load company phone
-      final companyPhone = await configService.getString(AppConfigService.keyCompanyPhone) ?? '';
+      final companyPhone =
+          await configService.getString(AppConfigService.keyCompanyPhone) ?? '';
       _companyPhoneController.text = companyPhone;
-      
+
       // Load warehouse and branch IDs
       _defaultWarehouseId = await configService.getDefaultWarehouseId();
       _defaultBranchId = await configService.getDefaultBranchId();
-      
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -78,33 +78,34 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
 
   Future<void> _saveSettings() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() => _isSaving = true);
-    
+
     try {
       final db = context.read<AppDatabase>();
       final configService = AppConfigService(db);
-      
+
       // Save tax rate
       final taxRate = double.parse(_taxRateController.text) / 100;
       await configService.setDouble(AppConfigService.keyTaxRate, taxRate);
-      
+
       // Save low stock threshold
       final threshold = int.parse(_lowStockThresholdController.text);
-      await configService.setInt(AppConfigService.keyLowStockThreshold, threshold);
-      
+      await configService.setInt(
+          AppConfigService.keyLowStockThreshold, threshold);
+
       // Save invoice message
       await configService.setString(
         AppConfigService.keyInvoiceMessage,
         _invoiceMessageController.text,
       );
-      
+
       // Save company phone
       await configService.setString(
         AppConfigService.keyCompanyPhone,
         _companyPhoneController.text,
       );
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -191,7 +192,8 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                               prefixIcon: Icon(Icons.percent),
                               border: OutlineInputBorder(),
                             ),
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'الرجاء إدخال نسبة الضريبة';
@@ -207,9 +209,9 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Inventory Section
                   Card(
                     child: Padding(
@@ -249,9 +251,9 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Invoice Settings Section
                   Card(
                     child: Padding(
@@ -288,9 +290,9 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Company Info Section
                   Card(
                     child: Padding(
@@ -320,9 +322,9 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Warehouse & Branch Info (Read-only for now)
                   Card(
                     child: Padding(
@@ -356,9 +358,9 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 32),
-                  
+
                   // Save Button
                   ElevatedButton.icon(
                     onPressed: _isSaving ? null : _saveSettings,

@@ -18,7 +18,8 @@ class HRService {
   Future<List<Employee>> getAllEmployees() async {
     return await (db.select(
       db.employees,
-    )..where((t) => t.isActive.equals(true))).get();
+    )..where((t) => t.isActive.equals(true)))
+        .get();
   }
 
   Future<void> addEmployee(EmployeesCompanion employee) async {
@@ -41,9 +42,7 @@ class HRService {
     final entryId = const Uuid().v4();
 
     await db.transaction(() async {
-      await db
-          .into(db.payrollEntries)
-          .insert(
+      await db.into(db.payrollEntries).insert(
             PayrollEntriesCompanion.insert(
               id: Value(entryId),
               month: month,
@@ -54,9 +53,7 @@ class HRService {
           );
 
       for (var emp in employees) {
-        await db
-            .into(db.payrollLines)
-            .insert(
+        await db.into(db.payrollLines).insert(
               PayrollLinesCompanion.insert(
                 id: Value(const Uuid().v4()),
                 payrollEntryId: entryId,
@@ -76,7 +73,8 @@ class HRService {
     await db.transaction(() async {
       final entry = await (db.select(
         db.payrollEntries,
-      )..where((t) => t.id.equals(entryId))).getSingle();
+      )..where((t) => t.id.equals(entryId)))
+          .getSingle();
       if (entry.status != 'DRAFT') {
         throw Exception('كشف الرواتب معتمد بالفعل أو مدفوع');
       }
@@ -115,16 +113,18 @@ class HRService {
   }
 
   Future<List<PayrollEntry>> getAllPayrollEntries() async {
-    return await (db.select(db.payrollEntries)..orderBy([
-          (t) => OrderingTerm.desc(t.year),
-          (t) => OrderingTerm.desc(t.month),
-        ]))
+    return await (db.select(db.payrollEntries)
+          ..orderBy([
+            (t) => OrderingTerm.desc(t.year),
+            (t) => OrderingTerm.desc(t.month),
+          ]))
         .get();
   }
 
   Future<List<PayrollLine>> getPayrollLines(String entryId) async {
     return await (db.select(
       db.payrollLines,
-    )..where((t) => t.payrollEntryId.equals(entryId))).get();
+    )..where((t) => t.payrollEntryId.equals(entryId)))
+        .get();
   }
 }

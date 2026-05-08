@@ -75,9 +75,7 @@ class _AddEditCategoryDialogState extends State<AddEditCategoryDialog> {
       try {
         if (widget.category == null) {
           // Add new category
-          await widget.db
-              .into(widget.db.categories)
-              .insert(
+          await widget.db.into(widget.db.categories).insert(
                 CategoriesCompanion.insert(name: _name, code: Value(_code)),
               );
           if (mounted) {
@@ -89,7 +87,8 @@ class _AddEditCategoryDialogState extends State<AddEditCategoryDialog> {
           // Update existing category
           await (widget.db.update(
             widget.db.categories,
-          )..where((c) => c.id.equals(widget.category!.id))).write(
+          )..where((c) => c.id.equals(widget.category!.id)))
+              .write(
             CategoriesCompanion(name: Value(_name), code: Value(_code)),
           );
           if (mounted) {

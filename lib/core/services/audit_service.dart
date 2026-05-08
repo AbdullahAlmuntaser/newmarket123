@@ -12,9 +12,7 @@ class AuditService {
     required String entityId,
     String? details,
   }) async {
-    await db
-        .into(db.auditLogs)
-        .insert(
+    await db.into(db.auditLogs).insert(
           AuditLogsCompanion.insert(
             userId: Value(userId),
             action: action,
@@ -32,37 +30,40 @@ class AuditService {
     String id, {
     String? details,
     String? userId,
-  }) => log(
-    action: 'CREATE',
-    targetEntity: entity,
-    entityId: id,
-    details: details,
-    userId: userId,
-  );
+  }) =>
+      log(
+        action: 'CREATE',
+        targetEntity: entity,
+        entityId: id,
+        details: details,
+        userId: userId,
+      );
 
   Future<void> logUpdate(
     String entity,
     String id, {
     String? details,
     String? userId,
-  }) => log(
-    action: 'UPDATE',
-    targetEntity: entity,
-    entityId: id,
-    details: details,
-    userId: userId,
-  );
+  }) =>
+      log(
+        action: 'UPDATE',
+        targetEntity: entity,
+        entityId: id,
+        details: details,
+        userId: userId,
+      );
 
   Future<void> logDelete(
     String entity,
     String id, {
     String? details,
     String? userId,
-  }) => log(
-    action: 'DELETE',
-    targetEntity: entity,
-    entityId: id,
-    details: details,
-    userId: userId,
-  );
+  }) =>
+      log(
+        action: 'DELETE',
+        targetEntity: entity,
+        entityId: id,
+        details: details,
+        userId: userId,
+      );
 }

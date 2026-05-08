@@ -15,7 +15,8 @@ class SmartStockWidget extends StatelessWidget {
     return StreamBuilder<List<UnitConversion>>(
       stream: (db.select(
         db.unitConversions,
-      )..where((t) => t.productId.equals(product.id))).watch(),
+      )..where((t) => t.productId.equals(product.id)))
+          .watch(),
       builder: (context, snapshot) {
         final conversions = snapshot.data ?? [];
         final formattedStock = ErpLogic.formatInventory(

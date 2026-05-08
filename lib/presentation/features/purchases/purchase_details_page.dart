@@ -75,23 +75,29 @@ class PurchaseDetailsPage extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(l10n.purchaseDetails, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(l10n.purchaseDetails,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold)),
                 Row(
                   children: [
                     if (supplier?.phone != null && supplier!.phone!.isNotEmpty)
                       PopupMenuButton<String>(
-                        icon: const Icon(Icons.send, color: Colors.blue, size: 20),
+                        icon: const Icon(Icons.send,
+                            color: Colors.blue, size: 20),
                         tooltip: 'إرسال',
-                        onSelected: (value) => _sendMessage(context, supplier.phone!, value, purchase),
+                        onSelected: (value) => _sendMessage(
+                            context, supplier.phone!, value, purchase),
                         itemBuilder: (context) => [
                           const PopupMenuItem(value: 'sms', child: Text('SMS')),
-                          const PopupMenuItem(value: 'whatsapp', child: Text('WhatsApp')),
+                          const PopupMenuItem(
+                              value: 'whatsapp', child: Text('WhatsApp')),
                         ],
                       ),
                     IconButton(
                       icon: const Icon(Icons.print, size: 20),
                       tooltip: 'طباعة',
-                      onPressed: () => _printInvoice(context, db, purchase, supplier),
+                      onPressed: () =>
+                          _printInvoice(context, db, purchase, supplier),
                     ),
                   ],
                 ),
@@ -101,9 +107,11 @@ class PurchaseDetailsPage extends StatelessWidget {
             _buildInfoRow(l10n.purchaseId, purchase.id.substring(0, 8)),
             _buildInfoRow(l10n.date, DateFormat.yMMMd().format(purchase.date)),
             _buildInfoRow(l10n.supplier, supplier?.name ?? l10n.unknown),
-            _buildInfoRow(l10n.invoiceNumberLabel, purchase.invoiceNumber ?? '-'),
+            _buildInfoRow(
+                l10n.invoiceNumberLabel, purchase.invoiceNumber ?? '-'),
             _buildInfoRow(l10n.status, purchase.status.name),
-            _buildInfoRow(l10n.paymentMethod, purchase.isCredit ? l10n.credit : l10n.cash),
+            _buildInfoRow(l10n.paymentMethod,
+                purchase.isCredit ? l10n.credit : l10n.cash),
           ],
         ),
       ),
@@ -178,13 +186,15 @@ class PurchaseDetailsPage extends StatelessWidget {
   Future<PurchaseWithSupplier?> _getPurchaseDetails(AppDatabase db) async {
     final purchase = await (db.select(
       db.purchases,
-    )..where((t) => t.id.equals(purchaseId))).getSingleOrNull();
+    )..where((t) => t.id.equals(purchaseId)))
+        .getSingleOrNull();
     if (purchase == null) return null;
     Supplier? supplier;
     if (purchase.supplierId != null) {
       supplier = await (db.select(
         db.suppliers,
-      )..where((t) => t.id.equals(purchase.supplierId!))).getSingleOrNull();
+      )..where((t) => t.id.equals(purchase.supplierId!)))
+          .getSingleOrNull();
     }
     return PurchaseWithSupplier(purchase, supplier);
   }
@@ -194,12 +204,14 @@ class PurchaseDetailsPage extends StatelessWidget {
   ) async {
     final items = await (db.select(
       db.purchaseItems,
-    )..where((t) => t.purchaseId.equals(purchaseId))).get();
+    )..where((t) => t.purchaseId.equals(purchaseId)))
+        .get();
     final List<PurchaseItemWithProduct> result = [];
     for (var item in items) {
       final product = await (db.select(
         db.products,
-      )..where((t) => t.id.equals(item.productId))).getSingleOrNull();
+      )..where((t) => t.id.equals(item.productId)))
+          .getSingleOrNull();
       result.add(PurchaseItemWithProduct(item, product));
     }
     return result;
@@ -247,7 +259,7 @@ class PurchaseDetailsPage extends StatelessWidget {
   ) async {
     try {
       final items = await (db.select(db.purchaseItems)
-        ..where((i) => i.purchaseId.equals(purchaseId)))
+            ..where((i) => i.purchaseId.equals(purchaseId)))
           .get();
 
       if (!context.mounted) return;
@@ -286,7 +298,8 @@ class PurchaseDetailsPage extends StatelessWidget {
     buffer.writeln('الصنف          | الكمية | السعر');
     buffer.writeln('------------------------------');
     for (var item in items) {
-      buffer.writeln('${item.productId.substring(0, 8)} | ${item.quantity} | ${item.unitPrice}');
+      buffer.writeln(
+          '${item.productId.substring(0, 8)} | ${item.quantity} | ${item.unitPrice}');
     }
     buffer.writeln('------------------------------');
     buffer.writeln('الإجمالي: ${purchase.total.toStringAsFixed(2)}');

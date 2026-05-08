@@ -14,13 +14,17 @@ class PostingProfilesSettingsPage extends StatelessWidget {
       body: StreamBuilder<List<PostingProfile>>(
         stream: db.accountingDao.watchPostingProfiles(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
           final profiles = snapshot.data!;
-          
+
           return FutureBuilder<List<GLAccount>>(
             future: db.accountingDao.getAllAccounts(),
             builder: (context, accountSnapshot) {
-              if (!accountSnapshot.hasData) return const Center(child: CircularProgressIndicator());
+              if (!accountSnapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
               final accounts = accountSnapshot.data!;
               final accountMap = {for (var a in accounts) a.id: a.name};
 
@@ -28,16 +32,22 @@ class PostingProfilesSettingsPage extends StatelessWidget {
                 itemCount: profiles.length,
                 itemBuilder: (context, index) {
                   final profile = profiles[index];
-                  final accountName = accountMap[profile.accountId] ?? 'غير محدد';
+                  final accountName =
+                      accountMap[profile.accountId] ?? 'غير محدد';
                   return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     child: ListTile(
-                      title: Text('${profile.operationType} - ${profile.accountType}'),
-                      subtitle: Text('الجانب: ${profile.side} | الحساب: $accountName'),
-                      onTap: () => _showAddProfileDialog(context, db, accounts, profile: profile),
+                      title: Text(
+                          '${profile.operationType} - ${profile.accountType}'),
+                      subtitle: Text(
+                          'الجانب: ${profile.side} | الحساب: $accountName'),
+                      onTap: () => _showAddProfileDialog(context, db, accounts,
+                          profile: profile),
                       trailing: IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => db.accountingDao.deletePostingProfile(profile.id),
+                        onPressed: () =>
+                            db.accountingDao.deletePostingProfile(profile.id),
                       ),
                     ),
                   );
@@ -58,9 +68,12 @@ class PostingProfilesSettingsPage extends StatelessWidget {
   }
 
   Future<void> _showAddProfileDialog(
-      BuildContext context, AppDatabase db, List<GLAccount> accounts, {PostingProfile? profile}) async {
-    final operationController = TextEditingController(text: profile?.operationType ?? '');
-    final accountTypeController = TextEditingController(text: profile?.accountType ?? '');
+      BuildContext context, AppDatabase db, List<GLAccount> accounts,
+      {PostingProfile? profile}) async {
+    final operationController =
+        TextEditingController(text: profile?.operationType ?? '');
+    final accountTypeController =
+        TextEditingController(text: profile?.accountType ?? '');
     String side = profile?.side ?? 'DEBIT';
     String? selectedAccountId = profile?.accountId;
 
@@ -68,23 +81,36 @@ class PostingProfilesSettingsPage extends StatelessWidget {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: Text(profile == null ? 'إضافة قيد ترحيل جديد' : 'تعديل قيد الترحيل'),
+          title: Text(
+              profile == null ? 'إضافة قيد ترحيل جديد' : 'تعديل قيد الترحيل'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: operationController, decoration: const InputDecoration(labelText: 'نوع العملية (SALE, PURCHASE)')),
-                TextField(controller: accountTypeController, decoration: const InputDecoration(labelText: 'نوع الحساب (REVENUE, CASH)')),
+                TextField(
+                    controller: operationController,
+                    decoration: const InputDecoration(
+                        labelText: 'نوع العملية (SALE, PURCHASE)')),
+                TextField(
+                    controller: accountTypeController,
+                    decoration: const InputDecoration(
+                        labelText: 'نوع الحساب (REVENUE, CASH)')),
                 DropdownButtonFormField<String>(
                   value: selectedAccountId,
                   isExpanded: true,
-                  items: accounts.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(),
+                  items: accounts
+                      .map((a) =>
+                          DropdownMenuItem(value: a.id, child: Text(a.name)))
+                      .toList(),
                   onChanged: (v) => setState(() => selectedAccountId = v),
-                  decoration: const InputDecoration(labelText: 'الحساب المحاسبي'),
+                  decoration:
+                      const InputDecoration(labelText: 'الحساب المحاسبي'),
                 ),
                 DropdownButtonFormField<String>(
                   value: side,
-                  items: ['DEBIT', 'CREDIT'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                  items: ['DEBIT', 'CREDIT']
+                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                      .toList(),
                   onChanged: (v) => setState(() => side = v!),
                   decoration: const InputDecoration(labelText: 'الجانب'),
                 ),
@@ -92,11 +118,14 @@ class PostingProfilesSettingsPage extends StatelessWidget {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('إلغاء')),
             ElevatedButton(
               onPressed: () {
                 if (profile == null) {
-                  db.accountingDao.createPostingProfile(PostingProfilesCompanion.insert(
+                  db.accountingDao
+                      .createPostingProfile(PostingProfilesCompanion.insert(
                     operationType: operationController.text.toUpperCase(),
                     accountType: accountTypeController.text.toUpperCase(),
                     accountId: drift.Value(selectedAccountId),

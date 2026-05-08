@@ -14,16 +14,21 @@ class ShiftsPage extends StatelessWidget {
       body: StreamBuilder<List<Shift>>(
         stream: db.select(db.shifts).watch(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
           return ListView.builder(
             itemCount: snapshot.data!.length,
             itemBuilder: (context, index) {
               final shift = snapshot.data![index];
               return ListTile(
-                title: Text('وردية: ${shift.startTime.toString().split(' ')[0]}'),
+                title:
+                    Text('وردية: ${shift.startTime.toString().split(' ')[0]}'),
                 subtitle: Text('الحالة: ${shift.isOpen ? "مفتوحة" : "مغلقة"}'),
                 trailing: shift.isOpen
-                    ? ElevatedButton(onPressed: () => _closeShift(context, db, shift), child: const Text('إغلاق'))
+                    ? ElevatedButton(
+                        onPressed: () => _closeShift(context, db, shift),
+                        child: const Text('إغلاق'))
                     : null,
               );
             },
@@ -39,13 +44,14 @@ class ShiftsPage extends StatelessWidget {
 
   Future<void> _openShift(BuildContext context, AppDatabase db) async {
     await db.into(db.shifts).insert(ShiftsCompanion.insert(
-      userId: 'current_user_id', // يجب استبداله بـ ID المستخدم الفعلي
-      startTime: drift.Value(DateTime.now()),
-      isOpen: const drift.Value(true),
-    ));
+          userId: 'current_user_id', // يجب استبداله بـ ID المستخدم الفعلي
+          startTime: drift.Value(DateTime.now()),
+          isOpen: const drift.Value(true),
+        ));
   }
 
-  Future<void> _closeShift(BuildContext context, AppDatabase db, Shift shift) async {
+  Future<void> _closeShift(
+      BuildContext context, AppDatabase db, Shift shift) async {
     await (db.update(db.shifts)..where((s) => s.id.equals(shift.id))).write(
       ShiftsCompanion(
         endTime: drift.Value(DateTime.now()),

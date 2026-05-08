@@ -11,16 +11,17 @@ class CommunicationService {
   /// فتح تطبيق الهاتف للاتصال برقم معين
   Future<bool> makePhoneCall(String phoneNumber) async {
     if (phoneNumber.isEmpty) return false;
-    
+
     final Uri launchUri = Uri(
       scheme: 'tel',
       path: phoneNumber,
     );
-    
+
     try {
       return await launchUrl(launchUri);
     } catch (e) {
-      developer.log('Error making phone call', error: e, name: 'CommunicationService');
+      developer.log('Error making phone call',
+          error: e, name: 'CommunicationService');
       return false;
     }
   }
@@ -33,16 +34,16 @@ class CommunicationService {
     String? message,
   }) async {
     if (phoneNumber.isEmpty) return false;
-    
+
     // تنظيف الرقم وإزالة أي أحرف غير رقمية
     String cleanNumber = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
-    
+
     // إزالة الصفر الأول إذا كان يبدأ بـ 0 وإضافة كود الدولة
     if (cleanNumber.startsWith('0')) {
       // افتراض أن الرقم سعودي إذا لم يكن به كود دولة
       cleanNumber = '966${cleanNumber.substring(1)}';
     }
-    
+
     try {
       Uri uri;
       if (message != null && message.isNotEmpty) {
@@ -54,10 +55,11 @@ class CommunicationService {
       } else {
         uri = Uri.parse('https://wa.me/$cleanNumber');
       }
-      
+
       return await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (e) {
-      developer.log('Error opening WhatsApp', error: e, name: 'CommunicationService');
+      developer.log('Error opening WhatsApp',
+          error: e, name: 'CommunicationService');
       return false;
     }
   }
@@ -68,7 +70,7 @@ class CommunicationService {
     required String message,
   }) async {
     if (phoneNumber.isEmpty || message.isEmpty) return false;
-    
+
     try {
       // استخدام scheme الخاص بـ SMS
       final Uri smsUri = Uri(
@@ -76,10 +78,11 @@ class CommunicationService {
         path: phoneNumber,
         query: 'body=$message',
       );
-      
+
       return await launchUrl(smsUri);
     } catch (e) {
-      developer.log('Error sending SMS', error: e, name: 'CommunicationService');
+      developer.log('Error sending SMS',
+          error: e, name: 'CommunicationService');
       return false;
     }
   }
@@ -102,7 +105,7 @@ ${dueDate != null ? '*تاريخ الاستحقاق:* ${_formatDate(dueDate)}' :
 
 شكراً لتعاملكم معنا! 🙏
 ''';
-    
+
     return await sendWhatsAppMessage(
       phoneNumber: phoneNumber,
       message: message,
@@ -127,7 +130,7 @@ ${dueDate != null ? '*تاريخ الاستحقاق:* ${_formatDate(dueDate)}' :
 
 يرجى تأكيد الاستلام. شكراً! 🙏
 ''';
-    
+
     return await sendWhatsAppMessage(
       phoneNumber: phoneNumber,
       message: message,
@@ -150,7 +153,7 @@ ${dueDate != null ? '*تاريخ الاستحقاق:* ${_formatDate(dueDate)}' :
 
 يرجى الت reorder فوراً!
 ''';
-    
+
     return await sendSMS(
       phoneNumber: phoneNumber,
       message: message,
@@ -175,7 +178,7 @@ ${dueDate != null ? '*تاريخ الاستحقاق:* ${_formatDate(dueDate)}' :
 
 يرجى اتخاذ اللازم!
 ''';
-    
+
     return await sendSMS(
       phoneNumber: phoneNumber,
       message: message,

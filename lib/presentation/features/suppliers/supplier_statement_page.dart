@@ -101,9 +101,9 @@ class SupplierStatementPage extends StatelessWidget {
           Text(
             '${supplier.balance.toStringAsFixed(2)} SAR',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: supplier.balance > 0 ? Colors.red : Colors.green,
-            ),
+                  fontWeight: FontWeight.bold,
+                  color: supplier.balance > 0 ? Colors.red : Colors.green,
+                ),
           ),
         ],
       ),
@@ -111,23 +111,23 @@ class SupplierStatementPage extends StatelessWidget {
   }
 
   Stream<List<dynamic>> _getCombinedStatementStream(AppDatabase db) {
-    final purchasesStream =
-        db.select(db.purchases).watch();
+    final purchasesStream = db.select(db.purchases).watch();
 
     return purchasesStream.asyncMap((purchases) async {
-      final filteredPurchases = purchases.where((p) => p.supplierId == supplier.id && p.isCredit).toList();
+      final filteredPurchases = purchases
+          .where((p) => p.supplierId == supplier.id && p.isCredit)
+          .toList();
       final payments = await (db.select(
         db.supplierPayments,
-      )..where((t) => t.supplierId.equals(supplier.id))).get();
+      )..where((t) => t.supplierId.equals(supplier.id)))
+          .get();
 
       final List<dynamic> combined = [...filteredPurchases, ...payments];
       combined.sort((a, b) {
-        final dateA = a is Purchase
-            ? a.date
-            : (a as SupplierPayment).paymentDate;
-        final dateB = b is Purchase
-            ? b.date
-            : (b as SupplierPayment).paymentDate;
+        final dateA =
+            a is Purchase ? a.date : (a as SupplierPayment).paymentDate;
+        final dateB =
+            b is Purchase ? b.date : (b as SupplierPayment).paymentDate;
         return dateB.compareTo(dateA);
       });
       return combined;

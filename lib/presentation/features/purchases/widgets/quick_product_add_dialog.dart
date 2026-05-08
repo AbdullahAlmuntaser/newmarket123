@@ -73,7 +73,8 @@ class _QuickProductAddDialogState extends State<QuickProductAddDialog> {
       // Fetch the created product to return it
       final createdProduct = await (db.select(
         db.products,
-      )..where((t) => t.id.equals(productId))).getSingle();
+      )..where((t) => t.id.equals(productId)))
+          .getSingle();
 
       widget.onProductCreated(createdProduct);
       if (mounted) Navigator.pop(context);

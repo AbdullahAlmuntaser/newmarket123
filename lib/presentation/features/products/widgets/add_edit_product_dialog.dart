@@ -24,7 +24,8 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     super.initState();
     _skuController = TextEditingController(text: widget.product?.sku ?? '');
     _nameController = TextEditingController(text: widget.product?.name ?? '');
-    _stockController = TextEditingController(text: widget.product?.stock.toString() ?? '0.0');
+    _stockController =
+        TextEditingController(text: widget.product?.stock.toString() ?? '0.0');
   }
 
   @override
@@ -50,7 +51,8 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(labelText: l10n.productName),
-                validator: (value) => value!.isEmpty ? l10n.enterProductName : null,
+                validator: (value) =>
+                    value!.isEmpty ? l10n.enterProductName : null,
               ),
               TextFormField(
                 controller: _skuController,
@@ -67,7 +69,8 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+        TextButton(
+            onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
         ElevatedButton(onPressed: _saveProduct, child: Text(l10n.save)),
       ],
     );
@@ -77,34 +80,43 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     if (_formKey.currentState!.validate()) {
       final db = Provider.of<AppDatabase>(context, listen: false);
       final initialStock = double.tryParse(_stockController.text) ?? 0.0;
-      
+
       try {
         await db.transaction(() async {
           if (widget.product == null) {
-            final productId = await db.into(db.products).insertReturning(ProductsCompanion.insert(
-              name: _nameController.text, 
-              sku: _skuController.text, 
-              stock: Value(initialStock),
-            )).then((p) => p.id);
+            final productId = await db
+                .into(db.products)
+                .insertReturning(ProductsCompanion.insert(
+                  name: _nameController.text,
+                  sku: _skuController.text,
+                  stock: Value(initialStock),
+                ))
+                .then((p) => p.id);
 
             if (initialStock > 0) {
-              final defaultWarehouse = await (db.select(db.warehouses)..where((w) => w.isDefault.equals(true))).getSingleOrNull();
-              final warehouseId = defaultWarehouse?.id ?? 'default_warehouse_id';
+              final defaultWarehouse = await (db.select(db.warehouses)
+                    ..where((w) => w.isDefault.equals(true)))
+                  .getSingleOrNull();
+              final warehouseId =
+                  defaultWarehouse?.id ?? 'default_warehouse_id';
 
-              await db.into(db.inventoryTransactions).insert(InventoryTransactionsCompanion.insert(
-                productId: productId,
-                warehouseId: warehouseId, 
-                quantity: initialStock,
-                type: 'ADJUSTMENT',
-                referenceId: productId,
-              ));
+              await db
+                  .into(db.inventoryTransactions)
+                  .insert(InventoryTransactionsCompanion.insert(
+                    productId: productId,
+                    warehouseId: warehouseId,
+                    quantity: initialStock,
+                    type: 'ADJUSTMENT',
+                    referenceId: productId,
+                  ));
             }
           }
         });
         if (!mounted) return;
         Navigator.pop(context);
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل الحفظ: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('فشل الحفظ: $e')));
       }
     }
   }

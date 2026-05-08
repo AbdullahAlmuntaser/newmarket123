@@ -29,23 +29,25 @@ class GrnService {
           .get();
 
       String grnId = const Uuid().v4();
-      String grnNumber = 'GRN-${DateTime.now().millisecondsSinceEpoch.toString().substring(6)}';
+      String grnNumber =
+          'GRN-${DateTime.now().millisecondsSinceEpoch.toString().substring(6)}';
 
-       await db.into(db.goodReceivedNotes).insert(
-         GoodReceivedNotesCompanion.insert(
-           id: Value(grnId),
-           purchaseId: Value(purchaseId),
-           supplierId: Value(purchase.supplierId),
-           warehouseId: warehouseId,
-           grnNumber: grnNumber,
-           receivedBy: Value(receivedBy),
-           notes: Value(notes ?? 'From Purchase: ${purchase.invoiceNumber}'),
-           status: const Value('POSTED'),
-           receivedDate: Value(DateTime.now()),
-         ),
-       );
+      await db.into(db.goodReceivedNotes).insert(
+            GoodReceivedNotesCompanion.insert(
+              id: Value(grnId),
+              purchaseId: Value(purchaseId),
+              supplierId: Value(purchase.supplierId),
+              warehouseId: warehouseId,
+              grnNumber: grnNumber,
+              receivedBy: Value(receivedBy),
+              notes: Value(notes ?? 'From Purchase: ${purchase.invoiceNumber}'),
+              status: const Value('POSTED'),
+              receivedDate: Value(DateTime.now()),
+            ),
+          );
 
-      final landedCosts = purchase.landedCosts + purchase.shippingCost + purchase.otherExpenses;
+      final landedCosts =
+          purchase.landedCosts + purchase.shippingCost + purchase.otherExpenses;
       double itemsSubtotal = 0;
       for (var item in purchaseItems) {
         itemsSubtotal += item.quantity * item.price;
@@ -68,17 +70,17 @@ class GrnService {
 
         final String batchId = const Uuid().v4();
         await db.into(db.productBatches).insert(
-          ProductBatchesCompanion.insert(
-            id: Value(batchId),
-            productId: productId,
-            warehouseId: warehouseId,
-            batchNumber: item.batchNumber ?? 'BATCH-$grnNumber',
-            quantity: Value(qtyInBaseUnit),
-            initialQuantity: Value(qtyInBaseUnit),
-            costPrice: Value(unitCost),
-            expiryDate: Value(item.expiryDate),
-          ),
-        );
+              ProductBatchesCompanion.insert(
+                id: Value(batchId),
+                productId: productId,
+                warehouseId: warehouseId,
+                batchNumber: item.batchNumber ?? 'BATCH-$grnNumber',
+                quantity: Value(qtyInBaseUnit),
+                initialQuantity: Value(qtyInBaseUnit),
+                costPrice: Value(unitCost),
+                expiryDate: Value(item.expiryDate),
+              ),
+            );
 
         final product = await (db.select(db.products)
               ..where((p) => p.id.equals(productId)))
@@ -93,25 +95,25 @@ class GrnService {
         );
 
         await db.into(db.inventoryTransactions).insert(
-          InventoryTransactionsCompanion.insert(
-            productId: productId,
-            warehouseId: warehouseId,
-            batchId: Value(batchId),
-            quantity: qtyInBaseUnit,
-            type: 'PURCHASE',
-            referenceId: grnId,
-          ),
-        );
+              InventoryTransactionsCompanion.insert(
+                productId: productId,
+                warehouseId: warehouseId,
+                batchId: Value(batchId),
+                quantity: qtyInBaseUnit,
+                type: 'PURCHASE',
+                referenceId: grnId,
+              ),
+            );
 
         await db.into(db.goodReceivedNoteItems).insert(
-          GoodReceivedNoteItemsCompanion.insert(
-            grnId: grnId,
-            productId: productId,
-            quantity: qty,
-            batchNumber: Value(item.batchNumber),
-            expiryDate: Value(item.expiryDate),
-          ),
-        );
+              GoodReceivedNoteItemsCompanion.insert(
+                grnId: grnId,
+                productId: productId,
+                quantity: qty,
+                batchNumber: Value(item.batchNumber),
+                expiryDate: Value(item.expiryDate),
+              ),
+            );
 
         await (db.update(db.purchaseItems)
               ..where((pi) => pi.id.equals(item.id)))
@@ -119,7 +121,8 @@ class GrnService {
       }
 
       await (db.update(db.purchases)..where((p) => p.id.equals(purchaseId)))
-          .write(const PurchasesCompanion(status: Value(DocumentStatus.received)));
+          .write(
+              const PurchasesCompanion(status: Value(DocumentStatus.received)));
 
       await _auditService.log(
         action: 'CREATE_GRN_FROM_PURCHASE',
@@ -145,16 +148,20 @@ class GrnService {
     ]);
 
     if (startDate != null) {
-      query.where(db.goodReceivedNotes.receivedDate.isBiggerOrEqual(Variable(startDate)));
+      query.where(db.goodReceivedNotes.receivedDate
+          .isBiggerOrEqual(Variable(startDate)));
     }
     if (endDate != null) {
-      query.where(db.goodReceivedNotes.receivedDate.isSmallerOrEqual(Variable(endDate)));
+      query.where(db.goodReceivedNotes.receivedDate
+          .isSmallerOrEqual(Variable(endDate)));
     }
 
-    query.orderBy([OrderingTerm(
-      expression: db.goodReceivedNotes.receivedDate,
-      mode: OrderingMode.desc,
-    )]);
+    query.orderBy([
+      OrderingTerm(
+        expression: db.goodReceivedNotes.receivedDate,
+        mode: OrderingMode.desc,
+      )
+    ]);
 
     final rows = await query.get();
     final result = <GrnReportItem>[];
@@ -186,7 +193,8 @@ class GrnService {
     return result;
   }
 
-  Future<List<ExpiringBatchReport>> getExpiringBatchesReport({int daysThreshold = 30}) async {
+  Future<List<ExpiringBatchReport>> getExpiringBatchesReport(
+      {int daysThreshold = 30}) async {
     final now = DateTime.now();
     final threshold = now.add(Duration(days: daysThreshold));
 
@@ -199,8 +207,7 @@ class GrnService {
         db.warehouses,
         db.warehouses.id.equalsExp(db.productBatches.warehouseId),
       ),
-    ]))
-        .get();
+    ])).get();
 
     final result = <ExpiringBatchReport>[];
     for (var row in batches) {

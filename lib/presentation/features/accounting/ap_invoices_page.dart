@@ -48,8 +48,10 @@ class _APInvoicesPageState extends State<APInvoicesPage> {
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${l10n.invoiceNumberLabel}: ${invoice.invoiceNumber}'),
-                      Text('${l10n.date}: ${DateFormat.yMMMd().format(invoice.invoiceDate)}'),
+                      Text(
+                          '${l10n.invoiceNumberLabel}: ${invoice.invoiceNumber}'),
+                      Text(
+                          '${l10n.date}: ${DateFormat.yMMMd().format(invoice.invoiceDate)}'),
                     ],
                   ),
                   trailing: Column(
@@ -57,8 +59,10 @@ class _APInvoicesPageState extends State<APInvoicesPage> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        NumberFormat.currency(symbol: l10n.currencySymbol).format(invoice.totalAmount),
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        NumberFormat.currency(symbol: l10n.currencySymbol)
+                            .format(invoice.totalAmount),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       Text(
                         invoice.status,
@@ -85,8 +89,10 @@ class _APInvoicesPageState extends State<APInvoicesPage> {
 
   Stream<List<APInvoiceWithSupplier>> _watchAPInvoices(AppDatabase db) {
     final query = db.select(db.aPInvoices).join([
-      drift.innerJoin(db.suppliers, db.suppliers.id.equalsExp(db.aPInvoices.supplierId)),
-    ])..orderBy([drift.OrderingTerm.desc(db.aPInvoices.invoiceDate)]);
+      drift.innerJoin(
+          db.suppliers, db.suppliers.id.equalsExp(db.aPInvoices.supplierId)),
+    ])
+      ..orderBy([drift.OrderingTerm.desc(db.aPInvoices.invoiceDate)]);
 
     return query.watch().map((rows) {
       return rows.map((row) {
@@ -157,14 +163,16 @@ class _AddAPInvoiceDialogState extends State<AddAPInvoiceDialog> {
               TextFormField(
                 controller: _invoiceNumberController,
                 decoration: InputDecoration(labelText: l10n.invoiceNumberLabel),
-                validator: (v) => v == null || v.isEmpty ? l10n.enterNameError : null,
+                validator: (v) =>
+                    v == null || v.isEmpty ? l10n.enterNameError : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _totalAmountController,
                 decoration: InputDecoration(labelText: l10n.totalAmount),
                 keyboardType: TextInputType.number,
-                validator: (v) => v == null || v.isEmpty ? l10n.enterAmountError : null,
+                validator: (v) =>
+                    v == null || v.isEmpty ? l10n.enterAmountError : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -189,7 +197,9 @@ class _AddAPInvoiceDialogState extends State<AddAPInvoiceDialog> {
               ),
               ListTile(
                 title: Text(l10n.dueDate),
-                subtitle: Text(_dueDate == null ? l10n.unknown : DateFormat.yMMMd().format(_dueDate!)),
+                subtitle: Text(_dueDate == null
+                    ? l10n.unknown
+                    : DateFormat.yMMMd().format(_dueDate!)),
                 trailing: const Icon(Icons.calendar_today),
                 onTap: () async {
                   final picked = await showDatePicker(
@@ -206,10 +216,12 @@ class _AddAPInvoiceDialogState extends State<AddAPInvoiceDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+        TextButton(
+            onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
         ElevatedButton(
           onPressed: () async {
-            if (_formKey.currentState!.validate() && _selectedSupplier != null) {
+            if (_formKey.currentState!.validate() &&
+                _selectedSupplier != null) {
               await db.suppliersDao.createAPInvoice(
                 APInvoicesCompanion.insert(
                   supplierId: _selectedSupplier!.id,
@@ -217,7 +229,8 @@ class _AddAPInvoiceDialogState extends State<AddAPInvoiceDialog> {
                   invoiceDate: drift.Value(_invoiceDate),
                   dueDate: drift.Value(_dueDate),
                   totalAmount: double.parse(_totalAmountController.text),
-                  taxAmount: drift.Value(double.tryParse(_taxAmountController.text) ?? 0.0),
+                  taxAmount: drift.Value(
+                      double.tryParse(_taxAmountController.text) ?? 0.0),
                   status: const drift.Value('POSTED'),
                 ),
               );

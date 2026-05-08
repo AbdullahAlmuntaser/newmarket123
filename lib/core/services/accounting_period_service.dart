@@ -18,7 +18,8 @@ class AccountingPeriodService {
 
     await db.transaction(() async {
       // 1. تحديث حالة الفترة
-      await (db.update(db.accountingPeriods)..where((p) => p.id.equals(periodId)))
+      await (db.update(db.accountingPeriods)
+            ..where((p) => p.id.equals(periodId)))
           .write(AccountingPeriodsCompanion(
         isClosed: const Value(true),
         closedAt: Value(DateTime.now()),
@@ -41,20 +42,31 @@ class AccountingPeriodService {
       final startOfMonth = DateTime(now.year, now.month, 1);
       final endOfMonth = DateTime(now.year, now.month + 1, 0);
       await db.into(db.accountingPeriods).insert(
-        AccountingPeriodsCompanion.insert(
-          name: '${_getMonthName(now.month)} ${now.year}',
-          startDate: startOfMonth,
-          endDate: endOfMonth,
-          status: const Value('OPEN'),
-        ),
-      );
+            AccountingPeriodsCompanion.insert(
+              name: '${_getMonthName(now.month)} ${now.year}',
+              startDate: startOfMonth,
+              endDate: endOfMonth,
+              status: const Value('OPEN'),
+            ),
+          );
     }
   }
 
   String _getMonthName(int month) {
     const months = [
-      '', 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+      '',
+      'يناير',
+      'فبراير',
+      'مارس',
+      'أبريل',
+      'مايو',
+      'يونيو',
+      'يوليو',
+      'أغسطس',
+      'سبتمبر',
+      'أكتوبر',
+      'نوفمبر',
+      'ديسمبر'
     ];
     return months[month];
   }
@@ -62,9 +74,12 @@ class AccountingPeriodService {
   /// Checks if a transaction date is allowed (must not be in a closed period)
   Future<bool> isDateAllowed(DateTime date) async {
     final closedPeriods = await (db.select(db.accountingPeriods)
-          ..where((p) => p.isClosed.equals(true) & p.startDate.isSmallerOrEqual(Variable(date)) & p.endDate.isBiggerOrEqual(Variable(date))))
+          ..where((p) =>
+              p.isClosed.equals(true) &
+              p.startDate.isSmallerOrEqual(Variable(date)) &
+              p.endDate.isBiggerOrEqual(Variable(date))))
         .get();
-        
+
     return closedPeriods.isEmpty;
   }
 }

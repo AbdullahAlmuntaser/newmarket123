@@ -21,7 +21,7 @@ class InvoiceService {
     String? companyVatNumber,
   }) async {
     final pdf = pw.Document();
-    
+
     // Using config service to avoid unused field warning
     await _configService.getTaxRate();
 

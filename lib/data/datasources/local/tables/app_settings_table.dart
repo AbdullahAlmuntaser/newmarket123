@@ -6,7 +6,9 @@ class AppSettings extends Table {
   TextColumn get key => text()();
   TextColumn get value => text()();
   TextColumn get description => text().nullable()();
-  
+
   @override
-  List<Set<Column>> get uniqueKeys => [{key}];
+  List<Set<Column>> get uniqueKeys => [
+        {key}
+      ];
 }

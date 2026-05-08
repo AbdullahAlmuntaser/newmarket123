@@ -27,9 +27,7 @@ void main() {
   test('InventoryService.watchLowStockProducts filters correctly', () async {
     final p1 = const Uuid().v4();
 
-    await db
-        .into(db.products)
-        .insert(
+    await db.into(db.products).insert(
           ProductsCompanion.insert(
             id: Value(p1),
             name: 'Product 1',

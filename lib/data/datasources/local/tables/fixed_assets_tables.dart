@@ -5,7 +5,8 @@ class AccAssetCategories extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text().withLength(min: 2, max: 100)();
   TextColumn get code => text().withLength(min: 2, max: 50)();
-  RealColumn get defaultDepreciationRate => real().withDefault(const Constant(0.0))(); // نسبة الإهلاك السنوية الافتراضية
+  RealColumn get defaultDepreciationRate => real()
+      .withDefault(const Constant(0.0))(); // نسبة الإهلاك السنوية الافتراضية
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -18,11 +19,15 @@ class AccFixedAssets extends Table {
   RealColumn get purchaseCost => real()(); // تكلفة الشراء
   DateTimeColumn get purchaseDate => dateTime()();
   DateTimeColumn get acquisitionDate => dateTime()(); // تاريخ البدء في الإهلاك
-  RealColumn get salvageValue => real().withDefault(const Constant(0.0))(); // قيمة الخردة
+  RealColumn get salvageValue =>
+      real().withDefault(const Constant(0.0))(); // قيمة الخردة
   IntColumn get usefulLifeMonths => integer()(); // العمر الإنتاجي بالشهور
-  TextColumn get depreciationMethod => text().withDefault(const Constant('straight_line'))(); // straight_line, declining
-  TextColumn get status => text().withDefault(const Constant('active'))(); // active, sold, scrapped
-  IntColumn get accumulatedDepreciation => integer().withDefault(const Constant(0))();
+  TextColumn get depreciationMethod => text().withDefault(
+      const Constant('straight_line'))(); // straight_line, declining
+  TextColumn get status =>
+      text().withDefault(const Constant('active'))(); // active, sold, scrapped
+  IntColumn get accumulatedDepreciation =>
+      integer().withDefault(const Constant(0))();
   // ملاحظة: currentBookValue يُحسب برمجياً
   DateTimeColumn get lastDepreciationDate => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -34,7 +39,8 @@ class AccAssetDepreciationLogs extends Table {
   IntColumn get assetId => integer().references(AccFixedAssets, #id)();
   RealColumn get depreciationAmount => real()();
   DateTimeColumn get depreciationDate => dateTime()();
-  IntColumn get journalEntryId => integer().nullable()(); // ربط بالقيد المحاسبي (سيتم الربط يدوياً أو عبر خدمة)
+  IntColumn get journalEntryId => integer()
+      .nullable()(); // ربط بالقيد المحاسبي (سيتم الربط يدوياً أو عبر خدمة)
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }

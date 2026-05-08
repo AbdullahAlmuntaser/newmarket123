@@ -23,7 +23,8 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
       appBar: AppBar(title: const Text('أوامر الشراء')),
       body: StreamBuilder<List<TypedResult>>(
         stream: (db.select(db.purchaseOrders).join([
-          leftOuterJoin(db.suppliers, db.suppliers.id.equalsExp(db.purchaseOrders.supplierId)),
+          leftOuterJoin(db.suppliers,
+              db.suppliers.id.equalsExp(db.purchaseOrders.supplierId)),
         ])).watch(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -42,7 +43,8 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
               final order = rows[index].readTable(db.purchaseOrders);
               final supplier = rows[index].readTableOrNull(db.suppliers);
               return ListTile(
-                title: Text('أمر شراء: ${order.orderNumber ?? order.id.substring(0, 8)}'),
+                title: Text(
+                    'أمر شراء: ${order.orderNumber ?? order.id.substring(0, 8)}'),
                 subtitle: Text(
                   'المورد: ${supplier?.name ?? 'غير معروف'} | الحالة: ${order.status}',
                 ),
@@ -53,17 +55,23 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('تأكيد'),
-                      content: Text('تحويل أمر الشراء ${order.orderNumber} إلى فاتورة؟'),
+                      content: Text(
+                          'تحويل أمر الشراء ${order.orderNumber} إلى فاتورة؟'),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
-                        TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('تحويل')),
+                        TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('إلغاء')),
+                        TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('تحويل')),
                       ],
                     ),
                   );
                   if (confirm == true) {
                     await PurchaseConverter(db).convertOrderToInvoice(order.id);
                     if (mounted) {
-                      scaffoldMessenger.showSnackBar(const SnackBar(content: Text('تم التحويل بنجاح')));
+                      scaffoldMessenger.showSnackBar(
+                          const SnackBar(content: Text('تم التحويل بنجاح')));
                     }
                   }
                 },

@@ -42,7 +42,8 @@ class FinancialControlService {
 
     final sale = await (db.select(
       db.sales,
-    )..where((s) => s.id.equals(saleId))).getSingleOrNull();
+    )..where((s) => s.id.equals(saleId)))
+        .getSingleOrNull();
     if (sale == null) {
       errors.add('الفاتورة غير موجودة');
       return ValidationResult(isValid: false, errors: errors);
@@ -61,7 +62,8 @@ class FinancialControlService {
 
     final items = await (db.select(
       db.saleItems,
-    )..where((si) => si.saleId.equals(saleId))).get();
+    )..where((si) => si.saleId.equals(saleId)))
+        .get();
     if (items.isEmpty) {
       errors.add('الفاتورة لا تحتوي على أصناف');
     }
@@ -83,7 +85,8 @@ class FinancialControlService {
 
     final purchase = await (db.select(
       db.purchases,
-    )..where((p) => p.id.equals(purchaseId))).getSingleOrNull();
+    )..where((p) => p.id.equals(purchaseId)))
+        .getSingleOrNull();
     if (purchase == null) {
       errors.add('الفاتورة غير موجودة');
       return ValidationResult(isValid: false, errors: errors);
@@ -102,7 +105,8 @@ class FinancialControlService {
 
     final items = await (db.select(
       db.purchaseItems,
-    )..where((pi) => pi.purchaseId.equals(purchaseId))).get();
+    )..where((pi) => pi.purchaseId.equals(purchaseId)))
+        .get();
     if (items.isEmpty) {
       errors.add('الفاتورة لا تحتوي على أصناف');
     }
@@ -115,7 +119,8 @@ class FinancialControlService {
 
     final entry = await (db.select(
       db.gLEntries,
-    )..where((e) => e.id.equals(entryId))).getSingleOrNull();
+    )..where((e) => e.id.equals(entryId)))
+        .getSingleOrNull();
     if (entry == null) {
       errors.add('القيد غير موجود');
       return ValidationResult(isValid: false, errors: errors);
@@ -127,7 +132,8 @@ class FinancialControlService {
 
     final lines = await (db.select(
       db.gLLines,
-    )..where((l) => l.entryId.equals(entryId))).get();
+    )..where((l) => l.entryId.equals(entryId)))
+        .get();
 
     if (lines.isEmpty) {
       errors.add('القيد لا يحتوي على أسطر');
@@ -158,7 +164,8 @@ class FinancialControlService {
     if (periodId != null) {
       final period = await (db.select(
         db.accountingPeriods,
-      )..where((p) => p.id.equals(periodId))).getSingleOrNull();
+      )..where((p) => p.id.equals(periodId)))
+          .getSingleOrNull();
       if (period == null) {
         errors.add('الفترة المحاسبية غير موجودة');
       } else if (period.isClosed) {
@@ -184,13 +191,14 @@ class FinancialControlService {
 
     try {
       final valuation = await costingService!.getInventoryValuation(productId);
-      
+
       if (valuation.totalQuantity < 0) {
         errors.add('الكمية السالبة غير مسموحة: ${valuation.totalQuantity}');
       }
-      
+
       if (valuation.totalQuantity == 0 && valuation.totalValue != 0) {
-        errors.add('تناقض في تقييم المخزون - الكمية صفر لكن القيمة: ${valuation.totalValue}');
+        errors.add(
+            'تناقض في تقييم المخزون - الكمية صفر لكن القيمة: ${valuation.totalValue}');
       }
     } catch (e) {
       errors.add('خطأ في جلب تقييم المخزون: $e');
@@ -221,7 +229,8 @@ class FinancialControlService {
 
     final sale = await (db.select(
       db.sales,
-    )..where((s) => s.id.equals(saleId))).getSingle();
+    )..where((s) => s.id.equals(saleId)))
+        .getSingle();
     final periodValidation = await validateAccountingPeriod(sale.createdAt);
     if (!periodValidation.isValid) {
       return FinancialControlResult(
@@ -260,7 +269,8 @@ class FinancialControlService {
 
     final purchase = await (db.select(
       db.purchases,
-    )..where((p) => p.id.equals(purchaseId))).getSingle();
+    )..where((p) => p.id.equals(purchaseId)))
+        .getSingle();
     final periodValidation = await validateAccountingPeriod(purchase.date);
     if (!periodValidation.isValid) {
       return FinancialControlResult(
@@ -292,7 +302,8 @@ class FinancialControlService {
   }) async {
     final sale = await (db.select(
       db.sales,
-    )..where((s) => s.id.equals(saleId))).getSingleOrNull();
+    )..where((s) => s.id.equals(saleId)))
+        .getSingleOrNull();
 
     if (sale == null) {
       return FinancialControlResult(
@@ -326,18 +337,19 @@ class FinancialControlService {
     await db.transaction(() async {
       final items = await (db.select(
         db.saleItems,
-      )..where((si) => si.saleId.equals(saleId))).get();
+      )..where((si) => si.saleId.equals(saleId)))
+          .get();
 
       for (var item in items) {
         await db.into(db.inventoryTransactions).insert(
-          InventoryTransactionsCompanion.insert(
-            productId: item.productId,
-            warehouseId: '',
-            quantity: item.quantity * item.unitFactor,
-            type: 'RETURN',
-            referenceId: saleId,
-          ),
-        );
+              InventoryTransactionsCompanion.insert(
+                productId: item.productId,
+                warehouseId: '',
+                quantity: item.quantity * item.unitFactor,
+                type: 'RETURN',
+                referenceId: saleId,
+              ),
+            );
       }
 
       await _createReverseEntry(
@@ -374,7 +386,8 @@ class FinancialControlService {
   }) async {
     final purchase = await (db.select(
       db.purchases,
-    )..where((p) => p.id.equals(purchaseId))).getSingleOrNull();
+    )..where((p) => p.id.equals(purchaseId)))
+        .getSingleOrNull();
 
     if (purchase == null) {
       return FinancialControlResult(
@@ -408,18 +421,19 @@ class FinancialControlService {
     await db.transaction(() async {
       final items = await (db.select(
         db.purchaseItems,
-      )..where((pi) => pi.purchaseId.equals(purchaseId))).get();
+      )..where((pi) => pi.purchaseId.equals(purchaseId)))
+          .get();
 
       for (var item in items) {
         await db.into(db.inventoryTransactions).insert(
-          InventoryTransactionsCompanion.insert(
-            productId: item.productId,
-            warehouseId: '',
-            quantity: -item.quantity,
-            type: 'PURCHASE_RETURN',
-            referenceId: purchaseId,
-          ),
-        );
+              InventoryTransactionsCompanion.insert(
+                productId: item.productId,
+                warehouseId: '',
+                quantity: -item.quantity,
+                type: 'PURCHASE_RETURN',
+                referenceId: purchaseId,
+              ),
+            );
       }
 
       await _createReverseEntry(
@@ -433,7 +447,8 @@ class FinancialControlService {
       );
 
       await (db.update(db.purchases)..where((p) => p.id.equals(purchaseId)))
-          .write(const PurchasesCompanion(status: Value(DocumentStatus.voided)));
+          .write(
+              const PurchasesCompanion(status: Value(DocumentStatus.voided)));
 
       await _auditService.logCreate(
         'Purchase',
@@ -504,7 +519,7 @@ class FinancialControlService {
       );
     }
 
-final entry = GLEntriesCompanion.insert(
+    final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
       description: description,
       date: Value(date),
@@ -525,7 +540,8 @@ final entry = GLEntriesCompanion.insert(
   }) async {
     final period = await (db.select(
       db.accountingPeriods,
-    )..where((p) => p.id.equals(periodId))).getSingleOrNull();
+    )..where((p) => p.id.equals(periodId)))
+        .getSingleOrNull();
 
     if (period == null) {
       return FinancialControlResult(success: false, error: 'الفترة غير موجودة');
@@ -561,7 +577,8 @@ final entry = GLEntriesCompanion.insert(
   }) async {
     final existingOpen = await (db.select(
       db.accountingPeriods,
-    )..where((p) => p.isClosed.equals(false))).getSingleOrNull();
+    )..where((p) => p.isClosed.equals(false)))
+        .getSingleOrNull();
 
     if (existingOpen != null) {
       return FinancialControlResult(
@@ -579,9 +596,7 @@ final entry = GLEntriesCompanion.insert(
     }
 
     final periodId = const Uuid().v4();
-    await db
-        .into(db.accountingPeriods)
-        .insert(
+    await db.into(db.accountingPeriods).insert(
           AccountingPeriodsCompanion.insert(
             id: Value(periodId),
             name: name,
@@ -607,21 +622,24 @@ final entry = GLEntriesCompanion.insert(
   Future<bool> canEditSale(String saleId) async {
     final sale = await (db.select(
       db.sales,
-    )..where((s) => s.id.equals(saleId))).getSingleOrNull();
+    )..where((s) => s.id.equals(saleId)))
+        .getSingleOrNull();
     return sale != null && sale.status == DocumentStatus.draft;
   }
 
   Future<bool> canEditPurchase(String purchaseId) async {
     final purchase = await (db.select(
       db.purchases,
-    )..where((p) => p.id.equals(purchaseId))).getSingleOrNull();
+    )..where((p) => p.id.equals(purchaseId)))
+        .getSingleOrNull();
     return purchase != null && purchase.status == DocumentStatus.draft;
   }
 
   Future<bool> canEditGLEntry(String entryId) async {
     final entry = await (db.select(
       db.gLEntries,
-    )..where((e) => e.id.equals(entryId))).getSingleOrNull();
+    )..where((e) => e.id.equals(entryId)))
+        .getSingleOrNull();
     return entry != null && entry.status == 'draft';
   }
 
@@ -648,10 +666,12 @@ final entry = GLEntriesCompanion.insert(
       query = query..where((l) => l.entityId.equals(entityId));
     }
     if (startDate != null) {
-      query = query..where((l) => l.timestamp.isBiggerOrEqual(Variable(startDate)));
+      query = query
+        ..where((l) => l.timestamp.isBiggerOrEqual(Variable(startDate)));
     }
     if (endDate != null) {
-      query = query..where((l) => l.timestamp.isSmallerOrEqual(Variable(endDate)));
+      query = query
+        ..where((l) => l.timestamp.isSmallerOrEqual(Variable(endDate)));
     }
 
     query = query

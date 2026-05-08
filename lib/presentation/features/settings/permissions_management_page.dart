@@ -94,9 +94,8 @@ class _PermissionsManagementPageState extends State<PermissionsManagementPage>
                     separatorBuilder: (context, index) => const Divider(),
                     itemBuilder: (context, index) {
                       final role = roles[index];
-                      final userCount = users
-                          .where((u) => u.role == role)
-                          .length;
+                      final userCount =
+                          users.where((u) => u.role == role).length;
                       return ListTile(
                         leading: const Icon(Icons.shield, size: 32),
                         title: Text(role),
@@ -221,30 +220,29 @@ class _PermissionsManagementPageState extends State<PermissionsManagementPage>
                   labelText: 'اختر الدور',
                   border: OutlineInputBorder(),
                 ),
-                items:
-                    rolePermissions
+                items: rolePermissions
                         .map((rp) => rp.role)
                         .toSet()
                         .toList()
                         .isNotEmpty
                     ? rolePermissions
-                          .map((rp) => rp.role)
-                          .toSet()
-                          .map(
-                            (role) => DropdownMenuItem(
-                              value: role,
-                              child: Text(role),
-                            ),
-                          )
-                          .toList()
+                        .map((rp) => rp.role)
+                        .toSet()
+                        .map(
+                          (role) => DropdownMenuItem(
+                            value: role,
+                            child: Text(role),
+                          ),
+                        )
+                        .toList()
                     : ['admin', 'cashier', 'manager', 'viewer']
-                          .map(
-                            (role) => DropdownMenuItem(
-                              value: role,
-                              child: Text(role),
-                            ),
-                          )
-                          .toList(),
+                        .map(
+                          (role) => DropdownMenuItem(
+                            value: role,
+                            child: Text(role),
+                          ),
+                        )
+                        .toList(),
                 onChanged: (val) {
                   if (val != null) setState(() => _selectedRole = val);
                 },
@@ -267,9 +265,7 @@ class _PermissionsManagementPageState extends State<PermissionsManagementPage>
                     value: hasPermission,
                     onChanged: (val) async {
                       if (val) {
-                        await db
-                            .into(db.rolePermissions)
-                            .insert(
+                        await db.into(db.rolePermissions).insert(
                               RolePermissionsCompanion.insert(
                                 id: drift.Value(const Uuid().v4()),
                                 role: _selectedRole,
@@ -278,11 +274,12 @@ class _PermissionsManagementPageState extends State<PermissionsManagementPage>
                               ),
                             );
                       } else {
-                        await (db.delete(db.rolePermissions)..where(
-                              (rp) =>
-                                  rp.role.equals(_selectedRole) &
-                                  rp.permissionCode.equals(permCode),
-                            ))
+                        await (db.delete(db.rolePermissions)
+                              ..where(
+                                (rp) =>
+                                    rp.role.equals(_selectedRole) &
+                                    rp.permissionCode.equals(permCode),
+                              ))
                             .go();
                       }
                       setState(() {});
@@ -370,9 +367,7 @@ class _PermissionsManagementPageState extends State<PermissionsManagementPage>
           ElevatedButton(
             onPressed: () async {
               if (codeController.text.isNotEmpty) {
-                await db
-                    .into(db.permissions)
-                    .insert(
+                await db.into(db.permissions).insert(
                       PermissionsCompanion.insert(
                         id: drift.Value(const Uuid().v4()),
                         code: codeController.text,

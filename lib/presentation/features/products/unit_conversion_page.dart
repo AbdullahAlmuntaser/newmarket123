@@ -36,9 +36,7 @@ class _UnitConversionPageState extends State<UnitConversionPage> {
   Future<void> _addConversion() async {
     if (_formKey.currentState!.validate()) {
       final db = context.read<AppDatabase>();
-      await db
-          .into(db.unitConversions)
-          .insert(
+      await db.into(db.unitConversions).insert(
             UnitConversionsCompanion.insert(
               productId: widget.productId,
               unitName: _unitNameController.text,
@@ -80,7 +78,8 @@ class _UnitConversionPageState extends State<UnitConversionPage> {
             child: StreamBuilder<List<UnitConversion>>(
               stream: (db.select(
                 db.unitConversions,
-              )..where((t) => t.productId.equals(widget.productId))).watch(),
+              )..where((t) => t.productId.equals(widget.productId)))
+                  .watch(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
@@ -113,7 +112,8 @@ class _UnitConversionPageState extends State<UnitConversionPage> {
                           onPressed: () async {
                             await (db.delete(
                               db.unitConversions,
-                            )..where((t) => t.id.equals(conv.id))).go();
+                            )..where((t) => t.id.equals(conv.id)))
+                                .go();
                           },
                         ),
                       ),

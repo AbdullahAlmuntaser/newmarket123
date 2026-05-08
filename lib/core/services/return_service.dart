@@ -27,9 +27,7 @@ class ReturnService {
       }
 
       // 1. Record Return
-      await db
-          .into(db.salesReturns)
-          .insert(
+      await db.into(db.salesReturns).insert(
             SalesReturnsCompanion.insert(
               id: Value(returnId),
               saleId: saleId,
@@ -42,9 +40,7 @@ class ReturnService {
 
       for (var item in items) {
         // 2. Record Return Items
-        await db
-            .into(db.salesReturnItems)
-            .insert(
+        await db.into(db.salesReturnItems).insert(
               SalesReturnItemsCompanion.insert(
                 id: Value(const Uuid().v4()),
                 salesReturnId: returnId,
@@ -57,26 +53,28 @@ class ReturnService {
         // 3. Update Stock
         final product = await (db.select(
           db.products,
-        )..where((t) => t.id.equals(item.productId))).getSingle();
+        )..where((t) => t.id.equals(item.productId)))
+            .getSingle();
         await (db.update(
           db.products,
-        )..where((t) => t.id.equals(item.productId))).write(
+        )..where((t) => t.id.equals(item.productId)))
+            .write(
           ProductsCompanion(stock: Value(product.stock + item.quantity)),
         );
 
         // 4. Return to Batch (FIFO logic reverse)
         // Find latest batch affected or add to newest batch
-        final latestBatch =
-            await (db.select(db.productBatches)
-                  ..where((t) => t.productId.equals(item.productId))
-                  ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
-                  ..limit(1))
-                .getSingleOrNull();
+        final latestBatch = await (db.select(db.productBatches)
+              ..where((t) => t.productId.equals(item.productId))
+              ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+              ..limit(1))
+            .getSingleOrNull();
 
         if (latestBatch != null) {
           await (db.update(
             db.productBatches,
-          )..where((t) => t.id.equals(latestBatch.id))).write(
+          )..where((t) => t.id.equals(latestBatch.id)))
+              .write(
             ProductBatchesCompanion(
               quantity: Value(latestBatch.quantity + item.quantity),
             ),
@@ -88,7 +86,8 @@ class ReturnService {
       // 5. Accounting Entries
       final sale = await (db.select(
         db.sales,
-      )..where((t) => t.id.equals(saleId))).getSingle();
+      )..where((t) => t.id.equals(saleId)))
+          .getSingle();
       final dao = db.accountingDao;
 
       // A. Revenue Reversal
@@ -188,9 +187,7 @@ class ReturnService {
       }
 
       // 1. Record Return
-      await db
-          .into(db.purchaseReturns)
-          .insert(
+      await db.into(db.purchaseReturns).insert(
             PurchaseReturnsCompanion.insert(
               id: Value(returnId),
               purchaseId: purchaseId,
@@ -201,9 +198,7 @@ class ReturnService {
 
       for (var item in items) {
         // 2. Record Return Items
-        await db
-            .into(db.purchaseReturnItems)
-            .insert(
+        await db.into(db.purchaseReturnItems).insert(
               PurchaseReturnItemsCompanion.insert(
                 id: Value(const Uuid().v4()),
                 purchaseReturnId: returnId,
@@ -216,24 +211,25 @@ class ReturnService {
         // 3. Update Stock
         final product = await (db.select(
           db.products,
-        )..where((t) => t.id.equals(item.productId))).getSingle();
+        )..where((t) => t.id.equals(item.productId)))
+            .getSingle();
         await (db.update(
           db.products,
-        )..where((t) => t.id.equals(item.productId))).write(
+        )..where((t) => t.id.equals(item.productId)))
+            .write(
           ProductsCompanion(stock: Value(product.stock - item.quantity)),
         );
 
         // 4. Update Batches (Decrease newest batches first)
         double remainingToDeduct = item.quantity;
-        final batches =
-            await (db.select(db.productBatches)
-                  ..where(
-                    (t) =>
-                        t.productId.equals(item.productId) &
-                        t.quantity.isBiggerThan(const Variable(0)),
-                  )
-                  ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
-                .get();
+        final batches = await (db.select(db.productBatches)
+              ..where(
+                (t) =>
+                    t.productId.equals(item.productId) &
+                    t.quantity.isBiggerThan(const Variable(0)),
+              )
+              ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+            .get();
 
         for (var batch in batches) {
           if (remainingToDeduct <= 0) break;
@@ -242,7 +238,8 @@ class ReturnService {
               : batch.quantity;
           await (db.update(
             db.productBatches,
-          )..where((t) => t.id.equals(batch.id))).write(
+          )..where((t) => t.id.equals(batch.id)))
+              .write(
             ProductBatchesCompanion(quantity: Value(batch.quantity - deduct)),
           );
           remainingToDeduct -= deduct;
@@ -252,7 +249,8 @@ class ReturnService {
       // 5. Accounting Entries
       final purchase = await (db.select(
         db.purchases,
-      )..where((t) => t.id.equals(purchaseId))).getSingle();
+      )..where((t) => t.id.equals(purchaseId)))
+          .getSingle();
       final dao = db.accountingDao;
       final entryId = const Uuid().v4();
 

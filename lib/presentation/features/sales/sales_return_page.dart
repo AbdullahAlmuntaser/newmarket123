@@ -16,7 +16,9 @@ class SalesReturnPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.salesReturns)),
       body: FutureBuilder<List<SalesReturn>>(
-        future: (db.select(db.salesReturns)..orderBy([(t) => drift.OrderingTerm.desc(t.createdAt)])).get(),
+        future: (db.select(db.salesReturns)
+              ..orderBy([(t) => drift.OrderingTerm.desc(t.createdAt)]))
+            .get(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
@@ -31,7 +33,8 @@ class SalesReturnPage extends StatelessWidget {
               final ret = returns[index];
               return ListTile(
                 title: Text('مرتجع رقم: ${ret.id.substring(0, 8)}'),
-                subtitle: Text('المبلغ: ${ret.amountReturned.toStringAsFixed(2)}'),
+                subtitle:
+                    Text('المبلغ: ${ret.amountReturned.toStringAsFixed(2)}'),
                 trailing: Text(ret.createdAt.toString().split(' ')[0]),
               );
             },

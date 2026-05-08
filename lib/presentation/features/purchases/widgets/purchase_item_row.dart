@@ -72,7 +72,8 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
                   flex: 2,
                   child: TextFormField(
                     initialValue: widget.item.quantity.toString(),
-                    decoration: const InputDecoration(labelText: 'الكمية', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(
+                        labelText: 'الكمية', border: OutlineInputBorder()),
                     keyboardType: TextInputType.number,
                     onChanged: (v) {
                       widget.item.quantity = double.tryParse(v) ?? 0.0;
@@ -149,8 +150,8 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
                         setState(() {
                           widget.item.expiryDate = date;
                           _expiryController.text = date.toString().split(
-                            ' ',
-                          )[0];
+                                ' ',
+                              )[0];
                         });
                       }
                     },
@@ -181,7 +182,8 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
     return StreamBuilder<List<UnitConversion>>(
       stream: (db.select(
         db.unitConversions,
-      )..where((t) => t.productId.equals(widget.item.product.id))).watch(),
+      )..where((t) => t.productId.equals(widget.item.product.id)))
+          .watch(),
       builder: (context, snapshot) {
         final conversions = snapshot.data ?? [];
         return DropdownButtonFormField<UnitConversion?>(
@@ -199,7 +201,7 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
           onChanged: (value) {
             setState(() {
               final newFactor = value?.factor ?? 1.0;
-              
+
               // تحديث السعر بناءً على الوحدة الجديدة (السعر = السعر الأساسي * عامل التحويل)
               // يفترض أن السعر الأساسي (buyPrice) هو للوحدة الأساسية
               widget.item.unitPrice = widget.item.product.buyPrice * newFactor;

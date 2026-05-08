@@ -148,9 +148,8 @@ class _ShiftsPageState extends State<ShiftsPage> {
           width: double.infinity,
           height: 55,
           child: ElevatedButton(
-            onPressed: userId == null
-                ? null
-                : () => _handleOpenShift(context, userId),
+            onPressed:
+                userId == null ? null : () => _handleOpenShift(context, userId),
             child: Text(l10n.openShift, style: const TextStyle(fontSize: 18)),
           ),
         ),
@@ -182,10 +181,10 @@ class _ShiftsPageState extends State<ShiftsPage> {
 
     try {
       await context.read<ShiftProvider>().openShift(
-        userId,
-        cash,
-        note: _noteController.text,
-      );
+            userId,
+            cash,
+            note: _noteController.text,
+          );
       if (!context.mounted) return;
       _cashController.clear();
       _noteController.clear();

@@ -135,10 +135,9 @@ class _PayrollPageState extends State<PayrollPage> {
                   final db = context.read<AppDatabase>();
                   return ListTile(
                     title: FutureBuilder<Employee?>(
-                      future:
-                          (db.select(db.employees)
-                                ..where((t) => t.id.equals(line.employeeId)))
-                              .getSingleOrNull(),
+                      future: (db.select(db.employees)
+                            ..where((t) => t.id.equals(line.employeeId)))
+                          .getSingleOrNull(),
                       builder: (context, snapshot) =>
                           Text(snapshot.data?.name ?? 'تحميل...'),
                     ),

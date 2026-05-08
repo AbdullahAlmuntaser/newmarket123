@@ -14,12 +14,14 @@ class InventoryAuditService {
 
       for (var item in auditItems) {
         if (item.difference != 0) {
-          await db.into(db.stockMovements).insert(StockMovementsCompanion.insert(
-            productId: item.productId,
-            quantity: item.difference,
-            type: 'ADJUSTMENT',
-            referenceId: Value(auditId),
-          ));
+          await db
+              .into(db.stockMovements)
+              .insert(StockMovementsCompanion.insert(
+                productId: item.productId,
+                quantity: item.difference,
+                type: 'ADJUSTMENT',
+                referenceId: Value(auditId),
+              ));
         }
       }
     });

@@ -59,13 +59,13 @@ Future<void> initServices() async {
   debugPrint("DI: ==== Initializing Services ====");
   try {
     final db = sl<AppDatabase>();
-    
+
     debugPrint("DI: Registering DAOs...");
     sl.registerLazySingleton<AuditDao>(() => AuditDao(db));
     sl.registerLazySingleton<StockMovementDao>(() => StockMovementDao(db));
     sl.registerLazySingleton<ProductsDao>(() => ProductsDao(db));
     sl.registerLazySingleton<ProductUnitsDao>(() => ProductUnitsDao(db));
-    
+
     debugPrint("DI: Registering UnitConversionService...");
     sl.registerLazySingleton<UnitConversionService>(
       () => UnitConversionService(
@@ -95,10 +95,16 @@ Future<void> initServices() async {
 
     debugPrint("DI: Registering business services...");
     sl.registerLazySingleton<PurchaseService>(
-      () => PurchaseService(db, sl<PostingEngine>(), sl<InventoryCostingService>(), sl<AppConfigService>()),
+      () => PurchaseService(db, sl<PostingEngine>(),
+          sl<InventoryCostingService>(), sl<AppConfigService>()),
     );
     sl.registerLazySingleton<SalesService>(
-      () => SalesService(sl<AppDatabase>(), sl<PostingEngine>(), sl<InventoryService>(), sl<AppSettingsService>(), sl<PermissionService>()),
+      () => SalesService(
+          sl<AppDatabase>(),
+          sl<PostingEngine>(),
+          sl<InventoryService>(),
+          sl<AppSettingsService>(),
+          sl<PermissionService>()),
     );
     sl.registerLazySingleton<StatementService>(
       () => StatementService(sl<PostingEngine>()),
@@ -131,7 +137,8 @@ Future<void> initServices() async {
     sl.registerLazySingleton(() => BomService(db, sl<AccountingService>()));
     sl.registerLazySingleton<GrnService>(() => GrnService(db));
     sl.registerLazySingleton<ReorderService>(() => ReorderService(db));
-    sl.registerLazySingleton<SupplierAnalyticsService>(() => SupplierAnalyticsService(db));
+    sl.registerLazySingleton<SupplierAnalyticsService>(
+        () => SupplierAnalyticsService(db));
     sl.registerLazySingleton<DriveBackupService>(() => DriveBackupService(db));
     sl.registerLazySingleton<FinancialControlService>(
       () => FinancialControlService(
@@ -145,7 +152,8 @@ Future<void> initServices() async {
       engine.setCostingService(sl<InventoryCostingService>());
       return engine;
     });
-    sl.registerLazySingleton<CommunicationService>(() => CommunicationService());
+    sl.registerLazySingleton<CommunicationService>(
+        () => CommunicationService());
     debugPrint("DI: Additional services registered");
 
     debugPrint("DI: Registering providers...");
@@ -154,7 +162,7 @@ Future<void> initServices() async {
       () => PosBloc(db, sl<PricingService>(), sl<TransactionEngine>()),
     );
     debugPrint("DI: Providers registered");
-    
+
     debugPrint("DI: ==== Services Initialization Complete ====");
   } catch (e, stack) {
     debugPrint("DI: Services initialization error: $e");

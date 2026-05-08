@@ -11,7 +11,7 @@ class ExportService {
   /// Exports products to a CSV file
   Future<String> exportProducts() async {
     final products = await db.select(db.products).get();
-    
+
     List<List<dynamic>> rows = [];
     // Header
     rows.add(["ID", "Name", "SKU", "Barcode", "Price", "Stock"]);
@@ -21,11 +21,12 @@ class ExportService {
     }
 
     String csvData = const ListToCsvConverter().convert(rows);
-    
+
     final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/products_export_${DateTime.now().millisecondsSinceEpoch}.csv');
+    final file = File(
+        '${directory.path}/products_export_${DateTime.now().millisecondsSinceEpoch}.csv');
     await file.writeAsString(csvData);
-    
+
     return file.path;
   }
 }

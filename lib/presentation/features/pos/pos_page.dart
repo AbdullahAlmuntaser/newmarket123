@@ -46,7 +46,7 @@ class _PosViewState extends State<PosView> {
   @override
   Widget build(BuildContext context) {
     final commService = sl<CommunicationService>();
-    
+
     return BlocListener<PosBloc, PosState>(
       listener: (context, state) {
         if (state is PosCheckoutSuccess) {
@@ -62,8 +62,12 @@ class _PosViewState extends State<PosView> {
         appBar: AppBar(
           title: const Text('نقطة البيع السريع'),
           actions: [
-            IconButton(icon: const Icon(Icons.history), onPressed: () => context.push('/sales')),
-            IconButton(icon: const Icon(Icons.qr_code_scanner), onPressed: () => _openScanner(context)),
+            IconButton(
+                icon: const Icon(Icons.history),
+                onPressed: () => context.push('/sales')),
+            IconButton(
+                icon: const Icon(Icons.qr_code_scanner),
+                onPressed: () => _openScanner(context)),
           ],
         ),
         body: BlocBuilder<PosBloc, PosState>(
@@ -72,7 +76,8 @@ class _PosViewState extends State<PosView> {
               return const Center(child: CircularProgressIndicator());
             }
             if (state is PosError) {
-              return Center(child: Text('خطأ في تحميل البيانات: ${state.message}'));
+              return Center(
+                  child: Text('خطأ في تحميل البيانات: ${state.message}'));
             }
             if (state is PosLoaded) {
               return Row(
@@ -84,7 +89,8 @@ class _PosViewState extends State<PosView> {
                       children: [
                         Padding(
                           padding: const EdgeInsets.all(8.0),
-                          child: ProductSearchWidget(controller: _barcodeController),
+                          child: ProductSearchWidget(
+                              controller: _barcodeController),
                         ),
                         const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 8.0),
@@ -123,33 +129,37 @@ class _PosViewState extends State<PosView> {
   ) async {
     // أولاً إظهار رسالة النجاح
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('تمت عملية البيع بنجاح'), backgroundColor: Colors.green),
+      const SnackBar(
+          content: Text('تمت عملية البيع بنجاح'),
+          backgroundColor: Colors.green),
     );
-    
+
     // مسح السلة
     context.read<PosBloc>().add(ClearCart());
-    
+
     // عرض خيارات إرسال الفاتورة بعد قليل
     if (!mounted) return;
-    
+
     await Future.delayed(const Duration(milliseconds: 500));
-    
+
     if (!mounted) return;
-    
+
     // جلب بيانات العميل إذا وجدت
     String customerName = 'عميل نقدي';
     String? customerPhone;
-    
+
     if (state.sale.customerId != null) {
-      final customer = await sl<AppDatabase>().customersDao.getCustomerById(state.sale.customerId!);
+      final customer = await sl<AppDatabase>()
+          .customersDao
+          .getCustomerById(state.sale.customerId!);
       if (customer != null) {
         customerName = customer.name;
         customerPhone = customer.phone;
       }
     }
-    
+
     final hasCustomerPhone = customerPhone != null && customerPhone.isNotEmpty;
-    
+
     if (!context.mounted) return;
 
     showDialog(

@@ -57,9 +57,8 @@ class CategoriesPage extends StatelessWidget {
               // Cycle through predefined colors
               final color = categoryColors[index % categoryColors.length];
               // Determine text/icon color based on the luminosity of the background color
-              final textColor = color.computeLuminance() > 0.5
-                  ? Colors.black
-                  : Colors.white;
+              final textColor =
+                  color.computeLuminance() > 0.5 ? Colors.black : Colors.white;
 
               return Card(
                 elevation: 4,
@@ -188,7 +187,8 @@ class CategoriesPage extends StatelessWidget {
               onPressed: () async {
                 final products = await (db.select(
                   db.products,
-                )..where((p) => p.categoryId.equals(category.id))).get();
+                )..where((p) => p.categoryId.equals(category.id)))
+                    .get();
                 if (!context.mounted) return;
                 if (products.isNotEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(

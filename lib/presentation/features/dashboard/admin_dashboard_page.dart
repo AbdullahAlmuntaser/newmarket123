@@ -146,9 +146,8 @@ class AdminDashboardPage extends StatelessWidget {
     final displayValue = isPercentage
         ? '${(value * 100).toStringAsFixed(1)}%'
         : value.toStringAsFixed(2);
-    final progress = isPercentage
-        ? value.clamp(0.0, 1.0)
-        : (value / 3.0).clamp(0.0, 1.0);
+    final progress =
+        isPercentage ? value.clamp(0.0, 1.0) : (value / 3.0).clamp(0.0, 1.0);
 
     return Column(
       children: [
@@ -249,18 +248,19 @@ class AdminDashboardPage extends StatelessWidget {
                   Text(
                     '${l10n.welcomeAdmin}, ${auth.currentUser?.fullName ?? 'Admin'}!',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
+                          fontWeight: FontWeight.bold,
+                          color:
+                              Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     l10n.adminDashboardDescription,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onPrimaryContainer.withOpacity(0.7),
-                    ),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer.withOpacity(0.7),
+                        ),
                   ),
                 ],
               ),
@@ -297,7 +297,9 @@ class AdminDashboardPage extends StatelessWidget {
             _buildKPICard(
               context,
               'مشتريات اليوم',
-              data.dailyExpenses.isNotEmpty ? data.dailyExpenses.last.value : 0.0,
+              data.dailyExpenses.isNotEmpty
+                  ? data.dailyExpenses.last.value
+                  : 0.0,
               Icons.shopping_cart,
               Colors.blue,
             ),
@@ -362,9 +364,9 @@ class AdminDashboardPage extends StatelessWidget {
                     child: Text(
                       currency.format(value),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: color,
-                      ),
+                            fontWeight: FontWeight.bold,
+                            color: color,
+                          ),
                     ),
                   ),
                 ],
@@ -437,8 +439,7 @@ class AdminDashboardPage extends StatelessWidget {
                   lineBarsData: [
                     LineChartBarData(
                       spots: List.generate(data.dailyRevenue.length, (i) {
-                        final profit =
-                            data.dailyRevenue[i].value -
+                        final profit = data.dailyRevenue[i].value -
                             data.dailyExpenses[i].value;
                         return FlSpot(i.toDouble(), profit);
                       }),
@@ -689,8 +690,7 @@ class AdminDashboardPage extends StatelessWidget {
                 child: BarChart(
                   BarChartData(
                     alignment: BarChartAlignment.spaceAround,
-                    maxY:
-                        data.topSellingProducts
+                    maxY: data.topSellingProducts
                             .map((e) => e.quantity)
                             .reduce((a, b) => a > b ? a : b) *
                         1.2,
@@ -724,8 +724,7 @@ class AdminDashboardPage extends StatelessWidget {
                               return const SizedBox();
                             }
                             final name = data
-                                .topSellingProducts[value.toInt()]
-                                .productName;
+                                .topSellingProducts[value.toInt()].productName;
                             return Padding(
                               padding: const EdgeInsets.only(top: 8),
                               child: Transform.rotate(

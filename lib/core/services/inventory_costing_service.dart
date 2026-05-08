@@ -61,20 +61,21 @@ class InventoryCostingService {
     }
   }
 
-  Future<InventoryValuationMethod> getProductValuationMethod(String productId) async {
+  Future<InventoryValuationMethod> getProductValuationMethod(
+      String productId) async {
     final product = await (_db.select(_db.products)
-      ..where((p) => p.id.equals(productId)))
-      .getSingleOrNull();
-    
+          ..where((p) => p.id.equals(productId)))
+        .getSingleOrNull();
+
     if (product == null) return InventoryValuationMethod.fifo;
     return _parseMethod(product.valuationMethod);
   }
 
   Future<double> calculateAverageCost(String productId) async {
     final batches = await (_db.select(_db.productBatches)
-      ..where((b) => b.productId.equals(productId))
-      ..where((b) => b.quantity.isBiggerThan(const Variable(0.0))))
-      .get();
+          ..where((b) => b.productId.equals(productId))
+          ..where((b) => b.quantity.isBiggerThan(const Variable(0.0))))
+        .get();
 
     if (batches.isEmpty) return 0.0;
 
@@ -91,11 +92,12 @@ class InventoryCostingService {
 
   Future<InventoryValuation> getInventoryValuation(String productId) async {
     final method = await getProductValuationMethod(productId);
-    final batches = await (_db.select(_db.productBatches))
-      .get();
+    final batches = await (_db.select(_db.productBatches)).get();
 
-    final productBatches = batches.where((b) => b.productId == productId && b.quantity > 0).toList();
-    
+    final productBatches = batches
+        .where((b) => b.productId == productId && b.quantity > 0)
+        .toList();
+
     if (productBatches.isEmpty) {
       return InventoryValuation(
         productId: productId,
@@ -116,7 +118,8 @@ class InventoryCostingService {
     }
   }
 
-  Future<InventoryValuation> _calculateAvcoValuation(String productId, List<ProductBatch> batches) async {
+  Future<InventoryValuation> _calculateAvcoValuation(
+      String productId, List<ProductBatch> batches) async {
     double totalValue = 0.0;
     double totalQty = 0.0;
 
@@ -135,7 +138,8 @@ class InventoryCostingService {
     );
   }
 
-  Future<InventoryValuation> _calculateFifoValuation(String productId, List<ProductBatch> batches) async {
+  Future<InventoryValuation> _calculateFifoValuation(
+      String productId, List<ProductBatch> batches) async {
     final sortedBatches = List<ProductBatch>.from(batches)
       ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
@@ -157,7 +161,8 @@ class InventoryCostingService {
     );
   }
 
-  Future<InventoryValuation> _calculateLifoValuation(String productId, List<ProductBatch> batches) async {
+  Future<InventoryValuation> _calculateLifoValuation(
+      String productId, List<ProductBatch> batches) async {
     final sortedBatches = List<ProductBatch>.from(batches)
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
@@ -179,30 +184,34 @@ class InventoryCostingService {
     );
   }
 
-  Future<List<BatchWithCost>> getBatchesForSale(String productId, double quantity) async {
+  Future<List<BatchWithCost>> getBatchesForSale(
+      String productId, double quantity) async {
     final method = await getProductValuationMethod(productId);
-    final batches = await (_db.select(_db.productBatches))
-      .get();
+    final batches = await (_db.select(_db.productBatches)).get();
 
-    final productBatches = batches.where((b) => b.productId == productId && b.quantity > 0).toList();
-    
+    final productBatches = batches
+        .where((b) => b.productId == productId && b.quantity > 0)
+        .toList();
+
     if (productBatches.isEmpty) return [];
 
     List<ProductBatch> sortedBatches;
-    
+
     switch (method) {
       case InventoryValuationMethod.avco:
-        return productBatches.map((b) => BatchWithCost(
-          batch: b,
-          remainingQuantity: b.quantity,
-          costPerUnit: b.costPrice,
-        )).toList();
-        
+        return productBatches
+            .map((b) => BatchWithCost(
+                  batch: b,
+                  remainingQuantity: b.quantity,
+                  costPerUnit: b.costPrice,
+                ))
+            .toList();
+
       case InventoryValuationMethod.lifo:
         sortedBatches = List<ProductBatch>.from(productBatches)
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
         break;
-        
+
       case InventoryValuationMethod.fifo:
       default:
         sortedBatches = List<ProductBatch>.from(productBatches)
@@ -218,10 +227,10 @@ class InventoryCostingService {
 
     double remaining = quantity;
     final result = <BatchWithCost>[];
-    
+
     for (var batch in sortedBatches) {
       if (remaining <= 0) break;
-      
+
       final deduct = remaining > batch.quantity ? batch.quantity : remaining;
       result.add(BatchWithCost(
         batch: batch,
@@ -236,12 +245,12 @@ class InventoryCostingService {
 
   Future<double> calculateCogsForSale(String productId, double quantity) async {
     final batches = await getBatchesForSale(productId, quantity);
-    
+
     double totalCogs = 0.0;
     for (var batch in batches) {
       totalCogs += batch.remainingQuantity * batch.costPerUnit;
     }
-    
+
     return totalCogs;
   }
 
@@ -279,21 +288,22 @@ class InventoryCostingService {
     );
   }
 
-  Future<Map<String, double>> getBatchSummaryReport({String? warehouseId}) async {
+  Future<Map<String, double>> getBatchSummaryReport(
+      {String? warehouseId}) async {
     final Map<String, double> summary = {};
-    
+
     final query = _db.select(_db.productBatches);
     if (warehouseId != null) {
       query.where((b) => b.warehouseId.equals(warehouseId));
     }
-    
+
     final batches = await query.get();
-    
+
     for (var batch in batches) {
       final key = '${batch.productId}_${batch.warehouseId}';
       summary[key] = (summary[key] ?? 0) + batch.quantity;
     }
-    
+
     return summary;
   }
 }

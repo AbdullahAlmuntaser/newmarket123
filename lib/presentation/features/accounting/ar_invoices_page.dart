@@ -48,8 +48,10 @@ class _ARInvoicesPageState extends State<ARInvoicesPage> {
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${l10n.invoiceNumberLabel}: ${invoice.invoiceNumber}'),
-                      Text('${l10n.date}: ${DateFormat.yMMMd().format(invoice.invoiceDate)}'),
+                      Text(
+                          '${l10n.invoiceNumberLabel}: ${invoice.invoiceNumber}'),
+                      Text(
+                          '${l10n.date}: ${DateFormat.yMMMd().format(invoice.invoiceDate)}'),
                     ],
                   ),
                   trailing: Column(
@@ -57,8 +59,10 @@ class _ARInvoicesPageState extends State<ARInvoicesPage> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        NumberFormat.currency(symbol: l10n.currencySymbol).format(invoice.totalAmount),
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        NumberFormat.currency(symbol: l10n.currencySymbol)
+                            .format(invoice.totalAmount),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       Text(
                         invoice.status,
@@ -85,8 +89,10 @@ class _ARInvoicesPageState extends State<ARInvoicesPage> {
 
   Stream<List<ARInvoiceWithCustomer>> _watchARInvoices(AppDatabase db) {
     final query = db.select(db.aRInvoices).join([
-      drift.innerJoin(db.customers, db.customers.id.equalsExp(db.aRInvoices.customerId)),
-    ])..orderBy([drift.OrderingTerm.desc(db.aRInvoices.invoiceDate)]);
+      drift.innerJoin(
+          db.customers, db.customers.id.equalsExp(db.aRInvoices.customerId)),
+    ])
+      ..orderBy([drift.OrderingTerm.desc(db.aRInvoices.invoiceDate)]);
 
     return query.watch().map((rows) {
       return rows.map((row) {
@@ -157,14 +163,16 @@ class _AddARInvoiceDialogState extends State<AddARInvoiceDialog> {
               TextFormField(
                 controller: _invoiceNumberController,
                 decoration: InputDecoration(labelText: l10n.invoiceNumberLabel),
-                validator: (v) => v == null || v.isEmpty ? l10n.enterNameError : null,
+                validator: (v) =>
+                    v == null || v.isEmpty ? l10n.enterNameError : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _totalAmountController,
                 decoration: InputDecoration(labelText: l10n.totalAmount),
                 keyboardType: TextInputType.number,
-                validator: (v) => v == null || v.isEmpty ? l10n.enterAmountError : null,
+                validator: (v) =>
+                    v == null || v.isEmpty ? l10n.enterAmountError : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -189,7 +197,9 @@ class _AddARInvoiceDialogState extends State<AddARInvoiceDialog> {
               ),
               ListTile(
                 title: Text(l10n.dueDate),
-                subtitle: Text(_dueDate == null ? l10n.unknown : DateFormat.yMMMd().format(_dueDate!)),
+                subtitle: Text(_dueDate == null
+                    ? l10n.unknown
+                    : DateFormat.yMMMd().format(_dueDate!)),
                 trailing: const Icon(Icons.calendar_today),
                 onTap: () async {
                   final picked = await showDatePicker(
@@ -206,10 +216,12 @@ class _AddARInvoiceDialogState extends State<AddARInvoiceDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+        TextButton(
+            onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
         ElevatedButton(
           onPressed: () async {
-            if (_formKey.currentState!.validate() && _selectedCustomer != null) {
+            if (_formKey.currentState!.validate() &&
+                _selectedCustomer != null) {
               await db.customersDao.createARInvoice(
                 ARInvoicesCompanion.insert(
                   customerId: _selectedCustomer!.id,
@@ -217,7 +229,8 @@ class _AddARInvoiceDialogState extends State<AddARInvoiceDialog> {
                   invoiceDate: drift.Value(_invoiceDate),
                   dueDate: drift.Value(_dueDate),
                   totalAmount: double.parse(_totalAmountController.text),
-                  taxAmount: drift.Value(double.tryParse(_taxAmountController.text) ?? 0.0),
+                  taxAmount: drift.Value(
+                      double.tryParse(_taxAmountController.text) ?? 0.0),
                   status: const drift.Value('POSTED'),
                 ),
               );

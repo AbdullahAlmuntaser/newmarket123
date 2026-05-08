@@ -7,6 +7,8 @@ import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/invoice_service.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
+import 'package:supermarket/injection_container.dart' as di;
+import 'package:supermarket/core/services/audit_service.dart';
 
 class SaleDetailsBottomSheet extends StatelessWidget {
   final Sale sale;
@@ -30,7 +32,8 @@ class SaleDetailsBottomSheet extends StatelessWidget {
       builder: (context, scrollController) => FutureBuilder<List<SaleItem>>(
         future: (db.select(
           db.saleItems,
-        )..where((t) => t.saleId.equals(sale.id))).get(),
+        )..where((t) => t.saleId.equals(sale.id)))
+            .get(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -44,11 +47,11 @@ class SaleDetailsBottomSheet extends StatelessWidget {
 
           // Optimized product fetching: Fetch all products related to sale items in one go
           return FutureBuilder<List<Product>>(
-            future:
-                (db.select(db.products)..where(
-                      (p) => p.id.isIn(items.map((i) => i.productId).toList()),
-                    ))
-                    .get(),
+            future: (db.select(db.products)
+                  ..where(
+                    (p) => p.id.isIn(items.map((i) => i.productId).toList()),
+                  ))
+                .get(),
             builder: (context, productSnapshot) {
               if (productSnapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -71,15 +74,25 @@ class SaleDetailsBottomSheet extends StatelessWidget {
                         ),
                         Row(
                           children: [
-                            if (sale.status == DocumentStatus.draft)
+                            if (sale.status == DocumentStatus.draft) ...[
                               IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.orange),
+                                icon: const Icon(Icons.edit,
+                                    color: Colors.orange),
                                 tooltip: 'تعديل',
                                 onPressed: () {
                                   Navigator.pop(context);
-                                  context.push('/sales/invoice/edit/${sale.id}');
+                                  context
+                                      .push('/sales/invoice/edit/${sale.id}');
                                 },
                               ),
+                              IconButton(
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
+                                tooltip: 'حذف',
+                                onPressed: () =>
+                                    _confirmDelete(context, db, sale),
+                              ),
+                            ],
                             if (sale.status == DocumentStatus.posted)
                               IconButton(
                                 icon: const Icon(
@@ -109,16 +122,19 @@ class SaleDetailsBottomSheet extends StatelessWidget {
                             FutureBuilder<Customer?>(
                               future: sale.customerId != null
                                   ? (db.select(db.customers)
-                                        ..where((c) => c.id.equals(sale.customerId!)))
+                                        ..where((c) =>
+                                            c.id.equals(sale.customerId!)))
                                       .getSingleOrNull()
                                   : Future.value(null),
                               builder: (context, snapshot) {
                                 final customer = snapshot.data;
-                                if (customer?.phone == null || customer!.phone!.isEmpty) {
+                                if (customer?.phone == null ||
+                                    customer!.phone!.isEmpty) {
                                   return const SizedBox.shrink();
                                 }
                                 return PopupMenuButton<String>(
-                                  icon: const Icon(Icons.send, color: Colors.blue),
+                                  icon: const Icon(Icons.send,
+                                      color: Colors.blue),
                                   tooltip: 'إرسال',
                                   onSelected: (value) => _sendMessage(
                                     context,
@@ -269,6 +285,53 @@ class SaleDetailsBottomSheet extends StatelessWidget {
       }
     } catch (e) {
       debugPrint('Error sending message: $e');
+    }
+  }
+
+  Future<void> _confirmDelete(
+      BuildContext context, AppDatabase db, Sale sale) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('تأكيد الحذف'),
+        content:
+            Text('هل أنت متأكد من حذف الفاتورة #${sale.id.substring(0, 8)}؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('حذف', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        await db.salesDao.deleteSale(sale.id);
+
+        await di.sl<AuditService>().logDelete(
+              'SalesInvoice',
+              sale.id,
+            );
+
+        if (context.mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم حذف الفاتورة بنجاح')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('فشل الحذف: $e')),
+          );
+        }
+      }
     }
   }
 }

@@ -4,7 +4,7 @@ import 'package:drift/drift.dart';
 
 class SyncService {
   final AppDatabase db;
-  
+
   SyncService(this.db);
 
   /// Adds an operation to the sync queue
@@ -15,14 +15,14 @@ class SyncService {
     required Map<String, dynamic> payload,
   }) async {
     await db.into(db.syncQueue).insert(
-      SyncQueueCompanion.insert(
-        entityTable: table,
-        entityId: entityId,
-        operation: operation,
-        payload: jsonEncode(payload),
-        status: const Value(0), // 0: Pending, 1: Synced, -1: Failed
-      ),
-    );
+          SyncQueueCompanion.insert(
+            entityTable: table,
+            entityId: entityId,
+            operation: operation,
+            payload: jsonEncode(payload),
+            status: const Value(0), // 0: Pending, 1: Synced, -1: Failed
+          ),
+        );
   }
 
   /// Gets pending items from the queue
@@ -44,7 +44,7 @@ class SyncService {
       try {
         // Pseudo-code for Cloud API call:
         // await cloudApi.sync(item.entityTable, item.operation, item.payload);
-        
+
         await markAsSynced(item.id);
       } catch (e) {
         // Log sync error using developer.log or a dedicated logger

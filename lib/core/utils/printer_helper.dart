@@ -21,7 +21,9 @@ class PrinterHelper {
         build: (pw.Context context) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            pw.Text('سند صرف مخزني', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+            pw.Text('سند صرف مخزني',
+                style:
+                    pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
             pw.Divider(),
             pw.SizedBox(height: 10),
             pw.Text('الصنف: $itemName'),
@@ -66,18 +68,21 @@ class PrinterHelper {
               pw.Center(
                 child: pw.Text(
                   'SUPERMARKET SYSTEM',
-                  style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+                  style: pw.TextStyle(
+                      fontSize: 16, fontWeight: pw.FontWeight.bold),
                 ),
               ),
               pw.SizedBox(height: 5),
               pw.Text('ID: ${sale.id.substring(0, 8)}'),
-              pw.Text('Date: ${DateFormat("yyyy-MM-dd HH:mm").format(sale.createdAt)}'),
+              pw.Text(
+                  'Date: ${DateFormat("yyyy-MM-dd HH:mm").format(sale.createdAt)}'),
               if (customerName != null) pw.Text('Customer: $customerName'),
               pw.Divider(),
               pw.TableHelper.fromTextArray(
                 headers: ['Item', 'Qty', 'Price', 'Total'],
                 data: items.map((item) {
-                  final product = products.firstWhere((p) => p.id == item.productId);
+                  final product =
+                      products.firstWhere((p) => p.id == item.productId);
                   return [
                     product.name,
                     item.quantity.toString(),

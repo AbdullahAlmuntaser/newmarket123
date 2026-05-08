@@ -30,8 +30,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          final entries =
-              snapshot.data
+          final entries = snapshot.data
                   ?.where((e) => e.referenceType == 'EXPENSE')
                   .toList() ??
               [];
@@ -51,9 +50,9 @@ class _ExpensesPageState extends State<ExpensesPage> {
                   final expenseLine = lines.isEmpty
                       ? null
                       : lines.cast<dao.GLLineWithAccount?>().firstWhere(
-                          (l) => l != null && l.line.debit > 0,
-                          orElse: () => null,
-                        );
+                            (l) => l != null && l.line.debit > 0,
+                            orElse: () => null,
+                          );
                   return ListTile(
                     title: Text(entry.description),
                     subtitle: Text(entry.date.toString().split(' ')[0]),
@@ -101,9 +100,8 @@ class _ExpensesPageState extends State<ExpensesPage> {
     final descriptionController = TextEditingController();
     final amountController = TextEditingController();
     GLAccount? selectedExpenseAccount;
-    GLAccount? selectedPaymentAccount = paymentAccounts.isNotEmpty
-        ? paymentAccounts.first
-        : null;
+    GLAccount? selectedPaymentAccount =
+        paymentAccounts.isNotEmpty ? paymentAccounts.first : null;
 
     if (!context.mounted) return;
 

@@ -210,9 +210,7 @@ class _AccountingPeriodsPageState extends State<AccountingPeriodsPage> {
       return;
     }
 
-    await db
-        .into(db.accountingPeriods)
-        .insert(
+    await db.into(db.accountingPeriods).insert(
           AccountingPeriodsCompanion.insert(
             id: drift.Value(const Uuid().v4()),
             name: _nameController.text,
@@ -310,7 +308,8 @@ class _AccountingPeriodsPageState extends State<AccountingPeriodsPage> {
 
     await (db.delete(
       db.accountingPeriods,
-    )..where((p) => p.id.equals(period.id))).go();
+    )..where((p) => p.id.equals(period.id)))
+        .go();
 
     if (mounted) {
       ScaffoldMessenger.of(

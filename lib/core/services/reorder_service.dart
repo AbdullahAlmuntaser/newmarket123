@@ -16,7 +16,8 @@ class ReorderService {
     // Find products below alert limit
     final lowStockProducts = await (db.select(
       db.products,
-    )..where((p) => p.stock.isSmallerOrEqual(p.alertLimit))).get();
+    )..where((p) => p.stock.isSmallerOrEqual(p.alertLimit)))
+        .get();
 
     if (lowStockProducts.isEmpty) return [];
 
@@ -25,8 +26,9 @@ class ReorderService {
     for (var product in lowStockProducts) {
       // Find last supplier for this product
       final lastPurchase = await (db.select(db.purchaseItems).join([
-            innerJoin(db.purchases, db.purchases.id.equalsExp(db.purchaseItems.purchaseId)),
-          ])
+        innerJoin(db.purchases,
+            db.purchases.id.equalsExp(db.purchaseItems.purchaseId)),
+      ])
             ..where(db.purchaseItems.productId.equals(product.id))
             ..orderBy([OrderingTerm.desc(db.purchases.date)])
             ..limit(1))
@@ -43,11 +45,13 @@ class ReorderService {
               PurchaseOrdersCompanion(
                 id: Value(orderId),
                 supplierId: Value(supplierId),
-                total: Value(product.buyPrice * (product.alertLimit - product.stock + 10.0)),
+                total: Value(product.buyPrice *
+                    (product.alertLimit - product.stock + 10.0)),
                 warehouseId: Value(warehouseId),
                 status: const Value('DRAFT'),
                 date: Value(DateTime.now()),
-                orderNumber: Value('AUTO-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}'),
+                orderNumber: Value(
+                    'AUTO-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}'),
               ),
             );
 
@@ -55,7 +59,8 @@ class ReorderService {
               PurchaseOrderItemsCompanion(
                 orderId: Value(orderId),
                 productId: Value(product.id),
-                quantity: Value(((product.alertLimit - product.stock) + 10.0).toDouble()),
+                quantity: Value(
+                    ((product.alertLimit - product.stock) + 10.0).toDouble()),
                 price: Value(product.buyPrice),
               ),
             );

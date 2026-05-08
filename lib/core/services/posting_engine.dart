@@ -98,18 +98,19 @@ class PostingEngine {
     required Map<String, dynamic> context,
   }) async {
     await _checkPeriodOpen();
-    
-    // Log the attempt
-    developer.log('Posting transaction: $type, Reference: $referenceId', name: 'PostingEngine');
 
-    final profile =
-        await (db.select(db.postingProfiles)
-              ..where((p) => p.operationType.equals(type.name.toUpperCase()))
-              ..where((p) => p.isActive.equals(true)))
-            .get();
+    // Log the attempt
+    developer.log('Posting transaction: $type, Reference: $referenceId',
+        name: 'PostingEngine');
+
+    final profile = await (db.select(db.postingProfiles)
+          ..where((p) => p.operationType.equals(type.name.toUpperCase()))
+          ..where((p) => p.isActive.equals(true)))
+        .get();
 
     if (profile.isEmpty) {
-      developer.log('No posting profile found for: ${type.name.toUpperCase()}', name: 'PostingEngine', level: 1000);
+      developer.log('No posting profile found for: ${type.name.toUpperCase()}',
+          name: 'PostingEngine', level: 1000);
       throw Exception('No posting profile found for: ${type.name}');
     }
 
@@ -135,19 +136,20 @@ class PostingEngine {
         ),
       );
     }
-    
-    developer.log('Successfully found profile and created lines for ${type.name}', name: 'PostingEngine');
+
+    developer.log(
+        'Successfully found profile and created lines for ${type.name}',
+        name: 'PostingEngine');
     await db.accountingDao.createEntry(entry, lines);
   }
 
   Future<void> _checkPeriodOpen() async {
     final now = DateTime.now();
-    final period =
-        await (db.select(db.accountingPeriods)
-              ..where((p) => p.isClosed.equals(false))
-              ..where((p) => p.startDate.isSmallerOrEqual(Variable(now)))
-              ..where((p) => p.endDate.isBiggerOrEqual(Variable(now))))
-            .getSingleOrNull();
+    final period = await (db.select(db.accountingPeriods)
+          ..where((p) => p.isClosed.equals(false))
+          ..where((p) => p.startDate.isSmallerOrEqual(Variable(now)))
+          ..where((p) => p.endDate.isBiggerOrEqual(Variable(now))))
+        .getSingleOrNull();
 
     if (period == null) throw Exception('Period is locked or closed.');
   }

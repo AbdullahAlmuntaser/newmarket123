@@ -51,7 +51,8 @@ class MainDrawer extends StatelessWidget {
                   onTap: () => context.go('/'),
                 ),
                 if (isAdmin)
-                  _buildSubItem(context, 'لوحة تحكم المدير', '/admin-dashboard'),
+                  _buildSubItem(
+                      context, 'لوحة تحكم المدير', '/admin-dashboard'),
                 _buildDrawerItem(
                   context,
                   icon: Icons.point_of_sale_rounded,
@@ -64,7 +65,8 @@ class MainDrawer extends StatelessWidget {
                     icon: Icons.history_rounded,
                     title: l10n?.sales ?? 'المبيعات',
                     children: [
-                      _buildSubItem(context, l10n?.sales ?? 'سجل المبيعات', '/sales'),
+                      _buildSubItem(
+                          context, l10n?.sales ?? 'سجل المبيعات', '/sales'),
                       _buildSubItem(
                         context,
                         'فاتورة مبيعات جديدة',
@@ -165,9 +167,7 @@ class MainDrawer extends StatelessWidget {
                     onTap: () => context.push('/inventory/transfer'),
                   ),
                 ],
-
                 const _DrawerDivider(),
-
                 _buildExpansionGroup(
                   context,
                   icon: Icons.people_alt_rounded,
@@ -176,7 +176,6 @@ class MainDrawer extends StatelessWidget {
                     _buildSubItem(context, 'قائمة العملاء', '/customers'),
                   ],
                 ),
-
                 if (isManager) ...[
                   _buildExpansionGroup(
                     context,
@@ -184,7 +183,8 @@ class MainDrawer extends StatelessWidget {
                     title: l10n?.suppliers ?? 'الموردين',
                     children: [
                       _buildSubItem(context, 'قائمة الموردين', '/suppliers'),
-                      _buildSubItem(context, 'دفع للمورد', '/suppliers/payment'),
+                      _buildSubItem(
+                          context, 'دفع للمورد', '/suppliers/payment'),
                     ],
                   ),
                 ],
@@ -281,7 +281,8 @@ class MainDrawer extends StatelessWidget {
                         l10n?.cashFlowForecast ?? 'توقعات التدفق النقدي',
                         '/reports/cash-flow',
                       ),
-                      _buildSubItem(context, l10n?.auditLog ?? 'سجل التدقيق', '/reports/audit'),
+                      _buildSubItem(context, l10n?.auditLog ?? 'سجل التدقيق',
+                          '/reports/audit'),
                     ],
                   ),
                 ],
@@ -407,13 +408,17 @@ class MainDrawer extends StatelessWidget {
                         l10n?.customerLedger ?? 'كشف حساب العميل',
                         '/accounting/customer-ledger',
                       ),
-                      ],
-                      ),                  _buildExpansionGroup(
+                    ],
+                  ),
+                  _buildExpansionGroup(
                     context,
                     icon: Icons.settings_rounded,
                     title: 'الإعدادات',
                     children: [
-                      _buildSubItem(context, l10n?.staffManagement ?? 'إدارة المستخدمين', '/users'),
+                      _buildSubItem(
+                          context,
+                          l10n?.staffManagement ?? 'إدارة المستخدمين',
+                          '/users'),
                       _buildSubItem(
                         context,
                         'أسعار العملات',
@@ -429,7 +434,8 @@ class MainDrawer extends StatelessWidget {
                         l10n?.backupAndSync ?? 'النسخ الاحتياطي',
                         '/settings/backup',
                       ),
-                      _buildSubItem(context, l10n?.cloudSync ?? 'المزامنة', '/sync'),
+                      _buildSubItem(
+                          context, l10n?.cloudSync ?? 'المزامنة', '/sync'),
                       _buildSubItem(
                         context,
                         'إعدادات الطابعة',
@@ -438,7 +444,6 @@ class MainDrawer extends StatelessWidget {
                     ],
                   ),
                 ],
-
                 const SizedBox(height: 20),
                 _buildDrawerItem(
                   context,

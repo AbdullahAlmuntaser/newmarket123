@@ -17,7 +17,7 @@ class BackupService {
     try {
       // Get database file path
       final dbFile = await _getDatabaseFile();
-      
+
       if (!await dbFile.exists()) {
         return BackupResult(
           success: false,
@@ -68,7 +68,7 @@ class BackupService {
   Future<BackupResult> restoreBackup(String backupPath) async {
     try {
       final backupFile = File(backupPath);
-      
+
       if (!await backupFile.exists()) {
         return BackupResult(
           success: false,
@@ -79,12 +79,11 @@ class BackupService {
 
       // Get current database file
       final dbFile = await _getDatabaseFile();
-      
+
       // Create a temporary backup of current database before restore
       if (await dbFile.exists()) {
         final preRestoreBackup = File(
-          '${dbFile.path}.pre_restore_${DateTime.now().millisecondsSinceEpoch}.db'
-        );
+            '${dbFile.path}.pre_restore_${DateTime.now().millisecondsSinceEpoch}.db');
         await dbFile.copy(preRestoreBackup.path);
       }
 
@@ -112,9 +111,9 @@ class BackupService {
     try {
       final backupDir = await _getBackupDirectory();
       final files = backupDir.listSync();
-      
+
       final backups = <BackupMetadata>[];
-      
+
       for (var file in files) {
         if (file is File && file.path.endsWith('.db')) {
           final metadataFile = File('${file.path}.json');
@@ -137,7 +136,7 @@ class BackupService {
 
       // Sort by date descending
       backups.sort((a, b) => b.backupDate.compareTo(a.backupDate));
-      
+
       return backups;
     } catch (e) {
       debugPrint('Error listing backups: $e');
@@ -151,15 +150,15 @@ class BackupService {
     try {
       final backupFile = File(backupPath);
       final metadataFile = File('$backupPath.json');
-      
+
       if (await backupFile.exists()) {
         await backupFile.delete();
       }
-      
+
       if (await metadataFile.exists()) {
         await metadataFile.delete();
       }
-      
+
       return true;
     } catch (e) {
       debugPrint('Error deleting backup: $e');
@@ -177,11 +176,11 @@ class BackupService {
   Future<Directory> _getBackupDirectory() async {
     final appDir = await getApplicationDocumentsDirectory();
     final backupDir = Directory('${appDir.path}/backups');
-    
+
     if (!await backupDir.exists()) {
       await backupDir.create(recursive: true);
     }
-    
+
     return backupDir;
   }
 

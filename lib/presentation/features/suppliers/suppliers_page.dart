@@ -37,13 +37,13 @@ class _SuppliersPageState extends State<SuppliersPage> {
           _buildSearchBar(l10n, colorScheme),
           Expanded(
             child: StreamBuilder<List<Supplier>>(
-              stream:
-                  (db.select(db.suppliers)..where(
-                        (t) =>
-                            t.name.like('%${_searchQuery.toLowerCase()}%') |
-                            t.phone.like('%$_searchQuery%'),
-                      ))
-                      .watch(),
+              stream: (db.select(db.suppliers)
+                    ..where(
+                      (t) =>
+                          t.name.like('%${_searchQuery.toLowerCase()}%') |
+                          t.phone.like('%$_searchQuery%'),
+                    ))
+                  .watch(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -174,7 +174,8 @@ class _SuppliersPageState extends State<SuppliersPage> {
                       if (supplier.phone != null && supplier.phone!.isNotEmpty)
                         IconButton.filledTonal(
                           icon: const Icon(Icons.phone),
-                          onPressed: () => commService.makePhoneCall(supplier.phone!),
+                          onPressed: () =>
+                              commService.makePhoneCall(supplier.phone!),
                           tooltip: 'اتصال',
                         ),
                       const SizedBox(width: 4),
@@ -316,7 +317,8 @@ class _SuppliersPageState extends State<SuppliersPage> {
     if (companion != null) {
       await (db.update(
         db.suppliers,
-      )..where((t) => t.id.equals(supplier.id))).write(companion);
+      )..where((t) => t.id.equals(supplier.id)))
+          .write(companion);
       if (mounted) {
         ScaffoldMessenger.of(
           context,

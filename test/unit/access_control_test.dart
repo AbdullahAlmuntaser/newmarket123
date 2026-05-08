@@ -2,19 +2,25 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:supermarket/core/auth/user_role.dart';
 
 void main() {
-
   test('Access Control Logic Verification', () {
     // Testing the logic implemented in appRouter redirect.
     // This simulates different roles and locations to verify redirection.
 
     bool checkAccess(String location, String roleName) {
       final role = UserRole.fromString(roleName);
-      
+
       // Simulate the logic from AccessGuard
-      if (location.startsWith('/reports') && !role.canAccessReports) return false;
-      if (location.startsWith('/accounting') && !role.canAccessAccounting) return false;
-      if ((location == '/users' || location.startsWith('/settings') || location == '/sync') && !role.canAccessAdminSettings) return false;
-      
+      if (location.startsWith('/reports') && !role.canAccessReports) {
+        return false;
+      }
+      if (location.startsWith('/accounting') && !role.canAccessAccounting) {
+        return false;
+      }
+      if ((location == '/users' ||
+              location.startsWith('/settings') ||
+              location == '/sync') &&
+          !role.canAccessAdminSettings) return false;
+
       return true;
     }
 

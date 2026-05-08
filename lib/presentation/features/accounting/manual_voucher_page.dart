@@ -174,7 +174,8 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
                       ),
                       const SizedBox(height: 8),
                       ListTile(
-                        title: Text('تاريخ استحقاق الشيك: ${_formatDate(_checkDueDate)}'),
+                        title: Text(
+                            'تاريخ استحقاق الشيك: ${_formatDate(_checkDueDate)}'),
                         leading: const Icon(Icons.calendar_today),
                         onTap: () async {
                           final date = await showDatePicker(
@@ -183,20 +184,24 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
                             firstDate: DateTime.now(),
                             lastDate: DateTime(2030),
                           );
-                          if (date != null) setState(() => _checkDueDate = date);
+                          if (date != null) {
+                            setState(() => _checkDueDate = date);
+                          }
                         },
                       ),
                     ],
-                    ],
-                    ),
-                    ),
-                    ),            const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
 
             // تخصيص الفواتير (فقط في سند القبض للعملاء)
             if (widget.isReceipt && _selectedCustomer != null) ...[
               BillAllocationWidget(
                 customerId: _selectedCustomer!.id,
-                totalPaymentAmount: double.tryParse(_amountController.text) ?? 0.0,
+                totalPaymentAmount:
+                    double.tryParse(_amountController.text) ?? 0.0,
                 onAllocationChanged: (allocs) {},
               ),
               const SizedBox(height: 16),

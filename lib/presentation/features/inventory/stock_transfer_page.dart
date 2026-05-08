@@ -92,8 +92,9 @@ class _StockTransferPageState extends State<StockTransferPage> {
         return ListTile(
           title: FutureBuilder<Product?>(
             future: (context.read<AppDatabase>().select(
-              context.read<AppDatabase>().products,
-            )..where((t) => t.id.equals(item.productId))).getSingleOrNull(),
+                      context.read<AppDatabase>().products,
+                    )..where((t) => t.id.equals(item.productId)))
+                .getSingleOrNull(),
             builder: (context, snapshot) =>
                 Text(snapshot.data?.name ?? 'Loading...'),
           ),
@@ -130,38 +131,46 @@ class _StockTransferPageState extends State<StockTransferPage> {
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
-              onPressed:
-                provider.transferItems.isEmpty ||
-                    provider.selectedToWarehouseId == null
-                ? null
-                : () async {
-                    final messenger = ScaffoldMessenger.of(context);
-                    final userId = Provider.of<AuthProvider>(context, listen: false).currentUser?.id;
-                    try {
-                      // حفظ أول صنف للطباعة
-                      final firstItem = provider.transferItems.first;
-                      final product = await (context.read<AppDatabase>().select(
-                        context.read<AppDatabase>().products,
-                      )..where((t) => t.id.equals(firstItem.productId))).getSingle();
+              onPressed: provider.transferItems.isEmpty ||
+                      provider.selectedToWarehouseId == null
+                  ? null
+                  : () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final userId =
+                          Provider.of<AuthProvider>(context, listen: false)
+                              .currentUser
+                              ?.id;
+                      try {
+                        // حفظ أول صنف للطباعة
+                        final firstItem = provider.transferItems.first;
+                        final product = await (context
+                                .read<AppDatabase>()
+                                .select(
+                                  context.read<AppDatabase>().products,
+                                )
+                              ..where((t) => t.id.equals(firstItem.productId)))
+                            .getSingle();
 
-                      await provider.submitTransfer(_noteController.text, userId);
-                      messenger.showSnackBar(
-                        const SnackBar(content: Text('تم التحويل بنجاح')),
-                      );
+                        await provider.submitTransfer(
+                            _noteController.text, userId);
+                        messenger.showSnackBar(
+                          const SnackBar(content: Text('تم التحويل بنجاح')),
+                        );
 
-                      await PrinterHelper.printStockMovement(
-                          itemName: product.name,
-                          quantity: firstItem.quantity,
-                          reference: 'TRN-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}'
-                      );
+                        await PrinterHelper.printStockMovement(
+                            itemName: product.name,
+                            quantity: firstItem.quantity,
+                            reference:
+                                'TRN-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}');
 
-                      _noteController.clear();
-                    } catch (e) {
-                      messenger.showSnackBar(
-                        SnackBar(content: Text(e.toString())),
-                      );
-                    }
-                  },              child: const Text('تأكيد التحويل'),
+                        _noteController.clear();
+                      } catch (e) {
+                        messenger.showSnackBar(
+                          SnackBar(content: Text(e.toString())),
+                        );
+                      }
+                    },
+              child: const Text('تأكيد التحويل'),
             ),
           ),
         ],
@@ -194,10 +203,9 @@ class _StockTransferPageState extends State<StockTransferPage> {
                   return DropdownMenuItem(
                     value: b,
                     child: FutureBuilder<Product?>(
-                      future:
-                          (db.select(db.products)
-                                ..where((t) => t.id.equals(b.productId)))
-                              .getSingleOrNull(),
+                      future: (db.select(db.products)
+                            ..where((t) => t.id.equals(b.productId)))
+                          .getSingleOrNull(),
                       builder: (context, snapshot) => Text(
                         '${snapshot.data?.name ?? 'Unknown'} (Batch: ${b.batchNumber}, Qty: ${b.quantity})',
                       ),

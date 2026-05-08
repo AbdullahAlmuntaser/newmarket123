@@ -28,7 +28,8 @@ class PermissionService {
 
       // الحصول على صلاحيات الدور
       final rolePerms = await db.select(db.rolePermissions).get();
-      final permission = rolePerms.where((rp) => rp.role == userData.role && rp.permissionCode == permissionCode);
+      final permission = rolePerms.where((rp) =>
+          rp.role == userData.role && rp.permissionCode == permissionCode);
       return permission.isNotEmpty;
     } catch (e) {
       return false;

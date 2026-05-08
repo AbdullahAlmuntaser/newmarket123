@@ -26,7 +26,8 @@ class SupplierAnalyticsService {
     for (var supplier in suppliers) {
       final purchases = await (db.select(
         db.purchases,
-      )..where((p) => p.supplierId.equals(supplier.id))).get();
+      )..where((p) => p.supplierId.equals(supplier.id)))
+          .get();
 
       double total = 0;
       for (var p in purchases) {

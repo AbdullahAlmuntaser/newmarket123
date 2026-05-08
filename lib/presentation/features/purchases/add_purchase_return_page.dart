@@ -90,9 +90,8 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
           ),
         ],
       ),
-      bottomNavigationBar: _selectedPurchase != null
-          ? _buildSummary(l10n)
-          : null,
+      bottomNavigationBar:
+          _selectedPurchase != null ? _buildSummary(l10n) : null,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _returnedQuantities.values.any((q) => q > 0)
             ? () => _processReturn()
@@ -199,10 +198,9 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
                               icon: const Icon(Icons.remove_circle_outline),
                               onPressed: returnedQty > 0
                                   ? () => setState(
-                                      () =>
-                                          _returnedQuantities[item.productId] =
-                                              returnedQty - 1,
-                                    )
+                                        () => _returnedQuantities[
+                                            item.productId] = returnedQty - 1,
+                                      )
                                   : null,
                             ),
                             SizedBox(
@@ -220,10 +218,9 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
                               icon: const Icon(Icons.add_circle_outline),
                               onPressed: returnedQty < item.quantity
                                   ? () => setState(
-                                      () =>
-                                          _returnedQuantities[item.productId] =
-                                              returnedQty + 1,
-                                    )
+                                        () => _returnedQuantities[
+                                            item.productId] = returnedQty + 1,
+                                      )
                                   : null,
                             ),
                           ],

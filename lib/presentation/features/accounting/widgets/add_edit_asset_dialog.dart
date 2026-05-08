@@ -77,9 +77,8 @@ class _AddEditAssetDialogState extends State<AddEditAssetDialog> {
         salvageValue: Value(double.tryParse(_salvageController.text) ?? 0.0),
         purchaseDate: Value(_purchaseDate),
         // Reset depreciation if cost or date changes, handled in provider
-        accumulatedDepreciation: _isEditing
-            ? const Value.absent()
-            : const Value(0.0),
+        accumulatedDepreciation:
+            _isEditing ? const Value.absent() : const Value(0.0),
       );
 
       if (_isEditing) {

@@ -16,13 +16,15 @@ class ProductUnitsDao extends DatabaseAccessor<AppDatabase>
   Future<ProductUnit?> getProductUnitById(String id) async {
     return (select(
       productUnits,
-    )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
+    )..where((tbl) => tbl.id.equals(id)))
+        .getSingleOrNull();
   }
 
   Future<List<ProductUnit>> getUnitsForProduct(String productId) async {
     return (select(
       productUnits,
-    )..where((tbl) => tbl.productId.equals(productId))).get();
+    )..where((tbl) => tbl.productId.equals(productId)))
+        .get();
   }
 
   Future<int> addProductUnit(ProductUnitsCompanion unit) =>

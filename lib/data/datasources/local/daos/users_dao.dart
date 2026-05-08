@@ -17,7 +17,8 @@ class UsersDao extends DatabaseAccessor<AppDatabase> with _$UsersDaoMixin {
   Future<bool> hasPermission(String username, String permissionCode) async {
     final user = await (select(
       users,
-    )..where((u) => u.username.equals(username))).getSingleOrNull();
+    )..where((u) => u.username.equals(username)))
+        .getSingleOrNull();
     if (user == null) return false;
     if (user.role == 'ADMIN') return true; // Admin has all permissions
 
@@ -50,10 +51,11 @@ class UsersDao extends DatabaseAccessor<AppDatabase> with _$UsersDaoMixin {
   }
 
   Future<void> removePermissionFromRole(String role, String permissionCode) {
-    return (delete(rolePermissions)..where(
-          (rp) =>
-              rp.role.equals(role) & rp.permissionCode.equals(permissionCode),
-        ))
+    return (delete(rolePermissions)
+          ..where(
+            (rp) =>
+                rp.role.equals(role) & rp.permissionCode.equals(permissionCode),
+          ))
         .go();
   }
 }

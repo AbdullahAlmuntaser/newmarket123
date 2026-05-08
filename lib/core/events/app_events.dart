@@ -1,5 +1,3 @@
-
-
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
 abstract class AppEvent {}

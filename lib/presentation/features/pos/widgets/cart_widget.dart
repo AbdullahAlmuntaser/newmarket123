@@ -36,7 +36,9 @@ class CartWidget extends StatelessWidget {
                   children: [
                     Text(
                       l10n.cart,
-                      style: Theme.of(context).textTheme.headlineSmall
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     if (state.isWholesaleMode)
@@ -182,11 +184,11 @@ class CartWidget extends StatelessWidget {
                       _qtyBtn(Icons.remove, () {
                         if (item.quantity > Decimal.one) {
                           context.read<PosBloc>().add(
-                            UpdateCartItemQuantity(
-                              item.product.id,
-                              item.quantity - Decimal.one,
-                            ),
-                          );
+                                UpdateCartItemQuantity(
+                                  item.product.id,
+                                  item.quantity - Decimal.one,
+                                ),
+                              );
                         }
                       }),
                       Padding(
@@ -201,11 +203,11 @@ class CartWidget extends StatelessWidget {
                       ),
                       _qtyBtn(Icons.add, () {
                         context.read<PosBloc>().add(
-                          UpdateCartItemQuantity(
-                            item.product.id,
-                            item.quantity + Decimal.one,
-                          ),
-                        );
+                              UpdateCartItemQuantity(
+                                item.product.id,
+                                item.quantity + Decimal.one,
+                              ),
+                            );
                       }),
                     ],
                   ),
@@ -339,8 +341,8 @@ class CartWidget extends StatelessWidget {
                 : null,
             onTap: () {
               context.read<PosBloc>().add(
-                UpdateCartItemUnit(item.product.id, item.product.unit),
-              );
+                    UpdateCartItemUnit(item.product.id, item.product.unit),
+                  );
               Navigator.pop(ctx);
             },
           ),
@@ -354,8 +356,8 @@ class CartWidget extends StatelessWidget {
                   : null,
               onTap: () {
                 context.read<PosBloc>().add(
-                  UpdateCartItemUnit(item.product.id, u.unitName),
-                );
+                      UpdateCartItemUnit(item.product.id, u.unitName),
+                    );
                 Navigator.pop(ctx);
               },
             ),
@@ -379,9 +381,7 @@ class CartWidget extends StatelessWidget {
     );
 
     if (result != null) {
-      await database
-          .into(database.unitConversions)
-          .insert(
+      await database.into(database.unitConversions).insert(
             UnitConversionsCompanion.insert(
               productId: item.product.id,
               unitName: result['unitName'],

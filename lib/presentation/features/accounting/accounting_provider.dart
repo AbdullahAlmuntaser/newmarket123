@@ -121,13 +121,12 @@ class AccountingProvider with ChangeNotifier {
     );
 
     // Update lines with entryId
-    final updatedLines = lines
-        .map((l) => l.copyWith(entryId: Value(entryId)))
-        .toList();
+    final updatedLines =
+        lines.map((l) => l.copyWith(entryId: Value(entryId))).toList();
 
     await db.transaction(() async {
       await db.accountingDao.createEntry(entry, updatedLines);
-      
+
       // Audit log
       await sl<AuditService>().logCreate(
         'ManualJournalEntry',
@@ -136,7 +135,7 @@ class AccountingProvider with ChangeNotifier {
         userId: userId,
       );
     });
-    
+
     notifyListeners();
   }
 

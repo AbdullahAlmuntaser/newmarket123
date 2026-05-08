@@ -18,21 +18,23 @@ class AuditLogService {
     Map<String, dynamic>? newValues,
   }) async {
     await db.into(db.accAuditLogs).insert(
-      AccAuditLogsCompanion.insert(
-        logTableName: logTableName,
-        recordId: recordId,
-        action: action,
-        oldValues: Value(oldValues != null ? jsonEncode(oldValues) : null),
-        newValues: Value(newValues != null ? jsonEncode(newValues) : null),
-        userId: Value(userId),
-      ),
-    );
+          AccAuditLogsCompanion.insert(
+            logTableName: logTableName,
+            recordId: recordId,
+            action: action,
+            oldValues: Value(oldValues != null ? jsonEncode(oldValues) : null),
+            newValues: Value(newValues != null ? jsonEncode(newValues) : null),
+            userId: Value(userId),
+          ),
+        );
   }
 
   /// الحصول على سجل التدقيقات لكيان معين
-  Future<List<AccAuditLog>> getAuditLogForTable(String logTableName, int recordId) async {
+  Future<List<AccAuditLog>> getAuditLogForTable(
+      String logTableName, int recordId) async {
     return (db.select(db.accAuditLogs)
-          ..where((t) => t.logTableName.equals(logTableName) & t.recordId.equals(recordId))
+          ..where((t) =>
+              t.logTableName.equals(logTableName) & t.recordId.equals(recordId))
           ..orderBy([(t) => OrderingTerm.desc(t.timestamp)]))
         .get();
   }

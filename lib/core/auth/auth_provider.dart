@@ -17,7 +17,8 @@ class AuthProvider with ChangeNotifier {
   Future<bool> login(String username, String password) async {
     final user = await (db.select(
       db.users,
-    )..where((u) => u.username.equals(username))).getSingleOrNull();
+    )..where((u) => u.username.equals(username)))
+        .getSingleOrNull();
 
     if (user != null && BCrypt.checkpw(password, user.password)) {
       _currentUser = user;
@@ -38,9 +39,7 @@ class AuthProvider with ChangeNotifier {
     final count = await db.select(db.users).get();
     if (count.isEmpty) {
       final hashedPassword = BCrypt.hashpw('123', BCrypt.gensalt());
-      await db
-          .into(db.users)
-          .insert(
+      await db.into(db.users).insert(
             UsersCompanion.insert(
               username: 'admin',
               password: hashedPassword,

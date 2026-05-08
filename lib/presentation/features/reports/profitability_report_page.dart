@@ -36,26 +36,26 @@ class _ProfitabilityReportPageState extends State<ProfitabilityReportPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _report == null
-          ? const Center(child: Text('لا توجد بيانات'))
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  _buildCard('إجمالي المبيعات', _report!.totalRevenue),
-                  _buildCard('إجمالي تكلفة البضاعة', _report!.totalCost),
-                  _buildCard(
-                    'إجمالي الربح',
-                    _report!.grossProfit,
-                    color: Colors.green,
+              ? const Center(child: Text('لا توجد بيانات'))
+              : Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      _buildCard('إجمالي المبيعات', _report!.totalRevenue),
+                      _buildCard('إجمالي تكلفة البضاعة', _report!.totalCost),
+                      _buildCard(
+                        'إجمالي الربح',
+                        _report!.grossProfit,
+                        color: Colors.green,
+                      ),
+                      _buildCard(
+                        'هامش الربح',
+                        _report!.profitMargin,
+                        isPercent: true,
+                      ),
+                    ],
                   ),
-                  _buildCard(
-                    'هامش الربح',
-                    _report!.profitMargin,
-                    isPercent: true,
-                  ),
-                ],
-              ),
-            ),
+                ),
     );
   }
 

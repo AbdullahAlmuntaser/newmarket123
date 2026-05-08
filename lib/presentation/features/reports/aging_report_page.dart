@@ -56,14 +56,21 @@ class _AgingReportPageState extends State<AgingReportPage> {
                       DataColumn(label: Text(l10n.days90Plus)),
                       DataColumn(label: Text(l10n.totalDue)),
                     ],
-                    rows: data.map((d) => DataRow(cells: [
-                      DataCell(Text(d.name)),
-                      DataCell(Text(NumberFormat.currency(symbol: '').format(d.current))),
-                      DataCell(Text(NumberFormat.currency(symbol: '').format(d.days30))),
-                      DataCell(Text(NumberFormat.currency(symbol: '').format(d.days60))),
-                      DataCell(Text(NumberFormat.currency(symbol: '').format(d.days90Plus))),
-                      DataCell(Text(NumberFormat.currency(symbol: '').format(d.total))),
-                    ])).toList(),
+                    rows: data
+                        .map((d) => DataRow(cells: [
+                              DataCell(Text(d.name)),
+                              DataCell(Text(NumberFormat.currency(symbol: '')
+                                  .format(d.current))),
+                              DataCell(Text(NumberFormat.currency(symbol: '')
+                                  .format(d.days30))),
+                              DataCell(Text(NumberFormat.currency(symbol: '')
+                                  .format(d.days60))),
+                              DataCell(Text(NumberFormat.currency(symbol: '')
+                                  .format(d.days90Plus))),
+                              DataCell(Text(NumberFormat.currency(symbol: '')
+                                  .format(d.total))),
+                            ]))
+                        .toList(),
                   ),
                 );
               },

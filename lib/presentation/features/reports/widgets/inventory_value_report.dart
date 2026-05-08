@@ -41,11 +41,11 @@ class InventoryValueReport extends StatelessWidget {
                     ),
                     Text(
                       totalValue.toStringAsFixed(2),
-                      style: Theme.of(context).textTheme.headlineMedium
-                          ?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style:
+                          Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
                     ),
                   ],
                 );

@@ -65,7 +65,8 @@ class ErpDataService {
     double avgCost = 0;
     final product = await (db.select(
       db.products,
-    )..where((p) => p.id.equals(productId))).getSingleOrNull();
+    )..where((p) => p.id.equals(productId)))
+        .getSingleOrNull();
 
     try {
       final valuation = await costingService.getInventoryValuation(productId);
@@ -99,24 +100,26 @@ class ErpDataService {
   }) async {
     final customer = await (db.select(
       db.customers,
-    )..where((c) => c.id.equals(customerId))).getSingleOrNull();
+    )..where((c) => c.id.equals(customerId)))
+        .getSingleOrNull();
     final balance = customer?.balance ?? 0;
     final limit = customer?.creditLimit ?? 0;
 
     final sales = await (db.select(
       db.sales,
-    )..where((s) => s.customerId.equals(customerId))).get();
+    )..where((s) => s.customerId.equals(customerId)))
+        .get();
     final lastSale = sales.isNotEmpty ? sales.last : null;
 
     double lastPrice = 0;
     if (productId != null) {
-      final query =
-          db.select(db.saleItems).join([
-            innerJoin(db.sales, db.sales.id.equalsExp(db.saleItems.saleId)),
-          ])..where(
-            db.sales.customerId.equals(customerId) &
-                db.saleItems.productId.equals(productId),
-          );
+      final query = db.select(db.saleItems).join([
+        innerJoin(db.sales, db.sales.id.equalsExp(db.saleItems.saleId)),
+      ])
+        ..where(
+          db.sales.customerId.equals(customerId) &
+              db.saleItems.productId.equals(productId),
+        );
 
       query.orderBy([OrderingTerm.desc(db.sales.createdAt)]);
 
@@ -142,7 +145,8 @@ class ErpDataService {
     // Current balance
     final supplier = await (db.select(
       db.suppliers,
-    )..where((s) => s.id.equals(supplierId))).getSingleOrNull();
+    )..where((s) => s.id.equals(supplierId)))
+        .getSingleOrNull();
     final balance = supplier?.balance ?? 0;
 
     double lastPrice = 0;
@@ -162,18 +166,17 @@ class ErpDataService {
       lastDate = lastPurchase?.date;
 
       // Best price from this supplier
-      final query =
-          db.selectOnly(db.purchaseItems).join([
-              innerJoin(
-                db.purchases,
-                db.purchases.id.equalsExp(db.purchaseItems.purchaseId),
-              ),
-            ])
-            ..addColumns([db.purchaseItems.unitPrice.min()])
-            ..where(
-              db.purchaseItems.productId.equals(productId) &
-                  db.purchases.supplierId.equals(supplierId),
-            );
+      final query = db.selectOnly(db.purchaseItems).join([
+        innerJoin(
+          db.purchases,
+          db.purchases.id.equalsExp(db.purchaseItems.purchaseId),
+        ),
+      ])
+        ..addColumns([db.purchaseItems.unitPrice.min()])
+        ..where(
+          db.purchaseItems.productId.equals(productId) &
+              db.purchases.supplierId.equals(supplierId),
+        );
 
       final row = await query.getSingle();
       bestPrice = row.read(db.purchaseItems.unitPrice.min()) ?? 0;
