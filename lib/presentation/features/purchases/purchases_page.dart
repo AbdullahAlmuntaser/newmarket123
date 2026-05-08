@@ -6,7 +6,10 @@ import 'package:intl/intl.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
+import 'package:supermarket/injection_container.dart' as di;
+import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/presentation/widgets/main_drawer.dart';
+import 'package:supermarket/core/auth/auth_provider.dart';
 
 class PurchasesPage extends StatefulWidget {
   const PurchasesPage({super.key});
@@ -257,10 +260,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                 title: const Text('تعديل', style: TextStyle(color: Colors.orange)),
                 onTap: () {
                   Navigator.pop(context);
-                  // TODO: Navigate to edit page
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('ميزة التعديل قيد التطوير')),
-                  );
+                  context.push('/purchases/edit/${purchase.id}');
                 },
               ),
             if (purchase.status == DocumentStatus.draft)
@@ -292,10 +292,32 @@ class _PurchasesPageState extends State<PurchasesPage> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
-              // TODO: Implement delete functionality
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('ميزة الحذف قيد التطوير')),
-              );
+              final db = Provider.of<AppDatabase>(context, listen: false);
+              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              final userId = authProvider.currentUser?.id;
+              
+              try {
+                await db.purchasesDao.deletePurchase(purchase.id);
+                
+                await di.sl<AuditService>().logDelete(
+                  'Purchase',
+                  purchase.id,
+                  userId: userId,
+                );
+                
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('تم حذف عملية الشراء بنجاح')),
+                  );
+                  setState(() {});
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('فشل الحذف: ${e.toString()}')),
+                  );
+                }
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('حذف', style: TextStyle(color: Colors.white)),
