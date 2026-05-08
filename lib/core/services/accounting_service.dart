@@ -9,6 +9,9 @@ import 'package:json_annotation/json_annotation.dart';
 import 'dart:developer' as developer;
 import 'app_config_service.dart';
 import 'permission_service.dart';
+import 'budget_service.dart';
+import 'package:supermarket/injection_container.dart';
+import 'package:supermarket/core/services/utils/notification_service.dart';
 
 part 'accounting_service.g.dart';
 
@@ -247,9 +250,9 @@ class AccountingService {
       } else if (event is PurchasePostedEvent) {
         postPurchase(event.purchase, event.items);
       } else if (event is SaleReturnCreatedEvent) {
-        postSaleReturn(event.saleReturn, event.items);
+        postSaleReturn(event.saleReturn, event.items, 'SYSTEM');
       } else if (event is PurchaseReturnCreatedEvent) {
-        postPurchaseReturn(event.purchaseReturn, event.items);
+        postPurchaseReturn(event.purchaseReturn, event.items, 'SYSTEM');
       } else if (event is CustomerPaymentEvent) {
         _handleCustomerPayment(event);
       } else if (event is SupplierPaymentEvent) {
@@ -1146,6 +1149,12 @@ class AccountingService {
     ];
 
     await dao.createEntry(entry, lines);
+
+    await _auditService.logCreate(
+      'GLEntry',
+      entryId,
+      details: 'Payment to Supplier: $supplierId, Amount: $amount',
+    );
   }
 
   Future<void> recordCheckCollected(Check check) async {
@@ -1273,242 +1282,240 @@ class AccountingService {
   Future<void> postSaleReturn(
     SalesReturn saleReturn,
     List<SalesReturnItem> items,
+    String userId,
   ) async {
     // التحقق من الصلاحيات
-    if (!await _permissionService.check(PermissionCode.postSaleReturn)) {
-      throw Exception('Permission denied: POST_SALE_RETURN');
-    }
-
-    final dao = db.accountingDao;
-    final originalSale = await db.salesDao.getSaleById(saleReturn.saleId);
-    if (originalSale == null) throw Exception('Original sale not found.');
-    
-    final entryId = const Uuid().v4();
-    final salesReturnAccount = await dao.getAccountByCode(codeSalesReturns);
-    final taxAccount = await dao.getAccountByCode(codeOutputVAT);
-    final arAccount = await dao.getAccountByCode(codeAccountsReceivable);
-    final cashAccount = await dao.getAccountByCode(codeCash);
-
-    if (salesReturnAccount == null ||
-        taxAccount == null ||
-        arAccount == null ||
-        cashAccount == null) {
-      throw Exception('Missing accounts for sale return.');
-    }
-
-    final totalReturned = saleReturn.amountReturned;
-    final taxPortion = originalSale.tax > 0
-        ? (totalReturned / originalSale.total) * originalSale.tax
-        : 0.0;
-    final revenuePortion = totalReturned - taxPortion;
-    final creditAccount = originalSale.isCredit ? arAccount : cashAccount;
-
-    final entry = GLEntriesCompanion.insert(
-      id: Value(entryId),
-      description: 'Sale Return for Sale #${originalSale.id.substring(0, 8)}',
-      date: Value(saleReturn.createdAt),
-      referenceType: const Value('SALE_RETURN'),
-      referenceId: Value(saleReturn.id),
-      branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
-    );
-
-    final lines = [
-      GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: salesReturnAccount.id,
-        debit: Value(revenuePortion),
-        credit: const Value(0.0),
-        branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
-      ),
-      GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: taxAccount.id,
-        debit: Value(taxPortion),
-        credit: const Value(0.0),
-        branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
-      ),
-      GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: creditAccount.id,
-        debit: const Value(0.0),
-        credit: Value(totalReturned),
-        branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
-      ),
-    ];
-
-    await dao.createEntry(entry, lines);
-
-    // Record in AccountTransactions if credit
-    if (originalSale.isCredit) {
-      await _recordAccountTransaction(
-        accountId: creditAccount.id,
-        type: 'RETURN',
-        referenceId: saleReturn.id,
-        credit: totalReturned,
-        date: saleReturn.createdAt,
-        branchId: originalSale.branchId ?? await _configService.getDefaultBranchId(),
-      );
-    }
-
-    double totalCostReversed = 0;
-    for (var item in items) {
-      final batches = await (db.select(db.productBatches)
-            ..where((b) => b.productId.equals(item.productId))
-            ..where((b) => b.quantity.isBiggerThan(const Variable(0)))
-            ..orderBy([
-              (b) => OrderingTerm(
-                expression: b.expiryDate.isNull(),
-                mode: OrderingMode.asc,
-              ),
-              (b) => OrderingTerm(
-                expression: b.expiryDate,
-                mode: OrderingMode.asc,
-              ),
-              (b) => OrderingTerm(
-                expression: b.createdAt,
-                mode: OrderingMode.asc,
-              ),
-            ]))
-          .get();
+    await _permissionService.executeIfAllowed(userId, PermissionCode.postSaleReturn, () async {
+      final dao = db.accountingDao;
+      final originalSale = await db.salesDao.getSaleById(saleReturn.saleId);
+      if (originalSale == null) throw Exception('Original sale not found.');
       
-      double remainingQty = item.quantity;
-      for (var batch in batches) {
-        if (remainingQty <= 0) break;
-        double deductFromBatch = batch.quantity >= remainingQty
-            ? remainingQty
-            : batch.quantity;
-        totalCostReversed += deductFromBatch * batch.costPrice;
-        remainingQty -= deductFromBatch;
-      }
-    }
+      final entryId = const Uuid().v4();
+      final salesReturnAccount = await dao.getAccountByCode(codeSalesReturns);
+      final taxAccount = await dao.getAccountByCode(codeOutputVAT);
+      final arAccount = await dao.getAccountByCode(codeAccountsReceivable);
+      final cashAccount = await dao.getAccountByCode(codeCash);
 
-    if (totalCostReversed > 0) {
-      final cogsEntryId = const Uuid().v4();
-      final cogsAccount = await dao.getAccountByCode(codeCOGS);
-      final inventoryAccount = await dao.getAccountByCode(codeInventory);
-      if (cogsAccount != null && inventoryAccount != null) {
-        final cogsEntry = GLEntriesCompanion.insert(
-          id: Value(cogsEntryId),
-          description:
-              'COGS Reversal for Sale Return #${saleReturn.id.substring(0, 8)}',
-          date: Value(saleReturn.createdAt),
-          referenceType: const Value('COGS_REVERSAL'),
-          referenceId: Value(saleReturn.id),
-          branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
-        );
-        final cogsLines = [
-          GLLinesCompanion.insert(
-            entryId: cogsEntryId,
-            accountId: inventoryAccount.id,
-            debit: Value(totalCostReversed),
-            credit: const Value(0.0),
-            branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
-          ),
-          GLLinesCompanion.insert(
-            entryId: cogsEntryId,
-            accountId: cogsAccount.id,
-            debit: const Value(0.0),
-            credit: Value(totalCostReversed),
-            branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
-          ),
-        ];
-        await dao.createEntry(cogsEntry, cogsLines);
+      if (salesReturnAccount == null ||
+          taxAccount == null ||
+          arAccount == null ||
+          cashAccount == null) {
+        throw Exception('Missing accounts for sale return.');
       }
-    }
+
+      final totalReturned = saleReturn.amountReturned;
+      final taxPortion = originalSale.tax > 0
+          ? (totalReturned / originalSale.total) * originalSale.tax
+          : 0.0;
+      final revenuePortion = totalReturned - taxPortion;
+      final creditAccount = originalSale.isCredit ? arAccount : cashAccount;
+
+      final entry = GLEntriesCompanion.insert(
+        id: Value(entryId),
+        description: 'Sale Return for Sale #${originalSale.id.substring(0, 8)}',
+        date: Value(saleReturn.createdAt),
+        referenceType: const Value('SALE_RETURN'),
+        referenceId: Value(saleReturn.id),
+        branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
+      );
+
+      final lines = [
+        GLLinesCompanion.insert(
+          entryId: entryId,
+          accountId: salesReturnAccount.id,
+          debit: Value(revenuePortion),
+          credit: const Value(0.0),
+          branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
+        ),
+        GLLinesCompanion.insert(
+          entryId: entryId,
+          accountId: taxAccount.id,
+          debit: Value(taxPortion),
+          credit: const Value(0.0),
+          branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
+        ),
+        GLLinesCompanion.insert(
+          entryId: entryId,
+          accountId: creditAccount.id,
+          debit: const Value(0.0),
+          credit: Value(totalReturned),
+          branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
+        ),
+      ];
+
+      await dao.createEntry(entry, lines);
+
+      // Record in AccountTransactions if credit
+      if (originalSale.isCredit) {
+        await _recordAccountTransaction(
+          accountId: creditAccount.id,
+          type: 'RETURN',
+          referenceId: saleReturn.id,
+          credit: totalReturned,
+          date: saleReturn.createdAt,
+          branchId: originalSale.branchId ?? await _configService.getDefaultBranchId(),
+        );
+      }
+
+      double totalCostReversed = 0;
+      for (var item in items) {
+        final batches = await (db.select(db.productBatches)
+              ..where((b) => b.productId.equals(item.productId))
+              ..where((b) => b.quantity.isBiggerThan(const Variable(0)))
+              ..orderBy([
+                (b) => OrderingTerm(
+                  expression: b.expiryDate.isNull(),
+                  mode: OrderingMode.asc,
+                ),
+                (b) => OrderingTerm(
+                  expression: b.expiryDate,
+                  mode: OrderingMode.asc,
+                ),
+                (b) => OrderingTerm(
+                  expression: b.createdAt,
+                  mode: OrderingMode.asc,
+                ),
+              ]))
+            .get();
+        
+        double remainingQty = item.quantity;
+        for (var batch in batches) {
+          if (remainingQty <= 0) break;
+          double deductFromBatch = batch.quantity >= remainingQty
+              ? remainingQty
+              : batch.quantity;
+          totalCostReversed += deductFromBatch * batch.costPrice;
+          remainingQty -= deductFromBatch;
+        }
+      }
+
+      if (totalCostReversed > 0) {
+        final cogsEntryId = const Uuid().v4();
+        final cogsAccount = await dao.getAccountByCode(codeCOGS);
+        final inventoryAccount = await dao.getAccountByCode(codeInventory);
+        if (cogsAccount != null && inventoryAccount != null) {
+          final cogsEntry = GLEntriesCompanion.insert(
+            id: Value(cogsEntryId),
+            description:
+                'COGS Reversal for Sale Return #${saleReturn.id.substring(0, 8)}',
+            date: Value(saleReturn.createdAt),
+            referenceType: const Value('COGS_REVERSAL'),
+            referenceId: Value(saleReturn.id),
+            branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
+          );
+          final cogsLines = [
+            GLLinesCompanion.insert(
+              entryId: cogsEntryId,
+              accountId: inventoryAccount.id,
+              debit: Value(totalCostReversed),
+              credit: const Value(0.0),
+              branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
+            ),
+            GLLinesCompanion.insert(
+              entryId: cogsEntryId,
+              accountId: cogsAccount.id,
+              debit: const Value(0.0),
+              credit: Value(totalCostReversed),
+              branchId: Value(originalSale.branchId ?? await _configService.getDefaultBranchId()),
+            ),
+          ];
+          await dao.createEntry(cogsEntry, cogsLines);
+        }
+      }
+    });
   }
 
   Future<void> postPurchaseReturn(
     PurchaseReturn purchaseReturn,
     List<PurchaseReturnItem> items,
+    String userId,
   ) async {
     // التحقق من الصلاحيات
-    if (!await _permissionService.check(PermissionCode.postPurchaseReturn)) {
-      throw Exception('Permission denied: POST_PURCHASE_RETURN');
-    }
+    await _permissionService.executeIfAllowed(userId, PermissionCode.postPurchaseReturn, () async {
+      final dao = db.accountingDao;
+      final originalPurchase = await db.purchasesDao.getPurchaseById(
+        purchaseReturn.purchaseId,
+      );
+      if (originalPurchase == null) {
+        throw Exception('Original purchase not found.');
+      }
 
-    final dao = db.accountingDao;
-    final originalPurchase = await db.purchasesDao.getPurchaseById(
-      purchaseReturn.purchaseId,
-    );
-    if (originalPurchase == null) {
-      throw Exception('Original purchase not found.');
-    }
+      final entryId = const Uuid().v4();
+      final purchaseReturnAccount = await dao.getAccountByCode(
+        codePurchaseReturns,
+      );
+      final taxAccount = await dao.getAccountByCode(codeInputVAT);
+      final apAccount = await dao.getAccountByCode(codeAccountsPayable);
+      final cashAccount = await dao.getAccountByCode(codeCash);
 
-    final entryId = const Uuid().v4();
-    final purchaseReturnAccount = await dao.getAccountByCode(
-      codePurchaseReturns,
-    );
-    final taxAccount = await dao.getAccountByCode(codeInputVAT);
-    final apAccount = await dao.getAccountByCode(codeAccountsPayable);
-    final cashAccount = await dao.getAccountByCode(codeCash);
+      if (purchaseReturnAccount == null ||
+          taxAccount == null ||
+          apAccount == null ||
+          cashAccount == null) {
+        throw Exception('Missing accounts for purchase return.');
+      }
 
-    if (purchaseReturnAccount == null ||
-        taxAccount == null ||
-        apAccount == null ||
-        cashAccount == null) {
-      throw Exception('Missing accounts for purchase return.');
-    }
+      final totalReturned = purchaseReturn.amountReturned;
+      final taxPortion = originalPurchase.tax > 0
+          ? (totalReturned / originalPurchase.total) * originalPurchase.tax
+          : 0.0;
+      final purchasePortion = totalReturned - taxPortion;
+      final debitAccount = originalPurchase.isCredit ? apAccount : cashAccount;
 
-    final totalReturned = purchaseReturn.amountReturned;
-    final taxPortion = originalPurchase.tax > 0
-        ? (totalReturned / originalPurchase.total) * originalPurchase.tax
-        : 0.0;
-    final purchasePortion = totalReturned - taxPortion;
-    final debitAccount = originalPurchase.isCredit ? apAccount : cashAccount;
-
-    final entry = GLEntriesCompanion.insert(
-      id: Value(entryId),
-      description:
-          'Purchase Return for Purchase #${originalPurchase.id.substring(0, 8)}',
-      date: Value(purchaseReturn.createdAt),
-      referenceType: const Value('PURCHASE_RETURN'),
-      referenceId: Value(purchaseReturn.id),
-      branchId: Value(originalPurchase.branchId ?? await _configService.getDefaultBranchId()),
-    );
-
-    final lines = [
-      GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: debitAccount.id,
-        debit: Value(totalReturned),
-        credit: const Value(0.0),
+      final entry = GLEntriesCompanion.insert(
+        id: Value(entryId),
+        description:
+            'Purchase Return for Purchase #${originalPurchase.id.substring(0, 8)}',
+        date: Value(purchaseReturn.createdAt),
+        referenceType: const Value('PURCHASE_RETURN'),
+        referenceId: Value(purchaseReturn.id),
         branchId: Value(originalPurchase.branchId ?? await _configService.getDefaultBranchId()),
-      ),
-      GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: purchaseReturnAccount.id,
-        debit: const Value(0.0),
-        credit: Value(purchasePortion),
-        branchId: Value(originalPurchase.branchId ?? await _configService.getDefaultBranchId()),
-      ),
-      if (taxPortion > 0)
+      );
+
+      final lines = [
         GLLinesCompanion.insert(
           entryId: entryId,
-          accountId: taxAccount.id,
-          debit: const Value(0.0),
-          credit: Value(taxPortion),
+          accountId: debitAccount.id,
+          debit: Value(totalReturned),
+          credit: const Value(0.0),
           branchId: Value(originalPurchase.branchId ?? await _configService.getDefaultBranchId()),
         ),
-    ];
+        GLLinesCompanion.insert(
+          entryId: entryId,
+          accountId: purchaseReturnAccount.id,
+          debit: const Value(0.0),
+          credit: Value(purchasePortion),
+          branchId: Value(originalPurchase.branchId ?? await _configService.getDefaultBranchId()),
+        ),
+        if (taxPortion > 0)
+          GLLinesCompanion.insert(
+            entryId: entryId,
+            accountId: taxAccount.id,
+            debit: const Value(0.0),
+            credit: Value(taxPortion),
+            branchId: Value(originalPurchase.branchId ?? await _configService.getDefaultBranchId()),
+          ),
+      ];
 
-    await dao.createEntry(entry, lines);
+      await dao.createEntry(entry, lines);
 
-    // Record in AccountTransactions if credit
-    if (originalPurchase.isCredit) {
-      final supplier = await db.suppliersDao.getSupplierById(
-        originalPurchase.supplierId!,
-      );
-      final supplierAccountId = supplier?.accountId ?? apAccount.id;
+      // Record in AccountTransactions if credit
+      if (originalPurchase.isCredit) {
+        final supplier = await db.suppliersDao.getSupplierById(
+          originalPurchase.supplierId!,
+        );
+        final supplierAccountId = supplier?.accountId ?? apAccount.id;
 
-      await _recordAccountTransaction(
-        accountId: supplierAccountId,
-        type: 'RETURN',
-        referenceId: purchaseReturn.id,
-        debit: totalReturned,
-        date: purchaseReturn.createdAt,
-        branchId: originalPurchase.branchId ?? await _configService.getDefaultBranchId(),
-      );
-    }
+        await _recordAccountTransaction(
+          accountId: supplierAccountId,
+          type: 'RETURN',
+          referenceId: purchaseReturn.id,
+          debit: totalReturned,
+          date: purchaseReturn.createdAt,
+          branchId: originalPurchase.branchId ?? await _configService.getDefaultBranchId(),
+        );
+      }
+    });
   }
 
   Future<void> runAutomaticDepreciation(DateTime asOfDate) async {
@@ -1898,8 +1905,22 @@ class AccountingService {
     required DateTime date,
     required String expenseAccountId,
     required String paymentAccountId,
+    int? costCenterId,
   }) async {
     final dao = db.accountingDao;
+    // NOTE: In production, inject these services via DI instead of instantiating here
+    final budgetService = BudgetService(db, sl<NotificationService>());
+    final period = '${date.year}-${date.month}';
+
+    // 1. التحقق من الميزانية إذا كان هناك مركز تكلفة
+    if (costCenterId != null) {
+      await budgetService.validateExpenseAgainstBudget(
+        costCenterId: costCenterId,
+        expenseAmount: amount,
+        period: period,
+      );
+    }
+
     final entryId = const Uuid().v4();
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
@@ -1923,6 +1944,15 @@ class AccountingService {
       ),
     ];
     await dao.createEntry(entry, lines);
+
+    // 2. تحديث الميزانية فعلياً بعد تسجيل المصروف
+    if (costCenterId != null) {
+      await budgetService.updateActualBudget(
+        costCenterId: costCenterId,
+        expenseAmount: amount,
+        period: period,
+      );
+    }
   }
 
   Future<CashFlowData> getCashFlowStatement({

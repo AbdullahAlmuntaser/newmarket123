@@ -167,6 +167,25 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
     return (select(db.products)..where((p) => p.id.isIn(productIds))).get();
   }
 
+  Future<List<TopProduct>> getTopSellingProducts({int limit = 5}) async {
+    final quantitySum = saleItems.quantity.sum();
+    final query = select(saleItems).join([
+      innerJoin(products, products.id.equalsExp(saleItems.productId)),
+    ])
+      ..addColumns([quantitySum])
+      ..groupBy([saleItems.productId])
+      ..orderBy([OrderingTerm.desc(quantitySum)])
+      ..limit(limit);
+
+    final rows = await query.get();
+    return rows.map((row) {
+      return TopProduct(
+        product: row.readTable(products),
+        totalQuantity: row.read(quantitySum) ?? 0.0,
+      );
+    }).toList();
+  }
+
   Future<List<ProductProfitability>> getProductProfitability({
     DateTime? startDate,
     DateTime? endDate,
@@ -174,76 +193,34 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
     final reportStartDate = startDate ?? DateTime(2000);
     final reportEndDate = endDate ?? DateTime.now();
 
+    final revenueSum = (saleItems.quantity * saleItems.price).sum();
+    final costSum = (saleItems.quantity * products.buyPrice).sum();
+    final quantitySum = saleItems.quantity.sum();
+
     final query = select(saleItems).join([
       innerJoin(sales, sales.id.equalsExp(saleItems.saleId)),
       innerJoin(products, products.id.equalsExp(saleItems.productId)),
-    ])..where(sales.createdAt.isBetween(Variable(reportStartDate), Variable(reportEndDate)));
+    ])
+      ..addColumns([revenueSum, costSum, quantitySum])
+      ..where(sales.createdAt.isBetween(Variable(reportStartDate), Variable(reportEndDate)))
+      ..groupBy([saleItems.productId]);
 
     final rows = await query.get();
-    final Map<String, ProductProfitability> profitabilityMap = {};
 
-    for (final row in rows) {
-      final item = row.readTable(saleItems);
+    return rows.map((row) {
       final product = row.readTable(products);
+      final revenue = row.read(revenueSum) ?? 0.0;
+      final cost = row.read(costSum) ?? 0.0;
 
-      final revenue = item.quantity * item.price;
-      // Use product buyPrice as fallback, though batches are more accurate
-      final cost = item.quantity * product.buyPrice;
-
-      if (profitabilityMap.containsKey(product.id)) {
-        final current = profitabilityMap[product.id]!;
-        profitabilityMap[product.id] = ProductProfitability(
-          productId: product.id,
-          productName: product.name,
-          totalQuantity: current.totalQuantity + item.quantity,
-          totalRevenue: current.totalRevenue + revenue,
-          totalCost: current.totalCost + cost,
-        );
-      } else {
-        profitabilityMap[product.id] = ProductProfitability(
-          productId: product.id,
-          productName: product.name,
-          totalQuantity: item.quantity,
-          totalRevenue: revenue,
-          totalCost: cost,
-        );
-      }
-    }
-
-    return profitabilityMap.values.toList()
-      ..sort((a, b) => b.netProfit.compareTo(a.netProfit));
-  }
-
-  Future<List<TopProduct>> getTopSellingProducts({int limit = 5}) async {
-    final query = select(
-      saleItems,
-    ).join([innerJoin(products, products.id.equalsExp(saleItems.productId))]);
-
-    final rows = await query.get();
-    final Map<String, TopProduct> topProductsMap = {};
-
-    for (final row in rows) {
-      final item = row.readTable(saleItems);
-      final product = row.readTable(products);
-
-      if (topProductsMap.containsKey(product.id)) {
-        final current = topProductsMap[product.id]!;
-        topProductsMap[product.id] = TopProduct(
-          product: product,
-          totalQuantity: current.totalQuantity + item.quantity,
-        );
-      } else {
-        topProductsMap[product.id] = TopProduct(
-          product: product,
-          totalQuantity: item.quantity,
-        );
-      }
-    }
-
-    final list = topProductsMap.values.toList()
-      ..sort((a, b) => b.totalQuantity.compareTo(a.totalQuantity));
-
-    return list.take(limit).toList();
+      return ProductProfitability(
+        productId: product.id,
+        productName: product.name,
+        totalQuantity: row.read(quantitySum) ?? 0.0,
+        totalRevenue: revenue,
+        totalCost: cost,
+      );
+    }).toList()
+    ..sort((a, b) => b.netProfit.compareTo(a.netProfit));
   }
 
   // ==================== Sales Orders Management ====================
@@ -318,6 +295,48 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
           targetEntity: 'SALES_ORDER',
           entityId: orderId,
           details: const Value('Deleted sales order'),
+        ),
+      );
+    });
+  }
+
+  Future<void> deleteSale(String saleId) async {
+    return transaction(() async {
+      await (delete(saleItems)..where((i) => i.saleId.equals(saleId))).go();
+      await (delete(sales)..where((s) => s.id.equals(saleId))).go();
+
+      await into(auditLogs).insert(
+        AuditLogsCompanion.insert(
+          action: 'DELETE',
+          targetEntity: 'SALES_INVOICE',
+          entityId: saleId,
+          details: Value('Deleted sales invoice: $saleId'),
+        ),
+      );
+    });
+  }
+
+  Future<void> updateSale({
+    required String saleId,
+    required SalesCompanion saleCompanion,
+    required List<SaleItemsCompanion> itemsCompanions,
+    required String? userId,
+  }) async {
+    return transaction(() async {
+      await (update(sales)..where((s) => s.id.equals(saleId))).write(saleCompanion);
+      
+      await (delete(saleItems)..where((i) => i.saleId.equals(saleId))).go();
+      for (var item in itemsCompanions) {
+        await into(saleItems).insert(item);
+      }
+
+      await into(auditLogs).insert(
+        AuditLogsCompanion.insert(
+          userId: Value(userId),
+          action: 'UPDATE',
+          targetEntity: 'SALES_INVOICE',
+          entityId: saleId,
+          details: Value('Updated sales invoice: $saleId'),
         ),
       );
     });

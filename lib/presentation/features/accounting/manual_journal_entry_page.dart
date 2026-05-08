@@ -1,3 +1,4 @@
+import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
@@ -209,6 +210,7 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
   }
 
   void _saveEntry(AccountingProvider provider) async {
+    final userId = Provider.of<AuthProvider>(context, listen: false).currentUser?.id;
     final lines = _lines
         .where((l) => l.accountId != null)
         .map((l) => GLLinesCompanion.insert(
@@ -223,6 +225,7 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
       description: _descriptionController.text,
       date: _selectedDate,
       lines: lines,
+      userId: userId,
     );
     if(mounted) Navigator.pop(context);
   }

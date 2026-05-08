@@ -1,3 +1,4 @@
+import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:supermarket/core/services/purchase_service.dart';
+import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/injection_container.dart';
 import 'package:uuid/uuid.dart';
 import 'purchase_provider.dart';
@@ -15,7 +17,8 @@ import 'widgets/quick_product_add_dialog.dart';
 import 'package:supermarket/core/services/grn_service.dart';
 
 class AddPurchasePage extends StatefulWidget {
-  const AddPurchasePage({super.key});
+  final String? purchaseId;
+  const AddPurchasePage({super.key, this.purchaseId});
 
   @override
   State<AddPurchasePage> createState() => _AddPurchasePageState();
@@ -45,6 +48,32 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   double get _tax => double.tryParse(_taxController.text) ?? 0.0;
   double get _total => _subtotal - _discount + _shippingCost + _otherExpenses + _tax;
 
+  bool get isEditMode => widget.purchaseId != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (isEditMode) {
+      _loadPurchaseData();
+    }
+  }
+
+  Future<void> _loadPurchaseData() async {
+    final db = Provider.of<AppDatabase>(context, listen: false);
+    final purchase = await db.purchasesDao.getPurchaseById(widget.purchaseId!);
+    if (purchase != null && mounted) {
+      await (db.select(db.purchaseItems)
+        ..where((i) => i.purchaseId.equals(widget.purchaseId!))).get();
+      
+      setState(() {
+        _discountController.text = purchase.discount.toString();
+        _shippingCostController.text = purchase.shippingCost.toString();
+        _otherExpensesController.text = purchase.otherExpenses.toString();
+        _taxController.text = purchase.tax.toString();
+      });
+    }
+  }
+
   @override
   void dispose() {
     _discountController.dispose();
@@ -58,7 +87,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   Widget build(BuildContext context) {
     final db = Provider.of<AppDatabase>(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('فاتورة مشتريات')),
+      appBar: AppBar(title: Text(isEditMode ? 'تعديل فاتورة مشتريات' : 'فاتورة مشتريات')),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -263,10 +292,15 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
     }
     
     setState(() => _isSaving = true);
-    final purchaseId = const Uuid().v4();
+    final String purchaseId;
+    final bool isNew = !isEditMode;
+    purchaseId = isNew ? const Uuid().v4() : widget.purchaseId!;
+    
     try {
       final purchaseService = sl<PurchaseService>();
       final grnService = sl<GrnService>();
+      final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
+      final userId = currentUser?.id;
 
       await db.transaction(() async {
         final itemsCompanions = _items.map((item) => PurchaseItemsCompanion.insert(
@@ -280,37 +314,73 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
           expiryDate: drift.Value(item.expiryDate),
         )).toList();
 
-        await db.purchasesDao.createPurchase(
-          purchaseCompanion: PurchasesCompanion.insert(
-            id: drift.Value(purchaseId),
-            supplierId: drift.Value(_selectedSupplier!.id),
-            warehouseId: drift.Value(_selectedWarehouse!.id),
-            total: _total,
-            discount: drift.Value(_discount),
-            tax: drift.Value(_tax),
-            shippingCost: drift.Value(_shippingCost),
-            otherExpenses: drift.Value(_otherExpenses),
-            date: drift.Value(_selectedDate),
-            status: const drift.Value(DocumentStatus.draft),
-          ),
-          itemsCompanions: itemsCompanions,
-          userId: null,
-        );
+        if (isNew) {
+          await db.purchasesDao.createPurchase(
+            purchaseCompanion: PurchasesCompanion.insert(
+              id: drift.Value(purchaseId),
+              supplierId: drift.Value(_selectedSupplier!.id),
+              warehouseId: drift.Value(_selectedWarehouse!.id),
+              total: _total,
+              discount: drift.Value(_discount),
+              tax: drift.Value(_tax),
+              shippingCost: drift.Value(_shippingCost),
+              otherExpenses: drift.Value(_otherExpenses),
+              date: drift.Value(_selectedDate),
+              status: const drift.Value(DocumentStatus.draft),
+            ),
+            itemsCompanions: itemsCompanions,
+            userId: userId,
+          );
+
+          await sl<AuditService>().logCreate(
+            'PurchaseInvoice',
+            purchaseId,
+            details: 'فاتورة مشتريات جديدة بقيمة ${_total.toStringAsFixed(2)}',
+            userId: userId,
+          );
+        } else {
+          await db.purchasesDao.updatePurchase(
+            purchaseId: purchaseId,
+            purchaseCompanion: PurchasesCompanion(
+              supplierId: drift.Value(_selectedSupplier?.id),
+              warehouseId: drift.Value(_selectedWarehouse?.id),
+              total: drift.Value(_total),
+              discount: drift.Value(_discount),
+              tax: drift.Value(_tax),
+              shippingCost: drift.Value(_shippingCost),
+              otherExpenses: drift.Value(_otherExpenses),
+              date: drift.Value(_selectedDate),
+            ),
+            itemsCompanions: itemsCompanions,
+            userId: userId,
+          );
+
+          await sl<AuditService>().logUpdate(
+            'PurchaseInvoice',
+            purchaseId,
+            details: 'تم تعديل الفاتورة بقيمة ${_total.toStringAsFixed(2)}',
+            userId: userId,
+          );
+        }
 
         if (post) {
-          // 1. Create GRN (Automatically updates Inventory Stock and BuyPrice)
           await grnService.createGrnFromPurchase(
             purchaseId: purchaseId,
             warehouseId: _selectedWarehouse!.id, 
             notes: 'Auto-generated from Invoice',
           );
 
-          // 2. Post Purchase (Updates Accounting/GLEntries)
           await purchaseService.postPurchase(purchaseId);
+          await sl<AuditService>().logUpdate(
+            'PurchaseInvoice',
+            purchaseId,
+            details: 'تم ترحيل الفاتورة',
+            userId: userId,
+          );
         }
       });
 if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(post ? 'تم حفظ وترحيل الفاتورة وتحديث المخزون بنجاح' : 'تم حفظ المسودة بنجاح')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(post ? 'تم حفظ وترحيل الفاتورة وتحديث المخزون بنجاح' : isEditMode ? 'تم تعديل الفاتورة بنجاح' : 'تم حفظ المسودة بنجاح')));
         context.pop();
       }
     } catch (e) {

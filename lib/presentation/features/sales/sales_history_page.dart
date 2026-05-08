@@ -19,6 +19,13 @@ class SalesHistoryPage extends StatefulWidget {
 class _SalesHistoryPageState extends State<SalesHistoryPage> {
   final int _pageSize = 20;
   int _currentPage = 0;
+  
+  DateTime? _startDate;
+  DateTime? _endDate;
+  DocumentStatus? _statusFilter;
+  String? _customerIdFilter;
+  String? _warehouseIdFilter;
+  bool _showFilters = false;
 
   @override
   Widget build(BuildContext context) {
@@ -26,37 +33,56 @@ class _SalesHistoryPageState extends State<SalesHistoryPage> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.sales)),
+      appBar: AppBar(
+        title: Text(l10n.sales),
+        actions: [
+          IconButton(
+            icon: Icon(_showFilters ? Icons.filter_list_off : Icons.filter_list),
+            onPressed: () => setState(() => _showFilters = !_showFilters),
+            tooltip: 'فلترة',
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => setState(() {
+              _currentPage = 0;
+              _startDate = null;
+              _endDate = null;
+              _statusFilter = null;
+              _customerIdFilter = null;
+              _warehouseIdFilter = null;
+            }),
+            tooltip: 'إعادة تعيين',
+          ),
+        ],
+      ),
       drawer: const MainDrawer(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/sales/invoice'),
         icon: const Icon(Icons.add),
         label: const Text('فاتورة مبيعات'),
       ),
-      body: FutureBuilder<List<Sale>>(
-        future: (db.select(
-          db.sales,
-        )..orderBy([(t) => drift.OrderingTerm.desc(t.createdAt)])).get(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final allSales = snapshot.data ?? [];
-          if (allSales.isEmpty) {
-            return Center(child: Text(l10n.noSalesFound));
-          }
+      body: Column(
+        children: [
+          if (_showFilters) _buildFiltersPanel(context, db, l10n),
+          Expanded(
+            child: FutureBuilder<List<Sale>>(
+              future: _fetchFilteredSales(db),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final allSales = snapshot.data ?? [];
+                if (allSales.isEmpty) {
+                  return Center(child: Text(l10n.noSalesFound));
+                }
 
-          final totalPages = (allSales.length / _pageSize).ceil();
-          final start = _currentPage * _pageSize;
-          final end = (start + _pageSize < allSales.length)
-              ? start + _pageSize
-              : allSales.length;
-          final sales = allSales.sublist(start, end);
+                final start = _currentPage * _pageSize;
+                final end = (start + _pageSize < allSales.length)
+                    ? start + _pageSize
+                    : allSales.length;
+                final sales = allSales.sublist(start, end);
 
-          return Column(
-            children: [
-              Expanded(
-                child: ListView.separated(
+                return ListView.separated(
                   itemCount: sales.length,
                   separatorBuilder: (context, index) => const Divider(),
                   itemBuilder: (context, index) {
@@ -102,39 +128,9 @@ class _SalesHistoryPageState extends State<SalesHistoryPage> {
                       onTap: () => _showSaleDetails(context, db, sale, l10n),
                     );
                   },
-                ),
-              ),
-              if (totalPages > 1) _buildPaginationControls(totalPages),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildPaginationControls(int totalPages) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        border: Border(top: BorderSide(color: Colors.grey[300]!)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.chevron_left),
-            onPressed: _currentPage > 0
-                ? () => setState(() => _currentPage--)
-                : null,
-          ),
-          Text('صفحة ${_currentPage + 1} من $totalPages'),
-          const SizedBox(width: 8),
-          IconButton(
-            icon: const Icon(Icons.chevron_right),
-            onPressed: _currentPage + 1 < totalPages
-                ? () => setState(() => _currentPage++)
-                : null,
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -153,5 +149,120 @@ class _SalesHistoryPageState extends State<SalesHistoryPage> {
       builder: (context) =>
           SaleDetailsBottomSheet(sale: sale, db: db, l10n: l10n),
     );
+  }
+
+  Widget _buildFiltersPanel(BuildContext context, AppDatabase db, AppLocalizations l10n) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.calendar_today, size: 18),
+                  label: Text(_startDate != null ? DateFormat.yMMMd().format(_startDate!) : 'من تاريخ'),
+                  onPressed: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: _startDate ?? DateTime.now(),
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now(),
+                    );
+                    if (date != null) setState(() => _startDate = date);
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.calendar_today, size: 18),
+                  label: Text(_endDate != null ? DateFormat.yMMMd().format(_endDate!) : 'إلى تاريخ'),
+                  onPressed: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: _endDate ?? DateTime.now(),
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now(),
+                    );
+                    if (date != null) setState(() => _endDate = date);
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<DocumentStatus?>(
+                  value: _statusFilter,
+                  decoration: const InputDecoration(
+                    labelText: 'الحالة',
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: null, child: Text('كل الحالات')),
+                    DropdownMenuItem(value: DocumentStatus.draft, child: Text('مسودة')),
+                    DropdownMenuItem(value: DocumentStatus.posted, child: Text('مرحّل')),
+                    DropdownMenuItem(value: DocumentStatus.cancelled, child: Text('ملغي')),
+                  ],
+                  onChanged: (value) => setState(() => _statusFilter = value),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.search),
+                  label: const Text('بحث'),
+                  onPressed: () => setState(() => _currentPage = 0),
+                ),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: () => setState(() {
+                  _startDate = null;
+                  _endDate = null;
+                  _statusFilter = null;
+                  _customerIdFilter = null;
+                  _warehouseIdFilter = null;
+                  _currentPage = 0;
+                }),
+                child: const Text('مسح'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<List<Sale>> _fetchFilteredSales(AppDatabase db) async {
+    var query = db.select(db.sales);
+    
+    if (_startDate != null) {
+      query = query..where((s) => s.createdAt.isBiggerOrEqualValue(_startDate!));
+    }
+    if (_endDate != null) {
+      query = query..where((s) => s.createdAt.isSmallerOrEqualValue(_endDate!));
+    }
+    if (_statusFilter != null) {
+      query = query..where((s) => s.status.equals(_statusFilter!.index));
+    }
+    if (_customerIdFilter != null) {
+      query = query..where((s) => s.customerId.equals(_customerIdFilter!));
+    }
+    if (_warehouseIdFilter != null) {
+      query = query..where((s) => s.warehouseId.equals(_warehouseIdFilter!));
+    }
+    
+    query = query..orderBy([(t) => drift.OrderingTerm.desc(t.createdAt)]);
+    return query.get();
   }
 }

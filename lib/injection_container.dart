@@ -98,7 +98,7 @@ Future<void> initServices() async {
       () => PurchaseService(db, sl<PostingEngine>(), sl<InventoryCostingService>(), sl<AppConfigService>()),
     );
     sl.registerLazySingleton<SalesService>(
-      () => SalesService(sl<PostingEngine>(), sl<InventoryService>(), sl<AppSettingsService>(), sl<PermissionService>()),
+      () => SalesService(sl<AppDatabase>(), sl<PostingEngine>(), sl<InventoryService>(), sl<AppSettingsService>(), sl<PermissionService>()),
     );
     sl.registerLazySingleton<StatementService>(
       () => StatementService(sl<PostingEngine>()),

@@ -203,4 +203,46 @@ Future<List<PurchaseOrderItem>> getPurchaseOrderItems(String orderId) {
       PurchaseOrdersCompanion(status: Value(status)),
     );
   }
+
+  Future<void> deletePurchase(String purchaseId) async {
+    return transaction(() async {
+      await (delete(purchaseItems)..where((i) => i.purchaseId.equals(purchaseId))).go();
+      await (delete(purchases)..where((p) => p.id.equals(purchaseId))).go();
+
+      await into(auditLogs).insert(
+        AuditLogsCompanion.insert(
+          action: 'DELETE',
+          targetEntity: 'PURCHASES',
+          entityId: purchaseId,
+          details: Value('Deleted purchase record: $purchaseId'),
+        ),
+      );
+    });
+  }
+
+  Future<void> updatePurchase({
+    required String purchaseId,
+    required PurchasesCompanion purchaseCompanion,
+    required List<PurchaseItemsCompanion> itemsCompanions,
+    required String? userId,
+  }) async {
+    return transaction(() async {
+      await (update(purchases)..where((p) => p.id.equals(purchaseId))).write(purchaseCompanion);
+      
+      await (delete(purchaseItems)..where((i) => i.purchaseId.equals(purchaseId))).go();
+      for (var item in itemsCompanions) {
+        await into(purchaseItems).insert(item);
+      }
+
+      await into(auditLogs).insert(
+        AuditLogsCompanion.insert(
+          userId: Value(userId),
+          action: 'UPDATE',
+          targetEntity: 'PURCHASES',
+          entityId: purchaseId,
+          details: Value('Updated purchase record: $purchaseId'),
+        ),
+      );
+    });
+  }
 }

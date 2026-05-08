@@ -72,7 +72,7 @@ class StockTransferProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> submitTransfer(String? note) async {
+  Future<void> submitTransfer(String? note, String? userId) async {
     if (_selectedFromWarehouseId == null ||
         _selectedToWarehouseId == null ||
         _transferItems.isEmpty) {
@@ -87,6 +87,7 @@ class StockTransferProvider with ChangeNotifier {
         toWarehouseId: _selectedToWarehouseId!,
         items: _transferItems,
         note: note,
+        userId: userId,
       );
       _transferItems = [];
       // Refresh batches

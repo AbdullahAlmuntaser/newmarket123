@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/services/inventory_service.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
@@ -18,6 +19,7 @@ class _StockTakePageState extends State<StockTakePage> {
   List<Product> _products = [];
   String _currentStockTakeId = '';
   bool _isLoading = true;
+  bool _isSaving = false;
   late TextEditingController _noteController;
 
   @override
@@ -375,7 +377,7 @@ class _StockTakePageState extends State<StockTakePage> {
           ),
           const SizedBox(height: 12),
           ElevatedButton(
-            onPressed: stockTake.status == 'DRAFT'
+            onPressed: stockTake.status == 'DRAFT' && !_isSaving
                 ? () => _finalizeStockTake(db, stockTake)
                 : null,
             style: ElevatedButton.styleFrom(
@@ -383,7 +385,9 @@ class _StockTakePageState extends State<StockTakePage> {
               backgroundColor: colorScheme.primary,
               foregroundColor: Colors.white,
             ),
-            child: const Text(
+            child: _isSaving 
+                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text(
               'اعتماد وإقفال الجرد نهائياً',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
@@ -394,13 +398,45 @@ class _StockTakePageState extends State<StockTakePage> {
   }
 
   void _finalizeStockTake(AppDatabase db, StockTake stockTake) async {
-    await (db.update(db.stockTakes)..where((t) => t.id.equals(stockTake.id)))
-        .write(const StockTakesCompanion(status: drift.Value('COMPLETED')));
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم إقفال الجرد وتحديث المخزون بنجاح')),
+    setState(() => _isSaving = true);
+    try {
+      final inventoryService = InventoryService(db);
+      final auditItems = await (db.select(db.stockTakeItems)
+            ..where((t) => t.stockTakeId.equals(stockTake.id)))
+          .get();
+
+      final itemsToAudit = auditItems.map((i) => InventoryAuditItemsCompanion.insert(
+        auditId: i.stockTakeId,
+        productId: i.productId,
+        actualStock: i.actualQty,
+        systemStock: i.expectedQty,
+        difference: i.variance,
+      )).toList();
+
+      await inventoryService.performInventoryAudit(
+        auditCompanion: InventoryAuditsCompanion.insert(
+          note: drift.Value(_noteController.text),
+        ),
+        items: itemsToAudit,
       );
-      setState(() => _currentStockTakeId = '');
+
+      await (db.update(db.stockTakes)..where((t) => t.id.equals(stockTake.id)))
+          .write(const StockTakesCompanion(status: drift.Value('COMPLETED')));
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم إقفال الجرد وتحديث المخزون والقيود المحاسبية بنجاح')),
+        );
+        setState(() => _currentStockTakeId = '');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في إقفال الجرد: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 

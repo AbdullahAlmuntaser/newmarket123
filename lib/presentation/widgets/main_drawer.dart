@@ -84,8 +84,18 @@ class MainDrawer extends StatelessWidget {
                       ),
                       _buildSubItem(
                         context,
+                        'إنشاء مرتجع مبيعات',
+                        '/returns/new',
+                      ),
+                      _buildSubItem(
+                        context,
                         l10n?.purchaseReturns ?? 'مرتجعات المشتريات',
                         '/purchases/returns',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'إنشاء مرتجع مشتريات',
+                        '/purchases/returns/new',
                       ),
                     ],
                   ),
@@ -174,6 +184,7 @@ class MainDrawer extends StatelessWidget {
                     title: l10n?.suppliers ?? 'الموردين',
                     children: [
                       _buildSubItem(context, 'قائمة الموردين', '/suppliers'),
+                      _buildSubItem(context, 'دفع للمورد', '/suppliers/payment'),
                     ],
                   ),
                 ],
@@ -315,6 +326,21 @@ class MainDrawer extends StatelessWidget {
                         context,
                         l10n?.trialBalance ?? 'ميزان المراجعة',
                         '/accounting/trial-balance',
+                      ),
+                      _buildSubItem(
+                        context,
+                        l10n?.supplierLedger ?? 'كشف حساب المورد',
+                        '/accounting/supplier-ledger',
+                      ),
+                      _buildSubItem(
+                        context,
+                        l10n?.customerLedger ?? 'كشف حساب العميل',
+                        '/accounting/customer-ledger',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'الميزانيات التقديرية',
+                        '/accounting/budgets',
                       ),
                       _buildSubItem(
                         context,

@@ -1,3 +1,4 @@
+import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/presentation/features/inventory/stock_transfer_provider.dart';
@@ -130,37 +131,37 @@ class _StockTransferPageState extends State<StockTransferPage> {
             height: 50,
             child: ElevatedButton(
               onPressed:
-                  provider.transferItems.isEmpty ||
-                      provider.selectedToWarehouseId == null
-                  ? null
-                  : () async {
-                      final messenger = ScaffoldMessenger.of(context);
-                      try {
-                        // حفظ أول صنف للطباعة
-                        final firstItem = provider.transferItems.first;
-                        final product = await (context.read<AppDatabase>().select(
-                          context.read<AppDatabase>().products,
-                        )..where((t) => t.id.equals(firstItem.productId))).getSingle();
+                provider.transferItems.isEmpty ||
+                    provider.selectedToWarehouseId == null
+                ? null
+                : () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    final userId = Provider.of<AuthProvider>(context, listen: false).currentUser?.id;
+                    try {
+                      // حفظ أول صنف للطباعة
+                      final firstItem = provider.transferItems.first;
+                      final product = await (context.read<AppDatabase>().select(
+                        context.read<AppDatabase>().products,
+                      )..where((t) => t.id.equals(firstItem.productId))).getSingle();
 
-                        await provider.submitTransfer(_noteController.text);
-                        messenger.showSnackBar(
-                          const SnackBar(content: Text('تم التحويل بنجاح')),
-                        );
-                        
-                        await PrinterHelper.printStockMovement(
-                            itemName: product.name,
-                            quantity: firstItem.quantity,
-                            reference: 'TRN-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}'
-                        );
+                      await provider.submitTransfer(_noteController.text, userId);
+                      messenger.showSnackBar(
+                        const SnackBar(content: Text('تم التحويل بنجاح')),
+                      );
 
-                        _noteController.clear();
-                      } catch (e) {
-                        messenger.showSnackBar(
-                          SnackBar(content: Text(e.toString())),
-                        );
-                      }
-                    },
-              child: const Text('تأكيد التحويل'),
+                      await PrinterHelper.printStockMovement(
+                          itemName: product.name,
+                          quantity: firstItem.quantity,
+                          reference: 'TRN-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}'
+                      );
+
+                      _noteController.clear();
+                    } catch (e) {
+                      messenger.showSnackBar(
+                        SnackBar(content: Text(e.toString())),
+                      );
+                    }
+                  },              child: const Text('تأكيد التحويل'),
             ),
           ),
         ],

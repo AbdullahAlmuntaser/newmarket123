@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/invoice_service.dart';
@@ -69,6 +71,15 @@ class SaleDetailsBottomSheet extends StatelessWidget {
                         ),
                         Row(
                           children: [
+                            if (sale.status == DocumentStatus.draft)
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.orange),
+                                tooltip: 'تعديل',
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  context.push('/sales/invoice/edit/${sale.id}');
+                                },
+                              ),
                             if (sale.status == DocumentStatus.posted)
                               IconButton(
                                 icon: const Icon(
@@ -94,6 +105,51 @@ class SaleDetailsBottomSheet extends StatelessWidget {
                                 items,
                                 productMap,
                               ),
+                            ),
+                            FutureBuilder<Customer?>(
+                              future: sale.customerId != null
+                                  ? (db.select(db.customers)
+                                        ..where((c) => c.id.equals(sale.customerId!)))
+                                      .getSingleOrNull()
+                                  : Future.value(null),
+                              builder: (context, snapshot) {
+                                final customer = snapshot.data;
+                                if (customer?.phone == null || customer!.phone!.isEmpty) {
+                                  return const SizedBox.shrink();
+                                }
+                                return PopupMenuButton<String>(
+                                  icon: const Icon(Icons.send, color: Colors.blue),
+                                  tooltip: 'إرسال',
+                                  onSelected: (value) => _sendMessage(
+                                    context,
+                                    customer.phone!,
+                                    value,
+                                    sale,
+                                  ),
+                                  itemBuilder: (context) => [
+                                    const PopupMenuItem(
+                                      value: 'sms',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.sms, color: Colors.grey),
+                                          SizedBox(width: 8),
+                                          Text('SMS'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'whatsapp',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.chat, color: Colors.green),
+                                          SizedBox(width: 8),
+                                          Text('WhatsApp'),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -179,6 +235,40 @@ class SaleDetailsBottomSheet extends StatelessWidget {
       await Printing.layoutPdf(onLayout: (format) => pdfData);
     } catch (e) {
       debugPrint("Invoice generation error: $e");
+    }
+  }
+
+  Future<void> _sendMessage(
+    BuildContext context,
+    String phone,
+    String type,
+    Sale sale,
+  ) async {
+    final message = 'شكراً لتعاملكم معنا!\n'
+        'فاتورة رقم: ${sale.id.substring(0, 8)}\n'
+        'المبلغ: ${sale.total.toStringAsFixed(2)} SAR\n'
+        'التاريخ: ${DateFormat.yMMMd().format(sale.createdAt)}';
+
+    String url;
+    if (type == 'whatsapp') {
+      final cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+      url = 'https://wa.me/$cleanPhone?text=${Uri.encodeComponent(message)}';
+    } else {
+      url = 'sms:$phone?body=${Uri.encodeComponent(message)}';
+    }
+
+    try {
+      if (await canLaunchUrl(Uri.parse(url))) {
+        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تعذر فتح التطبيق')),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error sending message: $e');
     }
   }
 }

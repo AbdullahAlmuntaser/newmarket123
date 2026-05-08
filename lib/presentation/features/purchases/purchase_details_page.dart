@@ -1,6 +1,9 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:printing/printing.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 
@@ -34,7 +37,7 @@ class PurchaseDetailsPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildInfoCard(context, purchase, supplier, l10n),
+                _buildInfoCard(context, purchase, supplier, l10n, db),
                 const SizedBox(height: 24),
                 Text(
                   l10n.items,
@@ -59,6 +62,7 @@ class PurchaseDetailsPage extends StatelessWidget {
     Purchase purchase,
     Supplier? supplier,
     AppLocalizations l10n,
+    AppDatabase db,
   ) {
     return Card(
       elevation: 2,
@@ -66,19 +70,40 @@ class PurchaseDetailsPage extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(l10n.purchaseDetails, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Row(
+                  children: [
+                    if (supplier?.phone != null && supplier!.phone!.isNotEmpty)
+                      PopupMenuButton<String>(
+                        icon: const Icon(Icons.send, color: Colors.blue, size: 20),
+                        tooltip: 'إرسال',
+                        onSelected: (value) => _sendMessage(context, supplier.phone!, value, purchase),
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(value: 'sms', child: Text('SMS')),
+                          const PopupMenuItem(value: 'whatsapp', child: Text('WhatsApp')),
+                        ],
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.print, size: 20),
+                      tooltip: 'طباعة',
+                      onPressed: () => _printInvoice(context, db, purchase, supplier),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
             _buildInfoRow(l10n.purchaseId, purchase.id.substring(0, 8)),
             _buildInfoRow(l10n.date, DateFormat.yMMMd().format(purchase.date)),
             _buildInfoRow(l10n.supplier, supplier?.name ?? l10n.unknown),
-            _buildInfoRow(
-              l10n.invoiceNumberLabel,
-              purchase.invoiceNumber ?? '-',
-            ),
+            _buildInfoRow(l10n.invoiceNumberLabel, purchase.invoiceNumber ?? '-'),
             _buildInfoRow(l10n.status, purchase.status.name),
-            _buildInfoRow(
-              l10n.paymentMethod,
-              purchase.isCredit ? l10n.credit : l10n.cash,
-            ),
+            _buildInfoRow(l10n.paymentMethod, purchase.isCredit ? l10n.credit : l10n.cash),
           ],
         ),
       ),
@@ -178,6 +203,96 @@ class PurchaseDetailsPage extends StatelessWidget {
       result.add(PurchaseItemWithProduct(item, product));
     }
     return result;
+  }
+
+  Future<void> _sendMessage(
+    BuildContext context,
+    String phone,
+    String type,
+    Purchase purchase,
+  ) async {
+    final message = 'شكراً لتعاملكم معنا!\n'
+        'فاتورة شراء رقم: ${purchase.id.substring(0, 8)}\n'
+        'المبلغ: ${purchase.total.toStringAsFixed(2)}\n'
+        'التاريخ: ${DateFormat.yMMMd().format(purchase.date)}';
+
+    String url;
+    if (type == 'whatsapp') {
+      final cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+      url = 'https://wa.me/$cleanPhone?text=${Uri.encodeComponent(message)}';
+    } else {
+      url = 'sms:$phone?body=${Uri.encodeComponent(message)}';
+    }
+
+    try {
+      if (await canLaunchUrl(Uri.parse(url))) {
+        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تعذر فتح التطبيق')),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error sending message: $e');
+    }
+  }
+
+  Future<void> _printInvoice(
+    BuildContext context,
+    AppDatabase db,
+    Purchase purchase,
+    Supplier? supplier,
+  ) async {
+    try {
+      final items = await (db.select(db.purchaseItems)
+        ..where((i) => i.purchaseId.equals(purchaseId)))
+          .get();
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('جاري تحضير الطباعة...')),
+      );
+
+      final pdfData = await _generatePdfData(purchase, items, supplier);
+      await Printing.layoutPdf(onLayout: (format) async => pdfData);
+    } catch (e) {
+      debugPrint('Print error: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في الطباعة: $e')),
+        );
+      }
+    }
+  }
+
+  Future<Uint8List> _generatePdfData(
+    Purchase purchase,
+    List<PurchaseItem> items,
+    Supplier? supplier,
+  ) async {
+    final buffer = StringBuffer();
+    buffer.writeln('==============================');
+    buffer.writeln('       فاتورة مشتريات         ');
+    buffer.writeln('==============================');
+    buffer.writeln('رقم الفاتورة: ${purchase.id.substring(0, 8)}');
+    buffer.writeln('التاريخ: ${DateFormat.yMMMd().format(purchase.date)}');
+    if (supplier != null) {
+      buffer.writeln('المورد: ${supplier.name}');
+    }
+    buffer.writeln('------------------------------');
+    buffer.writeln('الصنف          | الكمية | السعر');
+    buffer.writeln('------------------------------');
+    for (var item in items) {
+      buffer.writeln('${item.productId.substring(0, 8)} | ${item.quantity} | ${item.unitPrice}');
+    }
+    buffer.writeln('------------------------------');
+    buffer.writeln('الإجمالي: ${purchase.total.toStringAsFixed(2)}');
+    buffer.writeln('==============================');
+
+    return Uint8List.fromList(buffer.toString().codeUnits);
   }
 }
 

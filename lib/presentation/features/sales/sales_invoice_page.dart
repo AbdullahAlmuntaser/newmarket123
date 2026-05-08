@@ -1,9 +1,9 @@
+import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:supermarket/presentation/widgets/permission_guard.dart';
 import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/core/services/unit_conversion_service.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/erp_data_service.dart';
@@ -16,7 +16,8 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:uuid/uuid.dart';
 
 class SalesInvoicePage extends StatefulWidget {
-  const SalesInvoicePage({super.key});
+  final String? saleId;
+  const SalesInvoicePage({super.key, this.saleId});
 
   @override
   State<SalesInvoicePage> createState() => _SalesInvoicePageState();
@@ -56,6 +57,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
   
   double get _total => _subtotal + _totalTax - _discount + _shippingCost + _otherExpenses;
 
+  bool get isEditMode => widget.saleId != null;
+
   @override
   void initState() {
     super.initState();
@@ -63,6 +66,52 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     _taxController.addListener(() => setState(() {}));
     _shippingCostController.addListener(() => setState(() {}));
     _otherExpensesController.addListener(() => setState(() {}));
+    if (isEditMode) {
+      _loadSaleData();
+    }
+  }
+
+  Future<void> _loadSaleData() async {
+    final db = Provider.of<AppDatabase>(context, listen: false);
+    final sale = await (db.select(db.sales)..where((s) => s.id.equals(widget.saleId!))).getSingleOrNull();
+    if (sale != null && mounted) {
+      final items = await (db.select(db.saleItems)..where((i) => i.saleId.equals(widget.saleId!))).get();
+      
+      Customer? customer;
+      if (sale.customerId != null) {
+        customer = await (db.select(db.customers)..where((c) => c.id.equals(sale.customerId!))).getSingleOrNull();
+      }
+      
+      Warehouse? warehouse;
+      if (sale.warehouseId != null) {
+        warehouse = await (db.select(db.warehouses)..where((w) => w.id.equals(sale.warehouseId!))).getSingleOrNull();
+      }
+      
+      List<Product> products = [];
+      for (var item in items) {
+        final product = await (db.select(db.products)..where((p) => p.id.equals(item.productId))).getSingleOrNull();
+        if (product != null) products.add(product);
+      }
+      
+      setState(() {
+        _discountController.text = sale.discount.toString();
+        _shippingCostController.text = sale.shippingCost.toString();
+        _otherExpensesController.text = sale.otherExpenses.toString();
+        _taxController.text = sale.tax.toString();
+        _selectedCustomer = customer;
+        _selectedWarehouse = warehouse;
+        _paymentType = sale.isCredit ? 'credit' : (sale.paymentMethod == PaymentMethod.bank ? 'bank' : 'cash');
+        
+        for (int i = 0; i < items.length && i < products.length; i++) {
+          _items.add(SalesLineItem(
+            product: products[i],
+            quantity: items[i].quantity,
+            price: items[i].price,
+            selectedUnit: items[i].unitName,
+          ));
+        }
+      });
+    }
   }
 
   @override
@@ -137,7 +186,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
   Widget build(BuildContext context) {
     final db = Provider.of<AppDatabase>(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('فاتورة مبيعات'), elevation: 0),
+      appBar: AppBar(title: Text(isEditMode ? 'تعديل فاتورة مبيعات' : 'فاتورة مبيعات'), elevation: 0),
       body: Form(
         key: _formKey, // ربط النموذج للتحقق
         child: Column(
@@ -650,10 +699,12 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     }
 
     setState(() => _isSaving = true);
+    final String saleId;
+    final bool isNew = !isEditMode;
+    saleId = isNew ? const Uuid().v4() : widget.saleId!;
     
     try {
       await db.transaction(() async {
-        final saleId = const Uuid().v4();
         double totalItemDiscount = 0;
         for (var item in _items) {
           totalItemDiscount += item.discount;
@@ -666,20 +717,9 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
           method = PaymentMethod.check;
         }
 
-        final saleCompanion = SalesCompanion.insert(
-          id: drift.Value(saleId),
-          customerId: drift.Value(_selectedCustomer?.id),
-          total: _total,
-          tax: drift.Value(_totalTax),
-          discount: drift.Value(_discount + totalItemDiscount),
-          paymentMethod: method,
-          isCredit: drift.Value(_paymentType == 'credit'),
-          status: const drift.Value(DocumentStatus.draft),
-          shippingCost: drift.Value(_shippingCost),
-          otherExpenses: drift.Value(_otherExpenses),
-          warehouseId: drift.Value(_selectedWarehouse?.id),
-          representativeId: drift.Value(_representativeId),
-        );
+        final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
+        final userId = currentUser?.id;
+
         final itemsCompanions = <SaleItemsCompanion>[];
         for (var item in _items) {
           final baseQuantity = await sl<UnitConversionService>().convertToBaseUnit(
@@ -695,47 +735,97 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
               price: item.price,
               unitName: drift.Value(item.selectedUnit),
               unitFactor: drift.Value(item.unitFactor),
-              costCenterId: drift.Value(item.costCenterId), // الربط المطلوب
+              costCenterId: drift.Value(item.costCenterId),
             ),
           );
         }
-        await db.salesDao.createSale(
-          saleCompanion: saleCompanion,
-          itemsCompanions: itemsCompanions,
-          userId: null,
-        );
 
-        await sl<AuditService>().logCreate(
-          'SalesInvoice', 
-          saleId, 
-          details: 'فاتورة مبيعات جديدة بقيمة ${_total.toStringAsFixed(2)}',
-        );
+        if (isNew) {
+          final saleCompanion = SalesCompanion.insert(
+            id: drift.Value(saleId),
+            customerId: drift.Value(_selectedCustomer?.id),
+            total: _total,
+            tax: drift.Value(_totalTax),
+            discount: drift.Value(_discount + totalItemDiscount),
+            paymentMethod: method,
+            isCredit: drift.Value(_paymentType == 'credit'),
+            status: const drift.Value(DocumentStatus.draft),
+            shippingCost: drift.Value(_shippingCost),
+            otherExpenses: drift.Value(_otherExpenses),
+            warehouseId: drift.Value(_selectedWarehouse?.id),
+            representativeId: drift.Value(_representativeId),
+          );
+
+          await db.salesDao.createSale(
+            saleCompanion: saleCompanion,
+            itemsCompanions: itemsCompanions,
+            userId: userId,
+          );
+
+          await sl<AuditService>().logCreate(
+            'SalesInvoice', 
+            saleId, 
+            details: 'فاتورة مبيعات جديدة بقيمة ${_total.toStringAsFixed(2)}',
+            userId: userId,
+          );
+        } else {
+          final saleCompanion = SalesCompanion(
+            customerId: drift.Value(_selectedCustomer?.id),
+            total: drift.Value(_total),
+            tax: drift.Value(_totalTax),
+            discount: drift.Value(_discount + totalItemDiscount),
+            paymentMethod: drift.Value(method),
+            isCredit: drift.Value(_paymentType == 'credit'),
+            shippingCost: drift.Value(_shippingCost),
+            otherExpenses: drift.Value(_otherExpenses),
+            warehouseId: drift.Value(_selectedWarehouse?.id),
+            representativeId: drift.Value(_representativeId),
+          );
+
+          await db.salesDao.updateSale(
+            saleId: saleId,
+            saleCompanion: saleCompanion,
+            itemsCompanions: itemsCompanions,
+            userId: userId,
+          );
+
+          await sl<AuditService>().logUpdate(
+            'SalesInvoice', 
+            saleId, 
+            details: 'تم تعديل الفاتورة بقيمة ${_total.toStringAsFixed(2)}',
+            userId: userId,
+          );
+        }
 
         if (post) {
-          await sl<TransactionEngine>().postSale(saleId, userId: null);
+          await sl<TransactionEngine>().postSale(saleId, userId: userId);
           await sl<AuditService>().logUpdate(
             'SalesInvoice', 
             saleId, 
             details: 'تم ترحيل الفاتورة',
+            userId: userId,
           );
         }
       });
       
-      if (mounted) {
-        context.pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(post ? 'تم ترحيل الفاتورة بنجاح' : 'تم حفظ المسودة')),
-        );
-      }
+      if (!mounted) return;
+      final messenger = ScaffoldMessenger.of(context);
+      final nav = Navigator.of(context);
+      
+      nav.pop();
+      messenger.showSnackBar(
+        SnackBar(content: Text(post ? 'تم ترحيل الفاتورة بنجاح' : 'تم حفظ المسودة')),
+      );
     } catch (e) {
       debugPrint('Error saving invoice: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('فشل الحفظ: ${e.toString()}')),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('فشل الحفظ: ${e.toString()}')),
+      );
     } finally {
-      setState(() => _isSaving = false);
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 }

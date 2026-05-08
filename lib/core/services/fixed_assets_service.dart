@@ -50,7 +50,7 @@ class FixedAssetsService {
 
         await (db.update(db.accFixedAssets)..where((t) => t.id.equals(asset.id))).write(
           AccFixedAssetsCompanion(
-            accumulatedDepreciation: Value(asset.accumulatedDepreciation + depreciationAmount.toInt()),
+            accumulatedDepreciation: Value((asset.accumulatedDepreciation + depreciationAmount).toInt()),
             lastDepreciationDate: Value(runDate),
           ),
         );
