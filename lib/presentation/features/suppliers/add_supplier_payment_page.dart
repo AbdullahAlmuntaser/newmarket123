@@ -9,8 +9,8 @@ import 'package:drift/drift.dart' as drift;
 import 'package:go_router/go_router.dart';
 
 class AddSupplierPaymentPage extends StatefulWidget {
-  final Supplier supplier;
-  const AddSupplierPaymentPage({super.key, required this.supplier});
+  final String supplierId;
+  const AddSupplierPaymentPage({super.key, required this.supplierId});
 
   @override
   State<AddSupplierPaymentPage> createState() => _AddSupplierPaymentPageState();
@@ -22,6 +22,23 @@ class _AddSupplierPaymentPageState extends State<AddSupplierPaymentPage> {
   final _noteController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   bool _isSaving = false;
+  Supplier? _supplier;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSupplier();
+  }
+
+  Future<void> _loadSupplier() async {
+    final db = Provider.of<AppDatabase>(context, listen: false);
+    final supplier = await (db.select(db.suppliers)
+          ..where((s) => s.id.equals(widget.supplierId)))
+        .getSingleOrNull();
+    if (mounted) {
+      setState(() => _supplier = supplier);
+    }
+  }
 
   @override
   void dispose() {
@@ -32,8 +49,12 @@ class _AddSupplierPaymentPageState extends State<AddSupplierPaymentPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_supplier == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
-      appBar: AppBar(title: Text('سند صرف للمورد: ${widget.supplier.name}')),
+      appBar: AppBar(title: Text('سند صرف للمورد: ${_supplier!.name}')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -50,7 +71,7 @@ class _AddSupplierPaymentPageState extends State<AddSupplierPaymentPage> {
                         style: TextStyle(color: Colors.grey),
                       ),
                       Text(
-                        widget.supplier.balance.toStringAsFixed(2),
+                        _supplier!.balance.toStringAsFixed(2),
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -134,7 +155,7 @@ class _AddSupplierPaymentPageState extends State<AddSupplierPaymentPage> {
       await db.into(db.supplierPayments).insert(
             SupplierPaymentsCompanion.insert(
               id: drift.Value(paymentId),
-              supplierId: widget.supplier.id,
+              supplierId: _supplier!.id,
               amount: amount,
               paymentDate: drift.Value(_selectedDate),
               syncStatus: const drift.Value(1),
@@ -144,7 +165,7 @@ class _AddSupplierPaymentPageState extends State<AddSupplierPaymentPage> {
       // 2. Fire event for accounting
       sl<EventBusService>().fire(
         SupplierPaymentEvent(
-          supplierId: widget.supplier.id,
+          supplierId: _supplier!.id,
           amount: amount,
           paymentMethod: 'cash',
           paymentId: paymentId,

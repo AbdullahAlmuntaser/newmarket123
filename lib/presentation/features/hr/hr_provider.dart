@@ -4,12 +4,12 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class HRProvider with ChangeNotifier {
   final HRService _service;
-  List<Employee> _employees = [];
+  List<HREmployee> _employees = [];
   bool _isLoading = false;
 
   HRProvider(this._service);
 
-  List<Employee> get employees => _employees;
+  List<HREmployee> get employees => _employees;
   bool get isLoading => _isLoading;
 
   Future<void> loadEmployees() async {
@@ -20,17 +20,17 @@ class HRProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addEmployee(EmployeesCompanion employee) async {
+  Future<void> addEmployee(HREmployeesCompanion employee) async {
     await _service.addEmployee(employee);
     await loadEmployees();
   }
 
-  Future<void> updateEmployee(Employee employee) async {
+  Future<void> updateEmployee(HREmployee employee) async {
     await _service.updateEmployee(employee);
     await loadEmployees();
   }
 
-  Future<void> deleteEmployee(String id) async {
+  Future<void> deleteEmployee(int id) async {
     await _service.deleteEmployee(id);
     await loadEmployees();
   }

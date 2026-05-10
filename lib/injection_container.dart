@@ -36,6 +36,14 @@ import 'core/services/report_service.dart';
 import 'core/services/pricing_service.dart';
 import 'core/services/transaction_engine.dart';
 import 'core/services/communication_service.dart';
+import 'core/services/cash_management_service.dart';
+import 'core/services/transfer_service.dart';
+import 'core/services/statement_printing_service.dart';
+import 'core/services/unified_statement_service.dart';
+import 'core/services/production_service.dart';
+import 'core/services/hr_service.dart';
+import 'core/services/notification_service.dart';
+import 'core/services/dashboard_service.dart';
 import 'presentation/features/pos/bloc/pos_bloc.dart';
 import 'presentation/features/products/products_provider.dart';
 
@@ -152,6 +160,17 @@ Future<void> initServices() async {
       engine.setCostingService(sl<InventoryCostingService>());
       return engine;
     });
+    sl.registerLazySingleton<CashManagementService>(
+        () => CashManagementService(db, sl<EventBusService>()));
+    sl.registerLazySingleton<TransferService>(() => TransferService(db));
+    sl.registerLazySingleton<StatementPrintingService>(
+        () => StatementPrintingService(db));
+    sl.registerLazySingleton<UnifiedStatementService>(
+        () => UnifiedStatementService(db));
+    sl.registerLazySingleton<ProductionService>(() => ProductionService(db));
+    sl.registerLazySingleton<HRService>(() => HRService(db));
+    sl.registerLazySingleton<NotificationService>(() => NotificationService());
+    sl.registerLazySingleton<DashboardService>(() => DashboardService(db));
     sl.registerLazySingleton<CommunicationService>(
         () => CommunicationService());
     debugPrint("DI: Additional services registered");

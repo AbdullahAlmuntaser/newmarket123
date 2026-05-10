@@ -26,6 +26,11 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
   bool _isLoading = true;
   bool _isSaving = false;
 
+  // New settings
+  bool _allowNegativeStock = false;
+  bool _allowSellBelowCost = true;
+  bool _hideSalePrices = false;
+
   @override
   void initState() {
     super.initState();
@@ -63,6 +68,11 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
       // Load warehouse and branch IDs
       _defaultWarehouseId = await configService.getDefaultWarehouseId();
       _defaultBranchId = await configService.getDefaultBranchId();
+
+      // Load new settings
+      _allowNegativeStock = await configService.allowNegativeStock();
+      _allowSellBelowCost = await configService.allowSellBelowCost();
+      _hideSalePrices = await configService.hideSalePrices();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -105,6 +115,11 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         AppConfigService.keyCompanyPhone,
         _companyPhoneController.text,
       );
+
+      // Save new settings
+      await configService.setBool('allow_negative_stock', _allowNegativeStock);
+      await configService.setBool(AppConfigService.keyAllowSellBelowCost, _allowSellBelowCost);
+      await configService.setBool(AppConfigService.keyHideSalePrices, _hideSalePrices);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -169,6 +184,45 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  // General Section
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'إعدادات عامة',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          SwitchListTile(
+                            title: const Text('السماح بالمخزون السلبي'),
+                            subtitle: const Text('السماح بالبيع حتى في حالة عدم توفر كمية'),
+                            value: _allowNegativeStock,
+                            onChanged: (v) => setState(() => _allowNegativeStock = v),
+                          ),
+                          SwitchListTile(
+                            title: const Text('السماح بالبيع بأقل من التكلفة'),
+                            value: _allowSellBelowCost,
+                            onChanged: (v) => setState(() => _allowSellBelowCost = v),
+                          ),
+                          SwitchListTile(
+                            title: const Text('إخفاء أسعار البيع'),
+                            subtitle: const Text('إخفاء أسعار البيع في شاشات معينة'),
+                            value: _hideSalePrices,
+                            onChanged: (v) => setState(() => _hideSalePrices = v),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
                   // Tax Rate Section
                   Card(
                     child: Padding(

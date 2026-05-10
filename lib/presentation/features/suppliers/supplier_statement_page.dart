@@ -4,18 +4,45 @@ import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:intl/intl.dart';
 
-class SupplierStatementPage extends StatelessWidget {
-  final Supplier supplier;
+class SupplierStatementPage extends StatefulWidget {
+  final String supplierId;
 
-  const SupplierStatementPage({super.key, required this.supplier});
+  const SupplierStatementPage({super.key, required this.supplierId});
+
+  @override
+  State<SupplierStatementPage> createState() => _SupplierStatementPageState();
+}
+
+class _SupplierStatementPageState extends State<SupplierStatementPage> {
+  Supplier? _supplier;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSupplier();
+  }
+
+  Future<void> _loadSupplier() async {
+    final db = Provider.of<AppDatabase>(context, listen: false);
+    final supplier = await (db.select(db.suppliers)
+          ..where((s) => s.id.equals(widget.supplierId)))
+        .getSingleOrNull();
+    if (mounted) {
+      setState(() => _supplier = supplier);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final db = Provider.of<AppDatabase>(context);
     final l10n = AppLocalizations.of(context)!;
 
+    if (_supplier == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
-      appBar: AppBar(title: Text('كشف حساب المورد: ${supplier.name}')),
+      appBar: AppBar(title: Text('كشف حساب المورد: ${_supplier!.name}')),
       body: Column(
         children: [
           _buildSummaryHeader(context, l10n),
@@ -99,10 +126,10 @@ class SupplierStatementPage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '${supplier.balance.toStringAsFixed(2)} SAR',
+            '${_supplier!.balance.toStringAsFixed(2)} SAR',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: supplier.balance > 0 ? Colors.red : Colors.green,
+                  color: _supplier!.balance > 0 ? Colors.red : Colors.green,
                 ),
           ),
         ],
@@ -115,11 +142,11 @@ class SupplierStatementPage extends StatelessWidget {
 
     return purchasesStream.asyncMap((purchases) async {
       final filteredPurchases = purchases
-          .where((p) => p.supplierId == supplier.id && p.isCredit)
+          .where((p) => p.supplierId == _supplier!.id && p.isCredit)
           .toList();
       final payments = await (db.select(
         db.supplierPayments,
-      )..where((t) => t.supplierId.equals(supplier.id)))
+      )..where((t) => t.supplierId.equals(_supplier!.id)))
           .get();
 
       final List<dynamic> combined = [...filteredPurchases, ...payments];

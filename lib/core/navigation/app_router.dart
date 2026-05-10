@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supermarket/injection_container.dart' as di;
 import 'package:supermarket/core/auth/auth_provider.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/home/home_page.dart';
 import 'package:supermarket/presentation/features/auth/login_page.dart';
 import 'package:supermarket/presentation/features/dashboard/dashboard_page.dart';
@@ -23,8 +22,10 @@ import 'package:supermarket/presentation/features/inventory/stock_take_page.dart
 import 'package:supermarket/presentation/features/inventory/low_stock_alert_page.dart';
 import 'package:supermarket/presentation/features/inventory/warehouse_manager_page.dart';
 import 'package:supermarket/presentation/features/manufacturing/bom_management_page.dart';
+import 'package:supermarket/presentation/features/manufacturing/production_orders_page.dart';
 import 'package:supermarket/presentation/features/hr/employees_page.dart';
 import 'package:supermarket/presentation/features/hr/payroll_page.dart';
+import 'package:supermarket/presentation/features/hr/hr_extras_page.dart';
 import 'package:supermarket/presentation/features/customers/customers_page.dart';
 import 'package:supermarket/presentation/features/customers/customer_statement_page.dart';
 import 'package:supermarket/presentation/features/suppliers/suppliers_page.dart';
@@ -57,12 +58,17 @@ import 'package:supermarket/presentation/features/accounting/customer_ledger_pag
 import 'package:supermarket/presentation/features/accounting/accounting_periods_page.dart';
 import 'package:supermarket/presentation/features/accounting/shifts_page.dart';
 import 'package:supermarket/presentation/features/accounting/checks_page.dart';
+import 'package:supermarket/presentation/features/accounting/transfers_page.dart';
+import 'package:supermarket/presentation/features/accounting/cash_management_page.dart';
+import 'package:supermarket/presentation/features/accounting/unified_statement_page.dart';
 import 'package:supermarket/presentation/features/reports/sales_reports_page.dart';
 import 'package:supermarket/presentation/features/reports/product_profitability_page.dart';
 import 'package:supermarket/presentation/features/reports/profitability_report_page.dart';
 import 'package:supermarket/presentation/features/reports/inventory_reports_screen.dart';
 import 'package:supermarket/presentation/features/reports/inventory_audit_page.dart';
 import 'package:supermarket/presentation/features/reports/vat_report_page.dart';
+import 'package:supermarket/presentation/features/reports/item_movement_report_page.dart';
+import 'package:supermarket/presentation/features/reports/expenses_by_center_page.dart';
 import 'package:supermarket/presentation/features/reports/audit_log_page.dart';
 import 'package:supermarket/presentation/features/reports/aging_report_page.dart';
 import 'package:supermarket/presentation/features/reports/cash_flow_forecast_page.dart';
@@ -70,6 +76,7 @@ import 'package:supermarket/presentation/features/auth/staff_management_page.dar
 import 'package:supermarket/presentation/features/settings/backup_page.dart';
 import 'package:supermarket/presentation/features/settings/permissions_management_page.dart';
 import 'package:supermarket/presentation/features/settings/currency_rates_page.dart';
+import 'package:supermarket/presentation/features/settings/system_settings_page.dart';
 import 'package:supermarket/presentation/features/settings/sync_page.dart';
 import 'package:supermarket/core/auth/user_role.dart';
 import 'package:supermarket/core/auth/access_guard.dart';
@@ -176,10 +183,15 @@ final GoRouter appRouter = GoRouter(
         path: '/manufacturing/bom',
         builder: (context, state) => const BomManagementPage()),
     GoRoute(
+        path: '/manufacturing/production-orders',
+        builder: (context, state) => const ProductionOrdersPage()),
+    GoRoute(
         path: '/hr/employees',
         builder: (context, state) => const EmployeesPage()),
     GoRoute(
         path: '/hr/payroll', builder: (context, state) => const PayrollPage()),
+    GoRoute(
+        path: '/hr/extras', builder: (context, state) => const HRExtrasPage()),
     GoRoute(
         path: '/customers', builder: (context, state) => const CustomersPage()),
     GoRoute(
@@ -191,14 +203,14 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
         path: '/suppliers/statement/:id',
         builder: (context, state) =>
-            SupplierStatementPage(supplier: state.extra as Supplier)),
+            SupplierStatementPage(supplierId: state.pathParameters['id']!)),
     GoRoute(
         path: '/suppliers/payments',
         builder: (context, state) => const SupplierPaymentsPage()),
     GoRoute(
         path: '/suppliers/payment',
         builder: (context, state) =>
-            AddSupplierPaymentPage(supplier: state.extra as Supplier)),
+            AddSupplierPaymentPage(supplierId: state.pathParameters['id']!)),
     GoRoute(
         path: '/purchases', builder: (context, state) => const PurchasesPage()),
     GoRoute(
@@ -268,6 +280,15 @@ final GoRouter appRouter = GoRouter(
         path: '/accounting/checks',
         builder: (context, state) => const ChecksPage()),
     GoRoute(
+        path: '/accounting/transfers',
+        builder: (context, state) => const TransfersPage()),
+    GoRoute(
+        path: '/accounting/cashbox',
+        builder: (context, state) => const CashManagementPage()),
+    GoRoute(
+        path: '/accounting/unified-statement',
+        builder: (context, state) => const UnifiedStatementPage()),
+    GoRoute(
         path: '/accounting/cost-centers',
         builder: (context, state) => const CostCentersPage()),
     GoRoute(
@@ -304,6 +325,12 @@ final GoRouter appRouter = GoRouter(
         path: '/reports/vat',
         builder: (context, state) => const VatReportPage()),
     GoRoute(
+        path: '/reports/item-movement',
+        builder: (context, state) => const ItemMovementReportPage()),
+    GoRoute(
+        path: '/reports/expenses-by-center',
+        builder: (context, state) => const ExpensesByCenterPage()),
+    GoRoute(
         path: '/reports/aging',
         builder: (context, state) => const AgingReportPage()),
     GoRoute(
@@ -325,6 +352,9 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
         path: '/settings/currency-rates',
         builder: (context, state) => const CurrencyRatesPage()),
+    GoRoute(
+        path: '/settings/system',
+        builder: (context, state) => const SystemSettingsPage()),
     GoRoute(
         path: '/settings/printer',
         builder: (context, state) => const PrinterSettingsPage()),

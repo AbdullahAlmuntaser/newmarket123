@@ -588,4 +588,45 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
       totalEquity: totalEquity,
     );
   }
+
+  Future<List<CostCenterExpense>> getExpensesByCostCenter({
+    required DateTime startDate,
+    required DateTime endDate,
+    String? branchId,
+  }) async {
+    final debitSum = gLLines.debit.sum();
+    final creditSum = gLLines.credit.sum();
+
+    final query = selectOnly(gLLines).join([
+      innerJoin(gLEntries, gLEntries.id.equalsExp(gLLines.entryId)),
+      innerJoin(gLAccounts, gLAccounts.id.equalsExp(gLLines.accountId)),
+      innerJoin(costCenters, costCenters.id.equalsExp(gLLines.costCenterId)),
+    ])
+      ..addColumns([costCenters.name, debitSum, creditSum])
+      ..where(gLEntries.date.isBetween(Variable(startDate), Variable(endDate)))
+      ..where(gLAccounts.type.equals(AccountType.expense));
+
+    if (branchId != null) {
+      query.where(gLLines.branchId.equals(branchId));
+    }
+
+    query.groupBy([costCenters.id]);
+
+    final rows = await query.get();
+    return rows.map((row) {
+      return CostCenterExpense(
+        name: row.read(costCenters.name)!,
+        total: (row.read(debitSum) ?? 0.0) - (row.read(creditSum) ?? 0.0),
+      );
+    }).toList();
+  }
 }
+
+class CostCenterExpense {
+  final String name;
+  final double total;
+  CostCenterExpense({required this.name, required this.total});
+}
+
+
+

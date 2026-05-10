@@ -33,9 +33,9 @@ class _PayrollPageState extends State<PayrollPage> {
                 final entry = provider.entries[index];
                 return ListTile(
                   leading: const Icon(Icons.payments),
-                  title: Text('شهر ${entry.month} - سنة ${entry.year}'),
+                  title: Text('الفترة: ${entry.period}'),
                   subtitle: Text(
-                    'الحالة: ${entry.status} - ${entry.note ?? ''}',
+                    'الحالة: ${entry.status}',
                   ),
                   onTap: () => _showPayrollDetails(context, provider, entry),
                 );
@@ -87,11 +87,8 @@ class _PayrollPageState extends State<PayrollPage> {
           ),
           ElevatedButton(
             onPressed: () {
-              provider.generatePayroll(
-                int.tryParse(monthController.text) ?? 1,
-                int.tryParse(yearController.text) ?? 2024,
-                note: noteController.text,
-              );
+              final period = '${yearController.text}-${monthController.text.padLeft(2, '0')}';
+              provider.generatePayroll(period);
               Navigator.pop(context);
             },
             child: const Text('توليد'),
@@ -104,7 +101,7 @@ class _PayrollPageState extends State<PayrollPage> {
   void _showPayrollDetails(
     BuildContext context,
     PayrollProvider provider,
-    PayrollEntry entry,
+    HRPayrollRun entry,
   ) async {
     final lines = await provider.getPayrollLines(entry.id);
     if (!context.mounted) return;
@@ -122,7 +119,7 @@ class _PayrollPageState extends State<PayrollPage> {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(
-                'تفاصيل رواتب شهر ${entry.month}/${entry.year}',
+                'تفاصيل رواتب الفترة: ${entry.period}',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
@@ -134,15 +131,15 @@ class _PayrollPageState extends State<PayrollPage> {
                   final line = lines[index];
                   final db = context.read<AppDatabase>();
                   return ListTile(
-                    title: FutureBuilder<Employee?>(
-                      future: (db.select(db.employees)
+                    title: FutureBuilder<HREmployee?>(
+                      future: (db.select(db.hREmployees)
                             ..where((t) => t.id.equals(line.employeeId)))
                           .getSingleOrNull(),
                       builder: (context, snapshot) =>
                           Text(snapshot.data?.name ?? 'تحميل...'),
                     ),
                     subtitle: Text(
-                      'الأساسي: ${line.basicSalary} | البدلات: ${line.allowances} | الخصومات: ${line.deductions}',
+                      'الأساسي: ${line.basicSalary} | البدلات: ${line.housingAllowance + line.transportAllowance + line.otherAllowances} | الخصومات: ${line.deductions}',
                     ),
                     trailing: Text(
                       line.netSalary.toStringAsFixed(2),

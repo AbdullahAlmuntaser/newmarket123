@@ -258,9 +258,68 @@ class AccountingService {
         _handleCustomerPayment(event);
       } else if (event is SupplierPaymentEvent) {
         _handleSupplierPayment(event);
+      } else if (event is CashTransactionEvent) {
+        _handleCashTransaction(event);
       }
     });
   }
+
+  Future<void> _handleCashTransaction(CashTransactionEvent event) async {
+    final dao = db.accountingDao;
+    final entryId = const Uuid().v4();
+    final cashAccount = await dao.getAccountByCode(codeCash);
+    if (cashAccount == null) return;
+
+    final defaultBranchId = await _configService.getDefaultBranchId();
+
+    final entry = GLEntriesCompanion.insert(
+      id: Value(entryId),
+      description: '${event.type == "IN" ? "سند قبض" : "سند صرف"}: ${event.category} - ${event.note ?? ""}',
+      date: Value(DateTime.now()),
+      referenceType: Value(event.type == "IN" ? 'RECEIPT' : 'PAYMENT'),
+      referenceId: Value(event.referenceId),
+      status: const Value('POSTED'),
+      postedAt: Value(DateTime.now()),
+      branchId: Value(defaultBranchId),
+    );
+
+    final lines = event.type == "IN"
+        ? [
+            GLLinesCompanion.insert(
+              entryId: entryId,
+              accountId: cashAccount.id,
+              debit: Value(event.amount),
+              credit: const Value(0.0),
+              branchId: Value(defaultBranchId),
+            ),
+            GLLinesCompanion.insert(
+              entryId: entryId,
+              accountId: event.accountId,
+              debit: const Value(0.0),
+              credit: Value(event.amount),
+              branchId: Value(defaultBranchId),
+            ),
+          ]
+        : [
+            GLLinesCompanion.insert(
+              entryId: entryId,
+              accountId: event.accountId,
+              debit: Value(event.amount),
+              credit: const Value(0.0),
+              branchId: Value(defaultBranchId),
+            ),
+            GLLinesCompanion.insert(
+              entryId: entryId,
+              accountId: cashAccount.id,
+              debit: const Value(0.0),
+              credit: Value(event.amount),
+              branchId: Value(defaultBranchId),
+            ),
+          ];
+
+    await dao.createEntry(entry, lines);
+  }
+
 
   /// New: Generic journal entry creation from events
   Future<void> createJournalEntry(AppEvent event) async {
@@ -1805,19 +1864,17 @@ class AccountingService {
 
     final List<TrialBalanceItem> revenues = [];
     for (var account in revenueAccounts) {
-      final balance = await dao.getAccountBalanceAsOfDate(
-        account.id,
-        endDate ?? DateTime.now(),
-      );
+      final balance = startDate != null 
+        ? await dao.getAccountBalanceInRange(account.id, startDate, endDate ?? DateTime.now())
+        : await dao.getAccountBalanceAsOfDate(account.id, endDate ?? DateTime.now());
       revenues.add(TrialBalanceItem(account, 0.0, balance));
     }
 
     final List<TrialBalanceItem> expenses = [];
     for (var account in expenseAccounts) {
-      final balance = await dao.getAccountBalanceAsOfDate(
-        account.id,
-        endDate ?? DateTime.now(),
-      );
+      final balance = startDate != null
+        ? await dao.getAccountBalanceInRange(account.id, startDate, endDate ?? DateTime.now())
+        : await dao.getAccountBalanceAsOfDate(account.id, endDate ?? DateTime.now());
       expenses.add(TrialBalanceItem(account, balance, 0.0));
     }
 
@@ -1840,6 +1897,21 @@ class AccountingService {
       endDate: endDate ?? DateTime.now(),
     );
   }
+
+  Future<Map<String, IncomeStatementData>> compareIncomeStatement({
+    required DateTime period1Start,
+    required DateTime period1End,
+    required DateTime period2Start,
+    required DateTime period2End,
+  }) async {
+    final data1 = await getIncomeStatement(startDate: period1Start, endDate: period1End);
+    final data2 = await getIncomeStatement(startDate: period2Start, endDate: period2End);
+    return {
+      'period1': data1,
+      'period2': data2,
+    };
+  }
+
 
   Future<BalanceSheetData> getBalanceSheet({DateTime? date}) async {
     final dao = db.accountingDao;

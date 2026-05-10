@@ -489,27 +489,32 @@ class WarehousePicker extends StatelessWidget {
   }
 }
 
-class CurrencyPicker extends StatelessWidget {
+class ProductPicker extends StatelessWidget {
   final AppDatabase db;
-  final Currency? value;
-  final void Function(Currency?)? onChanged;
+  final Product? value;
+  final void Function(Product?)? onChanged;
 
-  const CurrencyPicker(
-      {super.key, required this.db, this.value, this.onChanged});
+  const ProductPicker({
+    super.key,
+    required this.db,
+    this.value,
+    this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return EntityPickerDropdown(
       db: db,
-      streamBuilder: (database) => database.select(database.currencies).watch(),
-      labelText: 'العملة',
-      hintText: 'بحث...',
-      selectLabel: 'اختيار عملة',
-      addNewLabel: 'عملة جديدة',
-      itemText: (c) => (c as Currency).name,
+      streamBuilder: (database) => database.select(database.products).watch(),
+      labelText: 'المنتج',
+      hintText: 'بحث عن منتج...',
+      selectLabel: 'اختيار منتج',
+      addNewLabel: 'منتج جديد',
+      itemText: (p) => (p as Product).name,
       value: value,
-      onChanged: onChanged != null ? (v) => onChanged!(v as Currency?) : null,
-      entityTypeLabel: 'عملة',
+      onChanged: onChanged != null ? (v) => onChanged!(v as Product?) : null,
+      entityTypeLabel: 'منتج',
     );
   }
 }
+

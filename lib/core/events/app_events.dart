@@ -86,3 +86,23 @@ class SupplierPaymentEvent extends AppEvent {
     this.userId,
   });
 }
+
+class CashTransactionEvent extends AppEvent {
+  final double amount;
+  final String type; // IN, OUT
+  final String category;
+  final String accountId;
+  final String? referenceId;
+  final String? note;
+  final String? userId;
+
+  CashTransactionEvent({
+    required this.amount,
+    required this.type,
+    required this.category,
+    required this.accountId,
+    this.referenceId,
+    this.note,
+    this.userId,
+  });
+}
