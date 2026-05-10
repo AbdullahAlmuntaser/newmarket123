@@ -5,6 +5,7 @@ import 'package:supermarket/core/services/event_bus_service.dart';
 import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/core/services/inventory_costing_service.dart';
 import 'package:supermarket/core/services/app_config_service.dart';
+import 'package:supermarket/core/services/cash_management_service.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:developer' as developer;
@@ -788,6 +789,42 @@ class TransactionEngine {
       }
     }
     return result;
+  }
+
+  Future<void> createCashReceipt({
+    required double amount,
+    required String category,
+    required String accountId,
+    String? note,
+    String? userId,
+  }) async {
+    // Forward to CashManagementService
+    final cashService = CashManagementService(db, eventBus);
+    await cashService.createCashReceipt(
+      amount: amount,
+      category: category,
+      accountId: accountId,
+      note: note,
+      userId: userId,
+    );
+  }
+
+  Future<void> createCashPayment({
+    required double amount,
+    required String category,
+    required String accountId,
+    String? note,
+    String? userId,
+  }) async {
+    // Forward to CashManagementService
+    final cashService = CashManagementService(db, eventBus);
+    await cashService.createCashPayment(
+      amount: amount,
+      category: category,
+      accountId: accountId,
+      note: note,
+      userId: userId,
+    );
   }
 }
 

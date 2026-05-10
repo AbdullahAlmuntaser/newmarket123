@@ -122,6 +122,11 @@ class MainDrawer extends StatelessWidget {
                       ),
                       _buildSubItem(
                         context,
+                        'أوامر الإنتاج',
+                        '/manufacturing/production-orders',
+                      ),
+                      _buildSubItem(
+                        context,
                         'المنتجات أوشكت على النفاد',
                         '/low-stock',
                       ),
@@ -234,6 +239,7 @@ class MainDrawer extends StatelessWidget {
                     children: [
                       _buildSubItem(context, 'إدارة الموظفين', '/hr/employees'),
                       _buildSubItem(context, 'مسيرات الرواتب', '/hr/payroll'),
+                      _buildSubItem(context, 'السلف والخصومات', '/hr/extras'),
                     ],
                   ),
                   _buildExpansionGroup(
@@ -265,6 +271,16 @@ class MainDrawer extends StatelessWidget {
                         context,
                         'جرد المستودعات',
                         '/reports/inventory-audit',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'حركة صنف تفصيلية',
+                        '/reports/item-movement',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'مصروفات حسب المركز',
+                        '/reports/expenses-by-center',
                       ),
                       _buildSubItem(
                         context,
@@ -355,6 +371,21 @@ class MainDrawer extends StatelessWidget {
                       ),
                       _buildSubItem(
                         context,
+                        'الحوالات المالية',
+                        '/accounting/transfers',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'إدارة النقدية',
+                        '/accounting/cashbox',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'كشف حساب موحد',
+                        '/accounting/unified-statement',
+                      ),
+                      _buildSubItem(
+                        context,
                         l10n?.fixedAssets ?? 'الأصول الثابتة',
                         '/accounting/fixed-assets',
                       ),
@@ -419,6 +450,11 @@ class MainDrawer extends StatelessWidget {
                           context,
                           l10n?.staffManagement ?? 'إدارة المستخدمين',
                           '/users'),
+                      _buildSubItem(
+                        context,
+                        'إعدادات النظام',
+                        '/settings/system',
+                      ),
                       _buildSubItem(
                         context,
                         'أسعار العملات',

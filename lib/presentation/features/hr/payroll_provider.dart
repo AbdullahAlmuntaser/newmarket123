@@ -4,12 +4,12 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class PayrollProvider with ChangeNotifier {
   final HRService _service;
-  List<PayrollEntry> _entries = [];
+  List<HRPayrollRun> _entries = [];
   bool _isLoading = false;
 
   PayrollProvider(this._service);
 
-  List<PayrollEntry> get entries => _entries;
+  List<HRPayrollRun> get entries => _entries;
   bool get isLoading => _isLoading;
 
   Future<void> loadPayrollEntries() async {
@@ -20,16 +20,16 @@ class PayrollProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> generatePayroll(int month, int year, {String? note}) async {
+  Future<void> generatePayroll(String period) async {
     _isLoading = true;
     notifyListeners();
-    await _service.generatePayroll(month, year, note: note);
+    await _service.generatePayroll(period);
     await loadPayrollEntries();
     _isLoading = false;
     notifyListeners();
   }
 
-  Future<List<PayrollLine>> getPayrollLines(String entryId) async {
-    return await _service.getPayrollLines(entryId);
+  Future<List<HRPayrollDetail>> getPayrollLines(int runId) async {
+    return await _service.getPayrollLines(runId);
   }
 }

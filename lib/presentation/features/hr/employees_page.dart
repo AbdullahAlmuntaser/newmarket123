@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/hr/hr_provider.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:drift/drift.dart' hide Column;
-import 'package:uuid/uuid.dart';
 
 class EmployeesPage extends StatefulWidget {
   const EmployeesPage({super.key});
@@ -47,7 +46,7 @@ class _EmployeesPageState extends State<EmployeesPage> {
   }
 
   Widget _buildEmployeeCard(
-    Employee emp,
+    HREmployee emp,
     HRProvider provider,
     ColorScheme colorScheme,
   ) {
@@ -85,7 +84,7 @@ class _EmployeesPageState extends State<EmployeesPage> {
                         ),
                       ),
                       Text(
-                        emp.jobTitle ?? 'بدون مسمى وظيفي',
+                        emp.position ?? 'بدون مسمى وظيفي',
                         style: TextStyle(
                           color: colorScheme.outline,
                           fontSize: 14,
@@ -93,7 +92,7 @@ class _EmployeesPageState extends State<EmployeesPage> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'كود: ${emp.employeeCode}',
+                        'كود: ${emp.code}',
                         style: TextStyle(
                           fontSize: 12,
                           color: colorScheme.outline,
@@ -102,7 +101,7 @@ class _EmployeesPageState extends State<EmployeesPage> {
                     ],
                   ),
                 ),
-                _buildStatusBadge(emp.isActive),
+                _buildStatusBadge(emp.status == 'active'),
               ],
             ),
             const Divider(height: 32),
@@ -169,7 +168,7 @@ class _EmployeesPageState extends State<EmployeesPage> {
     );
   }
 
-  void _confirmDelete(Employee emp, HRProvider provider) {
+  void _confirmDelete(HREmployee emp, HRProvider provider) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -199,11 +198,11 @@ class _EmployeesPageState extends State<EmployeesPage> {
   void _showAddEditDialog(
     BuildContext context,
     HRProvider provider,
-    Employee? employee,
+    HREmployee? employee,
   ) {
     final nameController = TextEditingController(text: employee?.name);
-    final codeController = TextEditingController(text: employee?.employeeCode);
-    final jobTitleController = TextEditingController(text: employee?.jobTitle);
+    final codeController = TextEditingController(text: employee?.code);
+    final jobTitleController = TextEditingController(text: employee?.position);
     final salaryController = TextEditingController(
       text: employee?.basicSalary.toString(),
     );
@@ -245,23 +244,21 @@ class _EmployeesPageState extends State<EmployeesPage> {
             onPressed: () {
               if (employee == null) {
                 provider.addEmployee(
-                  EmployeesCompanion.insert(
-                    id: Value(const Uuid().v4()),
+                  HREmployeesCompanion.insert(
                     name: nameController.text,
-                    employeeCode: codeController.text,
-                    jobTitle: Value(jobTitleController.text),
-                    basicSalary: Value(
-                      double.tryParse(salaryController.text) ?? 0.0,
-                    ),
-                    isActive: const Value(true),
+                    code: codeController.text,
+                    position: Value(jobTitleController.text),
+                    basicSalary: double.tryParse(salaryController.text) ?? 0.0,
+                    hireDate: DateTime.now(),
+                    status: const Value('active'),
                   ),
                 );
               } else {
                 provider.updateEmployee(
                   employee.copyWith(
                     name: nameController.text,
-                    employeeCode: codeController.text,
-                    jobTitle: Value(jobTitleController.text),
+                    code: codeController.text,
+                    position: Value(jobTitleController.text),
                     basicSalary: double.tryParse(salaryController.text) ?? 0.0,
                   ),
                 );

@@ -28,7 +28,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   Supplier? _selectedSupplier;
   Warehouse? _selectedWarehouse;
   String _paymentMethod = 'cash';
-  Currency? _selectedCurrency;
+  String? _selectedCurrency;
   String? _representativeId;
 
   final DateTime _selectedDate = DateTime.now();
@@ -182,11 +182,21 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
                   ),
                 ),
                 Expanded(
-                    child: CurrencyPicker(
-                        db: db,
-                        value: _selectedCurrency,
-                        onChanged: (v) =>
-                            setState(() => _selectedCurrency = v))),
+                    child: StreamBuilder<List<Currency>>(
+                      stream: db.select(db.currencies).watch(),
+                      builder: (context, snapshot) {
+                        final currencies = snapshot.data ?? [];
+                        return DropdownButtonFormField<String>(
+                          value: _selectedCurrency,
+                          decoration: const InputDecoration(labelText: 'العملة'),
+                          items: currencies.map((c) => DropdownMenuItem(
+                            value: c.code,
+                            child: Text('${c.code} - ${c.name}'),
+                          )).toList(),
+                          onChanged: (v) => setState(() => _selectedCurrency = v),
+                        );
+                      },
+                    )),
               ],
             ),
             Row(

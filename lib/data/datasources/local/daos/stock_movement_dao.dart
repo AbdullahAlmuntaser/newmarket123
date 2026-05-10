@@ -25,4 +25,23 @@ class StockMovementDao extends DatabaseAccessor<AppDatabase>
         stockMovements,
       )..where((tbl) => tbl.productId.equals(productId)))
           .get();
+
+  Future<List<StockMovement>> getProductMovementReport({
+    required String productId,
+    required DateTime startDate,
+    required DateTime endDate,
+    String? warehouseId,
+  }) {
+    var query = select(stockMovements)
+      ..where((t) => t.productId.equals(productId))
+      ..where((t) => t.movementDate.isBetweenValues(startDate, endDate));
+    
+    if (warehouseId != null) {
+      query.where((t) => t.fromWarehouseId.equals(warehouseId) | t.toWarehouseId.equals(warehouseId));
+    }
+    
+    return (query..orderBy([(t) => OrderingTerm(expression: t.movementDate)]))
+        .get();
+  }
 }
+

@@ -15,6 +15,8 @@ class AppConfigService {
   static const String keyCompanyPhone = 'company_phone';
   static const String keyInvoiceMessage = 'invoice_message';
   static const String keyLowStockThreshold = 'low_stock_threshold';
+  static const String keyAllowSellBelowCost = 'allow_sell_below_cost';
+  static const String keyHideSalePrices = 'hide_sale_prices';
 
   /// الحصول على قيمة إعداد معينة
   Future<String?> getString(String key) async {
@@ -91,6 +93,16 @@ class AppConfigService {
   /// السماح بالمخزون السلبي
   Future<bool> allowNegativeStock() async {
     return await getBool('allow_negative_stock', defaultValue: false);
+  }
+
+  /// السماح بالبيع بأقل من التكلفة
+  Future<bool> allowSellBelowCost() async {
+    return await getBool(keyAllowSellBelowCost, defaultValue: true);
+  }
+
+  /// إخفاء أسعار البيع
+  Future<bool> hideSalePrices() async {
+    return await getBool(keyHideSalePrices, defaultValue: false);
   }
 
   /// الحصول على رسالة الفاتورة الافتراضية للواتساب

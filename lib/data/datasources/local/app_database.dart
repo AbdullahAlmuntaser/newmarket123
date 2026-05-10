@@ -22,6 +22,8 @@ import 'daos/global_units_dao.dart';
 import 'daos/product_units_dao.dart';
 import 'daos/audit_dao.dart';
 import 'daos/stock_movement_dao.dart';
+import 'daos/cashbox_dao.dart';
+import 'daos/transfers_dao.dart';
 import 'tables/app_config_table.dart';
 import 'tables/fixed_assets_tables.dart';
 import 'tables/payroll_tables.dart';
@@ -570,6 +572,20 @@ class CashboxTransactions extends Table with SyncableTable {
   TextColumn get userId => text().references(Users, #id)();
 }
 
+class FinancialTransfers extends Table with SyncableTable {
+  TextColumn get senderAccountId => text().references(GLAccounts, #id)();
+  @ReferenceName('receiverAccountFinancialTransfers')
+  TextColumn get receiverAccountId => text().references(GLAccounts, #id)();
+  RealColumn get amount => real()();
+  RealColumn get commission => real().withDefault(const Constant(0.0))();
+  TextColumn get company => text().nullable()();
+  TextColumn get transferType => text()(); // CASH, BANK, CHECK
+  TextColumn get checkId => text().nullable().references(Checks, #id)();
+  DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
+  TextColumn get note => text().nullable()();
+  TextColumn get status => text().withDefault(const Constant('POSTED'))();
+}
+
 class PriceLists extends Table with SyncableTable {
   TextColumn get name => text()();
   TextColumn get currency => text().withDefault(const Constant('USD'))();
@@ -782,6 +798,25 @@ class BillOfMaterials extends Table with SyncableTable {
       real()(); // الكمية المطلوبة من المادة الخام لإنتاج وحدة واحدة
 }
 
+class ProductionOrders extends Table with SyncableTable {
+  TextColumn get finishedProductId => text().references(Products, #id)();
+  RealColumn get plannedQuantity => real()();
+  RealColumn get actualQuantity => real().withDefault(const Constant(0.0))();
+  DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
+  TextColumn get status => text().withDefault(const Constant('PLANNED'))(); // PLANNED, IN_PROGRESS, COMPLETED, CANCELLED
+  TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
+  TextColumn get note => text().nullable()();
+}
+
+class ProductionOrderItems extends Table with SyncableTable {
+  TextColumn get productionOrderId => text().references(ProductionOrders, #id)();
+  TextColumn get componentProductId => text().references(Products, #id)();
+  RealColumn get plannedQuantity => real()();
+  RealColumn get actualQuantity => real().withDefault(const Constant(0.0))();
+  RealColumn get unitCost => real().withDefault(const Constant(0.0))();
+}
+
+
 class PurchaseOrders extends Table with SyncableTable {
   TextColumn get supplierId => text().nullable().references(Suppliers, #id)();
   RealColumn get total => real()();
@@ -844,6 +879,8 @@ class CustomerPaymentLinks extends Table with SyncableTable {
     PurchaseOrderItems,
     SalesOrders,
     SalesOrderItems,
+    ProductionOrders,
+    ProductionOrderItems,
     SalesReturns,
     SalesReturnItems,
     PurchaseReturns,
@@ -875,6 +912,7 @@ class CustomerPaymentLinks extends Table with SyncableTable {
     Permissions,
     RolePermissions,
     CashboxTransactions,
+    FinancialTransfers,
     PriceLists,
     PriceListItems,
     Promotions,
@@ -929,13 +967,15 @@ class CustomerPaymentLinks extends Table with SyncableTable {
     ProductUnitsDao,
     AuditDao,
     StockMovementDao,
+    CashboxDao,
+    TransfersDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 36;
+  int get schemaVersion => 38;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1004,6 +1044,19 @@ class AppDatabase extends _$AppDatabase {
             } catch (_) {}
             try {
               await m.addColumn(sales, sales.representativeId);
+            } catch (_) {}
+          }
+          if (from < 37) {
+            // Version 37: Add FinancialTransfers table
+            try {
+              await m.createTable(financialTransfers);
+            } catch (_) {}
+          }
+          if (from < 38) {
+            // Version 38: Add Production tables
+            try {
+              await m.createTable(productionOrders);
+              await m.createTable(productionOrderItems);
             } catch (_) {}
           }
         },
@@ -1366,6 +1419,10 @@ class AppDatabase extends _$AppDatabase {
   AuditDao get auditDao => AuditDao(this);
   @override
   StockMovementDao get stockMovementDao => StockMovementDao(this);
+  @override
+  CashboxDao get cashboxDao => CashboxDao(this);
+  @override
+  TransfersDao get transfersDao => TransfersDao(this);
 }
 
 LazyDatabase _openConnection() {
