@@ -24,7 +24,7 @@
   "password": "كلمة المرور",
   "accountingSystem": "نظام المحاسبة",
   "loginButton": "دخول",
-  "loginHint": "تلميح: admin / 123",
+  "loginHint": "أدخل بيانات المستخدم المسجلة",
   "invalidCredentials": "بيانات الدخول غير صحيحة",
   "quickActions": "إجراءات سريعة",
   "seedProducts": "إضافة بيانات تجريبية",
