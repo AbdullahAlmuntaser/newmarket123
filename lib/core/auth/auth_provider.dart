@@ -48,5 +48,7 @@ class AuthProvider with ChangeNotifier {
             ),
           );
     }
+
+    await db.seedSecurityData();
   }
 }

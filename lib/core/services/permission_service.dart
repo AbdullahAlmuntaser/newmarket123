@@ -26,11 +26,16 @@ class PermissionService {
       final userData = await user.getSingleOrNull();
       if (userData == null) return false;
 
-      // الحصول على صلاحيات الدور
-      final rolePerms = await db.select(db.rolePermissions).get();
-      final permission = rolePerms.where((rp) =>
-          rp.role == userData.role && rp.permissionCode == permissionCode);
-      return permission.isNotEmpty;
+      if (userData.role.toLowerCase() == 'admin') return true;
+
+      final permission = await (db.select(db.rolePermissions)
+            ..where(
+              (rp) =>
+                  rp.role.equals(userData.role) &
+                  rp.permissionCode.equals(permissionCode),
+            ))
+          .getSingleOrNull();
+      return permission != null;
     } catch (e) {
       return false;
     }
