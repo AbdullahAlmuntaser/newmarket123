@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:supermarket/core/theme/app_theme.dart';
 import 'package:supermarket/core/theme/theme_provider.dart';
 import 'package:supermarket/core/theme/locale_provider.dart';
@@ -9,18 +8,6 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/injection_container.dart' as di;
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
-import 'package:supermarket/presentation/features/products/products_provider.dart';
-import 'package:supermarket/presentation/features/purchases/purchase_provider.dart';
-import 'package:supermarket/presentation/features/accounting/shifts_provider.dart';
-import 'package:supermarket/presentation/features/hr/hr_provider.dart';
-import 'package:supermarket/presentation/features/hr/payroll_provider.dart';
-import 'package:supermarket/presentation/features/inventory/stock_transfer_provider.dart';
-import 'package:supermarket/presentation/features/accounting/asset_provider.dart';
-import 'package:supermarket/presentation/features/customers/customer_statement_provider.dart';
-import 'package:supermarket/core/services/accounting_service.dart';
-import 'package:supermarket/core/services/dashboard_service.dart';
-import 'package:supermarket/presentation/features/dashboard/dashboard_provider.dart';
 
 void main() async {
   // 1. Ensure Flutter is initialized
@@ -174,25 +161,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [
-        Provider<AppDatabase>(create: (_) => di.sl<AppDatabase>()),
-        Provider<AccountingService>(create: (_) => di.sl<AccountingService>()),
-        Provider<DashboardService>(create: (_) => di.sl<DashboardService>()),
-        ChangeNotifierProvider(create: (_) => di.sl<ThemeProvider>()),
-        ChangeNotifierProvider(create: (_) => di.sl<LocaleProvider>()),
-        ChangeNotifierProvider(create: (_) => di.sl<AuthProvider>()),
-        ChangeNotifierProvider(create: (_) => di.sl<AccountingProvider>()),
-        ChangeNotifierProvider(create: (_) => di.sl<ProductsProvider>()),
-        ChangeNotifierProvider(create: (_) => di.sl<PurchaseProvider>()),
-        ChangeNotifierProvider(create: (_) => di.sl<ShiftProvider>()),
-        ChangeNotifierProvider(create: (_) => di.sl<HRProvider>()),
-        ChangeNotifierProvider(create: (_) => di.sl<PayrollProvider>()),
-        ChangeNotifierProvider(create: (_) => di.sl<StockTransferProvider>()),
-        ChangeNotifierProvider(create: (_) => di.sl<AssetProvider>()),
-        ChangeNotifierProvider(
-            create: (_) => di.sl<CustomerStatementProvider>()),
-        ChangeNotifierProvider(create: (_) => di.sl<DashboardProvider>()),
-      ],
+      providers: di.buildAppProviders(),
       child: Builder(
         builder: (context) {
           final themeProvider = Provider.of<ThemeProvider>(context);
