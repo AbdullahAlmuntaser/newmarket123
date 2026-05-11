@@ -826,7 +826,7 @@ class AccountingService {
     try {
       if (userId != null) {
         await _permissionService.executeIfAllowed(
-            userId, 'POST_SALE', () async {});
+            userId, PermissionCode.postSale, () async {});
       }
       if (await db.accountingDao.isDateInClosedPeriod(sale.createdAt)) {
         throw Exception('Cannot post sale in a closed accounting period.');

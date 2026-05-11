@@ -87,6 +87,7 @@ class PurchaseService {
           'tax': tax,
           'expenses': totalExpenses,
           'total': subtotal - discount + tax + totalExpenses,
+          'amount': subtotal - discount + tax + totalExpenses,
           'supplierId': purchase.supplierId,
           'description':
               'Purchase Invoice #${purchase.invoiceNumber ?? purchase.id.substring(0, 8)}',

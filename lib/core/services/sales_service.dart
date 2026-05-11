@@ -20,65 +20,68 @@ class SalesService {
 
   Future<void> processInvoice(SalesInvoice invoice, String userId) async {
     // التحقق من الصلاحية قبل تنفيذ العملية
-    await permissions.executeIfAllowed(userId, 'CREATE_SALE', () async {
-      try {
-        await db.transaction(() async {
-          // جلب الإعدادات (المستودع فقط)
-          final warehouseId =
-              await settings.getCurrentWarehouseId() ?? "MAIN_WAREHOUSE";
+    await permissions.executeIfAllowed(
+      userId,
+      PermissionCode.postSale,
+      () async {
+        try {
+          await db.transaction(() async {
+            // جلب الإعدادات (المستودع فقط)
+            final warehouseId =
+                await settings.getCurrentWarehouseId() ?? "MAIN_WAREHOUSE";
 
-          // حساب الإجماليات (استخدام الضريبة من الفاتورة مباشرة)
-          double subtotal = 0;
-          for (var item in invoice.items) {
-            subtotal += (item.quantity * item.unitFactor * item.price);
-          }
-
-          double discount = invoice.discount;
-          double tax = invoice.taxAmount; // استخدام القيمة الصحيحة
-          double total = subtotal - discount + tax;
-
-          // 1. خصم الكميات من المخزون
-          for (var item in invoice.items) {
-            try {
-              await inventoryService.deductStock(
-                itemId: item.itemId,
-                quantity: item.quantity * item.unitFactor,
-                warehouseId: warehouseId,
-                referenceId: invoice.id,
-                userId: userId,
-              );
-            } catch (e) {
-              throw Exception('فشل في تحديث المخزون للصنف ${item.itemId}: $e');
+            // حساب الإجماليات (استخدام الضريبة من الفاتورة مباشرة)
+            double subtotal = 0;
+            for (var item in invoice.items) {
+              subtotal += (item.quantity * item.unitFactor * item.price);
             }
-          }
 
-          // 2. القيد المحاسبي الديناميكي
-          await postingEngine.post(
-            type: TransactionType.sale,
-            referenceId: invoice.id,
-            context: {
-              'amount': total,
-              'description': 'Invoice #${invoice.id.substring(0, 8)}',
-            },
-          );
+            double discount = invoice.discount;
+            double tax = invoice.taxAmount; // استخدام القيمة الصحيحة
+            double total = subtotal - discount + tax;
 
-          // 3. Audit Log
-          await db.into(db.auditLogs).insert(
-                AuditLogsCompanion.insert(
-                  userId: Value(userId),
-                  action: 'PROCESS_INVOICE',
-                  targetEntity: 'SalesInvoice',
-                  entityId: invoice.id,
-                  details: Value(
-                      'تم معالجة فاتورة المبيعات رقم ${invoice.id} بقيمة $total'),
-                  timestamp: Value(DateTime.now()),
-                ),
-              );
-        });
-      } on Exception catch (e) {
-        debugPrint('خطأ في معالجة الفاتورة ${invoice.id}: $e');
-        rethrow;
-      }
-    });
+            // 1. خصم الكميات من المخزون
+            for (var item in invoice.items) {
+              try {
+                await inventoryService.deductStock(
+                  itemId: item.itemId,
+                  quantity: item.quantity * item.unitFactor,
+                  warehouseId: warehouseId,
+                  referenceId: invoice.id,
+                  userId: userId,
+                );
+              } catch (e) {
+                throw Exception('فشل في تحديث المخزون للصنف ${item.itemId}: $e');
+              }
+            }
+
+            // 2. القيد المحاسبي الديناميكي
+            await postingEngine.post(
+              type: TransactionType.sale,
+              referenceId: invoice.id,
+              context: {
+                'amount': total,
+                'description': 'Invoice #${invoice.id.substring(0, 8)}',
+              },
+            );
+
+            // 3. Audit Log
+            await db.into(db.auditLogs).insert(
+                  AuditLogsCompanion.insert(
+                    userId: Value(userId),
+                    action: 'PROCESS_INVOICE',
+                    targetEntity: 'SalesInvoice',
+                    entityId: invoice.id,
+                    details: Value(
+                        'تم معالجة فاتورة المبيعات رقم ${invoice.id} بقيمة $total'),
+                    timestamp: Value(DateTime.now()),
+                  ),
+                );
+          });
+        } on Exception catch (e) {
+          debugPrint('خطأ في معالجة الفاتورة ${invoice.id}: $e');
+          rethrow;
+        }
+      });
   }
 }

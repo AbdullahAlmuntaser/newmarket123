@@ -121,8 +121,12 @@ final GoRouter appRouter = GoRouter(
         builder: (context, state) => const AccessDeniedPage()),
     GoRoute(
         path: '/dashboard',
-        builder: (context, state) =>
-            const DashboardPage(currentUserId: 'admin')),
+        builder: (context, state) {
+          final authProvider = di.sl<AuthProvider>();
+          return DashboardPage(
+            currentUserId: authProvider.currentUser?.id ?? '',
+          );
+        }),
     GoRoute(
         path: '/admin-dashboard',
         builder: (context, state) => const AdminDashboardPage()),
@@ -208,7 +212,7 @@ final GoRouter appRouter = GoRouter(
         path: '/suppliers/payments',
         builder: (context, state) => const SupplierPaymentsPage()),
     GoRoute(
-        path: '/suppliers/payment',
+        path: '/suppliers/payment/:id',
         builder: (context, state) =>
             AddSupplierPaymentPage(supplierId: state.pathParameters['id']!)),
     GoRoute(
