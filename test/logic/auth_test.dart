@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supermarket/core/auth/access_guard.dart';
 import 'package:supermarket/core/auth/user_role.dart';
 
 void main() {
@@ -43,8 +44,8 @@ void main() {
         expect(UserRole.manager.canAccessReports, isTrue);
       });
 
-      test('can access accounting', () {
-        expect(UserRole.manager.canAccessAccounting, isTrue);
+      test('cannot access accounting', () {
+        expect(UserRole.manager.canAccessAccounting, isFalse);
       });
 
       test('cannot access admin settings', () {
@@ -69,52 +70,40 @@ void main() {
 
   group('Access Control Logic', () {
     bool checkAccess(String location, String roleName) {
-      final role = UserRole.fromString(roleName);
-
-      if (location.startsWith('/reports') && !role.canAccessReports) {
-        return false;
-      }
-      if (location.startsWith('/accounting') && !role.canAccessAccounting) {
-        return false;
-      }
-      if ((location == '/users' ||
-              location.startsWith('/settings') ||
-              location == '/sync') &&
-          !role.canAccessAdminSettings) {
-        return false;
-      }
-
-      return true;
+      return AccessGuard.canAccess(location, UserRole.fromString(roleName));
     }
 
-    test('Admin can access all locations', () {
+    test('Admin can access all major areas', () {
       expect(checkAccess('/reports/sales', 'admin'), isTrue);
-      expect(checkAccess('/reports/inventory', 'admin'), isTrue);
       expect(checkAccess('/accounting/coa', 'admin'), isTrue);
-      expect(checkAccess('/accounting/journal', 'admin'), isTrue);
       expect(checkAccess('/users', 'admin'), isTrue);
       expect(checkAccess('/settings/backup', 'admin'), isTrue);
       expect(checkAccess('/sync', 'admin'), isTrue);
       expect(checkAccess('/pos', 'admin'), isTrue);
+      expect(checkAccess('/hr/employees', 'admin'), isTrue);
     });
 
-    test('Manager can access reports and accounting but not admin settings', () {
+    test('Manager can access operational areas but not admin-only areas', () {
       expect(checkAccess('/reports/sales', 'manager'), isTrue);
-      expect(checkAccess('/reports/inventory', 'manager'), isTrue);
-      expect(checkAccess('/accounting/coa', 'manager'), isTrue);
-      expect(checkAccess('/accounting/journal', 'manager'), isTrue);
+      expect(checkAccess('/purchases', 'manager'), isTrue);
+      expect(checkAccess('/inventory/stock-take', 'manager'), isTrue);
+      expect(checkAccess('/suppliers', 'manager'), isTrue);
       expect(checkAccess('/pos', 'manager'), isTrue);
+      expect(checkAccess('/accounting/coa', 'manager'), isFalse);
       expect(checkAccess('/users', 'manager'), isFalse);
       expect(checkAccess('/settings/backup', 'manager'), isFalse);
       expect(checkAccess('/sync', 'manager'), isFalse);
     });
 
-    test('Cashier can only access POS', () {
+    test('Cashier can access cashier areas only', () {
       expect(checkAccess('/pos', 'cashier'), isTrue);
+      expect(checkAccess('/sales', 'cashier'), isTrue);
+      expect(checkAccess('/returns/new', 'cashier'), isTrue);
+      expect(checkAccess('/customers', 'cashier'), isTrue);
       expect(checkAccess('/reports/sales', 'cashier'), isFalse);
       expect(checkAccess('/accounting/coa', 'cashier'), isFalse);
+      expect(checkAccess('/purchases', 'cashier'), isFalse);
       expect(checkAccess('/users', 'cashier'), isFalse);
-      expect(checkAccess('/settings/backup', 'cashier'), isFalse);
     });
 
     test('Access check is case-insensitive', () {
