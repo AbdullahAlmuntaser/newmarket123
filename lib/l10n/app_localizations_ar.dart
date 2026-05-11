@@ -84,7 +84,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get loginButton => 'دخول';
 
   @override
-  String get loginHint => 'تلميح: admin / 123';
+  String get loginHint => 'أدخل بيانات المستخدم المسجلة';
 
   @override
   String get invalidCredentials => 'بيانات الدخول غير صحيحة';

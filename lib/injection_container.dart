@@ -11,6 +11,7 @@ import 'core/services/financial_control_service.dart';
 import 'core/services/grn_service.dart';
 import 'core/utils/drive_backup_service.dart';
 import 'core/theme/theme_provider.dart';
+import 'core/theme/locale_provider.dart';
 import 'core/services/unit_conversion_service.dart';
 import 'data/datasources/local/app_database.dart';
 import 'data/datasources/local/daos/products_dao.dart';
@@ -142,6 +143,9 @@ Future<void> initServices() async {
 
     debugPrint("DI: Registering additional services...");
     sl.registerLazySingleton<ThemeProvider>(() => ThemeProvider());
+    sl.registerLazySingleton<LocaleProvider>(
+      () => LocaleProvider(sl<AppConfigService>()),
+    );
     sl.registerLazySingleton(() => BomService(db, sl<AccountingService>()));
     sl.registerLazySingleton<GrnService>(() => GrnService(db));
     sl.registerLazySingleton<ReorderService>(() => ReorderService(db));

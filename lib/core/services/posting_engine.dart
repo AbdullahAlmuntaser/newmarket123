@@ -17,6 +17,8 @@ class PostingLine {
 }
 
 class PostingEngine {
+  static const double balanceTolerance = 0.001;
+
   final AppDatabase db;
   final InventoryCostingService? costingService;
 
@@ -27,20 +29,8 @@ class PostingEngine {
     required String reference,
     required DateTime date,
   }) async {
-    await _checkPeriodOpen();
-
-    // Validate entries before posting
-    if (entries.isEmpty) {
-      throw Exception('لا يمكن الترحيل بدون قيود محاسبية.');
-    }
-    for (var entry in entries) {
-      if (entry.account.isEmpty) {
-        throw Exception('الحساب المحاسبي غير محدد.');
-      }
-      if (entry.debit < 0 || entry.credit < 0) {
-        throw Exception('المبلغ يجب أن يكون أكبر من أو يساوي الصفر.');
-      }
-    }
+    await _checkPeriodOpen(date);
+    validatePostingLines(entries);
 
     final entryId = const Uuid().v4();
     final entry = GLEntriesCompanion.insert(
@@ -63,6 +53,42 @@ class PostingEngine {
         .toList();
 
     await db.accountingDao.createEntry(entry, lines);
+  }
+
+  static void validatePostingLines(List<PostingLine> entries) {
+    if (entries.isEmpty) {
+      throw Exception('لا يمكن الترحيل بدون قيود محاسبية.');
+    }
+
+    var totalDebit = 0.0;
+    var totalCredit = 0.0;
+
+    for (final entry in entries) {
+      if (entry.account.trim().isEmpty) {
+        throw Exception('الحساب المحاسبي غير محدد.');
+      }
+      if (!entry.debit.isFinite || !entry.credit.isFinite) {
+        throw Exception('مبلغ القيد المحاسبي غير صالح.');
+      }
+      if (entry.debit < 0 || entry.credit < 0) {
+        throw Exception('المبلغ يجب أن يكون أكبر من أو يساوي الصفر.');
+      }
+      if (entry.debit > 0 && entry.credit > 0) {
+        throw Exception('لا يمكن أن يكون السطر مديناً ودائناً في نفس الوقت.');
+      }
+      if (entry.debit == 0 && entry.credit == 0) {
+        throw Exception('لا يمكن ترحيل سطر محاسبي بقيمة صفرية.');
+      }
+
+      totalDebit += entry.debit;
+      totalCredit += entry.credit;
+    }
+
+    if ((totalDebit - totalCredit).abs() > balanceTolerance) {
+      throw Exception(
+        'القيد المحاسبي غير متوازن! (المدين: $totalDebit، الدائن: $totalCredit)',
+      );
+    }
   }
 
   Future<double> getTotalByAccount(
@@ -99,7 +125,6 @@ class PostingEngine {
   }) async {
     await _checkPeriodOpen();
 
-    // Log the attempt
     developer.log('Posting transaction: $type, Reference: $referenceId',
         name: 'PostingEngine');
 
@@ -124,18 +149,42 @@ class PostingEngine {
       status: const Value('POSTED'),
     );
 
-    List<GLLinesCompanion> lines = [];
-    for (var p in profile) {
-      if (p.accountId == null) continue;
-      lines.add(
-        GLLinesCompanion.insert(
-          entryId: entryId,
-          accountId: p.accountId!,
-          debit: Value(p.side == 'DEBIT' ? (context['amount'] ?? 0.0) : 0.0),
-          credit: Value(p.side == 'CREDIT' ? (context['amount'] ?? 0.0) : 0.0),
-        ),
-      );
+    final postingLines = <PostingLine>[];
+    for (final profileLine in profile) {
+      final accountId = profileLine.accountId;
+      if (accountId == null || accountId.trim().isEmpty) continue;
+
+      final amount = _resolveProfileAmount(type, profileLine, context);
+      if (amount <= balanceTolerance) continue;
+
+      switch (profileLine.side.toUpperCase()) {
+        case 'DEBIT':
+          postingLines.add(
+            PostingLine(account: accountId, debit: amount, credit: 0.0),
+          );
+          break;
+        case 'CREDIT':
+          postingLines.add(
+            PostingLine(account: accountId, debit: 0.0, credit: amount),
+          );
+          break;
+        default:
+          throw Exception('Invalid posting side: ${profileLine.side}');
+      }
     }
+
+    validatePostingLines(postingLines);
+
+    final lines = postingLines
+        .map(
+          (line) => GLLinesCompanion.insert(
+            entryId: entryId,
+            accountId: line.account,
+            debit: Value(line.debit),
+            credit: Value(line.credit),
+          ),
+        )
+        .toList();
 
     developer.log(
         'Successfully found profile and created lines for ${type.name}',
@@ -143,12 +192,44 @@ class PostingEngine {
     await db.accountingDao.createEntry(entry, lines);
   }
 
-  Future<void> _checkPeriodOpen() async {
-    final now = DateTime.now();
+  double _resolveProfileAmount(
+    TransactionType type,
+    PostingProfile profileLine,
+    Map<String, dynamic> context,
+  ) {
+    final accountType = profileLine.accountType.toUpperCase();
+
+    if (type == TransactionType.purchase &&
+        accountType == 'CASH' &&
+        context['paymentMethod'] != 'cash') {
+      return 0.0;
+    }
+    if (type == TransactionType.purchase &&
+        accountType == 'PAYABLE' &&
+        context['paymentMethod'] == 'cash') {
+      return 0.0;
+    }
+
+    if (type == TransactionType.sale &&
+        (accountType == 'COGS' || accountType == 'INVENTORY')) {
+      return _readAmount(context['cogs']);
+    }
+
+    return _readAmount(context['amount']);
+  }
+
+  double _readAmount(dynamic value) {
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
+  Future<void> _checkPeriodOpen([DateTime? postingDate]) async {
+    final date = postingDate ?? DateTime.now();
     final period = await (db.select(db.accountingPeriods)
           ..where((p) => p.isClosed.equals(false))
-          ..where((p) => p.startDate.isSmallerOrEqual(Variable(now)))
-          ..where((p) => p.endDate.isBiggerOrEqual(Variable(now))))
+          ..where((p) => p.startDate.isSmallerOrEqual(Variable(date)))
+          ..where((p) => p.endDate.isBiggerOrEqual(Variable(date))))
         .getSingleOrNull();
 
     if (period == null) throw Exception('Period is locked or closed.');
