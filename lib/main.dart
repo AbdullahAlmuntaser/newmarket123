@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:supermarket/core/theme/app_theme.dart';
 import 'package:supermarket/core/theme/theme_provider.dart';
+import 'package:supermarket/core/theme/locale_provider.dart';
 import 'package:supermarket/core/navigation/app_router.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/injection_container.dart' as di;
@@ -64,6 +65,7 @@ class _AppRootState extends State<AppRoot> {
       await db.select(db.users).get().timeout(const Duration(seconds: 5));
       await db.seedSecurityData();
       await db.ensureAccountingPeriodsForYear(DateTime.now().year);
+      await di.sl<LocaleProvider>().loadLocale();
 
       if (mounted) {
         setState(() {
@@ -182,6 +184,7 @@ class MyApp extends StatelessWidget {
         Provider<AccountingService>(create: (_) => di.sl<AccountingService>()),
         Provider<DashboardService>(create: (_) => di.sl<DashboardService>()),
         ChangeNotifierProvider(create: (_) => di.sl<ThemeProvider>()),
+        ChangeNotifierProvider(create: (_) => di.sl<LocaleProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<AuthProvider>()),
         ChangeNotifierProvider(
             create: (_) => AccountingProvider(di.sl<AppDatabase>())),
@@ -212,6 +215,7 @@ class MyApp extends StatelessWidget {
       child: Builder(
         builder: (context) {
           final themeProvider = Provider.of<ThemeProvider>(context);
+          final localeProvider = Provider.of<LocaleProvider>(context);
           return MaterialApp.router(
             title: 'Supermarket ERP',
             theme: AppTheme.lightTheme,
@@ -226,7 +230,7 @@ class MyApp extends StatelessWidget {
               GlobalCupertinoLocalizations.delegate,
             ],
             supportedLocales: AppLocalizations.supportedLocales,
-            locale: const Locale('ar'),
+            locale: localeProvider.locale,
           );
         },
       ),
