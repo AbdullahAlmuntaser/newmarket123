@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/core/services/app_config_service.dart';
+import 'package:supermarket/core/theme/locale_provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
 /// صفحة إعدادات النظام العامة
@@ -23,6 +24,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
 
   String? _defaultWarehouseId;
   String? _defaultBranchId;
+  String _localeCode = 'ar';
   bool _isLoading = true;
   bool _isSaving = false;
 
@@ -68,6 +70,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
       // Load warehouse and branch IDs
       _defaultWarehouseId = await configService.getDefaultWarehouseId();
       _defaultBranchId = await configService.getDefaultBranchId();
+      _localeCode = await configService.getLocaleCode();
 
       // Load new settings
       _allowNegativeStock = await configService.allowNegativeStock();
@@ -94,6 +97,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     try {
       final db = context.read<AppDatabase>();
       final configService = AppConfigService(db);
+      final localeProvider = context.read<LocaleProvider>();
 
       // Save tax rate
       final taxRate = double.parse(_taxRateController.text) / 100;
@@ -117,9 +121,13 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
       );
 
       // Save new settings
-      await configService.setBool('allow_negative_stock', _allowNegativeStock);
-      await configService.setBool(AppConfigService.keyAllowSellBelowCost, _allowSellBelowCost);
-      await configService.setBool(AppConfigService.keyHideSalePrices, _hideSalePrices);
+      await configService.setBool(
+          'allow_negative_stock', _allowNegativeStock);
+      await configService.setBool(
+          AppConfigService.keyAllowSellBelowCost, _allowSellBelowCost);
+      await configService.setBool(
+          AppConfigService.keyHideSalePrices, _hideSalePrices);
+      await localeProvider.setLocaleCode(_localeCode);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -199,22 +207,50 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                             ),
                           ),
                           const SizedBox(height: 16),
+                          DropdownButtonFormField<String>(
+                            value: _localeCode,
+                            decoration: const InputDecoration(
+                              labelText: 'لغة التطبيق',
+                              prefixIcon: Icon(Icons.language),
+                              border: OutlineInputBorder(),
+                            ),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'ar',
+                                child: Text('العربية'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'en',
+                                child: Text('English'),
+                              ),
+                            ],
+                            onChanged: (value) {
+                              if (value == null) return;
+                              setState(() => _localeCode = value);
+                            },
+                          ),
+                          const SizedBox(height: 16),
                           SwitchListTile(
                             title: const Text('السماح بالمخزون السلبي'),
-                            subtitle: const Text('السماح بالبيع حتى في حالة عدم توفر كمية'),
+                            subtitle: const Text(
+                                'السماح بالبيع حتى في حالة عدم توفر كمية'),
                             value: _allowNegativeStock,
-                            onChanged: (v) => setState(() => _allowNegativeStock = v),
+                            onChanged: (v) =>
+                                setState(() => _allowNegativeStock = v),
                           ),
                           SwitchListTile(
                             title: const Text('السماح بالبيع بأقل من التكلفة'),
                             value: _allowSellBelowCost,
-                            onChanged: (v) => setState(() => _allowSellBelowCost = v),
+                            onChanged: (v) =>
+                                setState(() => _allowSellBelowCost = v),
                           ),
                           SwitchListTile(
                             title: const Text('إخفاء أسعار البيع'),
-                            subtitle: const Text('إخفاء أسعار البيع في شاشات معينة'),
+                            subtitle: const Text(
+                                'إخفاء أسعار البيع في شاشات معينة'),
                             value: _hideSalePrices,
-                            onChanged: (v) => setState(() => _hideSalePrices = v),
+                            onChanged: (v) =>
+                                setState(() => _hideSalePrices = v),
                           ),
                         ],
                       ),
