@@ -1194,21 +1194,49 @@ class AppDatabase extends _$AppDatabase {
       await seedSecurityData();
 
       // 11. Accounting Periods
-      final periodsCount = await (selectOnly(accountingPeriods)
-            ..addColumns([accountingPeriods.id.count()]))
-          .map((row) => row.read(accountingPeriods.id.count()))
-          .getSingle();
-      if ((periodsCount ?? 0) == 0) {
-        await into(accountingPeriods).insert(
-          AccountingPeriodsCompanion.insert(
-            name: 'مايو 2026',
-            startDate: DateTime(2026, 5, 1),
-            endDate: DateTime(2026, 5, 31),
-            status: const Value('OPEN'),
-          ),
-        );
-      }
+      await ensureAccountingPeriodsForYear(DateTime.now().year);
     });
+  }
+
+  Future<void> ensureAccountingPeriodsForYear(int year) async {
+    final existingPeriods = await select(accountingPeriods).get();
+
+    for (var month = 1; month <= 12; month++) {
+      final alreadyExists = existingPeriods.any(
+        (period) =>
+            period.startDate.year == year && period.startDate.month == month,
+      );
+      if (alreadyExists) continue;
+
+      final startDate = DateTime(year, month, 1);
+      final endDate = DateTime(year, month + 1, 0, 23, 59, 59, 999);
+      await into(accountingPeriods).insert(
+        AccountingPeriodsCompanion.insert(
+          name: '${_arabicMonthName(month)} $year',
+          startDate: startDate,
+          endDate: endDate,
+          status: const Value('OPEN'),
+        ),
+      );
+    }
+  }
+
+  String _arabicMonthName(int month) {
+    const monthNames = [
+      'يناير',
+      'فبراير',
+      'مارس',
+      'أبريل',
+      'مايو',
+      'يونيو',
+      'يوليو',
+      'أغسطس',
+      'سبتمبر',
+      'أكتوبر',
+      'نوفمبر',
+      'ديسمبر',
+    ];
+    return monthNames[month - 1];
   }
 
   Future<void> seedSecurityData() async {

@@ -62,6 +62,8 @@ class _AppRootState extends State<AppRoot> {
       // Additional database health check
       final db = di.sl<AppDatabase>();
       await db.select(db.users).get().timeout(const Duration(seconds: 5));
+      await db.seedSecurityData();
+      await db.ensureAccountingPeriodsForYear(DateTime.now().year);
 
       if (mounted) {
         setState(() {
