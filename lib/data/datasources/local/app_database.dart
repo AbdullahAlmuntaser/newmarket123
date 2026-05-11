@@ -441,16 +441,6 @@ class AccountingPeriods extends Table with SyncableTable {
       text().withDefault(const Constant('OPEN'))(); // OPEN, CLOSED
 }
 
-class FixedAssets extends Table with SyncableTable {
-  TextColumn get name => text()();
-  DateTimeColumn get purchaseDate => dateTime()();
-  RealColumn get cost => real()();
-  RealColumn get salvageValue => real().withDefault(const Constant(0.0))();
-  IntColumn get usefulLifeYears => integer()();
-  RealColumn get accumulatedDepreciation =>
-      real().withDefault(const Constant(0.0))();
-}
-
 class SyncQueue extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get entityTable => text()();
@@ -895,7 +885,6 @@ class CustomerPaymentLinks extends Table with SyncableTable {
     GLEntries,
     GLLines,
     AccountingPeriods,
-    FixedAssets,
     InventoryAudits,
     InventoryAuditItems,
     Shifts,
@@ -938,7 +927,7 @@ class CustomerPaymentLinks extends Table with SyncableTable {
     AppConfigTable,
     // Advanced Accounting Tables
     AccAssetCategories,
-    AccFixedAssets,
+    FixedAssets,
     AccAssetDepreciationLogs,
     AccAssetDisposals,
     HREmployees,

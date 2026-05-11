@@ -22391,621 +22391,6 @@ class AccountingPeriodsCompanion extends UpdateCompanion<AccountingPeriod> {
   }
 }
 
-class $FixedAssetsTable extends FixedAssets
-    with TableInfo<$FixedAssetsTable, FixedAsset> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $FixedAssetsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-      'id', aliasedName, false,
-      type: DriftSqlType.string,
-      requiredDuringInsert: false,
-      clientDefault: () => const Uuid().v4());
-  static const VerificationMeta _createdAtMeta =
-      const VerificationMeta('createdAt');
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-      'created_at', aliasedName, false,
-      type: DriftSqlType.dateTime,
-      requiredDuringInsert: false,
-      defaultValue: currentDateAndTime);
-  static const VerificationMeta _updatedAtMeta =
-      const VerificationMeta('updatedAt');
-  @override
-  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
-      'updated_at', aliasedName, false,
-      type: DriftSqlType.dateTime,
-      requiredDuringInsert: false,
-      defaultValue: currentDateAndTime);
-  static const VerificationMeta _deviceIdMeta =
-      const VerificationMeta('deviceId');
-  @override
-  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
-      'device_id', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _syncStatusMeta =
-      const VerificationMeta('syncStatus');
-  @override
-  late final GeneratedColumn<int> syncStatus = GeneratedColumn<int>(
-      'sync_status', aliasedName, false,
-      type: DriftSqlType.int,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(1));
-  static const VerificationMeta _branchIdMeta =
-      const VerificationMeta('branchId');
-  @override
-  late final GeneratedColumn<String> branchId = GeneratedColumn<String>(
-      'branch_id', aliasedName, true,
-      type: DriftSqlType.string,
-      requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES branches (id)'));
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
-  @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-      'name', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _purchaseDateMeta =
-      const VerificationMeta('purchaseDate');
-  @override
-  late final GeneratedColumn<DateTime> purchaseDate = GeneratedColumn<DateTime>(
-      'purchase_date', aliasedName, false,
-      type: DriftSqlType.dateTime, requiredDuringInsert: true);
-  static const VerificationMeta _costMeta = const VerificationMeta('cost');
-  @override
-  late final GeneratedColumn<double> cost = GeneratedColumn<double>(
-      'cost', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
-  static const VerificationMeta _salvageValueMeta =
-      const VerificationMeta('salvageValue');
-  @override
-  late final GeneratedColumn<double> salvageValue = GeneratedColumn<double>(
-      'salvage_value', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
-  static const VerificationMeta _usefulLifeYearsMeta =
-      const VerificationMeta('usefulLifeYears');
-  @override
-  late final GeneratedColumn<int> usefulLifeYears = GeneratedColumn<int>(
-      'useful_life_years', aliasedName, false,
-      type: DriftSqlType.int, requiredDuringInsert: true);
-  static const VerificationMeta _accumulatedDepreciationMeta =
-      const VerificationMeta('accumulatedDepreciation');
-  @override
-  late final GeneratedColumn<double> accumulatedDepreciation =
-      GeneratedColumn<double>('accumulated_depreciation', aliasedName, false,
-          type: DriftSqlType.double,
-          requiredDuringInsert: false,
-          defaultValue: const Constant(0.0));
-  @override
-  List<GeneratedColumn> get $columns => [
-        id,
-        createdAt,
-        updatedAt,
-        deviceId,
-        syncStatus,
-        branchId,
-        name,
-        purchaseDate,
-        cost,
-        salvageValue,
-        usefulLifeYears,
-        accumulatedDepreciation
-      ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'fixed_assets';
-  @override
-  VerificationContext validateIntegrity(Insertable<FixedAsset> instance,
-      {bool isInserting = false}) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta,
-          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(_updatedAtMeta,
-          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
-    }
-    if (data.containsKey('device_id')) {
-      context.handle(_deviceIdMeta,
-          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
-    }
-    if (data.containsKey('sync_status')) {
-      context.handle(
-          _syncStatusMeta,
-          syncStatus.isAcceptableOrUnknown(
-              data['sync_status']!, _syncStatusMeta));
-    }
-    if (data.containsKey('branch_id')) {
-      context.handle(_branchIdMeta,
-          branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta));
-    }
-    if (data.containsKey('name')) {
-      context.handle(
-          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
-    } else if (isInserting) {
-      context.missing(_nameMeta);
-    }
-    if (data.containsKey('purchase_date')) {
-      context.handle(
-          _purchaseDateMeta,
-          purchaseDate.isAcceptableOrUnknown(
-              data['purchase_date']!, _purchaseDateMeta));
-    } else if (isInserting) {
-      context.missing(_purchaseDateMeta);
-    }
-    if (data.containsKey('cost')) {
-      context.handle(
-          _costMeta, cost.isAcceptableOrUnknown(data['cost']!, _costMeta));
-    } else if (isInserting) {
-      context.missing(_costMeta);
-    }
-    if (data.containsKey('salvage_value')) {
-      context.handle(
-          _salvageValueMeta,
-          salvageValue.isAcceptableOrUnknown(
-              data['salvage_value']!, _salvageValueMeta));
-    }
-    if (data.containsKey('useful_life_years')) {
-      context.handle(
-          _usefulLifeYearsMeta,
-          usefulLifeYears.isAcceptableOrUnknown(
-              data['useful_life_years']!, _usefulLifeYearsMeta));
-    } else if (isInserting) {
-      context.missing(_usefulLifeYearsMeta);
-    }
-    if (data.containsKey('accumulated_depreciation')) {
-      context.handle(
-          _accumulatedDepreciationMeta,
-          accumulatedDepreciation.isAcceptableOrUnknown(
-              data['accumulated_depreciation']!, _accumulatedDepreciationMeta));
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  FixedAsset map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return FixedAsset(
-      id: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      createdAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
-      updatedAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
-      deviceId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}device_id']),
-      syncStatus: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}sync_status'])!,
-      branchId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}branch_id']),
-      name: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
-      purchaseDate: attachedDatabase.typeMapping.read(
-          DriftSqlType.dateTime, data['${effectivePrefix}purchase_date'])!,
-      cost: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}cost'])!,
-      salvageValue: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}salvage_value'])!,
-      usefulLifeYears: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}useful_life_years'])!,
-      accumulatedDepreciation: attachedDatabase.typeMapping.read(
-          DriftSqlType.double,
-          data['${effectivePrefix}accumulated_depreciation'])!,
-    );
-  }
-
-  @override
-  $FixedAssetsTable createAlias(String alias) {
-    return $FixedAssetsTable(attachedDatabase, alias);
-  }
-}
-
-class FixedAsset extends DataClass implements Insertable<FixedAsset> {
-  final String id;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final String? deviceId;
-  final int syncStatus;
-  final String? branchId;
-  final String name;
-  final DateTime purchaseDate;
-  final double cost;
-  final double salvageValue;
-  final int usefulLifeYears;
-  final double accumulatedDepreciation;
-  const FixedAsset(
-      {required this.id,
-      required this.createdAt,
-      required this.updatedAt,
-      this.deviceId,
-      required this.syncStatus,
-      this.branchId,
-      required this.name,
-      required this.purchaseDate,
-      required this.cost,
-      required this.salvageValue,
-      required this.usefulLifeYears,
-      required this.accumulatedDepreciation});
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    map['created_at'] = Variable<DateTime>(createdAt);
-    map['updated_at'] = Variable<DateTime>(updatedAt);
-    if (!nullToAbsent || deviceId != null) {
-      map['device_id'] = Variable<String>(deviceId);
-    }
-    map['sync_status'] = Variable<int>(syncStatus);
-    if (!nullToAbsent || branchId != null) {
-      map['branch_id'] = Variable<String>(branchId);
-    }
-    map['name'] = Variable<String>(name);
-    map['purchase_date'] = Variable<DateTime>(purchaseDate);
-    map['cost'] = Variable<double>(cost);
-    map['salvage_value'] = Variable<double>(salvageValue);
-    map['useful_life_years'] = Variable<int>(usefulLifeYears);
-    map['accumulated_depreciation'] = Variable<double>(accumulatedDepreciation);
-    return map;
-  }
-
-  FixedAssetsCompanion toCompanion(bool nullToAbsent) {
-    return FixedAssetsCompanion(
-      id: Value(id),
-      createdAt: Value(createdAt),
-      updatedAt: Value(updatedAt),
-      deviceId: deviceId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(deviceId),
-      syncStatus: Value(syncStatus),
-      branchId: branchId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(branchId),
-      name: Value(name),
-      purchaseDate: Value(purchaseDate),
-      cost: Value(cost),
-      salvageValue: Value(salvageValue),
-      usefulLifeYears: Value(usefulLifeYears),
-      accumulatedDepreciation: Value(accumulatedDepreciation),
-    );
-  }
-
-  factory FixedAsset.fromJson(Map<String, dynamic> json,
-      {ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return FixedAsset(
-      id: serializer.fromJson<String>(json['id']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-      deviceId: serializer.fromJson<String?>(json['deviceId']),
-      syncStatus: serializer.fromJson<int>(json['syncStatus']),
-      branchId: serializer.fromJson<String?>(json['branchId']),
-      name: serializer.fromJson<String>(json['name']),
-      purchaseDate: serializer.fromJson<DateTime>(json['purchaseDate']),
-      cost: serializer.fromJson<double>(json['cost']),
-      salvageValue: serializer.fromJson<double>(json['salvageValue']),
-      usefulLifeYears: serializer.fromJson<int>(json['usefulLifeYears']),
-      accumulatedDepreciation:
-          serializer.fromJson<double>(json['accumulatedDepreciation']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-      'updatedAt': serializer.toJson<DateTime>(updatedAt),
-      'deviceId': serializer.toJson<String?>(deviceId),
-      'syncStatus': serializer.toJson<int>(syncStatus),
-      'branchId': serializer.toJson<String?>(branchId),
-      'name': serializer.toJson<String>(name),
-      'purchaseDate': serializer.toJson<DateTime>(purchaseDate),
-      'cost': serializer.toJson<double>(cost),
-      'salvageValue': serializer.toJson<double>(salvageValue),
-      'usefulLifeYears': serializer.toJson<int>(usefulLifeYears),
-      'accumulatedDepreciation':
-          serializer.toJson<double>(accumulatedDepreciation),
-    };
-  }
-
-  FixedAsset copyWith(
-          {String? id,
-          DateTime? createdAt,
-          DateTime? updatedAt,
-          Value<String?> deviceId = const Value.absent(),
-          int? syncStatus,
-          Value<String?> branchId = const Value.absent(),
-          String? name,
-          DateTime? purchaseDate,
-          double? cost,
-          double? salvageValue,
-          int? usefulLifeYears,
-          double? accumulatedDepreciation}) =>
-      FixedAsset(
-        id: id ?? this.id,
-        createdAt: createdAt ?? this.createdAt,
-        updatedAt: updatedAt ?? this.updatedAt,
-        deviceId: deviceId.present ? deviceId.value : this.deviceId,
-        syncStatus: syncStatus ?? this.syncStatus,
-        branchId: branchId.present ? branchId.value : this.branchId,
-        name: name ?? this.name,
-        purchaseDate: purchaseDate ?? this.purchaseDate,
-        cost: cost ?? this.cost,
-        salvageValue: salvageValue ?? this.salvageValue,
-        usefulLifeYears: usefulLifeYears ?? this.usefulLifeYears,
-        accumulatedDepreciation:
-            accumulatedDepreciation ?? this.accumulatedDepreciation,
-      );
-  FixedAsset copyWithCompanion(FixedAssetsCompanion data) {
-    return FixedAsset(
-      id: data.id.present ? data.id.value : this.id,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
-      syncStatus:
-          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
-      branchId: data.branchId.present ? data.branchId.value : this.branchId,
-      name: data.name.present ? data.name.value : this.name,
-      purchaseDate: data.purchaseDate.present
-          ? data.purchaseDate.value
-          : this.purchaseDate,
-      cost: data.cost.present ? data.cost.value : this.cost,
-      salvageValue: data.salvageValue.present
-          ? data.salvageValue.value
-          : this.salvageValue,
-      usefulLifeYears: data.usefulLifeYears.present
-          ? data.usefulLifeYears.value
-          : this.usefulLifeYears,
-      accumulatedDepreciation: data.accumulatedDepreciation.present
-          ? data.accumulatedDepreciation.value
-          : this.accumulatedDepreciation,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('FixedAsset(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('deviceId: $deviceId, ')
-          ..write('syncStatus: $syncStatus, ')
-          ..write('branchId: $branchId, ')
-          ..write('name: $name, ')
-          ..write('purchaseDate: $purchaseDate, ')
-          ..write('cost: $cost, ')
-          ..write('salvageValue: $salvageValue, ')
-          ..write('usefulLifeYears: $usefulLifeYears, ')
-          ..write('accumulatedDepreciation: $accumulatedDepreciation')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-      id,
-      createdAt,
-      updatedAt,
-      deviceId,
-      syncStatus,
-      branchId,
-      name,
-      purchaseDate,
-      cost,
-      salvageValue,
-      usefulLifeYears,
-      accumulatedDepreciation);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is FixedAsset &&
-          other.id == this.id &&
-          other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt &&
-          other.deviceId == this.deviceId &&
-          other.syncStatus == this.syncStatus &&
-          other.branchId == this.branchId &&
-          other.name == this.name &&
-          other.purchaseDate == this.purchaseDate &&
-          other.cost == this.cost &&
-          other.salvageValue == this.salvageValue &&
-          other.usefulLifeYears == this.usefulLifeYears &&
-          other.accumulatedDepreciation == this.accumulatedDepreciation);
-}
-
-class FixedAssetsCompanion extends UpdateCompanion<FixedAsset> {
-  final Value<String> id;
-  final Value<DateTime> createdAt;
-  final Value<DateTime> updatedAt;
-  final Value<String?> deviceId;
-  final Value<int> syncStatus;
-  final Value<String?> branchId;
-  final Value<String> name;
-  final Value<DateTime> purchaseDate;
-  final Value<double> cost;
-  final Value<double> salvageValue;
-  final Value<int> usefulLifeYears;
-  final Value<double> accumulatedDepreciation;
-  final Value<int> rowid;
-  const FixedAssetsCompanion({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.deviceId = const Value.absent(),
-    this.syncStatus = const Value.absent(),
-    this.branchId = const Value.absent(),
-    this.name = const Value.absent(),
-    this.purchaseDate = const Value.absent(),
-    this.cost = const Value.absent(),
-    this.salvageValue = const Value.absent(),
-    this.usefulLifeYears = const Value.absent(),
-    this.accumulatedDepreciation = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  FixedAssetsCompanion.insert({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.deviceId = const Value.absent(),
-    this.syncStatus = const Value.absent(),
-    this.branchId = const Value.absent(),
-    required String name,
-    required DateTime purchaseDate,
-    required double cost,
-    this.salvageValue = const Value.absent(),
-    required int usefulLifeYears,
-    this.accumulatedDepreciation = const Value.absent(),
-    this.rowid = const Value.absent(),
-  })  : name = Value(name),
-        purchaseDate = Value(purchaseDate),
-        cost = Value(cost),
-        usefulLifeYears = Value(usefulLifeYears);
-  static Insertable<FixedAsset> custom({
-    Expression<String>? id,
-    Expression<DateTime>? createdAt,
-    Expression<DateTime>? updatedAt,
-    Expression<String>? deviceId,
-    Expression<int>? syncStatus,
-    Expression<String>? branchId,
-    Expression<String>? name,
-    Expression<DateTime>? purchaseDate,
-    Expression<double>? cost,
-    Expression<double>? salvageValue,
-    Expression<int>? usefulLifeYears,
-    Expression<double>? accumulatedDepreciation,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-      if (deviceId != null) 'device_id': deviceId,
-      if (syncStatus != null) 'sync_status': syncStatus,
-      if (branchId != null) 'branch_id': branchId,
-      if (name != null) 'name': name,
-      if (purchaseDate != null) 'purchase_date': purchaseDate,
-      if (cost != null) 'cost': cost,
-      if (salvageValue != null) 'salvage_value': salvageValue,
-      if (usefulLifeYears != null) 'useful_life_years': usefulLifeYears,
-      if (accumulatedDepreciation != null)
-        'accumulated_depreciation': accumulatedDepreciation,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  FixedAssetsCompanion copyWith(
-      {Value<String>? id,
-      Value<DateTime>? createdAt,
-      Value<DateTime>? updatedAt,
-      Value<String?>? deviceId,
-      Value<int>? syncStatus,
-      Value<String?>? branchId,
-      Value<String>? name,
-      Value<DateTime>? purchaseDate,
-      Value<double>? cost,
-      Value<double>? salvageValue,
-      Value<int>? usefulLifeYears,
-      Value<double>? accumulatedDepreciation,
-      Value<int>? rowid}) {
-    return FixedAssetsCompanion(
-      id: id ?? this.id,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      deviceId: deviceId ?? this.deviceId,
-      syncStatus: syncStatus ?? this.syncStatus,
-      branchId: branchId ?? this.branchId,
-      name: name ?? this.name,
-      purchaseDate: purchaseDate ?? this.purchaseDate,
-      cost: cost ?? this.cost,
-      salvageValue: salvageValue ?? this.salvageValue,
-      usefulLifeYears: usefulLifeYears ?? this.usefulLifeYears,
-      accumulatedDepreciation:
-          accumulatedDepreciation ?? this.accumulatedDepreciation,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<DateTime>(updatedAt.value);
-    }
-    if (deviceId.present) {
-      map['device_id'] = Variable<String>(deviceId.value);
-    }
-    if (syncStatus.present) {
-      map['sync_status'] = Variable<int>(syncStatus.value);
-    }
-    if (branchId.present) {
-      map['branch_id'] = Variable<String>(branchId.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
-    }
-    if (purchaseDate.present) {
-      map['purchase_date'] = Variable<DateTime>(purchaseDate.value);
-    }
-    if (cost.present) {
-      map['cost'] = Variable<double>(cost.value);
-    }
-    if (salvageValue.present) {
-      map['salvage_value'] = Variable<double>(salvageValue.value);
-    }
-    if (usefulLifeYears.present) {
-      map['useful_life_years'] = Variable<int>(usefulLifeYears.value);
-    }
-    if (accumulatedDepreciation.present) {
-      map['accumulated_depreciation'] =
-          Variable<double>(accumulatedDepreciation.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('FixedAssetsCompanion(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('deviceId: $deviceId, ')
-          ..write('syncStatus: $syncStatus, ')
-          ..write('branchId: $branchId, ')
-          ..write('name: $name, ')
-          ..write('purchaseDate: $purchaseDate, ')
-          ..write('cost: $cost, ')
-          ..write('salvageValue: $salvageValue, ')
-          ..write('usefulLifeYears: $usefulLifeYears, ')
-          ..write('accumulatedDepreciation: $accumulatedDepreciation, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $InventoryAuditsTable extends InventoryAudits
     with TableInfo<$InventoryAuditsTable, InventoryAudit> {
   @override
@@ -44808,12 +44193,12 @@ class AccAssetCategoriesCompanion extends UpdateCompanion<AccAssetCategory> {
   }
 }
 
-class $AccFixedAssetsTable extends AccFixedAssets
-    with TableInfo<$AccFixedAssetsTable, AccFixedAsset> {
+class $FixedAssetsTable extends FixedAssets
+    with TableInfo<$FixedAssetsTable, FixedAsset> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $AccFixedAssetsTable(this.attachedDatabase, [this._alias]);
+  $FixedAssetsTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<int> id = GeneratedColumn<int>(
@@ -44846,11 +44231,10 @@ class $AccFixedAssetsTable extends AccFixedAssets
       requiredDuringInsert: true,
       defaultConstraints: GeneratedColumn.constraintIsAlways(
           'REFERENCES acc_asset_categories (id)'));
-  static const VerificationMeta _purchaseCostMeta =
-      const VerificationMeta('purchaseCost');
+  static const VerificationMeta _costMeta = const VerificationMeta('cost');
   @override
-  late final GeneratedColumn<double> purchaseCost = GeneratedColumn<double>(
-      'purchase_cost', aliasedName, false,
+  late final GeneratedColumn<double> cost = GeneratedColumn<double>(
+      'cost', aliasedName, false,
       type: DriftSqlType.double, requiredDuringInsert: true);
   static const VerificationMeta _purchaseDateMeta =
       const VerificationMeta('purchaseDate');
@@ -44872,11 +44256,11 @@ class $AccFixedAssetsTable extends AccFixedAssets
       type: DriftSqlType.double,
       requiredDuringInsert: false,
       defaultValue: const Constant(0.0));
-  static const VerificationMeta _usefulLifeMonthsMeta =
-      const VerificationMeta('usefulLifeMonths');
+  static const VerificationMeta _usefulLifeYearsMeta =
+      const VerificationMeta('usefulLifeYears');
   @override
-  late final GeneratedColumn<int> usefulLifeMonths = GeneratedColumn<int>(
-      'useful_life_months', aliasedName, false,
+  late final GeneratedColumn<int> usefulLifeYears = GeneratedColumn<int>(
+      'useful_life_years', aliasedName, false,
       type: DriftSqlType.int, requiredDuringInsert: true);
   static const VerificationMeta _depreciationMethodMeta =
       const VerificationMeta('depreciationMethod');
@@ -44896,11 +44280,11 @@ class $AccFixedAssetsTable extends AccFixedAssets
   static const VerificationMeta _accumulatedDepreciationMeta =
       const VerificationMeta('accumulatedDepreciation');
   @override
-  late final GeneratedColumn<int> accumulatedDepreciation =
-      GeneratedColumn<int>('accumulated_depreciation', aliasedName, false,
-          type: DriftSqlType.int,
+  late final GeneratedColumn<double> accumulatedDepreciation =
+      GeneratedColumn<double>('accumulated_depreciation', aliasedName, false,
+          type: DriftSqlType.double,
           requiredDuringInsert: false,
-          defaultValue: const Constant(0));
+          defaultValue: const Constant(0.0));
   static const VerificationMeta _lastDepreciationDateMeta =
       const VerificationMeta('lastDepreciationDate');
   @override
@@ -44921,11 +44305,11 @@ class $AccFixedAssetsTable extends AccFixedAssets
         name,
         serialNumber,
         categoryId,
-        purchaseCost,
+        cost,
         purchaseDate,
         acquisitionDate,
         salvageValue,
-        usefulLifeMonths,
+        usefulLifeYears,
         depreciationMethod,
         status,
         accumulatedDepreciation,
@@ -44936,9 +44320,9 @@ class $AccFixedAssetsTable extends AccFixedAssets
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'acc_fixed_assets';
+  static const String $name = 'fixed_assets';
   @override
-  VerificationContext validateIntegrity(Insertable<AccFixedAsset> instance,
+  VerificationContext validateIntegrity(Insertable<FixedAsset> instance,
       {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
@@ -44965,13 +44349,11 @@ class $AccFixedAssetsTable extends AccFixedAssets
     } else if (isInserting) {
       context.missing(_categoryIdMeta);
     }
-    if (data.containsKey('purchase_cost')) {
+    if (data.containsKey('cost')) {
       context.handle(
-          _purchaseCostMeta,
-          purchaseCost.isAcceptableOrUnknown(
-              data['purchase_cost']!, _purchaseCostMeta));
+          _costMeta, cost.isAcceptableOrUnknown(data['cost']!, _costMeta));
     } else if (isInserting) {
-      context.missing(_purchaseCostMeta);
+      context.missing(_costMeta);
     }
     if (data.containsKey('purchase_date')) {
       context.handle(
@@ -44995,13 +44377,13 @@ class $AccFixedAssetsTable extends AccFixedAssets
           salvageValue.isAcceptableOrUnknown(
               data['salvage_value']!, _salvageValueMeta));
     }
-    if (data.containsKey('useful_life_months')) {
+    if (data.containsKey('useful_life_years')) {
       context.handle(
-          _usefulLifeMonthsMeta,
-          usefulLifeMonths.isAcceptableOrUnknown(
-              data['useful_life_months']!, _usefulLifeMonthsMeta));
+          _usefulLifeYearsMeta,
+          usefulLifeYears.isAcceptableOrUnknown(
+              data['useful_life_years']!, _usefulLifeYearsMeta));
     } else if (isInserting) {
-      context.missing(_usefulLifeMonthsMeta);
+      context.missing(_usefulLifeYearsMeta);
     }
     if (data.containsKey('depreciation_method')) {
       context.handle(
@@ -45035,9 +44417,9 @@ class $AccFixedAssetsTable extends AccFixedAssets
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  AccFixedAsset map(Map<String, dynamic> data, {String? tablePrefix}) {
+  FixedAsset map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return AccFixedAsset(
+    return FixedAsset(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
       name: attachedDatabase.typeMapping
@@ -45046,22 +44428,22 @@ class $AccFixedAssetsTable extends AccFixedAssets
           .read(DriftSqlType.string, data['${effectivePrefix}serial_number']),
       categoryId: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}category_id'])!,
-      purchaseCost: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}purchase_cost'])!,
+      cost: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}cost'])!,
       purchaseDate: attachedDatabase.typeMapping.read(
           DriftSqlType.dateTime, data['${effectivePrefix}purchase_date'])!,
       acquisitionDate: attachedDatabase.typeMapping.read(
           DriftSqlType.dateTime, data['${effectivePrefix}acquisition_date'])!,
       salvageValue: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}salvage_value'])!,
-      usefulLifeMonths: attachedDatabase.typeMapping.read(
-          DriftSqlType.int, data['${effectivePrefix}useful_life_months'])!,
+      usefulLifeYears: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}useful_life_years'])!,
       depreciationMethod: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}depreciation_method'])!,
       status: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
       accumulatedDepreciation: attachedDatabase.typeMapping.read(
-          DriftSqlType.int,
+          DriftSqlType.double,
           data['${effectivePrefix}accumulated_depreciation'])!,
       lastDepreciationDate: attachedDatabase.typeMapping.read(
           DriftSqlType.dateTime,
@@ -45072,36 +44454,36 @@ class $AccFixedAssetsTable extends AccFixedAssets
   }
 
   @override
-  $AccFixedAssetsTable createAlias(String alias) {
-    return $AccFixedAssetsTable(attachedDatabase, alias);
+  $FixedAssetsTable createAlias(String alias) {
+    return $FixedAssetsTable(attachedDatabase, alias);
   }
 }
 
-class AccFixedAsset extends DataClass implements Insertable<AccFixedAsset> {
+class FixedAsset extends DataClass implements Insertable<FixedAsset> {
   final int id;
   final String name;
   final String? serialNumber;
   final int categoryId;
-  final double purchaseCost;
+  final double cost;
   final DateTime purchaseDate;
   final DateTime acquisitionDate;
   final double salvageValue;
-  final int usefulLifeMonths;
+  final int usefulLifeYears;
   final String depreciationMethod;
   final String status;
-  final int accumulatedDepreciation;
+  final double accumulatedDepreciation;
   final DateTime? lastDepreciationDate;
   final DateTime createdAt;
-  const AccFixedAsset(
+  const FixedAsset(
       {required this.id,
       required this.name,
       this.serialNumber,
       required this.categoryId,
-      required this.purchaseCost,
+      required this.cost,
       required this.purchaseDate,
       required this.acquisitionDate,
       required this.salvageValue,
-      required this.usefulLifeMonths,
+      required this.usefulLifeYears,
       required this.depreciationMethod,
       required this.status,
       required this.accumulatedDepreciation,
@@ -45116,14 +44498,14 @@ class AccFixedAsset extends DataClass implements Insertable<AccFixedAsset> {
       map['serial_number'] = Variable<String>(serialNumber);
     }
     map['category_id'] = Variable<int>(categoryId);
-    map['purchase_cost'] = Variable<double>(purchaseCost);
+    map['cost'] = Variable<double>(cost);
     map['purchase_date'] = Variable<DateTime>(purchaseDate);
     map['acquisition_date'] = Variable<DateTime>(acquisitionDate);
     map['salvage_value'] = Variable<double>(salvageValue);
-    map['useful_life_months'] = Variable<int>(usefulLifeMonths);
+    map['useful_life_years'] = Variable<int>(usefulLifeYears);
     map['depreciation_method'] = Variable<String>(depreciationMethod);
     map['status'] = Variable<String>(status);
-    map['accumulated_depreciation'] = Variable<int>(accumulatedDepreciation);
+    map['accumulated_depreciation'] = Variable<double>(accumulatedDepreciation);
     if (!nullToAbsent || lastDepreciationDate != null) {
       map['last_depreciation_date'] = Variable<DateTime>(lastDepreciationDate);
     }
@@ -45131,19 +44513,19 @@ class AccFixedAsset extends DataClass implements Insertable<AccFixedAsset> {
     return map;
   }
 
-  AccFixedAssetsCompanion toCompanion(bool nullToAbsent) {
-    return AccFixedAssetsCompanion(
+  FixedAssetsCompanion toCompanion(bool nullToAbsent) {
+    return FixedAssetsCompanion(
       id: Value(id),
       name: Value(name),
       serialNumber: serialNumber == null && nullToAbsent
           ? const Value.absent()
           : Value(serialNumber),
       categoryId: Value(categoryId),
-      purchaseCost: Value(purchaseCost),
+      cost: Value(cost),
       purchaseDate: Value(purchaseDate),
       acquisitionDate: Value(acquisitionDate),
       salvageValue: Value(salvageValue),
-      usefulLifeMonths: Value(usefulLifeMonths),
+      usefulLifeYears: Value(usefulLifeYears),
       depreciationMethod: Value(depreciationMethod),
       status: Value(status),
       accumulatedDepreciation: Value(accumulatedDepreciation),
@@ -45154,24 +44536,24 @@ class AccFixedAsset extends DataClass implements Insertable<AccFixedAsset> {
     );
   }
 
-  factory AccFixedAsset.fromJson(Map<String, dynamic> json,
+  factory FixedAsset.fromJson(Map<String, dynamic> json,
       {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return AccFixedAsset(
+    return FixedAsset(
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       serialNumber: serializer.fromJson<String?>(json['serialNumber']),
       categoryId: serializer.fromJson<int>(json['categoryId']),
-      purchaseCost: serializer.fromJson<double>(json['purchaseCost']),
+      cost: serializer.fromJson<double>(json['cost']),
       purchaseDate: serializer.fromJson<DateTime>(json['purchaseDate']),
       acquisitionDate: serializer.fromJson<DateTime>(json['acquisitionDate']),
       salvageValue: serializer.fromJson<double>(json['salvageValue']),
-      usefulLifeMonths: serializer.fromJson<int>(json['usefulLifeMonths']),
+      usefulLifeYears: serializer.fromJson<int>(json['usefulLifeYears']),
       depreciationMethod:
           serializer.fromJson<String>(json['depreciationMethod']),
       status: serializer.fromJson<String>(json['status']),
       accumulatedDepreciation:
-          serializer.fromJson<int>(json['accumulatedDepreciation']),
+          serializer.fromJson<double>(json['accumulatedDepreciation']),
       lastDepreciationDate:
           serializer.fromJson<DateTime?>(json['lastDepreciationDate']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -45185,47 +44567,47 @@ class AccFixedAsset extends DataClass implements Insertable<AccFixedAsset> {
       'name': serializer.toJson<String>(name),
       'serialNumber': serializer.toJson<String?>(serialNumber),
       'categoryId': serializer.toJson<int>(categoryId),
-      'purchaseCost': serializer.toJson<double>(purchaseCost),
+      'cost': serializer.toJson<double>(cost),
       'purchaseDate': serializer.toJson<DateTime>(purchaseDate),
       'acquisitionDate': serializer.toJson<DateTime>(acquisitionDate),
       'salvageValue': serializer.toJson<double>(salvageValue),
-      'usefulLifeMonths': serializer.toJson<int>(usefulLifeMonths),
+      'usefulLifeYears': serializer.toJson<int>(usefulLifeYears),
       'depreciationMethod': serializer.toJson<String>(depreciationMethod),
       'status': serializer.toJson<String>(status),
       'accumulatedDepreciation':
-          serializer.toJson<int>(accumulatedDepreciation),
+          serializer.toJson<double>(accumulatedDepreciation),
       'lastDepreciationDate':
           serializer.toJson<DateTime?>(lastDepreciationDate),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
 
-  AccFixedAsset copyWith(
+  FixedAsset copyWith(
           {int? id,
           String? name,
           Value<String?> serialNumber = const Value.absent(),
           int? categoryId,
-          double? purchaseCost,
+          double? cost,
           DateTime? purchaseDate,
           DateTime? acquisitionDate,
           double? salvageValue,
-          int? usefulLifeMonths,
+          int? usefulLifeYears,
           String? depreciationMethod,
           String? status,
-          int? accumulatedDepreciation,
+          double? accumulatedDepreciation,
           Value<DateTime?> lastDepreciationDate = const Value.absent(),
           DateTime? createdAt}) =>
-      AccFixedAsset(
+      FixedAsset(
         id: id ?? this.id,
         name: name ?? this.name,
         serialNumber:
             serialNumber.present ? serialNumber.value : this.serialNumber,
         categoryId: categoryId ?? this.categoryId,
-        purchaseCost: purchaseCost ?? this.purchaseCost,
+        cost: cost ?? this.cost,
         purchaseDate: purchaseDate ?? this.purchaseDate,
         acquisitionDate: acquisitionDate ?? this.acquisitionDate,
         salvageValue: salvageValue ?? this.salvageValue,
-        usefulLifeMonths: usefulLifeMonths ?? this.usefulLifeMonths,
+        usefulLifeYears: usefulLifeYears ?? this.usefulLifeYears,
         depreciationMethod: depreciationMethod ?? this.depreciationMethod,
         status: status ?? this.status,
         accumulatedDepreciation:
@@ -45235,8 +44617,8 @@ class AccFixedAsset extends DataClass implements Insertable<AccFixedAsset> {
             : this.lastDepreciationDate,
         createdAt: createdAt ?? this.createdAt,
       );
-  AccFixedAsset copyWithCompanion(AccFixedAssetsCompanion data) {
-    return AccFixedAsset(
+  FixedAsset copyWithCompanion(FixedAssetsCompanion data) {
+    return FixedAsset(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       serialNumber: data.serialNumber.present
@@ -45244,9 +44626,7 @@ class AccFixedAsset extends DataClass implements Insertable<AccFixedAsset> {
           : this.serialNumber,
       categoryId:
           data.categoryId.present ? data.categoryId.value : this.categoryId,
-      purchaseCost: data.purchaseCost.present
-          ? data.purchaseCost.value
-          : this.purchaseCost,
+      cost: data.cost.present ? data.cost.value : this.cost,
       purchaseDate: data.purchaseDate.present
           ? data.purchaseDate.value
           : this.purchaseDate,
@@ -45256,9 +44636,9 @@ class AccFixedAsset extends DataClass implements Insertable<AccFixedAsset> {
       salvageValue: data.salvageValue.present
           ? data.salvageValue.value
           : this.salvageValue,
-      usefulLifeMonths: data.usefulLifeMonths.present
-          ? data.usefulLifeMonths.value
-          : this.usefulLifeMonths,
+      usefulLifeYears: data.usefulLifeYears.present
+          ? data.usefulLifeYears.value
+          : this.usefulLifeYears,
       depreciationMethod: data.depreciationMethod.present
           ? data.depreciationMethod.value
           : this.depreciationMethod,
@@ -45275,16 +44655,16 @@ class AccFixedAsset extends DataClass implements Insertable<AccFixedAsset> {
 
   @override
   String toString() {
-    return (StringBuffer('AccFixedAsset(')
+    return (StringBuffer('FixedAsset(')
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('serialNumber: $serialNumber, ')
           ..write('categoryId: $categoryId, ')
-          ..write('purchaseCost: $purchaseCost, ')
+          ..write('cost: $cost, ')
           ..write('purchaseDate: $purchaseDate, ')
           ..write('acquisitionDate: $acquisitionDate, ')
           ..write('salvageValue: $salvageValue, ')
-          ..write('usefulLifeMonths: $usefulLifeMonths, ')
+          ..write('usefulLifeYears: $usefulLifeYears, ')
           ..write('depreciationMethod: $depreciationMethod, ')
           ..write('status: $status, ')
           ..write('accumulatedDepreciation: $accumulatedDepreciation, ')
@@ -45300,11 +44680,11 @@ class AccFixedAsset extends DataClass implements Insertable<AccFixedAsset> {
       name,
       serialNumber,
       categoryId,
-      purchaseCost,
+      cost,
       purchaseDate,
       acquisitionDate,
       salvageValue,
-      usefulLifeMonths,
+      usefulLifeYears,
       depreciationMethod,
       status,
       accumulatedDepreciation,
@@ -45313,16 +44693,16 @@ class AccFixedAsset extends DataClass implements Insertable<AccFixedAsset> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is AccFixedAsset &&
+      (other is FixedAsset &&
           other.id == this.id &&
           other.name == this.name &&
           other.serialNumber == this.serialNumber &&
           other.categoryId == this.categoryId &&
-          other.purchaseCost == this.purchaseCost &&
+          other.cost == this.cost &&
           other.purchaseDate == this.purchaseDate &&
           other.acquisitionDate == this.acquisitionDate &&
           other.salvageValue == this.salvageValue &&
-          other.usefulLifeMonths == this.usefulLifeMonths &&
+          other.usefulLifeYears == this.usefulLifeYears &&
           other.depreciationMethod == this.depreciationMethod &&
           other.status == this.status &&
           other.accumulatedDepreciation == this.accumulatedDepreciation &&
@@ -45330,47 +44710,47 @@ class AccFixedAsset extends DataClass implements Insertable<AccFixedAsset> {
           other.createdAt == this.createdAt);
 }
 
-class AccFixedAssetsCompanion extends UpdateCompanion<AccFixedAsset> {
+class FixedAssetsCompanion extends UpdateCompanion<FixedAsset> {
   final Value<int> id;
   final Value<String> name;
   final Value<String?> serialNumber;
   final Value<int> categoryId;
-  final Value<double> purchaseCost;
+  final Value<double> cost;
   final Value<DateTime> purchaseDate;
   final Value<DateTime> acquisitionDate;
   final Value<double> salvageValue;
-  final Value<int> usefulLifeMonths;
+  final Value<int> usefulLifeYears;
   final Value<String> depreciationMethod;
   final Value<String> status;
-  final Value<int> accumulatedDepreciation;
+  final Value<double> accumulatedDepreciation;
   final Value<DateTime?> lastDepreciationDate;
   final Value<DateTime> createdAt;
-  const AccFixedAssetsCompanion({
+  const FixedAssetsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.serialNumber = const Value.absent(),
     this.categoryId = const Value.absent(),
-    this.purchaseCost = const Value.absent(),
+    this.cost = const Value.absent(),
     this.purchaseDate = const Value.absent(),
     this.acquisitionDate = const Value.absent(),
     this.salvageValue = const Value.absent(),
-    this.usefulLifeMonths = const Value.absent(),
+    this.usefulLifeYears = const Value.absent(),
     this.depreciationMethod = const Value.absent(),
     this.status = const Value.absent(),
     this.accumulatedDepreciation = const Value.absent(),
     this.lastDepreciationDate = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
-  AccFixedAssetsCompanion.insert({
+  FixedAssetsCompanion.insert({
     this.id = const Value.absent(),
     required String name,
     this.serialNumber = const Value.absent(),
     required int categoryId,
-    required double purchaseCost,
+    required double cost,
     required DateTime purchaseDate,
     required DateTime acquisitionDate,
     this.salvageValue = const Value.absent(),
-    required int usefulLifeMonths,
+    required int usefulLifeYears,
     this.depreciationMethod = const Value.absent(),
     this.status = const Value.absent(),
     this.accumulatedDepreciation = const Value.absent(),
@@ -45378,23 +44758,23 @@ class AccFixedAssetsCompanion extends UpdateCompanion<AccFixedAsset> {
     this.createdAt = const Value.absent(),
   })  : name = Value(name),
         categoryId = Value(categoryId),
-        purchaseCost = Value(purchaseCost),
+        cost = Value(cost),
         purchaseDate = Value(purchaseDate),
         acquisitionDate = Value(acquisitionDate),
-        usefulLifeMonths = Value(usefulLifeMonths);
-  static Insertable<AccFixedAsset> custom({
+        usefulLifeYears = Value(usefulLifeYears);
+  static Insertable<FixedAsset> custom({
     Expression<int>? id,
     Expression<String>? name,
     Expression<String>? serialNumber,
     Expression<int>? categoryId,
-    Expression<double>? purchaseCost,
+    Expression<double>? cost,
     Expression<DateTime>? purchaseDate,
     Expression<DateTime>? acquisitionDate,
     Expression<double>? salvageValue,
-    Expression<int>? usefulLifeMonths,
+    Expression<int>? usefulLifeYears,
     Expression<String>? depreciationMethod,
     Expression<String>? status,
-    Expression<int>? accumulatedDepreciation,
+    Expression<double>? accumulatedDepreciation,
     Expression<DateTime>? lastDepreciationDate,
     Expression<DateTime>? createdAt,
   }) {
@@ -45403,11 +44783,11 @@ class AccFixedAssetsCompanion extends UpdateCompanion<AccFixedAsset> {
       if (name != null) 'name': name,
       if (serialNumber != null) 'serial_number': serialNumber,
       if (categoryId != null) 'category_id': categoryId,
-      if (purchaseCost != null) 'purchase_cost': purchaseCost,
+      if (cost != null) 'cost': cost,
       if (purchaseDate != null) 'purchase_date': purchaseDate,
       if (acquisitionDate != null) 'acquisition_date': acquisitionDate,
       if (salvageValue != null) 'salvage_value': salvageValue,
-      if (usefulLifeMonths != null) 'useful_life_months': usefulLifeMonths,
+      if (usefulLifeYears != null) 'useful_life_years': usefulLifeYears,
       if (depreciationMethod != null) 'depreciation_method': depreciationMethod,
       if (status != null) 'status': status,
       if (accumulatedDepreciation != null)
@@ -45418,31 +44798,31 @@ class AccFixedAssetsCompanion extends UpdateCompanion<AccFixedAsset> {
     });
   }
 
-  AccFixedAssetsCompanion copyWith(
+  FixedAssetsCompanion copyWith(
       {Value<int>? id,
       Value<String>? name,
       Value<String?>? serialNumber,
       Value<int>? categoryId,
-      Value<double>? purchaseCost,
+      Value<double>? cost,
       Value<DateTime>? purchaseDate,
       Value<DateTime>? acquisitionDate,
       Value<double>? salvageValue,
-      Value<int>? usefulLifeMonths,
+      Value<int>? usefulLifeYears,
       Value<String>? depreciationMethod,
       Value<String>? status,
-      Value<int>? accumulatedDepreciation,
+      Value<double>? accumulatedDepreciation,
       Value<DateTime?>? lastDepreciationDate,
       Value<DateTime>? createdAt}) {
-    return AccFixedAssetsCompanion(
+    return FixedAssetsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
       serialNumber: serialNumber ?? this.serialNumber,
       categoryId: categoryId ?? this.categoryId,
-      purchaseCost: purchaseCost ?? this.purchaseCost,
+      cost: cost ?? this.cost,
       purchaseDate: purchaseDate ?? this.purchaseDate,
       acquisitionDate: acquisitionDate ?? this.acquisitionDate,
       salvageValue: salvageValue ?? this.salvageValue,
-      usefulLifeMonths: usefulLifeMonths ?? this.usefulLifeMonths,
+      usefulLifeYears: usefulLifeYears ?? this.usefulLifeYears,
       depreciationMethod: depreciationMethod ?? this.depreciationMethod,
       status: status ?? this.status,
       accumulatedDepreciation:
@@ -45467,8 +44847,8 @@ class AccFixedAssetsCompanion extends UpdateCompanion<AccFixedAsset> {
     if (categoryId.present) {
       map['category_id'] = Variable<int>(categoryId.value);
     }
-    if (purchaseCost.present) {
-      map['purchase_cost'] = Variable<double>(purchaseCost.value);
+    if (cost.present) {
+      map['cost'] = Variable<double>(cost.value);
     }
     if (purchaseDate.present) {
       map['purchase_date'] = Variable<DateTime>(purchaseDate.value);
@@ -45479,8 +44859,8 @@ class AccFixedAssetsCompanion extends UpdateCompanion<AccFixedAsset> {
     if (salvageValue.present) {
       map['salvage_value'] = Variable<double>(salvageValue.value);
     }
-    if (usefulLifeMonths.present) {
-      map['useful_life_months'] = Variable<int>(usefulLifeMonths.value);
+    if (usefulLifeYears.present) {
+      map['useful_life_years'] = Variable<int>(usefulLifeYears.value);
     }
     if (depreciationMethod.present) {
       map['depreciation_method'] = Variable<String>(depreciationMethod.value);
@@ -45490,7 +44870,7 @@ class AccFixedAssetsCompanion extends UpdateCompanion<AccFixedAsset> {
     }
     if (accumulatedDepreciation.present) {
       map['accumulated_depreciation'] =
-          Variable<int>(accumulatedDepreciation.value);
+          Variable<double>(accumulatedDepreciation.value);
     }
     if (lastDepreciationDate.present) {
       map['last_depreciation_date'] =
@@ -45504,16 +44884,16 @@ class AccFixedAssetsCompanion extends UpdateCompanion<AccFixedAsset> {
 
   @override
   String toString() {
-    return (StringBuffer('AccFixedAssetsCompanion(')
+    return (StringBuffer('FixedAssetsCompanion(')
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('serialNumber: $serialNumber, ')
           ..write('categoryId: $categoryId, ')
-          ..write('purchaseCost: $purchaseCost, ')
+          ..write('cost: $cost, ')
           ..write('purchaseDate: $purchaseDate, ')
           ..write('acquisitionDate: $acquisitionDate, ')
           ..write('salvageValue: $salvageValue, ')
-          ..write('usefulLifeMonths: $usefulLifeMonths, ')
+          ..write('usefulLifeYears: $usefulLifeYears, ')
           ..write('depreciationMethod: $depreciationMethod, ')
           ..write('status: $status, ')
           ..write('accumulatedDepreciation: $accumulatedDepreciation, ')
@@ -45546,8 +44926,8 @@ class $AccAssetDepreciationLogsTable extends AccAssetDepreciationLogs
       'asset_id', aliasedName, false,
       type: DriftSqlType.int,
       requiredDuringInsert: true,
-      defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'REFERENCES acc_fixed_assets (id)'));
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES fixed_assets (id)'));
   static const VerificationMeta _depreciationAmountMeta =
       const VerificationMeta('depreciationAmount');
   @override
@@ -45948,8 +45328,8 @@ class $AccAssetDisposalsTable extends AccAssetDisposals
       'asset_id', aliasedName, false,
       type: DriftSqlType.int,
       requiredDuringInsert: true,
-      defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'REFERENCES acc_fixed_assets (id)'));
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES fixed_assets (id)'));
   static const VerificationMeta _disposalDateMeta =
       const VerificationMeta('disposalDate');
   @override
@@ -52023,7 +51403,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $GLLinesTable gLLines = $GLLinesTable(this);
   late final $AccountingPeriodsTable accountingPeriods =
       $AccountingPeriodsTable(this);
-  late final $FixedAssetsTable fixedAssets = $FixedAssetsTable(this);
   late final $InventoryAuditsTable inventoryAudits =
       $InventoryAuditsTable(this);
   late final $InventoryAuditItemsTable inventoryAuditItems =
@@ -52077,7 +51456,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AppConfigTableTable appConfigTable = $AppConfigTableTable(this);
   late final $AccAssetCategoriesTable accAssetCategories =
       $AccAssetCategoriesTable(this);
-  late final $AccFixedAssetsTable accFixedAssets = $AccFixedAssetsTable(this);
+  late final $FixedAssetsTable fixedAssets = $FixedAssetsTable(this);
   late final $AccAssetDepreciationLogsTable accAssetDepreciationLogs =
       $AccAssetDepreciationLogsTable(this);
   late final $AccAssetDisposalsTable accAssetDisposals =
@@ -52155,7 +51534,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         gLEntries,
         gLLines,
         accountingPeriods,
-        fixedAssets,
         inventoryAudits,
         inventoryAuditItems,
         shifts,
@@ -52193,7 +51571,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         deliveryNoteItems,
         appConfigTable,
         accAssetCategories,
-        accFixedAssets,
+        fixedAssets,
         accAssetDepreciationLogs,
         accAssetDisposals,
         hREmployees,
@@ -52825,19 +52203,6 @@ class $$BranchesTableFilterComposer
                     $state.db.accountingPeriods,
                     joinBuilder,
                     parentComposers)));
-    return f(composer);
-  }
-
-  ComposableFilter fixedAssetsRefs(
-      ComposableFilter Function($$FixedAssetsTableFilterComposer f) f) {
-    final $$FixedAssetsTableFilterComposer composer = $state.composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.id,
-        referencedTable: $state.db.fixedAssets,
-        getReferencedColumn: (t) => t.branchId,
-        builder: (joinBuilder, parentComposers) =>
-            $$FixedAssetsTableFilterComposer(ComposerState($state.db,
-                $state.db.fixedAssets, joinBuilder, parentComposers)));
     return f(composer);
   }
 
@@ -64590,261 +63955,6 @@ class $$AccountingPeriodsTableOrderingComposer
   }
 }
 
-typedef $$FixedAssetsTableCreateCompanionBuilder = FixedAssetsCompanion
-    Function({
-  Value<String> id,
-  Value<DateTime> createdAt,
-  Value<DateTime> updatedAt,
-  Value<String?> deviceId,
-  Value<int> syncStatus,
-  Value<String?> branchId,
-  required String name,
-  required DateTime purchaseDate,
-  required double cost,
-  Value<double> salvageValue,
-  required int usefulLifeYears,
-  Value<double> accumulatedDepreciation,
-  Value<int> rowid,
-});
-typedef $$FixedAssetsTableUpdateCompanionBuilder = FixedAssetsCompanion
-    Function({
-  Value<String> id,
-  Value<DateTime> createdAt,
-  Value<DateTime> updatedAt,
-  Value<String?> deviceId,
-  Value<int> syncStatus,
-  Value<String?> branchId,
-  Value<String> name,
-  Value<DateTime> purchaseDate,
-  Value<double> cost,
-  Value<double> salvageValue,
-  Value<int> usefulLifeYears,
-  Value<double> accumulatedDepreciation,
-  Value<int> rowid,
-});
-
-class $$FixedAssetsTableTableManager extends RootTableManager<
-    _$AppDatabase,
-    $FixedAssetsTable,
-    FixedAsset,
-    $$FixedAssetsTableFilterComposer,
-    $$FixedAssetsTableOrderingComposer,
-    $$FixedAssetsTableCreateCompanionBuilder,
-    $$FixedAssetsTableUpdateCompanionBuilder> {
-  $$FixedAssetsTableTableManager(_$AppDatabase db, $FixedAssetsTable table)
-      : super(TableManagerState(
-          db: db,
-          table: table,
-          filteringComposer:
-              $$FixedAssetsTableFilterComposer(ComposerState(db, table)),
-          orderingComposer:
-              $$FixedAssetsTableOrderingComposer(ComposerState(db, table)),
-          updateCompanionCallback: ({
-            Value<String> id = const Value.absent(),
-            Value<DateTime> createdAt = const Value.absent(),
-            Value<DateTime> updatedAt = const Value.absent(),
-            Value<String?> deviceId = const Value.absent(),
-            Value<int> syncStatus = const Value.absent(),
-            Value<String?> branchId = const Value.absent(),
-            Value<String> name = const Value.absent(),
-            Value<DateTime> purchaseDate = const Value.absent(),
-            Value<double> cost = const Value.absent(),
-            Value<double> salvageValue = const Value.absent(),
-            Value<int> usefulLifeYears = const Value.absent(),
-            Value<double> accumulatedDepreciation = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              FixedAssetsCompanion(
-            id: id,
-            createdAt: createdAt,
-            updatedAt: updatedAt,
-            deviceId: deviceId,
-            syncStatus: syncStatus,
-            branchId: branchId,
-            name: name,
-            purchaseDate: purchaseDate,
-            cost: cost,
-            salvageValue: salvageValue,
-            usefulLifeYears: usefulLifeYears,
-            accumulatedDepreciation: accumulatedDepreciation,
-            rowid: rowid,
-          ),
-          createCompanionCallback: ({
-            Value<String> id = const Value.absent(),
-            Value<DateTime> createdAt = const Value.absent(),
-            Value<DateTime> updatedAt = const Value.absent(),
-            Value<String?> deviceId = const Value.absent(),
-            Value<int> syncStatus = const Value.absent(),
-            Value<String?> branchId = const Value.absent(),
-            required String name,
-            required DateTime purchaseDate,
-            required double cost,
-            Value<double> salvageValue = const Value.absent(),
-            required int usefulLifeYears,
-            Value<double> accumulatedDepreciation = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              FixedAssetsCompanion.insert(
-            id: id,
-            createdAt: createdAt,
-            updatedAt: updatedAt,
-            deviceId: deviceId,
-            syncStatus: syncStatus,
-            branchId: branchId,
-            name: name,
-            purchaseDate: purchaseDate,
-            cost: cost,
-            salvageValue: salvageValue,
-            usefulLifeYears: usefulLifeYears,
-            accumulatedDepreciation: accumulatedDepreciation,
-            rowid: rowid,
-          ),
-        ));
-}
-
-class $$FixedAssetsTableFilterComposer
-    extends FilterComposer<_$AppDatabase, $FixedAssetsTable> {
-  $$FixedAssetsTableFilterComposer(super.$state);
-  ColumnFilters<String> get id => $state.composableBuilder(
-      column: $state.table.id,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<DateTime> get createdAt => $state.composableBuilder(
-      column: $state.table.createdAt,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<DateTime> get updatedAt => $state.composableBuilder(
-      column: $state.table.updatedAt,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<String> get deviceId => $state.composableBuilder(
-      column: $state.table.deviceId,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<int> get syncStatus => $state.composableBuilder(
-      column: $state.table.syncStatus,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<String> get name => $state.composableBuilder(
-      column: $state.table.name,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<DateTime> get purchaseDate => $state.composableBuilder(
-      column: $state.table.purchaseDate,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<double> get cost => $state.composableBuilder(
-      column: $state.table.cost,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<double> get salvageValue => $state.composableBuilder(
-      column: $state.table.salvageValue,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<int> get usefulLifeYears => $state.composableBuilder(
-      column: $state.table.usefulLifeYears,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<double> get accumulatedDepreciation => $state.composableBuilder(
-      column: $state.table.accumulatedDepreciation,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  $$BranchesTableFilterComposer get branchId {
-    final $$BranchesTableFilterComposer composer = $state.composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.branchId,
-        referencedTable: $state.db.branches,
-        getReferencedColumn: (t) => t.id,
-        builder: (joinBuilder, parentComposers) =>
-            $$BranchesTableFilterComposer(ComposerState(
-                $state.db, $state.db.branches, joinBuilder, parentComposers)));
-    return composer;
-  }
-}
-
-class $$FixedAssetsTableOrderingComposer
-    extends OrderingComposer<_$AppDatabase, $FixedAssetsTable> {
-  $$FixedAssetsTableOrderingComposer(super.$state);
-  ColumnOrderings<String> get id => $state.composableBuilder(
-      column: $state.table.id,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<DateTime> get createdAt => $state.composableBuilder(
-      column: $state.table.createdAt,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<DateTime> get updatedAt => $state.composableBuilder(
-      column: $state.table.updatedAt,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<String> get deviceId => $state.composableBuilder(
-      column: $state.table.deviceId,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<int> get syncStatus => $state.composableBuilder(
-      column: $state.table.syncStatus,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<String> get name => $state.composableBuilder(
-      column: $state.table.name,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<DateTime> get purchaseDate => $state.composableBuilder(
-      column: $state.table.purchaseDate,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<double> get cost => $state.composableBuilder(
-      column: $state.table.cost,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<double> get salvageValue => $state.composableBuilder(
-      column: $state.table.salvageValue,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<int> get usefulLifeYears => $state.composableBuilder(
-      column: $state.table.usefulLifeYears,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<double> get accumulatedDepreciation =>
-      $state.composableBuilder(
-          column: $state.table.accumulatedDepreciation,
-          builder: (column, joinBuilders) =>
-              ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  $$BranchesTableOrderingComposer get branchId {
-    final $$BranchesTableOrderingComposer composer = $state.composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.branchId,
-        referencedTable: $state.db.branches,
-        getReferencedColumn: (t) => t.id,
-        builder: (joinBuilder, parentComposers) =>
-            $$BranchesTableOrderingComposer(ComposerState(
-                $state.db, $state.db.branches, joinBuilder, parentComposers)));
-    return composer;
-  }
-}
-
 typedef $$InventoryAuditsTableCreateCompanionBuilder = InventoryAuditsCompanion
     Function({
   Value<String> id,
@@ -74870,16 +73980,16 @@ class $$AccAssetCategoriesTableFilterComposer
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
-  ComposableFilter accFixedAssetsRefs(
-      ComposableFilter Function($$AccFixedAssetsTableFilterComposer f) f) {
-    final $$AccFixedAssetsTableFilterComposer composer = $state.composerBuilder(
+  ComposableFilter fixedAssetsRefs(
+      ComposableFilter Function($$FixedAssetsTableFilterComposer f) f) {
+    final $$FixedAssetsTableFilterComposer composer = $state.composerBuilder(
         composer: this,
         getCurrentColumn: (t) => t.id,
-        referencedTable: $state.db.accFixedAssets,
+        referencedTable: $state.db.fixedAssets,
         getReferencedColumn: (t) => t.categoryId,
         builder: (joinBuilder, parentComposers) =>
-            $$AccFixedAssetsTableFilterComposer(ComposerState($state.db,
-                $state.db.accFixedAssets, joinBuilder, parentComposers)));
+            $$FixedAssetsTableFilterComposer(ComposerState($state.db,
+                $state.db.fixedAssets, joinBuilder, parentComposers)));
     return f(composer);
   }
 }
@@ -74914,84 +74024,83 @@ class $$AccAssetCategoriesTableOrderingComposer
           ColumnOrderings(column, joinBuilders: joinBuilders));
 }
 
-typedef $$AccFixedAssetsTableCreateCompanionBuilder = AccFixedAssetsCompanion
+typedef $$FixedAssetsTableCreateCompanionBuilder = FixedAssetsCompanion
     Function({
   Value<int> id,
   required String name,
   Value<String?> serialNumber,
   required int categoryId,
-  required double purchaseCost,
+  required double cost,
   required DateTime purchaseDate,
   required DateTime acquisitionDate,
   Value<double> salvageValue,
-  required int usefulLifeMonths,
+  required int usefulLifeYears,
   Value<String> depreciationMethod,
   Value<String> status,
-  Value<int> accumulatedDepreciation,
+  Value<double> accumulatedDepreciation,
   Value<DateTime?> lastDepreciationDate,
   Value<DateTime> createdAt,
 });
-typedef $$AccFixedAssetsTableUpdateCompanionBuilder = AccFixedAssetsCompanion
+typedef $$FixedAssetsTableUpdateCompanionBuilder = FixedAssetsCompanion
     Function({
   Value<int> id,
   Value<String> name,
   Value<String?> serialNumber,
   Value<int> categoryId,
-  Value<double> purchaseCost,
+  Value<double> cost,
   Value<DateTime> purchaseDate,
   Value<DateTime> acquisitionDate,
   Value<double> salvageValue,
-  Value<int> usefulLifeMonths,
+  Value<int> usefulLifeYears,
   Value<String> depreciationMethod,
   Value<String> status,
-  Value<int> accumulatedDepreciation,
+  Value<double> accumulatedDepreciation,
   Value<DateTime?> lastDepreciationDate,
   Value<DateTime> createdAt,
 });
 
-class $$AccFixedAssetsTableTableManager extends RootTableManager<
+class $$FixedAssetsTableTableManager extends RootTableManager<
     _$AppDatabase,
-    $AccFixedAssetsTable,
-    AccFixedAsset,
-    $$AccFixedAssetsTableFilterComposer,
-    $$AccFixedAssetsTableOrderingComposer,
-    $$AccFixedAssetsTableCreateCompanionBuilder,
-    $$AccFixedAssetsTableUpdateCompanionBuilder> {
-  $$AccFixedAssetsTableTableManager(
-      _$AppDatabase db, $AccFixedAssetsTable table)
+    $FixedAssetsTable,
+    FixedAsset,
+    $$FixedAssetsTableFilterComposer,
+    $$FixedAssetsTableOrderingComposer,
+    $$FixedAssetsTableCreateCompanionBuilder,
+    $$FixedAssetsTableUpdateCompanionBuilder> {
+  $$FixedAssetsTableTableManager(_$AppDatabase db, $FixedAssetsTable table)
       : super(TableManagerState(
           db: db,
           table: table,
           filteringComposer:
-              $$AccFixedAssetsTableFilterComposer(ComposerState(db, table)),
+              $$FixedAssetsTableFilterComposer(ComposerState(db, table)),
           orderingComposer:
-              $$AccFixedAssetsTableOrderingComposer(ComposerState(db, table)),
+              $$FixedAssetsTableOrderingComposer(ComposerState(db, table)),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
             Value<String> name = const Value.absent(),
             Value<String?> serialNumber = const Value.absent(),
             Value<int> categoryId = const Value.absent(),
-            Value<double> purchaseCost = const Value.absent(),
+            Value<double> cost = const Value.absent(),
             Value<DateTime> purchaseDate = const Value.absent(),
             Value<DateTime> acquisitionDate = const Value.absent(),
             Value<double> salvageValue = const Value.absent(),
-            Value<int> usefulLifeMonths = const Value.absent(),
+            Value<int> usefulLifeYears = const Value.absent(),
             Value<String> depreciationMethod = const Value.absent(),
             Value<String> status = const Value.absent(),
-            Value<int> accumulatedDepreciation = const Value.absent(),
+            Value<double> accumulatedDepreciation = const Value.absent(),
             Value<DateTime?> lastDepreciationDate = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
-              AccFixedAssetsCompanion(
+              FixedAssetsCompanion(
             id: id,
             name: name,
             serialNumber: serialNumber,
             categoryId: categoryId,
-            purchaseCost: purchaseCost,
+            cost: cost,
             purchaseDate: purchaseDate,
             acquisitionDate: acquisitionDate,
             salvageValue: salvageValue,
-            usefulLifeMonths: usefulLifeMonths,
+            usefulLifeYears: usefulLifeYears,
             depreciationMethod: depreciationMethod,
             status: status,
             accumulatedDepreciation: accumulatedDepreciation,
@@ -75003,27 +74112,27 @@ class $$AccFixedAssetsTableTableManager extends RootTableManager<
             required String name,
             Value<String?> serialNumber = const Value.absent(),
             required int categoryId,
-            required double purchaseCost,
+            required double cost,
             required DateTime purchaseDate,
             required DateTime acquisitionDate,
             Value<double> salvageValue = const Value.absent(),
-            required int usefulLifeMonths,
+            required int usefulLifeYears,
             Value<String> depreciationMethod = const Value.absent(),
             Value<String> status = const Value.absent(),
-            Value<int> accumulatedDepreciation = const Value.absent(),
+            Value<double> accumulatedDepreciation = const Value.absent(),
             Value<DateTime?> lastDepreciationDate = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
-              AccFixedAssetsCompanion.insert(
+              FixedAssetsCompanion.insert(
             id: id,
             name: name,
             serialNumber: serialNumber,
             categoryId: categoryId,
-            purchaseCost: purchaseCost,
+            cost: cost,
             purchaseDate: purchaseDate,
             acquisitionDate: acquisitionDate,
             salvageValue: salvageValue,
-            usefulLifeMonths: usefulLifeMonths,
+            usefulLifeYears: usefulLifeYears,
             depreciationMethod: depreciationMethod,
             status: status,
             accumulatedDepreciation: accumulatedDepreciation,
@@ -75033,9 +74142,9 @@ class $$AccFixedAssetsTableTableManager extends RootTableManager<
         ));
 }
 
-class $$AccFixedAssetsTableFilterComposer
-    extends FilterComposer<_$AppDatabase, $AccFixedAssetsTable> {
-  $$AccFixedAssetsTableFilterComposer(super.$state);
+class $$FixedAssetsTableFilterComposer
+    extends FilterComposer<_$AppDatabase, $FixedAssetsTable> {
+  $$FixedAssetsTableFilterComposer(super.$state);
   ColumnFilters<int> get id => $state.composableBuilder(
       column: $state.table.id,
       builder: (column, joinBuilders) =>
@@ -75051,8 +74160,8 @@ class $$AccFixedAssetsTableFilterComposer
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
-  ColumnFilters<double> get purchaseCost => $state.composableBuilder(
-      column: $state.table.purchaseCost,
+  ColumnFilters<double> get cost => $state.composableBuilder(
+      column: $state.table.cost,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
@@ -75071,8 +74180,8 @@ class $$AccFixedAssetsTableFilterComposer
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
-  ColumnFilters<int> get usefulLifeMonths => $state.composableBuilder(
-      column: $state.table.usefulLifeMonths,
+  ColumnFilters<int> get usefulLifeYears => $state.composableBuilder(
+      column: $state.table.usefulLifeYears,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
@@ -75086,7 +74195,7 @@ class $$AccFixedAssetsTableFilterComposer
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
-  ColumnFilters<int> get accumulatedDepreciation => $state.composableBuilder(
+  ColumnFilters<double> get accumulatedDepreciation => $state.composableBuilder(
       column: $state.table.accumulatedDepreciation,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
@@ -75153,9 +74262,9 @@ class $$AccFixedAssetsTableFilterComposer
   }
 }
 
-class $$AccFixedAssetsTableOrderingComposer
-    extends OrderingComposer<_$AppDatabase, $AccFixedAssetsTable> {
-  $$AccFixedAssetsTableOrderingComposer(super.$state);
+class $$FixedAssetsTableOrderingComposer
+    extends OrderingComposer<_$AppDatabase, $FixedAssetsTable> {
+  $$FixedAssetsTableOrderingComposer(super.$state);
   ColumnOrderings<int> get id => $state.composableBuilder(
       column: $state.table.id,
       builder: (column, joinBuilders) =>
@@ -75171,8 +74280,8 @@ class $$AccFixedAssetsTableOrderingComposer
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
-  ColumnOrderings<double> get purchaseCost => $state.composableBuilder(
-      column: $state.table.purchaseCost,
+  ColumnOrderings<double> get cost => $state.composableBuilder(
+      column: $state.table.cost,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
@@ -75191,8 +74300,8 @@ class $$AccFixedAssetsTableOrderingComposer
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
-  ColumnOrderings<int> get usefulLifeMonths => $state.composableBuilder(
-      column: $state.table.usefulLifeMonths,
+  ColumnOrderings<int> get usefulLifeYears => $state.composableBuilder(
+      column: $state.table.usefulLifeYears,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
@@ -75206,10 +74315,11 @@ class $$AccFixedAssetsTableOrderingComposer
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
-  ColumnOrderings<int> get accumulatedDepreciation => $state.composableBuilder(
-      column: $state.table.accumulatedDepreciation,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
+  ColumnOrderings<double> get accumulatedDepreciation =>
+      $state.composableBuilder(
+          column: $state.table.accumulatedDepreciation,
+          builder: (column, joinBuilders) =>
+              ColumnOrderings(column, joinBuilders: joinBuilders));
 
   ColumnOrderings<DateTime> get lastDepreciationDate =>
       $state.composableBuilder(
@@ -75349,15 +74459,15 @@ class $$AccAssetDepreciationLogsTableFilterComposer
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
-  $$AccFixedAssetsTableFilterComposer get assetId {
-    final $$AccFixedAssetsTableFilterComposer composer = $state.composerBuilder(
+  $$FixedAssetsTableFilterComposer get assetId {
+    final $$FixedAssetsTableFilterComposer composer = $state.composerBuilder(
         composer: this,
         getCurrentColumn: (t) => t.assetId,
-        referencedTable: $state.db.accFixedAssets,
+        referencedTable: $state.db.fixedAssets,
         getReferencedColumn: (t) => t.id,
         builder: (joinBuilder, parentComposers) =>
-            $$AccFixedAssetsTableFilterComposer(ComposerState($state.db,
-                $state.db.accFixedAssets, joinBuilder, parentComposers)));
+            $$FixedAssetsTableFilterComposer(ComposerState($state.db,
+                $state.db.fixedAssets, joinBuilder, parentComposers)));
     return composer;
   }
 }
@@ -75395,16 +74505,15 @@ class $$AccAssetDepreciationLogsTableOrderingComposer
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
-  $$AccFixedAssetsTableOrderingComposer get assetId {
-    final $$AccFixedAssetsTableOrderingComposer composer =
-        $state.composerBuilder(
-            composer: this,
-            getCurrentColumn: (t) => t.assetId,
-            referencedTable: $state.db.accFixedAssets,
-            getReferencedColumn: (t) => t.id,
-            builder: (joinBuilder, parentComposers) =>
-                $$AccFixedAssetsTableOrderingComposer(ComposerState($state.db,
-                    $state.db.accFixedAssets, joinBuilder, parentComposers)));
+  $$FixedAssetsTableOrderingComposer get assetId {
+    final $$FixedAssetsTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.assetId,
+        referencedTable: $state.db.fixedAssets,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) =>
+            $$FixedAssetsTableOrderingComposer(ComposerState($state.db,
+                $state.db.fixedAssets, joinBuilder, parentComposers)));
     return composer;
   }
 }
@@ -75541,15 +74650,15 @@ class $$AccAssetDisposalsTableFilterComposer
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
-  $$AccFixedAssetsTableFilterComposer get assetId {
-    final $$AccFixedAssetsTableFilterComposer composer = $state.composerBuilder(
+  $$FixedAssetsTableFilterComposer get assetId {
+    final $$FixedAssetsTableFilterComposer composer = $state.composerBuilder(
         composer: this,
         getCurrentColumn: (t) => t.assetId,
-        referencedTable: $state.db.accFixedAssets,
+        referencedTable: $state.db.fixedAssets,
         getReferencedColumn: (t) => t.id,
         builder: (joinBuilder, parentComposers) =>
-            $$AccFixedAssetsTableFilterComposer(ComposerState($state.db,
-                $state.db.accFixedAssets, joinBuilder, parentComposers)));
+            $$FixedAssetsTableFilterComposer(ComposerState($state.db,
+                $state.db.fixedAssets, joinBuilder, parentComposers)));
     return composer;
   }
 }
@@ -75597,16 +74706,15 @@ class $$AccAssetDisposalsTableOrderingComposer
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
-  $$AccFixedAssetsTableOrderingComposer get assetId {
-    final $$AccFixedAssetsTableOrderingComposer composer =
-        $state.composerBuilder(
-            composer: this,
-            getCurrentColumn: (t) => t.assetId,
-            referencedTable: $state.db.accFixedAssets,
-            getReferencedColumn: (t) => t.id,
-            builder: (joinBuilder, parentComposers) =>
-                $$AccFixedAssetsTableOrderingComposer(ComposerState($state.db,
-                    $state.db.accFixedAssets, joinBuilder, parentComposers)));
+  $$FixedAssetsTableOrderingComposer get assetId {
+    final $$FixedAssetsTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.assetId,
+        referencedTable: $state.db.fixedAssets,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) =>
+            $$FixedAssetsTableOrderingComposer(ComposerState($state.db,
+                $state.db.fixedAssets, joinBuilder, parentComposers)));
     return composer;
   }
 }
@@ -78090,8 +77198,6 @@ class $AppDatabaseManager {
       $$GLLinesTableTableManager(_db, _db.gLLines);
   $$AccountingPeriodsTableTableManager get accountingPeriods =>
       $$AccountingPeriodsTableTableManager(_db, _db.accountingPeriods);
-  $$FixedAssetsTableTableManager get fixedAssets =>
-      $$FixedAssetsTableTableManager(_db, _db.fixedAssets);
   $$InventoryAuditsTableTableManager get inventoryAudits =>
       $$InventoryAuditsTableTableManager(_db, _db.inventoryAudits);
   $$InventoryAuditItemsTableTableManager get inventoryAuditItems =>
@@ -78166,8 +77272,8 @@ class $AppDatabaseManager {
       $$AppConfigTableTableTableManager(_db, _db.appConfigTable);
   $$AccAssetCategoriesTableTableManager get accAssetCategories =>
       $$AccAssetCategoriesTableTableManager(_db, _db.accAssetCategories);
-  $$AccFixedAssetsTableTableManager get accFixedAssets =>
-      $$AccFixedAssetsTableTableManager(_db, _db.accFixedAssets);
+  $$FixedAssetsTableTableManager get fixedAssets =>
+      $$FixedAssetsTableTableManager(_db, _db.fixedAssets);
   $$AccAssetDepreciationLogsTableTableManager get accAssetDepreciationLogs =>
       $$AccAssetDepreciationLogsTableTableManager(
           _db, _db.accAssetDepreciationLogs);

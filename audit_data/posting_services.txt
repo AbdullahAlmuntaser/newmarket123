@@ -1,0 +1,13 @@
+lib/core/services/accounting_service.dart:  Future<void> postSale(Sale sale, List<SaleItem> items,
+lib/core/services/accounting_service.dart:  Future<void> postPurchase(Purchase purchase, List<PurchaseItem> items,
+lib/core/services/accounting_service.dart:  Future<void> postSaleReturn(
+lib/core/services/accounting_service.dart:  Future<void> postPurchaseReturn(
+lib/core/services/posting_engine.dart:  Future<void> postEntry({
+lib/core/services/posting_engine.dart:  Future<void> post({
+lib/core/services/transaction_engine.dart:  Future<void> postPurchase(String purchaseId, {String? userId}) async {
+lib/core/services/transaction_engine.dart:  Future<void> postSale(String saleId, {String? userId}) async {
+lib/core/services/transaction_engine.dart:  Future<void> postSaleReturn(String returnId, {String? userId}) async {
+lib/core/services/transaction_engine.dart:  Future<void> postPurchaseReturn(String returnId, {String? userId}) async {
+lib/core/services/transaction_engine.dart:  Future<void> postCustomerPayment({
+lib/core/services/transaction_engine.dart:  Future<void> postSupplierPayment({
+lib/core/services/purchase_service.dart:  Future<void> postPurchase(String purchaseId) async {

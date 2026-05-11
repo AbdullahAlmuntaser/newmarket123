@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/accounting/asset_provider.dart';
-import 'package:uuid/uuid.dart';
 
 class AddEditAssetDialog extends StatefulWidget {
   final AssetProvider assetProvider;
@@ -70,13 +69,12 @@ class _AddEditAssetDialogState extends State<AddEditAssetDialog> {
   void _submit() {
     if (_formKey.currentState!.validate()) {
       final companion = FixedAssetsCompanion(
-        id: _isEditing ? Value(widget.asset!.id) : Value(const Uuid().v4()),
+        id: _isEditing ? Value(widget.asset!.id) : const Value.absent(),
         name: Value(_nameController.text),
         cost: Value(double.tryParse(_costController.text) ?? 0.0),
         usefulLifeYears: Value(int.tryParse(_lifeController.text) ?? 5),
         salvageValue: Value(double.tryParse(_salvageController.text) ?? 0.0),
         purchaseDate: Value(_purchaseDate),
-        // Reset depreciation if cost or date changes, handled in provider
         accumulatedDepreciation:
             _isEditing ? const Value.absent() : const Value(0.0),
       );

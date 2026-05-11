@@ -23,6 +23,8 @@ import 'package:supermarket/core/services/stock_transfer_service.dart';
 import 'package:supermarket/core/services/asset_service.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
 import 'package:supermarket/core/services/purchase_service.dart';
+import 'package:supermarket/core/services/dashboard_service.dart';
+import 'package:supermarket/presentation/features/dashboard/dashboard_provider.dart';
 
 void main() async {
   // 1. Ensure Flutter is initialized
@@ -176,6 +178,7 @@ class MyApp extends StatelessWidget {
       providers: [
         Provider<AppDatabase>(create: (_) => di.sl<AppDatabase>()),
         Provider<AccountingService>(create: (_) => di.sl<AccountingService>()),
+        Provider<DashboardService>(create: (_) => di.sl<DashboardService>()),
         ChangeNotifierProvider(create: (_) => di.sl<ThemeProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<AuthProvider>()),
         ChangeNotifierProvider(
@@ -200,6 +203,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
             create: (_) => AssetProvider(AssetService(di.sl<AppDatabase>()))),
         ChangeNotifierProvider(create: (_) => CustomerStatementProvider()),
+        ChangeNotifierProvider(
+          create: (_) => DashboardProvider(di.sl<AppDatabase>()),
+        ),
       ],
       child: Builder(
         builder: (context) {

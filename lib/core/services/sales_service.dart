@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart';
 import '../../domain/entities/sales_invoice.dart';
+import '../constants/app_enums.dart';
 import 'posting_engine.dart';
 import 'inventory_service.dart';
 import 'app_settings_service.dart';
@@ -51,30 +52,14 @@ class SalesService {
             }
           }
 
-          // 2. القيد المحاسبي
-          await postingEngine.postEntry(
-            entries: [
-              PostingLine(
-                account: invoice.paymentMethod == 'cash'
-                    ? 'CASH_BOX'
-                    : 'CUSTOMER_AR',
-                debit: total,
-                credit: 0,
-              ),
-              PostingLine(
-                account: 'SALES_REVENUE',
-                debit: 0,
-                credit: subtotal - discount,
-              ),
-              if (tax > 0)
-                PostingLine(
-                  account: 'VAT_PAYABLE',
-                  debit: 0,
-                  credit: tax,
-                ),
-            ],
-            reference: "INV_${invoice.id}",
-            date: invoice.timestamp,
+          // 2. القيد المحاسبي الديناميكي
+          await postingEngine.post(
+            type: TransactionType.sale,
+            referenceId: invoice.id,
+            context: {
+              'amount': total,
+              'description': 'Invoice #${invoice.id.substring(0, 8)}',
+            },
           );
 
           // 3. Audit Log

@@ -41,6 +41,7 @@ PayrollLines
 Permissions
 RolePermissions
 CashboxTransactions
+FinancialTransfers
 PriceLists
 PriceListItems
 Promotions
@@ -60,7 +61,10 @@ DeliveryNotes
 DeliveryNoteItems
 Checks
 BillOfMaterials
+ProductionOrders
+ProductionOrderItems
 PurchaseOrders
 PurchaseOrderItems
 SalesOrders
 SalesOrderItems
+CustomerPaymentLinks
