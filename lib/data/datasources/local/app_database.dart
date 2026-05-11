@@ -1190,20 +1190,127 @@ class AppDatabase extends _$AppDatabase {
       // 9. Posting Profiles
       await _seedPostingProfiles();
 
-      // 10. Accounting Periods
-      final periodsCount = await (selectOnly(accountingPeriods)
-            ..addColumns([accountingPeriods.id.count()]))
-          .map((row) => row.read(accountingPeriods.id.count()))
-          .getSingle();
-      if ((periodsCount ?? 0) == 0) {
-        await into(accountingPeriods).insert(
-          AccountingPeriodsCompanion.insert(
-            name: 'مايو 2026',
-            startDate: DateTime(2026, 5, 1),
-            endDate: DateTime(2026, 5, 31),
-            status: const Value('OPEN'),
+      // 10. Permissions and role defaults
+      await seedSecurityData();
+
+      // 11. Accounting Periods
+      await ensureAccountingPeriodsForYear(DateTime.now().year);
+    });
+  }
+
+  Future<void> ensureAccountingPeriodsForYear(int year) async {
+    final existingPeriods = await select(accountingPeriods).get();
+
+    for (var month = 1; month <= 12; month++) {
+      final alreadyExists = existingPeriods.any(
+        (period) =>
+            period.startDate.year == year && period.startDate.month == month,
+      );
+      if (alreadyExists) continue;
+
+      final startDate = DateTime(year, month, 1);
+      final endDate = DateTime(year, month + 1, 0, 23, 59, 59, 999);
+      await into(accountingPeriods).insert(
+        AccountingPeriodsCompanion.insert(
+          name: '${_arabicMonthName(month)} $year',
+          startDate: startDate,
+          endDate: endDate,
+          status: const Value('OPEN'),
+        ),
+      );
+    }
+  }
+
+  String _arabicMonthName(int month) {
+    const monthNames = [
+      'يناير',
+      'فبراير',
+      'مارس',
+      'أبريل',
+      'مايو',
+      'يونيو',
+      'يوليو',
+      'أغسطس',
+      'سبتمبر',
+      'أكتوبر',
+      'نوفمبر',
+      'ديسمبر',
+    ];
+    return monthNames[month - 1];
+  }
+
+  Future<void> seedSecurityData() async {
+    const permissionsToSeed = <String, String>{
+      'POST_SALE': 'ترحيل المبيعات',
+      'POST_PURCHASE': 'ترحيل المشتريات',
+      'POST_SALE_RETURN': 'ترحيل مرتجعات المبيعات',
+      'POST_PURCHASE_RETURN': 'ترحيل مرتجعات المشتريات',
+      'DELETE_INVOICE': 'حذف الفواتير',
+      'VOID_TRANSACTION': 'إلغاء العمليات',
+      'MANAGE_USERS': 'إدارة المستخدمين',
+      'VIEW_REPORTS': 'عرض التقارير',
+      'MANAGE_SETTINGS': 'إدارة الإعدادات',
+      'MANAGE_INVENTORY': 'إدارة المخزون',
+      'APPROVE_DISCOUNT': 'اعتماد الخصومات',
+    };
+
+    const rolePermissionsToSeed = <String, List<String>>{
+      'admin': [
+        'POST_SALE',
+        'POST_PURCHASE',
+        'POST_SALE_RETURN',
+        'POST_PURCHASE_RETURN',
+        'DELETE_INVOICE',
+        'VOID_TRANSACTION',
+        'MANAGE_USERS',
+        'VIEW_REPORTS',
+        'MANAGE_SETTINGS',
+        'MANAGE_INVENTORY',
+        'APPROVE_DISCOUNT',
+      ],
+      'manager': [
+        'POST_SALE',
+        'POST_PURCHASE',
+        'POST_SALE_RETURN',
+        'POST_PURCHASE_RETURN',
+        'VIEW_REPORTS',
+        'MANAGE_INVENTORY',
+        'APPROVE_DISCOUNT',
+      ],
+      'cashier': [
+        'POST_SALE',
+        'POST_SALE_RETURN',
+      ],
+    };
+
+    await transaction(() async {
+      for (final entry in permissionsToSeed.entries) {
+        await into(permissions).insertOnConflictUpdate(
+          PermissionsCompanion.insert(
+            code: entry.key,
+            description: Value(entry.value),
           ),
         );
+      }
+
+      for (final roleEntry in rolePermissionsToSeed.entries) {
+        for (final permissionCode in roleEntry.value) {
+          final existing = await (select(rolePermissions)
+                ..where(
+                  (rp) =>
+                      rp.role.equals(roleEntry.key) &
+                      rp.permissionCode.equals(permissionCode),
+                ))
+              .getSingleOrNull();
+          if (existing == null) {
+            await into(rolePermissions).insert(
+              RolePermissionsCompanion.insert(
+                role: roleEntry.key,
+                permissionCode: permissionCode,
+              ),
+            );
+          }
+        }
       }
     });
   }

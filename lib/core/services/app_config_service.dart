@@ -17,6 +17,7 @@ class AppConfigService {
   static const String keyLowStockThreshold = 'low_stock_threshold';
   static const String keyAllowSellBelowCost = 'allow_sell_below_cost';
   static const String keyHideSalePrices = 'hide_sale_prices';
+  static const String keyLocaleCode = 'locale_code';
 
   /// الحصول على قيمة إعداد معينة
   Future<String?> getString(String key) async {
@@ -116,6 +117,17 @@ class AppConfigService {
     return await getInt(keyLowStockThreshold, defaultValue: 10);
   }
 
+  /// الحصول على لغة التطبيق
+  Future<String> getLocaleCode() async {
+    final code = await getString(keyLocaleCode);
+    return code == 'en' ? 'en' : 'ar';
+  }
+
+  /// حفظ لغة التطبيق
+  Future<void> setLocaleCode(String languageCode) async {
+    await setString(keyLocaleCode, languageCode == 'en' ? 'en' : 'ar');
+  }
+
   /// تهيئة الإعدادات الافتراضية عند أول تشغيل
   Future<void> initializeDefaults() async {
     final hasConfig = await (_db.select(_db.appConfigTable)..limit(1))
@@ -128,6 +140,7 @@ class AppConfigService {
       await setInt(keyLowStockThreshold, 10);
       await setString(
           keyInvoiceMessage, 'شكراً لتعاملكم معنا. نقدر ثقتكم بنا.');
+      await setLocaleCode('ar');
     }
   }
 }

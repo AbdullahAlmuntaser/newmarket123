@@ -189,7 +189,7 @@ class MainDrawer extends StatelessWidget {
                     children: [
                       _buildSubItem(context, 'قائمة الموردين', '/suppliers'),
                       _buildSubItem(
-                          context, 'دفع للمورد', '/suppliers/payment'),
+                          context, 'دفعات الموردين', '/suppliers/payments'),
                     ],
                   ),
                 ],

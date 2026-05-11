@@ -66,11 +66,12 @@ flutter test --concurrency=1
 ## ملفات الاختبار الموجودة
 
 ### اختبارات المنطق (logic/)
-- `auth_test.dart` - اختبارات المصادقة والأذونات
+- `auth_test.dart` - اختبارات المصادقة والأذونات والتحكم بالوصول
 - `calculation_test.dart` - اختبارات الحسابات والضرائب والخصومات
 - `enums_test.dart` - اختبارات التعدادات
 - `unit_conversion_test.dart` - اختبارات تحويل الوحدات
 - `validators_test.dart` - اختبارات المدققات
+- `posting_engine_test.dart` - اختبارات تحقق قيود الترحيل المحاسبي
 
 ### اختبارات الخدمات (services/)
 - `accounting_service_test.dart` - اختبارات الخدمة المحاسبية
@@ -79,7 +80,7 @@ flutter test --concurrency=1
 - `pricing_service_test.dart` - اختبارات التسعير
 
 ### اختبارات الوحدات (unit/)
-- `access_control_test.dart` - اختبارات التحكم بالوصول
+- `access_control_test.dart` - اختبارات التحكم بالوصول باستخدام `AccessGuard` مباشرة
 - `accounting_service_test.dart` - اختبارات المحاسبة
 - `analytics_service_test.dart` - اختبارات التحليلات
 - `inventory_service_test.dart` - اختبارات المخزون
@@ -151,3 +152,24 @@ dev_dependencies:
 6. **Keep Tests Independent**: اختبارات لا تعتمد على بعضها
 7. **Fast Tests**: اجعل الاختبارات سريعة
 8. **Readable**: اكتب كود اختبار واضح ومقروء
+
+
+## اختبارات مطلوبة للتغييرات الأمنية والمحاسبية
+
+عند تعديل المصادقة أو الصلاحيات أو الترحيل المحاسبي، شغل على الأقل:
+
+```bash
+flutter test test/logic/auth_test.dart
+flutter test test/unit/access_control_test.dart
+flutter test test/widgets/login_page_test.dart
+flutter test test/logic/posting_engine_test.dart
+```
+
+وعند تعديل اللغة أو إعدادات النظام، شغل اختبارات الواجهات المرتبطة بالإعدادات وتسجيل الدخول إن وجدت، ثم شغل:
+
+```bash
+flutter analyze
+flutter test
+```
+
+> ملاحظة: في بيئات لا تحتوي Flutter/Dart لا يمكن تأكيد هذه الأوامر محلياً، ويجب تنفيذها في CI أو جهاز تطوير مجهز.

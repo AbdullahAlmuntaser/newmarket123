@@ -16,9 +16,11 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         title: Text(l10n.home),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => Scaffold.of(context).openEndDrawer(),
+          Builder(
+            builder: (scaffoldContext) => IconButton(
+              icon: const Icon(Icons.notifications_outlined),
+              onPressed: () => Scaffold.of(scaffoldContext).openEndDrawer(),
+            ),
           ),
           const SizedBox(width: 8),
         ],
