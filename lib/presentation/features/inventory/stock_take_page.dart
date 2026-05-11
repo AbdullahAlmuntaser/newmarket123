@@ -18,10 +18,12 @@ class StockTakePage extends StatefulWidget {
 class _StockTakePageState extends State<StockTakePage> {
   String? _selectedWarehouseId;
   List<Warehouse> _warehouses = [];
-  List<Product> _products = [];
+  List<Product> _filteredProducts = [];
   String _currentStockTakeId = '';
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isLoadingProducts = false;
+  final TextEditingController _productSearchController = TextEditingController();
   late TextEditingController _noteController;
 
   @override
@@ -40,8 +42,25 @@ class _StockTakePageState extends State<StockTakePage> {
   Future<void> _initializePage() async {
     final db = context.read<AppDatabase>();
     _warehouses = await db.select(db.warehouses).get();
-    _products = await db.select(db.products).get();
+    _filteredProducts = [];
     setState(() => _isLoading = false);
+  }
+
+  Future<void> _searchProducts(String query) async {
+    if (query.isEmpty) {
+      setState(() => _filteredProducts = []);
+      return;
+    }
+    setState(() => _isLoadingProducts = true);
+    final db = context.read<AppDatabase>();
+    final results = await (db.select(db.products)
+          ..where((p) => p.name.like('%$query%') | p.sku.like('%$query%'))
+          ..limit(50))
+        .get();
+    setState(() {
+      _filteredProducts = results;
+      _isLoadingProducts = false;
+    });
   }
 
   @override
@@ -478,27 +497,52 @@ class _StockTakePageState extends State<StockTakePage> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<Product>(
-              decoration: const InputDecoration(
-                labelText: 'اختر المنتج من القائمة',
-                border: OutlineInputBorder(),
+            TextField(
+              controller: _productSearchController,
+              decoration: InputDecoration(
+                labelText: 'ابحث عن المنتج',
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _isLoadingProducts
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : null,
               ),
-              items: _products
-                  .map(
-                    (p) => DropdownMenuItem(
-                      value: p,
-                      child: Text('${p.name} (${p.sku})'),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (product) {
-                if (product != null) {
-                  Navigator.pop(context);
-                  _showAddQtyDialog(db, stockTakeId, product);
-                }
-              },
+              onChanged: _searchProducts,
             ),
             const SizedBox(height: 8),
+            if (_filteredProducts.isEmpty && _productSearchController.text.isNotEmpty)
+              const Padding(
+                padding: EdgeInsets.all(8),
+                child: Text('لا توجد نتائج'),
+              )
+            else if (_filteredProducts.isNotEmpty)
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 200),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _filteredProducts.length,
+                  itemBuilder: (context, index) {
+                    final product = _filteredProducts[index];
+                    return ListTile(
+                      title: Text(product.name),
+                      subtitle: Text('SKU: ${product.sku}'),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _productSearchController.clear();
+                        _filteredProducts = [];
+                        _showAddQtyDialog(db, stockTakeId, product);
+                      },
+                    );
+                  },
+                ),
+              ),
           ],
         ),
       ),

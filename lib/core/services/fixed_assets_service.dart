@@ -7,18 +7,18 @@ class FixedAssetsService {
   FixedAssetsService(this.db);
 
   Future<double> calculateMonthlyDepreciation(int assetId) async {
-    final asset = await (db.select(db.accFixedAssets)
+    final asset = await (db.select(db.fixedAssets)
           ..where((t) => t.id.equals(assetId)))
         .getSingle();
 
-    double depreciableAmount = asset.purchaseCost - asset.salvageValue;
+    double depreciableAmount = asset.cost - asset.salvageValue;
 
     if (asset.depreciationMethod == 'straight_line') {
-      return depreciableAmount / asset.usefulLifeMonths;
+      return depreciableAmount / (asset.usefulLifeYears * 12);
     } else if (asset.depreciationMethod == 'declining') {
-      final annualRate = 2.0 / asset.usefulLifeMonths * 12;
+      final annualRate = 2.0 / asset.usefulLifeYears;
       final monthlyRate = annualRate / 12;
-      final bookValue = asset.purchaseCost - asset.accumulatedDepreciation;
+      final bookValue = asset.cost - asset.accumulatedDepreciation;
       return bookValue * monthlyRate;
     }
 
@@ -28,7 +28,7 @@ class FixedAssetsService {
   Future<List<Map<String, dynamic>>> runMonthlyDepreciation(
       DateTime runDate) async {
     final results = <Map<String, dynamic>>[];
-    final assets = await (db.select(db.accFixedAssets)
+    final assets = await (db.select(db.fixedAssets)
           ..where((t) => t.status.equals('active')))
         .get();
 
@@ -51,12 +51,12 @@ class FixedAssetsService {
               ),
             );
 
-        await (db.update(db.accFixedAssets)
+        await (db.update(db.fixedAssets)
               ..where((t) => t.id.equals(asset.id)))
             .write(
-          AccFixedAssetsCompanion(
+          FixedAssetsCompanion(
             accumulatedDepreciation: Value(
-                (asset.accumulatedDepreciation + depreciationAmount).toInt()),
+                asset.accumulatedDepreciation + depreciationAmount),
             lastDepreciationDate: Value(runDate),
           ),
         );
@@ -166,11 +166,11 @@ class FixedAssetsService {
     double? salePrice,
     String? notes,
   }) async {
-    final asset = await (db.select(db.accFixedAssets)
+    final asset = await (db.select(db.fixedAssets)
           ..where((t) => t.id.equals(assetId)))
         .getSingle();
 
-    double bookValue = asset.purchaseCost - asset.accumulatedDepreciation;
+    double bookValue = asset.cost - asset.accumulatedDepreciation;
     double gainOrLoss = salePrice != null ? salePrice - bookValue : -bookValue;
 
     final disposalId = await db.into(db.accAssetDisposals).insert(
@@ -199,9 +199,9 @@ class FixedAssetsService {
       AccAssetDisposalsCompanion(journalEntryId: Value(journalEntryId)),
     );
 
-    await (db.update(db.accFixedAssets)..where((t) => t.id.equals(assetId)))
+    await (db.update(db.fixedAssets)..where((t) => t.id.equals(assetId)))
         .write(
-      AccFixedAssetsCompanion(
+      FixedAssetsCompanion(
           status: Value(disposalType == 'sold' ? 'sold' : 'scrapped')),
     );
 
@@ -221,7 +221,7 @@ class FixedAssetsService {
     DateTime date,
     String disposalType,
   ) async {
-    final asset = await (db.select(db.accFixedAssets)
+    final asset = await (db.select(db.fixedAssets)
           ..where((t) => t.id.equals(assetId)))
         .getSingle();
 
@@ -275,7 +275,7 @@ class FixedAssetsService {
             entryId: entryId.toString(),
             accountId: fixedAssetId,
             debit: const Value(0.0),
-            credit: Value(asset.purchaseCost),
+            credit: Value(asset.cost),
             memo: const Value('إلغاء قيمة الأصل'),
           ));
 

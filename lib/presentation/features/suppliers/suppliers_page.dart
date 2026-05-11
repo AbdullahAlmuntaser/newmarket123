@@ -21,6 +21,54 @@ class SuppliersPage extends StatefulWidget {
 
 class _SuppliersPageState extends State<SuppliersPage> {
   String _searchQuery = '';
+  int _currentPage = 0;
+  int _totalSuppliers = 0;
+  bool _isLoadingMore = false;
+  final int _pageSize = 30;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    _loadTotalCount();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      if (!_isLoadingMore && _hasMoreItems) {
+        _loadMore();
+      }
+    }
+  }
+
+  bool get _hasMoreItems =>
+      (_currentPage + 1) * _pageSize < _totalSuppliers;
+
+  Future<void> _loadTotalCount() async {
+    final db = context.read<AppDatabase>();
+    final query = db.select(db.suppliers)
+      ..where((t) =>
+          t.name.like('%${_searchQuery.toLowerCase()}%') |
+          t.phone.like('%$_searchQuery%'));
+    final count = await query.get();
+    setState(() => _totalSuppliers = count.length);
+  }
+
+  Future<void> _loadMore() async {
+    setState(() => _isLoadingMore = true);
+    setState(() {
+      _currentPage++;
+      _isLoadingMore = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,20 +90,30 @@ class _SuppliersPageState extends State<SuppliersPage> {
                       (t) =>
                           t.name.like('%${_searchQuery.toLowerCase()}%') |
                           t.phone.like('%$_searchQuery%'),
-                    ))
+                    )
+                    ..limit(_pageSize, offset: _currentPage * _pageSize))
                   .watch(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final suppliers = snapshot.data ?? [];
-                if (suppliers.isEmpty) {
+                if (suppliers.isEmpty && _currentPage == 0) {
                   return Center(child: Text(l10n.noSuppliersFound));
                 }
                 return ListView.builder(
+                  controller: _scrollController,
                   padding: const EdgeInsets.fromLTRB(12, 4, 12, 80),
-                  itemCount: suppliers.length,
+                  itemCount: suppliers.length + (_isLoadingMore ? 1 : 0),
                   itemBuilder: (context, index) {
+                    if (index == suppliers.length) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16),
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+                    }
                     final supplier = suppliers[index];
                     return _buildSupplierCard(supplier, db, l10n, colorScheme);
                   },

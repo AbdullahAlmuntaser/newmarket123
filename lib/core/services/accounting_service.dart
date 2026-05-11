@@ -1657,7 +1657,7 @@ class AccountingService {
             'إهلاك تلقائي للأصل: ${asset.name} لمدة $monthsToDepreciate شهر',
         date: Value(asOfDate),
         referenceType: const Value('DEPRECIATION'),
-        referenceId: Value(asset.id),
+        referenceId: Value(asset.id.toString()),
         status: const Value('POSTED'),
         postedAt: Value(DateTime.now()),
         branchId: Value(await _configService.getDefaultBranchId()),

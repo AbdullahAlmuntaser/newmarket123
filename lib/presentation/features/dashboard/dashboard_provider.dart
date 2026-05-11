@@ -22,9 +22,11 @@ class DashboardProvider with ChangeNotifier {
   final AppDatabase db;
   DashboardData? _data;
   bool _isLoading = false;
+  String? _error;
 
   DashboardData? get data => _data;
   bool get isLoading => _isLoading;
+  String? get error => _error;
 
   DashboardProvider(this.db) {
     refreshData();
@@ -32,37 +34,43 @@ class DashboardProvider with ChangeNotifier {
 
   Future<void> refreshData() async {
     _isLoading = true;
+    _error = null;
     notifyListeners();
 
-    final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
+    try {
+      final now = DateTime.now();
+      final startOfDay = DateTime(now.year, now.month, now.day);
 
-    // 1. المبيعات اليومية
-    final sales = await (db.select(db.sales)
-          ..where((s) => s.createdAt.isBiggerOrEqual(Variable(startOfDay))))
-        .get();
-    double totalSales = sales.fold(0.0, (sum, s) => sum + s.total);
+      // 1. المبيعات اليومية
+      final sales = await (db.select(db.sales)
+            ..where((s) => s.createdAt.isBiggerOrEqual(Variable(startOfDay))))
+          .get();
+      double totalSales = sales.fold(0.0, (sum, s) => sum + s.total);
 
-    // 2. القيمة الإجمالية للمخزون
-    double invValue = await db.calculateTotalInventoryValue();
+      // 2. القيمة الإجمالية للمخزون
+      double invValue = await db.calculateTotalInventoryValue();
 
-    // 3. المنتجات منخفضة المخزون
-    final lowStock = await (db.select(db.products)
-          ..where((p) => p.stock.isSmallerOrEqual(p.alertLimit)))
-        .get();
+      // 3. المنتجات منخفضة المخزون
+      final lowStock = await (db.select(db.products)
+            ..where((p) => p.stock.isSmallerOrEqual(p.alertLimit)))
+          .get();
 
-    // 4. العملاء المتجاوزين للائتمان
-    final creditExceeded = await (db.select(db.customers)
-          ..where((c) => c.balance.isBiggerThan(c.creditLimit)))
-        .get();
+      // 4. العملاء المتجاوزين للائتمان
+      final creditExceeded = await (db.select(db.customers)
+            ..where((c) => c.balance.isBiggerThan(c.creditLimit)))
+          .get();
 
-    _data = DashboardData(
-      totalSalesToday: totalSales,
-      netProfitToday: totalSales * 0.2, // تقدير أولي للربح
-      inventoryValue: invValue,
-      lowStockCount: lowStock.length,
-      creditLimitExceededCount: creditExceeded.length,
-    );
+      _data = DashboardData(
+        totalSalesToday: totalSales,
+        netProfitToday: totalSales * 0.2,
+        inventoryValue: invValue,
+        lowStockCount: lowStock.length,
+        creditLimitExceededCount: creditExceeded.length,
+      );
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('Dashboard error: $e');
+    }
 
     _isLoading = false;
     notifyListeners();

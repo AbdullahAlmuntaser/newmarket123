@@ -26,15 +26,15 @@ class DashboardService {
     
     // 1. Today's Sales
     final salesQuery = db.select(db.sales)
-      ..where((t) => t.createdAt.isBiggerOrEqualValue(todayStart));
+      ..where((t) => t.createdAt.isBiggerOrEqual(Variable(todayStart)));
     final sales = await salesQuery.get();
-    double totalSales = sales.fold(0, (sum, item) => sum + item.total);
+    double totalSales = sales.fold(0.0, (sum, item) => sum + item.total);
 
     // 2. Today's Purchases
     final purchasesQuery = db.select(db.purchases)
-      ..where((t) => t.date.isBiggerOrEqualValue(todayStart));
+      ..where((t) => t.date.isBiggerOrEqual(Variable(todayStart)));
     final purchases = await purchasesQuery.get();
-    double totalPurchases = purchases.fold(0, (sum, item) => sum + item.total);
+    double totalPurchases = purchases.fold(0.0, (sum, item) => sum + item.total);
 
     // 3. Cash Balance
     final cashAccount = await db.accountingDao.getAccountByCode('1010');

@@ -11,23 +11,23 @@ class AccAssetCategories extends Table {
 }
 
 // جدول الأصول الثابتة
-class AccFixedAssets extends Table {
+class FixedAssets extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text().withLength(min: 2, max: 150)();
   TextColumn get serialNumber => text().nullable()();
   IntColumn get categoryId => integer().references(AccAssetCategories, #id)();
-  RealColumn get purchaseCost => real()(); // تكلفة الشراء
+  RealColumn get cost => real()(); // تكلفة الشراء
   DateTimeColumn get purchaseDate => dateTime()();
   DateTimeColumn get acquisitionDate => dateTime()(); // تاريخ البدء في الإهلاك
   RealColumn get salvageValue =>
       real().withDefault(const Constant(0.0))(); // قيمة الخردة
-  IntColumn get usefulLifeMonths => integer()(); // العمر الإنتاجي بالشهور
+  IntColumn get usefulLifeYears => integer()(); // العمر الإنتاجي بالسنوات
   TextColumn get depreciationMethod => text().withDefault(
       const Constant('straight_line'))(); // straight_line, declining
   TextColumn get status =>
       text().withDefault(const Constant('active'))(); // active, sold, scrapped
-  IntColumn get accumulatedDepreciation =>
-      integer().withDefault(const Constant(0))();
+  RealColumn get accumulatedDepreciation =>
+      real().withDefault(const Constant(0.0))();
   // ملاحظة: currentBookValue يُحسب برمجياً
   DateTimeColumn get lastDepreciationDate => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -36,7 +36,7 @@ class AccFixedAssets extends Table {
 // جدول حركات إهلاك الأصول
 class AccAssetDepreciationLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get assetId => integer().references(AccFixedAssets, #id)();
+  IntColumn get assetId => integer().references(FixedAssets, #id)();
   RealColumn get depreciationAmount => real()();
   DateTimeColumn get depreciationDate => dateTime()();
   IntColumn get journalEntryId => integer()
@@ -48,7 +48,7 @@ class AccAssetDepreciationLogs extends Table {
 // جدول بيع أو خروج الأصول
 class AccAssetDisposals extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get assetId => integer().references(AccFixedAssets, #id)();
+  IntColumn get assetId => integer().references(FixedAssets, #id)();
   DateTimeColumn get disposalDate => dateTime()();
   RealColumn get salePrice => real().nullable()();
   TextColumn get disposalType => text()(); // sold, scrapped

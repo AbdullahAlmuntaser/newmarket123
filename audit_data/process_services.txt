@@ -1,0 +1,7 @@
+lib/core/services/sales_service.dart:  Future<void> processInvoice(SalesInvoice invoice, String userId) async {
+lib/core/services/stock_transfer_service.dart:  Future<void> processTransfer({
+lib/core/services/return_service.dart:  Future<void> processSalesReturn({
+lib/core/services/return_service.dart:  Future<void> processPurchaseReturn({
+lib/core/services/transaction_engine.dart:    // Check if already processed by looking for existing inventory transactions
+lib/core/services/transaction_engine.dart:    // Check if already processed by looking for existing inventory transactions
+lib/core/services/asset_service.dart:  Future<void> processDepreciation() async {

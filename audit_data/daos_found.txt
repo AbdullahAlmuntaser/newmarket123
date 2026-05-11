@@ -1,0 +1,15 @@
+lib/data/datasources/local/daos/warehouses_dao.dart:class WarehousesDao extends DatabaseAccessor<AppDatabase>
+lib/data/datasources/local/daos/users_dao.dart:class UsersDao extends DatabaseAccessor<AppDatabase> with _$UsersDaoMixin {
+lib/data/datasources/local/daos/global_units_dao.dart:class GlobalUnitsDao extends DatabaseAccessor<AppDatabase>
+lib/data/datasources/local/daos/purchases_dao.dart:class PurchasesDao extends DatabaseAccessor<AppDatabase>
+lib/data/datasources/local/daos/transfers_dao.dart:class TransfersDao extends DatabaseAccessor<AppDatabase> with _$TransfersDaoMixin {
+lib/data/datasources/local/daos/products_dao.dart:class ProductsDao extends DatabaseAccessor<AppDatabase>
+lib/data/datasources/local/daos/customers_dao.dart:class CustomersDao extends DatabaseAccessor<AppDatabase>
+lib/data/datasources/local/daos/cashbox_dao.dart:class CashboxDao extends DatabaseAccessor<AppDatabase> with _$CashboxDaoMixin {
+lib/data/datasources/local/daos/accounting_dao.dart:class AccountingDao extends DatabaseAccessor<AppDatabase>
+lib/data/datasources/local/daos/stock_movement_dao.dart:class StockMovementDao extends DatabaseAccessor<AppDatabase>
+lib/data/datasources/local/daos/suppliers_dao.dart:class SuppliersDao extends DatabaseAccessor<AppDatabase>
+lib/data/datasources/local/daos/sales_dao.dart:class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
+lib/data/datasources/local/daos/bom_dao.dart:class BomDao extends DatabaseAccessor<AppDatabase> with _$BomDaoMixin {
+lib/data/datasources/local/daos/audit_dao.dart:class AuditDao extends DatabaseAccessor<AppDatabase> with _$AuditDaoMixin {
+lib/data/datasources/local/daos/product_units_dao.dart:class ProductUnitsDao extends DatabaseAccessor<AppDatabase>

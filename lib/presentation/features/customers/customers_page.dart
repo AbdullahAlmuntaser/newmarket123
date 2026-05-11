@@ -22,11 +22,67 @@ class _CustomersPageState extends State<CustomersPage> {
   String _selectedType = 'ALL';
   bool _isFilterExpanded = false;
   final TextEditingController _payAmountController = TextEditingController();
+  int _currentPage = 0;
+  int _totalCustomers = 0;
+  bool _isLoadingMore = false;
+  final int _pageSize = 30;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void dispose() {
     _payAmountController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    _loadTotalCount();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      if (!_isLoadingMore && _hasMoreItems) {
+        _loadMore();
+      }
+    }
+  }
+
+  bool get _hasMoreItems =>
+      (_currentPage + 1) * _pageSize < _totalCustomers;
+
+  Future<void> _loadTotalCount() async {
+    final db = context.read<AppDatabase>();
+    final query = db.select(db.customers)
+      ..where((t) {
+        final matchesSearch = t.name.like('%${_searchQuery.toLowerCase()}%') |
+            t.phone.like('%$_searchQuery%');
+        final matchesType = _selectedType == 'ALL'
+            ? const drift.Constant(true)
+            : t.customerType.equals(_selectedType);
+        return matchesSearch & matchesType & t.isActive.equals(true);
+      });
+    final count = await query.get();
+    setState(() => _totalCustomers = count.length);
+  }
+
+  Future<void> _loadMore() async {
+    setState(() => _isLoadingMore = true);
+    setState(() {
+      _currentPage++;
+      _isLoadingMore = false;
+    });
+  }
+
+  void _resetPagination() {
+    setState(() {
+      _currentPage = 0;
+      _totalCustomers = 0;
+    });
+    _loadTotalCount();
   }
 
   @override
@@ -68,9 +124,18 @@ class _CustomersPageState extends State<CustomersPage> {
                   );
                 }
                 return ListView.builder(
+                  controller: _scrollController,
                   padding: const EdgeInsets.fromLTRB(12, 4, 12, 80),
-                  itemCount: customers.length,
+                  itemCount: customers.length + (_isLoadingMore ? 1 : 0),
                   itemBuilder: (context, index) {
+                    if (index == customers.length) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16),
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+                    }
                     final customer = customers[index];
                     return _buildCustomerCard(customer, db, l10n, colorScheme);
                   },
@@ -183,7 +248,10 @@ class _CustomersPageState extends State<CustomersPage> {
               filled: true,
               fillColor: colorScheme.surface,
             ),
-            onChanged: (value) => setState(() => _searchQuery = value),
+            onChanged: (value) => setState(() {
+              _searchQuery = value;
+              _resetPagination();
+            }),
           ),
         ),
         ExpansionTile(
@@ -218,7 +286,10 @@ class _CustomersPageState extends State<CustomersPage> {
         style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : null),
       ),
       selected: isSelected,
-      onSelected: (v) => setState(() => _selectedType = value),
+      onSelected: (v) => setState(() {
+              _selectedType = value;
+              _resetPagination();
+            }),
       selectedColor: Theme.of(context).colorScheme.primary,
       checkmarkColor: Colors.white,
     );
@@ -369,7 +440,8 @@ class _CustomersPageState extends State<CustomersPage> {
                 ? const drift.Constant(true)
                 : t.customerType.equals(_selectedType);
             return matchesSearch & matchesType & t.isActive.equals(true);
-          }))
+          })
+          ..limit(_pageSize, offset: _currentPage * _pageSize))
         .watch();
   }
 
