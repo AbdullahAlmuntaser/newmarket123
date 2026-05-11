@@ -338,4 +338,74 @@ if (product.stockQuantity >= 100) {
 ---
 
 **الإصدار:** 2.0  
-**آخر تحديث:** 2024
+**آخر تحديث:** 2026-05-11
+
+---
+
+## تحديثات API الحالية
+
+### AuthProvider - المصادقة والتهيئة الأولى
+```dart
+// هل توجد حسابات مستخدمين؟
+Future<bool> hasUsers();
+
+// إنشاء أول مسؤول عند عدم وجود مستخدمين
+Future<void> createInitialAdmin({
+  required String username,
+  required String password,
+  required String fullName,
+});
+
+// مدخل توافق قديم: يضمن بيانات الصلاحيات فقط ولا ينشئ admin افتراضي
+Future<void> seedAdmin();
+```
+
+### PermissionService - الصلاحيات
+```dart
+// التحقق من صلاحية مستخدم عبر userId وكود صلاحية
+Future<bool> hasPermission(String userId, String permissionCode);
+
+// تنفيذ عملية فقط إذا كان المستخدم يملك الصلاحية
+Future<T?> executeIfAllowed<T>(
+  String userId,
+  String permissionCode,
+  Future<T> Function() action,
+);
+```
+
+### AppConfigService - اللغة والإعدادات
+```dart
+static const String keyLocaleCode = 'locale_code';
+
+Future<String> getLocaleCode();
+Future<void> setLocaleCode(String languageCode);
+```
+
+### LocaleProvider - لغة التطبيق
+```dart
+Locale get locale;
+String get localeCode;
+
+Future<void> loadLocale();
+Future<void> setLocaleCode(String languageCode);
+```
+
+### PostingEngine - الترحيل المحاسبي
+```dart
+// تحقق مركزي من صلاحية سطور القيد قبل الحفظ
+static void validatePostingLines(List<PostingLine> entries);
+
+// إنشاء قيد يدوي/مباشر مع التحقق من فترة التاريخ المطلوب
+Future<void> postEntry({
+  required List<PostingLine> entries,
+  required String reference,
+  required DateTime date,
+});
+
+// إنشاء قيد حسب PostingProfiles وسياق العملية
+Future<void> post({
+  required TransactionType type,
+  required String referenceId,
+  required Map<String, dynamic> context,
+});
+```
