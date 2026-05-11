@@ -11,6 +11,7 @@ import 'core/services/financial_control_service.dart';
 import 'core/services/grn_service.dart';
 import 'core/utils/drive_backup_service.dart';
 import 'core/theme/theme_provider.dart';
+import 'core/theme/locale_provider.dart';
 import 'core/services/unit_conversion_service.dart';
 import 'data/datasources/local/app_database.dart';
 import 'data/datasources/local/daos/products_dao.dart';
@@ -44,6 +45,18 @@ import 'core/services/production_service.dart';
 import 'core/services/hr_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/dashboard_service.dart';
+import 'core/services/shift_service.dart';
+import 'core/services/stock_transfer_service.dart';
+import 'core/services/asset_service.dart';
+import 'presentation/features/accounting/accounting_provider.dart';
+import 'presentation/features/purchases/purchase_provider.dart';
+import 'presentation/features/accounting/shifts_provider.dart';
+import 'presentation/features/hr/hr_provider.dart';
+import 'presentation/features/hr/payroll_provider.dart';
+import 'presentation/features/inventory/stock_transfer_provider.dart';
+import 'presentation/features/accounting/asset_provider.dart';
+import 'presentation/features/customers/customer_statement_provider.dart';
+import 'presentation/features/dashboard/dashboard_provider.dart';
 import 'presentation/features/pos/bloc/pos_bloc.dart';
 import 'presentation/features/products/products_provider.dart';
 
@@ -142,6 +155,9 @@ Future<void> initServices() async {
 
     debugPrint("DI: Registering additional services...");
     sl.registerLazySingleton<ThemeProvider>(() => ThemeProvider());
+    sl.registerLazySingleton<LocaleProvider>(
+      () => LocaleProvider(sl<AppConfigService>()),
+    );
     sl.registerLazySingleton(() => BomService(db, sl<AccountingService>()));
     sl.registerLazySingleton<GrnService>(() => GrnService(db));
     sl.registerLazySingleton<ReorderService>(() => ReorderService(db));
@@ -171,12 +187,36 @@ Future<void> initServices() async {
     sl.registerLazySingleton<HRService>(() => HRService(db));
     sl.registerLazySingleton<NotificationService>(() => NotificationService());
     sl.registerLazySingleton<DashboardService>(() => DashboardService(db));
+    sl.registerLazySingleton<ShiftService>(() => ShiftService(db));
+    sl.registerLazySingleton<StockTransferService>(
+      () => StockTransferService(db),
+    );
+    sl.registerLazySingleton<AssetService>(() => AssetService(db));
     sl.registerLazySingleton<CommunicationService>(
         () => CommunicationService());
     debugPrint("DI: Additional services registered");
 
     debugPrint("DI: Registering providers...");
     sl.registerLazySingleton<ProductsProvider>(() => ProductsProvider(db));
+    sl.registerFactory<AccountingProvider>(() => AccountingProvider(db));
+    sl.registerFactory<PurchaseProvider>(
+      () => PurchaseProvider(db, sl<PurchaseService>()),
+    );
+    sl.registerFactory<ShiftProvider>(
+      () => ShiftProvider(sl<ShiftService>()),
+    );
+    sl.registerFactory<HRProvider>(() => HRProvider(sl<HRService>()));
+    sl.registerFactory<PayrollProvider>(() => PayrollProvider(sl<HRService>()));
+    sl.registerFactory<StockTransferProvider>(
+      () => StockTransferProvider(sl<StockTransferService>()),
+    );
+    sl.registerFactory<AssetProvider>(
+      () => AssetProvider(sl<AssetService>()),
+    );
+    sl.registerFactory<CustomerStatementProvider>(
+      () => CustomerStatementProvider(),
+    );
+    sl.registerFactory<DashboardProvider>(() => DashboardProvider(db));
     sl.registerFactory<PosBloc>(
       () => PosBloc(db, sl<PricingService>(), sl<TransactionEngine>()),
     );
