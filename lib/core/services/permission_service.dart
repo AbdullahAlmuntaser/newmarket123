@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class PermissionCode {

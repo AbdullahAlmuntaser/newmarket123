@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:provider/provider.dart';
+import 'package:provider/single_child_widget.dart';
 import 'package:get_it/get_it.dart';
 import 'core/auth/auth_provider.dart';
 import 'core/services/permission_service.dart';
@@ -66,6 +68,12 @@ AppDatabase? _database;
 Future<void> initDatabase() async {
   debugPrint("DI: ==== Opening Database ====");
   try {
+    if (sl.isRegistered<AppDatabase>()) {
+      _database = sl<AppDatabase>();
+      debugPrint("DI: Database already registered");
+      return;
+    }
+
     _database = AppDatabase();
     sl.registerLazySingleton<AppDatabase>(() => _database!);
     debugPrint("DI: Database opened successfully");
@@ -80,6 +88,11 @@ Future<void> initServices() async {
   debugPrint("DI: ==== Initializing Services ====");
   try {
     final db = sl<AppDatabase>();
+
+    if (sl.isRegistered<EventBusService>()) {
+      debugPrint("DI: Services already registered");
+      return;
+    }
 
     debugPrint("DI: Registering DAOs...");
     sl.registerLazySingleton<AuditDao>(() => AuditDao(db));
@@ -109,9 +122,15 @@ Future<void> initServices() async {
     );
     sl.registerLazySingleton<PermissionService>(() => PermissionService(db));
     sl.registerLazySingleton<AuditService>(() => AuditService(db));
-    sl.registerLazySingleton<InventoryService>(() => InventoryService(db, sl<AuditService>(), sl<AppConfigService>()));
     sl.registerLazySingleton<AppConfigService>(() => AppConfigService(db));
     sl.registerLazySingleton<AppSettingsService>(() => AppSettingsService(db));
+    sl.registerLazySingleton<InventoryService>(
+      () => InventoryService(
+        db,
+        sl<AuditService>(),
+        sl<AppConfigService>(),
+      ),
+    );
     debugPrint("DI: Core services registered");
 
     debugPrint("DI: Registering business services...");
@@ -197,7 +216,7 @@ Future<void> initServices() async {
     debugPrint("DI: Additional services registered");
 
     debugPrint("DI: Registering providers...");
-    sl.registerLazySingleton<ProductsProvider>(() => ProductsProvider(db));
+    sl.registerFactory<ProductsProvider>(() => ProductsProvider(db));
     sl.registerFactory<AccountingProvider>(() => AccountingProvider(db));
     sl.registerFactory<PurchaseProvider>(
       () => PurchaseProvider(db, sl<PurchaseService>()),
@@ -228,6 +247,47 @@ Future<void> initServices() async {
     debugPrintStack(stackTrace: stack);
     rethrow;
   }
+}
+
+List<SingleChildWidget> buildAppProviders() {
+  return [
+    Provider<AppDatabase>.value(value: sl<AppDatabase>()),
+    Provider<AccountingService>.value(value: sl<AccountingService>()),
+    Provider<DashboardService>.value(value: sl<DashboardService>()),
+    ChangeNotifierProvider<ThemeProvider>.value(value: sl<ThemeProvider>()),
+    ChangeNotifierProvider<LocaleProvider>.value(value: sl<LocaleProvider>()),
+    ChangeNotifierProvider<AuthProvider>.value(value: sl<AuthProvider>()),
+    ChangeNotifierProvider<AccountingProvider>(
+      create: (_) => sl<AccountingProvider>(),
+    ),
+    ChangeNotifierProvider<ProductsProvider>(
+      create: (_) => sl<ProductsProvider>(),
+    ),
+    ChangeNotifierProvider<PurchaseProvider>(
+      create: (_) => sl<PurchaseProvider>(),
+    ),
+    ChangeNotifierProvider<ShiftProvider>(
+      create: (_) => sl<ShiftProvider>(),
+    ),
+    ChangeNotifierProvider<HRProvider>(
+      create: (_) => sl<HRProvider>(),
+    ),
+    ChangeNotifierProvider<PayrollProvider>(
+      create: (_) => sl<PayrollProvider>(),
+    ),
+    ChangeNotifierProvider<StockTransferProvider>(
+      create: (_) => sl<StockTransferProvider>(),
+    ),
+    ChangeNotifierProvider<AssetProvider>(
+      create: (_) => sl<AssetProvider>(),
+    ),
+    ChangeNotifierProvider<CustomerStatementProvider>(
+      create: (_) => sl<CustomerStatementProvider>(),
+    ),
+    ChangeNotifierProvider<DashboardProvider>(
+      create: (_) => sl<DashboardProvider>(),
+    ),
+  ];
 }
 
 Future<void> init() async {
