@@ -1,30 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:supermarket/core/theme/app_theme.dart';
 import 'package:supermarket/core/theme/theme_provider.dart';
+import 'package:supermarket/core/theme/locale_provider.dart';
 import 'package:supermarket/core/navigation/app_router.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/injection_container.dart' as di;
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
-import 'package:supermarket/presentation/features/products/products_provider.dart';
-import 'package:supermarket/presentation/features/purchases/purchase_provider.dart';
-import 'package:supermarket/presentation/features/accounting/shifts_provider.dart';
-import 'package:supermarket/presentation/features/hr/hr_provider.dart';
-import 'package:supermarket/presentation/features/hr/payroll_provider.dart';
-import 'package:supermarket/presentation/features/inventory/stock_transfer_provider.dart';
-import 'package:supermarket/presentation/features/accounting/asset_provider.dart';
-import 'package:supermarket/presentation/features/customers/customer_statement_provider.dart';
-import 'package:supermarket/core/services/shift_service.dart';
-import 'package:supermarket/core/services/hr_service.dart';
-import 'package:supermarket/core/services/stock_transfer_service.dart';
-import 'package:supermarket/core/services/asset_service.dart';
-import 'package:supermarket/core/services/accounting_service.dart';
-import 'package:supermarket/core/services/purchase_service.dart';
-import 'package:supermarket/core/services/dashboard_service.dart';
-import 'package:supermarket/presentation/features/dashboard/dashboard_provider.dart';
 
 void main() async {
   // 1. Ensure Flutter is initialized
@@ -62,6 +45,9 @@ class _AppRootState extends State<AppRoot> {
       // Additional database health check
       final db = di.sl<AppDatabase>();
       await db.select(db.users).get().timeout(const Duration(seconds: 5));
+      await db.seedSecurityData();
+      await db.ensureAccountingPeriodsForYear(DateTime.now().year);
+      await di.sl<LocaleProvider>().loadLocale();
 
       if (mounted) {
         setState(() {
@@ -175,41 +161,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [
-        Provider<AppDatabase>(create: (_) => di.sl<AppDatabase>()),
-        Provider<AccountingService>(create: (_) => di.sl<AccountingService>()),
-        Provider<DashboardService>(create: (_) => di.sl<DashboardService>()),
-        ChangeNotifierProvider(create: (_) => di.sl<ThemeProvider>()),
-        ChangeNotifierProvider(create: (_) => di.sl<AuthProvider>()),
-        ChangeNotifierProvider(
-            create: (_) => AccountingProvider(di.sl<AppDatabase>())),
-        ChangeNotifierProvider(create: (_) => di.sl<ProductsProvider>()),
-        ChangeNotifierProvider(
-          create: (_) =>
-              PurchaseProvider(di.sl<AppDatabase>(), di.sl<PurchaseService>()),
-        ),
-        ChangeNotifierProvider(
-            create: (_) => ShiftProvider(ShiftService(di.sl<AppDatabase>()))),
-        ChangeNotifierProvider(
-            create: (_) => HRProvider(
-                HRService(di.sl<AppDatabase>()))),
-        ChangeNotifierProvider(
-            create: (_) => PayrollProvider(
-                HRService(di.sl<AppDatabase>()))),
-        ChangeNotifierProvider(
-          create: (_) =>
-              StockTransferProvider(StockTransferService(di.sl<AppDatabase>())),
-        ),
-        ChangeNotifierProvider(
-            create: (_) => AssetProvider(AssetService(di.sl<AppDatabase>()))),
-        ChangeNotifierProvider(create: (_) => CustomerStatementProvider()),
-        ChangeNotifierProvider(
-          create: (_) => DashboardProvider(di.sl<AppDatabase>()),
-        ),
-      ],
+      providers: di.buildAppProviders(),
       child: Builder(
         builder: (context) {
           final themeProvider = Provider.of<ThemeProvider>(context);
+          final localeProvider = Provider.of<LocaleProvider>(context);
           return MaterialApp.router(
             title: 'Supermarket ERP',
             theme: AppTheme.lightTheme,
@@ -224,7 +180,7 @@ class MyApp extends StatelessWidget {
               GlobalCupertinoLocalizations.delegate,
             ],
             supportedLocales: AppLocalizations.supportedLocales,
-            locale: const Locale('ar'),
+            locale: localeProvider.locale,
           );
         },
       ),

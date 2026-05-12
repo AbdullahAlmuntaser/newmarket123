@@ -84,7 +84,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginButton => 'LOGIN';
 
   @override
-  String get loginHint => 'Hint: admin / 123';
+  String get loginHint => 'Enter your registered user credentials';
 
   @override
   String get invalidCredentials => 'Invalid credentials';

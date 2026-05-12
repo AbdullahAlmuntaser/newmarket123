@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/core/services/utils/notification_service.dart';
+import 'package:supermarket/core/services/notification_service.dart';
 
 class BudgetService {
   final AppDatabase db;

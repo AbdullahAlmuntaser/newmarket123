@@ -964,7 +964,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 38;
+  int get schemaVersion => 39;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1048,13 +1048,77 @@ class AppDatabase extends _$AppDatabase {
               await m.createTable(productionOrderItems);
             } catch (_) {}
           }
+          if (from < 39) {
+            // Version 39: Add query indexes for high-volume ERP screens.
+            await ensurePerformanceIndexes();
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON;');
           await customStatement('PRAGMA journal_mode = WAL;');
           await customStatement('PRAGMA synchronous = NORMAL;');
+          await ensurePerformanceIndexes();
         },
       );
+
+  static const List<String> _performanceIndexStatements = [
+    'CREATE INDEX IF NOT EXISTS products_sku_idx ON products (sku)',
+    'CREATE INDEX IF NOT EXISTS products_barcode_idx ON products (barcode)',
+    'CREATE INDEX IF NOT EXISTS products_category_id_idx ON products (category_id)',
+    'CREATE INDEX IF NOT EXISTS products_supplier_id_idx ON products (supplier_id)',
+    'CREATE INDEX IF NOT EXISTS products_is_active_idx ON products (is_active)',
+    'CREATE INDEX IF NOT EXISTS product_units_product_id_idx ON product_units (product_id)',
+    'CREATE INDEX IF NOT EXISTS product_units_barcode_idx ON product_units (barcode)',
+    'CREATE INDEX IF NOT EXISTS product_batches_product_warehouse_idx '
+        'ON product_batches (product_id, warehouse_id)',
+    'CREATE INDEX IF NOT EXISTS product_batches_expiry_date_idx '
+        'ON product_batches (expiry_date)',
+    'CREATE INDEX IF NOT EXISTS sale_items_sale_id_idx ON sale_items (sale_id)',
+    'CREATE INDEX IF NOT EXISTS sale_items_product_id_idx ON sale_items (product_id)',
+    'CREATE INDEX IF NOT EXISTS sales_customer_id_idx ON sales (customer_id)',
+    'CREATE INDEX IF NOT EXISTS sales_created_at_idx ON sales (created_at)',
+    'CREATE INDEX IF NOT EXISTS sales_status_idx ON sales (status)',
+    'CREATE INDEX IF NOT EXISTS purchase_items_purchase_id_idx '
+        'ON purchase_items (purchase_id)',
+    'CREATE INDEX IF NOT EXISTS purchase_items_product_id_idx '
+        'ON purchase_items (product_id)',
+    'CREATE INDEX IF NOT EXISTS purchases_supplier_id_idx ON purchases (supplier_id)',
+    'CREATE INDEX IF NOT EXISTS purchases_date_idx ON purchases (date)',
+    'CREATE INDEX IF NOT EXISTS purchases_status_idx ON purchases (status)',
+    'CREATE INDEX IF NOT EXISTS gl_entries_date_idx ON gl_entries (date)',
+    'CREATE INDEX IF NOT EXISTS gl_entries_reference_idx '
+        'ON gl_entries (reference_type, reference_id)',
+    'CREATE INDEX IF NOT EXISTS gl_entries_status_idx ON gl_entries (status)',
+    'CREATE INDEX IF NOT EXISTS gl_lines_entry_id_idx ON gl_lines (entry_id)',
+    'CREATE INDEX IF NOT EXISTS gl_lines_account_id_idx ON gl_lines (account_id)',
+    'CREATE INDEX IF NOT EXISTS gl_lines_cost_center_id_idx '
+        'ON gl_lines (cost_center_id)',
+    'CREATE INDEX IF NOT EXISTS stock_movements_product_id_idx '
+        'ON stock_movements (product_id)',
+    'CREATE INDEX IF NOT EXISTS stock_movements_reference_id_idx '
+        'ON stock_movements (reference_id)',
+    'CREATE INDEX IF NOT EXISTS stock_movements_movement_date_idx '
+        'ON stock_movements (movement_date)',
+    'CREATE INDEX IF NOT EXISTS stock_movements_type_idx ON stock_movements (type)',
+    'CREATE INDEX IF NOT EXISTS customer_payments_customer_id_idx '
+        'ON customer_payments (customer_id)',
+    'CREATE INDEX IF NOT EXISTS customer_payments_payment_date_idx '
+        'ON customer_payments (payment_date)',
+    'CREATE INDEX IF NOT EXISTS supplier_payments_supplier_id_idx '
+        'ON supplier_payments (supplier_id)',
+    'CREATE INDEX IF NOT EXISTS supplier_payments_payment_date_idx '
+        'ON supplier_payments (payment_date)',
+    'CREATE INDEX IF NOT EXISTS audit_logs_timestamp_idx ON audit_logs (timestamp)',
+    'CREATE INDEX IF NOT EXISTS audit_logs_target_entity_idx '
+        'ON audit_logs (target_entity)',
+    'CREATE INDEX IF NOT EXISTS sync_queue_status_idx ON sync_queue (status)',
+  ];
+
+  Future<void> ensurePerformanceIndexes() async {
+    for (final statement in _performanceIndexStatements) {
+      await customStatement(statement);
+    }
+  }
 
   Future<int> getUnsyncedCount() async {
     final countExp = syncQueue.id.count();
@@ -1190,20 +1254,127 @@ class AppDatabase extends _$AppDatabase {
       // 9. Posting Profiles
       await _seedPostingProfiles();
 
-      // 10. Accounting Periods
-      final periodsCount = await (selectOnly(accountingPeriods)
-            ..addColumns([accountingPeriods.id.count()]))
-          .map((row) => row.read(accountingPeriods.id.count()))
-          .getSingle();
-      if ((periodsCount ?? 0) == 0) {
-        await into(accountingPeriods).insert(
-          AccountingPeriodsCompanion.insert(
-            name: 'مايو 2026',
-            startDate: DateTime(2026, 5, 1),
-            endDate: DateTime(2026, 5, 31),
-            status: const Value('OPEN'),
+      // 10. Permissions and role defaults
+      await seedSecurityData();
+
+      // 11. Accounting Periods
+      await ensureAccountingPeriodsForYear(DateTime.now().year);
+    });
+  }
+
+  Future<void> ensureAccountingPeriodsForYear(int year) async {
+    final existingPeriods = await select(accountingPeriods).get();
+
+    for (var month = 1; month <= 12; month++) {
+      final alreadyExists = existingPeriods.any(
+        (period) =>
+            period.startDate.year == year && period.startDate.month == month,
+      );
+      if (alreadyExists) continue;
+
+      final startDate = DateTime(year, month, 1);
+      final endDate = DateTime(year, month + 1, 0, 23, 59, 59, 999);
+      await into(accountingPeriods).insert(
+        AccountingPeriodsCompanion.insert(
+          name: '${_arabicMonthName(month)} $year',
+          startDate: startDate,
+          endDate: endDate,
+          status: const Value('OPEN'),
+        ),
+      );
+    }
+  }
+
+  String _arabicMonthName(int month) {
+    const monthNames = [
+      'يناير',
+      'فبراير',
+      'مارس',
+      'أبريل',
+      'مايو',
+      'يونيو',
+      'يوليو',
+      'أغسطس',
+      'سبتمبر',
+      'أكتوبر',
+      'نوفمبر',
+      'ديسمبر',
+    ];
+    return monthNames[month - 1];
+  }
+
+  Future<void> seedSecurityData() async {
+    const permissionsToSeed = <String, String>{
+      'POST_SALE': 'ترحيل المبيعات',
+      'POST_PURCHASE': 'ترحيل المشتريات',
+      'POST_SALE_RETURN': 'ترحيل مرتجعات المبيعات',
+      'POST_PURCHASE_RETURN': 'ترحيل مرتجعات المشتريات',
+      'DELETE_INVOICE': 'حذف الفواتير',
+      'VOID_TRANSACTION': 'إلغاء العمليات',
+      'MANAGE_USERS': 'إدارة المستخدمين',
+      'VIEW_REPORTS': 'عرض التقارير',
+      'MANAGE_SETTINGS': 'إدارة الإعدادات',
+      'MANAGE_INVENTORY': 'إدارة المخزون',
+      'APPROVE_DISCOUNT': 'اعتماد الخصومات',
+    };
+
+    const rolePermissionsToSeed = <String, List<String>>{
+      'admin': [
+        'POST_SALE',
+        'POST_PURCHASE',
+        'POST_SALE_RETURN',
+        'POST_PURCHASE_RETURN',
+        'DELETE_INVOICE',
+        'VOID_TRANSACTION',
+        'MANAGE_USERS',
+        'VIEW_REPORTS',
+        'MANAGE_SETTINGS',
+        'MANAGE_INVENTORY',
+        'APPROVE_DISCOUNT',
+      ],
+      'manager': [
+        'POST_SALE',
+        'POST_PURCHASE',
+        'POST_SALE_RETURN',
+        'POST_PURCHASE_RETURN',
+        'VIEW_REPORTS',
+        'MANAGE_INVENTORY',
+        'APPROVE_DISCOUNT',
+      ],
+      'cashier': [
+        'POST_SALE',
+        'POST_SALE_RETURN',
+      ],
+    };
+
+    await transaction(() async {
+      for (final entry in permissionsToSeed.entries) {
+        await into(permissions).insertOnConflictUpdate(
+          PermissionsCompanion.insert(
+            code: entry.key,
+            description: Value(entry.value),
           ),
         );
+      }
+
+      for (final roleEntry in rolePermissionsToSeed.entries) {
+        for (final permissionCode in roleEntry.value) {
+          final existing = await (select(rolePermissions)
+                ..where(
+                  (rp) =>
+                      rp.role.equals(roleEntry.key) &
+                      rp.permissionCode.equals(permissionCode),
+                ))
+              .getSingleOrNull();
+          if (existing == null) {
+            await into(rolePermissions).insert(
+              RolePermissionsCompanion.insert(
+                role: roleEntry.key,
+                permissionCode: permissionCode,
+              ),
+            );
+          }
+        }
       }
     });
   }

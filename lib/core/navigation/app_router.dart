@@ -61,6 +61,7 @@ import 'package:supermarket/presentation/features/accounting/checks_page.dart';
 import 'package:supermarket/presentation/features/accounting/transfers_page.dart';
 import 'package:supermarket/presentation/features/accounting/cash_management_page.dart';
 import 'package:supermarket/presentation/features/accounting/unified_statement_page.dart';
+import 'package:supermarket/presentation/features/reports/reports_hub_page.dart';
 import 'package:supermarket/presentation/features/reports/sales_reports_page.dart';
 import 'package:supermarket/presentation/features/reports/product_profitability_page.dart';
 import 'package:supermarket/presentation/features/reports/profitability_report_page.dart';
@@ -84,6 +85,9 @@ import 'package:supermarket/presentation/features/auth/access_denied_page.dart';
 import 'package:supermarket/presentation/features/reports/printer_settings_page.dart';
 import 'package:supermarket/presentation/features/home/low_stock_products_page.dart';
 import 'package:supermarket/presentation/features/purchases/supplier_performance_page.dart';
+import 'package:supermarket/presentation/features/approvals/approvals_page.dart';
+import 'package:supermarket/presentation/features/loyalty/loyalty_page.dart';
+import 'package:supermarket/presentation/features/promotions/promotions_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -121,8 +125,12 @@ final GoRouter appRouter = GoRouter(
         builder: (context, state) => const AccessDeniedPage()),
     GoRoute(
         path: '/dashboard',
-        builder: (context, state) =>
-            const DashboardPage(currentUserId: 'admin')),
+        builder: (context, state) {
+          final authProvider = di.sl<AuthProvider>();
+          return DashboardPage(
+            currentUserId: authProvider.currentUser?.id ?? '',
+          );
+        }),
     GoRoute(
         path: '/admin-dashboard',
         builder: (context, state) => const AdminDashboardPage()),
@@ -208,7 +216,7 @@ final GoRouter appRouter = GoRouter(
         path: '/suppliers/payments',
         builder: (context, state) => const SupplierPaymentsPage()),
     GoRoute(
-        path: '/suppliers/payment',
+        path: '/suppliers/payment/:id',
         builder: (context, state) =>
             AddSupplierPaymentPage(supplierId: state.pathParameters['id']!)),
     GoRoute(
@@ -307,6 +315,9 @@ final GoRouter appRouter = GoRouter(
         path: '/accounting/customer-ledger',
         builder: (context, state) => const CustomerLedgerPage()),
     GoRoute(
+        path: '/reports',
+        builder: (context, state) => const ReportsHubPage()),
+    GoRoute(
         path: '/reports/sales',
         builder: (context, state) => const SalesReportsPage()),
     GoRoute(
@@ -343,6 +354,15 @@ final GoRouter appRouter = GoRouter(
         path: '/users',
         builder: (context, state) => const StaffManagementPage()),
     GoRoute(path: '/sync', builder: (context, state) => const SyncPage()),
+    GoRoute(
+        path: '/approvals',
+        builder: (context, state) => const ApprovalsPage()),
+    GoRoute(
+        path: '/loyalty',
+        builder: (context, state) => const LoyaltyPage()),
+    GoRoute(
+        path: '/promotions',
+        builder: (context, state) => const PromotionsPage()),
     GoRoute(
         path: '/settings/backup',
         builder: (context, state) => const BackupPage()),

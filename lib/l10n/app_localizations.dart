@@ -251,7 +251,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginHint.
   ///
   /// In en, this message translates to:
-  /// **'Hint: admin / 123'**
+  /// **'Enter your registered user credentials'**
   String get loginHint;
 
   /// No description provided for @invalidCredentials.

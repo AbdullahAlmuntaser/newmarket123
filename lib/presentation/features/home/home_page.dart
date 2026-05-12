@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supermarket/core/services/notification_service.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/presentation/widgets/main_drawer.dart';
 import 'package:supermarket/presentation/widgets/notification_tray.dart';
@@ -16,9 +18,20 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         title: Text(l10n.home),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => Scaffold.of(context).openEndDrawer(),
+          Builder(
+            builder: (scaffoldContext) {
+              final unreadCount = context.select<NotificationService, int>(
+                (service) => service.unreadCount,
+              );
+              return IconButton(
+                icon: Badge.count(
+                  count: unreadCount,
+                  isLabelVisible: unreadCount > 0,
+                  child: const Icon(Icons.notifications_outlined),
+                ),
+                onPressed: () => Scaffold.of(scaffoldContext).openEndDrawer(),
+              );
+            },
           ),
           const SizedBox(width: 8),
         ],
