@@ -179,7 +179,8 @@ class MainDrawer extends StatelessWidget {
                   title: l10n?.customers ?? 'العملاء',
                   children: [
                     _buildSubItem(context, 'قائمة العملاء', '/customers'),
-                    _buildSubItem(context, 'نقاط الولاء', '/loyalty'),
+                    if (isManager)
+                      _buildSubItem(context, 'نقاط الولاء', '/loyalty'),
                   ],
                 ),
                 if (isManager) ...[
