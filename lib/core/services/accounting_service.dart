@@ -11,7 +11,7 @@ import 'app_config_service.dart';
 import 'permission_service.dart';
 import 'budget_service.dart';
 import 'package:supermarket/injection_container.dart';
-import 'package:supermarket/core/services/utils/notification_service.dart';
+import 'package:supermarket/core/services/notification_service.dart';
 
 part 'accounting_service.g.dart';
 
@@ -826,7 +826,7 @@ class AccountingService {
     try {
       if (userId != null) {
         await _permissionService.executeIfAllowed(
-            userId, 'POST_SALE', () async {});
+            userId, PermissionCode.postSale, () async {});
       }
       if (await db.accountingDao.isDateInClosedPeriod(sale.createdAt)) {
         throw Exception('Cannot post sale in a closed accounting period.');

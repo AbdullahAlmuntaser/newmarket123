@@ -24,7 +24,7 @@
   "password": "Password",
   "accountingSystem": "Accounting System",
   "loginButton": "LOGIN",
-  "loginHint": "Hint: admin / 123",
+  "loginHint": "Enter your registered user credentials",
   "invalidCredentials": "Invalid credentials",
   "quickActions": "Quick Actions",
   "seedProducts": "Seed Products",

@@ -179,6 +179,7 @@ class MainDrawer extends StatelessWidget {
                   title: l10n?.customers ?? 'العملاء',
                   children: [
                     _buildSubItem(context, 'قائمة العملاء', '/customers'),
+                    _buildSubItem(context, 'نقاط الولاء', '/loyalty'),
                   ],
                 ),
                 if (isManager) ...[
@@ -189,7 +190,7 @@ class MainDrawer extends StatelessWidget {
                     children: [
                       _buildSubItem(context, 'قائمة الموردين', '/suppliers'),
                       _buildSubItem(
-                          context, 'دفع للمورد', '/suppliers/payment'),
+                          context, 'دفعات الموردين', '/suppliers/payments'),
                     ],
                   ),
                 ],
@@ -469,6 +470,16 @@ class MainDrawer extends StatelessWidget {
                         context,
                         l10n?.backupAndSync ?? 'النسخ الاحتياطي',
                         '/settings/backup',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'سير الموافقات',
+                        '/approvals',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'العروض والبروموشنز',
+                        '/promotions',
                       ),
                       _buildSubItem(
                           context, l10n?.cloudSync ?? 'المزامنة', '/sync'),
