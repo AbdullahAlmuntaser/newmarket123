@@ -1,31 +1,35 @@
 ```
-# Build artifacts
-*.dart_tool/
-*.build/
-build/
-
-# Dependencies
-.pub/
+# Dependency directories
 .dart_tool/
+.build/
+dependencies/
 
-# Logs
+# Logs and temp files
 *.log
+*.tmp
+*.swp
 
 # Environment
 .env
 .env.local
 *.env.*
 
-# IDE files
-.idea/
+# Editor/IDE files
 .vscode/
+.idea/
 *.swp
 *.swo
 
-# OS files
-.DS_Store
-Thumbs.db
-
-# Coverage
+# Coverage reports
 coverage/
+htmlcov/
+.coverage
+
+# Distribution artifacts
+dist/
+build/
+*.jar
+*.war
+*.zip
+*.tar.gz
 ```

@@ -4,6 +4,8 @@ import 'package:drift/drift.dart' as drift;
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
+import 'package:supermarket/core/services/financial_closing_service.dart';
+import 'package:supermarket/core/auth/auth_provider.dart';
 
 /// صفحة إدارة الفترات المحاسبية
 class AccountingPeriodsPage extends StatefulWidget {
@@ -265,36 +267,62 @@ class _AccountingPeriodsPageState extends State<AccountingPeriodsPage> {
 
   Future<void> _closePeriod(AppDatabase db, AccountingPeriod period) async {
     try {
-      // ترحيل الأرباح إلى الأرباح المحتجزة
-      // (يتم عبر AccountingService.closeYear إذا لزم الأمر)
-
-      await (db.update(db.accountingPeriods)
-            ..where((p) => p.id.equals(period.id)))
-          .write(const AccountingPeriodsCompanion(isClosed: drift.Value(true)));
-
+      final authProvider = context.read<AuthProvider>();
+      final closingService = context.read<FinancialClosingService>();
+      
+      final result = await closingService.closeMonthlyPeriod(
+        periodId: period.id,
+        userId: authProvider.currentUser?.id ?? '',
+      );
+      
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('تم إغلاق الفترة بنجاح')));
+        if (result.success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result.message), backgroundColor: Colors.green),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result.error ?? 'فشل في إغلاق الفترة'), backgroundColor: Colors.red),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('فشل في إغلاق الفترة: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('فشل في إغلاق الفترة: $e'), backgroundColor: Colors.red),
+        );
       }
     }
   }
 
   Future<void> _reopenPeriod(AppDatabase db, AccountingPeriod period) async {
-    await (db.update(db.accountingPeriods)
-          ..where((p) => p.id.equals(period.id)))
-        .write(const AccountingPeriodsCompanion(isClosed: drift.Value(false)));
-
-    if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('تم إعادة فتح الفترة')));
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final closingService = context.read<FinancialClosingService>();
+      
+      final result = await closingService.reopenPeriod(
+        period.id,
+        authProvider.currentUser?.id ?? '',
+        authProvider.currentUser?.id ?? '',
+      );
+      
+      if (mounted) {
+        if (result.success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result.message), backgroundColor: Colors.green),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result.error ?? 'فشل في إعادة فتح الفترة'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('فشل في إعادة فتح الفترة: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
