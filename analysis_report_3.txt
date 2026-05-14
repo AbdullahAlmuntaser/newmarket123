@@ -1,0 +1,471 @@
+Analyzing systemmarket...                                       
+
+  error • The constructor being called isn't a const constructor • lib/core/navigation/app_router.dart:198:38 • const_with_non_const
+  error • The constructor being called isn't a const constructor • lib/core/navigation/app_router.dart:252:38 • const_with_non_const
+  error • The constructor being called isn't a const constructor • lib/core/navigation/app_router.dart:301:38 • const_with_non_const
+  error • Too many positional arguments: 0 expected, but 1 found • lib/injection_container.dart:233:27 • extra_positional_arguments
+  error • Too many positional arguments: 0 expected, but 1 found • lib/injection_container.dart:235:53 • extra_positional_arguments
+  error • Too many positional arguments: 0 expected, but 1 found • lib/main_fixed.dart:240:42 • extra_positional_arguments
+  error • Too many positional arguments: 0 expected, but 1 found • lib/main_fixed.dart:243:17 • extra_positional_arguments
+   info • Constructors for public widgets should have a named 'key' parameter • lib/presentation/features/accounting/cost_centers_page.dart:7:7 • use_key_in_widget_constructors
+warning • This class (or a class that this class inherits from) is marked as '@immutable', but one or more of its instance fields aren't final: CostCentersPage.modified, CostCentersPage.the, CostCentersPage.new_string, CostCentersPage.to, CostCentersPage.be, CostCentersPage.import, CostCentersPage.import, CostCentersPage.import, CostCentersPage.import, CostCentersPage.import • lib/presentation/features/accounting/cost_centers_page.dart:7:7 • must_be_immutable
+  error • Missing concrete implementation of 'StatelessWidget.build' • lib/presentation/features/accounting/cost_centers_page.dart:7:7 • non_abstract_class_inherits_abstract_member
+  error • Expected a class member • lib/presentation/features/accounting/cost_centers_page.dart:8:1 • expected_class_member
+  error • Expected to find ';' • lib/presentation/features/accounting/cost_centers_page.dart:8:10 • expected_token
+  error • Non-nullable instance field 'modified' must be initialized • lib/presentation/features/accounting/cost_centers_page.dart:8:10 • not_initialized_non_nullable_instance_field
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/cost_centers_page.dart:8:19 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/cost_centers_page.dart:8:19 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/cost_centers_page.dart:8:19 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/cost_centers_page.dart:8:23 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/cost_centers_page.dart:8:24 • prefer_typing_uninitialized_variables
+   info • The variable name 'new_string' isn't a lowerCamelCase identifier • lib/presentation/features/accounting/cost_centers_page.dart:8:24 • non_constant_identifier_names
+  error • Expected to find ';' • lib/presentation/features/accounting/cost_centers_page.dart:8:24 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/cost_centers_page.dart:8:24 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/cost_centers_page.dart:8:34 • expected_class_member
+  error • Undefined class 'content' • lib/presentation/features/accounting/cost_centers_page.dart:8:36 • undefined_class
+  error • Expected to find ';' • lib/presentation/features/accounting/cost_centers_page.dart:8:44 • expected_token
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/cost_centers_page.dart:8:47 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/cost_centers_page.dart:8:47 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/cost_centers_page.dart:8:47 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/cost_centers_page.dart:8:49 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/cost_centers_page.dart:8:51 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/cost_centers_page.dart:8:51 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/cost_centers_page.dart:8:51 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/cost_centers_page.dart:8:58 • expected_class_member
+  error • Expected a class member • lib/presentation/features/accounting/cost_centers_page.dart:8:89 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/cost_centers_page.dart:9:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/cost_centers_page.dart:9:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/accounting/cost_centers_page.dart:9:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/cost_centers_page.dart:9:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/cost_centers_page.dart:9:8 • expected_class_member
+  error • Expected a class member • lib/presentation/features/accounting/cost_centers_page.dart:9:40 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/cost_centers_page.dart:10:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/cost_centers_page.dart:10:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/accounting/cost_centers_page.dart:10:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/cost_centers_page.dart:10:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/cost_centers_page.dart:10:8 • expected_class_member
+  error • Expected a class member • lib/presentation/features/accounting/cost_centers_page.dart:10:70 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/cost_centers_page.dart:11:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/cost_centers_page.dart:11:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/accounting/cost_centers_page.dart:11:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/cost_centers_page.dart:11:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/cost_centers_page.dart:11:8 • expected_class_member
+  error • Expected a class member • lib/presentation/features/accounting/cost_centers_page.dart:11:87 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/cost_centers_page.dart:12:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/cost_centers_page.dart:12:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/accounting/cost_centers_page.dart:12:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/cost_centers_page.dart:12:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/cost_centers_page.dart:12:8 • expected_class_member
+  error • Expected a class member • lib/presentation/features/accounting/cost_centers_page.dart:12:57 • expected_class_member
+  error • Classes can't be declared inside other classes • lib/presentation/features/accounting/cost_centers_page.dart:14:1 • class_in_class
+  error • Expected a class member • lib/presentation/features/accounting/cost_centers_page.dart:14:23 • expected_class_member
+   info • The variable name 'StatelessWidget' isn't a lowerCamelCase identifier • lib/presentation/features/accounting/cost_centers_page.dart:14:31 • non_constant_identifier_names
+  error • Methods must have an explicit list of parameters • lib/presentation/features/accounting/cost_centers_page.dart:14:31 • missing_method_parameters
+  error • The constructor being called isn't a const constructor • lib/presentation/features/accounting/cost_centers_page.dart:15:3 • const_with_non_const
+  error • Too many positional arguments: 0 expected, but 1 found • lib/presentation/features/accounting/cost_centers_page.dart:15:25 • extra_positional_arguments
+   info • The declaration 'build' isn't referenced • lib/presentation/features/accounting/cost_centers_page.dart:18:10 • unused_element
+  error • Local variable '_showAddCostCenterDialog' can't be referenced before it is declared • lib/presentation/features/accounting/cost_centers_page.dart:28:30 • referenced_before_declaration
+  error • Local variable '_showAddCostCenterDialog' can't be referenced before it is declared • lib/presentation/features/accounting/cost_centers_page.dart:58:25 • referenced_before_declaration
+   info • The local variable '_showAddCostCenterDialog' starts with an underscore • lib/presentation/features/accounting/cost_centers_page.dart:109:8 • no_leading_underscores_for_local_identifiers
+  error • Expected a class member • lib/presentation/features/accounting/cost_centers_page.dart:164:1 • expected_class_member
+  error • Expected to find '}' • lib/presentation/features/accounting/cost_centers_page.dart:165:1 • expected_token
+  error • The named parameter 'assetProvider' isn't defined • lib/presentation/features/accounting/fixed_assets_page.dart:175:48 • undefined_named_parameter
+   info • Constructors for public widgets should have a named 'key' parameter • lib/presentation/features/accounting/general_ledger_page.dart:9:7 • use_key_in_widget_constructors
+warning • This class (or a class that this class inherits from) is marked as '@immutable', but one or more of its instance fields aren't final: GeneralLedgerPage.modified, GeneralLedgerPage.the, GeneralLedgerPage.new_string, GeneralLedgerPage.to, GeneralLedgerPage.be, GeneralLedgerPage.import, GeneralLedgerPage.import, GeneralLedgerPage.import, GeneralLedgerPage.import, GeneralLedgerPage.import, GeneralLedgerPage.import, GeneralLedgerPage.import • lib/presentation/features/accounting/general_ledger_page.dart:9:7 • must_be_immutable
+  error • Missing concrete implementation of 'StatelessWidget.build' • lib/presentation/features/accounting/general_ledger_page.dart:9:7 • non_abstract_class_inherits_abstract_member
+  error • Expected a class member • lib/presentation/features/accounting/general_ledger_page.dart:10:1 • expected_class_member
+  error • Expected to find ';' • lib/presentation/features/accounting/general_ledger_page.dart:10:10 • expected_token
+  error • Non-nullable instance field 'modified' must be initialized • lib/presentation/features/accounting/general_ledger_page.dart:10:10 • not_initialized_non_nullable_instance_field
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/general_ledger_page.dart:10:19 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/general_ledger_page.dart:10:19 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/general_ledger_page.dart:10:19 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/general_ledger_page.dart:10:23 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/general_ledger_page.dart:10:24 • prefer_typing_uninitialized_variables
+   info • The variable name 'new_string' isn't a lowerCamelCase identifier • lib/presentation/features/accounting/general_ledger_page.dart:10:24 • non_constant_identifier_names
+  error • Expected to find ';' • lib/presentation/features/accounting/general_ledger_page.dart:10:24 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/general_ledger_page.dart:10:24 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/general_ledger_page.dart:10:34 • expected_class_member
+  error • Undefined class 'content' • lib/presentation/features/accounting/general_ledger_page.dart:10:36 • undefined_class
+  error • Expected to find ';' • lib/presentation/features/accounting/general_ledger_page.dart:10:44 • expected_token
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/general_ledger_page.dart:10:47 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/general_ledger_page.dart:10:47 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/general_ledger_page.dart:10:47 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/general_ledger_page.dart:10:49 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/general_ledger_page.dart:10:51 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/general_ledger_page.dart:10:51 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/general_ledger_page.dart:10:51 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/general_ledger_page.dart:10:58 • expected_class_member
+  error • Expected a class member • lib/presentation/features/accounting/general_ledger_page.dart:10:89 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/general_ledger_page.dart:11:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/general_ledger_page.dart:11:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/accounting/general_ledger_page.dart:11:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/general_ledger_page.dart:11:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/general_ledger_page.dart:11:8 • expected_class_member
+  error • Expected a class member • lib/presentation/features/accounting/general_ledger_page.dart:11:32 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/general_ledger_page.dart:12:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/general_ledger_page.dart:12:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/accounting/general_ledger_page.dart:12:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/general_ledger_page.dart:12:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/general_ledger_page.dart:12:8 • expected_class_member
+  error • Expected a class member • lib/presentation/features/accounting/general_ledger_page.dart:12:40 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/general_ledger_page.dart:13:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/general_ledger_page.dart:13:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/accounting/general_ledger_page.dart:13:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/general_ledger_page.dart:13:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/general_ledger_page.dart:13:8 • expected_class_member
+  error • Expected a class member • lib/presentation/features/accounting/general_ledger_page.dart:13:70 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/general_ledger_page.dart:14:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/general_ledger_page.dart:14:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/accounting/general_ledger_page.dart:14:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/general_ledger_page.dart:14:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/general_ledger_page.dart:14:8 • expected_class_member
+  error • Expected a class member • lib/presentation/features/accounting/general_ledger_page.dart:14:77 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/general_ledger_page.dart:15:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/general_ledger_page.dart:15:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/accounting/general_ledger_page.dart:15:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/general_ledger_page.dart:15:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/general_ledger_page.dart:15:8 • expected_class_member
+  error • Expected a class member • lib/presentation/features/accounting/general_ledger_page.dart:15:87 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/general_ledger_page.dart:16:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/general_ledger_page.dart:16:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/accounting/general_ledger_page.dart:16:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/general_ledger_page.dart:16:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/general_ledger_page.dart:16:8 • expected_class_member
+  error • Expected a class member • lib/presentation/features/accounting/general_ledger_page.dart:16:57 • expected_class_member
+  error • Classes can't be declared inside other classes • lib/presentation/features/accounting/general_ledger_page.dart:18:1 • class_in_class
+  error • Expected a class member • lib/presentation/features/accounting/general_ledger_page.dart:18:25 • expected_class_member
+   info • The variable name 'StatelessWidget' isn't a lowerCamelCase identifier • lib/presentation/features/accounting/general_ledger_page.dart:18:33 • non_constant_identifier_names
+  error • Methods must have an explicit list of parameters • lib/presentation/features/accounting/general_ledger_page.dart:18:33 • missing_method_parameters
+  error • The constructor being called isn't a const constructor • lib/presentation/features/accounting/general_ledger_page.dart:19:3 • const_with_non_const
+  error • Too many positional arguments: 0 expected, but 1 found • lib/presentation/features/accounting/general_ledger_page.dart:19:27 • extra_positional_arguments
+   info • The declaration 'build' isn't referenced • lib/presentation/features/accounting/general_ledger_page.dart:22:10 • unused_element
+  error • Local variable '_buildLineItem' can't be referenced before it is declared • lib/presentation/features/accounting/general_ledger_page.dart:121:48 • referenced_before_declaration
+   info • The local variable '_buildLineItem' starts with an underscore • lib/presentation/features/accounting/general_ledger_page.dart:137:10 • no_leading_underscores_for_local_identifiers
+  error • Expected a class member • lib/presentation/features/accounting/general_ledger_page.dart:202:1 • expected_class_member
+  error • Expected to find '}' • lib/presentation/features/accounting/general_ledger_page.dart:203:1 • expected_token
+  error • The method 'checkActiveShift' isn't defined for the type 'ShiftProvider' • lib/presentation/features/accounting/shifts_page.dart:25:39 • undefined_method
+  error • The getter 'isLoading' isn't defined for the type 'ShiftProvider' • lib/presentation/features/accounting/shifts_page.dart:45:27 • undefined_getter
+  error • The getter 'hasActiveShift' isn't defined for the type 'ShiftProvider' • lib/presentation/features/accounting/shifts_page.dart:49:36 • undefined_getter
+  error • The getter 'activeShift' isn't defined for the type 'ShiftProvider' • lib/presentation/features/accounting/shifts_page.dart:50:63 • undefined_getter
+  error • The method 'openShift' isn't defined for the type 'ShiftProvider' • lib/presentation/features/accounting/shifts_page.dart:183:43 • undefined_method
+  error • The method 'getExpectedCash' isn't defined for the type 'ShiftProvider' • lib/presentation/features/accounting/shifts_page.dart:210:46 • undefined_method
+  error • The method 'closeShift' isn't defined for the type 'ShiftProvider' • lib/presentation/features/accounting/shifts_page.dart:243:35 • undefined_method
+  error • The final variable '_shiftService' must be initialized • lib/presentation/features/accounting/shifts_provider.dart:6:22 • final_not_initialized
+  error • Expected a class member • lib/presentation/features/accounting/shifts_provider.dart:7:1 • expected_class_member
+  error • Expected to find ';' • lib/presentation/features/accounting/shifts_provider.dart:7:10 • expected_token
+  error • Non-nullable instance field 'modified' must be initialized • lib/presentation/features/accounting/shifts_provider.dart:7:10 • not_initialized_non_nullable_instance_field
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/shifts_provider.dart:7:19 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/shifts_provider.dart:7:19 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/shifts_provider.dart:7:19 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/shifts_provider.dart:7:23 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/shifts_provider.dart:7:24 • prefer_typing_uninitialized_variables
+   info • The variable name 'new_string' isn't a lowerCamelCase identifier • lib/presentation/features/accounting/shifts_provider.dart:7:24 • non_constant_identifier_names
+  error • Expected to find ';' • lib/presentation/features/accounting/shifts_provider.dart:7:24 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/shifts_provider.dart:7:24 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/shifts_provider.dart:7:34 • expected_class_member
+  error • Undefined class 'content' • lib/presentation/features/accounting/shifts_provider.dart:7:36 • undefined_class
+  error • Expected to find ';' • lib/presentation/features/accounting/shifts_provider.dart:7:44 • expected_token
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/shifts_provider.dart:7:47 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/shifts_provider.dart:7:47 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/shifts_provider.dart:7:47 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/shifts_provider.dart:7:49 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/shifts_provider.dart:7:51 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/shifts_provider.dart:7:51 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/shifts_provider.dart:7:51 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/shifts_provider.dart:7:58 • expected_class_member
+  error • Expected a class member • lib/presentation/features/accounting/shifts_provider.dart:7:89 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/shifts_provider.dart:8:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/shifts_provider.dart:8:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/accounting/shifts_provider.dart:8:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/shifts_provider.dart:8:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/shifts_provider.dart:8:8 • expected_class_member
+  error • Expected a class member • lib/presentation/features/accounting/shifts_provider.dart:8:62 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/shifts_provider.dart:9:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/shifts_provider.dart:9:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/accounting/shifts_provider.dart:9:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/shifts_provider.dart:9:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/shifts_provider.dart:9:8 • expected_class_member
+  error • Expected a class member • lib/presentation/features/accounting/shifts_provider.dart:9:70 • expected_class_member
+  error • Classes can't be declared inside other classes • lib/presentation/features/accounting/shifts_provider.dart:11:1 • class_in_class
+  error • Expected a class member • lib/presentation/features/accounting/shifts_provider.dart:11:21 • expected_class_member
+   info • The variable name 'ChangeNotifier' isn't a lowerCamelCase identifier • lib/presentation/features/accounting/shifts_provider.dart:11:26 • non_constant_identifier_names
+  error • Methods must have an explicit list of parameters • lib/presentation/features/accounting/shifts_provider.dart:11:26 • missing_method_parameters
+   info • The local variable '_shiftService' starts with an underscore • lib/presentation/features/accounting/shifts_provider.dart:12:22 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_activeShift' starts with an underscore • lib/presentation/features/accounting/shifts_provider.dart:13:10 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_isLoading' starts with an underscore • lib/presentation/features/accounting/shifts_provider.dart:14:8 • no_leading_underscores_for_local_identifiers
+  error • Too many positional arguments: 0 expected, but 1 found • lib/presentation/features/accounting/shifts_provider.dart:16:17 • extra_positional_arguments
+  error • Conditions must have a static type of 'bool' • lib/presentation/features/accounting/shifts_provider.dart:18:3 • non_bool_condition
+  error • Local variable 'get' can't be referenced before it is declared • lib/presentation/features/accounting/shifts_provider.dart:18:10 • referenced_before_declaration
+  error • The non-nullable local variable 'get' must be assigned before it can be used • lib/presentation/features/accounting/shifts_provider.dart:18:10 • not_assigned_potentially_non_nullable_local_variable
+  error • Expected to find ':' • lib/presentation/features/accounting/shifts_provider.dart:18:14 • expected_token
+  error • Expected to find ';' • lib/presentation/features/accounting/shifts_provider.dart:18:14 • expected_token
+  error • Undefined name 'activeShift' • lib/presentation/features/accounting/shifts_provider.dart:18:14 • undefined_identifier
+  error • Expected an identifier • lib/presentation/features/accounting/shifts_provider.dart:18:26 • missing_identifier
+  error • Expected to find ';' • lib/presentation/features/accounting/shifts_provider.dart:18:26 • expected_token
+  error • Expected to find ';' • lib/presentation/features/accounting/shifts_provider.dart:19:8 • expected_token
+   info • The declaration 'isLoading' isn't referenced • lib/presentation/features/accounting/shifts_provider.dart:19:12 • unused_element
+  error • Functions must have an explicit list of parameters • lib/presentation/features/accounting/shifts_provider.dart:19:22 • missing_function_parameters
+warning • The value of the local variable 'get' isn't used • lib/presentation/features/accounting/shifts_provider.dart:20:8 • unused_local_variable
+  error • Expected to find ';' • lib/presentation/features/accounting/shifts_provider.dart:20:8 • expected_token
+  error • The name 'get' is already defined • lib/presentation/features/accounting/shifts_provider.dart:20:8 • duplicate_definition
+   info • The declaration 'hasActiveShift' isn't referenced • lib/presentation/features/accounting/shifts_provider.dart:20:12 • unused_element
+  error • Functions must have an explicit list of parameters • lib/presentation/features/accounting/shifts_provider.dart:20:27 • missing_function_parameters
+  error • The final variable '_shiftService' can't be read because it's potentially unassigned at this point • lib/presentation/features/accounting/shifts_provider.dart:25:26 • read_potentially_unassigned_final
+   info • The declaration 'openShift' isn't referenced • lib/presentation/features/accounting/shifts_provider.dart:30:16 • unused_element
+  error • The final variable '_shiftService' can't be read because it's potentially unassigned at this point • lib/presentation/features/accounting/shifts_provider.dart:37:11 • read_potentially_unassigned_final
+   info • The declaration 'closeShift' isn't referenced • lib/presentation/features/accounting/shifts_provider.dart:43:16 • unused_element
+  error • The final variable '_shiftService' can't be read because it's potentially unassigned at this point • lib/presentation/features/accounting/shifts_provider.dart:47:11 • read_potentially_unassigned_final
+   info • The declaration 'getExpectedCash' isn't referenced • lib/presentation/features/accounting/shifts_provider.dart:53:18 • unused_element
+  error • The final variable '_shiftService' can't be read because it's potentially unassigned at this point • lib/presentation/features/accounting/shifts_provider.dart:55:18 • read_potentially_unassigned_final
+  error • Expected a class member • lib/presentation/features/accounting/shifts_provider.dart:58:1 • expected_class_member
+  error • Expected to find '}' • lib/presentation/features/accounting/shifts_provider.dart:59:1 • expected_token
+   info • Constructors for public widgets should have a named 'key' parameter • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:7:7 • use_key_in_widget_constructors
+warning • This class (or a class that this class inherits from) is marked as '@immutable', but one or more of its instance fields aren't final: AddEditAssetDialog.modified, AddEditAssetDialog.the, AddEditAssetDialog.new_string, AddEditAssetDialog.to, AddEditAssetDialog.be, AddEditAssetDialog.import, AddEditAssetDialog.import, AddEditAssetDialog.import, AddEditAssetDialog.Column, AddEditAssetDialog.import, AddEditAssetDialog.import • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:7:7 • must_be_immutable
+  error • Missing concrete implementation of 'StatefulWidget.createState' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:7:7 • non_abstract_class_inherits_abstract_member
+  error • Expected a class member • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:1 • expected_class_member
+  error • Expected to find ';' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:10 • expected_token
+  error • Non-nullable instance field 'modified' must be initialized • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:10 • not_initialized_non_nullable_instance_field
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:19 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:19 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:19 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:23 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:24 • prefer_typing_uninitialized_variables
+   info • The variable name 'new_string' isn't a lowerCamelCase identifier • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:24 • non_constant_identifier_names
+  error • Expected to find ';' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:24 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:24 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:34 • expected_class_member
+  error • Undefined class 'content' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:36 • undefined_class
+  error • Expected to find ';' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:44 • expected_token
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:47 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:47 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:47 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:49 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:51 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:51 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:51 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:58 • expected_class_member
+  error • Expected a class member • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:8:89 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:9:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:9:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:9:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:9:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:9:8 • expected_class_member
+  error • Expected a class member • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:9:32 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:10:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:10:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:10:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:10:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:10:8 • expected_class_member
+  error • Undefined class 'hide' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:10:35 • undefined_class
+   info • The variable name 'Column' isn't a lowerCamelCase identifier • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:10:40 • non_constant_identifier_names
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:11:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:11:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:11:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:11:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:11:8 • expected_class_member
+  error • Expected a class member • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:11:70 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:12:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:12:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:12:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:12:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:12:8 • expected_class_member
+  error • Expected a class member • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:12:82 • expected_class_member
+  error • Classes can't be declared inside other classes • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:14:1 • class_in_class
+  error • Expected a class member • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:14:26 • expected_class_member
+   info • The variable name 'StatefulWidget' isn't a lowerCamelCase identifier • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:14:34 • non_constant_identifier_names
+  error • Methods must have an explicit list of parameters • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:14:34 • missing_method_parameters
+warning • The value of the local variable 'assetProvider' isn't used • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:15:23 • unused_local_variable
+warning • The value of the local variable 'asset' isn't used • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:16:21 • unused_local_variable
+  error • The constructor being called isn't a const constructor • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:18:3 • const_with_non_const
+  error • Too many positional arguments: 0 expected, but 1 found • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:18:28 • extra_positional_arguments
+  error • Expected to find ',' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:20:14 • expected_token
+  error • The getter 'assetProvider' isn't defined for the type 'AddEditAssetDialog' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:20:19 • undefined_getter
+  error • The getter 'asset' isn't defined for the type 'AddEditAssetDialog' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:21:10 • undefined_getter
+  error • State isn't a type • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:25:3 • not_a_type
+   info • The declaration 'createState' isn't referenced • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:25:29 • unused_element
+  error • The method '_AddEditAssetDialogState' isn't defined for the type 'AddEditAssetDialog' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:25:46 • undefined_method
+  error • Classes can't be declared inside other classes • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:28:1 • class_in_class
+  error • Expected a class member • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:28:32 • expected_class_member
+   info • The variable name 'State' isn't a lowerCamelCase identifier • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:28:40 • non_constant_identifier_names
+  error • Methods must have an explicit list of parameters • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:28:40 • missing_method_parameters
+   info • The local variable '_formKey' starts with an underscore • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:29:9 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_nameController' starts with an underscore • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:30:30 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_costController' starts with an underscore • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:31:30 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_lifeController' starts with an underscore • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:32:30 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_salvageController' starts with an underscore • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:33:30 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_purchaseDate' starts with an underscore • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:34:17 • no_leading_underscores_for_local_identifiers
+warning • The value of the local variable 'get' isn't used • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:36:8 • unused_local_variable
+  error • Expected to find ';' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:36:8 • expected_token
+   info • The local variable '_isEditing' starts with an underscore • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:36:12 • no_leading_underscores_for_local_identifiers
+  error • Functions must have an explicit list of parameters • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:36:23 • missing_function_parameters
+  error • Undefined name 'widget' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:36:26 • undefined_identifier
+   info • The declaration 'initState' isn't referenced • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:39:8 • unused_element
+  error • The method 'initState' isn't defined in a superclass of 'AddEditAssetDialog' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:40:11 • undefined_super_member
+  error • Undefined name 'widget' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:41:19 • undefined_identifier
+   info • The declaration 'dispose' isn't referenced • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:54:8 • unused_element
+  error • The method 'dispose' isn't defined in a superclass of 'AddEditAssetDialog' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:59:11 • undefined_super_member
+   info • The local variable '_pickDate' starts with an underscore • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:62:16 • no_leading_underscores_for_local_identifiers
+  error • Undefined name 'context' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:64:16 • undefined_identifier
+  error • The method 'setState' isn't defined for the type 'AddEditAssetDialog' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:70:7 • undefined_method
+   info • The local variable '_submit' starts with an underscore • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:76:8 • no_leading_underscores_for_local_identifiers
+  error • Conditions must have a static type of 'bool' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:79:13 • non_bool_condition
+  error • Undefined name 'widget' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:79:32 • undefined_identifier
+  error • Conditions must have a static type of 'bool' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:86:13 • non_bool_condition
+  error • Conditions must have a static type of 'bool' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:89:11 • non_bool_condition
+  error • Undefined name 'widget' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:92:9 • undefined_identifier
+  error • Undefined name 'context' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:94:20 • undefined_identifier
+   info • The declaration 'build' isn't referenced • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:99:10 • unused_element
+  error • Conditions must have a static type of 'bool' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:101:19 • non_bool_condition
+  error • Conditions must have a static type of 'bool' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:192:23 • non_bool_condition
+  error • Expected a class member • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:198:1 • expected_class_member
+  error • Expected to find '}' • lib/presentation/features/accounting/widgets/add_edit_asset_dialog.dart:199:1 • expected_token
+   info • Constructors for public widgets should have a named 'key' parameter • lib/presentation/features/hr/employees_page.dart:7:7 • use_key_in_widget_constructors
+warning • This class (or a class that this class inherits from) is marked as '@immutable', but one or more of its instance fields aren't final: EmployeesPage.modified, EmployeesPage.the, EmployeesPage.new_string, EmployeesPage.to, EmployeesPage.be, EmployeesPage.import, EmployeesPage.import, EmployeesPage.import, EmployeesPage.import, EmployeesPage.import, EmployeesPage.Column • lib/presentation/features/hr/employees_page.dart:7:7 • must_be_immutable
+  error • Missing concrete implementation of 'StatefulWidget.createState' • lib/presentation/features/hr/employees_page.dart:7:7 • non_abstract_class_inherits_abstract_member
+  error • Expected a class member • lib/presentation/features/hr/employees_page.dart:8:1 • expected_class_member
+  error • Expected to find ';' • lib/presentation/features/hr/employees_page.dart:8:10 • expected_token
+  error • Non-nullable instance field 'modified' must be initialized • lib/presentation/features/hr/employees_page.dart:8:10 • not_initialized_non_nullable_instance_field
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/hr/employees_page.dart:8:19 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/hr/employees_page.dart:8:19 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/hr/employees_page.dart:8:19 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/hr/employees_page.dart:8:23 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/hr/employees_page.dart:8:24 • prefer_typing_uninitialized_variables
+   info • The variable name 'new_string' isn't a lowerCamelCase identifier • lib/presentation/features/hr/employees_page.dart:8:24 • non_constant_identifier_names
+  error • Expected to find ';' • lib/presentation/features/hr/employees_page.dart:8:24 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/hr/employees_page.dart:8:24 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/hr/employees_page.dart:8:34 • expected_class_member
+  error • Undefined class 'content' • lib/presentation/features/hr/employees_page.dart:8:36 • undefined_class
+  error • Expected to find ';' • lib/presentation/features/hr/employees_page.dart:8:44 • expected_token
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/hr/employees_page.dart:8:47 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/hr/employees_page.dart:8:47 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/hr/employees_page.dart:8:47 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/hr/employees_page.dart:8:49 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/hr/employees_page.dart:8:51 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/hr/employees_page.dart:8:51 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/hr/employees_page.dart:8:51 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/hr/employees_page.dart:8:58 • expected_class_member
+  error • Expected a class member • lib/presentation/features/hr/employees_page.dart:8:89 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/hr/employees_page.dart:9:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/hr/employees_page.dart:9:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/hr/employees_page.dart:9:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/hr/employees_page.dart:9:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/hr/employees_page.dart:9:8 • expected_class_member
+  error • Expected a class member • lib/presentation/features/hr/employees_page.dart:9:40 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/hr/employees_page.dart:10:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/hr/employees_page.dart:10:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/hr/employees_page.dart:10:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/hr/employees_page.dart:10:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/hr/employees_page.dart:10:8 • expected_class_member
+  error • Expected a class member • lib/presentation/features/hr/employees_page.dart:10:70 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/hr/employees_page.dart:11:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/hr/employees_page.dart:11:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/hr/employees_page.dart:11:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/hr/employees_page.dart:11:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/hr/employees_page.dart:11:8 • expected_class_member
+  error • Expected a class member • lib/presentation/features/hr/employees_page.dart:11:71 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/hr/employees_page.dart:12:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/hr/employees_page.dart:12:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/hr/employees_page.dart:12:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/hr/employees_page.dart:12:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/hr/employees_page.dart:12:8 • expected_class_member
+  error • Undefined class 'hide' • lib/presentation/features/hr/employees_page.dart:12:35 • undefined_class
+   info • The variable name 'Column' isn't a lowerCamelCase identifier • lib/presentation/features/hr/employees_page.dart:12:40 • non_constant_identifier_names
+  error • Classes can't be declared inside other classes • lib/presentation/features/hr/employees_page.dart:14:1 • class_in_class
+  error • Expected a class member • lib/presentation/features/hr/employees_page.dart:14:21 • expected_class_member
+   info • The variable name 'StatefulWidget' isn't a lowerCamelCase identifier • lib/presentation/features/hr/employees_page.dart:14:29 • non_constant_identifier_names
+  error • Methods must have an explicit list of parameters • lib/presentation/features/hr/employees_page.dart:14:29 • missing_method_parameters
+  error • The constructor being called isn't a const constructor • lib/presentation/features/hr/employees_page.dart:15:3 • const_with_non_const
+  error • Too many positional arguments: 0 expected, but 1 found • lib/presentation/features/hr/employees_page.dart:15:23 • extra_positional_arguments
+  error • State isn't a type • lib/presentation/features/hr/employees_page.dart:18:3 • not_a_type
+   info • The declaration 'createState' isn't referenced • lib/presentation/features/hr/employees_page.dart:18:24 • unused_element
+  error • The method '_EmployeesPageState' isn't defined for the type 'EmployeesPage' • lib/presentation/features/hr/employees_page.dart:18:41 • undefined_method
+  error • Classes can't be declared inside other classes • lib/presentation/features/hr/employees_page.dart:21:1 • class_in_class
+  error • Expected a class member • lib/presentation/features/hr/employees_page.dart:21:27 • expected_class_member
+   info • The variable name 'State' isn't a lowerCamelCase identifier • lib/presentation/features/hr/employees_page.dart:21:35 • non_constant_identifier_names
+  error • Methods must have an explicit list of parameters • lib/presentation/features/hr/employees_page.dart:21:35 • missing_method_parameters
+   info • The declaration 'initState' isn't referenced • lib/presentation/features/hr/employees_page.dart:23:8 • unused_element
+  error • The method 'initState' isn't defined in a superclass of 'EmployeesPage' • lib/presentation/features/hr/employees_page.dart:24:11 • undefined_super_member
+  error • Undefined name 'context' • lib/presentation/features/hr/employees_page.dart:26:7 • undefined_identifier
+   info • The declaration 'build' isn't referenced • lib/presentation/features/hr/employees_page.dart:31:10 • unused_element
+  error • The getter 'isLoading' isn't defined for the type 'HRProvider' • lib/presentation/features/hr/employees_page.dart:37:22 • undefined_getter
+  error • The getter 'employees' isn't defined for the type 'HRProvider' • lib/presentation/features/hr/employees_page.dart:41:35 • undefined_getter
+  error • The getter 'employees' isn't defined for the type 'HRProvider' • lib/presentation/features/hr/employees_page.dart:43:38 • undefined_getter
+  error • Local variable '_buildEmployeeCard' can't be referenced before it is declared • lib/presentation/features/hr/employees_page.dart:44:24 • referenced_before_declaration
+  error • Local variable '_showAddEditDialog' can't be referenced before it is declared • lib/presentation/features/hr/employees_page.dart:48:26 • referenced_before_declaration
+   info • The local variable '_buildEmployeeCard' starts with an underscore • lib/presentation/features/hr/employees_page.dart:55:10 • no_leading_underscores_for_local_identifiers
+  error • Local variable '_buildStatusBadge' can't be referenced before it is declared • lib/presentation/features/hr/employees_page.dart:111:17 • referenced_before_declaration
+  error • Local variable '_showAddEditDialog' can't be referenced before it is declared • lib/presentation/features/hr/employees_page.dart:140:27 • referenced_before_declaration
+  error • Undefined name 'context' • lib/presentation/features/hr/employees_page.dart:140:46 • undefined_identifier
+  error • Local variable '_confirmDelete' can't be referenced before it is declared • lib/presentation/features/hr/employees_page.dart:145:40 • referenced_before_declaration
+   info • The local variable '_buildStatusBadge' starts with an underscore • lib/presentation/features/hr/employees_page.dart:157:10 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_confirmDelete' starts with an underscore • lib/presentation/features/hr/employees_page.dart:178:8 • no_leading_underscores_for_local_identifiers
+  error • Undefined name 'context' • lib/presentation/features/hr/employees_page.dart:180:16 • undefined_identifier
+  error • The method 'deleteEmployee' isn't defined for the type 'HRProvider' • lib/presentation/features/hr/employees_page.dart:191:24 • undefined_method
+   info • The local variable '_showAddEditDialog' starts with an underscore • lib/presentation/features/hr/employees_page.dart:205:8 • no_leading_underscores_for_local_identifiers
+  error • The method 'addEmployee' isn't defined for the type 'HRProvider' • lib/presentation/features/hr/employees_page.dart:253:26 • undefined_method
+  error • The method 'updateEmployee' isn't defined for the type 'HRProvider' • lib/presentation/features/hr/employees_page.dart:264:26 • undefined_method
+  error • Expected a class member • lib/presentation/features/hr/employees_page.dart:282:1 • expected_class_member
+  error • Expected to find '}' • lib/presentation/features/hr/employees_page.dart:283:1 • expected_token
+  error • The final variable '_service' must be initialized • lib/presentation/features/hr/hr_provider.dart:6:19 • final_not_initialized
+  error • Expected a class member • lib/presentation/features/hr/hr_provider.dart:7:1 • expected_class_member
+  error • Expected to find ';' • lib/presentation/features/hr/hr_provider.dart:7:10 • expected_token
+  error • Non-nullable instance field 'modified' must be initialized • lib/presentation/features/hr/hr_provider.dart:7:10 • not_initialized_non_nullable_instance_field
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/hr/hr_provider.dart:7:19 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/hr/hr_provider.dart:7:19 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/hr/hr_provider.dart:7:19 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/hr/hr_provider.dart:7:23 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/hr/hr_provider.dart:7:24 • prefer_typing_uninitialized_variables
+   info • The variable name 'new_string' isn't a lowerCamelCase identifier • lib/presentation/features/hr/hr_provider.dart:7:24 • non_constant_identifier_names
+  error • Expected to find ';' • lib/presentation/features/hr/hr_provider.dart:7:24 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/hr/hr_provider.dart:7:24 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/hr/hr_provider.dart:7:34 • expected_class_member
+  error • Undefined class 'content' • lib/presentation/features/hr/hr_provider.dart:7:36 • undefined_class
+  error • Expected to find ';' • lib/presentation/features/hr/hr_provider.dart:7:44 • expected_token
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/hr/hr_provider.dart:7:47 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/hr/hr_provider.dart:7:47 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/hr/hr_provider.dart:7:47 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/hr/hr_provider.dart:7:49 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/hr/hr_provider.dart:7:51 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/hr/hr_provider.dart:7:51 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/hr/hr_provider.dart:7:51 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/hr/hr_provider.dart:7:58 • expected_class_member
+  error • Expected a class member • lib/presentation/features/hr/hr_provider.dart:7:89 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/hr/hr_provider.dart:8:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/hr/hr_provider.dart:8:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/hr/hr_provider.dart:8:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/hr/hr_provider.dart:8:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/hr/hr_provider.dart:8:8 • expected_class_member
+  error • Expected a class member • lib/presentation/features/hr/hr_provider.dart:8:59 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/presentation/features/hr/hr_provider.dart:9:1 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/presentation/features/hr/hr_provider.dart:9:1 • expected_token
+  error • The name 'import' is already defined • lib/presentation/features/hr/hr_provider.dart:9:1 • duplicate_definition
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/presentation/features/hr/hr_provider.dart:9:1 • missing_const_final_var_or_type
+  error • Expected a class member • lib/presentation/features/hr/hr_provider.dart:9:8 • expected_class_member
+  error • Expected a class member • lib/presentation/features/hr/hr_provider.dart:9:70 • expected_class_member
+  error • Classes can't be declared inside other classes • lib/presentation/features/hr/hr_provider.dart:11:1 • class_in_class
+  error • Expected a class member • lib/presentation/features/hr/hr_provider.dart:11:18 • expected_class_member
+   info • The variable name 'ChangeNotifier' isn't a lowerCamelCase identifier • lib/presentation/features/hr/hr_provider.dart:11:23 • non_constant_identifier_names
+  error • Methods must have an explicit list of parameters • lib/presentation/features/hr/hr_provider.dart:11:23 • missing_method_parameters
+   info • The local variable '_service' starts with an underscore • lib/presentation/features/hr/hr_provider.dart:12:19 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_employees' starts with an underscore • lib/presentation/features/hr/hr_provider.dart:13:20 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_isLoading' starts with an underscore • lib/presentation/features/hr/hr_provider.dart:14:8 • no_leading_underscores_for_local_identifiers
+  error • Too many positional arguments: 0 expected, but 1 found • lib/presentation/features/hr/hr_provider.dart:16:14 • extra_positional_arguments
+warning • The value of the local variable 'get' isn't used • lib/presentation/features/hr/hr_provider.dart:18:20 • unused_local_variable
+  error • Expected to find ';' • lib/presentation/features/hr/hr_provider.dart:18:20 • expected_token
+   info • The declaration 'employees' isn't referenced • lib/presentation/features/hr/hr_provider.dart:18:24 • unused_element
+  error • Functions must have an explicit list of parameters • lib/presentation/features/hr/hr_provider.dart:18:34 • missing_function_parameters
+warning • The value of the local variable 'get' isn't used • lib/presentation/features/hr/hr_provider.dart:19:8 • unused_local_variable
+  error • Expected to find ';' • lib/presentation/features/hr/hr_provider.dart:19:8 • expected_token
+  error • The name 'get' is already defined • lib/presentation/features/hr/hr_provider.dart:19:8 • duplicate_definition
+   info • The declaration 'isLoading' isn't referenced • lib/presentation/features/hr/hr_provider.dart:19:12 • unused_element
+  error • Functions must have an explicit list of parameters • lib/presentation/features/hr/hr_provider.dart:19:22 • missing_function_parameters
+  error • The final variable '_service' can't be read because it's potentially unassigned at this point • lib/presentation/features/hr/hr_provider.dart:24:24 • read_potentially_unassigned_final
+   info • The declaration 'addEmployee' isn't referenced • lib/presentation/features/hr/hr_provider.dart:29:16 • unused_element
+  error • The final variable '_service' can't be read because it's potentially unassigned at this point • lib/presentation/features/hr/hr_provider.dart:30:11 • read_potentially_unassigned_final
+   info • The declaration 'updateEmployee' isn't referenced • lib/presentation/features/hr/hr_provider.dart:34:16 • unused_element
+  error • The final variable '_service' can't be read because it's potentially unassigned at this point • lib/presentation/features/hr/hr_provider.dart:35:11 • read_potentially_unassigned_final
+   info • The declaration 'deleteEmployee' isn't referenced • lib/presentation/features/hr/hr_provider.dart:39:16 • unused_element
+  error • The final variable '_service' can't be read because it's potentially unassigned at this point • lib/presentation/features/hr/hr_provider.dart:40:11 • read_potentially_unassigned_final
+  error • Expected a class member • lib/presentation/features/hr/hr_provider.dart:44:1 • expected_class_member
+  error • Expected to find '}' • lib/presentation/features/hr/hr_provider.dart:45:1 • expected_token
+

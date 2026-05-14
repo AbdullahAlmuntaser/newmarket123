@@ -6,6 +6,8 @@ import 'core/auth/auth_provider.dart';
 import 'core/services/permission_service.dart';
 import 'core/services/app_settings_service.dart';
 import 'core/services/app_config_service.dart';
+import 'core/services/approval_workflow_service.dart';
+import 'core/services/loyalty_service.dart';
 import 'core/services/inventory_service.dart';
 import 'core/services/accounting_service.dart';
 import 'core/services/event_bus_service.dart';
@@ -124,6 +126,12 @@ Future<void> initServices() async {
     sl.registerLazySingleton<AuditService>(() => AuditService(db));
     sl.registerLazySingleton<AppConfigService>(() => AppConfigService(db));
     sl.registerLazySingleton<AppSettingsService>(() => AppSettingsService(db));
+    sl.registerLazySingleton<ApprovalWorkflowService>(
+      () => ApprovalWorkflowService(sl<AppConfigService>()),
+    );
+    sl.registerLazySingleton<LoyaltyService>(
+      () => LoyaltyService(sl<AppConfigService>()),
+    );
     sl.registerLazySingleton<InventoryService>(
       () => InventoryService(
         db,
@@ -254,6 +262,13 @@ List<SingleChildWidget> buildAppProviders() {
     Provider<AppDatabase>.value(value: sl<AppDatabase>()),
     Provider<AccountingService>.value(value: sl<AccountingService>()),
     Provider<DashboardService>.value(value: sl<DashboardService>()),
+    Provider<ApprovalWorkflowService>.value(
+      value: sl<ApprovalWorkflowService>(),
+    ),
+    Provider<LoyaltyService>.value(value: sl<LoyaltyService>()),
+    ChangeNotifierProvider<NotificationService>.value(
+      value: sl<NotificationService>(),
+    ),
     ChangeNotifierProvider<ThemeProvider>.value(value: sl<ThemeProvider>()),
     ChangeNotifierProvider<LocaleProvider>.value(value: sl<LocaleProvider>()),
     ChangeNotifierProvider<AuthProvider>.value(value: sl<AuthProvider>()),
