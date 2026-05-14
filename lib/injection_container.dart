@@ -381,6 +381,9 @@ List<SingleChildWidget> buildAppProviders() {
     Provider<ProfitabilityService>.value(value: sl<ProfitabilityService>()),
     Provider<ReportingService>.value(value: sl<ReportingService>()),
     Provider<PdfInvoiceService>.value(value: sl<PdfInvoiceService>()),
+    // Add missing providers for services that were registered but not provided
+    Provider<FinancialControlService>.value(value: sl<FinancialControlService>()),
+    Provider<ReportService>.value(value: sl<ReportService>()),
   ];
 }
 

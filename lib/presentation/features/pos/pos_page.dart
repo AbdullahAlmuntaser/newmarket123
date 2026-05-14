@@ -11,6 +11,7 @@ import 'package:supermarket/presentation/features/pos/widgets/barcode_scanner_di
 import 'package:supermarket/presentation/features/pos/widgets/category_selector.dart';
 import 'package:supermarket/injection_container.dart';
 import 'package:supermarket/core/services/communication_service.dart';
+import 'package:supermarket/core/services/quick_customer_service.dart';
 import 'package:supermarket/core/utils/printer_helper.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:share_plus/share_plus.dart';
@@ -46,12 +47,13 @@ class _PosViewState extends State<PosView> {
   @override
   Widget build(BuildContext context) {
     final commService = sl<CommunicationService>();
+    final quickCustomerService = sl<QuickCustomerService>();
 
     return BlocListener<PosBloc, PosState>(
       listener: (context, state) {
         if (state is PosCheckoutSuccess) {
           // عرض خيارات إرسال الفاتورة
-          _showInvoiceOptions(context, state, commService);
+          _showInvoiceOptions(context, state, commService, quickCustomerService);
         } else if (state is PosError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message), backgroundColor: Colors.red),
@@ -126,6 +128,7 @@ class _PosViewState extends State<PosView> {
     BuildContext context,
     PosCheckoutSuccess state,
     CommunicationService commService,
+    QuickCustomerService quickCustomerService,
   ) async {
     // أولاً إظهار رسالة النجاح
     ScaffoldMessenger.of(context).showSnackBar(
@@ -155,6 +158,13 @@ class _PosViewState extends State<PosView> {
       if (customer != null) {
         customerName = customer.name;
         customerPhone = customer.phone;
+      }
+    } else {
+      // استخدام خدمة العميل السريع لإنشاء/جلب عميل نقدي
+      final quickCustomer = await quickCustomerService.getOrCreateQuickCustomer();
+      if (quickCustomer != null) {
+        customerName = quickCustomer.name;
+        customerPhone = quickCustomer.phone;
       }
     }
 
