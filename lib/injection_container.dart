@@ -52,6 +52,23 @@ import 'core/services/dashboard_service.dart';
 import 'core/services/shift_service.dart';
 import 'core/services/stock_transfer_service.dart';
 import 'core/services/asset_service.dart';
+import 'core/services/return_service.dart';
+import 'core/services/quick_customer_service.dart';
+import 'core/services/financial_closing_service.dart';
+import 'core/services/system_auditor.dart';
+import 'core/services/report_engine_service.dart';
+import 'core/services/accounting_period_service.dart';
+import 'core/services/analytics_service.dart';
+import 'core/services/audit_log_service.dart';
+import 'core/services/erp_data_service.dart';
+import 'core/services/fixed_assets_service.dart';
+import 'core/services/inventory_audit_service.dart';
+import 'core/services/invoice_service.dart';
+import 'core/services/profitability_service.dart';
+import 'core/services/reporting_service.dart';
+import 'core/services/pdf_service.dart';
+import 'core/services/budget_service.dart';
+import 'core/services/payroll_service.dart';
 import 'presentation/features/accounting/accounting_provider.dart';
 import 'presentation/features/purchases/purchase_provider.dart';
 import 'presentation/features/accounting/shifts_provider.dart';
@@ -221,8 +238,61 @@ Future<void> initServices() async {
     sl.registerLazySingleton<AssetService>(() => AssetService(db));
     sl.registerLazySingleton<CommunicationService>(
         () => CommunicationService());
-    debugPrint("DI: Additional services registered");
-
+    sl.registerLazySingleton<ReturnService>(() => ReturnService(db));
+    sl.registerLazySingleton<QuickCustomerService>(
+      () => QuickCustomerService(db),
+    );
+    sl.registerLazySingleton<FinancialClosingService>(
+      () => FinancialClosingService(db),
+    );
+    sl.registerLazySingleton<SystemAuditor>(() => SystemAuditor(db));
+    sl.registerLazySingleton<ReportEngineService>(
+      () => ReportEngineService(db),
+    );
+    
+    // Register additional services that were not previously registered
+    debugPrint("DI: Registering additional unregistered services...");
+    sl.registerLazySingleton<AccountingPeriodService>(
+      () => AccountingPeriodService(db),
+    );
+    sl.registerLazySingleton<AnalyticsService>(
+      () => AnalyticsService(db),
+    );
+    sl.registerLazySingleton<AuditLogService>(
+      () => AuditLogService(db),
+    );
+    sl.registerLazySingleton<ErpDataService>(
+      () => ErpDataService(db, sl<InventoryCostingService>()),
+    );
+    sl.registerLazySingleton<FixedAssetsService>(
+      () => FixedAssetsService(db),
+    );
+    sl.registerLazySingleton<InventoryAuditService>(
+      () => InventoryAuditService(db),
+    );
+    sl.registerLazySingleton<InvoiceService>(
+      () => InvoiceService(db),
+    );
+    sl.registerLazySingleton<ProfitabilityService>(
+      () => ProfitabilityService(db),
+    );
+    sl.registerLazySingleton<ReportingService>(
+      () => ReportingService(db),
+    );
+    sl.registerLazySingleton<PdfInvoiceService>(
+      () => PdfInvoiceService(),
+    );
+    
+    // Register BudgetService and PayrollService
+    debugPrint("DI: Registering BudgetService and PayrollService...");
+    sl.registerLazySingleton<BudgetService>(
+      () => BudgetService(db, sl<NotificationService>()),
+    );
+    sl.registerLazySingleton<PayrollService>(
+      () => PayrollService(db),
+    );
+    debugPrint("DI: BudgetService and PayrollService registered");
+    
     debugPrint("DI: Registering providers...");
     sl.registerFactory<ProductsProvider>(() => ProductsProvider(db));
     sl.registerFactory<AccountingProvider>(() => AccountingProvider(db));
@@ -233,7 +303,9 @@ Future<void> initServices() async {
       () => ShiftProvider(sl<ShiftService>()),
     );
     sl.registerFactory<HRProvider>(() => HRProvider(sl<HRService>()));
-    sl.registerFactory<PayrollProvider>(() => PayrollProvider(sl<HRService>()));
+    sl.registerFactory<PayrollProvider>(
+      () => PayrollProvider(sl<HRService>(), sl<PayrollService>()),
+    );
     sl.registerFactory<StockTransferProvider>(
       () => StockTransferProvider(sl<StockTransferService>()),
     );
@@ -302,6 +374,32 @@ List<SingleChildWidget> buildAppProviders() {
     ChangeNotifierProvider<DashboardProvider>(
       create: (_) => sl<DashboardProvider>(),
     ),
+    Provider<ReturnService>.value(value: sl<ReturnService>()),
+    Provider<QuickCustomerService>.value(value: sl<QuickCustomerService>()),
+    Provider<FinancialClosingService>.value(
+      value: sl<FinancialClosingService>(),
+    ),
+    Provider<SystemAuditor>.value(value: sl<SystemAuditor>()),
+    Provider<ReportEngineService>.value(value: sl<ReportEngineService>()),
+    // Provide additional services that were not previously provided
+    Provider<AccountingPeriodService>.value(
+      value: sl<AccountingPeriodService>(),
+    ),
+    Provider<AnalyticsService>.value(value: sl<AnalyticsService>()),
+    Provider<AuditLogService>.value(value: sl<AuditLogService>()),
+    Provider<ErpDataService>.value(value: sl<ErpDataService>()),
+    Provider<FixedAssetsService>.value(value: sl<FixedAssetsService>()),
+    Provider<InventoryAuditService>.value(value: sl<InventoryAuditService>()),
+    Provider<InvoiceService>.value(value: sl<InvoiceService>()),
+    Provider<ProfitabilityService>.value(value: sl<ProfitabilityService>()),
+    Provider<ReportingService>.value(value: sl<ReportingService>()),
+    Provider<PdfInvoiceService>.value(value: sl<PdfInvoiceService>()),
+    // Add missing providers for services that were registered but not provided
+    Provider<FinancialControlService>.value(value: sl<FinancialControlService>()),
+    Provider<ReportService>.value(value: sl<ReportService>()),
+    // Provide BudgetService and PayrollService
+    Provider<BudgetService>.value(value: sl<BudgetService>()),
+    Provider<PayrollService>.value(value: sl<PayrollService>()),
   ];
 }
 

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:supermarket/core/services/app_config_service.dart';
 import 'package:supermarket/core/theme/locale_provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/services/system_auditor.dart';
 
 /// صفحة إعدادات النظام العامة
 /// General System Settings Page
