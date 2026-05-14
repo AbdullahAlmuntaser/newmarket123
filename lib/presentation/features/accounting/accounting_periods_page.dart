@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 import 'package:supermarket/core/services/financial_closing_service.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
+import 'package:supermarket/core/services/accounting_period_service.dart';
 
 /// صفحة إدارة الفترات المحاسبية
 class AccountingPeriodsPage extends StatefulWidget {
@@ -19,6 +20,11 @@ class _AccountingPeriodsPageState extends State<AccountingPeriodsPage> {
   final TextEditingController _nameController = TextEditingController();
   DateTime? _startDate;
   DateTime? _endDate;
+  
+  // متغيرات لإنشاء فترات تلقائية
+  int _selectedYear = DateTime.now().year;
+  String _periodType = 'monthly'; // monthly, quarterly, yearly
+  bool _isBulkCreate = false;
 
   @override
   void dispose() {
@@ -29,12 +35,22 @@ class _AccountingPeriodsPageState extends State<AccountingPeriodsPage> {
   @override
   Widget build(BuildContext context) {
     final db = context.read<AppDatabase>();
+    final periodService = context.read<AccountingPeriodService>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('الفترات المحاسبية')),
+      appBar: AppBar(
+        title: const Text('الفترات المحاسبية'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.calendar_month),
+            tooltip: 'إنشاء فترات تلقائية',
+            onPressed: () => _showBulkCreateDialog(db, periodService),
+          ),
+        ],
+      ),
       body: Column(
         children: [
-          // نموذج إضافة فترة
+          // نموذج إضافة فترة يدوية
           Card(
             margin: const EdgeInsets.all(16),
             child: Padding(
@@ -42,9 +58,23 @@ class _AccountingPeriodsPageState extends State<AccountingPeriodsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    'إضافة فترة جديدة',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'إضافة فترة يدوية',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      TextButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _isBulkCreate = !_isBulkCreate;
+                          });
+                        },
+                        icon: Icon(_isBulkCreate ? Icons.close : Icons.auto_awesome),
+                        label: Text(_isBulkCreate ? 'إلغاء التوليد التلقائي' : 'توليد تلقائي'),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   TextField(
@@ -101,7 +131,7 @@ class _AccountingPeriodsPageState extends State<AccountingPeriodsPage> {
                         ? () => _addPeriod(db)
                         : null,
                     icon: const Icon(Icons.add),
-                    label: const Text('إضافة فترة'),
+                    label: const Text('إضافة فترة يدوية'),
                   ),
                 ],
               ),
@@ -343,6 +373,112 @@ class _AccountingPeriodsPageState extends State<AccountingPeriodsPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('تم حذف الفترة')));
+    }
+  }
+
+  /// عرض حوار إنشاء فترات تلقائية
+  Future<void> _showBulkCreateDialog(
+    AppDatabase db,
+    AccountingPeriodService periodService,
+  ) async {
+    int year = _selectedYear;
+    String type = _periodType;
+
+    await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('إنشاء فترات محاسبية تلقائية'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // اختيار السنة
+              DropdownButtonFormField<int>(
+                value: year,
+                decoration: const InputDecoration(
+                  labelText: 'السنة',
+                  border: OutlineInputBorder(),
+                ),
+                items: List.generate(10, (i) => DateTime.now().year - 5 + i)
+                    .map((y) => DropdownMenuItem(
+                          value: y,
+                          child: Text(y.toString()),
+                        ))
+                    .toList(),
+                onChanged: (v) => setDialogState(() => year = v!),
+              ),
+              const SizedBox(height: 16),
+              // نوع الفترة
+              DropdownButtonFormField<String>(
+                value: type,
+                decoration: const InputDecoration(
+                  labelText: 'نوع الفترة',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'monthly', child: Text('شهرية (12 فترة)')),
+                  DropdownMenuItem(value: 'quarterly', child: Text('ربع سنوية (4 فترات)')),
+                  DropdownMenuItem(value: 'yearly', child: Text('سنوية (فترة واحدة)')),
+                ],
+                onChanged: (v) => setDialogState(() => type = v!),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'سيتم إنشاء الفترات تلقائياً بناءً على الاختيار.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('إلغاء'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () async {
+                Navigator.pop(context);
+                await _bulkCreatePeriods(db, periodService, year, type);
+              },
+              icon: const Icon(Icons.auto_awesome),
+              label: const Text('إنشاء'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// إنشاء فترات متعددة تلقائياً
+  Future<void> _bulkCreatePeriods(
+    AppDatabase db,
+    AccountingPeriodService periodService,
+    int year,
+    String type,
+  ) async {
+    try {
+      final count = await periodService.bulkCreatePeriods(year: year, type: type);
+
+      if (mounted) {
+        setState(() {
+          _selectedYear = year;
+          _periodType = type;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('تم إنشاء $count فترات محاسبية بنجاح'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('فشل في إنشاء الفترات: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }
