@@ -67,6 +67,8 @@ import 'core/services/invoice_service.dart';
 import 'core/services/profitability_service.dart';
 import 'core/services/reporting_service.dart';
 import 'core/services/pdf_service.dart';
+import 'core/services/budget_service.dart';
+import 'core/services/payroll_service.dart';
 import 'presentation/features/accounting/accounting_provider.dart';
 import 'presentation/features/purchases/purchase_provider.dart';
 import 'presentation/features/accounting/shifts_provider.dart';
@@ -280,7 +282,16 @@ Future<void> initServices() async {
     sl.registerLazySingleton<PdfInvoiceService>(
       () => PdfInvoiceService(),
     );
-    debugPrint("DI: Additional services registered");
+    
+    // Register BudgetService and PayrollService
+    debugPrint("DI: Registering BudgetService and PayrollService...");
+    sl.registerLazySingleton<BudgetService>(
+      () => BudgetService(db, sl<NotificationService>()),
+    );
+    sl.registerLazySingleton<PayrollService>(
+      () => PayrollService(db),
+    );
+    debugPrint("DI: BudgetService and PayrollService registered");
     
     debugPrint("DI: Registering providers...");
     sl.registerFactory<ProductsProvider>(() => ProductsProvider(db));
@@ -292,7 +303,9 @@ Future<void> initServices() async {
       () => ShiftProvider(sl<ShiftService>()),
     );
     sl.registerFactory<HRProvider>(() => HRProvider(sl<HRService>()));
-    sl.registerFactory<PayrollProvider>(() => PayrollProvider(sl<HRService>()));
+    sl.registerFactory<PayrollProvider>(
+      () => PayrollProvider(sl<HRService>(), sl<PayrollService>()),
+    );
     sl.registerFactory<StockTransferProvider>(
       () => StockTransferProvider(sl<StockTransferService>()),
     );
@@ -384,6 +397,9 @@ List<SingleChildWidget> buildAppProviders() {
     // Add missing providers for services that were registered but not provided
     Provider<FinancialControlService>.value(value: sl<FinancialControlService>()),
     Provider<ReportService>.value(value: sl<ReportService>()),
+    // Provide BudgetService and PayrollService
+    Provider<BudgetService>.value(value: sl<BudgetService>()),
+    Provider<PayrollService>.value(value: sl<PayrollService>()),
   ];
 }
 
