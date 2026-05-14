@@ -384,14 +384,14 @@ class CartWidget extends StatelessWidget {
       await database.into(database.unitConversions).insert(
             UnitConversionsCompanion.insert(
               productId: item.product.id,
-              unitName: result['unitName'],
-              factor: result['factor'],
-              barcode: drift.Value(result['barcode']),
-              sellPrice: drift.Value(result['sellPrice']),
+              unitName: result['unitName'] as String,
+              factor: result['factor'] as double,
+              barcode: drift.Value(result['barcode'] as String?),
+              sellPrice: drift.Value(result['sellPrice'] as double?),
             ),
           );
       // Reload units in Bloc
-      posBloc.add(UpdateCartItemUnit(item.product.id, result['unitName']));
+      posBloc.add(UpdateCartItemUnit(item.product.id, result['unitName'] as String));
     }
   }
 

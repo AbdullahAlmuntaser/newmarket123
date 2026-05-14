@@ -9,13 +9,19 @@ void main() {
     }
 
     // Admin Access
+    expect(checkAccess('/reports', 'admin'), isTrue);
     expect(checkAccess('/reports/sales', 'admin'), isTrue);
+    expect(checkAccess('/approvals', 'admin'), isTrue);
     expect(checkAccess('/accounting/coa', 'admin'), isTrue);
     expect(checkAccess('/users', 'admin'), isTrue);
     expect(checkAccess('/settings/backup', 'admin'), isTrue);
 
     // Manager Access
+    expect(checkAccess('/reports', 'manager'), isTrue);
     expect(checkAccess('/reports/sales', 'manager'), isTrue);
+    expect(checkAccess('/approvals', 'manager'), isTrue);
+    expect(checkAccess('/loyalty', 'manager'), isTrue);
+    expect(checkAccess('/promotions', 'manager'), isTrue);
     expect(checkAccess('/inventory/warehouses', 'manager'), isTrue);
     expect(checkAccess('/suppliers', 'manager'), isTrue);
     expect(checkAccess('/accounting/coa', 'manager'), isFalse);
@@ -25,7 +31,11 @@ void main() {
     // Cashier Access
     expect(checkAccess('/sales', 'cashier'), isTrue);
     expect(checkAccess('/customers', 'cashier'), isTrue);
+    expect(checkAccess('/reports', 'cashier'), isFalse);
     expect(checkAccess('/reports/sales', 'cashier'), isFalse);
+    expect(checkAccess('/approvals', 'cashier'), isFalse);
+    expect(checkAccess('/loyalty', 'cashier'), isFalse);
+    expect(checkAccess('/promotions', 'cashier'), isFalse);
     expect(checkAccess('/accounting/coa', 'cashier'), isFalse);
     expect(checkAccess('/users', 'cashier'), isFalse);
     expect(checkAccess('/pos', 'cashier'), isTrue);

@@ -1568,7 +1568,7 @@ class $GLAccountsTable extends GLAccounts
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES g_l_accounts (id)'));
+          GeneratedColumn.constraintIsAlways('REFERENCES gl_accounts (id)'));
   static const VerificationMeta _isHeaderMeta =
       const VerificationMeta('isHeader');
   @override
@@ -1607,7 +1607,7 @@ class $GLAccountsTable extends GLAccounts
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'g_l_accounts';
+  static const String $name = 'gl_accounts';
   @override
   VerificationContext validateIntegrity(Insertable<GLAccount> instance,
       {bool isInserting = false}) {
@@ -2248,7 +2248,7 @@ class $SuppliersTable extends Suppliers
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES g_l_accounts (id)'));
+          GeneratedColumn.constraintIsAlways('REFERENCES gl_accounts (id)'));
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -5018,7 +5018,7 @@ class $CustomersTable extends Customers
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES g_l_accounts (id)'));
+          GeneratedColumn.constraintIsAlways('REFERENCES gl_accounts (id)'));
   static const VerificationMeta _currencyIdMeta =
       const VerificationMeta('currencyId');
   @override
@@ -5986,7 +5986,7 @@ class $WarehousesTable extends Warehouses
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES g_l_accounts (id)'));
+          GeneratedColumn.constraintIsAlways('REFERENCES gl_accounts (id)'));
   static const VerificationMeta _isDefaultMeta =
       const VerificationMeta('isDefault');
   @override
@@ -20421,7 +20421,7 @@ class $GLEntriesTable extends GLEntries
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'g_l_entries';
+  static const String $name = 'gl_entries';
   @override
   VerificationContext validateIntegrity(Insertable<GLEntry> instance,
       {bool isInserting = false}) {
@@ -21079,7 +21079,7 @@ class $GLLinesTable extends GLLines with TableInfo<$GLLinesTable, GLLine> {
       type: DriftSqlType.string,
       requiredDuringInsert: true,
       defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES g_l_entries (id)'));
+          GeneratedColumn.constraintIsAlways('REFERENCES gl_entries (id)'));
   static const VerificationMeta _accountIdMeta =
       const VerificationMeta('accountId');
   @override
@@ -21088,7 +21088,7 @@ class $GLLinesTable extends GLLines with TableInfo<$GLLinesTable, GLLine> {
       type: DriftSqlType.string,
       requiredDuringInsert: true,
       defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES g_l_accounts (id)'));
+          GeneratedColumn.constraintIsAlways('REFERENCES gl_accounts (id)'));
   static const VerificationMeta _costCenterIdMeta =
       const VerificationMeta('costCenterId');
   @override
@@ -21155,7 +21155,7 @@ class $GLLinesTable extends GLLines with TableInfo<$GLLinesTable, GLLine> {
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'g_l_lines';
+  static const String $name = 'gl_lines';
   @override
   VerificationContext validateIntegrity(Insertable<GLLine> instance,
       {bool isInserting = false}) {
@@ -24179,7 +24179,7 @@ class $ReconciliationsTable extends Reconciliations
       type: DriftSqlType.string,
       requiredDuringInsert: true,
       defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES g_l_accounts (id)'));
+          GeneratedColumn.constraintIsAlways('REFERENCES gl_accounts (id)'));
   static const VerificationMeta _dateMeta = const VerificationMeta('date');
   @override
   late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
@@ -30180,7 +30180,7 @@ class $ChecksTable extends Checks with TableInfo<$ChecksTable, Check> {
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES g_l_accounts (id)'));
+          GeneratedColumn.constraintIsAlways('REFERENCES gl_accounts (id)'));
   static const VerificationMeta _noteMeta = const VerificationMeta('note');
   @override
   late final GeneratedColumn<String> note = GeneratedColumn<String>(
@@ -30948,7 +30948,7 @@ class $FinancialTransfersTable extends FinancialTransfers
       type: DriftSqlType.string,
       requiredDuringInsert: true,
       defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES g_l_accounts (id)'));
+          GeneratedColumn.constraintIsAlways('REFERENCES gl_accounts (id)'));
   static const VerificationMeta _receiverAccountIdMeta =
       const VerificationMeta('receiverAccountId');
   @override
@@ -30957,7 +30957,7 @@ class $FinancialTransfersTable extends FinancialTransfers
           type: DriftSqlType.string,
           requiredDuringInsert: true,
           defaultConstraints: GeneratedColumn.constraintIsAlways(
-              'REFERENCES g_l_accounts (id)'));
+              'REFERENCES gl_accounts (id)'));
   static const VerificationMeta _amountMeta = const VerificationMeta('amount');
   @override
   late final GeneratedColumn<double> amount = GeneratedColumn<double>(
@@ -36849,7 +36849,7 @@ class $AccountTransactionsTable extends AccountTransactions
       type: DriftSqlType.string,
       requiredDuringInsert: true,
       defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES g_l_accounts (id)'));
+          GeneratedColumn.constraintIsAlways('REFERENCES gl_accounts (id)'));
   static const VerificationMeta _dateMeta = const VerificationMeta('date');
   @override
   late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
@@ -37461,7 +37461,7 @@ class $PostingProfilesTable extends PostingProfiles
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES g_l_accounts (id)'));
+          GeneratedColumn.constraintIsAlways('REFERENCES gl_accounts (id)'));
   static const VerificationMeta _descriptionMeta =
       const VerificationMeta('description');
   @override
@@ -39724,7 +39724,7 @@ class $APInvoicesTable extends APInvoices
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES g_l_accounts (id)'));
+          GeneratedColumn.constraintIsAlways('REFERENCES gl_accounts (id)'));
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -40494,7 +40494,7 @@ class $ARInvoicesTable extends ARInvoices
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES g_l_accounts (id)'));
+          GeneratedColumn.constraintIsAlways('REFERENCES gl_accounts (id)'));
   @override
   List<GeneratedColumn> get $columns => [
         id,

@@ -386,6 +386,9 @@ class PurchasePaymentLinks extends Table with SyncableTable {
 }
 
 class GLAccounts extends Table with SyncableTable {
+  @override
+  String get tableName => 'gl_accounts';
+
   TextColumn get code => text().unique()();
   TextColumn get name => text()();
   TextColumn get type => text()(); // ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
@@ -403,6 +406,9 @@ class CostCenters extends Table with SyncableTable {
 }
 
 class GLEntries extends Table with SyncableTable {
+  @override
+  String get tableName => 'gl_entries';
+
   TextColumn get description => text()();
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
   TextColumn get referenceType =>
@@ -418,6 +424,9 @@ class GLEntries extends Table with SyncableTable {
 }
 
 class GLLines extends Table with SyncableTable {
+  @override
+  String get tableName => 'gl_lines';
+
   TextColumn get entryId => text().references(GLEntries, #id)();
   TextColumn get accountId => text().references(GLAccounts, #id)();
   TextColumn get costCenterId =>
@@ -964,7 +973,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 38;
+  int get schemaVersion => 39;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1048,13 +1057,77 @@ class AppDatabase extends _$AppDatabase {
               await m.createTable(productionOrderItems);
             } catch (_) {}
           }
+          if (from < 39) {
+            // Version 39: Add query indexes for high-volume ERP screens.
+            await ensurePerformanceIndexes();
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON;');
           await customStatement('PRAGMA journal_mode = WAL;');
           await customStatement('PRAGMA synchronous = NORMAL;');
+          await ensurePerformanceIndexes();
         },
       );
+
+  static const List<String> _performanceIndexStatements = [
+    'CREATE INDEX IF NOT EXISTS products_sku_idx ON products (sku)',
+    'CREATE INDEX IF NOT EXISTS products_barcode_idx ON products (barcode)',
+    'CREATE INDEX IF NOT EXISTS products_category_id_idx ON products (category_id)',
+    'CREATE INDEX IF NOT EXISTS products_supplier_id_idx ON products (supplier_id)',
+    'CREATE INDEX IF NOT EXISTS products_is_active_idx ON products (is_active)',
+    'CREATE INDEX IF NOT EXISTS product_units_product_id_idx ON product_units (product_id)',
+    'CREATE INDEX IF NOT EXISTS product_units_barcode_idx ON product_units (barcode)',
+    'CREATE INDEX IF NOT EXISTS product_batches_product_warehouse_idx '
+        'ON product_batches (product_id, warehouse_id)',
+    'CREATE INDEX IF NOT EXISTS product_batches_expiry_date_idx '
+        'ON product_batches (expiry_date)',
+    'CREATE INDEX IF NOT EXISTS sale_items_sale_id_idx ON sale_items (sale_id)',
+    'CREATE INDEX IF NOT EXISTS sale_items_product_id_idx ON sale_items (product_id)',
+    'CREATE INDEX IF NOT EXISTS sales_customer_id_idx ON sales (customer_id)',
+    'CREATE INDEX IF NOT EXISTS sales_created_at_idx ON sales (created_at)',
+    'CREATE INDEX IF NOT EXISTS sales_status_idx ON sales (status)',
+    'CREATE INDEX IF NOT EXISTS purchase_items_purchase_id_idx '
+        'ON purchase_items (purchase_id)',
+    'CREATE INDEX IF NOT EXISTS purchase_items_product_id_idx '
+        'ON purchase_items (product_id)',
+    'CREATE INDEX IF NOT EXISTS purchases_supplier_id_idx ON purchases (supplier_id)',
+    'CREATE INDEX IF NOT EXISTS purchases_date_idx ON purchases (date)',
+    'CREATE INDEX IF NOT EXISTS purchases_status_idx ON purchases (status)',
+    'CREATE INDEX IF NOT EXISTS gl_entries_date_idx ON gl_entries (date)',
+    'CREATE INDEX IF NOT EXISTS gl_entries_reference_idx '
+        'ON gl_entries (reference_type, reference_id)',
+    'CREATE INDEX IF NOT EXISTS gl_entries_status_idx ON gl_entries (status)',
+    'CREATE INDEX IF NOT EXISTS gl_lines_entry_id_idx ON gl_lines (entry_id)',
+    'CREATE INDEX IF NOT EXISTS gl_lines_account_id_idx ON gl_lines (account_id)',
+    'CREATE INDEX IF NOT EXISTS gl_lines_cost_center_id_idx '
+        'ON gl_lines (cost_center_id)',
+    'CREATE INDEX IF NOT EXISTS stock_movements_product_id_idx '
+        'ON stock_movements (product_id)',
+    'CREATE INDEX IF NOT EXISTS stock_movements_reference_id_idx '
+        'ON stock_movements (reference_id)',
+    'CREATE INDEX IF NOT EXISTS stock_movements_movement_date_idx '
+        'ON stock_movements (movement_date)',
+    'CREATE INDEX IF NOT EXISTS stock_movements_type_idx ON stock_movements (type)',
+    'CREATE INDEX IF NOT EXISTS customer_payments_customer_id_idx '
+        'ON customer_payments (customer_id)',
+    'CREATE INDEX IF NOT EXISTS customer_payments_payment_date_idx '
+        'ON customer_payments (payment_date)',
+    'CREATE INDEX IF NOT EXISTS supplier_payments_supplier_id_idx '
+        'ON supplier_payments (supplier_id)',
+    'CREATE INDEX IF NOT EXISTS supplier_payments_payment_date_idx '
+        'ON supplier_payments (payment_date)',
+    'CREATE INDEX IF NOT EXISTS audit_logs_timestamp_idx ON audit_logs (timestamp)',
+    'CREATE INDEX IF NOT EXISTS audit_logs_target_entity_idx '
+        'ON audit_logs (target_entity)',
+    'CREATE INDEX IF NOT EXISTS sync_queue_status_idx ON sync_queue (status)',
+  ];
+
+  Future<void> ensurePerformanceIndexes() async {
+    for (final statement in _performanceIndexStatements) {
+      await customStatement(statement);
+    }
+  }
 
   Future<int> getUnsyncedCount() async {
     final countExp = syncQueue.id.count();
@@ -1285,10 +1358,14 @@ class AppDatabase extends _$AppDatabase {
 
     await transaction(() async {
       for (final entry in permissionsToSeed.entries) {
-        await into(permissions).insertOnConflictUpdate(
+        await into(permissions).insert(
           PermissionsCompanion.insert(
             code: entry.key,
             description: Value(entry.value),
+          ),
+          onConflict: DoUpdate(
+            (old) => PermissionsCompanion(description: Value(entry.value)),
+            target: [permissions.code],
           ),
         );
       }
