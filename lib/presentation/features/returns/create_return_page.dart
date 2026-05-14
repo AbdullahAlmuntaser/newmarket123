@@ -5,6 +5,7 @@ import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
+import 'package:supermarket/core/services/return_service.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:math';
 
@@ -212,15 +213,63 @@ class _CreateReturnPageState extends State<CreateReturnPage> {
   }
 
   Future<void> _processReturn() async {
-    final db = Provider.of<AppDatabase>(context, listen: false);
+    final returnService = Provider.of<ReturnService>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final l10n = AppLocalizations.of(context)!;
 
     try {
       if (widget.type == ReturnType.sale) {
-        await _handleSaleReturn(db, authProvider.currentUser?.id);
+        final sale = _selectedTransaction as Sale;
+        final items = _transactionItems
+            .where((item) => (_returnQuantities[item.productId] ?? 0) > 0)
+            .map((item) => ReturnItemData(
+                  productId: item.productId,
+                  quantity: _returnQuantities[item.productId] ?? 0,
+                  price: item.price,
+                ))
+            .toList();
+
+        if (items.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.noItemsSelected),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          return;
+        }
+
+        await returnService.processSalesReturn(
+          saleId: sale.id,
+          items: items,
+          userId: authProvider.currentUser?.id,
+        );
       } else {
-        await _handlePurchaseReturn(db, authProvider.currentUser?.id);
+        final purchase = _selectedTransaction as Purchase;
+        final items = _transactionItems
+            .where((item) => (_returnQuantities[item.productId] ?? 0) > 0)
+            .map((item) => ReturnItemData(
+                  productId: item.productId,
+                  quantity: _returnQuantities[item.productId] ?? 0,
+                  price: item.price,
+                ))
+            .toList();
+
+        if (items.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.noItemsSelected),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          return;
+        }
+
+        await returnService.processPurchaseReturn(
+          purchaseId: purchase.id,
+          items: items,
+          userId: authProvider.currentUser?.id,
+        );
       }
 
       if (mounted) {
@@ -239,87 +288,5 @@ class _CreateReturnPageState extends State<CreateReturnPage> {
         );
       }
     }
-  }
-
-  Future<void> _handleSaleReturn(AppDatabase db, String? userId) async {
-    final sale = _selectedTransaction as Sale;
-    double totalReturnedAmount = 0;
-    final List<SalesReturnItemsCompanion> itemCompanions = [];
-    final returnId = const Uuid().v4();
-
-    for (var item in _transactionItems) {
-      final returnedQty = _returnQuantities[item.productId] ?? 0;
-      if (returnedQty > 0) {
-        totalReturnedAmount += returnedQty * item.price;
-        itemCompanions.add(
-          SalesReturnItemsCompanion.insert(
-            id: drift.Value(const Uuid().v4()),
-            salesReturnId: returnId,
-            productId: item.productId,
-            quantity: returnedQty,
-            price: item.price,
-            syncStatus: const drift.Value(1),
-          ),
-        );
-      }
-    }
-
-    if (totalReturnedAmount == 0) return;
-
-    final returnCompanion = SalesReturnsCompanion.insert(
-      id: drift.Value(returnId),
-      saleId: sale.id,
-      amountReturned: totalReturnedAmount,
-      createdAt: drift.Value(DateTime.now()),
-      updatedAt: drift.Value(DateTime.now()),
-      syncStatus: const drift.Value(1),
-    );
-
-    await db.salesDao.createSaleReturn(
-      returnCompanion: returnCompanion,
-      itemsCompanions: itemCompanions,
-      userId: userId,
-    );
-  }
-
-  Future<void> _handlePurchaseReturn(AppDatabase db, String? userId) async {
-    final purchase = _selectedTransaction as Purchase;
-    double totalReturnedAmount = 0;
-    final List<PurchaseReturnItemsCompanion> itemCompanions = [];
-    final returnId = const Uuid().v4();
-
-    for (var item in _transactionItems) {
-      final returnedQty = _returnQuantities[item.productId] ?? 0;
-      if (returnedQty > 0) {
-        totalReturnedAmount += returnedQty * item.price;
-        itemCompanions.add(
-          PurchaseReturnItemsCompanion.insert(
-            id: drift.Value(const Uuid().v4()),
-            purchaseReturnId: returnId,
-            productId: item.productId,
-            quantity: returnedQty,
-            price: item.price,
-            syncStatus: const drift.Value(1),
-          ),
-        );
-      }
-    }
-
-    if (totalReturnedAmount == 0) return;
-
-    final returnCompanion = PurchaseReturnsCompanion.insert(
-      id: drift.Value(returnId),
-      purchaseId: purchase.id,
-      amountReturned: totalReturnedAmount,
-      createdAt: drift.Value(DateTime.now()),
-      updatedAt: drift.Value(DateTime.now()),
-      syncStatus: const drift.Value(1),
-    );
-
-    await db.purchasesDao.createPurchaseReturn(
-      returnCompanion: returnCompanion,
-      itemsCompanions: itemCompanions,
-      userId: userId,
-    );
   }
 }
