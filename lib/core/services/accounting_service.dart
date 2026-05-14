@@ -2028,8 +2028,8 @@ class AccountingService {
     int? costCenterId,
   }) async {
     final dao = db.accountingDao;
-    // NOTE: In production, inject these services via DI instead of instantiating here
-    final budgetService = BudgetService(db, sl<NotificationService>());
+    // Use injected BudgetService from DI container
+    final budgetService = sl<BudgetService>();
     final period = '${date.year}-${date.month}';
 
     // 1. التحقق من الميزانية إذا كان هناك مركز تكلفة

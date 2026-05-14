@@ -1,28 +1,38 @@
 ```
-# Build artifacts
-*.class
+# Compiled and build artifacts
+*.pyc
+__pycache__/
 *.o
 *.obj
+*.class
 *.exe
 *.dll
 *.so
 *.a
 *.out
-build/
-dist/
-target/
 
 # Dependencies
 node_modules/
 venv/
 .venv/
-__pycache__/
+.env
+.env.local
+.env.*
+
+# Build outputs
+dist/
+build/
+target/
+.gradle/
+
+# Python specific
 .mypy_cache/
 .pytest_cache/
-.gradle/
-pubspec.lock
+.coverage
+coverage/
+htmlcov/
 
-# Editor/IDE files
+# Editors
 .vscode/
 .idea/
 *.swp
@@ -32,17 +42,9 @@ pubspec.lock
 # System files
 .DS_Store
 Thumbs.db
-.env
-.env.local
-*.env.*
 
 # Logs
 *.log
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
 
 # Compressed files
 *.zip
