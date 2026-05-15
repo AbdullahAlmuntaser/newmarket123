@@ -1,0 +1,1 @@
+ /home/user/systemmarket/.dart_tool/flutter_build/2a2f6c11582a4e355b12f5d21478e018/native_assets.yaml: 

@@ -14,7 +14,7 @@ class CategoriesPage extends StatelessWidget {
     final db = Provider.of<AppDatabase>(context);
     final authProvider = Provider.of<AuthProvider>(context);
     final l10n = AppLocalizations.of(context)!;
-    final isAdmin = authProvider.currentUser?.role == 'admin';
+    final isAdmin = authProvider.isAdmin;
 
     // Define a list of beautiful colors to cycle through for category cards
     final List<Color> categoryColors = [

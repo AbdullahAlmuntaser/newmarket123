@@ -27,10 +27,9 @@ class MainDrawer extends StatelessWidget {
       );
     }
 
-    final role = authProvider.currentUser?.role.toLowerCase() ?? 'cashier';
-    final isAdmin = role == 'admin';
-    final isManager = role == 'manager' || isAdmin;
-    final isCashier = role == 'cashier' || isManager;
+    final isAdmin = authProvider.isAdmin;
+    final isManager = authProvider.isManager;
+    final isCashier = authProvider.isCashier;
 
     return Drawer(
       width: 280,

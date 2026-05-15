@@ -390,5 +390,6 @@
   "next30Days": "Next 30 Days",
   "next60Days": "Next 60 Days",
   "next90Days": "Next 90 Days",
-  "period": "Period"
+  "period": "Period",
+  "noItemsSelected": "No items selected"
 }

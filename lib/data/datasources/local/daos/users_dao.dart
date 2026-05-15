@@ -20,7 +20,7 @@ class UsersDao extends DatabaseAccessor<AppDatabase> with _$UsersDaoMixin {
     )..where((u) => u.username.equals(username)))
         .getSingleOrNull();
     if (user == null) return false;
-    if (user.role == 'ADMIN') return true; // Admin has all permissions
+    if (user.role.toLowerCase() == 'admin') return true; // Admin has all permissions
 
     final query = select(rolePermissions)
       ..where(

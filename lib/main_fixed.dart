@@ -8,6 +8,7 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/injection_container.dart' as di;
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:supermarket/core/services/payroll_service.dart';
 import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
 import 'package:supermarket/presentation/features/products/products_provider.dart';
 import 'package:supermarket/presentation/features/purchases/purchase_provider.dart';
@@ -243,7 +244,7 @@ class MyApp extends StatelessWidget {
                 HRService(di.sl<AppDatabase>()))),
         ChangeNotifierProvider(
             create: (_) => PayrollProvider(
-                HRService(di.sl<AppDatabase>()))),
+                di.sl<HRService>(), di.sl<PayrollService>())),
         ChangeNotifierProvider(
           create: (_) =>
               StockTransferProvider(StockTransferService(di.sl<AppDatabase>())),

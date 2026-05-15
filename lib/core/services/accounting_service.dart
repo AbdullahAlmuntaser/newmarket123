@@ -11,7 +11,6 @@ import 'app_config_service.dart';
 import 'permission_service.dart';
 import 'budget_service.dart';
 import 'package:supermarket/injection_container.dart';
-import 'package:supermarket/core/services/notification_service.dart';
 
 part 'accounting_service.g.dart';
 

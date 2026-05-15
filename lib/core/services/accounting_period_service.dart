@@ -13,7 +13,7 @@ class AccountingPeriodService {
     required String type, // monthly, quarterly, yearly
   }) async {
     final periods = <AccountingPeriodsCompanion>[];
-    final uuid = const Uuid();
+    const uuid = Uuid();
 
     if (type == 'yearly') {
       // فترة سنوية واحدة
