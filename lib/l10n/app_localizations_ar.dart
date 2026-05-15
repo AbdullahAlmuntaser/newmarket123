@@ -1,12 +1,8 @@
-// ignore: unused_import
-import 'package:intl/intl.dart' as intl;
 import 'app_localizations.dart';
-
-// ignore_for_file: type=lint
 
 /// The translations for Arabic (`ar`).
 class AppLocalizationsAr extends AppLocalizations {
-  AppLocalizationsAr([String locale = 'ar']) : super(locale);
+  AppLocalizationsAr([super.locale = 'ar']);
 
   @override
   String get appTitle => 'تطبيق المحاسبة';
@@ -752,8 +748,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeAdmin => 'مرحباً بك أيها المشرف';
 
   @override
-  String get adminDashboardDescription =>
-      'إدارة عمليات السوبر ماركت الخاصة بك بكل سهولة.';
+  String get adminDashboardDescription => 'إدارة عمليات السوبر ماركت الخاصة بك بكل سهولة.';
 
   @override
   String get manageStaff => 'إدارة الموظفين';
@@ -852,8 +847,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get confirmRestore => 'تأكيد الاستعادة';
 
   @override
-  String get restoreWarning =>
-      'الاستعادة ستؤدي إلى مسح البيانات الحالية. هل أنت متأكد؟';
+  String get restoreWarning => 'الاستعادة ستؤدي إلى مسح البيانات الحالية. هل أنت متأكد؟';
 
   @override
   String get simplifiedTaxInvoice => 'فاتورة ضريبية مبسطة';
@@ -1046,12 +1040,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get viewInvoice => 'عرض الفاتورة';
 
   @override
-  String get confirmDeleteCategory =>
-      'هل أنت متأكد من حذف هذه الفئة؟ سيؤدي هذا إلى منع الوصول إلى المنتجات المرتبطة بها.';
+  String get confirmDeleteCategory => 'هل أنت متأكد من حذف هذه الفئة؟ سيؤدي هذا إلى منع الوصول إلى المنتجات المرتبطة بها.';
 
   @override
-  String get categoryHasProductsError =>
-      'لا يمكن حذف الفئة لأنها مرتبطة بمنتجات موجودة.';
+  String get categoryHasProductsError => 'لا يمكن حذف الفئة لأنها مرتبطة بمنتجات موجودة.';
 
   @override
   String get deleteCategory => 'حذف فئة';
@@ -1207,4 +1199,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get period => 'الفترة';
+
+  @override
+  String get noItemsSelected => 'لم يتم اختيار أي أصناف';
 }

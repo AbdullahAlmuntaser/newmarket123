@@ -40,7 +40,7 @@ class PayrollProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final entryId = await _payrollService.postPayrollJournalEntry(payrollRunId);
+      await _payrollService.postPayrollJournalEntry(payrollRunId);
       await loadPayrollEntries();
     } finally {
       _isLoading = false;

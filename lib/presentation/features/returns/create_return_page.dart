@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
-import 'package:drift/drift.dart' as drift;
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:supermarket/core/services/return_service.dart';
-import 'package:uuid/uuid.dart';
 import 'dart:math';
 
 enum ReturnType { sale, purchase }

@@ -1,12 +1,8 @@
-// ignore: unused_import
-import 'package:intl/intl.dart' as intl;
 import 'app_localizations.dart';
-
-// ignore_for_file: type=lint
 
 /// The translations for English (`en`).
 class AppLocalizationsEn extends AppLocalizations {
-  AppLocalizationsEn([String locale = 'en']) : super(locale);
+  AppLocalizationsEn([super.locale = 'en']);
 
   @override
   String get appTitle => 'Accounting App';
@@ -752,8 +748,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeAdmin => 'Welcome Admin';
 
   @override
-  String get adminDashboardDescription =>
-      'Manage your supermarket operations with ease.';
+  String get adminDashboardDescription => 'Manage your supermarket operations with ease.';
 
   @override
   String get manageStaff => 'Manage Staff';
@@ -852,8 +847,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmRestore => 'Confirm Restore';
 
   @override
-  String get restoreWarning =>
-      'Restoring will overwrite current data. Are you sure?';
+  String get restoreWarning => 'Restoring will overwrite current data. Are you sure?';
 
   @override
   String get simplifiedTaxInvoice => 'Simplified Tax Invoice';
@@ -1046,12 +1040,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewInvoice => 'View Invoice';
 
   @override
-  String get confirmDeleteCategory =>
-      'Are you sure you want to delete this category? This will prevent access to associated products.';
+  String get confirmDeleteCategory => 'Are you sure you want to delete this category? This will prevent access to associated products.';
 
   @override
-  String get categoryHasProductsError =>
-      'Cannot delete category because it is associated with existing products.';
+  String get categoryHasProductsError => 'Cannot delete category because it is associated with existing products.';
 
   @override
   String get deleteCategory => 'Delete Category';
@@ -1207,4 +1199,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get period => 'Period';
+
+  @override
+  String get noItemsSelected => 'No items selected';
 }

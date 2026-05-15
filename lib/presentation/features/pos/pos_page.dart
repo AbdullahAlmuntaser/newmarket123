@@ -161,7 +161,7 @@ class _PosViewState extends State<PosView> {
       }
     } else {
       // استخدام خدمة العميل السريع لإنشاء/جلب عميل نقدي
-      final quickCustomer = await quickCustomerService.getOrCreateQuickCustomer();
+      final quickCustomer = await quickCustomerService.getOrCreateCustomerForSale('عميل نقدي');
       if (quickCustomer != null) {
         customerName = quickCustomer.name;
         customerPhone = quickCustomer.phone;
