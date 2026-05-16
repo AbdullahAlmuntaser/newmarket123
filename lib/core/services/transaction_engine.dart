@@ -198,11 +198,21 @@ class TransactionEngine {
     // Check if accounting period is open before posting
     await _checkAccountingPeriodOpen();
 
-    // NEW: Check if there is an active shift for cash sales
-    final saleHeader = await (db.select(db.sales)
+    // First check: Verify sale exists and is not already posted (outside transaction)
+    final saleCheck = await (db.select(db.sales)
           ..where((s) => s.id.equals(saleId)))
-        .getSingle();
-    if (saleHeader.paymentMethod == PaymentMethod.cash && userId != null) {
+        .getSingleOrNull();
+
+    if (saleCheck == null) {
+      throw Exception('الفاتورة غير موجودة.');
+    }
+
+    if (saleCheck.status == DocumentStatus.posted) {
+      throw Exception('هذه الفاتورة تم ترحيلها بالفعل.');
+    }
+
+    // Check if there is an active shift for cash sales
+    if (saleCheck.paymentMethod == PaymentMethod.cash && userId != null) {
       final activeShift = await (db.select(db.shifts)
             ..where((s) => s.userId.equals(userId) & s.isOpen.equals(true)))
           .getSingleOrNull();
@@ -212,12 +222,24 @@ class TransactionEngine {
     }
 
     await db.transaction(() async {
-      // 1. Get Sale and Items
-      final sale = saleHeader; // Already fetched above
+      // Re-fetch latest header within transaction to avoid race conditions
+      final currentSale = await (db.select(db.sales)
+            ..where((s) => s.id.equals(saleId))
+            ..where((s) => s.status.equals(DocumentStatus.draft.index)))
+          .getSingleOrNull();
 
-      if (sale.status == DocumentStatus.posted) {
-        throw Exception('هذه الفاتورة تم ترحيلها بالفعل.');
+      if (currentSale == null) {
+        // Sale was already posted or status changed - verify current status
+        final latestSale = await (db.select(db.sales)
+              ..where((s) => s.id.equals(saleId)))
+            .getSingle();
+        if (latestSale.status == DocumentStatus.posted) {
+          throw Exception('هذه الفاتورة تم ترحيلها بالفعل.');
+        }
+        throw Exception('حالة الفاتورة غير صالحة للترحيل.');
       }
+
+      final sale = currentSale;
 
       final items = await (db.select(
         db.saleItems,

@@ -52,11 +52,13 @@ class _PosViewState extends State<PosView> {
     return BlocListener<PosBloc, PosState>(
       listener: (context, state) {
         if (state is PosCheckoutSuccess) {
-          // عرض خيارات إرسال الفاتورة
           _showInvoiceOptions(context, state, commService, quickCustomerService);
         } else if (state is PosError) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
           );
         }
       },
@@ -65,11 +67,13 @@ class _PosViewState extends State<PosView> {
           title: const Text('نقطة البيع السريع'),
           actions: [
             IconButton(
-                icon: const Icon(Icons.history),
-                onPressed: () => context.push('/sales')),
+              icon: const Icon(Icons.history),
+              onPressed: () => context.push('/sales'),
+            ),
             IconButton(
-                icon: const Icon(Icons.qr_code_scanner),
-                onPressed: () => _openScanner(context)),
+              icon: const Icon(Icons.qr_code_scanner),
+              onPressed: () => _openScanner(context),
+            ),
           ],
         ),
         body: BlocBuilder<PosBloc, PosState>(
@@ -77,38 +81,74 @@ class _PosViewState extends State<PosView> {
             if (state is PosLoading) {
               return const Center(child: CircularProgressIndicator());
             }
-            if (state is PosError) {
-              return Center(
-                  child: Text('خطأ في تحميل البيانات: ${state.message}'));
-            }
             if (state is PosLoaded) {
-              return Row(
-                children: [
-                  const Expanded(flex: 2, child: CartWidget()),
-                  Expanded(
-                    flex: 3,
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth > 800;
+                  final isTablet = constraints.maxWidth > 500 && constraints.maxWidth <= 800;
+                  
+                  if (isWide) {
+                    return Row(
+                      children: [
+                        const Expanded(flex: 2, child: CartWidget()),
+                        Expanded(
+                          flex: 3,
+                          child: _buildProductSection(),
+                        ),
+                      ],
+                    );
+                  } else if (isTablet) {
+                    return Row(
+                      children: [
+                        const Expanded(flex: 1, child: CartWidget()),
+                        Expanded(
+                          flex: 2,
+                          child: _buildProductSection(),
+                        ),
+                      ],
+                    );
+                  }
+                  return DefaultTabController(
+                    length: 2,
                     child: Column(
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: ProductSearchWidget(
-                              controller: _barcodeController),
+                        const TabBar(
+                          tabs: [Tab(text: 'المنتجات'), Tab(text: 'السلة')],
                         ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8.0),
-                          child: CategorySelector(),
+                        Expanded(
+                          child: TabBarView(
+                            children: [
+                              _buildProductSection(),
+                              const CartWidget(),
+                            ],
+                          ),
                         ),
-                        const Expanded(child: ProductGrid()),
                       ],
                     ),
-                  ),
-                ],
+                  );
+                },
               );
             }
             return const Center(child: Text('بدء نقطة البيع...'));
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildProductSection() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: ProductSearchWidget(controller: _barcodeController),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8.0),
+          child: CategorySelector(),
+        ),
+        const Expanded(child: ProductGrid()),
+      ],
     );
   }
 
@@ -130,24 +170,19 @@ class _PosViewState extends State<PosView> {
     CommunicationService commService,
     QuickCustomerService quickCustomerService,
   ) async {
-    // أولاً إظهار رسالة النجاح
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('تمت عملية البيع بنجاح'),
-          backgroundColor: Colors.green),
+      SnackBar(
+        content: const Text('تمت عملية البيع بنجاح'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
     );
 
-    // مسح السلة
     context.read<PosBloc>().add(ClearCart());
 
-    // عرض خيارات إرسال الفاتورة بعد قليل
     if (!mounted) return;
-
     await Future.delayed(const Duration(milliseconds: 500));
-
     if (!mounted) return;
 
-    // جلب بيانات العميل إذا وجدت
     String customerName = 'عميل نقدي';
     String? customerPhone;
 
@@ -160,7 +195,6 @@ class _PosViewState extends State<PosView> {
         customerPhone = customer.phone;
       }
     } else {
-      // استخدام خدمة العميل السريع لإنشاء/جلب عميل نقدي
       final quickCustomer = await quickCustomerService.getOrCreateCustomerForSale('عميل نقدي');
       if (quickCustomer != null) {
         customerName = quickCustomer.name;
@@ -189,7 +223,6 @@ class _PosViewState extends State<PosView> {
             onPressed: () => Navigator.pop(ctx),
             child: const Text('لاحقاً'),
           ),
-          // زر طباعة
           IconButton.filledTonal(
             icon: const Icon(Icons.print),
             tooltip: 'طباعة',
@@ -203,7 +236,6 @@ class _PosViewState extends State<PosView> {
               );
             },
           ),
-          // زر WhatsApp إذا كان هناك عميل
           if (hasCustomerPhone)
             IconButton.filledTonal(
               icon: const Icon(Icons.message, color: Colors.green),
@@ -218,7 +250,6 @@ class _PosViewState extends State<PosView> {
                 );
               },
             ),
-          // زر مشاركة
           IconButton.filledTonal(
             icon: const Icon(Icons.share),
             tooltip: 'مشاركة',

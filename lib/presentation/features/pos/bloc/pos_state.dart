@@ -79,7 +79,8 @@ class PosLoaded extends PosState {
   final List<Category> categories;
   final String? selectedCategoryId;
   final List<Product> filteredProducts;
-  final String? activePriceListId; // New field
+  final String? activePriceListId;
+  final bool isProcessingCheckout;
 
   PosLoaded({
     this.cart = const [],
@@ -91,6 +92,7 @@ class PosLoaded extends PosState {
     this.selectedCategoryId,
     this.filteredProducts = const [],
     this.activePriceListId,
+    this.isProcessingCheckout = false,
   })  : discount = discount ?? Decimal.zero,
         taxRate = taxRate ?? Decimal.zero;
 
@@ -109,6 +111,7 @@ class PosLoaded extends PosState {
     String? selectedCategoryId,
     List<Product>? filteredProducts,
     String? activePriceListId,
+    bool? isProcessingCheckout,
   }) {
     return PosLoaded(
       cart: cart ?? this.cart,
@@ -120,6 +123,7 @@ class PosLoaded extends PosState {
       selectedCategoryId: selectedCategoryId ?? this.selectedCategoryId,
       filteredProducts: filteredProducts ?? this.filteredProducts,
       activePriceListId: activePriceListId ?? this.activePriceListId,
+      isProcessingCheckout: isProcessingCheckout ?? this.isProcessingCheckout,
     );
   }
 
@@ -134,6 +138,7 @@ class PosLoaded extends PosState {
         selectedCategoryId,
         filteredProducts,
         activePriceListId,
+        isProcessingCheckout,
       ];
 }
 
