@@ -8677,6 +8677,22 @@ class $CostCentersTable extends CostCenters
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
       'name', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _parentIdMeta =
+      const VerificationMeta('parentId');
+  @override
+  late final GeneratedColumn<String> parentId = GeneratedColumn<String>(
+      'parent_id', aliasedName, true,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES cost_centers (id)'));
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+      'type', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('department'));
   static const VerificationMeta _isActiveMeta =
       const VerificationMeta('isActive');
   @override
@@ -8697,6 +8713,8 @@ class $CostCentersTable extends CostCenters
         branchId,
         code,
         name,
+        parentId,
+        type,
         isActive
       ];
   @override
@@ -8746,6 +8764,14 @@ class $CostCentersTable extends CostCenters
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
+    if (data.containsKey('parent_id')) {
+      context.handle(_parentIdMeta,
+          parentId.isAcceptableOrUnknown(data['parent_id']!, _parentIdMeta));
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+          _typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
+    }
     if (data.containsKey('is_active')) {
       context.handle(_isActiveMeta,
           isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
@@ -8775,6 +8801,10 @@ class $CostCentersTable extends CostCenters
           .read(DriftSqlType.string, data['${effectivePrefix}code'])!,
       name: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      parentId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}parent_id']),
+      type: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}type'])!,
       isActive: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
     );
@@ -8795,6 +8825,8 @@ class CostCenter extends DataClass implements Insertable<CostCenter> {
   final String? branchId;
   final String code;
   final String name;
+  final String? parentId;
+  final String type;
   final bool isActive;
   const CostCenter(
       {required this.id,
@@ -8805,6 +8837,8 @@ class CostCenter extends DataClass implements Insertable<CostCenter> {
       this.branchId,
       required this.code,
       required this.name,
+      this.parentId,
+      required this.type,
       required this.isActive});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -8821,6 +8855,10 @@ class CostCenter extends DataClass implements Insertable<CostCenter> {
     }
     map['code'] = Variable<String>(code);
     map['name'] = Variable<String>(name);
+    if (!nullToAbsent || parentId != null) {
+      map['parent_id'] = Variable<String>(parentId);
+    }
+    map['type'] = Variable<String>(type);
     map['is_active'] = Variable<bool>(isActive);
     return map;
   }
@@ -8839,6 +8877,10 @@ class CostCenter extends DataClass implements Insertable<CostCenter> {
           : Value(branchId),
       code: Value(code),
       name: Value(name),
+      parentId: parentId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(parentId),
+      type: Value(type),
       isActive: Value(isActive),
     );
   }
@@ -8855,6 +8897,8 @@ class CostCenter extends DataClass implements Insertable<CostCenter> {
       branchId: serializer.fromJson<String?>(json['branchId']),
       code: serializer.fromJson<String>(json['code']),
       name: serializer.fromJson<String>(json['name']),
+      parentId: serializer.fromJson<String?>(json['parentId']),
+      type: serializer.fromJson<String>(json['type']),
       isActive: serializer.fromJson<bool>(json['isActive']),
     );
   }
@@ -8870,6 +8914,8 @@ class CostCenter extends DataClass implements Insertable<CostCenter> {
       'branchId': serializer.toJson<String?>(branchId),
       'code': serializer.toJson<String>(code),
       'name': serializer.toJson<String>(name),
+      'parentId': serializer.toJson<String?>(parentId),
+      'type': serializer.toJson<String>(type),
       'isActive': serializer.toJson<bool>(isActive),
     };
   }
@@ -8883,6 +8929,8 @@ class CostCenter extends DataClass implements Insertable<CostCenter> {
           Value<String?> branchId = const Value.absent(),
           String? code,
           String? name,
+          Value<String?> parentId = const Value.absent(),
+          String? type,
           bool? isActive}) =>
       CostCenter(
         id: id ?? this.id,
@@ -8893,6 +8941,8 @@ class CostCenter extends DataClass implements Insertable<CostCenter> {
         branchId: branchId.present ? branchId.value : this.branchId,
         code: code ?? this.code,
         name: name ?? this.name,
+        parentId: parentId.present ? parentId.value : this.parentId,
+        type: type ?? this.type,
         isActive: isActive ?? this.isActive,
       );
   CostCenter copyWithCompanion(CostCentersCompanion data) {
@@ -8906,6 +8956,8 @@ class CostCenter extends DataClass implements Insertable<CostCenter> {
       branchId: data.branchId.present ? data.branchId.value : this.branchId,
       code: data.code.present ? data.code.value : this.code,
       name: data.name.present ? data.name.value : this.name,
+      parentId: data.parentId.present ? data.parentId.value : this.parentId,
+      type: data.type.present ? data.type.value : this.type,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
     );
   }
@@ -8921,6 +8973,8 @@ class CostCenter extends DataClass implements Insertable<CostCenter> {
           ..write('branchId: $branchId, ')
           ..write('code: $code, ')
           ..write('name: $name, ')
+          ..write('parentId: $parentId, ')
+          ..write('type: $type, ')
           ..write('isActive: $isActive')
           ..write(')'))
         .toString();
@@ -8928,7 +8982,7 @@ class CostCenter extends DataClass implements Insertable<CostCenter> {
 
   @override
   int get hashCode => Object.hash(id, createdAt, updatedAt, deviceId,
-      syncStatus, branchId, code, name, isActive);
+      syncStatus, branchId, code, name, parentId, type, isActive);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -8941,6 +8995,8 @@ class CostCenter extends DataClass implements Insertable<CostCenter> {
           other.branchId == this.branchId &&
           other.code == this.code &&
           other.name == this.name &&
+          other.parentId == this.parentId &&
+          other.type == this.type &&
           other.isActive == this.isActive);
 }
 
@@ -8953,6 +9009,8 @@ class CostCentersCompanion extends UpdateCompanion<CostCenter> {
   final Value<String?> branchId;
   final Value<String> code;
   final Value<String> name;
+  final Value<String?> parentId;
+  final Value<String> type;
   final Value<bool> isActive;
   final Value<int> rowid;
   const CostCentersCompanion({
@@ -8964,6 +9022,8 @@ class CostCentersCompanion extends UpdateCompanion<CostCenter> {
     this.branchId = const Value.absent(),
     this.code = const Value.absent(),
     this.name = const Value.absent(),
+    this.parentId = const Value.absent(),
+    this.type = const Value.absent(),
     this.isActive = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -8976,6 +9036,8 @@ class CostCentersCompanion extends UpdateCompanion<CostCenter> {
     this.branchId = const Value.absent(),
     required String code,
     required String name,
+    this.parentId = const Value.absent(),
+    this.type = const Value.absent(),
     this.isActive = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : code = Value(code),
@@ -8989,6 +9051,8 @@ class CostCentersCompanion extends UpdateCompanion<CostCenter> {
     Expression<String>? branchId,
     Expression<String>? code,
     Expression<String>? name,
+    Expression<String>? parentId,
+    Expression<String>? type,
     Expression<bool>? isActive,
     Expression<int>? rowid,
   }) {
@@ -9001,6 +9065,8 @@ class CostCentersCompanion extends UpdateCompanion<CostCenter> {
       if (branchId != null) 'branch_id': branchId,
       if (code != null) 'code': code,
       if (name != null) 'name': name,
+      if (parentId != null) 'parent_id': parentId,
+      if (type != null) 'type': type,
       if (isActive != null) 'is_active': isActive,
       if (rowid != null) 'rowid': rowid,
     });
@@ -9015,6 +9081,8 @@ class CostCentersCompanion extends UpdateCompanion<CostCenter> {
       Value<String?>? branchId,
       Value<String>? code,
       Value<String>? name,
+      Value<String?>? parentId,
+      Value<String>? type,
       Value<bool>? isActive,
       Value<int>? rowid}) {
     return CostCentersCompanion(
@@ -9026,6 +9094,8 @@ class CostCentersCompanion extends UpdateCompanion<CostCenter> {
       branchId: branchId ?? this.branchId,
       code: code ?? this.code,
       name: name ?? this.name,
+      parentId: parentId ?? this.parentId,
+      type: type ?? this.type,
       isActive: isActive ?? this.isActive,
       rowid: rowid ?? this.rowid,
     );
@@ -9058,6 +9128,12 @@ class CostCentersCompanion extends UpdateCompanion<CostCenter> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
+    if (parentId.present) {
+      map['parent_id'] = Variable<String>(parentId.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
@@ -9078,6 +9154,8 @@ class CostCentersCompanion extends UpdateCompanion<CostCenter> {
           ..write('branchId: $branchId, ')
           ..write('code: $code, ')
           ..write('name: $name, ')
+          ..write('parentId: $parentId, ')
+          ..write('type: $type, ')
           ..write('isActive: $isActive, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -48248,11 +48326,14 @@ class $AccCurrenciesTable extends AccCurrencies
           GeneratedColumn.checkTextLength(minTextLength: 2, maxTextLength: 50),
       type: DriftSqlType.string,
       requiredDuringInsert: true);
-  static const VerificationMeta _symbolMeta = const VerificationMeta('symbol');
+  static const VerificationMeta _exchangeRateMeta =
+      const VerificationMeta('exchangeRate');
   @override
-  late final GeneratedColumn<String> symbol = GeneratedColumn<String>(
-      'symbol', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
+  late final GeneratedColumn<double> exchangeRate = GeneratedColumn<double>(
+      'exchange_rate', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1.0));
   static const VerificationMeta _isBaseMeta = const VerificationMeta('isBase');
   @override
   late final GeneratedColumn<bool> isBase = GeneratedColumn<bool>(
@@ -48262,16 +48343,6 @@ class $AccCurrenciesTable extends AccCurrencies
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('CHECK ("is_base" IN (0, 1))'),
       defaultValue: const Constant(false));
-  static const VerificationMeta _isActiveMeta =
-      const VerificationMeta('isActive');
-  @override
-  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
-      'is_active', aliasedName, false,
-      type: DriftSqlType.bool,
-      requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'),
-      defaultValue: const Constant(true));
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -48282,7 +48353,7 @@ class $AccCurrenciesTable extends AccCurrencies
       defaultValue: currentDateAndTime);
   @override
   List<GeneratedColumn> get $columns =>
-      [id, code, name, symbol, isBase, isActive, createdAt];
+      [id, code, name, exchangeRate, isBase, createdAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -48308,17 +48379,15 @@ class $AccCurrenciesTable extends AccCurrencies
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
-    if (data.containsKey('symbol')) {
-      context.handle(_symbolMeta,
-          symbol.isAcceptableOrUnknown(data['symbol']!, _symbolMeta));
+    if (data.containsKey('exchange_rate')) {
+      context.handle(
+          _exchangeRateMeta,
+          exchangeRate.isAcceptableOrUnknown(
+              data['exchange_rate']!, _exchangeRateMeta));
     }
     if (data.containsKey('is_base')) {
       context.handle(_isBaseMeta,
           isBase.isAcceptableOrUnknown(data['is_base']!, _isBaseMeta));
-    }
-    if (data.containsKey('is_active')) {
-      context.handle(_isActiveMeta,
-          isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
     }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
@@ -48339,12 +48408,10 @@ class $AccCurrenciesTable extends AccCurrencies
           .read(DriftSqlType.string, data['${effectivePrefix}code'])!,
       name: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
-      symbol: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}symbol']),
+      exchangeRate: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}exchange_rate'])!,
       isBase: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_base'])!,
-      isActive: attachedDatabase.typeMapping
-          .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
     );
@@ -48360,17 +48427,15 @@ class AccCurrency extends DataClass implements Insertable<AccCurrency> {
   final int id;
   final String code;
   final String name;
-  final String? symbol;
+  final double exchangeRate;
   final bool isBase;
-  final bool isActive;
   final DateTime createdAt;
   const AccCurrency(
       {required this.id,
       required this.code,
       required this.name,
-      this.symbol,
+      required this.exchangeRate,
       required this.isBase,
-      required this.isActive,
       required this.createdAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -48378,11 +48443,8 @@ class AccCurrency extends DataClass implements Insertable<AccCurrency> {
     map['id'] = Variable<int>(id);
     map['code'] = Variable<String>(code);
     map['name'] = Variable<String>(name);
-    if (!nullToAbsent || symbol != null) {
-      map['symbol'] = Variable<String>(symbol);
-    }
+    map['exchange_rate'] = Variable<double>(exchangeRate);
     map['is_base'] = Variable<bool>(isBase);
-    map['is_active'] = Variable<bool>(isActive);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -48392,10 +48454,8 @@ class AccCurrency extends DataClass implements Insertable<AccCurrency> {
       id: Value(id),
       code: Value(code),
       name: Value(name),
-      symbol:
-          symbol == null && nullToAbsent ? const Value.absent() : Value(symbol),
+      exchangeRate: Value(exchangeRate),
       isBase: Value(isBase),
-      isActive: Value(isActive),
       createdAt: Value(createdAt),
     );
   }
@@ -48407,9 +48467,8 @@ class AccCurrency extends DataClass implements Insertable<AccCurrency> {
       id: serializer.fromJson<int>(json['id']),
       code: serializer.fromJson<String>(json['code']),
       name: serializer.fromJson<String>(json['name']),
-      symbol: serializer.fromJson<String?>(json['symbol']),
+      exchangeRate: serializer.fromJson<double>(json['exchangeRate']),
       isBase: serializer.fromJson<bool>(json['isBase']),
-      isActive: serializer.fromJson<bool>(json['isActive']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -48420,9 +48479,8 @@ class AccCurrency extends DataClass implements Insertable<AccCurrency> {
       'id': serializer.toJson<int>(id),
       'code': serializer.toJson<String>(code),
       'name': serializer.toJson<String>(name),
-      'symbol': serializer.toJson<String?>(symbol),
+      'exchangeRate': serializer.toJson<double>(exchangeRate),
       'isBase': serializer.toJson<bool>(isBase),
-      'isActive': serializer.toJson<bool>(isActive),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -48431,17 +48489,15 @@ class AccCurrency extends DataClass implements Insertable<AccCurrency> {
           {int? id,
           String? code,
           String? name,
-          Value<String?> symbol = const Value.absent(),
+          double? exchangeRate,
           bool? isBase,
-          bool? isActive,
           DateTime? createdAt}) =>
       AccCurrency(
         id: id ?? this.id,
         code: code ?? this.code,
         name: name ?? this.name,
-        symbol: symbol.present ? symbol.value : this.symbol,
+        exchangeRate: exchangeRate ?? this.exchangeRate,
         isBase: isBase ?? this.isBase,
-        isActive: isActive ?? this.isActive,
         createdAt: createdAt ?? this.createdAt,
       );
   AccCurrency copyWithCompanion(AccCurrenciesCompanion data) {
@@ -48449,9 +48505,10 @@ class AccCurrency extends DataClass implements Insertable<AccCurrency> {
       id: data.id.present ? data.id.value : this.id,
       code: data.code.present ? data.code.value : this.code,
       name: data.name.present ? data.name.value : this.name,
-      symbol: data.symbol.present ? data.symbol.value : this.symbol,
+      exchangeRate: data.exchangeRate.present
+          ? data.exchangeRate.value
+          : this.exchangeRate,
       isBase: data.isBase.present ? data.isBase.value : this.isBase,
-      isActive: data.isActive.present ? data.isActive.value : this.isActive,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -48462,9 +48519,8 @@ class AccCurrency extends DataClass implements Insertable<AccCurrency> {
           ..write('id: $id, ')
           ..write('code: $code, ')
           ..write('name: $name, ')
-          ..write('symbol: $symbol, ')
+          ..write('exchangeRate: $exchangeRate, ')
           ..write('isBase: $isBase, ')
-          ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -48472,7 +48528,7 @@ class AccCurrency extends DataClass implements Insertable<AccCurrency> {
 
   @override
   int get hashCode =>
-      Object.hash(id, code, name, symbol, isBase, isActive, createdAt);
+      Object.hash(id, code, name, exchangeRate, isBase, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -48480,9 +48536,8 @@ class AccCurrency extends DataClass implements Insertable<AccCurrency> {
           other.id == this.id &&
           other.code == this.code &&
           other.name == this.name &&
-          other.symbol == this.symbol &&
+          other.exchangeRate == this.exchangeRate &&
           other.isBase == this.isBase &&
-          other.isActive == this.isActive &&
           other.createdAt == this.createdAt);
 }
 
@@ -48490,26 +48545,23 @@ class AccCurrenciesCompanion extends UpdateCompanion<AccCurrency> {
   final Value<int> id;
   final Value<String> code;
   final Value<String> name;
-  final Value<String?> symbol;
+  final Value<double> exchangeRate;
   final Value<bool> isBase;
-  final Value<bool> isActive;
   final Value<DateTime> createdAt;
   const AccCurrenciesCompanion({
     this.id = const Value.absent(),
     this.code = const Value.absent(),
     this.name = const Value.absent(),
-    this.symbol = const Value.absent(),
+    this.exchangeRate = const Value.absent(),
     this.isBase = const Value.absent(),
-    this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   AccCurrenciesCompanion.insert({
     this.id = const Value.absent(),
     required String code,
     required String name,
-    this.symbol = const Value.absent(),
+    this.exchangeRate = const Value.absent(),
     this.isBase = const Value.absent(),
-    this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
   })  : code = Value(code),
         name = Value(name);
@@ -48517,18 +48569,16 @@ class AccCurrenciesCompanion extends UpdateCompanion<AccCurrency> {
     Expression<int>? id,
     Expression<String>? code,
     Expression<String>? name,
-    Expression<String>? symbol,
+    Expression<double>? exchangeRate,
     Expression<bool>? isBase,
-    Expression<bool>? isActive,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (code != null) 'code': code,
       if (name != null) 'name': name,
-      if (symbol != null) 'symbol': symbol,
+      if (exchangeRate != null) 'exchange_rate': exchangeRate,
       if (isBase != null) 'is_base': isBase,
-      if (isActive != null) 'is_active': isActive,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -48537,17 +48587,15 @@ class AccCurrenciesCompanion extends UpdateCompanion<AccCurrency> {
       {Value<int>? id,
       Value<String>? code,
       Value<String>? name,
-      Value<String?>? symbol,
+      Value<double>? exchangeRate,
       Value<bool>? isBase,
-      Value<bool>? isActive,
       Value<DateTime>? createdAt}) {
     return AccCurrenciesCompanion(
       id: id ?? this.id,
       code: code ?? this.code,
       name: name ?? this.name,
-      symbol: symbol ?? this.symbol,
+      exchangeRate: exchangeRate ?? this.exchangeRate,
       isBase: isBase ?? this.isBase,
-      isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -48564,14 +48612,11 @@ class AccCurrenciesCompanion extends UpdateCompanion<AccCurrency> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
-    if (symbol.present) {
-      map['symbol'] = Variable<String>(symbol.value);
+    if (exchangeRate.present) {
+      map['exchange_rate'] = Variable<double>(exchangeRate.value);
     }
     if (isBase.present) {
       map['is_base'] = Variable<bool>(isBase.value);
-    }
-    if (isActive.present) {
-      map['is_active'] = Variable<bool>(isActive.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -48585,9 +48630,8 @@ class AccCurrenciesCompanion extends UpdateCompanion<AccCurrency> {
           ..write('id: $id, ')
           ..write('code: $code, ')
           ..write('name: $name, ')
-          ..write('symbol: $symbol, ')
+          ..write('exchangeRate: $exchangeRate, ')
           ..write('isBase: $isBase, ')
-          ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -48947,386 +48991,6 @@ class AccExchangeRatesCompanion extends UpdateCompanion<AccExchangeRate> {
   }
 }
 
-class $AccCostCentersTable extends AccCostCenters
-    with TableInfo<$AccCostCentersTable, AccCostCenter> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $AccCostCentersTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-      'id', aliasedName, false,
-      hasAutoIncrement: true,
-      type: DriftSqlType.int,
-      requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
-  @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-      'name', aliasedName, false,
-      additionalChecks:
-          GeneratedColumn.checkTextLength(minTextLength: 2, maxTextLength: 100),
-      type: DriftSqlType.string,
-      requiredDuringInsert: true);
-  static const VerificationMeta _codeMeta = const VerificationMeta('code');
-  @override
-  late final GeneratedColumn<String> code = GeneratedColumn<String>(
-      'code', aliasedName, false,
-      additionalChecks:
-          GeneratedColumn.checkTextLength(minTextLength: 2, maxTextLength: 50),
-      type: DriftSqlType.string,
-      requiredDuringInsert: true);
-  static const VerificationMeta _parentIdMeta =
-      const VerificationMeta('parentId');
-  @override
-  late final GeneratedColumn<int> parentId = GeneratedColumn<int>(
-      'parent_id', aliasedName, true,
-      type: DriftSqlType.int,
-      requiredDuringInsert: false,
-      defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'REFERENCES acc_cost_centers (id)'));
-  static const VerificationMeta _typeMeta = const VerificationMeta('type');
-  @override
-  late final GeneratedColumn<String> type = GeneratedColumn<String>(
-      'type', aliasedName, false,
-      type: DriftSqlType.string,
-      requiredDuringInsert: false,
-      defaultValue: const Constant('department'));
-  static const VerificationMeta _isActiveMeta =
-      const VerificationMeta('isActive');
-  @override
-  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
-      'is_active', aliasedName, false,
-      type: DriftSqlType.bool,
-      requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'),
-      defaultValue: const Constant(true));
-  static const VerificationMeta _createdAtMeta =
-      const VerificationMeta('createdAt');
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-      'created_at', aliasedName, false,
-      type: DriftSqlType.dateTime,
-      requiredDuringInsert: false,
-      defaultValue: currentDateAndTime);
-  @override
-  List<GeneratedColumn> get $columns =>
-      [id, name, code, parentId, type, isActive, createdAt];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'acc_cost_centers';
-  @override
-  VerificationContext validateIntegrity(Insertable<AccCostCenter> instance,
-      {bool isInserting = false}) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('name')) {
-      context.handle(
-          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
-    } else if (isInserting) {
-      context.missing(_nameMeta);
-    }
-    if (data.containsKey('code')) {
-      context.handle(
-          _codeMeta, code.isAcceptableOrUnknown(data['code']!, _codeMeta));
-    } else if (isInserting) {
-      context.missing(_codeMeta);
-    }
-    if (data.containsKey('parent_id')) {
-      context.handle(_parentIdMeta,
-          parentId.isAcceptableOrUnknown(data['parent_id']!, _parentIdMeta));
-    }
-    if (data.containsKey('type')) {
-      context.handle(
-          _typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
-    }
-    if (data.containsKey('is_active')) {
-      context.handle(_isActiveMeta,
-          isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta,
-          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  AccCostCenter map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return AccCostCenter(
-      id: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
-      name: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
-      code: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}code'])!,
-      parentId: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}parent_id']),
-      type: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}type'])!,
-      isActive: attachedDatabase.typeMapping
-          .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
-      createdAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
-    );
-  }
-
-  @override
-  $AccCostCentersTable createAlias(String alias) {
-    return $AccCostCentersTable(attachedDatabase, alias);
-  }
-}
-
-class AccCostCenter extends DataClass implements Insertable<AccCostCenter> {
-  final int id;
-  final String name;
-  final String code;
-  final int? parentId;
-  final String type;
-  final bool isActive;
-  final DateTime createdAt;
-  const AccCostCenter(
-      {required this.id,
-      required this.name,
-      required this.code,
-      this.parentId,
-      required this.type,
-      required this.isActive,
-      required this.createdAt});
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['name'] = Variable<String>(name);
-    map['code'] = Variable<String>(code);
-    if (!nullToAbsent || parentId != null) {
-      map['parent_id'] = Variable<int>(parentId);
-    }
-    map['type'] = Variable<String>(type);
-    map['is_active'] = Variable<bool>(isActive);
-    map['created_at'] = Variable<DateTime>(createdAt);
-    return map;
-  }
-
-  AccCostCentersCompanion toCompanion(bool nullToAbsent) {
-    return AccCostCentersCompanion(
-      id: Value(id),
-      name: Value(name),
-      code: Value(code),
-      parentId: parentId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(parentId),
-      type: Value(type),
-      isActive: Value(isActive),
-      createdAt: Value(createdAt),
-    );
-  }
-
-  factory AccCostCenter.fromJson(Map<String, dynamic> json,
-      {ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return AccCostCenter(
-      id: serializer.fromJson<int>(json['id']),
-      name: serializer.fromJson<String>(json['name']),
-      code: serializer.fromJson<String>(json['code']),
-      parentId: serializer.fromJson<int?>(json['parentId']),
-      type: serializer.fromJson<String>(json['type']),
-      isActive: serializer.fromJson<bool>(json['isActive']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'name': serializer.toJson<String>(name),
-      'code': serializer.toJson<String>(code),
-      'parentId': serializer.toJson<int?>(parentId),
-      'type': serializer.toJson<String>(type),
-      'isActive': serializer.toJson<bool>(isActive),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-    };
-  }
-
-  AccCostCenter copyWith(
-          {int? id,
-          String? name,
-          String? code,
-          Value<int?> parentId = const Value.absent(),
-          String? type,
-          bool? isActive,
-          DateTime? createdAt}) =>
-      AccCostCenter(
-        id: id ?? this.id,
-        name: name ?? this.name,
-        code: code ?? this.code,
-        parentId: parentId.present ? parentId.value : this.parentId,
-        type: type ?? this.type,
-        isActive: isActive ?? this.isActive,
-        createdAt: createdAt ?? this.createdAt,
-      );
-  AccCostCenter copyWithCompanion(AccCostCentersCompanion data) {
-    return AccCostCenter(
-      id: data.id.present ? data.id.value : this.id,
-      name: data.name.present ? data.name.value : this.name,
-      code: data.code.present ? data.code.value : this.code,
-      parentId: data.parentId.present ? data.parentId.value : this.parentId,
-      type: data.type.present ? data.type.value : this.type,
-      isActive: data.isActive.present ? data.isActive.value : this.isActive,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('AccCostCenter(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('code: $code, ')
-          ..write('parentId: $parentId, ')
-          ..write('type: $type, ')
-          ..write('isActive: $isActive, ')
-          ..write('createdAt: $createdAt')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode =>
-      Object.hash(id, name, code, parentId, type, isActive, createdAt);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is AccCostCenter &&
-          other.id == this.id &&
-          other.name == this.name &&
-          other.code == this.code &&
-          other.parentId == this.parentId &&
-          other.type == this.type &&
-          other.isActive == this.isActive &&
-          other.createdAt == this.createdAt);
-}
-
-class AccCostCentersCompanion extends UpdateCompanion<AccCostCenter> {
-  final Value<int> id;
-  final Value<String> name;
-  final Value<String> code;
-  final Value<int?> parentId;
-  final Value<String> type;
-  final Value<bool> isActive;
-  final Value<DateTime> createdAt;
-  const AccCostCentersCompanion({
-    this.id = const Value.absent(),
-    this.name = const Value.absent(),
-    this.code = const Value.absent(),
-    this.parentId = const Value.absent(),
-    this.type = const Value.absent(),
-    this.isActive = const Value.absent(),
-    this.createdAt = const Value.absent(),
-  });
-  AccCostCentersCompanion.insert({
-    this.id = const Value.absent(),
-    required String name,
-    required String code,
-    this.parentId = const Value.absent(),
-    this.type = const Value.absent(),
-    this.isActive = const Value.absent(),
-    this.createdAt = const Value.absent(),
-  })  : name = Value(name),
-        code = Value(code);
-  static Insertable<AccCostCenter> custom({
-    Expression<int>? id,
-    Expression<String>? name,
-    Expression<String>? code,
-    Expression<int>? parentId,
-    Expression<String>? type,
-    Expression<bool>? isActive,
-    Expression<DateTime>? createdAt,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (name != null) 'name': name,
-      if (code != null) 'code': code,
-      if (parentId != null) 'parent_id': parentId,
-      if (type != null) 'type': type,
-      if (isActive != null) 'is_active': isActive,
-      if (createdAt != null) 'created_at': createdAt,
-    });
-  }
-
-  AccCostCentersCompanion copyWith(
-      {Value<int>? id,
-      Value<String>? name,
-      Value<String>? code,
-      Value<int?>? parentId,
-      Value<String>? type,
-      Value<bool>? isActive,
-      Value<DateTime>? createdAt}) {
-    return AccCostCentersCompanion(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      code: code ?? this.code,
-      parentId: parentId ?? this.parentId,
-      type: type ?? this.type,
-      isActive: isActive ?? this.isActive,
-      createdAt: createdAt ?? this.createdAt,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
-    }
-    if (code.present) {
-      map['code'] = Variable<String>(code.value);
-    }
-    if (parentId.present) {
-      map['parent_id'] = Variable<int>(parentId.value);
-    }
-    if (type.present) {
-      map['type'] = Variable<String>(type.value);
-    }
-    if (isActive.present) {
-      map['is_active'] = Variable<bool>(isActive.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('AccCostCentersCompanion(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('code: $code, ')
-          ..write('parentId: $parentId, ')
-          ..write('type: $type, ')
-          ..write('isActive: $isActive, ')
-          ..write('createdAt: $createdAt')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $AccBudgetsTable extends AccBudgets
     with TableInfo<$AccBudgetsTable, AccBudget> {
   @override
@@ -49358,18 +49022,21 @@ class $AccBudgetsTable extends AccBudgets
   static const VerificationMeta _costCenterIdMeta =
       const VerificationMeta('costCenterId');
   @override
-  late final GeneratedColumn<int> costCenterId = GeneratedColumn<int>(
+  late final GeneratedColumn<String> costCenterId = GeneratedColumn<String>(
       'cost_center_id', aliasedName, true,
-      type: DriftSqlType.int,
+      type: DriftSqlType.string,
       requiredDuringInsert: false,
-      defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'REFERENCES acc_cost_centers (id)'));
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES cost_centers (id)'));
   static const VerificationMeta _accountIdMeta =
       const VerificationMeta('accountId');
   @override
-  late final GeneratedColumn<int> accountId = GeneratedColumn<int>(
+  late final GeneratedColumn<String> accountId = GeneratedColumn<String>(
       'account_id', aliasedName, true,
-      type: DriftSqlType.int, requiredDuringInsert: false);
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES gl_accounts (id)'));
   static const VerificationMeta _budgetedAmountMeta =
       const VerificationMeta('budgetedAmount');
   @override
@@ -49497,9 +49164,9 @@ class $AccBudgetsTable extends AccBudgets
       period: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}period'])!,
       costCenterId: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}cost_center_id']),
+          .read(DriftSqlType.string, data['${effectivePrefix}cost_center_id']),
       accountId: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}account_id']),
+          .read(DriftSqlType.string, data['${effectivePrefix}account_id']),
       budgetedAmount: attachedDatabase.typeMapping.read(
           DriftSqlType.double, data['${effectivePrefix}budgeted_amount'])!,
       actualAmount: attachedDatabase.typeMapping
@@ -49523,8 +49190,8 @@ class AccBudget extends DataClass implements Insertable<AccBudget> {
   final int id;
   final String name;
   final String period;
-  final int? costCenterId;
-  final int? accountId;
+  final String? costCenterId;
+  final String? accountId;
   final double budgetedAmount;
   final double actualAmount;
   final double variance;
@@ -49548,10 +49215,10 @@ class AccBudget extends DataClass implements Insertable<AccBudget> {
     map['name'] = Variable<String>(name);
     map['period'] = Variable<String>(period);
     if (!nullToAbsent || costCenterId != null) {
-      map['cost_center_id'] = Variable<int>(costCenterId);
+      map['cost_center_id'] = Variable<String>(costCenterId);
     }
     if (!nullToAbsent || accountId != null) {
-      map['account_id'] = Variable<int>(accountId);
+      map['account_id'] = Variable<String>(accountId);
     }
     map['budgeted_amount'] = Variable<double>(budgetedAmount);
     map['actual_amount'] = Variable<double>(actualAmount);
@@ -49587,8 +49254,8 @@ class AccBudget extends DataClass implements Insertable<AccBudget> {
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       period: serializer.fromJson<String>(json['period']),
-      costCenterId: serializer.fromJson<int?>(json['costCenterId']),
-      accountId: serializer.fromJson<int?>(json['accountId']),
+      costCenterId: serializer.fromJson<String?>(json['costCenterId']),
+      accountId: serializer.fromJson<String?>(json['accountId']),
       budgetedAmount: serializer.fromJson<double>(json['budgetedAmount']),
       actualAmount: serializer.fromJson<double>(json['actualAmount']),
       variance: serializer.fromJson<double>(json['variance']),
@@ -49603,8 +49270,8 @@ class AccBudget extends DataClass implements Insertable<AccBudget> {
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
       'period': serializer.toJson<String>(period),
-      'costCenterId': serializer.toJson<int?>(costCenterId),
-      'accountId': serializer.toJson<int?>(accountId),
+      'costCenterId': serializer.toJson<String?>(costCenterId),
+      'accountId': serializer.toJson<String?>(accountId),
       'budgetedAmount': serializer.toJson<double>(budgetedAmount),
       'actualAmount': serializer.toJson<double>(actualAmount),
       'variance': serializer.toJson<double>(variance),
@@ -49617,8 +49284,8 @@ class AccBudget extends DataClass implements Insertable<AccBudget> {
           {int? id,
           String? name,
           String? period,
-          Value<int?> costCenterId = const Value.absent(),
-          Value<int?> accountId = const Value.absent(),
+          Value<String?> costCenterId = const Value.absent(),
+          Value<String?> accountId = const Value.absent(),
           double? budgetedAmount,
           double? actualAmount,
           double? variance,
@@ -49698,8 +49365,8 @@ class AccBudgetsCompanion extends UpdateCompanion<AccBudget> {
   final Value<int> id;
   final Value<String> name;
   final Value<String> period;
-  final Value<int?> costCenterId;
-  final Value<int?> accountId;
+  final Value<String?> costCenterId;
+  final Value<String?> accountId;
   final Value<double> budgetedAmount;
   final Value<double> actualAmount;
   final Value<double> variance;
@@ -49736,8 +49403,8 @@ class AccBudgetsCompanion extends UpdateCompanion<AccBudget> {
     Expression<int>? id,
     Expression<String>? name,
     Expression<String>? period,
-    Expression<int>? costCenterId,
-    Expression<int>? accountId,
+    Expression<String>? costCenterId,
+    Expression<String>? accountId,
     Expression<double>? budgetedAmount,
     Expression<double>? actualAmount,
     Expression<double>? variance,
@@ -49762,8 +49429,8 @@ class AccBudgetsCompanion extends UpdateCompanion<AccBudget> {
       {Value<int>? id,
       Value<String>? name,
       Value<String>? period,
-      Value<int?>? costCenterId,
-      Value<int?>? accountId,
+      Value<String?>? costCenterId,
+      Value<String?>? accountId,
       Value<double>? budgetedAmount,
       Value<double>? actualAmount,
       Value<double>? variance,
@@ -49796,10 +49463,10 @@ class AccBudgetsCompanion extends UpdateCompanion<AccBudget> {
       map['period'] = Variable<String>(period.value);
     }
     if (costCenterId.present) {
-      map['cost_center_id'] = Variable<int>(costCenterId.value);
+      map['cost_center_id'] = Variable<String>(costCenterId.value);
     }
     if (accountId.present) {
-      map['account_id'] = Variable<int>(accountId.value);
+      map['account_id'] = Variable<String>(accountId.value);
     }
     if (budgetedAmount.present) {
       map['budgeted_amount'] = Variable<double>(budgetedAmount.value);
@@ -49855,9 +49522,12 @@ class $AccBankStatementsTable extends AccBankStatements
   static const VerificationMeta _accountIdMeta =
       const VerificationMeta('accountId');
   @override
-  late final GeneratedColumn<int> accountId = GeneratedColumn<int>(
+  late final GeneratedColumn<String> accountId = GeneratedColumn<String>(
       'account_id', aliasedName, false,
-      type: DriftSqlType.int, requiredDuringInsert: true);
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES gl_accounts (id)'));
   static const VerificationMeta _statementReferenceMeta =
       const VerificationMeta('statementReference');
   @override
@@ -49990,7 +49660,7 @@ class $AccBankStatementsTable extends AccBankStatements
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
       accountId: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}account_id'])!,
+          .read(DriftSqlType.string, data['${effectivePrefix}account_id'])!,
       statementReference: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}statement_reference']),
       statementDate: attachedDatabase.typeMapping.read(
@@ -50017,7 +49687,7 @@ class $AccBankStatementsTable extends AccBankStatements
 class AccBankStatement extends DataClass
     implements Insertable<AccBankStatement> {
   final int id;
-  final int accountId;
+  final String accountId;
   final String? statementReference;
   final DateTime statementDate;
   final double openingBalance;
@@ -50039,7 +49709,7 @@ class AccBankStatement extends DataClass
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
-    map['account_id'] = Variable<int>(accountId);
+    map['account_id'] = Variable<String>(accountId);
     if (!nullToAbsent || statementReference != null) {
       map['statement_reference'] = Variable<String>(statementReference);
     }
@@ -50073,7 +49743,7 @@ class AccBankStatement extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return AccBankStatement(
       id: serializer.fromJson<int>(json['id']),
-      accountId: serializer.fromJson<int>(json['accountId']),
+      accountId: serializer.fromJson<String>(json['accountId']),
       statementReference:
           serializer.fromJson<String?>(json['statementReference']),
       statementDate: serializer.fromJson<DateTime>(json['statementDate']),
@@ -50089,7 +49759,7 @@ class AccBankStatement extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
-      'accountId': serializer.toJson<int>(accountId),
+      'accountId': serializer.toJson<String>(accountId),
       'statementReference': serializer.toJson<String?>(statementReference),
       'statementDate': serializer.toJson<DateTime>(statementDate),
       'openingBalance': serializer.toJson<double>(openingBalance),
@@ -50102,7 +49772,7 @@ class AccBankStatement extends DataClass
 
   AccBankStatement copyWith(
           {int? id,
-          int? accountId,
+          String? accountId,
           Value<String?> statementReference = const Value.absent(),
           DateTime? statementDate,
           double? openingBalance,
@@ -50189,7 +49859,7 @@ class AccBankStatement extends DataClass
 
 class AccBankStatementsCompanion extends UpdateCompanion<AccBankStatement> {
   final Value<int> id;
-  final Value<int> accountId;
+  final Value<String> accountId;
   final Value<String?> statementReference;
   final Value<DateTime> statementDate;
   final Value<double> openingBalance;
@@ -50210,7 +49880,7 @@ class AccBankStatementsCompanion extends UpdateCompanion<AccBankStatement> {
   });
   AccBankStatementsCompanion.insert({
     this.id = const Value.absent(),
-    required int accountId,
+    required String accountId,
     this.statementReference = const Value.absent(),
     required DateTime statementDate,
     required double openingBalance,
@@ -50224,7 +49894,7 @@ class AccBankStatementsCompanion extends UpdateCompanion<AccBankStatement> {
         closingBalance = Value(closingBalance);
   static Insertable<AccBankStatement> custom({
     Expression<int>? id,
-    Expression<int>? accountId,
+    Expression<String>? accountId,
     Expression<String>? statementReference,
     Expression<DateTime>? statementDate,
     Expression<double>? openingBalance,
@@ -50248,7 +49918,7 @@ class AccBankStatementsCompanion extends UpdateCompanion<AccBankStatement> {
 
   AccBankStatementsCompanion copyWith(
       {Value<int>? id,
-      Value<int>? accountId,
+      Value<String>? accountId,
       Value<String?>? statementReference,
       Value<DateTime>? statementDate,
       Value<double>? openingBalance,
@@ -50276,7 +49946,7 @@ class AccBankStatementsCompanion extends UpdateCompanion<AccBankStatement> {
       map['id'] = Variable<int>(id.value);
     }
     if (accountId.present) {
-      map['account_id'] = Variable<int>(accountId.value);
+      map['account_id'] = Variable<String>(accountId.value);
     }
     if (statementReference.present) {
       map['statement_reference'] = Variable<String>(statementReference.value);
@@ -50384,9 +50054,12 @@ class $AccBankStatementLinesTable extends AccBankStatementLines
   static const VerificationMeta _matchedJournalEntryIdMeta =
       const VerificationMeta('matchedJournalEntryId');
   @override
-  late final GeneratedColumn<int> matchedJournalEntryId = GeneratedColumn<int>(
-      'matched_journal_entry_id', aliasedName, true,
-      type: DriftSqlType.int, requiredDuringInsert: false);
+  late final GeneratedColumn<String> matchedJournalEntryId =
+      GeneratedColumn<String>('matched_journal_entry_id', aliasedName, true,
+          type: DriftSqlType.string,
+          requiredDuringInsert: false,
+          defaultConstraints:
+              GeneratedColumn.constraintIsAlways('REFERENCES gl_entries (id)'));
   static const VerificationMeta _reconciliationStatusMeta =
       const VerificationMeta('reconciliationStatus');
   @override
@@ -50513,7 +50186,8 @@ class $AccBankStatementLinesTable extends AccBankStatementLines
       reference: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}reference']),
       matchedJournalEntryId: attachedDatabase.typeMapping.read(
-          DriftSqlType.int, data['${effectivePrefix}matched_journal_entry_id']),
+          DriftSqlType.string,
+          data['${effectivePrefix}matched_journal_entry_id']),
       reconciliationStatus: attachedDatabase.typeMapping.read(
           DriftSqlType.string,
           data['${effectivePrefix}reconciliation_status'])!,
@@ -50538,7 +50212,7 @@ class AccBankStatementLine extends DataClass
   final double credit;
   final double? balance;
   final String? reference;
-  final int? matchedJournalEntryId;
+  final String? matchedJournalEntryId;
   final String reconciliationStatus;
   final DateTime createdAt;
   const AccBankStatementLine(
@@ -50569,7 +50243,7 @@ class AccBankStatementLine extends DataClass
       map['reference'] = Variable<String>(reference);
     }
     if (!nullToAbsent || matchedJournalEntryId != null) {
-      map['matched_journal_entry_id'] = Variable<int>(matchedJournalEntryId);
+      map['matched_journal_entry_id'] = Variable<String>(matchedJournalEntryId);
     }
     map['reconciliation_status'] = Variable<String>(reconciliationStatus);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -50611,7 +50285,7 @@ class AccBankStatementLine extends DataClass
       balance: serializer.fromJson<double?>(json['balance']),
       reference: serializer.fromJson<String?>(json['reference']),
       matchedJournalEntryId:
-          serializer.fromJson<int?>(json['matchedJournalEntryId']),
+          serializer.fromJson<String?>(json['matchedJournalEntryId']),
       reconciliationStatus:
           serializer.fromJson<String>(json['reconciliationStatus']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -50629,7 +50303,8 @@ class AccBankStatementLine extends DataClass
       'credit': serializer.toJson<double>(credit),
       'balance': serializer.toJson<double?>(balance),
       'reference': serializer.toJson<String?>(reference),
-      'matchedJournalEntryId': serializer.toJson<int?>(matchedJournalEntryId),
+      'matchedJournalEntryId':
+          serializer.toJson<String?>(matchedJournalEntryId),
       'reconciliationStatus': serializer.toJson<String>(reconciliationStatus),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -50644,7 +50319,7 @@ class AccBankStatementLine extends DataClass
           double? credit,
           Value<double?> balance = const Value.absent(),
           Value<String?> reference = const Value.absent(),
-          Value<int?> matchedJournalEntryId = const Value.absent(),
+          Value<String?> matchedJournalEntryId = const Value.absent(),
           String? reconciliationStatus,
           DateTime? createdAt}) =>
       AccBankStatementLine(
@@ -50744,7 +50419,7 @@ class AccBankStatementLinesCompanion
   final Value<double> credit;
   final Value<double?> balance;
   final Value<String?> reference;
-  final Value<int?> matchedJournalEntryId;
+  final Value<String?> matchedJournalEntryId;
   final Value<String> reconciliationStatus;
   final Value<DateTime> createdAt;
   const AccBankStatementLinesCompanion({
@@ -50784,7 +50459,7 @@ class AccBankStatementLinesCompanion
     Expression<double>? credit,
     Expression<double>? balance,
     Expression<String>? reference,
-    Expression<int>? matchedJournalEntryId,
+    Expression<String>? matchedJournalEntryId,
     Expression<String>? reconciliationStatus,
     Expression<DateTime>? createdAt,
   }) {
@@ -50814,7 +50489,7 @@ class AccBankStatementLinesCompanion
       Value<double>? credit,
       Value<double?>? balance,
       Value<String?>? reference,
-      Value<int?>? matchedJournalEntryId,
+      Value<String?>? matchedJournalEntryId,
       Value<String>? reconciliationStatus,
       Value<DateTime>? createdAt}) {
     return AccBankStatementLinesCompanion(
@@ -50862,7 +50537,7 @@ class AccBankStatementLinesCompanion
     }
     if (matchedJournalEntryId.present) {
       map['matched_journal_entry_id'] =
-          Variable<int>(matchedJournalEntryId.value);
+          Variable<String>(matchedJournalEntryId.value);
     }
     if (reconciliationStatus.present) {
       map['reconciliation_status'] =
@@ -50917,9 +50592,9 @@ class $AccAuditLogsTable extends AccAuditLogs
   static const VerificationMeta _recordIdMeta =
       const VerificationMeta('recordId');
   @override
-  late final GeneratedColumn<int> recordId = GeneratedColumn<int>(
+  late final GeneratedColumn<String> recordId = GeneratedColumn<String>(
       'record_id', aliasedName, false,
-      type: DriftSqlType.int, requiredDuringInsert: true);
+      type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _actionMeta = const VerificationMeta('action');
   @override
   late final GeneratedColumn<String> action = GeneratedColumn<String>(
@@ -50939,9 +50614,12 @@ class $AccAuditLogsTable extends AccAuditLogs
       type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
   @override
-  late final GeneratedColumn<int> userId = GeneratedColumn<int>(
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
       'user_id', aliasedName, true,
-      type: DriftSqlType.int, requiredDuringInsert: false);
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES users (id)'));
   static const VerificationMeta _timestampMeta =
       const VerificationMeta('timestamp');
   @override
@@ -51035,7 +50713,7 @@ class $AccAuditLogsTable extends AccAuditLogs
       logTableName: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}log_table_name'])!,
       recordId: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}record_id'])!,
+          .read(DriftSqlType.string, data['${effectivePrefix}record_id'])!,
       action: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}action'])!,
       oldValues: attachedDatabase.typeMapping
@@ -51043,7 +50721,7 @@ class $AccAuditLogsTable extends AccAuditLogs
       newValues: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}new_values']),
       userId: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}user_id']),
+          .read(DriftSqlType.string, data['${effectivePrefix}user_id']),
       timestamp: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}timestamp'])!,
       ipAddress: attachedDatabase.typeMapping
@@ -51060,11 +50738,11 @@ class $AccAuditLogsTable extends AccAuditLogs
 class AccAuditLog extends DataClass implements Insertable<AccAuditLog> {
   final int id;
   final String logTableName;
-  final int recordId;
+  final String recordId;
   final String action;
   final String? oldValues;
   final String? newValues;
-  final int? userId;
+  final String? userId;
   final DateTime timestamp;
   final String? ipAddress;
   const AccAuditLog(
@@ -51082,7 +50760,7 @@ class AccAuditLog extends DataClass implements Insertable<AccAuditLog> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['log_table_name'] = Variable<String>(logTableName);
-    map['record_id'] = Variable<int>(recordId);
+    map['record_id'] = Variable<String>(recordId);
     map['action'] = Variable<String>(action);
     if (!nullToAbsent || oldValues != null) {
       map['old_values'] = Variable<String>(oldValues);
@@ -51091,7 +50769,7 @@ class AccAuditLog extends DataClass implements Insertable<AccAuditLog> {
       map['new_values'] = Variable<String>(newValues);
     }
     if (!nullToAbsent || userId != null) {
-      map['user_id'] = Variable<int>(userId);
+      map['user_id'] = Variable<String>(userId);
     }
     map['timestamp'] = Variable<DateTime>(timestamp);
     if (!nullToAbsent || ipAddress != null) {
@@ -51127,11 +50805,11 @@ class AccAuditLog extends DataClass implements Insertable<AccAuditLog> {
     return AccAuditLog(
       id: serializer.fromJson<int>(json['id']),
       logTableName: serializer.fromJson<String>(json['logTableName']),
-      recordId: serializer.fromJson<int>(json['recordId']),
+      recordId: serializer.fromJson<String>(json['recordId']),
       action: serializer.fromJson<String>(json['action']),
       oldValues: serializer.fromJson<String?>(json['oldValues']),
       newValues: serializer.fromJson<String?>(json['newValues']),
-      userId: serializer.fromJson<int?>(json['userId']),
+      userId: serializer.fromJson<String?>(json['userId']),
       timestamp: serializer.fromJson<DateTime>(json['timestamp']),
       ipAddress: serializer.fromJson<String?>(json['ipAddress']),
     );
@@ -51142,11 +50820,11 @@ class AccAuditLog extends DataClass implements Insertable<AccAuditLog> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'logTableName': serializer.toJson<String>(logTableName),
-      'recordId': serializer.toJson<int>(recordId),
+      'recordId': serializer.toJson<String>(recordId),
       'action': serializer.toJson<String>(action),
       'oldValues': serializer.toJson<String?>(oldValues),
       'newValues': serializer.toJson<String?>(newValues),
-      'userId': serializer.toJson<int?>(userId),
+      'userId': serializer.toJson<String?>(userId),
       'timestamp': serializer.toJson<DateTime>(timestamp),
       'ipAddress': serializer.toJson<String?>(ipAddress),
     };
@@ -51155,11 +50833,11 @@ class AccAuditLog extends DataClass implements Insertable<AccAuditLog> {
   AccAuditLog copyWith(
           {int? id,
           String? logTableName,
-          int? recordId,
+          String? recordId,
           String? action,
           Value<String?> oldValues = const Value.absent(),
           Value<String?> newValues = const Value.absent(),
-          Value<int?> userId = const Value.absent(),
+          Value<String?> userId = const Value.absent(),
           DateTime? timestamp,
           Value<String?> ipAddress = const Value.absent()}) =>
       AccAuditLog(
@@ -51226,11 +50904,11 @@ class AccAuditLog extends DataClass implements Insertable<AccAuditLog> {
 class AccAuditLogsCompanion extends UpdateCompanion<AccAuditLog> {
   final Value<int> id;
   final Value<String> logTableName;
-  final Value<int> recordId;
+  final Value<String> recordId;
   final Value<String> action;
   final Value<String?> oldValues;
   final Value<String?> newValues;
-  final Value<int?> userId;
+  final Value<String?> userId;
   final Value<DateTime> timestamp;
   final Value<String?> ipAddress;
   const AccAuditLogsCompanion({
@@ -51247,7 +50925,7 @@ class AccAuditLogsCompanion extends UpdateCompanion<AccAuditLog> {
   AccAuditLogsCompanion.insert({
     this.id = const Value.absent(),
     required String logTableName,
-    required int recordId,
+    required String recordId,
     required String action,
     this.oldValues = const Value.absent(),
     this.newValues = const Value.absent(),
@@ -51260,11 +50938,11 @@ class AccAuditLogsCompanion extends UpdateCompanion<AccAuditLog> {
   static Insertable<AccAuditLog> custom({
     Expression<int>? id,
     Expression<String>? logTableName,
-    Expression<int>? recordId,
+    Expression<String>? recordId,
     Expression<String>? action,
     Expression<String>? oldValues,
     Expression<String>? newValues,
-    Expression<int>? userId,
+    Expression<String>? userId,
     Expression<DateTime>? timestamp,
     Expression<String>? ipAddress,
   }) {
@@ -51284,11 +50962,11 @@ class AccAuditLogsCompanion extends UpdateCompanion<AccAuditLog> {
   AccAuditLogsCompanion copyWith(
       {Value<int>? id,
       Value<String>? logTableName,
-      Value<int>? recordId,
+      Value<String>? recordId,
       Value<String>? action,
       Value<String?>? oldValues,
       Value<String?>? newValues,
-      Value<int?>? userId,
+      Value<String?>? userId,
       Value<DateTime>? timestamp,
       Value<String?>? ipAddress}) {
     return AccAuditLogsCompanion(
@@ -51314,7 +50992,7 @@ class AccAuditLogsCompanion extends UpdateCompanion<AccAuditLog> {
       map['log_table_name'] = Variable<String>(logTableName.value);
     }
     if (recordId.present) {
-      map['record_id'] = Variable<int>(recordId.value);
+      map['record_id'] = Variable<String>(recordId.value);
     }
     if (action.present) {
       map['action'] = Variable<String>(action.value);
@@ -51326,7 +51004,7 @@ class AccAuditLogsCompanion extends UpdateCompanion<AccAuditLog> {
       map['new_values'] = Variable<String>(newValues.value);
     }
     if (userId.present) {
-      map['user_id'] = Variable<int>(userId.value);
+      map['user_id'] = Variable<String>(userId.value);
     }
     if (timestamp.present) {
       map['timestamp'] = Variable<DateTime>(timestamp.value);
@@ -51470,7 +51148,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AccCurrenciesTable accCurrencies = $AccCurrenciesTable(this);
   late final $AccExchangeRatesTable accExchangeRates =
       $AccExchangeRatesTable(this);
-  late final $AccCostCentersTable accCostCenters = $AccCostCentersTable(this);
   late final $AccBudgetsTable accBudgets = $AccBudgetsTable(this);
   late final $AccBankStatementsTable accBankStatements =
       $AccBankStatementsTable(this);
@@ -51580,7 +51257,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         hRAdditionalDeductions,
         accCurrencies,
         accExchangeRates,
-        accCostCenters,
         accBudgets,
         accBankStatements,
         accBankStatementLines,
@@ -52945,6 +52621,19 @@ class $$UsersTableFilterComposer
                     parentComposers)));
     return f(composer);
   }
+
+  ComposableFilter accAuditLogsRefs(
+      ComposableFilter Function($$AccAuditLogsTableFilterComposer f) f) {
+    final $$AccAuditLogsTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $state.db.accAuditLogs,
+        getReferencedColumn: (t) => t.userId,
+        builder: (joinBuilder, parentComposers) =>
+            $$AccAuditLogsTableFilterComposer(ComposerState($state.db,
+                $state.db.accAuditLogs, joinBuilder, parentComposers)));
+    return f(composer);
+  }
 }
 
 class $$UsersTableOrderingComposer
@@ -53587,6 +53276,36 @@ class $$GLAccountsTableFilterComposer
         builder: (joinBuilder, parentComposers) =>
             $$ARInvoicesTableFilterComposer(ComposerState($state.db,
                 $state.db.aRInvoices, joinBuilder, parentComposers)));
+    return f(composer);
+  }
+
+  ComposableFilter accBudgetsRefs(
+      ComposableFilter Function($$AccBudgetsTableFilterComposer f) f) {
+    final $$AccBudgetsTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $state.db.accBudgets,
+        getReferencedColumn: (t) => t.accountId,
+        builder: (joinBuilder, parentComposers) =>
+            $$AccBudgetsTableFilterComposer(ComposerState($state.db,
+                $state.db.accBudgets, joinBuilder, parentComposers)));
+    return f(composer);
+  }
+
+  ComposableFilter accBankStatementsRefs(
+      ComposableFilter Function($$AccBankStatementsTableFilterComposer f) f) {
+    final $$AccBankStatementsTableFilterComposer composer =
+        $state.composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $state.db.accBankStatements,
+            getReferencedColumn: (t) => t.accountId,
+            builder: (joinBuilder, parentComposers) =>
+                $$AccBankStatementsTableFilterComposer(ComposerState(
+                    $state.db,
+                    $state.db.accBankStatements,
+                    joinBuilder,
+                    parentComposers)));
     return f(composer);
   }
 }
@@ -57398,6 +57117,8 @@ typedef $$CostCentersTableCreateCompanionBuilder = CostCentersCompanion
   Value<String?> branchId,
   required String code,
   required String name,
+  Value<String?> parentId,
+  Value<String> type,
   Value<bool> isActive,
   Value<int> rowid,
 });
@@ -57411,6 +57132,8 @@ typedef $$CostCentersTableUpdateCompanionBuilder = CostCentersCompanion
   Value<String?> branchId,
   Value<String> code,
   Value<String> name,
+  Value<String?> parentId,
+  Value<String> type,
   Value<bool> isActive,
   Value<int> rowid,
 });
@@ -57440,6 +57163,8 @@ class $$CostCentersTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             Value<String> code = const Value.absent(),
             Value<String> name = const Value.absent(),
+            Value<String?> parentId = const Value.absent(),
+            Value<String> type = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -57452,6 +57177,8 @@ class $$CostCentersTableTableManager extends RootTableManager<
             branchId: branchId,
             code: code,
             name: name,
+            parentId: parentId,
+            type: type,
             isActive: isActive,
             rowid: rowid,
           ),
@@ -57464,6 +57191,8 @@ class $$CostCentersTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             required String code,
             required String name,
+            Value<String?> parentId = const Value.absent(),
+            Value<String> type = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -57476,6 +57205,8 @@ class $$CostCentersTableTableManager extends RootTableManager<
             branchId: branchId,
             code: code,
             name: name,
+            parentId: parentId,
+            type: type,
             isActive: isActive,
             rowid: rowid,
           ),
@@ -57520,6 +57251,11 @@ class $$CostCentersTableFilterComposer
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
+  ColumnFilters<String> get type => $state.composableBuilder(
+      column: $state.table.type,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
   ColumnFilters<bool> get isActive => $state.composableBuilder(
       column: $state.table.isActive,
       builder: (column, joinBuilders) =>
@@ -57534,6 +57270,18 @@ class $$CostCentersTableFilterComposer
         builder: (joinBuilder, parentComposers) =>
             $$BranchesTableFilterComposer(ComposerState(
                 $state.db, $state.db.branches, joinBuilder, parentComposers)));
+    return composer;
+  }
+
+  $$CostCentersTableFilterComposer get parentId {
+    final $$CostCentersTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.parentId,
+        referencedTable: $state.db.costCenters,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) =>
+            $$CostCentersTableFilterComposer(ComposerState($state.db,
+                $state.db.costCenters, joinBuilder, parentComposers)));
     return composer;
   }
 
@@ -57560,6 +57308,19 @@ class $$CostCentersTableFilterComposer
         builder: (joinBuilder, parentComposers) => $$GLLinesTableFilterComposer(
             ComposerState(
                 $state.db, $state.db.gLLines, joinBuilder, parentComposers)));
+    return f(composer);
+  }
+
+  ComposableFilter accBudgetsRefs(
+      ComposableFilter Function($$AccBudgetsTableFilterComposer f) f) {
+    final $$AccBudgetsTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $state.db.accBudgets,
+        getReferencedColumn: (t) => t.costCenterId,
+        builder: (joinBuilder, parentComposers) =>
+            $$AccBudgetsTableFilterComposer(ComposerState($state.db,
+                $state.db.accBudgets, joinBuilder, parentComposers)));
     return f(composer);
   }
 }
@@ -57602,6 +57363,11 @@ class $$CostCentersTableOrderingComposer
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
+  ColumnOrderings<String> get type => $state.composableBuilder(
+      column: $state.table.type,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
   ColumnOrderings<bool> get isActive => $state.composableBuilder(
       column: $state.table.isActive,
       builder: (column, joinBuilders) =>
@@ -57616,6 +57382,18 @@ class $$CostCentersTableOrderingComposer
         builder: (joinBuilder, parentComposers) =>
             $$BranchesTableOrderingComposer(ComposerState(
                 $state.db, $state.db.branches, joinBuilder, parentComposers)));
+    return composer;
+  }
+
+  $$CostCentersTableOrderingComposer get parentId {
+    final $$CostCentersTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.parentId,
+        referencedTable: $state.db.costCenters,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) =>
+            $$CostCentersTableOrderingComposer(ComposerState($state.db,
+                $state.db.costCenters, joinBuilder, parentComposers)));
     return composer;
   }
 }
@@ -63238,6 +63016,24 @@ class $$GLEntriesTableFilterComposer
         builder: (joinBuilder, parentComposers) => $$GLLinesTableFilterComposer(
             ComposerState(
                 $state.db, $state.db.gLLines, joinBuilder, parentComposers)));
+    return f(composer);
+  }
+
+  ComposableFilter accBankStatementLinesRefs(
+      ComposableFilter Function($$AccBankStatementLinesTableFilterComposer f)
+          f) {
+    final $$AccBankStatementLinesTableFilterComposer composer =
+        $state.composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $state.db.accBankStatementLines,
+            getReferencedColumn: (t) => t.matchedJournalEntryId,
+            builder: (joinBuilder, parentComposers) =>
+                $$AccBankStatementLinesTableFilterComposer(ComposerState(
+                    $state.db,
+                    $state.db.accBankStatementLines,
+                    joinBuilder,
+                    parentComposers)));
     return f(composer);
   }
 }
@@ -75751,9 +75547,8 @@ typedef $$AccCurrenciesTableCreateCompanionBuilder = AccCurrenciesCompanion
   Value<int> id,
   required String code,
   required String name,
-  Value<String?> symbol,
+  Value<double> exchangeRate,
   Value<bool> isBase,
-  Value<bool> isActive,
   Value<DateTime> createdAt,
 });
 typedef $$AccCurrenciesTableUpdateCompanionBuilder = AccCurrenciesCompanion
@@ -75761,9 +75556,8 @@ typedef $$AccCurrenciesTableUpdateCompanionBuilder = AccCurrenciesCompanion
   Value<int> id,
   Value<String> code,
   Value<String> name,
-  Value<String?> symbol,
+  Value<double> exchangeRate,
   Value<bool> isBase,
-  Value<bool> isActive,
   Value<DateTime> createdAt,
 });
 
@@ -75787,36 +75581,32 @@ class $$AccCurrenciesTableTableManager extends RootTableManager<
             Value<int> id = const Value.absent(),
             Value<String> code = const Value.absent(),
             Value<String> name = const Value.absent(),
-            Value<String?> symbol = const Value.absent(),
+            Value<double> exchangeRate = const Value.absent(),
             Value<bool> isBase = const Value.absent(),
-            Value<bool> isActive = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
               AccCurrenciesCompanion(
             id: id,
             code: code,
             name: name,
-            symbol: symbol,
+            exchangeRate: exchangeRate,
             isBase: isBase,
-            isActive: isActive,
             createdAt: createdAt,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
             required String code,
             required String name,
-            Value<String?> symbol = const Value.absent(),
+            Value<double> exchangeRate = const Value.absent(),
             Value<bool> isBase = const Value.absent(),
-            Value<bool> isActive = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
               AccCurrenciesCompanion.insert(
             id: id,
             code: code,
             name: name,
-            symbol: symbol,
+            exchangeRate: exchangeRate,
             isBase: isBase,
-            isActive: isActive,
             createdAt: createdAt,
           ),
         ));
@@ -75840,18 +75630,13 @@ class $$AccCurrenciesTableFilterComposer
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
-  ColumnFilters<String> get symbol => $state.composableBuilder(
-      column: $state.table.symbol,
+  ColumnFilters<double> get exchangeRate => $state.composableBuilder(
+      column: $state.table.exchangeRate,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
   ColumnFilters<bool> get isBase => $state.composableBuilder(
       column: $state.table.isBase,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<bool> get isActive => $state.composableBuilder(
-      column: $state.table.isActive,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
@@ -75907,18 +75692,13 @@ class $$AccCurrenciesTableOrderingComposer
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
-  ColumnOrderings<String> get symbol => $state.composableBuilder(
-      column: $state.table.symbol,
+  ColumnOrderings<double> get exchangeRate => $state.composableBuilder(
+      column: $state.table.exchangeRate,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
   ColumnOrderings<bool> get isBase => $state.composableBuilder(
       column: $state.table.isBase,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<bool> get isActive => $state.composableBuilder(
-      column: $state.table.isActive,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
@@ -76097,195 +75877,12 @@ class $$AccExchangeRatesTableOrderingComposer
   }
 }
 
-typedef $$AccCostCentersTableCreateCompanionBuilder = AccCostCentersCompanion
-    Function({
-  Value<int> id,
-  required String name,
-  required String code,
-  Value<int?> parentId,
-  Value<String> type,
-  Value<bool> isActive,
-  Value<DateTime> createdAt,
-});
-typedef $$AccCostCentersTableUpdateCompanionBuilder = AccCostCentersCompanion
-    Function({
-  Value<int> id,
-  Value<String> name,
-  Value<String> code,
-  Value<int?> parentId,
-  Value<String> type,
-  Value<bool> isActive,
-  Value<DateTime> createdAt,
-});
-
-class $$AccCostCentersTableTableManager extends RootTableManager<
-    _$AppDatabase,
-    $AccCostCentersTable,
-    AccCostCenter,
-    $$AccCostCentersTableFilterComposer,
-    $$AccCostCentersTableOrderingComposer,
-    $$AccCostCentersTableCreateCompanionBuilder,
-    $$AccCostCentersTableUpdateCompanionBuilder> {
-  $$AccCostCentersTableTableManager(
-      _$AppDatabase db, $AccCostCentersTable table)
-      : super(TableManagerState(
-          db: db,
-          table: table,
-          filteringComposer:
-              $$AccCostCentersTableFilterComposer(ComposerState(db, table)),
-          orderingComposer:
-              $$AccCostCentersTableOrderingComposer(ComposerState(db, table)),
-          updateCompanionCallback: ({
-            Value<int> id = const Value.absent(),
-            Value<String> name = const Value.absent(),
-            Value<String> code = const Value.absent(),
-            Value<int?> parentId = const Value.absent(),
-            Value<String> type = const Value.absent(),
-            Value<bool> isActive = const Value.absent(),
-            Value<DateTime> createdAt = const Value.absent(),
-          }) =>
-              AccCostCentersCompanion(
-            id: id,
-            name: name,
-            code: code,
-            parentId: parentId,
-            type: type,
-            isActive: isActive,
-            createdAt: createdAt,
-          ),
-          createCompanionCallback: ({
-            Value<int> id = const Value.absent(),
-            required String name,
-            required String code,
-            Value<int?> parentId = const Value.absent(),
-            Value<String> type = const Value.absent(),
-            Value<bool> isActive = const Value.absent(),
-            Value<DateTime> createdAt = const Value.absent(),
-          }) =>
-              AccCostCentersCompanion.insert(
-            id: id,
-            name: name,
-            code: code,
-            parentId: parentId,
-            type: type,
-            isActive: isActive,
-            createdAt: createdAt,
-          ),
-        ));
-}
-
-class $$AccCostCentersTableFilterComposer
-    extends FilterComposer<_$AppDatabase, $AccCostCentersTable> {
-  $$AccCostCentersTableFilterComposer(super.$state);
-  ColumnFilters<int> get id => $state.composableBuilder(
-      column: $state.table.id,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<String> get name => $state.composableBuilder(
-      column: $state.table.name,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<String> get code => $state.composableBuilder(
-      column: $state.table.code,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<String> get type => $state.composableBuilder(
-      column: $state.table.type,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<bool> get isActive => $state.composableBuilder(
-      column: $state.table.isActive,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<DateTime> get createdAt => $state.composableBuilder(
-      column: $state.table.createdAt,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  $$AccCostCentersTableFilterComposer get parentId {
-    final $$AccCostCentersTableFilterComposer composer = $state.composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.parentId,
-        referencedTable: $state.db.accCostCenters,
-        getReferencedColumn: (t) => t.id,
-        builder: (joinBuilder, parentComposers) =>
-            $$AccCostCentersTableFilterComposer(ComposerState($state.db,
-                $state.db.accCostCenters, joinBuilder, parentComposers)));
-    return composer;
-  }
-
-  ComposableFilter accBudgetsRefs(
-      ComposableFilter Function($$AccBudgetsTableFilterComposer f) f) {
-    final $$AccBudgetsTableFilterComposer composer = $state.composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.id,
-        referencedTable: $state.db.accBudgets,
-        getReferencedColumn: (t) => t.costCenterId,
-        builder: (joinBuilder, parentComposers) =>
-            $$AccBudgetsTableFilterComposer(ComposerState($state.db,
-                $state.db.accBudgets, joinBuilder, parentComposers)));
-    return f(composer);
-  }
-}
-
-class $$AccCostCentersTableOrderingComposer
-    extends OrderingComposer<_$AppDatabase, $AccCostCentersTable> {
-  $$AccCostCentersTableOrderingComposer(super.$state);
-  ColumnOrderings<int> get id => $state.composableBuilder(
-      column: $state.table.id,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<String> get name => $state.composableBuilder(
-      column: $state.table.name,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<String> get code => $state.composableBuilder(
-      column: $state.table.code,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<String> get type => $state.composableBuilder(
-      column: $state.table.type,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<bool> get isActive => $state.composableBuilder(
-      column: $state.table.isActive,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<DateTime> get createdAt => $state.composableBuilder(
-      column: $state.table.createdAt,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  $$AccCostCentersTableOrderingComposer get parentId {
-    final $$AccCostCentersTableOrderingComposer composer =
-        $state.composerBuilder(
-            composer: this,
-            getCurrentColumn: (t) => t.parentId,
-            referencedTable: $state.db.accCostCenters,
-            getReferencedColumn: (t) => t.id,
-            builder: (joinBuilder, parentComposers) =>
-                $$AccCostCentersTableOrderingComposer(ComposerState($state.db,
-                    $state.db.accCostCenters, joinBuilder, parentComposers)));
-    return composer;
-  }
-}
-
 typedef $$AccBudgetsTableCreateCompanionBuilder = AccBudgetsCompanion Function({
   Value<int> id,
   required String name,
   required String period,
-  Value<int?> costCenterId,
-  Value<int?> accountId,
+  Value<String?> costCenterId,
+  Value<String?> accountId,
   required double budgetedAmount,
   Value<double> actualAmount,
   required double variance,
@@ -76296,8 +75893,8 @@ typedef $$AccBudgetsTableUpdateCompanionBuilder = AccBudgetsCompanion Function({
   Value<int> id,
   Value<String> name,
   Value<String> period,
-  Value<int?> costCenterId,
-  Value<int?> accountId,
+  Value<String?> costCenterId,
+  Value<String?> accountId,
   Value<double> budgetedAmount,
   Value<double> actualAmount,
   Value<double> variance,
@@ -76325,8 +75922,8 @@ class $$AccBudgetsTableTableManager extends RootTableManager<
             Value<int> id = const Value.absent(),
             Value<String> name = const Value.absent(),
             Value<String> period = const Value.absent(),
-            Value<int?> costCenterId = const Value.absent(),
-            Value<int?> accountId = const Value.absent(),
+            Value<String?> costCenterId = const Value.absent(),
+            Value<String?> accountId = const Value.absent(),
             Value<double> budgetedAmount = const Value.absent(),
             Value<double> actualAmount = const Value.absent(),
             Value<double> variance = const Value.absent(),
@@ -76349,8 +75946,8 @@ class $$AccBudgetsTableTableManager extends RootTableManager<
             Value<int> id = const Value.absent(),
             required String name,
             required String period,
-            Value<int?> costCenterId = const Value.absent(),
-            Value<int?> accountId = const Value.absent(),
+            Value<String?> costCenterId = const Value.absent(),
+            Value<String?> accountId = const Value.absent(),
             required double budgetedAmount,
             Value<double> actualAmount = const Value.absent(),
             required double variance,
@@ -76390,11 +75987,6 @@ class $$AccBudgetsTableFilterComposer
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
-  ColumnFilters<int> get accountId => $state.composableBuilder(
-      column: $state.table.accountId,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
   ColumnFilters<double> get budgetedAmount => $state.composableBuilder(
       column: $state.table.budgetedAmount,
       builder: (column, joinBuilders) =>
@@ -76420,15 +76012,27 @@ class $$AccBudgetsTableFilterComposer
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
-  $$AccCostCentersTableFilterComposer get costCenterId {
-    final $$AccCostCentersTableFilterComposer composer = $state.composerBuilder(
+  $$CostCentersTableFilterComposer get costCenterId {
+    final $$CostCentersTableFilterComposer composer = $state.composerBuilder(
         composer: this,
         getCurrentColumn: (t) => t.costCenterId,
-        referencedTable: $state.db.accCostCenters,
+        referencedTable: $state.db.costCenters,
         getReferencedColumn: (t) => t.id,
         builder: (joinBuilder, parentComposers) =>
-            $$AccCostCentersTableFilterComposer(ComposerState($state.db,
-                $state.db.accCostCenters, joinBuilder, parentComposers)));
+            $$CostCentersTableFilterComposer(ComposerState($state.db,
+                $state.db.costCenters, joinBuilder, parentComposers)));
+    return composer;
+  }
+
+  $$GLAccountsTableFilterComposer get accountId {
+    final $$GLAccountsTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.accountId,
+        referencedTable: $state.db.gLAccounts,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) =>
+            $$GLAccountsTableFilterComposer(ComposerState($state.db,
+                $state.db.gLAccounts, joinBuilder, parentComposers)));
     return composer;
   }
 }
@@ -76448,11 +76052,6 @@ class $$AccBudgetsTableOrderingComposer
 
   ColumnOrderings<String> get period => $state.composableBuilder(
       column: $state.table.period,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<int> get accountId => $state.composableBuilder(
-      column: $state.table.accountId,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
@@ -76481,16 +76080,27 @@ class $$AccBudgetsTableOrderingComposer
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
-  $$AccCostCentersTableOrderingComposer get costCenterId {
-    final $$AccCostCentersTableOrderingComposer composer =
-        $state.composerBuilder(
-            composer: this,
-            getCurrentColumn: (t) => t.costCenterId,
-            referencedTable: $state.db.accCostCenters,
-            getReferencedColumn: (t) => t.id,
-            builder: (joinBuilder, parentComposers) =>
-                $$AccCostCentersTableOrderingComposer(ComposerState($state.db,
-                    $state.db.accCostCenters, joinBuilder, parentComposers)));
+  $$CostCentersTableOrderingComposer get costCenterId {
+    final $$CostCentersTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.costCenterId,
+        referencedTable: $state.db.costCenters,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) =>
+            $$CostCentersTableOrderingComposer(ComposerState($state.db,
+                $state.db.costCenters, joinBuilder, parentComposers)));
+    return composer;
+  }
+
+  $$GLAccountsTableOrderingComposer get accountId {
+    final $$GLAccountsTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.accountId,
+        referencedTable: $state.db.gLAccounts,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) =>
+            $$GLAccountsTableOrderingComposer(ComposerState($state.db,
+                $state.db.gLAccounts, joinBuilder, parentComposers)));
     return composer;
   }
 }
@@ -76498,7 +76108,7 @@ class $$AccBudgetsTableOrderingComposer
 typedef $$AccBankStatementsTableCreateCompanionBuilder
     = AccBankStatementsCompanion Function({
   Value<int> id,
-  required int accountId,
+  required String accountId,
   Value<String?> statementReference,
   required DateTime statementDate,
   required double openingBalance,
@@ -76510,7 +76120,7 @@ typedef $$AccBankStatementsTableCreateCompanionBuilder
 typedef $$AccBankStatementsTableUpdateCompanionBuilder
     = AccBankStatementsCompanion Function({
   Value<int> id,
-  Value<int> accountId,
+  Value<String> accountId,
   Value<String?> statementReference,
   Value<DateTime> statementDate,
   Value<double> openingBalance,
@@ -76539,7 +76149,7 @@ class $$AccBankStatementsTableTableManager extends RootTableManager<
               ComposerState(db, table)),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
-            Value<int> accountId = const Value.absent(),
+            Value<String> accountId = const Value.absent(),
             Value<String?> statementReference = const Value.absent(),
             Value<DateTime> statementDate = const Value.absent(),
             Value<double> openingBalance = const Value.absent(),
@@ -76561,7 +76171,7 @@ class $$AccBankStatementsTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
-            required int accountId,
+            required String accountId,
             Value<String?> statementReference = const Value.absent(),
             required DateTime statementDate,
             required double openingBalance,
@@ -76589,11 +76199,6 @@ class $$AccBankStatementsTableFilterComposer
   $$AccBankStatementsTableFilterComposer(super.$state);
   ColumnFilters<int> get id => $state.composableBuilder(
       column: $state.table.id,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
-  ColumnFilters<int> get accountId => $state.composableBuilder(
-      column: $state.table.accountId,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
@@ -76632,6 +76237,18 @@ class $$AccBankStatementsTableFilterComposer
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
+  $$GLAccountsTableFilterComposer get accountId {
+    final $$GLAccountsTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.accountId,
+        referencedTable: $state.db.gLAccounts,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) =>
+            $$GLAccountsTableFilterComposer(ComposerState($state.db,
+                $state.db.gLAccounts, joinBuilder, parentComposers)));
+    return composer;
+  }
+
   ComposableFilter accBankStatementLinesRefs(
       ComposableFilter Function($$AccBankStatementLinesTableFilterComposer f)
           f) {
@@ -76656,11 +76273,6 @@ class $$AccBankStatementsTableOrderingComposer
   $$AccBankStatementsTableOrderingComposer(super.$state);
   ColumnOrderings<int> get id => $state.composableBuilder(
       column: $state.table.id,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  ColumnOrderings<int> get accountId => $state.composableBuilder(
-      column: $state.table.accountId,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
@@ -76698,6 +76310,18 @@ class $$AccBankStatementsTableOrderingComposer
       column: $state.table.createdAt,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  $$GLAccountsTableOrderingComposer get accountId {
+    final $$GLAccountsTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.accountId,
+        referencedTable: $state.db.gLAccounts,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) =>
+            $$GLAccountsTableOrderingComposer(ComposerState($state.db,
+                $state.db.gLAccounts, joinBuilder, parentComposers)));
+    return composer;
+  }
 }
 
 typedef $$AccBankStatementLinesTableCreateCompanionBuilder
@@ -76710,7 +76334,7 @@ typedef $$AccBankStatementLinesTableCreateCompanionBuilder
   Value<double> credit,
   Value<double?> balance,
   Value<String?> reference,
-  Value<int?> matchedJournalEntryId,
+  Value<String?> matchedJournalEntryId,
   Value<String> reconciliationStatus,
   Value<DateTime> createdAt,
 });
@@ -76724,7 +76348,7 @@ typedef $$AccBankStatementLinesTableUpdateCompanionBuilder
   Value<double> credit,
   Value<double?> balance,
   Value<String?> reference,
-  Value<int?> matchedJournalEntryId,
+  Value<String?> matchedJournalEntryId,
   Value<String> reconciliationStatus,
   Value<DateTime> createdAt,
 });
@@ -76755,7 +76379,7 @@ class $$AccBankStatementLinesTableTableManager extends RootTableManager<
             Value<double> credit = const Value.absent(),
             Value<double?> balance = const Value.absent(),
             Value<String?> reference = const Value.absent(),
-            Value<int?> matchedJournalEntryId = const Value.absent(),
+            Value<String?> matchedJournalEntryId = const Value.absent(),
             Value<String> reconciliationStatus = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
@@ -76781,7 +76405,7 @@ class $$AccBankStatementLinesTableTableManager extends RootTableManager<
             Value<double> credit = const Value.absent(),
             Value<double?> balance = const Value.absent(),
             Value<String?> reference = const Value.absent(),
-            Value<int?> matchedJournalEntryId = const Value.absent(),
+            Value<String?> matchedJournalEntryId = const Value.absent(),
             Value<String> reconciliationStatus = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
@@ -76839,11 +76463,6 @@ class $$AccBankStatementLinesTableFilterComposer
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
-  ColumnFilters<int> get matchedJournalEntryId => $state.composableBuilder(
-      column: $state.table.matchedJournalEntryId,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
   ColumnFilters<String> get reconciliationStatus => $state.composableBuilder(
       column: $state.table.reconciliationStatus,
       builder: (column, joinBuilders) =>
@@ -76867,6 +76486,18 @@ class $$AccBankStatementLinesTableFilterComposer
                     $state.db.accBankStatements,
                     joinBuilder,
                     parentComposers)));
+    return composer;
+  }
+
+  $$GLEntriesTableFilterComposer get matchedJournalEntryId {
+    final $$GLEntriesTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.matchedJournalEntryId,
+        referencedTable: $state.db.gLEntries,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) =>
+            $$GLEntriesTableFilterComposer(ComposerState(
+                $state.db, $state.db.gLEntries, joinBuilder, parentComposers)));
     return composer;
   }
 }
@@ -76909,11 +76540,6 @@ class $$AccBankStatementLinesTableOrderingComposer
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
-  ColumnOrderings<int> get matchedJournalEntryId => $state.composableBuilder(
-      column: $state.table.matchedJournalEntryId,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
   ColumnOrderings<String> get reconciliationStatus => $state.composableBuilder(
       column: $state.table.reconciliationStatus,
       builder: (column, joinBuilders) =>
@@ -76939,17 +76565,29 @@ class $$AccBankStatementLinesTableOrderingComposer
                     parentComposers)));
     return composer;
   }
+
+  $$GLEntriesTableOrderingComposer get matchedJournalEntryId {
+    final $$GLEntriesTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.matchedJournalEntryId,
+        referencedTable: $state.db.gLEntries,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) =>
+            $$GLEntriesTableOrderingComposer(ComposerState(
+                $state.db, $state.db.gLEntries, joinBuilder, parentComposers)));
+    return composer;
+  }
 }
 
 typedef $$AccAuditLogsTableCreateCompanionBuilder = AccAuditLogsCompanion
     Function({
   Value<int> id,
   required String logTableName,
-  required int recordId,
+  required String recordId,
   required String action,
   Value<String?> oldValues,
   Value<String?> newValues,
-  Value<int?> userId,
+  Value<String?> userId,
   Value<DateTime> timestamp,
   Value<String?> ipAddress,
 });
@@ -76957,11 +76595,11 @@ typedef $$AccAuditLogsTableUpdateCompanionBuilder = AccAuditLogsCompanion
     Function({
   Value<int> id,
   Value<String> logTableName,
-  Value<int> recordId,
+  Value<String> recordId,
   Value<String> action,
   Value<String?> oldValues,
   Value<String?> newValues,
-  Value<int?> userId,
+  Value<String?> userId,
   Value<DateTime> timestamp,
   Value<String?> ipAddress,
 });
@@ -76985,11 +76623,11 @@ class $$AccAuditLogsTableTableManager extends RootTableManager<
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
             Value<String> logTableName = const Value.absent(),
-            Value<int> recordId = const Value.absent(),
+            Value<String> recordId = const Value.absent(),
             Value<String> action = const Value.absent(),
             Value<String?> oldValues = const Value.absent(),
             Value<String?> newValues = const Value.absent(),
-            Value<int?> userId = const Value.absent(),
+            Value<String?> userId = const Value.absent(),
             Value<DateTime> timestamp = const Value.absent(),
             Value<String?> ipAddress = const Value.absent(),
           }) =>
@@ -77007,11 +76645,11 @@ class $$AccAuditLogsTableTableManager extends RootTableManager<
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
             required String logTableName,
-            required int recordId,
+            required String recordId,
             required String action,
             Value<String?> oldValues = const Value.absent(),
             Value<String?> newValues = const Value.absent(),
-            Value<int?> userId = const Value.absent(),
+            Value<String?> userId = const Value.absent(),
             Value<DateTime> timestamp = const Value.absent(),
             Value<String?> ipAddress = const Value.absent(),
           }) =>
@@ -77042,7 +76680,7 @@ class $$AccAuditLogsTableFilterComposer
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
-  ColumnFilters<int> get recordId => $state.composableBuilder(
+  ColumnFilters<String> get recordId => $state.composableBuilder(
       column: $state.table.recordId,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
@@ -77062,11 +76700,6 @@ class $$AccAuditLogsTableFilterComposer
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
-  ColumnFilters<int> get userId => $state.composableBuilder(
-      column: $state.table.userId,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-
   ColumnFilters<DateTime> get timestamp => $state.composableBuilder(
       column: $state.table.timestamp,
       builder: (column, joinBuilders) =>
@@ -77076,6 +76709,18 @@ class $$AccAuditLogsTableFilterComposer
       column: $state.table.ipAddress,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
+
+  $$UsersTableFilterComposer get userId {
+    final $$UsersTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.userId,
+        referencedTable: $state.db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) => $$UsersTableFilterComposer(
+            ComposerState(
+                $state.db, $state.db.users, joinBuilder, parentComposers)));
+    return composer;
+  }
 }
 
 class $$AccAuditLogsTableOrderingComposer
@@ -77091,7 +76736,7 @@ class $$AccAuditLogsTableOrderingComposer
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
-  ColumnOrderings<int> get recordId => $state.composableBuilder(
+  ColumnOrderings<String> get recordId => $state.composableBuilder(
       column: $state.table.recordId,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
@@ -77111,11 +76756,6 @@ class $$AccAuditLogsTableOrderingComposer
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
-  ColumnOrderings<int> get userId => $state.composableBuilder(
-      column: $state.table.userId,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-
   ColumnOrderings<DateTime> get timestamp => $state.composableBuilder(
       column: $state.table.timestamp,
       builder: (column, joinBuilders) =>
@@ -77125,6 +76765,18 @@ class $$AccAuditLogsTableOrderingComposer
       column: $state.table.ipAddress,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  $$UsersTableOrderingComposer get userId {
+    final $$UsersTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.userId,
+        referencedTable: $state.db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) => $$UsersTableOrderingComposer(
+            ComposerState(
+                $state.db, $state.db.users, joinBuilder, parentComposers)));
+    return composer;
+  }
 }
 
 class $AppDatabaseManager {
@@ -77292,8 +76944,6 @@ class $AppDatabaseManager {
       $$AccCurrenciesTableTableManager(_db, _db.accCurrencies);
   $$AccExchangeRatesTableTableManager get accExchangeRates =>
       $$AccExchangeRatesTableTableManager(_db, _db.accExchangeRates);
-  $$AccCostCentersTableTableManager get accCostCenters =>
-      $$AccCostCentersTableTableManager(_db, _db.accCostCenters);
   $$AccBudgetsTableTableManager get accBudgets =>
       $$AccBudgetsTableTableManager(_db, _db.accBudgets);
   $$AccBankStatementsTableTableManager get accBankStatements =>

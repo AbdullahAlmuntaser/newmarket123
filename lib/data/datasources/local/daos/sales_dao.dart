@@ -74,10 +74,7 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
     return (select(sales)..where((s) => s.customerId.equals(customerId))).get();
   }
 
-  Future<List<Sale>> getInvoicesByDateRange({
-    required DateTime startDate,
-    required DateTime endDate,
-  }) {
+  Future<List<Sale>> getInvoicesByDateRange(DateTime startDate, DateTime endDate) {
     return (select(sales)
           ..where((s) =>
               s.createdAt.isBiggerOrEqualValue(startDate) &

@@ -40,7 +40,7 @@
   "cartEmpty": "Cart is empty",
   "subtotal": "Subtotal",
   "discount": "Discount",
-  "tax": "Tax (15%)",
+  "tax": "Tax",
   "total": "Total",
   "proceedToCheckout": "PROCEED TO CHECKOUT",
   "completePayment": "Complete Payment",
@@ -391,5 +391,17 @@
   "next60Days": "Next 60 Days",
   "next90Days": "Next 90 Days",
   "period": "Period",
-  "noItemsSelected": "No items selected"
-}
+  "noItemsSelected": "No items selected",
+  "manufacturing": "Manufacturing",
+  "productionOrders": "Production Orders",
+  "bomManagement": "BOM Management",
+  "createOrder": "Create Order",
+  "plannedQuantity": "Planned Quantity",
+  "productionOrderCreated": "Production order created successfully",
+  "complete": "Complete",
+  "bom": "Bill of Materials",
+  "executeAssembly": "Execute Assembly",
+  "assemblySuccess": "Assembly executed successfully",
+  "finishedProduct": "Finished Product",
+  "rawMaterials": "Raw Materials"
+  }

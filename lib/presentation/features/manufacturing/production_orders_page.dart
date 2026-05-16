@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' show OrderingMode, OrderingTerm;
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/production_service.dart';
 import 'package:supermarket/presentation/widgets/entity_picker.dart';
+import 'package:supermarket/l10n/app_localizations.dart';
 
 class ProductionOrdersPage extends StatefulWidget {
   const ProductionOrdersPage({super.key});
@@ -18,11 +19,12 @@ class _ProductionOrdersPageState extends State<ProductionOrdersPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final db = Provider.of<AppDatabase>(context);
     final productionService = Provider.of<ProductionService>(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('أوامر الإنتاج')),
+      appBar: AppBar(title: Text(l10n.productionOrders)),
       body: Column(
         children: [
           Padding(
@@ -41,14 +43,17 @@ class _ProductionOrdersPageState extends State<ProductionOrdersPage> {
                   width: 100,
                   child: TextFormField(
                     controller: _quantityController,
-                    decoration: const InputDecoration(labelText: 'الكمية', border: OutlineInputBorder()),
+                    decoration: InputDecoration(
+                        labelText: l10n.quantityLabel,
+                        border: const OutlineInputBorder()),
                     keyboardType: TextInputType.number,
                   ),
                 ),
                 const SizedBox(width: 10),
                 ElevatedButton(
                   onPressed: () async {
-                    if (_selectedProduct == null || _quantityController.text.isEmpty) return;
+                    if (_selectedProduct == null ||
+                        _quantityController.text.isEmpty) return;
                     final messenger = ScaffoldMessenger.of(context);
                     try {
                       await productionService.createProductionOrder(
@@ -56,13 +61,14 @@ class _ProductionOrdersPageState extends State<ProductionOrdersPage> {
                         quantity: double.parse(_quantityController.text),
                       );
                       if (!mounted) return;
-                      messenger.showSnackBar(const SnackBar(content: Text('تم إنشاء أمر الإنتاج')));
+                      messenger.showSnackBar(
+                          SnackBar(content: Text(l10n.productionOrderCreated)));
                     } catch (e) {
                       if (!mounted) return;
-                      messenger.showSnackBar(SnackBar(content: Text('خطأ: $e')));
+                      messenger.showSnackBar(SnackBar(content: Text('Error: $e')));
                     }
                   },
-                  child: const Text('إنشاء أمر'),
+                  child: Text(l10n.createOrder),
                 ),
               ],
             ),
@@ -70,23 +76,29 @@ class _ProductionOrdersPageState extends State<ProductionOrdersPage> {
           const Divider(),
           Expanded(
             child: StreamBuilder<List<ProductionOrder>>(
-              stream: (db.select(db.productionOrders)..orderBy([(t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc)])).watch(),
+              stream: (db.select(db.productionOrders)
+                    ..orderBy([(t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc)]))
+                  .watch(),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
                 final orders = snapshot.data!;
                 return ListView.builder(
                   itemCount: orders.length,
                   itemBuilder: (context, index) {
                     final o = orders[index];
                     return ListTile(
-                      title: Text('أمر إنتاج لمنتج: ${o.finishedProductId}'),
-                      subtitle: Text('الكمية: ${o.plannedQuantity} - الحالة: ${o.status}'),
-                      trailing: o.status == 'PLANNED' 
-                        ? ElevatedButton(
-                            onPressed: () => productionService.completeProductionOrder(o.id),
-                            child: const Text('إكمال'),
-                          )
-                        : const Icon(Icons.check_circle, color: Colors.green),
+                      title: Text('${l10n.productLabel}: ${o.finishedProductId}'),
+                      subtitle: Text(
+                          '${l10n.plannedQuantity}: ${o.plannedQuantity} - ${l10n.status}: ${o.status}'),
+                      trailing: o.status == 'PLANNED'
+                          ? ElevatedButton(
+                              onPressed: () =>
+                                  productionService.completeProductionOrder(o.id),
+                              child: Text(l10n.complete),
+                            )
+                          : const Icon(Icons.check_circle, color: Colors.green),
                     );
                   },
                 );

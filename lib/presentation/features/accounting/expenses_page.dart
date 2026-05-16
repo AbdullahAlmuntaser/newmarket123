@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
-import 'package:supermarket/core/services/event_bus_service.dart';
 import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart'
     as dao;
-import 'package:supermarket/domain/entities/account.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/injection_container.dart';
 
@@ -36,7 +34,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
               [];
 
           if (entries.isEmpty) {
-            return Center(child: Text(l10n.noSalesFound));
+            return Center(child: Text(l10n.noItemsFound));
           }
 
           return ListView.builder(
@@ -80,20 +78,22 @@ class _ExpensesPageState extends State<ExpensesPage> {
   void _showAddExpenseDialog(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
     final db = context.read<AppDatabase>();
-    final accountingService = AccountingService(db, sl<EventBusService>());
+    final accountingService = sl<AccountingService>();
 
     final allAccounts = await db.accountingDao.getAllAccounts();
     final expenseAccounts = allAccounts
-        .where((a) => a.type == AccountType.expense.toString())
+        .where((a) => a.type == 'EXPENSE')
         .toList();
     final paymentAccounts = allAccounts
         .where(
           (a) =>
-              a.type == AccountType.asset.toString() &&
-              (a.code == AccountingService.codeCash ||
-                  a.code == AccountingService.codeBank),
+              a.type == 'ASSET' &&
+              (a.analyticType == 'صندوق' || a.analyticType == 'بنك'),
         )
         .toList();
+    final costCenters = await (db.select(db.costCenters)
+          ..where((c) => c.isActive.equals(true)))
+        .get();
 
     if (!mounted) return;
 
@@ -102,6 +102,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
     GLAccount? selectedExpenseAccount;
     GLAccount? selectedPaymentAccount =
         paymentAccounts.isNotEmpty ? paymentAccounts.first : null;
+    CostCenter? selectedCostCenter;
 
     if (!context.mounted) return;
 
@@ -116,13 +117,14 @@ class _ExpensesPageState extends State<ExpensesPage> {
               children: [
                 TextField(
                   controller: descriptionController,
-                  decoration: InputDecoration(labelText: l10n.overview),
+                  decoration: InputDecoration(labelText: l10n.name),
                 ),
                 TextField(
                   controller: amountController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(labelText: l10n.total),
                 ),
+                const SizedBox(height: 10),
                 DropdownButtonFormField<GLAccount>(
                   value: selectedExpenseAccount,
                   items: expenseAccounts
@@ -132,7 +134,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                       .toList(),
                   onChanged: (val) =>
                       setDialogState(() => selectedExpenseAccount = val),
-                  decoration: InputDecoration(labelText: l10n.accountType),
+                  decoration: InputDecoration(labelText: l10n.expense),
                 ),
                 DropdownButtonFormField<GLAccount>(
                   value: selectedPaymentAccount,
@@ -143,7 +145,18 @@ class _ExpensesPageState extends State<ExpensesPage> {
                       .toList(),
                   onChanged: (val) =>
                       setDialogState(() => selectedPaymentAccount = val),
-                  decoration: InputDecoration(labelText: l10n.cashPayment),
+                  decoration: InputDecoration(labelText: l10n.paymentMethod),
+                ),
+                DropdownButtonFormField<CostCenter>(
+                  value: selectedCostCenter,
+                  items: costCenters
+                      .map(
+                        (c) => DropdownMenuItem(value: c, child: Text(c.name)),
+                      )
+                      .toList(),
+                  onChanged: (val) =>
+                      setDialogState(() => selectedCostCenter = val),
+                  decoration: InputDecoration(labelText: l10n.costCenters),
                 ),
               ],
             ),
@@ -161,14 +174,23 @@ class _ExpensesPageState extends State<ExpensesPage> {
                   selectedExpenseAccount != null &&
                   selectedPaymentAccount != null) {
                 final amount = double.tryParse(amountController.text) ?? 0.0;
-                await accountingService.recordExpense(
-                  description: descriptionController.text,
-                  amount: amount,
-                  date: DateTime.now(),
-                  expenseAccountId: selectedExpenseAccount!.id.toString(),
-                  paymentAccountId: selectedPaymentAccount!.id.toString(),
-                );
-                if (context.mounted) Navigator.pop(context);
+                try {
+                  await accountingService.recordExpense(
+                    description: descriptionController.text,
+                    amount: amount,
+                    date: DateTime.now(),
+                    expenseAccountId: selectedExpenseAccount!.id,
+                    paymentAccountId: selectedPaymentAccount!.id,
+                    costCenterId: selectedCostCenter != null ? int.tryParse(selectedCostCenter!.id) : null,
+                  );
+                  if (context.mounted) Navigator.pop(context);
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                    );
+                  }
+                }
               }
             },
             child: Text(l10n.save),

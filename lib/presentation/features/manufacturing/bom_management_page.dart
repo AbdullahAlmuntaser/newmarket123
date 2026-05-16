@@ -41,11 +41,7 @@ class _BomManagementPageState extends State<BomManagementPage> {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          l10n.localeName == 'ar'
-              ? 'إدارة التصنيع'
-              : 'Manufacturing Management',
-        ),
+        title: Text(l10n.bomManagement),
         actions: [
           IconButton(icon: const Icon(Icons.add), onPressed: _showAddBomDialog),
         ],
@@ -71,9 +67,7 @@ class _BomManagementPageState extends State<BomManagementPage> {
             const Icon(Icons.settings, size: 80, color: Colors.grey),
             const SizedBox(height: 16),
             Text(
-              l10n.localeName == 'ar'
-                  ? 'لا توجد وصفات تصنيع'
-                  : 'No manufacturing recipes',
+              l10n.noItemsFound,
               style: const TextStyle(fontSize: 18, color: Colors.grey),
             ),
           ],
@@ -95,9 +89,7 @@ class _BomManagementPageState extends State<BomManagementPage> {
             leading: const Icon(Icons.category),
             title: Text(productName),
             subtitle: Text(
-              l10n.localeName == 'ar'
-                  ? '${components.length} مكون'
-                  : '${components.length} component(s)',
+              '${components.length} ${l10n.items}',
             ),
             children:
                 components.map((bom) => _buildComponentTile(bom)).toList(),
@@ -140,11 +132,7 @@ class _BomManagementPageState extends State<BomManagementPage> {
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(
-          l10n.localeName == 'ar'
-              ? 'إضافة مكون تصنيع'
-              : 'Add Manufacturing Component',
-        ),
+        title: Text(l10n.add),
         content: Form(
           key: formKey,
           child: Column(
@@ -153,9 +141,7 @@ class _BomManagementPageState extends State<BomManagementPage> {
               DropdownButtonFormField<String>(
                 value: finishedProduct,
                 decoration: InputDecoration(
-                  labelText: l10n.localeName == 'ar'
-                      ? 'المنتج المُصنَّع'
-                      : 'Finished Product',
+                  labelText: l10n.finishedProduct,
                 ),
                 items: _products
                     .map(
@@ -163,14 +149,13 @@ class _BomManagementPageState extends State<BomManagementPage> {
                     )
                     .toList(),
                 onChanged: (v) => finishedProduct = v,
-                validator: (v) => v == null ? 'مطلوب' : null,
+                validator: (v) => v == null ? l10n.enterNameError : null,
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: component,
                 decoration: InputDecoration(
-                  labelText:
-                      l10n.localeName == 'ar' ? 'المادة الخام' : 'Raw Material',
+                  labelText: l10n.rawMaterials,
                 ),
                 items: _products
                     .map(
@@ -178,22 +163,20 @@ class _BomManagementPageState extends State<BomManagementPage> {
                     )
                     .toList(),
                 onChanged: (v) => component = v,
-                validator: (v) => v == null ? 'مطلوب' : null,
+                validator: (v) => v == null ? l10n.enterNameError : null,
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: qtyCtrl,
                 decoration: InputDecoration(
-                  labelText: l10n.localeName == 'ar'
-                      ? 'الكمية المطلوبة'
-                      : 'Required Quantity',
+                  labelText: l10n.quantityLabel,
                 ),
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
                 validator: (v) {
-                  if (v == null || v.isEmpty) return 'مطلوب';
-                  if (double.tryParse(v) == null) return 'رقم غير صالح';
+                  if (v == null || v.isEmpty) return l10n.enterAmountError;
+                  if (double.tryParse(v) == null) return l10n.enterAmountError;
                   return null;
                 },
               ),
@@ -203,7 +186,7 @@ class _BomManagementPageState extends State<BomManagementPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.localeName == 'ar' ? 'إلغاء' : 'Cancel'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -218,7 +201,7 @@ class _BomManagementPageState extends State<BomManagementPage> {
                 await _loadData();
               }
             },
-            child: Text(l10n.localeName == 'ar' ? 'إضافة' : 'Add'),
+            child: Text(l10n.add),
           ),
         ],
       ),
@@ -232,18 +215,18 @@ class _BomManagementPageState extends State<BomManagementPage> {
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(l10n.localeName == 'ar' ? 'تعديل الكمية' : 'Edit Quantity'),
+        title: Text(l10n.edit),
         content: TextField(
           controller: ctrl,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
-            labelText: l10n.localeName == 'ar' ? 'الكمية' : 'Quantity',
+            labelText: l10n.quantityLabel,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.localeName == 'ar' ? 'إلغاء' : 'Cancel'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -255,7 +238,7 @@ class _BomManagementPageState extends State<BomManagementPage> {
               if (context.mounted) Navigator.pop(ctx);
               await _loadData();
             },
-            child: Text(l10n.localeName == 'ar' ? 'حفظ' : 'Save'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -267,21 +250,19 @@ class _BomManagementPageState extends State<BomManagementPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(l10n.localeName == 'ar' ? 'تأكيد الحذف' : 'Confirm Delete'),
+        title: Text(l10n.delete),
         content: Text(
-          l10n.localeName == 'ar'
-              ? 'هل أنت متأكد من حذف هذا المكون؟'
-              : 'Are you sure you want to delete this component?',
+          l10n.deleteProductConfirmation(bom.componentProductId),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.localeName == 'ar' ? 'إلغاء' : 'Cancel'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: Text(l10n.localeName == 'ar' ? 'حذف' : 'Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
