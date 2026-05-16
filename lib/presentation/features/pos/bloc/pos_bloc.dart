@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:drift/drift.dart';
 import 'package:decimal/decimal.dart';
@@ -48,6 +49,10 @@ class PosBloc extends Bloc<PosEvent, PosState> {
             selectedCategoryId: currentState.selectedCategoryId,
             filteredProducts: currentState.filteredProducts,
             taxRate: currentState.taxRate,
+            // Reset fields
+            cart: const [],
+            discount: Decimal.zero,
+            isWholesaleMode: false,
           ),
         );
       } else {
@@ -394,6 +399,9 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     if (state is! PosLoaded) return;
     final currentState = state as PosLoaded;
     if (currentState.cart.isEmpty) return;
+    if (currentState.isProcessingCheckout) return;
+
+    emit(currentState.copyWith(isProcessingCheckout: true));
 
     try {
       final total = currentState.total;
@@ -476,8 +484,10 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         ),
       );
     } catch (e) {
-      emit(PosError("Checkout failed: $e"));
-      emit(currentState.copyWith());
+      developer.log('Checkout error: $e', name: 'pos_bloc');
+      final errorMessage = e.toString().replaceFirst('Exception: ', '');
+      emit(PosError(errorMessage));
+      emit(currentState.copyWith(isProcessingCheckout: false));
     }
   }
 }
