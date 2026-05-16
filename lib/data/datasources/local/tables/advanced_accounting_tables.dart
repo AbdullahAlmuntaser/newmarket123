@@ -1,13 +1,14 @@
 import 'package:drift/drift.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 
 // جدول العملات
 class AccCurrencies extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get code => text().withLength(min: 3, max: 3)(); // USD, SAR, EUR
   TextColumn get name => text().withLength(min: 2, max: 50)();
-  TextColumn get symbol => text().nullable()();
+  RealColumn get exchangeRate =>
+      real().withDefault(const Constant(1.0))(); // مقابل العملة الأساسية
   BoolColumn get isBase => boolean().withDefault(const Constant(false))();
-  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -23,28 +24,15 @@ class AccExchangeRates extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
-// جدول مراكز التكلفة
-class AccCostCenters extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get name => text().withLength(min: 2, max: 100)();
-  TextColumn get code => text().withLength(min: 2, max: 50)();
-  IntColumn get parentId =>
-      integer().nullable().references(AccCostCenters, #id)(); // هيكل شجري
-  TextColumn get type => text().withDefault(
-      const Constant('department'))(); // department, project, branch
-  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
-}
-
 // جدول الميزانيات التقديرية
 class AccBudgets extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text().withLength(min: 2, max: 100)();
   TextColumn get period => text()(); // "2024", "2024-Q1"
-  IntColumn get costCenterId =>
-      integer().nullable().references(AccCostCenters, #id)();
-  IntColumn get accountId =>
-      integer().nullable()(); // ربط بحساب محدد من شجرة الحسابات
+  TextColumn get costCenterId =>
+      text().nullable().references(CostCenters, #id)();
+  TextColumn get accountId =>
+      text().nullable().references(GLAccounts, #id)(); // ربط بحساب محدد
   RealColumn get budgetedAmount => real()();
   RealColumn get actualAmount =>
       real().withDefault(const Constant(0.0))(); // يُحدث تلقائياً من القيود
@@ -57,7 +45,8 @@ class AccBudgets extends Table {
 // جدول كشف الحساب البنكي
 class AccBankStatements extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get accountId => integer()(); // ربط بحساب البنك في شجرة الحسابات
+  TextColumn get accountId =>
+      text().references(GLAccounts, #id)(); // ربط بحساب البنك
   TextColumn get statementReference => text().nullable()();
   DateTimeColumn get statementDate => dateTime()();
   RealColumn get openingBalance => real()();
@@ -78,22 +67,22 @@ class AccBankStatementLines extends Table {
   RealColumn get credit => real().withDefault(const Constant(0.0))();
   RealColumn get balance => real().nullable()();
   TextColumn get reference => text().nullable()();
-  IntColumn get matchedJournalEntryId =>
-      integer().nullable()(); // ربط بالقيد المطابق
+  TextColumn get matchedJournalEntryId =>
+      text().nullable().references(GLEntries, #id)(); // ربط بالقيد المطابق
   TextColumn get reconciliationStatus => text().withDefault(
       const Constant('unreconciled'))(); // unreconciled, matched, cleared
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
-// جدول سجل التدقيقات (Audit Log)
+// جدول سجل التدقيقات (Audit Log) - نسخة متقدمة
 class AccAuditLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get logTableName => text()();
-  IntColumn get recordId => integer()();
+  TextColumn get recordId => text()(); // Changed to Text to match SyncableTable IDs
   TextColumn get action => text()(); // INSERT, UPDATE, DELETE
   TextColumn get oldValues => text().nullable()(); // JSON
   TextColumn get newValues => text().nullable()(); // JSON
-  IntColumn get userId => integer().nullable()(); // من قام بالعملية
+  TextColumn get userId => text().nullable().references(Users, #id)();
   DateTimeColumn get timestamp => dateTime().withDefault(currentDateAndTime)();
   TextColumn get ipAddress => text().nullable()();
 }

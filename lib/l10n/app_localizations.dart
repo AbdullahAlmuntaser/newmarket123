@@ -342,7 +342,7 @@ abstract class AppLocalizations {
   /// No description provided for @tax.
   ///
   /// In en, this message translates to:
-  /// **'Tax (15%)'**
+  /// **'Tax'**
   String get tax;
 
   /// No description provided for @total.
@@ -2426,6 +2426,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No items selected'**
   String get noItemsSelected;
+
+  /// No description provided for @manufacturing.
+  ///
+  /// In en, this message translates to:
+  /// **'Manufacturing'**
+  String get manufacturing;
+
+  /// No description provided for @productionOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'Production Orders'**
+  String get productionOrders;
+
+  /// No description provided for @bomManagement.
+  ///
+  /// In en, this message translates to:
+  /// **'BOM Management'**
+  String get bomManagement;
+
+  /// No description provided for @createOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Order'**
+  String get createOrder;
+
+  /// No description provided for @plannedQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned Quantity'**
+  String get plannedQuantity;
+
+  /// No description provided for @productionOrderCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Production order created successfully'**
+  String get productionOrderCreated;
+
+  /// No description provided for @complete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete'**
+  String get complete;
+
+  /// No description provided for @bom.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill of Materials'**
+  String get bom;
+
+  /// No description provided for @executeAssembly.
+  ///
+  /// In en, this message translates to:
+  /// **'Execute Assembly'**
+  String get executeAssembly;
+
+  /// No description provided for @assemblySuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Assembly executed successfully'**
+  String get assemblySuccess;
+
+  /// No description provided for @finishedProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished Product'**
+  String get finishedProduct;
+
+  /// No description provided for @rawMaterials.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw Materials'**
+  String get rawMaterials;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

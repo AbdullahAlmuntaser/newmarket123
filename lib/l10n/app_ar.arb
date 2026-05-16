@@ -40,7 +40,7 @@
   "cartEmpty": "السلة فارغة",
   "subtotal": "المجموع الفرعي",
   "discount": "الخصم",
-  "tax": "الضريبة (15%)",
+  "tax": "الضريبة",
   "total": "الإجمالي",
   "proceedToCheckout": "إتمام عملية البيع",
   "completePayment": "إكمال الدفع",
@@ -394,5 +394,17 @@
   "next60Days": "60 يوم القادمة",
   "next90Days": "90 يوم القادمة",
   "period": "الفترة",
-  "noItemsSelected": "لم يتم اختيار أي أصناف"
+  "noItemsSelected": "لم يتم اختيار أي أصناف",
+  "manufacturing": "التصنيع",
+  "productionOrders": "أوامر الإنتاج",
+  "bomManagement": "إدارة BOM",
+  "createOrder": "إنشاء أمر",
+  "plannedQuantity": "الكمية المخططة",
+  "productionOrderCreated": "تم إنشاء أمر الإنتاج بنجاح",
+  "complete": "إكمال",
+  "bom": "قائمة المواد (BOM)",
+  "executeAssembly": "تنفيذ التجميع",
+  "assemblySuccess": "تم تنفيذ التجميع بنجاح",
+  "finishedProduct": "منتج تام الصنع",
+  "rawMaterials": "المواد الخام"
 }

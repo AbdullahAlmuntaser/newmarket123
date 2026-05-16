@@ -2,7 +2,7 @@ import 'app_localizations.dart';
 
 /// The translations for Arabic (`ar`).
 class AppLocalizationsAr extends AppLocalizations {
-  AppLocalizationsAr([super.locale = 'ar']);
+  AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
   String get appTitle => 'تطبيق المحاسبة';
@@ -128,7 +128,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get discount => 'الخصم';
 
   @override
-  String get tax => 'الضريبة (15%)';
+  String get tax => 'الضريبة';
 
   @override
   String get total => 'الإجمالي';
@@ -1202,4 +1202,40 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get noItemsSelected => 'لم يتم اختيار أي أصناف';
+
+  @override
+  String get manufacturing => 'التصنيع';
+
+  @override
+  String get productionOrders => 'أوامر الإنتاج';
+
+  @override
+  String get bomManagement => 'إدارة BOM';
+
+  @override
+  String get createOrder => 'إنشاء أمر';
+
+  @override
+  String get plannedQuantity => 'الكمية المخططة';
+
+  @override
+  String get productionOrderCreated => 'تم إنشاء أمر الإنتاج بنجاح';
+
+  @override
+  String get complete => 'إكمال';
+
+  @override
+  String get bom => 'قائمة المواد (BOM)';
+
+  @override
+  String get executeAssembly => 'تنفيذ التجميع';
+
+  @override
+  String get assemblySuccess => 'تم تنفيذ التجميع بنجاح';
+
+  @override
+  String get finishedProduct => 'منتج تام الصنع';
+
+  @override
+  String get rawMaterials => 'المواد الخام';
 }

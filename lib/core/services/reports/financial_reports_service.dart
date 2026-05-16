@@ -28,8 +28,8 @@ class FinancialReportsService {
     try {
       // Get sales invoices in period
       final salesInvoices = await salesDao.getInvoicesByDateRange(
-        startDate: startDate,
-        endDate: endDate,
+        startDate,
+        endDate,
       );
 
       // Get purchase invoices in period
@@ -90,8 +90,8 @@ class FinancialReportsService {
   }) async {
     try {
       var invoices = await salesDao.getInvoicesByDateRange(
-        startDate: startDate,
-        endDate: endDate,
+        startDate,
+        endDate,
       );
 
       // Filter by customer if specified

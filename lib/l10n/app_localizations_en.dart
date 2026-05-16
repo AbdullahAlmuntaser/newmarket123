@@ -2,7 +2,7 @@ import 'app_localizations.dart';
 
 /// The translations for English (`en`).
 class AppLocalizationsEn extends AppLocalizations {
-  AppLocalizationsEn([super.locale = 'en']);
+  AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
   String get appTitle => 'Accounting App';
@@ -128,7 +128,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get discount => 'Discount';
 
   @override
-  String get tax => 'Tax (15%)';
+  String get tax => 'Tax';
 
   @override
   String get total => 'Total';
@@ -1202,4 +1202,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noItemsSelected => 'No items selected';
+
+  @override
+  String get manufacturing => 'Manufacturing';
+
+  @override
+  String get productionOrders => 'Production Orders';
+
+  @override
+  String get bomManagement => 'BOM Management';
+
+  @override
+  String get createOrder => 'Create Order';
+
+  @override
+  String get plannedQuantity => 'Planned Quantity';
+
+  @override
+  String get productionOrderCreated => 'Production order created successfully';
+
+  @override
+  String get complete => 'Complete';
+
+  @override
+  String get bom => 'Bill of Materials';
+
+  @override
+  String get executeAssembly => 'Execute Assembly';
+
+  @override
+  String get assemblySuccess => 'Assembly executed successfully';
+
+  @override
+  String get finishedProduct => 'Finished Product';
+
+  @override
+  String get rawMaterials => 'Raw Materials';
 }

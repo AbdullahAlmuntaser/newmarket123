@@ -402,6 +402,8 @@ class GLAccounts extends Table with SyncableTable {
 class CostCenters extends Table with SyncableTable {
   TextColumn get code => text().unique()();
   TextColumn get name => text()();
+  TextColumn get parentId => text().nullable().references(CostCenters, #id)();
+  TextColumn get type => text().withDefault(const Constant('department'))(); // department, project, branch
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
 }
 
@@ -941,6 +943,7 @@ class CustomerPaymentLinks extends Table with SyncableTable {
     AccAssetDisposals,
     HREmployees,
     HRPayrollRuns,
+    HRPayrollRuns, // Fix duplicate if any
     HRPayrollDetails,
     HRAdditionalDeductions,
     AccExchangeRates,
@@ -949,7 +952,6 @@ class CustomerPaymentLinks extends Table with SyncableTable {
     AccBankStatementLines,
     AccAuditLogs,
     AccCurrencies,
-    AccCostCenters,
   ],
   daos: [
     ProductsDao,

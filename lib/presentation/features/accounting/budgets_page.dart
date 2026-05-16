@@ -247,8 +247,8 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
               onChanged: (value) => setState(() => _selectedPeriod = value!),
             ),
             const SizedBox(height: 16),
-            FutureBuilder<List<AccCostCenter>>(
-              future: (db.select(db.accCostCenters)..where((c) => c.isActive.equals(true))).get(),
+            FutureBuilder<List<CostCenter>>(
+              future: (db.select(db.costCenters)..where((c) => c.isActive.equals(true))).get(),
               builder: (context, snapshot) {
                 final costCenters = snapshot.data ?? [];
                 return DropdownButtonFormField<int?>(
@@ -261,7 +261,7 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
                   items: [
                     const DropdownMenuItem<int?>(value: null, child: Text('عام')),
                     ...costCenters.map((c) => DropdownMenuItem(
-                      value: c.id,
+                      value: int.tryParse(c.id),
                       child: Text(c.name),
                     )),
                   ],
@@ -356,8 +356,8 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
         AccBudgetsCompanion.insert(
           name: _nameController.text,
           period: _selectedPeriod,
-          costCenterId: drift.Value(_selectedCostCenterId),
-          accountId: drift.Value(_selectedAccountId),
+          costCenterId: drift.Value(_selectedCostCenterId?.toString()),
+          accountId: drift.Value(_selectedAccountId?.toString()),
           budgetedAmount: double.parse(_amountController.text),
           variance: double.parse(_amountController.text),
         ),

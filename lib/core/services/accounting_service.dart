@@ -2034,7 +2034,7 @@ class AccountingService {
     // 1. التحقق من الميزانية إذا كان هناك مركز تكلفة
     if (costCenterId != null) {
       await budgetService.validateExpenseAgainstBudget(
-        costCenterId: costCenterId,
+        costCenterId: costCenterId.toString(),
         expenseAmount: amount,
         period: period,
       );
@@ -2053,12 +2053,14 @@ class AccountingService {
         entryId: entryId,
         accountId: expenseAccountId,
         debit: Value(amount),
+        costCenterId: Value(costCenterId?.toString()),
         branchId: Value(await _configService.getDefaultBranchId()),
       ),
       GLLinesCompanion.insert(
         entryId: entryId,
         accountId: paymentAccountId,
         credit: Value(amount),
+        costCenterId: Value(costCenterId?.toString()),
         branchId: Value(await _configService.getDefaultBranchId()),
       ),
     ];
@@ -2067,7 +2069,7 @@ class AccountingService {
     // 2. تحديث الميزانية فعلياً بعد تسجيل المصروف
     if (costCenterId != null) {
       await budgetService.updateActualBudget(
-        costCenterId: costCenterId,
+        costCenterId: costCenterId.toString(),
         expenseAmount: amount,
         period: period,
       );

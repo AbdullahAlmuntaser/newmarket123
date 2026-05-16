@@ -357,11 +357,6 @@ class MainDrawer extends StatelessWidget {
                       ),
                       _buildSubItem(
                         context,
-                        'الميزانيات التقديرية',
-                        '/accounting/budgets',
-                      ),
-                      _buildSubItem(
-                        context,
                         l10n?.expenses ?? 'المصروفات',
                         '/accounting/expenses',
                       ),
@@ -417,28 +412,13 @@ class MainDrawer extends StatelessWidget {
                       ),
                       _buildSubItem(
                         context,
-                        'الميزانيات التقديرية',
-                        '/accounting/budgets',
-                      ),
-                      _buildSubItem(
-                        context,
                         l10n?.apInvoices ?? 'فواتير الذمم الدائنة',
                         '/accounting/ap-invoices',
                       ),
                       _buildSubItem(
                         context,
-                        l10n?.supplierLedger ?? 'كشف حساب المورد',
-                        '/accounting/supplier-ledger',
-                      ),
-                      _buildSubItem(
-                        context,
                         l10n?.arInvoices ?? 'فواتير الذمم المدينة',
                         '/accounting/ar-invoices',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.customerLedger ?? 'كشف حساب العميل',
-                        '/accounting/customer-ledger',
                       ),
                     ],
                   ),

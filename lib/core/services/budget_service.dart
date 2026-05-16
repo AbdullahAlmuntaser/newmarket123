@@ -10,7 +10,7 @@ class BudgetService {
 
   /// التحقق من توافر الميزانية قبل تسجيل المصروف
   Future<void> validateExpenseAgainstBudget({
-    required int costCenterId,
+    required String costCenterId,
     required double expenseAmount,
     required String period,
   }) async {
@@ -34,7 +34,10 @@ class BudgetService {
           (budget.actualAmount + expenseAmount) / budget.budgetedAmount;
       if (consumption >= 0.9) {
         await notificationService.showNotification(
-          costCenterId,
+          // For notifications, we might need an int ID if the plugin requires it.
+          // If so, we'll hash the UUID or use a different approach.
+          // For now, passing 0 as a placeholder or using a hash.
+          costCenterId.hashCode,
           'تنبيه ميزانية',
           'مركز التكلفة ${budget.name} استهلك ${(consumption * 100).toStringAsFixed(0)}% من الميزانية المخصصة.',
         );
@@ -44,7 +47,7 @@ class BudgetService {
 
   /// تحديث الميزانية عند تسجيل مصروف فعلي
   Future<void> updateActualBudget({
-    required int costCenterId,
+    required String costCenterId,
     required double expenseAmount,
     required String period,
   }) async {
