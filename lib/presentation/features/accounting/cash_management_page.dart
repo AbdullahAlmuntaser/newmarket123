@@ -4,6 +4,8 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/cash_management_service.dart';
 import 'package:supermarket/presentation/widgets/shared/account_selector_widget.dart';
 import 'package:intl/intl.dart' as intl;
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
+import 'package:supermarket/presentation/widgets/money_form_field.dart';
 
 class CashManagementPage extends StatefulWidget {
   const CashManagementPage({super.key});
@@ -62,11 +64,11 @@ class _CashManagementPageState extends State<CashManagementPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: TextFormField(
+                        child: MoneyFormField(
                           controller: _amountController,
-                          decoration: const InputDecoration(labelText: 'المبلغ', border: OutlineInputBorder()),
-                          keyboardType: TextInputType.number,
-                          validator: (v) => v!.isEmpty ? 'مطلوب' : null,
+                          label: 'المبلغ',
+                          required: true,
+                          allowZero: false,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -89,33 +91,32 @@ class _CashManagementPageState extends State<CashManagementPage> {
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
                         if (_accountId == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(ApiResponseSnackBar(message: 'يرجى اختيار الحساب', isError: true));
+                          AppSnackBar.warning(context, 'يرجى اختيار الحساب');
                           return;
                         }
-                        final messenger = ScaffoldMessenger.of(context);
                         try {
                           if (_isReceipt) {
                             await cashService.createCashReceipt(
-                              amount: double.parse(_amountController.text),
+                              amount: MoneyFormField.valueOf(_amountController),
                               category: _categoryController.text,
                               accountId: _accountId!,
                               note: _noteController.text,
                             );
                           } else {
                             await cashService.createCashPayment(
-                              amount: double.parse(_amountController.text),
+                              amount: MoneyFormField.valueOf(_amountController),
                               category: _categoryController.text,
                               accountId: _accountId!,
                               note: _noteController.text,
                             );
                           }
                           if (!mounted) return;
-                          messenger.showSnackBar(ApiResponseSnackBar(message: 'تم تسجيل السند بنجاح'));
+                          AppSnackBar.success(context, 'تم تسجيل السند بنجاح');
                           _formKey.currentState!.reset();
                           setState(() => _accountId = null);
                         } catch (e) {
                           if (!mounted) return;
-                          messenger.showSnackBar(ApiResponseSnackBar(message: 'خطأ: $e', isError: true));
+                          AppSnackBar.error(context, 'خطأ: $e');
                         }
                       }
                     },

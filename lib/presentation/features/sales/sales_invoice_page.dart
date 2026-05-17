@@ -15,6 +15,7 @@ import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:supermarket/presentation/features/sales/widgets/sales_item_row.dart';
 import 'package:supermarket/presentation/widgets/entity_picker.dart';
 import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
+import 'package:supermarket/presentation/widgets/money_form_field.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:uuid/uuid.dart';
 
@@ -60,11 +61,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
   bool _isSplitPayment = false;
 
   double get _subtotal => _items.fold(0.0, (sum, item) => sum + item.lineTotal);
-  double _moneyValue(TextEditingController controller) {
-    final text = controller.text.trim();
-    if (text.isEmpty) return 0.0;
-    return double.tryParse(text) ?? 0.0;
-  }
+  double _moneyValue(TextEditingController controller) =>
+      MoneyFormField.valueOf(controller);
 
   double get _discount => _moneyValue(_discountController);
   double get _shippingCost => _moneyValue(_shippingCostController);
@@ -611,13 +609,16 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
           ),
           SizedBox(
             width: 160,
-            child: TextFormField(
+            child: MoneyFormField(
               controller: controller,
+              label: label,
               enabled: enabled,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(isDense: true, helperText: helperText),
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              validator: (value) => _validateOptionalMoney(value, label),
+              helperText: helperText,
+              decoration: InputDecoration(
+                labelText: label,
+                isDense: true,
+                helperText: helperText,
+              ),
               onChanged: (_) => setState(() {}),
             ),
           ),
@@ -645,15 +646,6 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
         );
       },
     );
-  }
-
-  String? _validateOptionalMoney(String? value, String fieldName) {
-    final text = value?.trim() ?? '';
-    if (text.isEmpty) return null;
-    final parsed = double.tryParse(text);
-    if (parsed == null) return 'أدخل رقمًا صحيحًا في $fieldName';
-    if (parsed < 0) return '$fieldName لا يمكن أن يكون سالبًا';
-    return null;
   }
 
   Widget _row(String label, double val, {bool isBold = false, Color? color}) {
@@ -694,26 +686,32 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
           Row(
             children: [
               Expanded(
-                child: TextField(
+                child: MoneyFormField(
+                  label: 'كاش',
                   decoration: const InputDecoration(
                     labelText: 'كاش',
                     isDense: true,
                   ),
-                  keyboardType: TextInputType.number,
-                  onChanged: (v) =>
-                      setState(() => _cashPayment = double.tryParse(v) ?? 0),
+                  onValidChanged: (value) =>
+                      setState(() => _cashPayment = value),
+                  onChanged: (value) {
+                    if (value.trim().isEmpty) setState(() => _cashPayment = 0);
+                  },
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: TextField(
+                child: MoneyFormField(
+                  label: 'آجل',
                   decoration: const InputDecoration(
                     labelText: 'آجل',
                     isDense: true,
                   ),
-                  keyboardType: TextInputType.number,
-                  onChanged: (v) =>
-                      setState(() => _creditPayment = double.tryParse(v) ?? 0),
+                  onValidChanged: (value) =>
+                      setState(() => _creditPayment = value),
+                  onChanged: (value) {
+                    if (value.trim().isEmpty) setState(() => _creditPayment = 0);
+                  },
                 ),
               ),
             ],

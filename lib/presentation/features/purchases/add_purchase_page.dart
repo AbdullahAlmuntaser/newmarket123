@@ -14,6 +14,7 @@ import 'package:uuid/uuid.dart';
 import 'purchase_provider.dart';
 import '../../widgets/entity_picker.dart';
 import '../../widgets/app_snack_bar.dart';
+import '../../widgets/money_form_field.dart';
 import 'widgets/purchase_item_row.dart';
 import 'widgets/quick_product_add_dialog.dart';
 
@@ -56,11 +57,8 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
 
   double get _subtotal =>
       _items.fold(0.0, (sum, item) => sum + (item.subtotal));
-  double _moneyValue(TextEditingController controller) {
-    final text = controller.text.trim();
-    if (text.isEmpty) return 0.0;
-    return double.tryParse(text) ?? 0.0;
-  }
+  double _moneyValue(TextEditingController controller) =>
+      MoneyFormField.valueOf(controller);
   double get _discount => _moneyValue(_discountController);
   double get _shippingCost => _moneyValue(_shippingCostController);
   double get _otherExpenses => _moneyValue(_otherExpensesController);
@@ -417,17 +415,16 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
             ),
             SizedBox(
               width: 160,
-              child: TextFormField(
+              child: MoneyFormField(
                 controller: controller,
+                label: title,
                 enabled: enabled,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                helperText: helperText,
                 decoration: InputDecoration(
+                  labelText: title,
                   isDense: true,
                   helperText: helperText,
                 ),
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                validator: (value) => _validateOptionalMoney(value, title),
                 onChanged: (_) => setState(() {}),
               ),
             ),
@@ -454,15 +451,6 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         );
       },
     );
-  }
-
-  String? _validateOptionalMoney(String? value, String fieldName) {
-    final text = value?.trim() ?? '';
-    if (text.isEmpty) return null;
-    final parsed = double.tryParse(text);
-    if (parsed == null) return 'أدخل رقمًا صحيحًا في $fieldName';
-    if (parsed < 0) return '$fieldName لا يمكن أن يكون سالبًا';
-    return null;
   }
 
   Widget _buildFooter(AppDatabase db) => ElevatedButton(

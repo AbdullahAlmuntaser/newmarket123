@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/purchases/purchase_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:supermarket/presentation/widgets/money_form_field.dart';
 
 class PurchaseItemRow extends StatefulWidget {
   final int index;
@@ -70,20 +71,12 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
               children: [
                 Expanded(
                   flex: 2,
-                  child: TextFormField(
+                  child: QuantityFormField(
                     initialValue: widget.item.quantity.toString(),
-                    decoration: const InputDecoration(
-                        labelText: 'الكمية', border: OutlineInputBorder()),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    validator: (v) => _validatePositiveNumber(v, 'الكمية'),
-                    onChanged: (v) {
-                      final parsed = double.tryParse(v.trim());
-                      if (parsed != null && parsed > 0) {
-                        widget.item.quantity = parsed;
-                        widget.onChanged();
-                      }
+                    label: 'الكمية',
+                    onValidChanged: (value) {
+                      widget.item.quantity = value;
+                      widget.onChanged();
                     },
                   ),
                 ),
@@ -95,22 +88,13 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
             Row(
               children: [
                 Expanded(
-                  child: TextFormField(
+                  child: MoneyFormField(
                     initialValue: widget.item.unitPrice.toString(),
-                    decoration: const InputDecoration(
-                      labelText: 'سعر الشراء',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    validator: (v) => _validateNonNegativeNumber(v, 'سعر الشراء'),
-                    onChanged: (v) {
-                      final parsed = double.tryParse(v.trim());
-                      if (parsed != null && parsed >= 0) {
-                        widget.item.unitPrice = parsed;
-                        widget.onChanged();
-                      }
+                    label: 'سعر الشراء',
+                    required: true,
+                    onValidChanged: (value) {
+                      widget.item.unitPrice = value;
+                      widget.onChanged();
                     },
                   ),
                 ),
@@ -188,24 +172,6 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
         ),
       ),
     );
-  }
-
-  String? _validatePositiveNumber(String? value, String fieldName) {
-    final text = value?.trim() ?? '';
-    if (text.isEmpty) return '$fieldName مطلوب';
-    final parsed = double.tryParse(text);
-    if (parsed == null) return 'أدخل رقمًا صحيحًا في $fieldName';
-    if (parsed <= 0) return '$fieldName يجب أن تكون أكبر من صفر';
-    return null;
-  }
-
-  String? _validateNonNegativeNumber(String? value, String fieldName) {
-    final text = value?.trim() ?? '';
-    if (text.isEmpty) return '$fieldName مطلوب';
-    final parsed = double.tryParse(text);
-    if (parsed == null) return 'أدخل رقمًا صحيحًا في $fieldName';
-    if (parsed < 0) return '$fieldName لا يمكن أن يكون سالبًا';
-    return null;
   }
 
   Widget _buildUnitSelector(AppDatabase db) {
