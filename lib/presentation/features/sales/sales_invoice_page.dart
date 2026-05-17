@@ -14,6 +14,7 @@ import 'package:supermarket/injection_container.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:supermarket/presentation/features/sales/widgets/sales_item_row.dart';
 import 'package:supermarket/presentation/widgets/entity_picker.dart';
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:uuid/uuid.dart';
 
@@ -44,9 +45,15 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
   final TextEditingController _otherExpensesController =
       TextEditingController();
   bool _isSaving = false;
+  Sale? _loadedSale;
   final _currencyFormatter = NumberFormat.currency(locale: 'ar', symbol: '');
   double _originalTax = 0.0;
   bool _isHeaderExpanded = true;
+
+  bool get _isLockedForEditing =>
+      isEditMode &&
+      _loadedSale != null &&
+      _loadedSale!.status != DocumentStatus.draft;
 
   double _cashPayment = 0.0;
   double _creditPayment = 0.0;
@@ -116,6 +123,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       }
 
       setState(() {
+        _loadedSale = sale;
         _discountController.text = sale.discount.toString();
         _shippingCostController.text = sale.shippingCost.toString();
         _otherExpensesController.text = sale.otherExpenses.toString();
@@ -159,6 +167,13 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
 
   Future<void> _onBarcodeSubmitted(String barcode, AppDatabase db) async {
     if (barcode.isEmpty) return;
+    if (_isLockedForEditing) {
+      AppSnackBar.warning(
+        context,
+        'لا يمكن إضافة أصناف إلى فاتورة مبيعات غير مسودة',
+      );
+      return;
+    }
 
     // 1. Search in main products table
     final products = await (db.select(
@@ -199,6 +214,13 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
 
   void _addItemToInvoice(
       Product product, double qty, double price, String unit) {
+    if (_isLockedForEditing) {
+      AppSnackBar.warning(
+        context,
+        'لا يمكن إضافة أصناف إلى فاتورة مبيعات غير مسودة',
+      );
+      return;
+    }
     setState(() {
       _items.add(
         SalesLineItem(
@@ -228,6 +250,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
+                    if (_isLockedForEditing) _buildLockedBanner(),
                     _buildCollapsibleHeader(db),
                     _buildBarcodeSearch(db),
                     _buildCustomerAlerts(),
@@ -245,6 +268,29 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       ),
     );
   }
+
+
+  Widget _buildLockedBanner() => Container(
+        width: double.infinity,
+        margin: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.orange.shade50,
+          border: Border.all(color: Colors.orange.shade300),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.lock_outline, color: Colors.orange.shade800),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'هذه الفاتورة ليست مسودة، لذلك لا يمكن تعديلها مباشرة. استخدم مرتجعاً أو مستند تصحيح عند الحاجة.',
+              ),
+            ),
+          ],
+        ),
+      );
 
   Widget _buildCollapsibleHeader(AppDatabase db) {
     return Card(
@@ -478,7 +524,9 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
             final item = _items[index];
             return Dismissible(
               key: UniqueKey(),
-              direction: DismissDirection.endToStart,
+              direction: _isLockedForEditing
+                  ? DismissDirection.none
+                  : DismissDirection.endToStart,
               background: Container(
                 color: Colors.red,
                 alignment: Alignment.centerRight,
@@ -493,7 +541,12 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
                   item: item,
                   products: products,
                   customerId: _selectedCustomer?.id,
-                  onDelete: () => setState(() => _items.removeAt(index)),
+                  onDelete: _isLockedForEditing
+                      ? () => AppSnackBar.warning(
+                            context,
+                            'لا يمكن حذف أصناف من فاتورة مبيعات غير مسودة',
+                          )
+                      : () => setState(() => _items.removeAt(index)),
                   onChanged: () => setState(() {}),
                 ),
               ),
@@ -508,7 +561,9 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: TextButton.icon(
-        onPressed: () => setState(() => _items.add(SalesLineItem())),
+        onPressed: _isLockedForEditing
+            ? null
+            : () => setState(() => _items.add(SalesLineItem())),
         icon: const Icon(Icons.add_circle_outline),
         label: const Text('إضافة منتج يدوياً'),
       ),
@@ -693,7 +748,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
         children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: _items.isEmpty || _isSaving
+              onPressed: _items.isEmpty || _isSaving || _isLockedForEditing
                   ? null
                   : () => _saveInvoice(db, post: false),
               child: const Text('مسودة'),
@@ -705,7 +760,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
               permission: 'POST_INVOICE',
               fallback: const SizedBox.shrink(),
               child: ElevatedButton(
-                onPressed: _items.isEmpty || _isSaving
+                onPressed: _items.isEmpty || _isSaving || _isLockedForEditing
                     ? null
                     : () => _saveInvoice(db, post: true),
                 style: ElevatedButton.styleFrom(
@@ -739,54 +794,50 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     final currentUser =
         Provider.of<AuthProvider>(context, listen: false).currentUser;
 
+    if (_isLockedForEditing) {
+      AppSnackBar.warning(
+        context,
+        'لا يمكن تعديل فاتورة مبيعات غير مسودة. استخدم مرتجعاً أو مستند تصحيح بدلاً من التعديل المباشر.',
+      );
+      return;
+    }
+
     final taxChanged = (_tax - _originalTax).abs() > 0.0001;
     if (taxChanged &&
         (currentUser == null ||
             !await sl<PermissionService>()
                 .hasPermission(currentUser.id, PermissionCode.editTax))) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('ليست لديك صلاحية إدخال أو تعديل الضريبة'),
-        ),
-      );
+      AppSnackBar.error(context, 'ليست لديك صلاحية إدخال أو تعديل الضريبة');
       return;
     }
 
     if (_items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('الفاتورة فارغة - الرجاء إضافة أصناف')));
+      AppSnackBar.warning(context, 'الفاتورة فارغة - الرجاء إضافة أصناف');
       return;
     }
 
     for (var item in _items) {
       if (item.product == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('الرجاء اختيار منتج لكل صنف')));
+        AppSnackBar.warning(context, 'الرجاء اختيار منتج لكل صنف');
         return;
       }
       if (item.quantity <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('الكمية يجب أن تكون أكبر من صفر')));
+        AppSnackBar.warning(context, 'الكمية يجب أن تكون أكبر من صفر');
         return;
       }
       if (item.price < 0) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('السعر يجب أن يكون أكبر من أو يساوي صفر')));
+        AppSnackBar.warning(context, 'السعر يجب أن يكون أكبر من أو يساوي صفر');
         return;
       }
     }
 
     if (!_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى تصحيح الحقول المالية قبل الحفظ')),
-      );
+      AppSnackBar.warning(context, 'يرجى تصحيح الحقول المالية قبل الحفظ');
       return;
     }
 
     if (_paymentType == 'credit' && _selectedCustomer == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يجب اختيار عميل للبيع الآجل')),
-      );
+      AppSnackBar.warning(context, 'يجب اختيار عميل للبيع الآجل');
       return;
     }
 
@@ -797,12 +848,9 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       final newBalance = _customerSmartData!.currentBalance + _total;
       if (newBalance > _customerSmartData!.creditLimit &&
           _customerSmartData!.creditLimit > 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'لا يمكن حفظ الفاتورة: العميل تجاوز الحد الائتماني المسموح به'),
-            backgroundColor: Colors.red,
-          ),
+        AppSnackBar.error(
+          context,
+          'لا يمكن حفظ الفاتورة: العميل تجاوز الحد الائتماني المسموح به',
         );
         return;
       }
@@ -919,20 +967,15 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       });
 
       if (!mounted) return;
-      final messenger = ScaffoldMessenger.of(context);
-      final nav = Navigator.of(context);
-
-      nav.pop();
-      messenger.showSnackBar(
-        SnackBar(
-            content: Text(post ? 'تم ترحيل الفاتورة بنجاح' : 'تم حفظ المسودة')),
+      AppSnackBar.success(
+        context,
+        post ? 'تم ترحيل الفاتورة بنجاح' : 'تم حفظ المسودة',
       );
+      Navigator.of(context).pop();
     } catch (e) {
       debugPrint('Error saving invoice: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('فشل الحفظ: ${e.toString()}')),
-      );
+      AppSnackBar.error(context, 'فشل الحفظ: ${e.toString()}');
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);

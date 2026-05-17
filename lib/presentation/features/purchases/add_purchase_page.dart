@@ -13,6 +13,7 @@ import 'package:supermarket/injection_container.dart';
 import 'package:uuid/uuid.dart';
 import 'purchase_provider.dart';
 import '../../widgets/entity_picker.dart';
+import '../../widgets/app_snack_bar.dart';
 import 'widgets/purchase_item_row.dart';
 import 'widgets/quick_product_add_dialog.dart';
 
@@ -46,6 +47,12 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
 
   bool _isSaving = false;
   double _originalTax = 0.0;
+  Purchase? _loadedPurchase;
+
+  bool get _isLockedForEditing =>
+      isEditMode &&
+      _loadedPurchase != null &&
+      _loadedPurchase!.status != DocumentStatus.draft;
 
   double get _subtotal =>
       _items.fold(0.0, (sum, item) => sum + (item.subtotal));
@@ -128,6 +135,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
 
     if (!mounted) return;
     setState(() {
+      _loadedPurchase = purchase;
       _selectedSupplier = supplier;
       _selectedWarehouse = warehouse;
       _selectedCurrency = purchase.currencyId;
@@ -167,6 +175,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
+              if (_isLockedForEditing) _buildLockedBanner(),
               _buildHeader(db),
               ListView.builder(
                 shrinkWrap: true,
@@ -177,7 +186,12 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
                   item: _items[i],
                   products: const [],
                   onChanged: () => setState(() {}),
-                  onDelete: () => setState(() => _items.removeAt(i)),
+                  onDelete: _isLockedForEditing
+                      ? () => AppSnackBar.warning(
+                            context,
+                            'لا يمكن تعديل أصناف فاتورة مشتريات غير مسودة',
+                          )
+                      : () => setState(() => _items.removeAt(i)),
                 ),
               ),
               const SizedBox(height: 16),
@@ -185,7 +199,9 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ElevatedButton.icon(
-                    onPressed: () => _showProductPicker(db),
+                    onPressed: _isLockedForEditing
+                        ? null
+                        : () => _showProductPicker(db),
                     icon: const Icon(Icons.search),
                     label: const Text('إضافة صنف موجود'),
                     style: ElevatedButton.styleFrom(
@@ -197,7 +213,9 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
                   ),
                   const SizedBox(width: 12),
                   ElevatedButton.icon(
-                    onPressed: () => _showQuickAddProduct(db),
+                    onPressed: _isLockedForEditing
+                        ? null
+                        : () => _showQuickAddProduct(db),
                     icon: const Icon(Icons.add_circle_outline),
                     label: const Text('إضافة صنف جديد'),
                     style: ElevatedButton.styleFrom(
@@ -218,6 +236,29 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
       bottomNavigationBar: _buildFooter(db),
     );
   }
+
+
+  Widget _buildLockedBanner() => Container(
+        width: double.infinity,
+        margin: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.orange.shade50,
+          border: Border.all(color: Colors.orange.shade300),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.lock_outline, color: Colors.orange.shade800),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'هذه الفاتورة ليست مسودة، لذلك لا يمكن تعديلها مباشرة. استخدم مستند تصحيح أو مرتجع عند الحاجة.',
+              ),
+            ),
+          ],
+        ),
+      );
 
   Widget _buildHeader(AppDatabase db) => Padding(
         padding: const EdgeInsets.all(8.0),
@@ -425,17 +466,24 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   }
 
   Widget _buildFooter(AppDatabase db) => ElevatedButton(
-        onPressed: _isSaving ? null : () => _savePurchase(db, post: true),
+        onPressed: _isSaving || _isLockedForEditing
+            ? null
+            : () => _savePurchase(db, post: true),
         child: _isSaving
             ? const CircularProgressIndicator()
             : const Text('حفظ وترحيل'),
       );
 
   Future<void> _savePurchase(AppDatabase db, {required bool post}) async {
-    if (!(_formKey.currentState?.validate() ?? false)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى تصحيح الحقول المالية قبل الحفظ')),
+    if (_isLockedForEditing) {
+      AppSnackBar.warning(
+        context,
+        'لا يمكن تعديل فاتورة مشتريات غير مسودة. استخدم مستند تصحيح أو مرتجع بدلاً من التعديل المباشر.',
       );
+      return;
+    }
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      AppSnackBar.warning(context, 'يرجى تصحيح الحقول المالية قبل الحفظ');
       return;
     }
     final currentUser =
@@ -445,37 +493,30 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         (currentUser == null ||
             !await sl<PermissionService>()
                 .hasPermission(currentUser.id, PermissionCode.editTax))) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ليست لديك صلاحية إدخال أو تعديل الضريبة')),
-      );
+      AppSnackBar.error(context, 'ليست لديك صلاحية إدخال أو تعديل الضريبة');
       return;
     }
 
     if (_selectedSupplier == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('الرجاء اختيار المورد')));
+      AppSnackBar.warning(context, 'الرجاء اختيار المورد');
       return;
     }
     if (_selectedWarehouse == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('الرجاء اختيار المستودع')));
+      AppSnackBar.warning(context, 'الرجاء اختيار المستودع');
       return;
     }
     if (_items.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('الرجاء إضافة أصناف')));
+      AppSnackBar.warning(context, 'الرجاء إضافة أصناف');
       return;
     }
 
     for (var item in _items) {
       if (item.quantity <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('الكمية يجب أن تكون أكبر من صفر')));
+        AppSnackBar.warning(context, 'الكمية يجب أن تكون أكبر من صفر');
         return;
       }
       if (item.unitPrice < 0) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('السعر يجب أن يكون أكبر من أو يساوي صفر')));
+        AppSnackBar.warning(context, 'السعر يجب أن يكون أكبر من أو يساوي صفر');
         return;
       }
     }
@@ -585,12 +626,14 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         }
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(post
-                ? 'تم حفظ وترحيل الفاتورة وتحديث المخزون بنجاح'
-                : isEditMode
-                    ? 'تم تعديل الفاتورة بنجاح'
-                    : 'تم حفظ المسودة بنجاح')));
+        AppSnackBar.success(
+          context,
+          post
+              ? 'تم حفظ وترحيل الفاتورة وتحديث المخزون بنجاح'
+              : isEditMode
+                  ? 'تم تعديل الفاتورة بنجاح'
+                  : 'تم حفظ المسودة بنجاح',
+        );
         context.pop();
       }
     } catch (e) {
@@ -607,17 +650,12 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                Text(errorMessage, style: const TextStyle(color: Colors.white)),
-            backgroundColor: Colors.red.shade700,
-            duration: const Duration(seconds: 5),
-          ),
-        );
+        AppSnackBar.error(context, errorMessage);
       }
     } finally {
-      setState(() => _isSaving = false);
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 }

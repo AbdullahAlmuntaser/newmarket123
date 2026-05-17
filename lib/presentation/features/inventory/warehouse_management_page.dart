@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:drift/drift.dart' as drift;
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
 
 class WarehouseManagementPage extends StatelessWidget {
   const WarehouseManagementPage({super.key});
@@ -105,12 +106,8 @@ class WarehouseManagementPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              final messenger = ScaffoldMessenger.of(context);
               if (nameController.text.trim().isEmpty) {
-                messenger.showSnackBar(const SnackBar(
-                  content: Text('اسم المستودع مطلوب'),
-                  backgroundColor: Colors.red,
-                ));
+                AppSnackBar.warning(context, 'اسم المستودع مطلوب');
                 return;
               }
               try {
@@ -121,17 +118,11 @@ class WarehouseManagementPage extends StatelessWidget {
                   ),
                 );
                 if (context.mounted) {
+                  AppSnackBar.success(context, 'تم إنشاء المستودع بنجاح');
                   Navigator.pop(context);
-                  messenger.showSnackBar(const SnackBar(
-                    content: Text('تم إنشاء المستودع بنجاح'),
-                    backgroundColor: Colors.green,
-                  ));
                 }
               } catch (e) {
-                messenger.showSnackBar(SnackBar(
-                  content: Text('فشل إنشاء المستودع: $e'),
-                  backgroundColor: Colors.red,
-                ));
+                AppSnackBar.error(context, 'فشل إنشاء المستودع: $e');
               }
             },
             child: const Text('حفظ'),
@@ -173,12 +164,8 @@ class WarehouseManagementPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              final messenger = ScaffoldMessenger.of(context);
               if (nameController.text.trim().isEmpty) {
-                messenger.showSnackBar(const SnackBar(
-                  content: Text('اسم المستودع مطلوب'),
-                  backgroundColor: Colors.red,
-                ));
+                AppSnackBar.warning(context, 'اسم المستودع مطلوب');
                 return;
               }
               try {
@@ -189,17 +176,11 @@ class WarehouseManagementPage extends StatelessWidget {
                   ),
                 );
                 if (context.mounted) {
+                  AppSnackBar.success(context, 'تم تحديث المستودع بنجاح');
                   Navigator.pop(context);
-                  messenger.showSnackBar(const SnackBar(
-                    content: Text('تم تحديث المستودع بنجاح'),
-                    backgroundColor: Colors.green,
-                  ));
                 }
               } catch (e) {
-                messenger.showSnackBar(SnackBar(
-                  content: Text('فشل تحديث المستودع: $e'),
-                  backgroundColor: Colors.red,
-                ));
+                AppSnackBar.error(context, 'فشل تحديث المستودع: $e');
               }
             },
             child: const Text('تحديث'),
@@ -213,10 +194,9 @@ class WarehouseManagementPage extends StatelessWidget {
     final hasStock = await db.warehousesDao.hasStock(id);
     if (hasStock) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('لا يمكن حذف المستودع لأنه يحتوي على مخزون.'),
-          ),
+        AppSnackBar.warning(
+          context,
+          'لا يمكن حذف المستودع لأنه يحتوي على مخزون.',
         );
       }
       return;
@@ -242,18 +222,11 @@ class WarehouseManagementPage extends StatelessWidget {
     );
 
     if (confirmed == true && context.mounted) {
-      final messenger = ScaffoldMessenger.of(context);
       try {
         await db.warehousesDao.deleteWarehouse(id);
-        messenger.showSnackBar(const SnackBar(
-          content: Text('تم حذف المستودع بنجاح'),
-          backgroundColor: Colors.green,
-        ));
+        AppSnackBar.success(context, 'تم حذف المستودع بنجاح');
       } catch (e) {
-        messenger.showSnackBar(SnackBar(
-          content: Text('فشل حذف المستودع: $e'),
-          backgroundColor: Colors.red,
-        ));
+        AppSnackBar.error(context, 'فشل حذف المستودع: $e');
       }
     }
   }
