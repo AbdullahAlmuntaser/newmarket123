@@ -45,6 +45,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       TextEditingController();
   bool _isSaving = false;
   final _currencyFormatter = NumberFormat.currency(locale: 'ar', symbol: '');
+  double _originalTax = 0.0;
   bool _isHeaderExpanded = true;
 
   double _cashPayment = 0.0;
@@ -118,7 +119,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
         _discountController.text = sale.discount.toString();
         _shippingCostController.text = sale.shippingCost.toString();
         _otherExpensesController.text = sale.otherExpenses.toString();
-        _taxController.text = sale.tax.toString();
+        _originalTax = sale.tax;
+        _taxController.text = sale.tax == 0 ? '' : sale.tax.toString();
         _selectedCustomer = customer;
         _selectedWarehouse = warehouse;
         _paymentType = sale.isCredit
@@ -737,10 +739,11 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     final currentUser =
         Provider.of<AuthProvider>(context, listen: false).currentUser;
 
-    if (_taxController.text.trim().isNotEmpty &&
-        currentUser != null &&
-        !await sl<PermissionService>()
-            .hasPermission(currentUser.id, PermissionCode.editTax)) {
+    final taxChanged = (_tax - _originalTax).abs() > 0.0001;
+    if (taxChanged &&
+        (currentUser == null ||
+            !await sl<PermissionService>()
+                .hasPermission(currentUser.id, PermissionCode.editTax))) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('ليست لديك صلاحية إدخال أو تعديل الضريبة'),
