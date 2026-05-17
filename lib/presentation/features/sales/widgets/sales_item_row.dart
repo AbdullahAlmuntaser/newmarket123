@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:provider/provider.dart';
+import 'package:supermarket/presentation/widgets/money_form_field.dart';
 
 class SalesItemRow extends StatefulWidget {
   final int index;
@@ -61,31 +62,12 @@ class _SalesItemRowState extends State<SalesItemRow> {
                 const SizedBox(width: 8),
                 Expanded(
                     flex: 1,
-                    child: TextFormField(
+                    child: QuantityFormField(
                       initialValue: widget.item.quantity.toString(),
+                      label: 'الكمية',
                       decoration: const InputDecoration(labelText: 'الكمية'),
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      validator: (v) {
-                        final text = v?.trim() ?? '';
-                        if (text.isEmpty) return 'الكمية مطلوبة';
-                        final qty = double.tryParse(text);
-                        if (qty == null) return 'أدخل رقمًا صحيحًا في الكمية';
-                        if (qty <= 0) return 'الكمية يجب أن تكون أكبر من صفر';
-                        return null;
-                      },
-                      onChanged: (v) {
-                        final qty = double.tryParse(v) ?? 0.0;
-                        if (qty <= 0) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content:
-                                    Text('الكمية يجب أن تكون أكبر من الصفر')),
-                          );
-                          return;
-                        }
-                        widget.item.quantity = qty;
+                      onValidChanged: (value) {
+                        widget.item.quantity = value;
                         widget.onChanged();
                       },
                     )),

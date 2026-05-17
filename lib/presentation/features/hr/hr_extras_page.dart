@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/hr_service.dart';
 import 'package:intl/intl.dart' as intl;
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
+import 'package:supermarket/presentation/widgets/money_form_field.dart';
 
 class HRExtrasPage extends StatefulWidget {
   const HRExtrasPage({super.key});
@@ -15,6 +17,7 @@ class _HRExtrasPageState extends State<HRExtrasPage> {
   HREmployee? _selectedEmployee;
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +30,9 @@ class _HRExtrasPageState extends State<HRExtrasPage> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
+            child: Form(
+              key: _formKey,
+              child: Column(
               children: [
                 FutureBuilder<List<HREmployee>>(
                   future: db.select(db.hREmployees).get(),
@@ -45,10 +50,11 @@ class _HRExtrasPageState extends State<HRExtrasPage> {
                 Row(
                   children: [
                     Expanded(
-                      child: TextFormField(
+                      child: MoneyFormField(
                         controller: _amountController,
-                        decoration: const InputDecoration(labelText: 'المبلغ', border: OutlineInputBorder()),
-                        keyboardType: TextInputType.number,
+                        label: 'المبلغ',
+                        required: true,
+                        allowZero: false,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -63,26 +69,33 @@ class _HRExtrasPageState extends State<HRExtrasPage> {
                 const SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: () async {
-                    if (_selectedEmployee == null || _amountController.text.isEmpty) return;
-                    final messenger = ScaffoldMessenger.of(context);
+                    if (!(_formKey.currentState?.validate() ?? false)) {
+                      AppSnackBar.warning(context, 'يرجى إدخال مبلغ صحيح');
+                      return;
+                    }
+                    if (_selectedEmployee == null) {
+                      AppSnackBar.warning(context, 'يرجى اختيار الموظف');
+                      return;
+                    }
                     try {
                       await hrService.recordAdvance(
                         employeeId: _selectedEmployee!.id,
-                        amount: double.parse(_amountController.text),
+                        amount: MoneyFormField.valueOf(_amountController),
                         note: _noteController.text,
                       );
                       if (!mounted) return;
-                      messenger.showSnackBar(const SnackBar(content: Text('تم تسجيل العملية بنجاح')));
+                      AppSnackBar.success(context, 'تم تسجيل العملية بنجاح');
                       _amountController.clear();
                       _noteController.clear();
                     } catch (e) {
                       if (!mounted) return;
-                      messenger.showSnackBar(SnackBar(content: Text('خطأ: $e')));
+                      AppSnackBar.error(context, 'خطأ: $e');
                     }
                   },
                   child: const Text('تسجيل سلفة / خصم'),
                 ),
               ],
+              ),
             ),
           ),
           const Divider(),

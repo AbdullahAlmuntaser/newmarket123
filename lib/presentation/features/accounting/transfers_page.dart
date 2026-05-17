@@ -4,6 +4,8 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/transfer_service.dart';
 import 'package:supermarket/presentation/widgets/shared/account_selector_widget.dart';
 import 'package:intl/intl.dart' as intl;
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
+import 'package:supermarket/presentation/widgets/money_form_field.dart';
 
 class TransfersPage extends StatefulWidget {
   const TransfersPage({super.key});
@@ -61,19 +63,18 @@ class _TransfersPageState extends State<TransfersPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: TextFormField(
+                        child: MoneyFormField(
                           controller: _amountController,
-                          decoration: const InputDecoration(labelText: 'المبلغ', border: OutlineInputBorder()),
-                          keyboardType: TextInputType.number,
-                          validator: (v) => v!.isEmpty ? 'مطلوب' : null,
+                          label: 'المبلغ',
+                          required: true,
+                          allowZero: false,
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: TextFormField(
+                        child: MoneyFormField(
                           controller: _commissionController,
-                          decoration: const InputDecoration(labelText: 'العمولة', border: OutlineInputBorder()),
-                          keyboardType: TextInputType.number,
+                          label: 'العمولة',
                         ),
                       ),
                     ],
@@ -112,22 +113,21 @@ class _TransfersPageState extends State<TransfersPage> {
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
                         if (_senderAccountId == null || _receiverAccountId == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(ApiResponseSnackBar(message: 'يرجى اختيار الحسابات', isError: true));
+                          AppSnackBar.warning(context, 'يرجى اختيار الحسابات');
                           return;
                         }
-                        final messenger = ScaffoldMessenger.of(context);
                         try {
                           await transferService.createTransfer(
                             senderAccountId: _senderAccountId!,
                             receiverAccountId: _receiverAccountId!,
-                            amount: double.parse(_amountController.text),
-                            commission: double.tryParse(_commissionController.text) ?? 0.0,
+                            amount: MoneyFormField.valueOf(_amountController),
+                            commission: MoneyFormField.valueOf(_commissionController),
                             company: _companyController.text,
                             transferType: _transferType,
                             note: _noteController.text,
                           );
                           if (!mounted) return;
-                          messenger.showSnackBar(ApiResponseSnackBar(message: 'تم التحويل بنجاح'));
+                          AppSnackBar.success(context, 'تم التحويل بنجاح');
                           _formKey.currentState!.reset();
                           setState(() {
                             _senderAccountId = null;
@@ -135,7 +135,7 @@ class _TransfersPageState extends State<TransfersPage> {
                           });
                         } catch (e) {
                           if (!mounted) return;
-                          messenger.showSnackBar(ApiResponseSnackBar(message: 'خطأ: $e', isError: true));
+                          AppSnackBar.error(context, 'خطأ: $e');
                         }
                       }
                     },
