@@ -45,6 +45,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   final TextEditingController _taxController = TextEditingController();
 
   bool _isSaving = false;
+  double _originalTax = 0.0;
 
   double get _subtotal =>
       _items.fold(0.0, (sum, item) => sum + (item.subtotal));
@@ -141,6 +142,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
           purchase.shippingCost == 0 ? '' : purchase.shippingCost.toString();
       _otherExpensesController.text =
           purchase.otherExpenses == 0 ? '' : purchase.otherExpenses.toString();
+      _originalTax = purchase.tax;
       _taxController.text = purchase.tax == 0 ? '' : purchase.tax.toString();
     });
   }
@@ -438,10 +440,11 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
     }
     final currentUser =
         Provider.of<AuthProvider>(context, listen: false).currentUser;
-    if (_taxController.text.trim().isNotEmpty &&
-        currentUser != null &&
-        !await sl<PermissionService>()
-            .hasPermission(currentUser.id, PermissionCode.editTax)) {
+    final taxChanged = (_tax - _originalTax).abs() > 0.0001;
+    if (taxChanged &&
+        (currentUser == null ||
+            !await sl<PermissionService>()
+                .hasPermission(currentUser.id, PermissionCode.editTax))) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('ليست لديك صلاحية إدخال أو تعديل الضريبة')),
       );
