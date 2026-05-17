@@ -64,7 +64,17 @@ class _SalesItemRowState extends State<SalesItemRow> {
                     child: TextFormField(
                       initialValue: widget.item.quantity.toString(),
                       decoration: const InputDecoration(labelText: 'الكمية'),
-                      keyboardType: TextInputType.number,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      validator: (v) {
+                        final text = v?.trim() ?? '';
+                        if (text.isEmpty) return 'الكمية مطلوبة';
+                        final qty = double.tryParse(text);
+                        if (qty == null) return 'أدخل رقمًا صحيحًا في الكمية';
+                        if (qty <= 0) return 'الكمية يجب أن تكون أكبر من صفر';
+                        return null;
+                      },
                       onChanged: (v) {
                         final qty = double.tryParse(v) ?? 0.0;
                         if (qty <= 0) {

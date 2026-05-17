@@ -1327,6 +1327,7 @@ class AppDatabase extends _$AppDatabase {
       'MANAGE_SETTINGS': 'إدارة الإعدادات',
       'MANAGE_INVENTORY': 'إدارة المخزون',
       'APPROVE_DISCOUNT': 'اعتماد الخصومات',
+      'EDIT_TAX': 'إدخال وتعديل الضريبة يدويًا',
     };
 
     const rolePermissionsToSeed = <String, List<String>>{
@@ -1342,6 +1343,7 @@ class AppDatabase extends _$AppDatabase {
         'MANAGE_SETTINGS',
         'MANAGE_INVENTORY',
         'APPROVE_DISCOUNT',
+        'EDIT_TAX',
       ],
       'manager': [
         'POST_SALE',
@@ -1351,6 +1353,7 @@ class AppDatabase extends _$AppDatabase {
         'VIEW_REPORTS',
         'MANAGE_INVENTORY',
         'APPROVE_DISCOUNT',
+        'EDIT_TAX',
       ],
       'cashier': [
         'POST_SALE',

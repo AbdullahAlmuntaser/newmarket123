@@ -105,14 +105,33 @@ class WarehouseManagementPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (nameController.text.isNotEmpty) {
+              final messenger = ScaffoldMessenger.of(context);
+              if (nameController.text.trim().isEmpty) {
+                messenger.showSnackBar(const SnackBar(
+                  content: Text('اسم المستودع مطلوب'),
+                  backgroundColor: Colors.red,
+                ));
+                return;
+              }
+              try {
                 await db.warehousesDao.createWarehouse(
                   WarehousesCompanion.insert(
-                    name: nameController.text,
-                    location: drift.Value(locationController.text),
+                    name: nameController.text.trim(),
+                    location: drift.Value(locationController.text.trim()),
                   ),
                 );
-                if (context.mounted) Navigator.pop(context);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  messenger.showSnackBar(const SnackBar(
+                    content: Text('تم إنشاء المستودع بنجاح'),
+                    backgroundColor: Colors.green,
+                  ));
+                }
+              } catch (e) {
+                messenger.showSnackBar(SnackBar(
+                  content: Text('فشل إنشاء المستودع: $e'),
+                  backgroundColor: Colors.red,
+                ));
               }
             },
             child: const Text('حفظ'),
@@ -154,14 +173,33 @@ class WarehouseManagementPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (nameController.text.isNotEmpty) {
+              final messenger = ScaffoldMessenger.of(context);
+              if (nameController.text.trim().isEmpty) {
+                messenger.showSnackBar(const SnackBar(
+                  content: Text('اسم المستودع مطلوب'),
+                  backgroundColor: Colors.red,
+                ));
+                return;
+              }
+              try {
                 await db.warehousesDao.updateWarehouse(
                   warehouse.copyWith(
-                    name: nameController.text,
-                    location: drift.Value(locationController.text),
+                    name: nameController.text.trim(),
+                    location: drift.Value(locationController.text.trim()),
                   ),
                 );
-                if (context.mounted) Navigator.pop(context);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  messenger.showSnackBar(const SnackBar(
+                    content: Text('تم تحديث المستودع بنجاح'),
+                    backgroundColor: Colors.green,
+                  ));
+                }
+              } catch (e) {
+                messenger.showSnackBar(SnackBar(
+                  content: Text('فشل تحديث المستودع: $e'),
+                  backgroundColor: Colors.red,
+                ));
               }
             },
             child: const Text('تحديث'),
@@ -204,7 +242,19 @@ class WarehouseManagementPage extends StatelessWidget {
     );
 
     if (confirmed == true && context.mounted) {
-      await db.warehousesDao.deleteWarehouse(id);
+      final messenger = ScaffoldMessenger.of(context);
+      try {
+        await db.warehousesDao.deleteWarehouse(id);
+        messenger.showSnackBar(const SnackBar(
+          content: Text('تم حذف المستودع بنجاح'),
+          backgroundColor: Colors.green,
+        ));
+      } catch (e) {
+        messenger.showSnackBar(SnackBar(
+          content: Text('فشل حذف المستودع: $e'),
+          backgroundColor: Colors.red,
+        ));
+      }
     }
   }
 }

@@ -122,24 +122,56 @@ class PostingProfilesSettingsPage extends StatelessWidget {
                 onPressed: () => Navigator.pop(context),
                 child: const Text('إلغاء')),
             ElevatedButton(
-              onPressed: () {
-                if (profile == null) {
-                  db.accountingDao
-                      .createPostingProfile(PostingProfilesCompanion.insert(
-                    operationType: operationController.text.toUpperCase(),
-                    accountType: accountTypeController.text.toUpperCase(),
-                    accountId: drift.Value(selectedAccountId),
-                    side: side,
+              onPressed: () async {
+                final operationType = operationController.text.trim().toUpperCase();
+                final accountType = accountTypeController.text.trim().toUpperCase();
+                final messenger = ScaffoldMessenger.of(context);
+
+                if (operationType.isEmpty || accountType.isEmpty) {
+                  messenger.showSnackBar(const SnackBar(
+                    content: Text('نوع العملية ونوع الحساب مطلوبان'),
+                    backgroundColor: Colors.red,
                   ));
-                } else {
-                  db.accountingDao.updatePostingProfile(profile.copyWith(
-                    operationType: operationController.text.toUpperCase(),
-                    accountType: accountTypeController.text.toUpperCase(),
-                    accountId: drift.Value(selectedAccountId),
-                    side: side,
+                  return;
+                }
+                if (selectedAccountId == null) {
+                  messenger.showSnackBar(const SnackBar(
+                    content: Text('يرجى اختيار الحساب المحاسبي'),
+                    backgroundColor: Colors.red,
+                  ));
+                  return;
+                }
+
+                try {
+                  if (profile == null) {
+                    await db.accountingDao
+                        .createPostingProfile(PostingProfilesCompanion.insert(
+                      operationType: operationType,
+                      accountType: accountType,
+                      accountId: drift.Value(selectedAccountId),
+                      side: side,
+                    ));
+                  } else {
+                    await db.accountingDao.updatePostingProfile(profile.copyWith(
+                      operationType: operationType,
+                      accountType: accountType,
+                      accountId: drift.Value(selectedAccountId),
+                      side: side,
+                    ));
+                  }
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    messenger.showSnackBar(const SnackBar(
+                      content: Text('تم حفظ إعداد الترحيل بنجاح'),
+                      backgroundColor: Colors.green,
+                    ));
+                  }
+                } catch (e) {
+                  messenger.showSnackBar(SnackBar(
+                    content: Text('فشل حفظ إعداد الترحيل: $e'),
+                    backgroundColor: Colors.red,
                   ));
                 }
-                Navigator.pop(context);
               },
               child: const Text('حفظ'),
             ),

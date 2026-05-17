@@ -438,6 +438,16 @@ class MainDrawer extends StatelessWidget {
                       ),
                       _buildSubItem(
                         context,
+                        'الإعدادات المتقدمة',
+                        '/settings/advanced',
+                      ),
+                      _buildSubItem(
+                        context,
+                        'إعدادات قيود الترحيل',
+                        '/settings/posting-profiles',
+                      ),
+                      _buildSubItem(
+                        context,
                         'أسعار العملات',
                         '/settings/currency-rates',
                       ),
@@ -588,7 +598,7 @@ class MainDrawer extends StatelessWidget {
       contentPadding: const EdgeInsets.only(right: 55, left: 16),
       title: Text(
         title,
-        style: const TextStyle(color: Colors.white60, fontSize: 14),
+        style: const TextStyle(color: Colors.white70, fontSize: 14),
       ),
       onTap: () {
         Navigator.pop(context);
