@@ -3,10 +3,12 @@ import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:supermarket/core/services/purchase_service.dart';
 import 'package:supermarket/core/services/audit_service.dart';
+import 'package:supermarket/core/services/permission_service.dart';
 import 'package:supermarket/injection_container.dart';
 import 'package:uuid/uuid.dart';
 import 'purchase_provider.dart';
@@ -31,7 +33,9 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   String? _selectedCurrency;
   String? _representativeId;
 
-  final DateTime _selectedDate = DateTime.now();
+  final _formKey = GlobalKey<FormState>();
+  final _currencyFormatter = NumberFormat.currency(locale: 'ar', symbol: '');
+  DateTime _selectedDate = DateTime.now();
   final List<PurchaseItemData> _items = [];
 
   final TextEditingController _discountController = TextEditingController();
@@ -44,12 +48,15 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
 
   double get _subtotal =>
       _items.fold(0.0, (sum, item) => sum + (item.subtotal));
-  double get _discount => double.tryParse(_discountController.text) ?? 0.0;
-  double get _shippingCost =>
-      double.tryParse(_shippingCostController.text) ?? 0.0;
-  double get _otherExpenses =>
-      double.tryParse(_otherExpensesController.text) ?? 0.0;
-  double get _tax => double.tryParse(_taxController.text) ?? 0.0;
+  double _moneyValue(TextEditingController controller) {
+    final text = controller.text.trim();
+    if (text.isEmpty) return 0.0;
+    return double.tryParse(text) ?? 0.0;
+  }
+  double get _discount => _moneyValue(_discountController);
+  double get _shippingCost => _moneyValue(_shippingCostController);
+  double get _otherExpenses => _moneyValue(_otherExpensesController);
+  double get _tax => _moneyValue(_taxController);
   double get _total =>
       _subtotal - _discount + _shippingCost + _otherExpenses + _tax;
 
@@ -66,18 +73,76 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   Future<void> _loadPurchaseData() async {
     final db = Provider.of<AppDatabase>(context, listen: false);
     final purchase = await db.purchasesDao.getPurchaseById(widget.purchaseId!);
-    if (purchase != null && mounted) {
-      await (db.select(db.purchaseItems)
-            ..where((i) => i.purchaseId.equals(widget.purchaseId!)))
-          .get();
+    if (purchase == null) return;
 
-      setState(() {
-        _discountController.text = purchase.discount.toString();
-        _shippingCostController.text = purchase.shippingCost.toString();
-        _otherExpensesController.text = purchase.otherExpenses.toString();
-        _taxController.text = purchase.tax.toString();
-      });
+    final supplier = purchase.supplierId == null
+        ? null
+        : await (db.select(db.suppliers)
+              ..where((s) => s.id.equals(purchase.supplierId!)))
+            .getSingleOrNull();
+    final warehouse = purchase.warehouseId == null
+        ? null
+        : await (db.select(db.warehouses)
+              ..where((w) => w.id.equals(purchase.warehouseId!)))
+            .getSingleOrNull();
+    final purchaseItems = await (db.select(db.purchaseItems)
+          ..where((i) => i.purchaseId.equals(widget.purchaseId!)))
+        .get();
+
+    final loadedItems = <PurchaseItemData>[];
+    for (final item in purchaseItems) {
+      final product = await (db.select(db.products)
+            ..where((p) => p.id.equals(item.productId)))
+          .getSingleOrNull();
+      if (product == null) continue;
+
+      final conversions = await (db.select(db.unitConversions)
+            ..where((u) => u.productId.equals(product.id)))
+          .get();
+      UnitConversion? selectedUnit;
+      for (final conversion in conversions) {
+        final matchesUnitId = item.unitId != null &&
+            (conversion.id == item.unitId || conversion.unitName == item.unitId);
+        final matchesFactor = item.unitId == null &&
+            (conversion.factor - item.unitFactor).abs() < 0.0001;
+        if (matchesUnitId || matchesFactor) {
+          selectedUnit = conversion;
+          break;
+        }
+      }
+
+      loadedItems.add(
+        PurchaseItemData(
+          product: product,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          discountAmount: item.discount,
+          taxPercent: item.taxPercent,
+          expiryDate: item.expiryDate,
+          batchNumber: item.batchNumber,
+          selectedUnit: selectedUnit,
+        ),
+      );
     }
+
+    if (!mounted) return;
+    setState(() {
+      _selectedSupplier = supplier;
+      _selectedWarehouse = warehouse;
+      _selectedCurrency = purchase.currencyId;
+      _paymentMethod = purchase.isCredit ? 'credit' : purchase.purchaseType;
+      _selectedDate = purchase.date;
+      _items
+        ..clear()
+        ..addAll(loadedItems);
+      _discountController.text =
+          purchase.discount == 0 ? '' : purchase.discount.toString();
+      _shippingCostController.text =
+          purchase.shippingCost == 0 ? '' : purchase.shippingCost.toString();
+      _otherExpensesController.text =
+          purchase.otherExpenses == 0 ? '' : purchase.otherExpenses.toString();
+      _taxController.text = purchase.tax == 0 ? '' : purchase.tax.toString();
+    });
   }
 
   @override
@@ -95,54 +160,57 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
     return Scaffold(
       appBar: AppBar(
           title: Text(isEditMode ? 'تعديل فاتورة مشتريات' : 'فاتورة مشتريات')),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildHeader(db),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _items.length,
-              itemBuilder: (ctx, i) => PurchaseItemRow(
-                index: i,
-                item: _items[i],
-                products: const [],
-                onChanged: () => setState(() {}),
-                onDelete: () => setState(() => _items.removeAt(i)),
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              _buildHeader(db),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _items.length,
+                itemBuilder: (ctx, i) => PurchaseItemRow(
+                  index: i,
+                  item: _items[i],
+                  products: const [],
+                  onChanged: () => setState(() {}),
+                  onDelete: () => setState(() => _items.removeAt(i)),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () => _showProductPicker(db),
-                  icon: const Icon(Icons.search),
-                  label: const Text('إضافة صنف موجود'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        Theme.of(context).colorScheme.secondaryContainer,
-                    foregroundColor:
-                        Theme.of(context).colorScheme.onSecondaryContainer,
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () => _showProductPicker(db),
+                    icon: const Icon(Icons.search),
+                    label: const Text('إضافة صنف موجود'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          Theme.of(context).colorScheme.secondaryContainer,
+                      foregroundColor:
+                          Theme.of(context).colorScheme.onSecondaryContainer,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton.icon(
-                  onPressed: () => _showQuickAddProduct(db),
-                  icon: const Icon(Icons.add_circle_outline),
-                  label: const Text('إضافة صنف جديد'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        Theme.of(context).colorScheme.primaryContainer,
-                    foregroundColor:
-                        Theme.of(context).colorScheme.onPrimaryContainer,
+                  const SizedBox(width: 12),
+                  ElevatedButton.icon(
+                    onPressed: () => _showQuickAddProduct(db),
+                    icon: const Icon(Icons.add_circle_outline),
+                    label: const Text('إضافة صنف جديد'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          Theme.of(context).colorScheme.primaryContainer,
+                      foregroundColor:
+                          Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _buildSummary(),
-          ],
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildSummary(),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: _buildFooter(db),
@@ -187,7 +255,10 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
                       builder: (context, snapshot) {
                         final currencies = snapshot.data ?? [];
                         return DropdownButtonFormField<String>(
-                          value: _selectedCurrency,
+                          value:
+                              currencies.any((c) => c.code == _selectedCurrency)
+                                  ? _selectedCurrency
+                                  : null,
                           decoration: const InputDecoration(labelText: 'العملة'),
                           items: currencies.map((c) => DropdownMenuItem(
                             value: c.code,
@@ -266,7 +337,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
           child: Column(
             children: [
               _buildRow('الإجمالي الفرعي', _subtotal),
-              _buildEditableRow('الضريبة', _taxController),
+              _buildTaxEditableRow(),
               _buildEditableRow('الخصم', _discountController),
               _buildEditableRow('الشحن', _shippingCostController),
               _buildEditableRow('مصاريف أخرى', _otherExpensesController),
@@ -283,28 +354,73 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
           Text(title,
               style: TextStyle(
                   fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
-          Text(value.toStringAsFixed(2),
+          Text(_currencyFormatter.format(value),
               style: TextStyle(
                   fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
         ],
       );
 
-  Widget _buildEditableRow(String title, TextEditingController controller) =>
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title),
-          SizedBox(
-            width: 100,
-            child: TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(isDense: true),
-              onChanged: (_) => setState(() {}),
+  Widget _buildEditableRow(String title, TextEditingController controller,
+          {bool enabled = true, String? helperText}) =>
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(title),
             ),
-          ),
-        ],
+            SizedBox(
+              width: 160,
+              child: TextFormField(
+                controller: controller,
+                enabled: enabled,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  isDense: true,
+                  helperText: helperText,
+                ),
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                validator: (value) => _validateOptionalMoney(value, title),
+                onChanged: (_) => setState(() {}),
+              ),
+            ),
+          ],
+        ),
       );
+
+  Widget _buildTaxEditableRow() {
+    final currentUser = context.read<AuthProvider>().currentUser;
+    if (currentUser == null) {
+      return _buildEditableRow('الضريبة', _taxController, enabled: false);
+    }
+
+    return FutureBuilder<bool>(
+      future: sl<PermissionService>()
+          .hasPermission(currentUser.id, PermissionCode.editTax),
+      builder: (context, snapshot) {
+        final canEditTax = snapshot.data == true;
+        return _buildEditableRow(
+          'الضريبة',
+          _taxController,
+          enabled: canEditTax,
+          helperText: canEditTax ? 'اختياري' : 'تحتاج صلاحية تعديل الضريبة',
+        );
+      },
+    );
+  }
+
+  String? _validateOptionalMoney(String? value, String fieldName) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) return null;
+    final parsed = double.tryParse(text);
+    if (parsed == null) return 'أدخل رقمًا صحيحًا في $fieldName';
+    if (parsed < 0) return '$fieldName لا يمكن أن يكون سالبًا';
+    return null;
+  }
 
   Widget _buildFooter(AppDatabase db) => ElevatedButton(
         onPressed: _isSaving ? null : () => _savePurchase(db, post: true),
@@ -314,6 +430,24 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
       );
 
   Future<void> _savePurchase(AppDatabase db, {required bool post}) async {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى تصحيح الحقول المالية قبل الحفظ')),
+      );
+      return;
+    }
+    final currentUser =
+        Provider.of<AuthProvider>(context, listen: false).currentUser;
+    if (_taxController.text.trim().isNotEmpty &&
+        currentUser != null &&
+        !await sl<PermissionService>()
+            .hasPermission(currentUser.id, PermissionCode.editTax)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ليست لديك صلاحية إدخال أو تعديل الضريبة')),
+      );
+      return;
+    }
+
     if (_selectedSupplier == null) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('الرجاء اختيار المورد')));
@@ -351,8 +485,6 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
     try {
       final purchaseService = sl<PurchaseService>();
       final grnService = sl<GrnService>();
-      final currentUser =
-          Provider.of<AuthProvider>(context, listen: false).currentUser;
       final userId = currentUser?.id;
 
       await db.transaction(() async {
@@ -362,8 +494,17 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
                   productId: item.product.id,
                   quantity: item.quantity,
                   unitPrice: item.unitPrice,
+                  unitId: drift.Value(item.selectedUnit?.unitName),
                   unitFactor: drift.Value(item.selectedUnit?.factor ?? 1.0),
+                  quantityInBaseUnit: drift.Value(
+                      item.quantity * (item.selectedUnit?.factor ?? 1.0)),
                   price: item.subtotal,
+                  discount: drift.Value(item.discountAmount),
+                  tax: drift.Value(
+                    (item.subtotal - item.discountAmount) *
+                        (item.taxPercent / 100),
+                  ),
+                  taxPercent: drift.Value(item.taxPercent),
                   batchNumber: drift.Value(item.batchNumber),
                   expiryDate: drift.Value(item.expiryDate),
                 ))
@@ -375,6 +516,9 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
               id: drift.Value(purchaseId),
               supplierId: drift.Value(_selectedSupplier!.id),
               warehouseId: drift.Value(_selectedWarehouse!.id),
+              currencyId: drift.Value(_selectedCurrency),
+              purchaseType: drift.Value(_paymentMethod),
+              isCredit: drift.Value(_paymentMethod == 'credit'),
               total: _total,
               discount: drift.Value(_discount),
               tax: drift.Value(_tax),
@@ -399,6 +543,9 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
             purchaseCompanion: PurchasesCompanion(
               supplierId: drift.Value(_selectedSupplier?.id),
               warehouseId: drift.Value(_selectedWarehouse?.id),
+              currencyId: drift.Value(_selectedCurrency),
+              purchaseType: drift.Value(_paymentMethod),
+              isCredit: drift.Value(_paymentMethod == 'credit'),
               total: drift.Value(_total),
               discount: drift.Value(_discount),
               tax: drift.Value(_tax),

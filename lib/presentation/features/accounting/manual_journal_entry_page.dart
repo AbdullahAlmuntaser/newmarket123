@@ -221,6 +221,15 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
   }
 
   void _saveEntry(AccountingProvider provider) async {
+    final messenger = ScaffoldMessenger.of(context);
+    if (_descriptionController.text.trim().isEmpty) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('يرجى إدخال وصف القيد'),
+        backgroundColor: Colors.red,
+      ));
+      return;
+    }
+
     final userId =
         Provider.of<AuthProvider>(context, listen: false).currentUser?.id;
     final lines = _lines
@@ -233,13 +242,27 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
               credit: drift.Value(l.credit),
             ))
         .toList();
-    await provider.createManualEntry(
-      description: _descriptionController.text,
-      date: _selectedDate,
-      lines: lines,
-      userId: userId,
-    );
-    if (mounted) Navigator.pop(context);
+
+    try {
+      await provider.createManualEntry(
+        description: _descriptionController.text.trim(),
+        date: _selectedDate,
+        lines: lines,
+        userId: userId,
+      );
+      if (!mounted) return;
+      Navigator.pop(context);
+      messenger.showSnackBar(const SnackBar(
+        content: Text('تم حفظ وترحيل القيد بنجاح'),
+        backgroundColor: Colors.green,
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(
+        content: Text('فشل حفظ القيد: $e'),
+        backgroundColor: Colors.red,
+      ));
+    }
   }
 }
 

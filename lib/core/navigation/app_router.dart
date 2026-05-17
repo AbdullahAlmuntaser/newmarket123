@@ -78,6 +78,8 @@ import 'package:supermarket/presentation/features/settings/backup_page.dart';
 import 'package:supermarket/presentation/features/settings/permissions_management_page.dart';
 import 'package:supermarket/presentation/features/settings/currency_rates_page.dart';
 import 'package:supermarket/presentation/features/settings/system_settings_page.dart';
+import 'package:supermarket/presentation/features/settings/posting_profiles_settings_page.dart';
+import 'package:supermarket/presentation/settings/advanced_settings_page.dart';
 import 'package:supermarket/presentation/features/settings/sync_page.dart';
 import 'package:supermarket/core/auth/user_role.dart';
 import 'package:supermarket/core/auth/access_guard.dart';
@@ -375,6 +377,12 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
         path: '/settings/system',
         builder: (context, state) => const SystemSettingsPage()),
+    GoRoute(
+        path: '/settings/advanced',
+        builder: (context, state) => const AdvancedSettingsPage()),
+    GoRoute(
+        path: '/settings/posting-profiles',
+        builder: (context, state) => const PostingProfilesSettingsPage()),
     GoRoute(
         path: '/settings/printer',
         builder: (context, state) => const PrinterSettingsPage()),

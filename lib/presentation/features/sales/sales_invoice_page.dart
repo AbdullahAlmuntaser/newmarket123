@@ -1,10 +1,12 @@
 import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:supermarket/presentation/widgets/permission_guard.dart';
+import 'package:supermarket/core/services/permission_service.dart';
 import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/core/services/unit_conversion_service.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/erp_data_service.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
@@ -42,6 +44,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
   final TextEditingController _otherExpensesController =
       TextEditingController();
   bool _isSaving = false;
+  final _currencyFormatter = NumberFormat.currency(locale: 'ar', symbol: '');
   bool _isHeaderExpanded = true;
 
   double _cashPayment = 0.0;
@@ -49,12 +52,16 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
   bool _isSplitPayment = false;
 
   double get _subtotal => _items.fold(0.0, (sum, item) => sum + item.lineTotal);
-  double get _discount => double.tryParse(_discountController.text) ?? 0.0;
-  double get _shippingCost =>
-      double.tryParse(_shippingCostController.text) ?? 0.0;
-  double get _otherExpenses =>
-      double.tryParse(_otherExpensesController.text) ?? 0.0;
-  double get _tax => double.tryParse(_taxController.text) ?? 0.0;
+  double _moneyValue(TextEditingController controller) {
+    final text = controller.text.trim();
+    if (text.isEmpty) return 0.0;
+    return double.tryParse(text) ?? 0.0;
+  }
+
+  double get _discount => _moneyValue(_discountController);
+  double get _shippingCost => _moneyValue(_shippingCostController);
+  double get _otherExpenses => _moneyValue(_otherExpensesController);
+  double get _tax => _moneyValue(_taxController);
 
   double get _totalTax => _tax;
 
@@ -517,7 +524,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       child: Column(
         children: [
           _row('المجموع الفرعي', _subtotal),
-          _editableRow('الضريبة', _taxController),
+          _buildTaxEditableRow(),
           _editableRow('الخصم', _discountController),
           _editableRow('الشحن', _shippingCostController),
           _editableRow('مصاريف أخرى', _otherExpensesController),
@@ -533,22 +540,63 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     );
   }
 
-  Widget _editableRow(String label, TextEditingController controller) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label),
-        SizedBox(
-          width: 100,
-          child: TextField(
-            controller: controller,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(isDense: true),
-            onChanged: (_) => setState(() {}),
+  Widget _editableRow(String label, TextEditingController controller,
+      {bool enabled = true, String? helperText}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Text(label),
           ),
-        ),
-      ],
+          SizedBox(
+            width: 160,
+            child: TextFormField(
+              controller: controller,
+              enabled: enabled,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(isDense: true, helperText: helperText),
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              validator: (value) => _validateOptionalMoney(value, label),
+              onChanged: (_) => setState(() {}),
+            ),
+          ),
+        ],
+      ),
     );
+  }
+
+  Widget _buildTaxEditableRow() {
+    final currentUser = context.read<AuthProvider>().currentUser;
+    if (currentUser == null) {
+      return _editableRow('الضريبة', _taxController, enabled: false);
+    }
+
+    return FutureBuilder<bool>(
+      future: sl<PermissionService>()
+          .hasPermission(currentUser.id, PermissionCode.editTax),
+      builder: (context, snapshot) {
+        final canEditTax = snapshot.data == true;
+        return _editableRow(
+          'الضريبة',
+          _taxController,
+          enabled: canEditTax,
+          helperText: canEditTax ? 'اختياري' : 'تحتاج صلاحية تعديل الضريبة',
+        );
+      },
+    );
+  }
+
+  String? _validateOptionalMoney(String? value, String fieldName) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) return null;
+    final parsed = double.tryParse(text);
+    if (parsed == null) return 'أدخل رقمًا صحيحًا في $fieldName';
+    if (parsed < 0) return '$fieldName لا يمكن أن يكون سالبًا';
+    return null;
   }
 
   Widget _row(String label, double val, {bool isBold = false, Color? color}) {
@@ -564,7 +612,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
             ),
           ),
           Text(
-            val.toStringAsFixed(2),
+            _currencyFormatter.format(val),
             style: TextStyle(
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
               color: color,
@@ -686,6 +734,21 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
   }
 
   Future<void> _saveInvoice(AppDatabase db, {required bool post}) async {
+    final currentUser =
+        Provider.of<AuthProvider>(context, listen: false).currentUser;
+
+    if (_taxController.text.trim().isNotEmpty &&
+        currentUser != null &&
+        !await sl<PermissionService>()
+            .hasPermission(currentUser.id, PermissionCode.editTax)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ليست لديك صلاحية إدخال أو تعديل الضريبة'),
+        ),
+      );
+      return;
+    }
+
     if (_items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('الفاتورة فارغة - الرجاء إضافة أصناف')));
@@ -710,7 +773,12 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       }
     }
 
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى تصحيح الحقول المالية قبل الحفظ')),
+      );
+      return;
+    }
 
     if (_paymentType == 'credit' && _selectedCustomer == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -756,8 +824,6 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
           method = PaymentMethod.check;
         }
 
-        final currentUser =
-            Provider.of<AuthProvider>(context, listen: false).currentUser;
         final userId = currentUser?.id;
 
         final itemsCompanions = <SaleItemsCompanion>[];
