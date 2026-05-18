@@ -240,14 +240,12 @@ class PostingProfilesSettingsPage extends StatelessWidget {
                       ),
                     );
                   }
-                  if (context.mounted) {
-                    AppSnackBar.success(context, 'تم حفظ إعداد الترحيل بنجاح');
-                    Navigator.pop(context);
-                  }
+                  if (!context.mounted) return;
+                  AppSnackBar.success(context, 'تم حفظ إعداد الترحيل بنجاح');
+                  Navigator.pop(context);
                 } catch (e) {
-                  if (context.mounted) {
-                    AppSnackBar.error(context, 'فشل حفظ إعداد الترحيل: $e');
-                  }
+                  if (!context.mounted) return;
+                  AppSnackBar.error(context, 'فشل حفظ إعداد الترحيل: $e');
                 }
               },
               child: const Text('حفظ'),

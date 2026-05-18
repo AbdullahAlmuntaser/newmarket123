@@ -1,12 +1,15 @@
 # Compiled and build artifacts
 *.pyc
 __pycache__/
+<<<<<<< HEAD
 # Dart/Flutter
 .dart_tool/
 .packages
 .flutter-plugins
 .flutter-plugins-dependencies
 .dart_tool/
+=======
+>>>>>>> eb5632be869c640994114fe3706073f0b505bf0d
 *.class
 *.o
 *.obj
@@ -70,4 +73,4 @@ htmlcov/
 *.tar.gz
 *.tar.bz2
 *.tar.xz
-*.tar.zst
+*.tar.zst.dart_tool/

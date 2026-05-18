@@ -175,14 +175,12 @@ class WarehouseManagementPage extends StatelessWidget {
                     location: drift.Value(locationController.text.trim()),
                   ),
                 );
-                if (context.mounted) {
-                  AppSnackBar.success(context, 'تم تحديث المستودع بنجاح');
-                  Navigator.pop(context);
-                }
+                if (!context.mounted) return;
+                AppSnackBar.success(context, 'تم تحديث المستودع بنجاح');
+                Navigator.pop(context);
               } catch (e) {
-                if (context.mounted) {
-                  AppSnackBar.error(context, 'فشل تحديث المستودع: $e');
-                }
+                if (!context.mounted) return;
+                AppSnackBar.error(context, 'فشل تحديث المستودع: $e');
               }
             },
             child: const Text('تحديث'),
@@ -226,6 +224,7 @@ class WarehouseManagementPage extends StatelessWidget {
     if (confirmed == true && context.mounted) {
       try {
         await db.warehousesDao.deleteWarehouse(id);
+<<<<<<< HEAD
         if (context.mounted) {
           AppSnackBar.success(context, 'تم حذف المستودع بنجاح');
         }
@@ -233,6 +232,11 @@ class WarehouseManagementPage extends StatelessWidget {
         if (context.mounted) {
           AppSnackBar.error(context, 'فشل حذف المستودع: $e');
         }
+=======
+        AppSnackBar.success(context, 'تم حذف المستودع بنجاح');
+      } catch (e) {
+        AppSnackBar.error(context, 'فشل حذف المستودع: $e');
+>>>>>>> eb5632be869c640994114fe3706073f0b505bf0d
       }
     }
   }
