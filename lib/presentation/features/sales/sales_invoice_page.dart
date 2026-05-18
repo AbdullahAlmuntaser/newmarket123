@@ -800,6 +800,11 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       return;
     }
 
+    final taxChanged = (_tax - _originalTax).abs() > 0.0001;
+    if (taxChanged &&
+        (currentUser == null ||
+            !await sl<PermissionService>()
+                .hasPermission(currentUser.id, PermissionCode.editTax))) {
       if (!context.mounted) return;
       AppSnackBar.error(context, 'ليست لديك صلاحية إدخال أو تعديل الضريبة');
       return;
