@@ -5,6 +5,7 @@ import 'package:supermarket/presentation/features/accounting/accounting_provider
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:intl/intl.dart';
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
 
 class ManualJournalEntryPage extends StatefulWidget {
   const ManualJournalEntryPage({super.key});
@@ -221,6 +222,33 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
   }
 
   void _saveEntry(AccountingProvider provider) async {
+    if (_descriptionController.text.trim().isEmpty) {
+      AppSnackBar.warning(context, 'يرجى إدخال وصف القيد');
+      return;
+    }
+
+    for (var i = 0; i < _lines.length; i++) {
+      final line = _lines[i];
+      if (line.accountId == null && (line.debit > 0 || line.credit > 0)) {
+        AppSnackBar.warning(context, 'يرجى اختيار حساب للسطر رقم ${i + 1}');
+        return;
+      }
+      if (line.debit > 0 && line.credit > 0) {
+        AppSnackBar.warning(
+          context,
+          'لا يمكن أن يحتوي السطر رقم ${i + 1} على مدين ودائن معاً',
+        );
+        return;
+      }
+      if (line.accountId != null && line.debit == 0 && line.credit == 0) {
+        AppSnackBar.warning(
+          context,
+          'السطر رقم ${i + 1} يحتوي على حساب بدون قيمة مدينة أو دائنة',
+        );
+        return;
+      }
+    }
+
     final userId =
         Provider.of<AuthProvider>(context, listen: false).currentUser?.id;
     final lines = _lines
@@ -233,13 +261,21 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
               credit: drift.Value(l.credit),
             ))
         .toList();
-    await provider.createManualEntry(
-      description: _descriptionController.text,
-      date: _selectedDate,
-      lines: lines,
-      userId: userId,
-    );
-    if (mounted) Navigator.pop(context);
+
+    try {
+      await provider.createManualEntry(
+        description: _descriptionController.text.trim(),
+        date: _selectedDate,
+        lines: lines,
+        userId: userId,
+      );
+      if (!mounted) return;
+      AppSnackBar.success(context, 'تم حفظ وترحيل القيد بنجاح');
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      AppSnackBar.error(context, 'فشل حفظ القيد: $e');
+    }
   }
 }
 
