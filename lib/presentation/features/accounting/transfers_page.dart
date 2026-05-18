@@ -126,7 +126,7 @@ class _TransfersPageState extends State<TransfersPage> {
                             transferType: _transferType,
                             note: _noteController.text,
                           );
-                          if (!mounted) return;
+                          if (!context.mounted) return;
                           AppSnackBar.success(context, 'تم التحويل بنجاح');
                           _formKey.currentState!.reset();
                           setState(() {
@@ -134,7 +134,7 @@ class _TransfersPageState extends State<TransfersPage> {
                             _receiverAccountId = null;
                           });
                         } catch (e) {
-                          if (!mounted) return;
+                          if (!context.mounted) return;
                           AppSnackBar.error(context, 'خطأ: $e');
                         }
                       }

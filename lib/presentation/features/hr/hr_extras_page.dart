@@ -83,12 +83,12 @@ class _HRExtrasPageState extends State<HRExtrasPage> {
                         amount: MoneyFormField.valueOf(_amountController),
                         note: _noteController.text,
                       );
-                      if (!mounted) return;
+                      if (!context.mounted) return;
                       AppSnackBar.success(context, 'تم تسجيل العملية بنجاح');
                       _amountController.clear();
                       _noteController.clear();
                     } catch (e) {
-                      if (!mounted) return;
+                      if (!context.mounted) return;
                       AppSnackBar.error(context, 'خطأ: $e');
                     }
                   },
