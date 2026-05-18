@@ -110,12 +110,12 @@ class _CashManagementPageState extends State<CashManagementPage> {
                               note: _noteController.text,
                             );
                           }
-                          if (!mounted) return;
+                          if (!context.mounted) return;
                           AppSnackBar.success(context, 'تم تسجيل السند بنجاح');
                           _formKey.currentState!.reset();
                           setState(() => _accountId = null);
                         } catch (e) {
-                          if (!mounted) return;
+                          if (!context.mounted) return;
                           AppSnackBar.error(context, 'خطأ: $e');
                         }
                       }

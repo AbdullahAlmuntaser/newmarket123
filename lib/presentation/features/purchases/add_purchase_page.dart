@@ -481,6 +481,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         (currentUser == null ||
             !await sl<PermissionService>()
                 .hasPermission(currentUser.id, PermissionCode.editTax))) {
+      if (!mounted) return;
       AppSnackBar.error(context, 'ليست لديك صلاحية إدخال أو تعديل الضريبة');
       return;
     }
@@ -613,17 +614,16 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
           );
         }
       });
-      if (mounted) {
-        AppSnackBar.success(
-          context,
-          post
-              ? 'تم حفظ وترحيل الفاتورة وتحديث المخزون بنجاح'
-              : isEditMode
-                  ? 'تم تعديل الفاتورة بنجاح'
-                  : 'تم حفظ المسودة بنجاح',
-        );
-        context.pop();
-      }
+      if (!context.mounted) return;
+      AppSnackBar.success(
+        context,
+        post
+            ? 'تم حفظ وترحيل الفاتورة وتحديث المخزون بنجاح'
+            : isEditMode
+                ? 'تم تعديل الفاتورة بنجاح'
+                : 'تم حفظ المسودة بنجاح',
+      );
+      context.pop();
     } catch (e) {
       debugPrint('خطأ في حفظ الفاتورة: $e');
       String errorMessage = 'حدث خطأ غير متوقع أثناء الحفظ.';
@@ -637,11 +637,10 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         errorMessage = 'فشل الحفظ: $e';
       }
 
-      if (mounted) {
-        AppSnackBar.error(context, errorMessage);
-      }
+      if (!context.mounted) return;
+      AppSnackBar.error(context, errorMessage);
     } finally {
-      if (mounted) {
+      if (context.mounted) {
         setState(() => _isSaving = false);
       }
     }

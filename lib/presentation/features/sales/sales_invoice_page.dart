@@ -805,6 +805,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
         (currentUser == null ||
             !await sl<PermissionService>()
                 .hasPermission(currentUser.id, PermissionCode.editTax))) {
+      if (!mounted) return;
       AppSnackBar.error(context, 'ليست لديك صلاحية إدخال أو تعديل الضريبة');
       return;
     }

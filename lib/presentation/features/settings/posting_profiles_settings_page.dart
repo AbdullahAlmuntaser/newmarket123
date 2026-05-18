@@ -245,7 +245,9 @@ class PostingProfilesSettingsPage extends StatelessWidget {
                     Navigator.pop(context);
                   }
                 } catch (e) {
-                  AppSnackBar.error(context, 'فشل حفظ إعداد الترحيل: $e');
+                  if (context.mounted) {
+                    AppSnackBar.error(context, 'فشل حفظ إعداد الترحيل: $e');
+                  }
                 }
               },
               child: const Text('حفظ'),
