@@ -1,6 +1,12 @@
 # Compiled and build artifacts
 *.pyc
 __pycache__/
+# Dart/Flutter
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.dart_tool/
 *.class
 *.o
 *.obj
