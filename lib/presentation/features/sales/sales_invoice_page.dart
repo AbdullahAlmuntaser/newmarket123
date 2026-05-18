@@ -1,10 +1,12 @@
 import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:supermarket/presentation/widgets/permission_guard.dart';
+import 'package:supermarket/core/services/permission_service.dart';
 import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/core/services/unit_conversion_service.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/erp_data_service.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
@@ -12,6 +14,8 @@ import 'package:supermarket/injection_container.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:supermarket/presentation/features/sales/widgets/sales_item_row.dart';
 import 'package:supermarket/presentation/widgets/entity_picker.dart';
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
+import 'package:supermarket/presentation/widgets/money_form_field.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:uuid/uuid.dart';
 
@@ -42,19 +46,28 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
   final TextEditingController _otherExpensesController =
       TextEditingController();
   bool _isSaving = false;
+  Sale? _loadedSale;
+  final _currencyFormatter = NumberFormat.currency(locale: 'ar', symbol: '');
+  double _originalTax = 0.0;
   bool _isHeaderExpanded = true;
+
+  bool get _isLockedForEditing =>
+      isEditMode &&
+      _loadedSale != null &&
+      _loadedSale!.status != DocumentStatus.draft;
 
   double _cashPayment = 0.0;
   double _creditPayment = 0.0;
   bool _isSplitPayment = false;
 
   double get _subtotal => _items.fold(0.0, (sum, item) => sum + item.lineTotal);
-  double get _discount => double.tryParse(_discountController.text) ?? 0.0;
-  double get _shippingCost =>
-      double.tryParse(_shippingCostController.text) ?? 0.0;
-  double get _otherExpenses =>
-      double.tryParse(_otherExpensesController.text) ?? 0.0;
-  double get _tax => double.tryParse(_taxController.text) ?? 0.0;
+  double _moneyValue(TextEditingController controller) =>
+      MoneyFormField.valueOf(controller);
+
+  double get _discount => _moneyValue(_discountController);
+  double get _shippingCost => _moneyValue(_shippingCostController);
+  double get _otherExpenses => _moneyValue(_otherExpensesController);
+  double get _tax => _moneyValue(_taxController);
 
   double get _totalTax => _tax;
 
@@ -108,10 +121,12 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       }
 
       setState(() {
+        _loadedSale = sale;
         _discountController.text = sale.discount.toString();
         _shippingCostController.text = sale.shippingCost.toString();
         _otherExpensesController.text = sale.otherExpenses.toString();
-        _taxController.text = sale.tax.toString();
+        _originalTax = sale.tax;
+        _taxController.text = sale.tax == 0 ? '' : sale.tax.toString();
         _selectedCustomer = customer;
         _selectedWarehouse = warehouse;
         _paymentType = sale.isCredit
@@ -150,6 +165,13 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
 
   Future<void> _onBarcodeSubmitted(String barcode, AppDatabase db) async {
     if (barcode.isEmpty) return;
+    if (_isLockedForEditing) {
+      AppSnackBar.warning(
+        context,
+        'لا يمكن إضافة أصناف إلى فاتورة مبيعات غير مسودة',
+      );
+      return;
+    }
 
     // 1. Search in main products table
     final products = await (db.select(
@@ -190,6 +212,13 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
 
   void _addItemToInvoice(
       Product product, double qty, double price, String unit) {
+    if (_isLockedForEditing) {
+      AppSnackBar.warning(
+        context,
+        'لا يمكن إضافة أصناف إلى فاتورة مبيعات غير مسودة',
+      );
+      return;
+    }
     setState(() {
       _items.add(
         SalesLineItem(
@@ -219,6 +248,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
+                    if (_isLockedForEditing) _buildLockedBanner(),
                     _buildCollapsibleHeader(db),
                     _buildBarcodeSearch(db),
                     _buildCustomerAlerts(),
@@ -236,6 +266,29 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       ),
     );
   }
+
+
+  Widget _buildLockedBanner() => Container(
+        width: double.infinity,
+        margin: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.orange.shade50,
+          border: Border.all(color: Colors.orange.shade300),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.lock_outline, color: Colors.orange.shade800),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'هذه الفاتورة ليست مسودة، لذلك لا يمكن تعديلها مباشرة. استخدم مرتجعاً أو مستند تصحيح عند الحاجة.',
+              ),
+            ),
+          ],
+        ),
+      );
 
   Widget _buildCollapsibleHeader(AppDatabase db) {
     return Card(
@@ -469,7 +522,9 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
             final item = _items[index];
             return Dismissible(
               key: UniqueKey(),
-              direction: DismissDirection.endToStart,
+              direction: _isLockedForEditing
+                  ? DismissDirection.none
+                  : DismissDirection.endToStart,
               background: Container(
                 color: Colors.red,
                 alignment: Alignment.centerRight,
@@ -484,7 +539,12 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
                   item: item,
                   products: products,
                   customerId: _selectedCustomer?.id,
-                  onDelete: () => setState(() => _items.removeAt(index)),
+                  onDelete: _isLockedForEditing
+                      ? () => AppSnackBar.warning(
+                            context,
+                            'لا يمكن حذف أصناف من فاتورة مبيعات غير مسودة',
+                          )
+                      : () => setState(() => _items.removeAt(index)),
                   onChanged: () => setState(() {}),
                 ),
               ),
@@ -499,7 +559,9 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: TextButton.icon(
-        onPressed: () => setState(() => _items.add(SalesLineItem())),
+        onPressed: _isLockedForEditing
+            ? null
+            : () => setState(() => _items.add(SalesLineItem())),
         icon: const Icon(Icons.add_circle_outline),
         label: const Text('إضافة منتج يدوياً'),
       ),
@@ -517,7 +579,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       child: Column(
         children: [
           _row('المجموع الفرعي', _subtotal),
-          _editableRow('الضريبة', _taxController),
+          _buildTaxEditableRow(),
           _editableRow('الخصم', _discountController),
           _editableRow('الشحن', _shippingCostController),
           _editableRow('مصاريف أخرى', _otherExpensesController),
@@ -533,21 +595,56 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     );
   }
 
-  Widget _editableRow(String label, TextEditingController controller) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label),
-        SizedBox(
-          width: 100,
-          child: TextField(
-            controller: controller,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(isDense: true),
-            onChanged: (_) => setState(() {}),
+  Widget _editableRow(String label, TextEditingController controller,
+      {bool enabled = true, String? helperText}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Text(label),
           ),
-        ),
-      ],
+          SizedBox(
+            width: 160,
+            child: MoneyFormField(
+              controller: controller,
+              label: label,
+              enabled: enabled,
+              helperText: helperText,
+              decoration: InputDecoration(
+                labelText: label,
+                isDense: true,
+                helperText: helperText,
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTaxEditableRow() {
+    final currentUser = context.read<AuthProvider>().currentUser;
+    if (currentUser == null) {
+      return _editableRow('الضريبة', _taxController, enabled: false);
+    }
+
+    return FutureBuilder<bool>(
+      future: sl<PermissionService>()
+          .hasPermission(currentUser.id, PermissionCode.editTax),
+      builder: (context, snapshot) {
+        final canEditTax = snapshot.data == true;
+        return _editableRow(
+          'الضريبة',
+          _taxController,
+          enabled: canEditTax,
+          helperText: canEditTax ? 'اختياري' : 'تحتاج صلاحية تعديل الضريبة',
+        );
+      },
     );
   }
 
@@ -564,7 +661,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
             ),
           ),
           Text(
-            val.toStringAsFixed(2),
+            _currencyFormatter.format(val),
             style: TextStyle(
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
               color: color,
@@ -589,26 +686,32 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
           Row(
             children: [
               Expanded(
-                child: TextField(
+                child: MoneyFormField(
+                  label: 'كاش',
                   decoration: const InputDecoration(
                     labelText: 'كاش',
                     isDense: true,
                   ),
-                  keyboardType: TextInputType.number,
-                  onChanged: (v) =>
-                      setState(() => _cashPayment = double.tryParse(v) ?? 0),
+                  onValidChanged: (value) =>
+                      setState(() => _cashPayment = value),
+                  onChanged: (value) {
+                    if (value.trim().isEmpty) setState(() => _cashPayment = 0);
+                  },
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: TextField(
+                child: MoneyFormField(
+                  label: 'آجل',
                   decoration: const InputDecoration(
                     labelText: 'آجل',
                     isDense: true,
                   ),
-                  keyboardType: TextInputType.number,
-                  onChanged: (v) =>
-                      setState(() => _creditPayment = double.tryParse(v) ?? 0),
+                  onValidChanged: (value) =>
+                      setState(() => _creditPayment = value),
+                  onChanged: (value) {
+                    if (value.trim().isEmpty) setState(() => _creditPayment = 0);
+                  },
                 ),
               ),
             ],
@@ -643,7 +746,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
         children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: _items.isEmpty || _isSaving
+              onPressed: _items.isEmpty || _isSaving || _isLockedForEditing
                   ? null
                   : () => _saveInvoice(db, post: false),
               child: const Text('مسودة'),
@@ -655,7 +758,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
               permission: 'POST_INVOICE',
               fallback: const SizedBox.shrink(),
               child: ElevatedButton(
-                onPressed: _items.isEmpty || _isSaving
+                onPressed: _items.isEmpty || _isSaving || _isLockedForEditing
                     ? null
                     : () => _saveInvoice(db, post: true),
                 style: ElevatedButton.styleFrom(
@@ -686,36 +789,53 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
   }
 
   Future<void> _saveInvoice(AppDatabase db, {required bool post}) async {
+    final currentUser =
+        Provider.of<AuthProvider>(context, listen: false).currentUser;
+
+    if (_isLockedForEditing) {
+      AppSnackBar.warning(
+        context,
+        'لا يمكن تعديل فاتورة مبيعات غير مسودة. استخدم مرتجعاً أو مستند تصحيح بدلاً من التعديل المباشر.',
+      );
+      return;
+    }
+
+    final taxChanged = (_tax - _originalTax).abs() > 0.0001;
+    if (taxChanged &&
+        (currentUser == null ||
+            !await sl<PermissionService>()
+                .hasPermission(currentUser.id, PermissionCode.editTax))) {
+      AppSnackBar.error(context, 'ليست لديك صلاحية إدخال أو تعديل الضريبة');
+      return;
+    }
+
     if (_items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('الفاتورة فارغة - الرجاء إضافة أصناف')));
+      AppSnackBar.warning(context, 'الفاتورة فارغة - الرجاء إضافة أصناف');
       return;
     }
 
     for (var item in _items) {
       if (item.product == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('الرجاء اختيار منتج لكل صنف')));
+        AppSnackBar.warning(context, 'الرجاء اختيار منتج لكل صنف');
         return;
       }
       if (item.quantity <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('الكمية يجب أن تكون أكبر من صفر')));
+        AppSnackBar.warning(context, 'الكمية يجب أن تكون أكبر من صفر');
         return;
       }
       if (item.price < 0) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('السعر يجب أن يكون أكبر من أو يساوي صفر')));
+        AppSnackBar.warning(context, 'السعر يجب أن يكون أكبر من أو يساوي صفر');
         return;
       }
     }
 
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      AppSnackBar.warning(context, 'يرجى تصحيح الحقول المالية قبل الحفظ');
+      return;
+    }
 
     if (_paymentType == 'credit' && _selectedCustomer == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يجب اختيار عميل للبيع الآجل')),
-      );
+      AppSnackBar.warning(context, 'يجب اختيار عميل للبيع الآجل');
       return;
     }
 
@@ -726,12 +846,9 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       final newBalance = _customerSmartData!.currentBalance + _total;
       if (newBalance > _customerSmartData!.creditLimit &&
           _customerSmartData!.creditLimit > 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'لا يمكن حفظ الفاتورة: العميل تجاوز الحد الائتماني المسموح به'),
-            backgroundColor: Colors.red,
-          ),
+        AppSnackBar.error(
+          context,
+          'لا يمكن حفظ الفاتورة: العميل تجاوز الحد الائتماني المسموح به',
         );
         return;
       }
@@ -756,8 +873,6 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
           method = PaymentMethod.check;
         }
 
-        final currentUser =
-            Provider.of<AuthProvider>(context, listen: false).currentUser;
         final userId = currentUser?.id;
 
         final itemsCompanions = <SaleItemsCompanion>[];
@@ -850,20 +965,15 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       });
 
       if (!mounted) return;
-      final messenger = ScaffoldMessenger.of(context);
-      final nav = Navigator.of(context);
-
-      nav.pop();
-      messenger.showSnackBar(
-        SnackBar(
-            content: Text(post ? 'تم ترحيل الفاتورة بنجاح' : 'تم حفظ المسودة')),
+      AppSnackBar.success(
+        context,
+        post ? 'تم ترحيل الفاتورة بنجاح' : 'تم حفظ المسودة',
       );
+      Navigator.of(context).pop();
     } catch (e) {
       debugPrint('Error saving invoice: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('فشل الحفظ: ${e.toString()}')),
-      );
+      AppSnackBar.error(context, 'فشل الحفظ: ${e.toString()}');
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);

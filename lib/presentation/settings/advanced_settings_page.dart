@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/services/app_config_service.dart';
-import '../../../data/datasources/local/app_database.dart';
+import 'package:supermarket/core/services/app_config_service.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class AdvancedSettingsPage extends StatefulWidget {
   const AdvancedSettingsPage({super.key});

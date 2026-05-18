@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/hr/hr_provider.dart';
 import 'package:drift/drift.dart' hide Column;
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
+import 'package:supermarket/presentation/widgets/money_form_field.dart';
 
 class EmployeesPage extends StatefulWidget {
   const EmployeesPage({super.key});
@@ -227,10 +229,10 @@ class _EmployeesPageState extends State<EmployeesPage> {
                 controller: jobTitleController,
                 decoration: const InputDecoration(labelText: 'المسمى الوظيفي'),
               ),
-              TextField(
+              MoneyFormField(
                 controller: salaryController,
-                decoration: const InputDecoration(labelText: 'الراتب الأساسي'),
-                keyboardType: TextInputType.number,
+                label: 'الراتب الأساسي',
+                required: true,
               ),
             ],
           ),
@@ -242,13 +244,26 @@ class _EmployeesPageState extends State<EmployeesPage> {
           ),
           ElevatedButton(
             onPressed: () {
+              final salary = MoneyFormField.tryParse(salaryController.text);
+              if (nameController.text.trim().isEmpty) {
+                AppSnackBar.warning(context, 'اسم الموظف مطلوب');
+                return;
+              }
+              if (codeController.text.trim().isEmpty) {
+                AppSnackBar.warning(context, 'كود الموظف مطلوب');
+                return;
+              }
+              if (salary == null || salary < 0) {
+                AppSnackBar.warning(context, 'يرجى إدخال راتب أساسي صحيح');
+                return;
+              }
               if (employee == null) {
                 provider.addEmployee(
                   HREmployeesCompanion.insert(
-                    name: nameController.text,
-                    code: codeController.text,
-                    position: Value(jobTitleController.text),
-                    basicSalary: double.tryParse(salaryController.text) ?? 0.0,
+                    name: nameController.text.trim(),
+                    code: codeController.text.trim(),
+                    position: Value(jobTitleController.text.trim()),
+                    basicSalary: salary,
                     hireDate: DateTime.now(),
                     status: const Value('active'),
                   ),
@@ -256,10 +271,10 @@ class _EmployeesPageState extends State<EmployeesPage> {
               } else {
                 provider.updateEmployee(
                   employee.copyWith(
-                    name: nameController.text,
-                    code: codeController.text,
-                    position: Value(jobTitleController.text),
-                    basicSalary: double.tryParse(salaryController.text) ?? 0.0,
+                    name: nameController.text.trim(),
+                    code: codeController.text.trim(),
+                    position: Value(jobTitleController.text.trim()),
+                    basicSalary: salary,
                   ),
                 );
               }
