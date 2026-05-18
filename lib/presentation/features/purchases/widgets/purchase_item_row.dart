@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/purchases/purchase_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:supermarket/presentation/widgets/money_form_field.dart';
 
 class PurchaseItemRow extends StatefulWidget {
   final int index;
@@ -70,13 +71,11 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
               children: [
                 Expanded(
                   flex: 2,
-                  child: TextFormField(
+                  child: QuantityFormField(
                     initialValue: widget.item.quantity.toString(),
-                    decoration: const InputDecoration(
-                        labelText: 'الكمية', border: OutlineInputBorder()),
-                    keyboardType: TextInputType.number,
-                    onChanged: (v) {
-                      widget.item.quantity = double.tryParse(v) ?? 0.0;
+                    label: 'الكمية',
+                    onValidChanged: (value) {
+                      widget.item.quantity = value;
                       widget.onChanged();
                     },
                   ),
@@ -89,15 +88,12 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
             Row(
               children: [
                 Expanded(
-                  child: TextFormField(
+                  child: MoneyFormField(
                     initialValue: widget.item.unitPrice.toString(),
-                    decoration: const InputDecoration(
-                      labelText: 'سعر الشراء',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (v) {
-                      widget.item.unitPrice = double.tryParse(v) ?? 0.0;
+                    label: 'سعر الشراء',
+                    required: true,
+                    onValidChanged: (value) {
+                      widget.item.unitPrice = value;
                       widget.onChanged();
                     },
                   ),

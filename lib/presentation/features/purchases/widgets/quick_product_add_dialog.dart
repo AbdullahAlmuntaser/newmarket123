@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:uuid/uuid.dart';
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
+import 'package:supermarket/presentation/widgets/money_form_field.dart';
 
 class QuickProductAddDialog extends StatefulWidget {
   final Function(Product) onProductCreated;
@@ -42,8 +44,8 @@ class _QuickProductAddDialogState extends State<QuickProductAddDialog> {
     final productId = const Uuid().v4();
 
     try {
-      final buyPrice = double.tryParse(_buyPriceController.text) ?? 0.0;
-      final sellPrice = double.tryParse(_sellPriceController.text) ?? 0.0;
+      final buyPrice = MoneyFormField.valueOf(_buyPriceController);
+      final sellPrice = MoneyFormField.valueOf(_sellPriceController);
       final sku = _barcodeController.text.isNotEmpty
           ? _barcodeController.text
           : productId.substring(0, 8);
@@ -80,9 +82,7 @@ class _QuickProductAddDialogState extends State<QuickProductAddDialog> {
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('خطأ في حفظ المنتج: $e')));
+        AppSnackBar.error(context, 'خطأ في حفظ المنتج: $e');
       }
     } finally {
       setState(() => _isSaving = false);
@@ -113,24 +113,18 @@ class _QuickProductAddDialogState extends State<QuickProductAddDialog> {
               Row(
                 children: [
                   Expanded(
-                    child: TextFormField(
+                    child: MoneyFormField(
                       controller: _buyPriceController,
-                      decoration: const InputDecoration(
-                        labelText: 'سعر الشراء',
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: (v) =>
-                          double.tryParse(v ?? '') == null ? 'خطأ' : null,
+                      label: 'سعر الشراء',
+                      required: true,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: TextFormField(
+                    child: MoneyFormField(
                       controller: _sellPriceController,
-                      decoration: const InputDecoration(labelText: 'سعر البيع'),
-                      keyboardType: TextInputType.number,
-                      validator: (v) =>
-                          double.tryParse(v ?? '') == null ? 'خطأ' : null,
+                      label: 'سعر البيع',
+                      required: true,
                     ),
                   ),
                 ],
