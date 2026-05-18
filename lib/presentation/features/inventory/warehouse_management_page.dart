@@ -221,11 +221,14 @@ class WarehouseManagementPage extends StatelessWidget {
       ),
     );
 
-    if (confirmed == true && context.mounted) {
+    if (confirmed == true) {
+      if (!context.mounted) return;
       try {
         await db.warehousesDao.deleteWarehouse(id);
+        if (!context.mounted) return;
         AppSnackBar.success(context, 'تم حذف المستودع بنجاح');
       } catch (e) {
+        if (!context.mounted) return;
         AppSnackBar.error(context, 'فشل حذف المستودع: $e');
       }
     }
