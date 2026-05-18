@@ -131,8 +131,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
       );
     }
 
-    if (!mounted) return;
-    setState(() {
+    if (!context.mounted) return;    setState(() {
       _loadedPurchase = purchase;
       _selectedSupplier = supplier;
       _selectedWarehouse = warehouse;
