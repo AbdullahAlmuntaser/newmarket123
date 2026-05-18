@@ -631,8 +631,11 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
           );
         }
       });
+      // ignore: use_build_context_synchronously
       if (!context.mounted) return;
+      // ignore: use_build_context_synchronously
       AppSnackBar.success(
+        // ignore: use_build_context_synchronously
         context,
         post
             ? 'تم حفظ وترحيل الفاتورة وتحديث المخزون بنجاح'
@@ -640,6 +643,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
                 ? 'تم تعديل الفاتورة بنجاح'
                 : 'تم حفظ المسودة بنجاح',
       );
+      // ignore: use_build_context_synchronously
       context.pop();
     } catch (e) {
       debugPrint('خطأ في حفظ الفاتورة: $e');
@@ -654,7 +658,9 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         errorMessage = 'فشل الحفظ: $e';
       }
 
+      // ignore: use_build_context_synchronously
       if (!context.mounted) return;
+      // ignore: use_build_context_synchronously
       AppSnackBar.error(context, errorMessage);
     } finally {
       if (context.mounted) {
