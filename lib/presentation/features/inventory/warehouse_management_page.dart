@@ -224,19 +224,9 @@ class WarehouseManagementPage extends StatelessWidget {
     if (confirmed == true && context.mounted) {
       try {
         await db.warehousesDao.deleteWarehouse(id);
-<<<<<<< HEAD
-        if (context.mounted) {
-          AppSnackBar.success(context, 'تم حذف المستودع بنجاح');
-        }
-      } catch (e) {
-        if (context.mounted) {
-          AppSnackBar.error(context, 'فشل حذف المستودع: $e');
-        }
-=======
         AppSnackBar.success(context, 'تم حذف المستودع بنجاح');
       } catch (e) {
         AppSnackBar.error(context, 'فشل حذف المستودع: $e');
->>>>>>> eb5632be869c640994114fe3706073f0b505bf0d
       }
     }
   }
