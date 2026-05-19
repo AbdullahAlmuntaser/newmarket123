@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
 import 'package:supermarket/injection_container.dart';
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
 
 class AddPurchaseReturnPage extends StatefulWidget {
   const AddPurchaseReturnPage({super.key});
@@ -286,19 +287,12 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.returnProcessedSuccessfully),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppSnackBar.success(context, l10n.returnProcessedSuccessfully);
         context.pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-        );
+        AppSnackBar.error(context, e.toString());
       }
     }
   }
