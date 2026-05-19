@@ -4,6 +4,8 @@ import 'package:drift/drift.dart' as drift;
 import 'package:intl/intl.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
+import 'package:supermarket/presentation/widgets/money_form_field.dart';
 import 'package:supermarket/presentation/widgets/main_drawer.dart';
 import 'package:supermarket/presentation/widgets/entity_picker.dart';
 
@@ -167,18 +169,17 @@ class _AddARInvoiceDialogState extends State<AddARInvoiceDialog> {
                     v == null || v.isEmpty ? l10n.enterNameError : null,
               ),
               const SizedBox(height: 16),
-              TextFormField(
+              MoneyFormField(
                 controller: _totalAmountController,
-                decoration: InputDecoration(labelText: l10n.totalAmount),
-                keyboardType: TextInputType.number,
-                validator: (v) =>
-                    v == null || v.isEmpty ? l10n.enterAmountError : null,
+                label: l10n.totalAmount,
+                required: true,
+                allowZero: false,
               ),
               const SizedBox(height: 16),
-              TextFormField(
+              MoneyFormField(
                 controller: _taxAmountController,
-                decoration: InputDecoration(labelText: l10n.taxAmount),
-                keyboardType: TextInputType.number,
+                label: l10n.taxAmount,
+                allowZero: true,
               ),
               const SizedBox(height: 16),
               ListTile(
@@ -222,23 +223,29 @@ class _AddARInvoiceDialogState extends State<AddARInvoiceDialog> {
           onPressed: () async {
             if (_formKey.currentState!.validate() &&
                 _selectedCustomer != null) {
+              final totalAmount = MoneyFormField.tryParse(
+                _totalAmountController.text,
+              );
+              if (totalAmount == null || totalAmount <= 0) {
+                AppSnackBar.warning(context, l10n.enterAmountError);
+                return;
+              }
               await db.customersDao.createARInvoice(
                 ARInvoicesCompanion.insert(
                   customerId: _selectedCustomer!.id,
                   invoiceNumber: _invoiceNumberController.text,
                   invoiceDate: drift.Value(_invoiceDate),
                   dueDate: drift.Value(_dueDate),
-                  totalAmount: double.parse(_totalAmountController.text),
+                  totalAmount: totalAmount,
                   taxAmount: drift.Value(
-                      double.tryParse(_taxAmountController.text) ?? 0.0),
+                    MoneyFormField.valueOf(_taxAmountController),
+                  ),
                   status: const drift.Value('POSTED'),
                 ),
               );
               if (!context.mounted) return;
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(l10n.arInvoiceAdded)),
-              );
+              AppSnackBar.success(context, l10n.arInvoiceAdded);
             }
           },
           child: Text(l10n.save),
