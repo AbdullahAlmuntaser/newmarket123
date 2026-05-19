@@ -37,7 +37,7 @@ void main() {
     // insert a product into the in-memory DB
     const productId = 'p-test-1';
     await db.into(db.products).insert(ProductsCompanion.insert(
-      id: drift.Value(productId),
+      id: const drift.Value(productId),
       name: 'Test Product',
       sku: 'SKU-TEST',
       buyPrice: const drift.Value(10.0),
@@ -65,10 +65,10 @@ void main() {
     final bloc = PosBloc(db, mockPricing, mockTx, skipInit: true);
 
     // start with a PosLoaded state with wholesale mode ON
-    (bloc as dynamic).emit(PosLoaded(cart: [], isWholesaleMode: true));
+    (bloc as dynamic).emit(PosLoaded(cart: const [], isWholesaleMode: true));
 
     // Act: add product by SKU
-    bloc.add(AddProductBySku('SKU-TEST'));
+    bloc.add(const AddProductBySku('SKU-TEST'));
 
     // wait a moment for async handlers
     await Future.delayed(const Duration(milliseconds: 100));

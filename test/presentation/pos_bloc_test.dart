@@ -81,7 +81,7 @@ void main() {
     bloc.add(RefreshPricesEvent());
 
     // give event loop a tick
-    await Future.delayed(Duration(milliseconds: 50));
+    await Future.delayed(const Duration(milliseconds: 50));
 
     // Assert: verify calculatePrice was called with isWholesale = true
     verify(() => mockPricing.calculatePrice(
