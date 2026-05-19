@@ -131,7 +131,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
       );
     }
 
-    if (!context.mounted) return;
+    if (!mounted) return;
     setState(() {
       _loadedPurchase = purchase;
       _selectedSupplier = supplier;
@@ -471,7 +471,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
       return;
     }
     if (!(_formKey.currentState?.validate() ?? false)) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppSnackBar.warning(context, 'يرجى تصحيح الحقول المالية قبل الحفظ');
       return;
     }
@@ -482,35 +482,35 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         (currentUser == null ||
             !await sl<PermissionService>()
                 .hasPermission(currentUser.id, PermissionCode.editTax))) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppSnackBar.error(context, 'ليست لديك صلاحية إدخال أو تعديل الضريبة');
       return;
     }
 
     if (_selectedSupplier == null) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppSnackBar.warning(context, 'الرجاء اختيار المورد');
       return;
     }
     if (_selectedWarehouse == null) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppSnackBar.warning(context, 'الرجاء اختيار المستودع');
       return;
     }
     if (_items.isEmpty) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppSnackBar.warning(context, 'الرجاء إضافة أصناف');
       return;
     }
 
     for (var item in _items) {
       if (item.quantity <= 0) {
-        if (!context.mounted) return;
+        if (!mounted) return;
         AppSnackBar.warning(context, 'الكمية يجب أن تكون أكبر من صفر');
         return;
       }
       if (item.unitPrice < 0) {
-        if (!context.mounted) return;
+        if (!mounted) return;
         AppSnackBar.warning(context, 'السعر يجب أن يكون أكبر من أو يساوي صفر');
         return;
       }
@@ -620,7 +620,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
           );
         }
       });
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppSnackBar.success(
         context,
         post
@@ -643,7 +643,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         errorMessage = 'فشل الحفظ: $e';
       }
 
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppSnackBar.error(context, errorMessage);
     } finally {
       if (mounted) {

@@ -8,14 +8,15 @@ class PricingService {
   PricingService(this.db);
 
   /// Calculates the applicable price for a product based on a specific price list.
-  /// Falls back to the product's default sell price if no list price is found.
+  /// Falls back to the product's default sell price (or wholesale price) if no list price is found.
   Future<Decimal> getPriceForProduct(
     String productId,
     String? priceListId,
-    Decimal quantity,
-  ) async {
+    Decimal quantity, {
+    bool isWholesale = false,
+  }) async {
     if (priceListId == null) {
-      return await _getDefaultPrice(productId);
+      return await _getDefaultPrice(productId, isWholesale: isWholesale);
     }
 
     final query = (db.select(db.priceListItems)
@@ -35,14 +36,18 @@ class PricingService {
       }
     }
 
-    return await _getDefaultPrice(productId);
+    return await _getDefaultPrice(productId, isWholesale: isWholesale);
   }
 
-  Future<Decimal> _getDefaultPrice(String productId) async {
+  Future<Decimal> _getDefaultPrice(String productId, {bool isWholesale = false}) async {
     final product = await (db.select(
       db.products,
     )..where((p) => p.id.equals(productId)))
         .getSingleOrNull();
+    
+    if (isWholesale && (product?.wholesalePrice ?? 0) > 0) {
+      return Decimal.parse((product!.wholesalePrice).toString());
+    }
     return Decimal.parse((product?.sellPrice ?? 0.0).toString());
   }
 
@@ -52,12 +57,14 @@ class PricingService {
     required Decimal quantity,
     String? priceListId,
     String? customerId,
+    bool isWholesale = false,
   }) async {
     // 1. Get base price (from list or product default)
     var finalPrice = await getPriceForProduct(
       productId,
       priceListId,
       quantity,
+      isWholesale: isWholesale,
     );
 
     // 2. Apply customer-specific discount
@@ -110,5 +117,27 @@ class PricingService {
     }
 
     return finalPrice > Decimal.zero ? finalPrice : Decimal.zero;
+  }
+
+  /// Get the wholesale price for a product (used by POS for wholesale mode)
+  Future<Decimal> getWholesalePrice(String productId) async {
+    final product = await (db.select(
+      db.products,
+    )..where((p) => p.id.equals(productId)))
+        .getSingleOrNull();
+    if (product != null && product.wholesalePrice > 0) {
+      return Decimal.parse(product.wholesalePrice.toString());
+    }
+    // Fallback to sell price if wholesale price is not set
+    return Decimal.parse((product?.sellPrice ?? 0.0).toString());
+  }
+
+  /// Get the sell price for a product
+  Future<Decimal> getSellPrice(String productId) async {
+    final product = await (db.select(
+      db.products,
+    )..where((p) => p.id.equals(productId)))
+        .getSingleOrNull();
+    return Decimal.parse((product?.sellPrice ?? 0.0).toString());
   }
 }

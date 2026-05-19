@@ -35,6 +35,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
   String _paymentType = 'cash'; // cash / credit
   String? _representativeId;
   String _priceLevel = 'RETAIL';
+  bool _isWholesaleMode = false;
   final List<SalesLineItem> _items = [];
   final TextEditingController _barcodeController = TextEditingController();
   final TextEditingController _discountController = TextEditingController();
@@ -239,7 +240,24 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     return Scaffold(
       appBar: AppBar(
           title: Text(isEditMode ? 'تعديل فاتورة مبيعات' : 'فاتورة مبيعات'),
-          elevation: 0),
+          elevation: 0,
+          actions: [
+            if (!_isLockedForEditing)
+              IconButton(
+                icon: Icon(
+                  _isWholesaleMode ? Icons.store : Icons.storefront,
+                  color: _isWholesaleMode ? Colors.green : null,
+                ),
+                tooltip: _isWholesaleMode ? 'وضع التجزئة' : 'وضع الجملة',
+                onPressed: () {
+                  setState(() {
+                    _isWholesaleMode = !_isWholesaleMode;
+                    _priceLevel = _isWholesaleMode ? 'WHOLESALE' : 'RETAIL';
+                    _recalculateItemPrices();
+                  });
+                },
+              ),
+          ]),
       body: Form(
         key: _formKey, // ربط النموذج للتحقق
         child: Column(
@@ -426,6 +444,27 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
         ],
       ),
     );
+  }
+
+  void _recalculateItemPrices() {
+    for (var i = 0; i < _items.length; i++) {
+      final item = _items[i];
+      final product = item.product;
+      if (product != null) {
+        double newPrice;
+        if (_isWholesaleMode && product.wholesalePrice > 0) {
+          newPrice = product.wholesalePrice;
+        } else {
+          newPrice = product.sellPrice;
+        }
+        _items[i] = SalesLineItem(
+          product: product,
+          quantity: item.quantity,
+          price: newPrice,
+          selectedUnit: item.selectedUnit,
+        );
+      }
+    }
   }
 
   Widget _buildBarcodeSearch(AppDatabase db) {
@@ -805,43 +844,43 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
         (currentUser == null ||
             !await sl<PermissionService>()
                 .hasPermission(currentUser.id, PermissionCode.editTax))) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppSnackBar.error(context, 'ليست لديك صلاحية إدخال أو تعديل الضريبة');
       return;
     }
 
     if (_items.isEmpty) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppSnackBar.warning(context, 'الفاتورة فارغة - الرجاء إضافة أصناف');
       return;
     }
 
     for (var item in _items) {
       if (item.product == null) {
-        if (!context.mounted) return;
+        if (!mounted) return;
         AppSnackBar.warning(context, 'الرجاء اختيار منتج لكل صنف');
         return;
       }
       if (item.quantity <= 0) {
-        if (!context.mounted) return;
+        if (!mounted) return;
         AppSnackBar.warning(context, 'الكمية يجب أن تكون أكبر من صفر');
         return;
       }
       if (item.price < 0) {
-        if (!context.mounted) return;
+        if (!mounted) return;
         AppSnackBar.warning(context, 'السعر يجب أن يكون أكبر من أو يساوي صفر');
         return;
       }
     }
 
     if (!_formKey.currentState!.validate()) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppSnackBar.warning(context, 'يرجى تصحيح الحقول المالية قبل الحفظ');
       return;
     }
 
     if (_paymentType == 'credit' && _selectedCustomer == null) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppSnackBar.warning(context, 'يجب اختيار عميل للبيع الآجل');
       return;
     }
@@ -853,7 +892,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       final newBalance = _customerSmartData!.currentBalance + _total;
       if (newBalance > _customerSmartData!.creditLimit &&
           _customerSmartData!.creditLimit > 0) {
-        if (!context.mounted) return;
+        if (!mounted) return;
         AppSnackBar.error(
           context,
           'لا يمكن حفظ الفاتورة: العميل تجاوز الحد الائتماني المسموح به',
@@ -972,7 +1011,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
         }
       });
 
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppSnackBar.success(
         context,
         post ? 'تم ترحيل الفاتورة بنجاح' : 'تم حفظ المسودة',
@@ -980,7 +1019,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       Navigator.of(context).pop();
     } catch (e) {
       debugPrint('Error saving invoice: $e');
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppSnackBar.error(context, 'فشل الحفظ: ${e.toString()}');
     } finally {
       if (mounted) {

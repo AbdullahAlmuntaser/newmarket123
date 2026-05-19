@@ -181,7 +181,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                     date: DateTime.now(),
                     expenseAccountId: selectedExpenseAccount!.id,
                     paymentAccountId: selectedPaymentAccount!.id,
-                    costCenterId: selectedCostCenter != null ? int.tryParse(selectedCostCenter!.id) : null,
+                    costCenterId: selectedCostCenter?.id,
                   );
                   if (context.mounted) Navigator.pop(context);
                 } catch (e) {

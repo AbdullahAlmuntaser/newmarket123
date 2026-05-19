@@ -90,6 +90,7 @@ import 'package:supermarket/presentation/features/purchases/supplier_performance
 import 'package:supermarket/presentation/features/approvals/approvals_page.dart';
 import 'package:supermarket/presentation/features/loyalty/loyalty_page.dart';
 import 'package:supermarket/presentation/features/promotions/promotions_page.dart';
+import 'package:supermarket/presentation/features/admin/user_roles_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -355,6 +356,9 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
         path: '/users',
         builder: (context, state) => const StaffManagementPage()),
+    GoRoute(
+        path: '/user-roles',
+        builder: (context, state) => const UserRolesPage()),
     GoRoute(path: '/sync', builder: (context, state) => const SyncPage()),
     GoRoute(
         path: '/approvals',

@@ -1973,12 +1973,38 @@ class AccountingService {
   }
 
   Future<void> createRevaluationEntry(dynamic invoice, String reason) async {
-    // Implement revaluation logic based on the existing database structure
-    // This is a placeholder for the actual revaluation implementation required by the business logic
+    final dao = db.accountingDao;
     final entryId = const Uuid().v4();
-    // Add logic here to create ledger lines based on invoice details and revaluation amount
-    // await dao.createEntry(entry, lines);
-    await _auditService.logCreate('GLEntry', entryId, details: reason);
+    final branchId = await _configService.getDefaultBranchId();
+
+    // Logic: Create a compensatory entry for the invoice amount or variance
+    // For simplicity, we create a basic GL entry and log it.
+    
+    final entry = GLEntriesCompanion.insert(
+      id: Value(entryId),
+      description: 'إعادة تقييم: $reason (المرجع: ${invoice.id})',
+      date: Value(DateTime.now()),
+      referenceType: const Value('REVALUATION'),
+      referenceId: Value(invoice.id),
+      branchId: Value(branchId),
+    );
+
+    // Placeholder lines - in real implementation, these would be based on invoice details
+    final lines = [
+      GLLinesCompanion.insert(
+        entryId: entryId,
+        accountId: (await dao.getAccountByCode(codeRetainedEarnings))?.id ?? 'retained_earnings',
+        debit: const Value(0.0),
+        credit: const Value(0.0),
+        memo: Value('Adjustment for invoice ${invoice.id}'),
+        branchId: Value(branchId),
+      ),
+    ];
+
+    await db.transaction(() async {
+      await dao.createEntry(entry, lines);
+      await _auditService.logCreate('GLEntry', entryId, details: 'Revaluation for invoice ${invoice.id}: $reason');
+    });
   }
 
   Future<void> recordAssemblyEntry({
@@ -2024,7 +2050,7 @@ class AccountingService {
     required DateTime date,
     required String expenseAccountId,
     required String paymentAccountId,
-    int? costCenterId,
+    String? costCenterId,
   }) async {
     final dao = db.accountingDao;
     // Use injected BudgetService from DI container
@@ -2034,7 +2060,7 @@ class AccountingService {
     // 1. التحقق من الميزانية إذا كان هناك مركز تكلفة
     if (costCenterId != null) {
       await budgetService.validateExpenseAgainstBudget(
-        costCenterId: costCenterId.toString(),
+        costCenterId: costCenterId,
         expenseAmount: amount,
         period: period,
       );
@@ -2053,14 +2079,14 @@ class AccountingService {
         entryId: entryId,
         accountId: expenseAccountId,
         debit: Value(amount),
-        costCenterId: Value(costCenterId?.toString()),
+        costCenterId: Value(costCenterId),
         branchId: Value(await _configService.getDefaultBranchId()),
       ),
       GLLinesCompanion.insert(
         entryId: entryId,
         accountId: paymentAccountId,
         credit: Value(amount),
-        costCenterId: Value(costCenterId?.toString()),
+        costCenterId: Value(costCenterId),
         branchId: Value(await _configService.getDefaultBranchId()),
       ),
     ];
@@ -2069,11 +2095,13 @@ class AccountingService {
     // 2. تحديث الميزانية فعلياً بعد تسجيل المصروف
     if (costCenterId != null) {
       await budgetService.updateActualBudget(
-        costCenterId: costCenterId.toString(),
+        costCenterId: costCenterId,
         expenseAmount: amount,
         period: period,
       );
     }
+    
+    await _auditService.logCreate('EXPENSE', entryId, details: description);
   }
 
   Future<CashFlowData> getCashFlowStatement({

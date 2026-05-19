@@ -18,6 +18,9 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   late TextEditingController _skuController;
   late TextEditingController _nameController;
   late TextEditingController _stockController;
+  late TextEditingController _buyPriceController;
+  late TextEditingController _sellPriceController;
+  late TextEditingController _wholesalePriceController;
 
   @override
   void initState() {
@@ -26,6 +29,12 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     _nameController = TextEditingController(text: widget.product?.name ?? '');
     _stockController =
         TextEditingController(text: widget.product?.stock.toString() ?? '0.0');
+    _buyPriceController = TextEditingController(
+        text: widget.product?.buyPrice.toString() ?? '0.0');
+    _sellPriceController = TextEditingController(
+        text: widget.product?.sellPrice.toString() ?? '0.0');
+    _wholesalePriceController = TextEditingController(
+        text: widget.product?.wholesalePrice.toString() ?? '0.0');
   }
 
   @override
@@ -33,6 +42,9 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     _skuController.dispose();
     _nameController.dispose();
     _stockController.dispose();
+    _buyPriceController.dispose();
+    _sellPriceController.dispose();
+    _wholesalePriceController.dispose();
     super.dispose();
   }
 
@@ -64,6 +76,24 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 decoration: InputDecoration(labelText: l10n.stockLabel),
                 keyboardType: TextInputType.number,
               ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _buyPriceController,
+                decoration: InputDecoration(labelText: l10n.buyPrice),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _sellPriceController,
+                decoration: InputDecoration(labelText: l10n.sellPrice),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _wholesalePriceController,
+                decoration: InputDecoration(labelText: l10n.wholesalePrice),
+                keyboardType: TextInputType.number,
+              ),
             ],
           ),
         ),
@@ -80,6 +110,9 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     if (_formKey.currentState!.validate()) {
       final db = Provider.of<AppDatabase>(context, listen: false);
       final initialStock = double.tryParse(_stockController.text) ?? 0.0;
+      final buyPrice = double.tryParse(_buyPriceController.text) ?? 0.0;
+      final sellPrice = double.tryParse(_sellPriceController.text) ?? 0.0;
+      final wholesalePrice = double.tryParse(_wholesalePriceController.text) ?? 0.0;
 
       try {
         await db.transaction(() async {
@@ -90,6 +123,9 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                   name: _nameController.text,
                   sku: _skuController.text,
                   stock: Value(initialStock),
+                  buyPrice: Value(buyPrice),
+                  sellPrice: Value(sellPrice),
+                  wholesalePrice: Value(wholesalePrice),
                 ))
                 .then((p) => p.id);
 
