@@ -62,76 +62,90 @@ class _PosViewState extends State<PosView> {
           );
         }
       },
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('نقطة البيع السريع'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.history),
-              onPressed: () => context.push('/sales'),
+      child: BlocBuilder<PosBloc, PosState>(
+        builder: (context, state) {
+          final bool isWholesale = state is PosLoaded && state.isWholesaleMode;
+
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('نقطة البيع السريع'),
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    isWholesale ? Icons.store : Icons.storefront,
+                    color: isWholesale ? Colors.green : null,
+                  ),
+                  tooltip: isWholesale ? 'وضع التجزئة' : 'وضع الجملة',
+                  onPressed: () {
+                    if (state is PosLoaded) {
+                      context.read<PosBloc>().add(
+                            ToggleWholesaleMode(!state.isWholesaleMode),
+                          );
+                    }
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.history),
+                  onPressed: () => context.push('/sales'),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.qr_code_scanner),
+                  onPressed: () => _openScanner(context),
+                ),
+              ],
             ),
-            IconButton(
-              icon: const Icon(Icons.qr_code_scanner),
-              onPressed: () => _openScanner(context),
-            ),
-          ],
-        ),
-        body: BlocBuilder<PosBloc, PosState>(
-          builder: (context, state) {
-            if (state is PosLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (state is PosLoaded) {
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  final isWide = constraints.maxWidth > 800;
-                  final isTablet = constraints.maxWidth > 500 && constraints.maxWidth <= 800;
-                  
-                  if (isWide) {
-                    return Row(
-                      children: [
-                        const Expanded(flex: 2, child: CartWidget()),
-                        Expanded(
-                          flex: 3,
-                          child: _buildProductSection(),
-                        ),
-                      ],
-                    );
-                  } else if (isTablet) {
-                    return Row(
-                      children: [
-                        const Expanded(flex: 1, child: CartWidget()),
-                        Expanded(
-                          flex: 2,
-                          child: _buildProductSection(),
-                        ),
-                      ],
-                    );
-                  }
-                  return DefaultTabController(
-                    length: 2,
-                    child: Column(
-                      children: [
-                        const TabBar(
-                          tabs: [Tab(text: 'المنتجات'), Tab(text: 'السلة')],
-                        ),
-                        Expanded(
-                          child: TabBarView(
-                            children: [
-                              _buildProductSection(),
-                              const CartWidget(),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            }
-            return const Center(child: Text('بدء نقطة البيع...'));
-          },
-        ),
+            body: state is PosLoading
+                ? const Center(child: CircularProgressIndicator())
+                : state is PosLoaded
+                    ? LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isWide = constraints.maxWidth > 800;
+                          final isTablet = constraints.maxWidth > 500 && constraints.maxWidth <= 800;
+                          
+                          if (isWide) {
+                            return Row(
+                              children: [
+                                const Expanded(flex: 2, child: CartWidget()),
+                                Expanded(
+                                  flex: 3,
+                                  child: _buildProductSection(),
+                                ),
+                              ],
+                            );
+                          } else if (isTablet) {
+                            return Row(
+                              children: [
+                                const Expanded(flex: 1, child: CartWidget()),
+                                Expanded(
+                                  flex: 2,
+                                  child: _buildProductSection(),
+                                ),
+                              ],
+                            );
+                          }
+                          return DefaultTabController(
+                            length: 2,
+                            child: Column(
+                              children: [
+                                const TabBar(
+                                  tabs: [Tab(text: 'المنتجات'), Tab(text: 'السلة')],
+                                ),
+                                Expanded(
+                                  child: TabBarView(
+                                    children: [
+                                      _buildProductSection(),
+                                      const CartWidget(),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      )
+                    : const Center(child: Text('بدء نقطة البيع...')),
+          );
+        },
       ),
     );
   }

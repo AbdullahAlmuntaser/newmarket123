@@ -17,7 +17,9 @@ class PosBloc extends Bloc<PosEvent, PosState> {
   final TransactionEngine transactionEngine;
   late StreamSubscription _productSubscription;
 
-  PosBloc(this.db, this.pricingService, this.transactionEngine)
+  // Added optional skipInit for tests to avoid DB-dependent initialisation
+  PosBloc(this.db, this.pricingService, this.transactionEngine,
+      {bool skipInit = false})
       : super(PosLoading()) {
     on<LoadCategories>(_onLoadCategories);
     on<SelectCategory>(_onSelectCategory);
@@ -60,12 +62,17 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       }
     });
 
-    _productSubscription = db.productsDao.watchProducts().listen((_) {
-      add(RefreshPricesEvent());
-    });
+    if (!skipInit) {
+      _productSubscription = db.productsDao.watchProducts().listen((_) {
+        add(RefreshPricesEvent());
+      });
 
-    // Load initial data
-    add(LoadCategories());
+      // Load initial data
+      add(LoadCategories());
+    } else {
+      // Provide a no-op subscription when skipping init so close() can cancel
+      _productSubscription = const Stream<List<Product>>.empty().listen((_) {});
+    }
   }
 
   @override
@@ -87,6 +94,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
           productId: item.product.id,
           priceListId: currentState.activePriceListId,
           quantity: item.quantity,
+          isWholesale: currentState.isWholesaleMode,
         );
         return item.copyWith(unitPrice: newPrice);
       }),
@@ -109,6 +117,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         productId: item.product.id,
         priceListId: event.priceListId,
         quantity: item.quantity,
+        isWholesale: currentState.isWholesaleMode,
       );
 
       updatedCart.add(item.copyWith(unitPrice: finalPrice));
@@ -248,11 +257,12 @@ class PosBloc extends Bloc<PosEvent, PosState> {
           .get();
 
       // جلب السعر الأدق عبر PricingService
-      Decimal finalPrice = await pricingService.calculatePrice(
-        productId: product.id,
-        priceListId: currentState.activePriceListId,
-        quantity: factor, // استخدام factor الوحدة للتحقق من السعر حسب الكمية
-      );
+       Decimal finalPrice = await pricingService.calculatePrice(
+         productId: product.id,
+         priceListId: currentState.activePriceListId,
+         quantity: factor, // استخدام factor الوحدة للتحقق من السعر حسب الكمية
+         isWholesale: currentState.isWholesaleMode,
+       );
 
       // إذا كانت الوحدة لها سعر محدد في جدول التحويلات، نستخدمه
       if (specificPrice != null) {

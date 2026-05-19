@@ -549,6 +549,19 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
                 ))
             .toList();
 
+        // تحديث أسعار المنتج في المستودع/النظام
+        for (var item in _items) {
+          final factor = item.selectedUnit?.factor ?? 1.0;
+          final baseBuyPrice = item.unitPrice / factor;
+          
+          await (db.update(db.products)..where((p) => p.id.equals(item.product.id)))
+              .write(ProductsCompanion(
+            buyPrice: drift.Value(baseBuyPrice),
+            sellPrice: drift.Value(item.retailPrice),
+            wholesalePrice: drift.Value(item.wholesalePrice),
+          ));
+        }
+
         if (isNew) {
           await db.purchasesDao.createPurchase(
             purchaseCompanion: PurchasesCompanion.insert(

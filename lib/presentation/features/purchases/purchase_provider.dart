@@ -84,6 +84,8 @@ class PurchaseItemData {
   DateTime? expiryDate;
   String? batchNumber;
   UnitConversion? selectedUnit;
+  double retailPrice;
+  double wholesalePrice;
 
   PurchaseItemData({
     required this.product,
@@ -94,8 +96,12 @@ class PurchaseItemData {
     this.expiryDate,
     this.batchNumber,
     this.selectedUnit,
+    double? retailPrice,
+    double? wholesalePrice,
   })  : _quantity = quantity,
-        _unitPrice = unitPrice;
+        _unitPrice = unitPrice,
+        retailPrice = retailPrice ?? product.sellPrice,
+        wholesalePrice = wholesalePrice ?? product.wholesalePrice;
 
   double get quantity => _quantity;
   set quantity(double value) {

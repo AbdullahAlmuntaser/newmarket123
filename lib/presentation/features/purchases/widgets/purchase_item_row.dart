@@ -112,6 +112,32 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
             Row(
               children: [
                 Expanded(
+                  child: MoneyFormField(
+                    initialValue: widget.item.retailPrice.toString(),
+                    label: 'سعر التجزئة',
+                    onValidChanged: (value) {
+                      widget.item.retailPrice = value;
+                      widget.onChanged();
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: MoneyFormField(
+                    initialValue: widget.item.wholesalePrice.toString(),
+                    label: 'سعر الجملة',
+                    onValidChanged: (value) {
+                      widget.item.wholesalePrice = value;
+                      widget.onChanged();
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
                   child: TextFormField(
                     initialValue: widget.item.batchNumber,
                     decoration: const InputDecoration(

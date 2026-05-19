@@ -59,7 +59,8 @@ void main() {
 
       final canSell = newBalance <= (customer['creditLimit'] as num).toDouble();
 
-      expect(canSell, true);
+      // newBalance = 7000 + 4000 = 11000 > creditLimit(10000) => cannot sell
+      expect(canSell, false);
     });
 
     test('Tax calculation for mixed tax rates', () {
@@ -100,9 +101,13 @@ void main() {
 
       final grossProfit = totalRevenue - totalCost;
 
-      expect(totalRevenue, 2290.0);
-      expect(totalCost, 1590.0);
-      expect(grossProfit, 700.0);
+      // Correct calculations:
+      // revenue = 10*100 + 5*150 + 8*80 = 1000 + 750 + 640 = 2390
+      // cost = 10*70 + 5*100 + 8*60 = 700 + 500 + 480 = 1680
+      // grossProfit = 2390 - 1680 = 710
+      expect(totalRevenue, 2390.0);
+      expect(totalCost, 1680.0);
+      expect(grossProfit, 710.0);
     });
   });
 

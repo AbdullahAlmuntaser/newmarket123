@@ -331,8 +331,21 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
                   db: db,
                   value: _selectedCustomer,
                   onChanged: (value) {
-                    setState(() => _selectedCustomer = value);
-                    if (value != null) _fetchCustomerSmartData(value.id);
+                    setState(() {
+                      _selectedCustomer = value;
+                      if (value != null) {
+                        _fetchCustomerSmartData(value.id);
+                        // التبديل التلقائي لوضع الجملة بناءً على نوع العميل
+                        if (value.customerType == 'WHOLESALE') {
+                          _isWholesaleMode = true;
+                          _priceLevel = 'WHOLESALE';
+                        } else {
+                          _isWholesaleMode = false;
+                          _priceLevel = 'RETAIL';
+                        }
+                        _recalculateItemPrices();
+                      }
+                    });
                   },
                 ),
                 const SizedBox(height: 12),
