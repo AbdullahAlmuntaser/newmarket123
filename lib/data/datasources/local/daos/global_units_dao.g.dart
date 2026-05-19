@@ -3,4 +3,7 @@
 part of 'global_units_dao.dart';
 
 // ignore_for_file: type=lint
-mixin _$GlobalUnitsDaoMixin on DatabaseAccessor<AppDatabase> {}
+mixin _$GlobalUnitsDaoMixin on DatabaseAccessor<AppDatabase> {
+  $BranchesTable get branches => attachedDatabase.branches;
+  $GlobalUnitsTable get globalUnits => attachedDatabase.globalUnits;
+}
