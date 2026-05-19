@@ -6,6 +6,7 @@ import 'package:printing/printing.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
 
 class PurchaseDetailsPage extends StatelessWidget {
   final String purchaseId;
@@ -241,9 +242,7 @@ class PurchaseDetailsPage extends StatelessWidget {
         await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       } else {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تعذر فتح التطبيق')),
-          );
+          AppSnackBar.warning(context, 'تعذر فتح التطبيق');
         }
       }
     } catch (e) {
@@ -264,18 +263,14 @@ class PurchaseDetailsPage extends StatelessWidget {
 
       if (!context.mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('جاري تحضير الطباعة...')),
-      );
+      AppSnackBar.info(context, 'جاري تحضير الطباعة...');
 
       final pdfData = await _generatePdfData(purchase, items, supplier);
       await Printing.layoutPdf(onLayout: (format) async => pdfData);
     } catch (e) {
       debugPrint('Print error: $e');
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في الطباعة: $e')),
-        );
+        AppSnackBar.error(context, 'خطأ في الطباعة: $e');
       }
     }
   }

@@ -9,6 +9,7 @@ import 'package:supermarket/core/services/invoice_service.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:supermarket/injection_container.dart' as di;
 import 'package:supermarket/core/services/audit_service.dart';
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
 
 class SaleDetailsBottomSheet extends StatelessWidget {
   final Sale sale;
@@ -278,9 +279,7 @@ class SaleDetailsBottomSheet extends StatelessWidget {
         await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       } else {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تعذر فتح التطبيق')),
-          );
+          AppSnackBar.warning(context, 'تعذر فتح التطبيق');
         }
       }
     } catch (e) {
@@ -321,15 +320,11 @@ class SaleDetailsBottomSheet extends StatelessWidget {
 
         if (context.mounted) {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم حذف الفاتورة بنجاح')),
-          );
+          AppSnackBar.success(context, 'تم حذف الفاتورة بنجاح');
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('فشل الحذف: $e')),
-          );
+          AppSnackBar.error(context, 'فشل الحذف: $e');
         }
       }
     }
