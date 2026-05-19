@@ -6,7 +6,8 @@ class PayrollService {
 
   PayrollService(this.db);
 
-  Future<int> postPayrollJournalEntry(int payrollRunId) async {
+  // Use String payrollRunId (UUID) to match table changes
+  Future<String> postPayrollJournalEntry(String payrollRunId) async {
     final payrollRun = await (db.select(db.hRPayrollRuns)
           ..where((t) => t.id.equals(payrollRunId)))
         .getSingle();
@@ -29,7 +30,7 @@ class PayrollService {
       batch.insert(
           db.gLLines,
           GLLinesCompanion.insert(
-            entryId: entryId.toString(),
+            entryId: entryId,
             accountId: salaryExpenseAccountId,
             debit: Value(payrollRun.totalSalaries + payrollRun.totalAllowances),
             credit: const Value(0.0),
@@ -39,7 +40,7 @@ class PayrollService {
       batch.insert(
           db.gLLines,
           GLLinesCompanion.insert(
-            entryId: entryId.toString(),
+            entryId: entryId,
             accountId: deductionsLiabilityAccountId,
             debit: const Value(0.0),
             credit: Value(payrollRun.totalDeductions),
@@ -49,7 +50,7 @@ class PayrollService {
       batch.insert(
           db.gLLines,
           GLLinesCompanion.insert(
-            entryId: entryId.toString(),
+            entryId: entryId,
             accountId: salariesPayableAccountId,
             debit: const Value(0.0),
             credit: Value(payrollRun.netPayable),
@@ -70,7 +71,7 @@ class PayrollService {
     return entryId;
   }
 
-  Future<void> paySalaries(int payrollRunId) async {
+  Future<void> paySalaries(String payrollRunId) async {
     final payrollRun = await (db.select(db.hRPayrollRuns)
           ..where((t) => t.id.equals(payrollRunId)))
         .getSingle();
@@ -96,7 +97,7 @@ class PayrollService {
       batch.insert(
           db.gLLines,
           GLLinesCompanion.insert(
-            entryId: paymentEntryId.toString(),
+            entryId: paymentEntryId,
             accountId: salariesPayableAccountId,
             debit: Value(payrollRun.netPayable),
             credit: const Value(0.0),
@@ -105,7 +106,7 @@ class PayrollService {
       batch.insert(
           db.gLLines,
           GLLinesCompanion.insert(
-            entryId: paymentEntryId.toString(),
+            entryId: paymentEntryId,
             accountId: bankAccountId,
             debit: const Value(0.0),
             credit: Value(payrollRun.netPayable),
@@ -166,10 +167,8 @@ class PayrollService {
     return accounts.first.id;
   }
 
-  Future<void> _postGLEntry(int entryId) async {
-    await (db.update(db.gLEntries)
-          ..where((t) => t.id.equals(entryId.toString())))
-        .write(
+  Future<void> _postGLEntry(String entryId) async {
+    await (db.update(db.gLEntries)..where((t) => t.id.equals(entryId))).write(
       GLEntriesCompanion(
         status: const Value('POSTED'),
         postedAt: Value(DateTime.now()),

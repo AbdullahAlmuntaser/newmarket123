@@ -31,12 +31,12 @@ class PayrollProvider with ChangeNotifier {
     notifyListeners();
   }
   
-  Future<List<HRPayrollDetail>> getPayrollLines(int runId) async {
+  Future<List<HRPayrollDetail>> getPayrollLines(String runId) async {
     return await _hrService.getPayrollLines(runId);
   }
   
   /// ترحيل قيد الرواتب للحسابات
-  Future<void> postPayrollJournalEntry(int payrollRunId) async {
+  Future<void> postPayrollJournalEntry(String payrollRunId) async {
     _isLoading = true;
     notifyListeners();
     try {
@@ -49,7 +49,7 @@ class PayrollProvider with ChangeNotifier {
   }
   
   /// سداد الرواتب
-  Future<void> paySalaries(int payrollRunId) async {
+  Future<void> paySalaries(String payrollRunId) async {
     _isLoading = true;
     notifyListeners();
     try {

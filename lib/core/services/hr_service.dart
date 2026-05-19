@@ -8,7 +8,7 @@ class HRService {
   HRService(this.db);
 
   Future<void> recordAdvance({
-    required int employeeId,
+    required String employeeId,
     required double amount,
     String? note,
   }) async {
@@ -37,7 +37,7 @@ class HRService {
           description: 'سلفة موظف: $note',
           date: Value(DateTime.now()),
           referenceType: const Value('HR_ADVANCE'),
-          referenceId: Value(employeeId.toString()),
+          referenceId: Value(employeeId),
           status: const Value('POSTED'),
           postedAt: Value(DateTime.now()),
         );
@@ -130,7 +130,7 @@ class HRService {
     await db.update(db.hREmployees).replace(employee);
   }
 
-  Future<void> deleteEmployee(int id) async {
+  Future<void> deleteEmployee(String id) async {
     await (db.delete(db.hREmployees)..where((t) => t.id.equals(id))).go();
   }
 
@@ -147,7 +147,7 @@ class HRService {
     await calculateMonthlyPayroll(period);
   }
 
-  Future<List<HRPayrollDetail>> getPayrollLines(int runId) async {
+  Future<List<HRPayrollDetail>> getPayrollLines(String runId) async {
     return await (db.select(db.hRPayrollDetails)
           ..where((t) => t.payrollRunId.equals(runId)))
         .get();

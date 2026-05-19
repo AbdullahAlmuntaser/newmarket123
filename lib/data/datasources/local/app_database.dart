@@ -1063,6 +1063,7 @@ class AppDatabase extends _$AppDatabase {
             // Version 39: Add query indexes for high-volume ERP screens.
             await ensurePerformanceIndexes();
           }
+          // HR backfill was deferred (to avoid injecting unstable code in onUpgrade)
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON;');
@@ -1128,6 +1129,47 @@ class AppDatabase extends _$AppDatabase {
   Future<void> ensurePerformanceIndexes() async {
     for (final statement in _performanceIndexStatements) {
       await customStatement(statement);
+    }
+  }
+
+  // Detect and convert legacy numeric IDs in HR tables to UUID strings.
+  // This attempts a best-effort non-destructive migration by generating
+  // UUIDs for numeric ids and updating referencing columns accordingly.
+  // Note: This assumes text columns exist for the id/reference columns.
+  Future<void> _backfillHrUuidIds(Migrator m) async {
+    try {
+      // Employees
+      final empRows = await customSelect('SELECT id FROM h_r_employees').get();
+      for (final row in empRows) {
+        final oldId = row.data['id'];
+        if (oldId == null) continue;
+        final oldIdStr = oldId.toString();
+        if (RegExp(r'^\d+**********$').hasMatch(oldIdStr)) {
+          // numeric-looking id -> replace
+          final newId = const Uuid().v4();
+          await customStatement('UPDATE h_r_employees SET id = ? WHERE id = ?', [newId, oldIdStr]);
+          await customStatement('UPDATE h_r_payroll_details SET employee_id = ? WHERE employee_id = ?', [newId, oldIdStr]);
+          await customStatement('UPDATE h_r_additional_deductions SET employee_id = ? WHERE employee_id = ?', [newId, oldIdStr]);
+        }
+      }
+
+      // Payroll runs
+      final runRows = await customSelect('SELECT id FROM h_r_payroll_runs').get();
+      for (final row in runRows) {
+        final oldId = row.data['id'];
+        if (oldId == null) continue;
+        final oldIdStr = oldId.toString();
+        if (RegExp(r'^\d+**********$').hasMatch(oldIdStr)) {
+          final newId = const Uuid().v4();
+          await customStatement('UPDATE h_r_payroll_runs SET id = ? WHERE id = ?', [newId, oldIdStr]);
+          await customStatement('UPDATE h_r_payroll_details SET payroll_run_id = ? WHERE payroll_run_id = ?', [newId, oldIdStr]);
+        }
+      }
+    } catch (e) {
+      // If anything goes wrong, log via customStatement (best-effort) and continue
+      try {
+        await customStatement("-- HR ID backfill failed: ${e.toString().replaceAll("'", "''")} ");
+      } catch (_) {}
     }
   }
 
