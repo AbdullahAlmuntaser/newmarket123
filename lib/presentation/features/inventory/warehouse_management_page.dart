@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:drift/drift.dart' as drift;
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
 
 class WarehouseManagementPage extends StatelessWidget {
   const WarehouseManagementPage({super.key});
@@ -105,14 +106,23 @@ class WarehouseManagementPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (nameController.text.isNotEmpty) {
+              if (nameController.text.trim().isEmpty) {
+                AppSnackBar.warning(context, 'اسم المستودع مطلوب');
+                return;
+              }
+              try {
                 await db.warehousesDao.createWarehouse(
                   WarehousesCompanion.insert(
-                    name: nameController.text,
-                    location: drift.Value(locationController.text),
+                    name: nameController.text.trim(),
+                    location: drift.Value(locationController.text.trim()),
                   ),
                 );
-                if (context.mounted) Navigator.pop(context);
+                if (context.mounted) {
+                  AppSnackBar.success(context, 'تم إنشاء المستودع بنجاح');
+                  Navigator.pop(context);
+                }
+              } catch (e) {
+                AppSnackBar.error(context, 'فشل إنشاء المستودع: $e');
               }
             },
             child: const Text('حفظ'),
@@ -154,14 +164,23 @@ class WarehouseManagementPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (nameController.text.isNotEmpty) {
+              if (nameController.text.trim().isEmpty) {
+                AppSnackBar.warning(context, 'اسم المستودع مطلوب');
+                return;
+              }
+              try {
                 await db.warehousesDao.updateWarehouse(
                   warehouse.copyWith(
-                    name: nameController.text,
-                    location: drift.Value(locationController.text),
+                    name: nameController.text.trim(),
+                    location: drift.Value(locationController.text.trim()),
                   ),
                 );
-                if (context.mounted) Navigator.pop(context);
+                if (context.mounted) {
+                  AppSnackBar.success(context, 'تم تحديث المستودع بنجاح');
+                  Navigator.pop(context);
+                }
+              } catch (e) {
+                AppSnackBar.error(context, 'فشل تحديث المستودع: $e');
               }
             },
             child: const Text('تحديث'),
@@ -175,10 +194,9 @@ class WarehouseManagementPage extends StatelessWidget {
     final hasStock = await db.warehousesDao.hasStock(id);
     if (hasStock) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('لا يمكن حذف المستودع لأنه يحتوي على مخزون.'),
-          ),
+        AppSnackBar.warning(
+          context,
+          'لا يمكن حذف المستودع لأنه يحتوي على مخزون.',
         );
       }
       return;
@@ -204,7 +222,12 @@ class WarehouseManagementPage extends StatelessWidget {
     );
 
     if (confirmed == true && context.mounted) {
-      await db.warehousesDao.deleteWarehouse(id);
+      try {
+        await db.warehousesDao.deleteWarehouse(id);
+        AppSnackBar.success(context, 'تم حذف المستودع بنجاح');
+      } catch (e) {
+        AppSnackBar.error(context, 'فشل حذف المستودع: $e');
+      }
     }
   }
 }

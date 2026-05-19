@@ -13,6 +13,7 @@ class PermissionCode {
   static const String manageSettings = 'MANAGE_SETTINGS';
   static const String manageInventory = 'MANAGE_INVENTORY';
   static const String approveDiscount = 'APPROVE_DISCOUNT';
+  static const String editTax = 'EDIT_TAX';
 }
 
 class PermissionService {

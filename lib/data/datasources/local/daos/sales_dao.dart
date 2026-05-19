@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 
 part 'sales_dao.g.dart';
 
@@ -305,6 +306,17 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
 
   Future<void> deleteSale(String saleId) async {
     return transaction(() async {
+      final existing = await (select(sales)..where((s) => s.id.equals(saleId)))
+          .getSingleOrNull();
+      if (existing == null) {
+        throw Exception('فاتورة المبيعات غير موجودة.');
+      }
+      if (existing.status != DocumentStatus.draft) {
+        throw Exception(
+          'لا يمكن حذف فاتورة مبيعات غير مسودة. استخدم مستند تصحيح أو مرتجع بدلاً من الحذف المباشر.',
+        );
+      }
+
       await (delete(saleItems)..where((i) => i.saleId.equals(saleId))).go();
       await (delete(sales)..where((s) => s.id.equals(saleId))).go();
 
@@ -325,7 +337,22 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
     required List<SaleItemsCompanion> itemsCompanions,
     required String? userId,
   }) async {
+    if (itemsCompanions.isEmpty) {
+      throw Exception('لا يمكن تحديث فاتورة مبيعات بدون أصناف.');
+    }
+
     return transaction(() async {
+      final existing = await (select(sales)..where((s) => s.id.equals(saleId)))
+          .getSingleOrNull();
+      if (existing == null) {
+        throw Exception('فاتورة المبيعات غير موجودة.');
+      }
+      if (existing.status != DocumentStatus.draft) {
+        throw Exception(
+          'لا يمكن تعديل فاتورة مبيعات غير مسودة. استخدم مستند تصحيح أو مرتجع بدلاً من التعديل المباشر.',
+        );
+      }
+
       await (update(sales)..where((s) => s.id.equals(saleId)))
           .write(saleCompanion);
 

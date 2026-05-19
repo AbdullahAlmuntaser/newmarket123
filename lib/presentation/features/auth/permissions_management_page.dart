@@ -164,6 +164,7 @@ final List<PermissionDefinition> _allPermissions = [
   PermissionDefinition(code: 'MANAGE_SETTINGS', name: 'Manage Settings', nameAr: 'إدارة الإعدادات', category: 'Settings'),
   PermissionDefinition(code: 'MANAGE_INVENTORY', name: 'Manage Inventory', nameAr: 'إدارة المخزون', category: 'Inventory'),
   PermissionDefinition(code: 'APPROVE_DISCOUNT', name: 'Approve Discounts', nameAr: 'الموافقة على الخصومات', category: 'Sales'),
+  PermissionDefinition(code: 'EDIT_TAX', name: 'Edit Tax', nameAr: 'إدخال وتعديل الضريبة', category: 'Tax'),
   PermissionDefinition(code: 'MANAGE_CUSTOMERS', name: 'Manage Customers', nameAr: 'إدارة العملاء', category: 'Customers'),
   PermissionDefinition(code: 'MANAGE_SUPPLIERS', name: 'Manage Suppliers', nameAr: 'إدارة الموردين', category: 'Suppliers'),
   PermissionDefinition(code: 'VIEW_FINANCIALS', name: 'View Financials', nameAr: 'عرض البيانات المالية', category: 'Accounting'),

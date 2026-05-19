@@ -14,7 +14,7 @@ class VatReportPage extends StatefulWidget {
 }
 
 class _VatReportPageState extends State<VatReportPage> {
-  final DateTimeRange _range = DateTimeRange(
+  DateTimeRange _range = DateTimeRange(
     start: DateTime.now().subtract(const Duration(days: 30)),
     end: DateTime.now(),
   );
@@ -24,18 +24,37 @@ class _VatReportPageState extends State<VatReportPage> {
     final db = Provider.of<AppDatabase>(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('تقرير ضريبة القيمة المضافة')),
+      appBar: AppBar(
+        title: const Text('تقرير ضريبة القيمة المضافة'),
+        actions: [
+          IconButton(
+            tooltip: 'تغيير الفترة',
+            icon: const Icon(Icons.date_range),
+            onPressed: _pickDateRange,
+          ),
+        ],
+      ),
       drawer: const MainDrawer(),
       body: FutureBuilder<VatReportData>(
         future: _fetchVatReport(db),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Text('تعذر تحميل تقرير الضريبة: ${snapshot.error}'),
+            );
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: Text('لا توجد بيانات للفترة المحددة'));
           }
           final data = snapshot.data!;
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              _buildRangeCard(),
+              const SizedBox(height: 16),
               _buildSectionTitle('المبيعات والمخرجات'),
               _buildCard(
                   'إجمالي المبيعات الخاضعة للضريبة', data.totalTaxableSales),
@@ -53,6 +72,39 @@ class _VatReportPageState extends State<VatReportPage> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Future<void> _pickDateRange() async {
+    final picked = await showDateRangePicker(
+      context: context,
+      initialDateRange: _range,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      helpText: 'اختر فترة تقرير الضريبة',
+      cancelText: 'إلغاء',
+      confirmText: 'تطبيق',
+    );
+    if (picked != null && mounted) {
+      setState(() => _range = picked);
+    }
+  }
+
+  Widget _buildRangeCard() {
+    final formatter = DateFormat('yyyy-MM-dd');
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.date_range),
+        title: const Text('فترة التقرير'),
+        subtitle: Text(
+          '${formatter.format(_range.start)} إلى ${formatter.format(_range.end)}',
+        ),
+        trailing: TextButton.icon(
+          onPressed: _pickDateRange,
+          icon: const Icon(Icons.edit_calendar),
+          label: const Text('تغيير'),
+        ),
       ),
     );
   }

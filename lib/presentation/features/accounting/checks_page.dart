@@ -5,6 +5,8 @@ import 'package:drift/drift.dart' as drift;
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:supermarket/presentation/widgets/money_form_field.dart';
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
 
 class ChecksPage extends StatefulWidget {
   const ChecksPage({super.key});
@@ -70,7 +72,7 @@ class _ChecksPageState extends State<ChecksPage> {
     if (!_formKey.currentState!.validate()) return;
 
     final db = context.read<AppDatabase>();
-    final amount = double.tryParse(_amountController.text) ?? 0.0;
+    final amount = MoneyFormField.valueOf(_amountController);
 
     final check = ChecksCompanion.insert(
       id: drift.Value(const Uuid().v4()),
@@ -88,9 +90,7 @@ class _ChecksPageState extends State<ChecksPage> {
     await db.into(db.checks).insert(check);
     _clearForm();
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('تم حفظ الشيك بنجاح')));
+      AppSnackBar.success(context, 'تم حفظ الشيك بنجاح');
     }
   }
 
@@ -153,16 +153,11 @@ class _ChecksPageState extends State<ChecksPage> {
                       validator: (v) => v!.isEmpty ? 'مطلوب' : null,
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    MoneyFormField(
                       controller: _amountController,
-                      decoration: const InputDecoration(
-                        labelText: 'المبلغ',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: (v) => double.tryParse(v ?? '') == null
-                          ? 'مبلغ غير صحيح'
-                          : null,
+                      label: 'المبلغ',
+                      required: true,
+                      allowZero: false,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -369,9 +364,7 @@ class _ChecksPageState extends State<ChecksPage> {
     }
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('تم تحديث حالة الشيك إلى $newStatus')),
-      );
+      AppSnackBar.success(context, 'تم تحديث حالة الشيك إلى $newStatus');
     }
   }
 }
