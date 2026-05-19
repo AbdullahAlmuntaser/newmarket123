@@ -131,7 +131,8 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
       );
     }
 
-    if (!context.mounted) return;    setState(() {
+    if (!context.mounted) return;
+    setState(() {
       _loadedPurchase = purchase;
       _selectedSupplier = supplier;
       _selectedWarehouse = warehouse;
@@ -470,6 +471,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
       return;
     }
     if (!(_formKey.currentState?.validate() ?? false)) {
+      if (!context.mounted) return;
       AppSnackBar.warning(context, 'يرجى تصحيح الحقول المالية قبل الحفظ');
       return;
     }

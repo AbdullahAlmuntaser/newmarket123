@@ -111,11 +111,13 @@ class _CashManagementPageState extends State<CashManagementPage> {
                             );
                           }
                           if (!context.mounted) return;
+                          
                           AppSnackBar.success(context, 'تم تسجيل السند بنجاح');
                           _formKey.currentState!.reset();
                           setState(() => _accountId = null);
                         } catch (e) {
                           if (!context.mounted) return;
+ 
                           AppSnackBar.error(context, 'خطأ: $e');
                         }
                       }

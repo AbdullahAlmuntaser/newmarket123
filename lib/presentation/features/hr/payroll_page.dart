@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/presentation/features/hr/payroll_provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
+import 'package:supermarket/presentation/widgets/money_form_field.dart';
 
 class PayrollPage extends StatefulWidget {
   const PayrollPage({super.key});
@@ -56,29 +58,35 @@ class _PayrollPageState extends State<PayrollPage> {
       text: DateTime.now().year.toString(),
     );
     final noteController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('توليد مسير رواتب'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+            QuantityFormField(
               controller: monthController,
+              label: 'الشهر',
+              allowZero: false,
               decoration: const InputDecoration(labelText: 'الشهر'),
-              keyboardType: TextInputType.number,
             ),
-            TextField(
+            QuantityFormField(
               controller: yearController,
+              label: 'السنة',
+              allowZero: false,
               decoration: const InputDecoration(labelText: 'السنة'),
-              keyboardType: TextInputType.number,
             ),
             TextField(
               controller: noteController,
               decoration: const InputDecoration(labelText: 'ملاحظات'),
             ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -87,7 +95,21 @@ class _PayrollPageState extends State<PayrollPage> {
           ),
           ElevatedButton(
             onPressed: () {
-              final period = '${yearController.text}-${monthController.text.padLeft(2, '0')}';
+              if (!(formKey.currentState?.validate() ?? false)) {
+                AppSnackBar.warning(context, 'يرجى إدخال شهر وسنة صحيحين');
+                return;
+              }
+              final month = MoneyFormField.tryParse(monthController.text)?.toInt();
+              final year = MoneyFormField.tryParse(yearController.text)?.toInt();
+              if (month == null || month < 1 || month > 12) {
+                AppSnackBar.warning(context, 'الشهر يجب أن يكون بين 1 و12');
+                return;
+              }
+              if (year == null || year < 2000) {
+                AppSnackBar.warning(context, 'السنة غير صحيحة');
+                return;
+              }
+              final period = '${year.toString().padLeft(4, '0')}-${month.toString().padLeft(2, '0')}';
               provider.generatePayroll(period);
               Navigator.pop(context);
             },
