@@ -141,8 +141,10 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
   Future<GLAccount?> getAccountById(String id) =>
       (select(gLAccounts)..where((t) => t.id.equals(id))).getSingleOrNull();
 
-  Future<int> createAccount(GLAccountsCompanion account) =>
-      into(gLAccounts).insert(account);
+  Future<String> createAccount(GLAccountsCompanion account) async {
+    final row = await into(gLAccounts).insertReturning(account);
+    return row.id;
+  }
 
   Future<bool> updateAccount(GLAccount account) =>
       update(gLAccounts).replace(account);
@@ -154,8 +156,10 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
   // --- Cost Centers ---
   Future<List<CostCenter>> getAllCostCenters() => (select(costCenters)).get();
   Stream<List<CostCenter>> watchCostCenters() => (select(costCenters)).watch();
-  Future<int> createCostCenter(CostCentersCompanion cc) =>
-      into(costCenters).insert(cc);
+  Future<String> createCostCenter(CostCentersCompanion cc) async {
+    final row = await into(costCenters).insertReturning(cc);
+    return row.id;
+  }
   Future<bool> updateCostCenter(CostCenter cc) =>
       update(costCenters).replace(cc);
 

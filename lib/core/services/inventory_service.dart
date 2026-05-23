@@ -167,8 +167,9 @@ class InventoryService {
     String? userId,
   }) async {
     await db.transaction(() async {
-      // 1. تسجيل رأس الجرد
-      final auditId = await db.into(db.inventoryAudits).insert(auditCompanion);
+      // 1. تسجيل رأس الجرد - نستخدم insertReturning للحصول على معرف UUID المنشأ
+      final auditRow = await db.into(db.inventoryAudits).insertReturning(auditCompanion);
+      final auditId = auditRow.id;
 
       double totalInventoryAdjustmentValue = 0.0;
 
@@ -187,7 +188,7 @@ class InventoryService {
         // 3. تحديث سجل الجرد بالتفاصيل المحسوبة
         await db.into(db.inventoryAuditItems).insert(
               item.copyWith(
-                auditId: drift.Value(auditId as String),
+                auditId: drift.Value(auditId),
                 systemStock: drift.Value(systemStock),
                 difference: drift.Value(difference),
               ),
@@ -246,7 +247,7 @@ class InventoryService {
                     productId: drift.Value(productId),
                     warehouseId: drift.Value(defaultWarehouseId),
                     batchNumber: drift.Value(
-                        'AUDIT-${auditId.toString().substring(0, 8)}'),
+                        'AUDIT-${auditId.substring(0, 8)}'),
                     expiryDate: const drift.Value(null),
                     quantity: drift.Value(difference),
                     initialQuantity: drift.Value(difference),
@@ -262,7 +263,7 @@ class InventoryService {
       if (totalInventoryAdjustmentValue != 0) {
         await _postInventoryAdjustment(
           totalInventoryAdjustmentValue,
-          auditId as String,
+          auditId,
         );
       }
 
@@ -270,7 +271,7 @@ class InventoryService {
       await _auditService.log(
         action: 'INVENTORY_AUDIT',
         targetEntity: 'InventoryAudits',
-        entityId: auditId as String,
+        entityId: auditId,
         userId: userId,
         details:
             'Performed inventory audit with total value adjustment: $totalInventoryAdjustmentValue',

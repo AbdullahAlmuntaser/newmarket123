@@ -47,7 +47,7 @@ void main() {
       when(() => mockAccountingDao.getAccountByCode(any()))
           .thenAnswer((_) async => null);
       when(() => mockAccountingDao.createAccount(any()))
-          .thenAnswer((_) async => 1);
+          .thenAnswer((_) async => 'acc-id');
       
       await accountingService.seedDefaultAccounts(branchId: '1');
       

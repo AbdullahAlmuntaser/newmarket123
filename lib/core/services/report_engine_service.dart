@@ -49,18 +49,18 @@ class ReportEngineService {
         productStats[productId] = {
           'productId': productId,
           'productName': productName,
-          'totalQuantity': 0,
+          'totalQuantity': 0.0,
           'totalRevenue': 0.0,
         };
       }
 
-      productStats[productId]!['totalQuantity'] += quantity;
-      productStats[productId]!['totalRevenue'] += (quantity * price);
+      productStats[productId]!['totalQuantity'] = (productStats[productId]!['totalQuantity'] as double) + quantity;
+      productStats[productId]!['totalRevenue'] = (productStats[productId]!['totalRevenue'] as double) + (quantity * price);
     }
 
     final report = productStats.values.toList()
       ..sort((a, b) =>
-          (b['totalQuantity'] as int).compareTo(a['totalQuantity'] as int));
+          (b['totalQuantity'] as double).compareTo(a['totalQuantity'] as double));
 
     return report.take(limit).toList();
   }
@@ -135,27 +135,27 @@ class ReportEngineService {
         'date': sale.readTable(_db.sales).createdAt,
         'quantity': -sale.readTable(_db.saleItems).quantity,
         'reference': sale.readTable(_db.sales).id,
-        'balance': 0, // سيتم حسابه لاحقاً
+        'balance': 0.0, // Use double
       });
     }
 
-    // حركات المشتريات
+    // حركات المشتريات - Fix: Join with Purchases instead of PurchaseOrders
     final purchases = await (_db.select(_db.purchaseItems)
           ..where((i) => i.productId.equals(productId)))
         .join([
       leftOuterJoin(
-        _db.purchaseOrders,
-        _db.purchaseOrders.id.equalsExp(_db.purchaseItems.purchaseId),
+        _db.purchases,
+        _db.purchases.id.equalsExp(_db.purchaseItems.purchaseId),
       ),
     ]).get();
 
     for (final purchase in purchases) {
       movements.add({
         'type': 'purchase',
-        'date': purchase.readTable(_db.purchaseOrders).createdAt,
+        'date': purchase.readTable(_db.purchases).date,
         'quantity': purchase.readTable(_db.purchaseItems).quantity,
-        'reference': purchase.readTable(_db.purchaseOrders).id,
-        'balance': 0,
+        'reference': purchase.readTable(_db.purchases).id,
+        'balance': 0.0,
       });
     }
 
@@ -170,7 +170,7 @@ class ReportEngineService {
         'date': movement.movementDate,
         'quantity': movement.quantity,
         'reference': movement.id,
-        'balance': 0,
+        'balance': 0.0,
       });
     }
 
@@ -178,9 +178,9 @@ class ReportEngineService {
     movements.sort(
         (a, b) => (a['date'] as DateTime).compareTo(b['date'] as DateTime));
 
-    int runningBalance = 0;
+    double runningBalance = 0.0;
     for (final movement in movements) {
-      runningBalance += movement['quantity'] as int;
+      runningBalance += (movement['quantity'] as num).toDouble();
       movement['balance'] = runningBalance;
     }
 
