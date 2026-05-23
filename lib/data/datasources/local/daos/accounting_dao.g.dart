@@ -13,6 +13,8 @@ mixin _$AccountingDaoMixin on DatabaseAccessor<AppDatabase> {
   $ReconciliationsTable get reconciliations => attachedDatabase.reconciliations;
   $AccountingPeriodsTable get accountingPeriods =>
       attachedDatabase.accountingPeriods;
+  $AccountTransactionsTable get accountTransactions =>
+      attachedDatabase.accountTransactions;
 }
 
 // **************************************************************************

@@ -12,6 +12,14 @@ class DatabaseFailure extends Failure {
   List<Object?> get props => [message];
 }
 
+class NotFoundFailure extends Failure {
+  final String message;
+  const NotFoundFailure(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
 // General failures
 class ServerFailure extends Failure {
   @override

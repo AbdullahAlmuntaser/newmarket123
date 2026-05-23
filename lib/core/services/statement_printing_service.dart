@@ -24,9 +24,9 @@ class StatementPrintingService {
           return [
             _buildHeader(account, startDate, endDate),
             pw.SizedBox(height: 20),
-            _buildTransactionTable(transactions),
+            _buildTransactionTable(transactions, account),
             pw.SizedBox(height: 20),
-            _buildFooter(transactions),
+            _buildFooter(transactions, account),
           ];
         },
       ),
@@ -56,18 +56,24 @@ class StatementPrintingService {
     );
   }
 
-  pw.Widget _buildTransactionTable(List<AccountTransaction> transactions) {
+  pw.Widget _buildTransactionTable(List<AccountTransaction> transactions, GLAccount account) {
     final headers = ['التاريخ', 'البيان', 'مدين', 'دائن', 'الرصيد'];
+    double runningBalance = 0.0;
 
     return pw.TableHelper.fromTextArray(
       headers: headers,
       data: transactions.map((t) {
+        if (account.type == 'ASSET' || account.type == 'EXPENSE') {
+          runningBalance += (t.debit - t.credit);
+        } else {
+          runningBalance += (t.credit - t.debit);
+        }
         return [
           intl.DateFormat('yyyy-MM-dd').format(t.date),
           t.type,
           t.debit.toStringAsFixed(2),
           t.credit.toStringAsFixed(2),
-          t.runningBalance.toStringAsFixed(2),
+          runningBalance.toStringAsFixed(2),
         ];
       }).toList(),
       headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
@@ -76,10 +82,15 @@ class StatementPrintingService {
     );
   }
 
-  pw.Widget _buildFooter(List<AccountTransaction> transactions) {
+  pw.Widget _buildFooter(List<AccountTransaction> transactions, GLAccount account) {
     double totalDebit = transactions.fold(0, (sum, t) => sum + t.debit);
     double totalCredit = transactions.fold(0, (sum, t) => sum + t.credit);
-    double finalBalance = transactions.isNotEmpty ? transactions.last.runningBalance : 0.0;
+    double finalBalance = 0.0;
+    if (account.type == 'ASSET' || account.type == 'EXPENSE') {
+      finalBalance = totalDebit - totalCredit;
+    } else {
+      finalBalance = totalCredit - totalDebit;
+    }
 
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.end,

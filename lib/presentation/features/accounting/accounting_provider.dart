@@ -5,6 +5,7 @@ import 'package:supermarket/core/services/event_bus_service.dart';
 import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart';
+import 'package:supermarket/data/models/gl_entry_detail.dart';
 import 'package:supermarket/injection_container.dart';
 import 'package:uuid/uuid.dart';
 
@@ -164,5 +165,21 @@ class AccountingProvider with ChangeNotifier {
       cc.copyWith(isActive: !cc.isActive),
     );
     notifyListeners();
+  }
+
+  Future<List<GLEntryDetail>> getEntryDetails(String entryId) async {
+    final lines = await db.accountingDao.getLinesForEntry(entryId);
+    return lines.map((l) => GLEntryDetail(
+      id: l.line.id,
+      entryId: l.line.entryId,
+      accountId: l.line.accountId,
+      debit: l.line.debit,
+      credit: l.line.credit,
+      memo: l.line.memo,
+    )).toList();
+  }
+
+  Future<GLAccount?> getAccountById(String id) {
+    return db.accountingDao.getAccountById(id);
   }
 }

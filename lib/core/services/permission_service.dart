@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class PermissionCode {
@@ -31,11 +30,8 @@ class PermissionService {
       if (userData.role.toLowerCase() == 'admin') return true;
 
       final permission = await (db.select(db.rolePermissions)
-            ..where(
-              (rp) =>
-                  rp.role.equals(userData.role) &
-                  rp.permissionCode.equals(permissionCode),
-            ))
+            ..where((rp) => rp.role.equals(userData.role))
+            ..where((rp) => rp.permissionCode.equals(permissionCode)))
           .getSingleOrNull();
       return permission != null;
     } catch (e) {

@@ -21,7 +21,8 @@ class HREmployees extends Table {
   TextColumn get bankName => text().nullable()();
   TextColumn get status =>
       text().withDefault(const Constant('active'))(); // active, terminated
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 // جدول الرواتب الشهرية
@@ -39,7 +40,8 @@ class HRPayrollRuns extends Table {
   TextColumn get status =>
       text().withDefault(const Constant('draft'))(); // draft, posted, paid
   TextColumn get notes => text().nullable()();
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 // جدول تفاصيل الرواتب لكل موظف
@@ -60,7 +62,8 @@ class HRPayrollDetails extends Table {
       text().nullable()(); // قيد السداد الفردي (اختياري)
   TextColumn get paymentStatus =>
       text().withDefault(const Constant('pending'))(); // pending, paid
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 // جدول أنواع الخصومات الإضافية (سلف، غياب، إلخ)
@@ -74,5 +77,6 @@ class HRAdditionalDeductions extends Table {
   BoolColumn get isRecurring => boolean().withDefault(const Constant(false))();
   IntColumn get remainingInstallments =>
       integer().withDefault(const Constant(0))(); // للأقساط
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  @override
+  Set<Column> get primaryKey => {id};
 }

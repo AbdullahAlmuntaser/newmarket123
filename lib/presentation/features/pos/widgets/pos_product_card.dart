@@ -51,21 +51,18 @@ class PosProductCard extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: product.stock > 0
-                          ? Colors.green.withOpacity(0.1)
-                          : Colors.red.withOpacity(0.1),
+                      color: product.stock > 0 ? Colors.green : Colors.red,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      '${l10n.stockLabel}: ${product.stock}',
-                      style: TextStyle(
+                      product.stock.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
                         fontSize: 10,
-                        color: product.stock > 0 ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),

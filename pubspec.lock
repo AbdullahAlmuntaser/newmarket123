@@ -301,18 +301,18 @@ packages:
     dependency: "direct main"
     description:
       name: drift
-      sha256: "8fafcd97c0cbfabbcb8132b4465f1bc5210f73d59f1d598506b5b9e7d8b0d8f9"
+      sha256: df027d168a2985a2e9da900adeba2ab0136f0d84436592cf3cd5135f82c8579c
       url: "https://pub.dev"
     source: hosted
-    version: "2.19.2"
+    version: "2.21.0"
   drift_dev:
     dependency: "direct dev"
     description:
       name: drift_dev
-      sha256: ac7647c6cedca99724ca300cff9181f6dd799428f8ed71f94159ed0528eaec26
+      sha256: "623649abe932fc17bd32e578e7e05f7ac5e7dd0b33e6c8669a0634105d1389bf"
       url: "https://pub.dev"
     source: hosted
-    version: "2.19.1"
+    version: "2.21.2"
   equatable:
     dependency: "direct main"
     description:
@@ -472,6 +472,54 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.22"
+  flutter_secure_storage:
+    dependency: "direct main"
+    description:
+      name: flutter_secure_storage
+      sha256: "6848263f9744072d0977347c383fb8b57d9780319a6bf5238b5a2866a029de62"
+      url: "https://pub.dev"
+    source: hosted
+    version: "10.2.0"
+  flutter_secure_storage_darwin:
+    dependency: transitive
+    description:
+      name: flutter_secure_storage_darwin
+      sha256: "67cd1ff671add31dc13e45194398187a04bb63804b37fa47866afae296d73fcb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.1"
+  flutter_secure_storage_linux:
+    dependency: transitive
+    description:
+      name: flutter_secure_storage_linux
+      sha256: "2b5c76dce569ab752d55a1cee6a2242bcc11fdba927078fb88c503f150767cda"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.0"
+  flutter_secure_storage_platform_interface:
+    dependency: transitive
+    description:
+      name: flutter_secure_storage_platform_interface
+      sha256: "8ceea1223bee3c6ac1a22dabd8feefc550e4729b3675de4b5900f55afcb435d6"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.1"
+  flutter_secure_storage_web:
+    dependency: transitive
+    description:
+      name: flutter_secure_storage_web
+      sha256: "073a62b3aeb866ab4ce795f960413948e51e5a42a9b0c8333b6daf5bb3208a1c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.1"
+  flutter_secure_storage_windows:
+    dependency: transitive
+    description:
+      name: flutter_secure_storage_windows
+      sha256: "3b7c8e068875dfd46719ff57c90d8c459c87f2302ed6b00ff006b3c9fcad1613"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.1.0"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -1177,6 +1225,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.10.0"
+  sqlcipher_flutter_libs:
+    dependency: "direct main"
+    description:
+      name: sqlcipher_flutter_libs
+      sha256: dd1fcc74d5baf3c36ad53e2652b2d06c9f8747494a3ccde0076e88b159dfe622
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.8"
   sqlite3:
     dependency: "direct main"
     description:
@@ -1189,18 +1245,18 @@ packages:
     dependency: "direct main"
     description:
       name: sqlite3_flutter_libs
-      sha256: "62bbb4073edbcdf53f40c80775f33eea01d301b7b81417e5b3fb7395416258c1"
+      sha256: eeb9e3a45207649076b808f8a5a74d68770d0b7f26ccef6d5f43106eee5375ad
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.24"
+    version: "0.5.42"
   sqlparser:
     dependency: transitive
     description:
       name: sqlparser
-      sha256: "3be52b4968fc2f098ba735863404756d2fe3ea0729cf006a5b5612618f74ca04"
+      sha256: d77749237609784e337ec36c979d41f6f38a7b279df98622ae23929c8eb954a4
       url: "https://pub.dev"
     source: hosted
-    version: "0.37.1"
+    version: "0.39.2"
   stack_trace:
     dependency: transitive
     description:

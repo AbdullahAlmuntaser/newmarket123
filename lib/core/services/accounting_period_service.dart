@@ -20,6 +20,7 @@ class AccountingPeriodService {
       periods.add(AccountingPeriodsCompanion.insert(
         id: Value(uuid.v4()),
         name: 'السنة $year',
+        fiscalYear: year, // Removed Value()
         startDate: DateTime(year, 1, 1),
         endDate: DateTime(year, 12, 31),
         status: const Value('OPEN'),
@@ -34,6 +35,7 @@ class AccountingPeriodService {
         periods.add(AccountingPeriodsCompanion.insert(
           id: Value(uuid.v4()),
           name: '${quarters[i]} $year',
+          fiscalYear: year, // Added missing fiscalYear
           startDate: DateTime(year, startMonth, 1),
           endDate: DateTime(year, endMonth, DateTime(year, endMonth + 1, 0).day),
           status: const Value('OPEN'),
@@ -51,6 +53,7 @@ class AccountingPeriodService {
         periods.add(AccountingPeriodsCompanion.insert(
           id: Value(uuid.v4()),
           name: '${months[i]} $year',
+          fiscalYear: year, // Added missing fiscalYear
           startDate: DateTime(year, i, 1),
           endDate: DateTime(year, i, daysInMonth),
           status: const Value('OPEN'),
@@ -109,6 +112,7 @@ class AccountingPeriodService {
       await db.into(db.accountingPeriods).insert(
             AccountingPeriodsCompanion.insert(
               name: '${_getMonthName(now.month)} ${now.year}',
+              fiscalYear: now.year, // Added fiscalYear
               startDate: startOfMonth,
               endDate: endOfMonth,
               status: const Value('OPEN'),

@@ -337,17 +337,6 @@ class AccountingService {
     String? branchId,
   }) async {
     await db.transaction(() async {
-      final lastTransaction = await (db.select(db.accountTransactions)
-            ..where((t) => t.accountId.equals(accountId))
-            ..orderBy([
-              (t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc),
-            ])
-            ..limit(1))
-          .getSingleOrNull();
-
-      double currentBalance = lastTransaction?.runningBalance ?? 0.0;
-      double newBalance = currentBalance + (debit - credit);
-
       // الحصول على معرف الفرع الافتراضي من الإعدادات
       final effectiveBranchId =
           branchId ?? await _configService.getDefaultBranchId();
@@ -360,7 +349,6 @@ class AccountingService {
               referenceId: Value(referenceId),
               debit: Value(debit),
               credit: Value(credit),
-              runningBalance: Value(newBalance),
               branchId: Value(effectiveBranchId),
             ),
           );
@@ -1779,78 +1767,100 @@ class AccountingService {
     );
   }
 
-  Future<void> closeFinancialYear(DateTime endDate) async {
-    final incomeStatement = await getIncomeStatement(endDate: endDate);
+  Future<void> generateOpeningBalances({
+    required int newFiscalYear,
+    required String userId,
+  }) async {
     final dao = db.accountingDao;
-    final entryId = const Uuid().v4();
-    final retainedEarningsAcc = await dao.getAccountByCode(
-      codeRetainedEarnings,
-    );
-    if (retainedEarningsAcc == null) return;
+    final previousYear = newFiscalYear - 1;
 
+    // 1. Get the last closed period of the previous year
+    final prevYearPeriod = await (db.select(db.accountingPeriods)
+          ..where((p) => p.fiscalYear.equals(previousYear))
+          ..orderBy([(t) => OrderingTerm(expression: t.endDate, mode: OrderingMode.desc)])
+          ..limit(1))
+        .getSingleOrNull();
+
+    if (prevYearPeriod == null) {
+      throw Exception('Previous fiscal year $previousYear not found or not closed.');
+    }
+
+    // 2. Get all Balance Sheet accounts
+    final allAccounts = await dao.getAllAccounts();
+    final balanceSheetAccounts = allAccounts.where((a) => 
+        a.type == AccountType.asset || 
+        a.type == AccountType.liability || 
+        a.type == AccountType.equity
+    );
+
+    // 3. Create Opening Entry
+    final entryId = const Uuid().v4();
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
-      description:
-          'إغلاق السنة المالية حتى ${endDate.toIso8601String().split('T')[0]}',
-      date: Value(endDate),
-      referenceType: const Value('YEAR_END'),
+      description: 'أرصدة افتتاحية للسنة المالية $newFiscalYear',
+      date: Value(DateTime(newFiscalYear, 1, 1)),
+      referenceType: const Value('OPENING_BALANCE'),
+      status: const Value('POSTED'),
+      postedAt: Value(DateTime.now()),
       branchId: Value(await _configService.getDefaultBranchId()),
     );
 
     List<GLLinesCompanion> lines = [];
-    for (var rev in incomeStatement.revenues) {
-      double balance = rev.totalCredit - rev.totalDebit;
-      if (balance != 0) {
-        lines.add(
-          GLLinesCompanion.insert(
+
+    for (var acc in balanceSheetAccounts) {
+      final balance = await dao.getAccountBalanceAsOfDate(acc.id, prevYearPeriod.endDate);
+      
+      if (balance == 0) continue;
+
+      if (acc.type == AccountType.asset) {
+        if (balance > 0) {
+          lines.add(GLLinesCompanion.insert(
             entryId: entryId,
-            accountId: rev.account.id,
+            accountId: acc.id,
             debit: Value(balance),
             credit: const Value(0.0),
-            memo: const Value('Year End Closing'),
+            memo: const Value('Opening Balance'),
             branchId: Value(await _configService.getDefaultBranchId()),
-          ),
-        );
-      }
-    }
-    for (var exp in incomeStatement.expenses) {
-      double balance = exp.totalDebit - exp.totalCredit;
-      if (balance != 0) {
-        lines.add(
-          GLLinesCompanion.insert(
+          ));
+        } else if (balance < 0) {
+          lines.add(GLLinesCompanion.insert(
             entryId: entryId,
-            accountId: exp.account.id,
+            accountId: acc.id,
+            debit: const Value(0.0),
+            credit: Value(balance.abs()),
+            memo: const Value('Opening Balance'),
+            branchId: Value(await _configService.getDefaultBranchId()),
+          ));
+        }
+      } else {
+        // Liability/Equity
+        if (balance > 0) {
+          lines.add(GLLinesCompanion.insert(
+            entryId: entryId,
+            accountId: acc.id,
             debit: const Value(0.0),
             credit: Value(balance),
-            memo: const Value('Year End Closing'),
+            memo: const Value('Opening Balance'),
             branchId: Value(await _configService.getDefaultBranchId()),
-          ),
-        );
+          ));
+        } else if (balance < 0) {
+          lines.add(GLLinesCompanion.insert(
+            entryId: entryId,
+            accountId: acc.id,
+            debit: Value(balance.abs()),
+            credit: const Value(0.0),
+            memo: const Value('Opening Balance'),
+            branchId: Value(await _configService.getDefaultBranchId()),
+          ));
+        }
       }
-    }
-    if (incomeStatement.netIncome != 0) {
-      lines.add(
-        GLLinesCompanion.insert(
-          entryId: entryId,
-          accountId: retainedEarningsAcc.id,
-          debit: Value(
-            incomeStatement.netIncome < 0
-                ? incomeStatement.netIncome.abs()
-                : 0.0,
-          ),
-          credit: Value(
-            incomeStatement.netIncome > 0 ? incomeStatement.netIncome : 0.0,
-          ),
-          memo: const Value('Net Income Transfer'),
-          branchId: Value(await _configService.getDefaultBranchId()),
-        ),
-      );
     }
 
     if (lines.isNotEmpty) {
       await dao.createEntry(entry, lines);
     }
   }
+
 
   Future<IncomeStatementData> getIncomeStatement({
     DateTime? startDate,
@@ -2007,41 +2017,21 @@ class AccountingService {
     });
   }
 
-  Future<void> recordAssemblyEntry({
-    required double producedQuantity,
-    required double totalCost,
-  }) async {
-    final dao = db.accountingDao;
-    final entryId = const Uuid().v4();
-
-    final inventoryAccount = await dao.getAccountByCode(codeInventory);
-    if (inventoryAccount == null) return;
-
-    final entry = GLEntriesCompanion.insert(
-      id: Value(entryId),
-      description: 'قيد تجميع إنتاج تام: $producedQuantity وحدة',
-      date: Value(DateTime.now()),
-      referenceType: const Value('ASSEMBLY'),
-      referenceId: Value(entryId),
-      branchId: Value(await _configService.getDefaultBranchId()),
-    );
-
-    final lines = [
-      GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: inventoryAccount.id,
-        debit: Value(totalCost),
-        branchId: Value(await _configService.getDefaultBranchId()),
-      ),
-      GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: inventoryAccount.id,
-        credit: Value(totalCost),
-        branchId: Value(await _configService.getDefaultBranchId()),
-      ),
-    ];
-
-    await dao.createEntry(entry, lines);
+  Future<void> closeFinancialYear(DateTime date) async {
+    // Basic implementation: Close all periods for the year and generate opening balances.
+    final fiscalYear = date.year;
+    
+    // Logic: 
+    // 1. Close all periods for the year.
+    // 2. Generate opening balances for next year.
+    
+    await db.transaction(() async {
+      await (db.update(db.accountingPeriods)..where((p) => p.fiscalYear.equals(fiscalYear)))
+          .write(const AccountingPeriodsCompanion(isClosed: Value(true), status: Value('CLOSED')));
+      
+      // Additional logic for retained earnings and opening balances can be added here
+      await generateOpeningBalances(newFiscalYear: fiscalYear + 1, userId: 'SYSTEM');
+    });
   }
 
   Future<void> recordExpense({

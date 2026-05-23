@@ -25,12 +25,12 @@ class HRProvider with ChangeNotifier {
     await loadEmployees();
   }
 
-  Future<void> updateEmployee(HREmployee employee) async {
+  Future<void> updateEmployee(HREmployeesCompanion employee) async {
     await _service.updateEmployee(employee);
     await loadEmployees();
   }
 
-  Future<void> deleteEmployee(int id) async {
+  Future<void> deleteEmployee(String id) async {
     await _service.deleteEmployee(id);
     await loadEmployees();
   }

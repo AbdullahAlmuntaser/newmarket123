@@ -40,6 +40,10 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
     return select(products).watch();
   }
 
+  Future<List<Product>> getAllProducts() {
+    return select(products).get();
+  }
+
   // ========== Warehouse & Batch Management ==========
   Stream<List<Warehouse>> watchWarehouses() {
     return select(warehouses).watch();

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:drift/drift.dart' hide Column;
 import 'package:provider/provider.dart';
+import 'package:drift/drift.dart' show Expression;
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 
@@ -55,7 +55,12 @@ class _PermissionsManagementPageState extends State<PermissionsManagementPage> {
       );
     } else {
       await (db.delete(db.rolePermissions)
-            ..where((rp) => rp.role.equals(role) & rp.permissionCode.equals(permissionCode)))
+            ..where((rp) =>
+                // Combine expressions with Expression.and to form a composite WHERE
+                Expression.and([
+                  rp.role.equals(role),
+                  rp.permissionCode.equals(permissionCode),
+                ])))
           .go();
     }
 

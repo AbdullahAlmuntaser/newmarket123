@@ -246,11 +246,13 @@ class _AccountingPeriodsPageState extends State<AccountingPeriodsPage> {
           AccountingPeriodsCompanion.insert(
             id: drift.Value(const Uuid().v4()),
             name: _nameController.text,
+            fiscalYear: _startDate!.year,
             startDate: _startDate!,
             endDate: _endDate!,
-            syncStatus: const drift.Value(1),
+            status: const drift.Value('OPEN'),
           ),
         );
+
 
     _nameController.clear();
     setState(() {

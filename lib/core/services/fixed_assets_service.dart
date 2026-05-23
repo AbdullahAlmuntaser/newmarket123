@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:uuid/uuid.dart';
 
 class FixedAssetsService {
   final AppDatabase db;
@@ -61,12 +62,12 @@ class FixedAssetsService {
           ),
         );
 
-        final journalEntryId = await _createDepreciationJournalEntry(
-          asset.id,
-          depreciationAmount,
-          runDate,
-          asset.categoryId,
-        );
+    final journalEntryId = await _createDepreciationJournalEntry(
+      asset.id,
+      depreciationAmount,
+      runDate,
+      asset.categoryId,
+    );
 
         final log = await (db.select(db.accAssetDepreciationLogs)
               ..orderBy([(t) => OrderingTerm.desc(t.id)])
@@ -91,7 +92,7 @@ class FixedAssetsService {
     return results;
   }
 
-  Future<int> _createDepreciationJournalEntry(
+  Future<String> _createDepreciationJournalEntry(
     int assetId,
     double amount,
     DateTime date,
@@ -101,36 +102,38 @@ class FixedAssetsService {
     final accumulatedDepreciationAccountId =
         await _getAccumulatedDepreciationAccount(assetId);
 
-    final entryId = await db.into(db.gLEntries).insert(
-          GLEntriesCompanion.insert(
-            description: 'قيد إهلاك شهرى للأصل',
-            date: Value(date),
-            referenceType: const Value('DEPRECIATION'),
-            referenceId:
-                Value('DEP-${date.toString().substring(0, 7)}-$assetId'),
-            status: const Value('DRAFT'),
-          ),
-        );
+    final entryId = const Uuid().v4();
+    final companion = GLEntriesCompanion.insert(
+      description: 'قيد إهلاك شهرى للأصل',
+      date: Value(date),
+      referenceType: const Value('DEPRECIATION'),
+      referenceId: Value('DEP-${date.toString().substring(0, 7)}-$assetId'),
+      status: const Value('DRAFT'),
+    ).copyWith(id: Value(entryId));
+
+    await db.into(db.gLEntries).insert(companion);
 
     await db.batch((batch) {
       batch.insert(
-          db.gLLines,
-          GLLinesCompanion.insert(
-            entryId: entryId.toString(),
-            accountId: expenseAccountId,
-            debit: Value(amount),
-            credit: const Value(0.0),
-            memo: const Value('مصروف إهلاك'),
-          ));
+        db.gLLines,
+        GLLinesCompanion.insert(
+          entryId: entryId,
+          accountId: expenseAccountId,
+          debit: Value(amount),
+          credit: const Value(0.0),
+          memo: const Value('مصروف إهلاك'),
+        ),
+      );
       batch.insert(
-          db.gLLines,
-          GLLinesCompanion.insert(
-            entryId: entryId.toString(),
-            accountId: accumulatedDepreciationAccountId,
-            debit: const Value(0.0),
-            credit: Value(amount),
-            memo: const Value('مجمع إهلاك'),
-          ));
+        db.gLLines,
+        GLLinesCompanion.insert(
+          entryId: entryId,
+          accountId: accumulatedDepreciationAccountId,
+          debit: const Value(0.0),
+          credit: Value(amount),
+          memo: const Value('مجمع إهلاك'),
+        ),
+      );
     });
 
     await _postGLEntry(entryId);
@@ -213,7 +216,7 @@ class FixedAssetsService {
     };
   }
 
-  Future<int> _createDisposalJournalEntry(
+  Future<String> _createDisposalJournalEntry(
     int assetId,
     double bookValue,
     double salePrice,
@@ -236,59 +239,64 @@ class FixedAssetsService {
           : await _getLossOnDisposalAccount();
     }
 
-    final entryId = await db.into(db.gLEntries).insert(
-          GLEntriesCompanion.insert(
-            description: 'قيد خروج أصل',
-            date: Value(date),
-            referenceType: const Value('DISPOSAL'),
-            referenceId: Value('DISP-$disposalType-$assetId'),
-            status: const Value('DRAFT'),
-          ),
-        );
+    final entryId = const Uuid().v4();
+    final companion = GLEntriesCompanion.insert(
+      description: 'قيد خروج أصل',
+      date: Value(date),
+      referenceType: const Value('DISPOSAL'),
+      referenceId: Value('DISP-$disposalType-$assetId'),
+      status: const Value('DRAFT'),
+    ).copyWith(id: Value(entryId));
+
+    await db.into(db.gLEntries).insert(companion);
 
     await db.batch((batch) {
       batch.insert(
-          db.gLLines,
-          GLLinesCompanion.insert(
-            entryId: entryId.toString(),
-            accountId: accumulatedDepId,
-            debit: Value(asset.accumulatedDepreciation.toDouble()),
-            credit: const Value(0.0),
-            memo: const Value('إلغاء مجمع الإهلاك'),
-          ));
+        db.gLLines,
+        GLLinesCompanion.insert(
+          entryId: entryId,
+          accountId: accumulatedDepId,
+          debit: Value(asset.accumulatedDepreciation.toDouble()),
+          credit: const Value(0.0),
+          memo: const Value('إلغاء مجمع الإهلاك'),
+        ),
+      );
 
       if (disposalType == 'sold' && salePrice > 0) {
         batch.insert(
-            db.gLLines,
-            GLLinesCompanion.insert(
-              entryId: entryId.toString(),
-              accountId: cashBankId,
-              debit: Value(salePrice),
-              credit: const Value(0.0),
-              memo: const Value('تحصيل بيع الأصل'),
-            ));
+          db.gLLines,
+          GLLinesCompanion.insert(
+            entryId: entryId,
+            accountId: cashBankId,
+            debit: Value(salePrice),
+            credit: const Value(0.0),
+            memo: const Value('تحصيل بيع الأصل'),
+          ),
+        );
       }
 
       batch.insert(
-          db.gLLines,
-          GLLinesCompanion.insert(
-            entryId: entryId.toString(),
-            accountId: fixedAssetId,
-            debit: const Value(0.0),
-            credit: Value(asset.cost),
-            memo: const Value('إلغاء قيمة الأصل'),
-          ));
+        db.gLLines,
+        GLLinesCompanion.insert(
+          entryId: entryId,
+          accountId: fixedAssetId,
+          debit: const Value(0.0),
+          credit: Value(asset.cost),
+          memo: const Value('إلغاء قيمة الأصل'),
+        ),
+      );
 
       if (gainOrLoss != 0 && gainLossId != null) {
         batch.insert(
-            db.gLLines,
-            GLLinesCompanion.insert(
-              entryId: entryId.toString(),
-              accountId: gainLossId,
-              debit: Value(gainOrLoss > 0 ? 0.0 : -gainOrLoss),
-              credit: Value(gainOrLoss > 0 ? gainOrLoss : 0.0),
-              memo: Value(gainOrLoss > 0 ? 'ربح بيع أصل' : 'خسارة بيع أصل'),
-            ));
+          db.gLLines,
+          GLLinesCompanion.insert(
+            entryId: entryId,
+            accountId: gainLossId,
+            debit: Value(gainOrLoss > 0 ? 0.0 : -gainOrLoss),
+            credit: Value(gainOrLoss > 0 ? gainOrLoss : 0.0),
+            memo: Value(gainOrLoss > 0 ? 'ربح بيع أصل' : 'خسارة بيع أصل'),
+          ),
+        );
       }
     });
 
@@ -329,10 +337,8 @@ class FixedAssetsService {
     return accounts.first.id;
   }
 
-  Future<void> _postGLEntry(int entryId) async {
-    await (db.update(db.gLEntries)
-          ..where((t) => t.id.equals(entryId.toString())))
-        .write(
+  Future<void> _postGLEntry(String entryId) async {
+    await (db.update(db.gLEntries)..where((t) => t.id.equals(entryId))).write(
       GLEntriesCompanion(
         status: const Value('POSTED'),
         postedAt: Value(DateTime.now()),

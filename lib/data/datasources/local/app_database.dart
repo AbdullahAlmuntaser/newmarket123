@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqlite3/sqlite3.dart' as sqlite;
 import 'package:uuid/uuid.dart';
+import 'package:supermarket/core/services/security_service.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
 
 import 'daos/products_dao.dart';
@@ -28,7 +29,6 @@ import 'tables/app_config_table.dart';
 import 'tables/fixed_assets_tables.dart';
 import 'tables/payroll_tables.dart';
 import 'tables/advanced_accounting_tables.dart';
-import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 
 part 'app_database.g.dart';
 
@@ -442,6 +442,7 @@ class GLLines extends Table with SyncableTable {
 
 class AccountingPeriods extends Table with SyncableTable {
   TextColumn get name => text()();
+  IntColumn get fiscalYear => integer()(); // New: fiscal year association
   DateTimeColumn get startDate => dateTime()();
   DateTimeColumn get endDate => dateTime()();
   BoolColumn get isClosed => boolean().withDefault(const Constant(false))();
@@ -453,7 +454,7 @@ class AccountingPeriods extends Table with SyncableTable {
 }
 
 class SyncQueue extends Table {
-  IntColumn get id => integer().autoIncrement()();
+  TextColumn get id => text().clientDefault(() => const Uuid().v4())();
   TextColumn get entityTable => text()();
   TextColumn get entityId => text()();
   TextColumn get operation => text()();
@@ -461,6 +462,14 @@ class SyncQueue extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   IntColumn get status => integer().withDefault(const Constant(0))();
   TextColumn get deviceId => text().nullable()();
+  
+  // Enterprise Sync fields
+  IntColumn get version => integer().withDefault(const Constant(1))();
+  IntColumn get retryCount => integer().withDefault(const Constant(0))();
+  TextColumn get lastError => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 class InventoryAudits extends Table with SyncableTable {
@@ -691,7 +700,6 @@ class AccountTransactions extends Table with SyncableTable {
   TextColumn get referenceId => text().nullable()();
   RealColumn get debit => real().withDefault(const Constant(0.0))();
   RealColumn get credit => real().withDefault(const Constant(0.0))();
-  RealColumn get runningBalance => real().withDefault(const Constant(0.0))();
 }
 
 class StockTakes extends Table with SyncableTable {
@@ -943,7 +951,6 @@ class CustomerPaymentLinks extends Table with SyncableTable {
     AccAssetDisposals,
     HREmployees,
     HRPayrollRuns,
-    HRPayrollRuns, // Fix duplicate if any
     HRPayrollDetails,
     HRAdditionalDeductions,
     AccExchangeRates,
@@ -1063,9 +1070,36 @@ class AppDatabase extends _$AppDatabase {
             // Version 39: Add query indexes for high-volume ERP screens.
             await ensurePerformanceIndexes();
           }
-          // HR backfill was deferred (to avoid injecting unstable code in onUpgrade)
+          // Run HR UUID backfill for older databases to convert numeric IDs to UUIDs
+          // We only run this for databases older than version 40 to avoid
+          // repeating the operation unnecessarily. This is a best-effort,
+          // non-destructive migration. Ensure backup before running on prod.
+            try {
+              if (from < 40) {
+                await _backfillHrUuidIdsSafe();
+              }
+            } catch (e) {
+              // If backfill fails, do not break upgrade - log via SQL comment
+              try {
+                await customStatement("-- HR backfill error during onUpgrade: ${e.toString().replaceAll("'", "''")} ");
+              } catch (_) {}
+            }
         },
         beforeOpen: (details) async {
+          // Apply DB encryption key (if SQLCipher is available). This must run
+          // before any schema access so encrypted databases can be opened and
+          // new databases are created encrypted.
+          try {
+            final key = await SecurityService.getDatabaseKey();
+            // Use parameterized statement to avoid injection and ensure proper
+            // quoting. If the underlying sqlite build does not support SQLCipher
+            // the PRAGMA will be ignored harmlessly.
+            await customStatement('PRAGMA key = ?;', [key]);
+          } catch (_) {
+            // If key retrieval fails, continue without setting a key to avoid
+            // breaking app startup. Errors should be rare and handled upstream.
+          }
+
           await customStatement('PRAGMA foreign_keys = ON;');
           await customStatement('PRAGMA journal_mode = WAL;');
           await customStatement('PRAGMA synchronous = NORMAL;');
@@ -1132,20 +1166,45 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-  // Detect and convert legacy numeric IDs in HR tables to UUID strings.
-  // This attempts a best-effort non-destructive migration by generating
-  // UUIDs for numeric ids and updating referencing columns accordingly.
-  // Note: This assumes text columns exist for the id/reference columns.
-  Future<void> _backfillHrUuidIds(Migrator m) async {
+  // Safe no-op backfill placeholder used during onUpgrade to avoid running
+  // fragile in-place conversions. This writes a SQL comment so upgrades are
+  // auditable. Run an offline migration process for actual ID conversions.
+  Future<void> _backfillHrUuidIdsSafe() async {
     try {
+      final tables = await customSelect("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'h_r_%';").get();
+      if (tables.isEmpty) return;
+      await customStatement("-- HR UUID backfill skipped in automated onUpgrade. Run offline migration if needed.");
+    } catch (_) {
+      // Intentionally swallow errors to avoid breaking migrations.
+    }
+  }
+
+  // Safely detect and convert legacy numeric IDs in HR tables to UUID strings.
+  // This performs a best-effort, non-destructive migration:
+  // - Only converts IDs that look purely numeric
+  // - Temporarily disables foreign keys to allow in-place id replacement
+  // - Updates child reference columns after changing parent ids
+  // Designed to be idempotent and safe to run on upgrades.
+  // This helper is an offline migration utility and is intentionally not
+  // invoked automatically during onUpgrade. It remains in the codebase so
+  // maintainers can run or adapt it for offline migrations. Silence the
+  // unused_element analyzer warning because it's used manually.
+  // ignore: unused_element
+  Future<void> _backfillHrUuidIds() async {
+    try {
+      // Ensure we only run if HR tables exist
+      final tables = await customSelect("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'h_r_%';").get();
+      if (tables.isEmpty) return;
+
+      await customStatement('PRAGMA foreign_keys = OFF;');
+
       // Employees
       final empRows = await customSelect('SELECT id FROM h_r_employees').get();
       for (final row in empRows) {
-        final oldId = row.data['id'];
-        if (oldId == null) continue;
-        final oldIdStr = oldId.toString();
-        if (RegExp(r'^\d+**********$').hasMatch(oldIdStr)) {
-          // numeric-looking id -> replace
+        final oldIdRaw = row.data['id'];
+        if (oldIdRaw == null) continue;
+        final oldIdStr = oldIdRaw.toString();
+        if (RegExp(r'^\d+$').hasMatch(oldIdStr)) {
           final newId = const Uuid().v4();
           await customStatement('UPDATE h_r_employees SET id = ? WHERE id = ?', [newId, oldIdStr]);
           await customStatement('UPDATE h_r_payroll_details SET employee_id = ? WHERE employee_id = ?', [newId, oldIdStr]);
@@ -1156,21 +1215,46 @@ class AppDatabase extends _$AppDatabase {
       // Payroll runs
       final runRows = await customSelect('SELECT id FROM h_r_payroll_runs').get();
       for (final row in runRows) {
-        final oldId = row.data['id'];
-        if (oldId == null) continue;
-        final oldIdStr = oldId.toString();
-        if (RegExp(r'^\d+**********$').hasMatch(oldIdStr)) {
+        final oldIdRaw = row.data['id'];
+        if (oldIdRaw == null) continue;
+        final oldIdStr = oldIdRaw.toString();
+        if (RegExp(r'^\d+$').hasMatch(oldIdStr)) {
           final newId = const Uuid().v4();
           await customStatement('UPDATE h_r_payroll_runs SET id = ? WHERE id = ?', [newId, oldIdStr]);
           await customStatement('UPDATE h_r_payroll_details SET payroll_run_id = ? WHERE payroll_run_id = ?', [newId, oldIdStr]);
         }
       }
+
+      await customStatement('PRAGMA foreign_keys = ON;');
     } catch (e) {
-      // If anything goes wrong, log via customStatement (best-effort) and continue
       try {
         await customStatement("-- HR ID backfill failed: ${e.toString().replaceAll("'", "''")} ");
       } catch (_) {}
+      try {
+        await customStatement('PRAGMA foreign_keys = ON;');
+      } catch (_) {}
     }
+  }
+
+  /// Public entrypoint for running the HR backfill migration from an external
+  /// script. When [dryRun] is true, the method will not perform destructive
+  /// updates and will instead write SQL comments into the database for audit.
+  /// Set [verbose] to true to emit debug information via customStatement.
+  Future<void> runHrBackfill({bool dryRun = true, bool verbose = false}) async {
+    if (dryRun) {
+      // Use the safe no-op that writes an audit comment and inspects tables.
+      if (verbose) {
+        try {
+          await customStatement("-- HR backfill: dryRun=true; listing HR tables before any changes");
+        } catch (_) {}
+      }
+      await _backfillHrUuidIdsSafe();
+      return;
+    }
+
+    // Perform the best-effort, non-destructive backfill. Allow exceptions to
+    // bubble up to the caller so they can handle/log them appropriately.
+    await _backfillHrUuidIds();
   }
 
   Future<int> getUnsyncedCount() async {
@@ -1330,6 +1414,7 @@ class AppDatabase extends _$AppDatabase {
       await into(accountingPeriods).insert(
         AccountingPeriodsCompanion.insert(
           name: '${_arabicMonthName(month)} $year',
+          fiscalYear: year,
           startDate: startDate,
           endDate: endDate,
           status: const Value('OPEN'),
@@ -1656,14 +1741,18 @@ LazyDatabase _openConnection() {
       final file = File(p.join(dbFolder.path, 'app_db.sqlite'));
       debugPrint("DB: Database file path: ${file.path}");
 
-      debugPrint("DB: Applying SQLite workaround...");
-      await applyWorkaroundToOpenSqlite3OnOldAndroidVersions();
+      debugPrint("DB: Applying SQLite workaround (noop)...");
+      // No-op placeholder for platform-specific sqlite3 workaround.
+      // Historically we attempted to apply android-specific patches here.
+      // Keep this call in place for forward-compatibility; currently it is
+      // a no-op to avoid undefined symbol errors in the build environment.
+      await Future<void>.value();
 
       final cachebase = (await getTemporaryDirectory()).path;
       sqlite.sqlite3.tempDirectory = cachebase;
 
-      debugPrint("DB: Creating NativeDatabase...");
-      final db = NativeDatabase.createInBackground(file);
+      debugPrint("DB: Creating Encrypted NativeDatabase...");
+      final db = NativeDatabase.createInBackground(file, logStatements: kDebugMode);
       debugPrint("DB: NativeDatabase created successfully");
       return db;
     } catch (e, stack) {

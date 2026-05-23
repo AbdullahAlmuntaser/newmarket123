@@ -11,23 +11,17 @@ class UnifiedStatementService {
     required DateTime startDate,
     required DateTime endDate,
   }) async {
+    final account = await db.accountingDao.getAccountById(accountId);
     final transactions = await (db.select(db.accountTransactions)
           ..where((t) => t.accountId.equals(accountId))
           ..where((t) => t.date.isBetweenValues(startDate, endDate))
           ..orderBy([(t) => OrderingTerm(expression: t.date)]))
         .get();
 
-    double runningBalance = 0.0;
-    
-    // Get opening balance
-    final openingBalanceTrans = await (db.select(db.accountTransactions)
-          ..where((t) => t.accountId.equals(accountId))
-          ..where((t) => t.date.isSmallerThanValue(startDate))
-          ..orderBy([(t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc)])
-          ..limit(1))
-        .getSingleOrNull();
-    
-    runningBalance = openingBalanceTrans?.runningBalance ?? 0.0;
+    double runningBalance = await db.accountingDao.getAccountBalanceAsOfDate(
+      accountId,
+      startDate.subtract(const Duration(milliseconds: 1)),
+    );
 
     List<UnifiedStatementEntry> entries = [];
     
@@ -43,12 +37,17 @@ class UnifiedStatementService {
     ));
 
     for (var t in transactions) {
+      if (account?.type == 'ASSET' || account?.type == 'EXPENSE') {
+        runningBalance += (t.debit - t.credit);
+      } else {
+        runningBalance += (t.credit - t.debit);
+      }
       entries.add(UnifiedStatementEntry(
         date: t.date,
         description: await _getTransactionDescription(t),
         debit: t.debit,
         credit: t.credit,
-        balance: t.runningBalance,
+        balance: runningBalance,
         referenceId: t.referenceId ?? '',
         type: t.type,
       ));

@@ -1,10 +1,11 @@
+// Fixed Repository
 import 'package:dartz/dartz.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/core/utils/failures.dart';
 import 'package:supermarket/domain/entities/item.dart' as entity;
 import 'package:supermarket/domain/repositories/item_repository.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/data/datasources/local/daos/products_dao.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class ItemRepositoryImpl implements ItemRepository {
   final ProductsDao _productsDao;
@@ -26,6 +27,8 @@ class ItemRepositoryImpl implements ItemRepository {
           wholesalePrice: Value(item.defaultUnit?.wholesalePrice ?? 0.0),
           alertLimit: Value(item.alertLimit),
           isActive: Value(item.isActive),
+          createdAt: Value(item.createdAt),
+          updatedAt: Value(item.updatedAt),
         ),
       );
       return const Right(null);
@@ -53,9 +56,8 @@ class ItemRepositoryImpl implements ItemRepository {
             updatedAt: product.updatedAt,
           ),
         );
-      } else {
-        return const Left(DatabaseFailure('Item not found'));
       }
+      return const Left(NotFoundFailure('Item not found'));
     } catch (e) {
       return Left(DatabaseFailure(e.toString()));
     }
@@ -64,25 +66,85 @@ class ItemRepositoryImpl implements ItemRepository {
   @override
   Future<Either<Failure, List<entity.Item>>> getAllItems() async {
     try {
-      final allProducts = await _productsDao.watchProducts().first;
+      final products = await _productsDao.getAllProducts();
       return Right(
-        allProducts
+        products
             .map(
               (p) => entity.Item(
-                id: p.product.id,
-                name: p.product.name,
-                sku: p.product.sku,
-                primaryBarcode: p.product.barcode,
-                categoryId: p.product.categoryId,
-                isActive: p.product.isActive,
-                alertLimit: p.product.alertLimit,
-                taxRate: p.product.taxRate,
-                createdAt: p.product.createdAt,
-                updatedAt: p.product.updatedAt,
+                id: p.id,
+                name: p.name,
+                sku: p.sku,
+                primaryBarcode: p.barcode,
+                categoryId: p.categoryId,
+                isActive: p.isActive,
+                alertLimit: p.alertLimit,
+                taxRate: p.taxRate,
+                createdAt: p.createdAt,
+                updatedAt: p.updatedAt,
               ),
             )
             .toList(),
       );
+    } catch (e) {
+      return Left(DatabaseFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<entity.Item>>> searchItems(String query) async {
+    try {
+      final products = await _productsDao.getAllProducts();
+      final filtered = products
+          .where((p) =>
+              p.name.toLowerCase().contains(query.toLowerCase()) ||
+              p.sku.toLowerCase().contains(query.toLowerCase()) ||
+              (p.barcode?.contains(query) ?? false))
+          .toList();
+
+      return Right(
+        filtered
+            .map(
+              (p) => entity.Item(
+                id: p.id,
+                name: p.name,
+                sku: p.sku,
+                primaryBarcode: p.barcode,
+                categoryId: p.categoryId,
+                isActive: p.isActive,
+                alertLimit: p.alertLimit,
+                taxRate: p.taxRate,
+                createdAt: p.createdAt,
+                updatedAt: p.updatedAt,
+              ),
+            )
+            .toList(),
+      );
+    } catch (e) {
+      return Left(DatabaseFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> updateItem(entity.Item item) async {
+    try {
+      final existingProduct = await _productsDao.getProductById(item.id);
+      if (existingProduct == null) {
+        return const Left(NotFoundFailure('Item not found'));
+      }
+
+      final updatedProduct = existingProduct.copyWith(
+        name: item.name,
+        sku: item.sku,
+        barcode: Value(item.primaryBarcode),
+        categoryId: Value(item.categoryId),
+        isActive: item.isActive,
+        alertLimit: item.alertLimit,
+        taxRate: item.taxRate,
+        updatedAt: item.updatedAt,
+      );
+
+      await _productsDao.updateProduct(updatedProduct);
+      return const Right(null);
     } catch (e) {
       return Left(DatabaseFailure(e.toString()));
     }

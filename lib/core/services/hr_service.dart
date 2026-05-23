@@ -71,8 +71,10 @@ class HRService {
       double totalAllowances = 0;
       double totalDeductions = 0;
 
-      final runId = await db.into(db.hRPayrollRuns).insert(
+      final runId = const Uuid().v4();
+      await db.into(db.hRPayrollRuns).insert(
         HRPayrollRunsCompanion.insert(
+          id: Value(runId),
           period: period,
           status: const Value('draft'),
         ),
@@ -126,8 +128,14 @@ class HRService {
     await db.into(db.hREmployees).insert(employee);
   }
 
-  Future<void> updateEmployee(HREmployee employee) async {
-    await db.update(db.hREmployees).replace(employee);
+  // Accept a companion for updates so callers can pass partial/complete values
+  Future<void> updateEmployee(HREmployeesCompanion employee) async {
+    // Expect the caller to provide the id in the companion
+    // Ensure the companion contains an id value
+    if (!employee.id.present) return;
+    final idValue = employee.id.value;
+
+    await (db.update(db.hREmployees)..where((t) => t.id.equals(idValue))).write(employee);
   }
 
   Future<void> deleteEmployee(String id) async {

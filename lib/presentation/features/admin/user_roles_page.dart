@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:drift/drift.dart' as drift;
+import 'package:drift/drift.dart' show Expression;
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 
@@ -65,10 +65,13 @@ class _UserRolesPageState extends State<UserRolesPage> {
       );
     } else {
       await (db.delete(db.rolePermissions)
-        ..where((rp) => 
-            rp.role.equals(_selectedRole) & 
-            rp.permissionCode.equals(permissionCode)))
+        ..where((rp) =>
+            Expression.and([
+              rp.role.equals(_selectedRole),
+              rp.permissionCode.equals(permissionCode),
+            ])))
         .go();
+
     }
     
     setState(() {

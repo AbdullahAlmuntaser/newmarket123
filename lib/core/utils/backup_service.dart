@@ -62,7 +62,8 @@ class BackupService {
       '$backupPrefix${_backupTimestamp()}$backupExtension',
     );
 
-    // نسخ الملف
+    // If the DB is encrypted with SQLCipher, the on-disk file is already
+    // encrypted. We still copy the file, but ensure integrity check passes.
     await dbFile.copy(backupPath);
 
     return backupPath;

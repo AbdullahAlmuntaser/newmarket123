@@ -564,6 +564,7 @@ class FinancialClosingService {
           AccountingPeriodsCompanion.insert(
             id: Value(periodId),
             name: name,
+            fiscalYear: startDate.year,
             startDate: startDate,
             endDate: endDate,
             isClosed: const Value(false),

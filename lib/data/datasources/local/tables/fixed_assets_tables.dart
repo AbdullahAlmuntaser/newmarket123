@@ -39,8 +39,8 @@ class AccAssetDepreciationLogs extends Table {
   IntColumn get assetId => integer().references(FixedAssets, #id)();
   RealColumn get depreciationAmount => real()();
   DateTimeColumn get depreciationDate => dateTime()();
-  IntColumn get journalEntryId => integer()
-      .nullable()(); // ربط بالقيد المحاسبي (سيتم الربط يدوياً أو عبر خدمة)
+  TextColumn get journalEntryId =>
+      text().nullable()(); // ربط بالقيد المحاسبي (UUID) - ارتباط منطقي وليس FK لسهولة الترحيل
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
@@ -53,7 +53,7 @@ class AccAssetDisposals extends Table {
   RealColumn get salePrice => real().nullable()();
   TextColumn get disposalType => text()(); // sold, scrapped
   RealColumn get gainOrLoss => real().nullable()(); // الربح أو الخسارة
-  IntColumn get journalEntryId => integer().nullable()();
+  TextColumn get journalEntryId => text().nullable()();
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }

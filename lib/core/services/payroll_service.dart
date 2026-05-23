@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:uuid/uuid.dart';
 
 class PayrollService {
   final AppDatabase db;
@@ -15,9 +16,12 @@ class PayrollService {
     final salaryExpenseAccountId = await _getSalaryExpenseAccount();
     final deductionsLiabilityAccountId = await _getDeductionsLiabilityAccount();
     final salariesPayableAccountId = await _getSalariesPayableAccount();
+    
+    final entryId = const Uuid().v4();
 
-    final entryId = await db.into(db.gLEntries).insert(
+    await db.into(db.gLEntries).insert(
           GLEntriesCompanion.insert(
+            id: Value(entryId),
             description: 'قيد رواتب فترة ${payrollRun.period}',
             date: Value(DateTime.now()),
             referenceType: const Value('PAYROLL'),
@@ -83,8 +87,11 @@ class PayrollService {
     final salariesPayableAccountId = await _getSalariesPayableAccount();
     final bankAccountId = await _getBankAccount();
 
-    final paymentEntryId = await db.into(db.gLEntries).insert(
+    final paymentEntryId = const Uuid().v4();
+
+    await db.into(db.gLEntries).insert(
           GLEntriesCompanion.insert(
+            id: Value(paymentEntryId),
             description: 'سداد رواتب فترة ${payrollRun.period}',
             date: Value(DateTime.now()),
             referenceType: const Value('PAYROLL_PAYMENT'),
