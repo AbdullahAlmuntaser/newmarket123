@@ -25,7 +25,7 @@ if (flutterVersionName == null) {
 
 android {
     namespace = "com.example.systemmarket"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -35,8 +35,8 @@ android {
 
     defaultConfig {
         applicationId = "com.example.systemmarket"
-        minSdk = flutter.minSdkVersion
-        targetSdk = 35
+        minSdk = 23
+        targetSdk = 36
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
     }
@@ -56,15 +56,15 @@ subprojects {
     afterEvaluate { project ->
         if (project.hasProperty('android')) {
             project.android {
-                if (compileSdk == null) {
-                    compileSdk = 35
+                if (compileSdk == null || compileSdk < 36) {
+                    compileSdk = 36
                 }
                 defaultConfig {
                     if (minSdk == null) {
-                        minSdk = 21
+                        minSdk = 23
                     }
-                    if (targetSdk == null) {
-                        targetSdk = 35
+                    if (targetSdk == null || targetSdk < 36) {
+                        targetSdk = 36
                     }
                 }
             }

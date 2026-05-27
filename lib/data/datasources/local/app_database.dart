@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ffi';
 // ignore_for_file: deprecated_member_use
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -6,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqlite3/sqlite3.dart' as sqlite;
+import 'package:sqlite3/open.dart';
 import 'package:uuid/uuid.dart';
 import 'package:supermarket/core/services/security_service.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
@@ -1741,11 +1743,12 @@ LazyDatabase _openConnection() {
       final file = File(p.join(dbFolder.path, 'app_db.sqlite'));
       debugPrint("DB: Database file path: ${file.path}");
 
-      debugPrint("DB: Applying SQLite workaround (noop)...");
-      // No-op placeholder for platform-specific sqlite3 workaround.
-      // Historically we attempted to apply android-specific patches here.
-      // Keep this call in place for forward-compatibility; currently it is
-      // a no-op to avoid undefined symbol errors in the build environment.
+      debugPrint("DB: Applying SQLite workaround (SQLCipher override)...");
+      if (Platform.isAndroid) {
+        open.overrideFor(OperatingSystem.android, () {
+          return DynamicLibrary.open('libsqlcipher.so');
+        });
+      }
       await Future<void>.value();
 
       final cachebase = (await getTemporaryDirectory()).path;
