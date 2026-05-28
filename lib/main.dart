@@ -8,12 +8,22 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/injection_container.dart' as di;
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'dart:io';
+import 'dart:ffi';
+import 'package:sqlite3/open.dart';
 
 void main() async {
   // 1. Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Run the Initialization Wrapper as the Root
+  // 2. Setup SQLite library override for SQLCipher on Android
+  if (Platform.isAndroid) {
+    open.overrideFor(OperatingSystem.android, () {
+      return DynamicLibrary.open('libsqlcipher.so');
+    });
+  }
+
+  // 3. Run the Initialization Wrapper as the Root
   runApp(const AppRoot());
 }
 
