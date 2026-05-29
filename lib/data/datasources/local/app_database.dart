@@ -1491,40 +1491,43 @@ class AppDatabase extends _$AppDatabase {
     };
 
     await transaction(() async {
-      for (final entry in permissionsToSeed.entries) {
-        await into(permissions).insert(
-          PermissionsCompanion.insert(
-            code: entry.key,
-            description: Value(entry.value),
-          ),
-          onConflict: DoUpdate(
-            (old) => PermissionsCompanion(description: Value(entry.value)),
-            target: [permissions.code],
-          ),
-        );
-      }
+      await batch((b) {
+        for (final entry in permissionsToSeed.entries) {
+          b.insert(
+            permissions,
+            PermissionsCompanion.insert(
+              code: entry.key,
+              description: Value(entry.value),
+            ),
+            mode: InsertMode.insertOrReplace,
+          );
+        }
+      });
 
-      for (final roleEntry in rolePermissionsToSeed.entries) {
-        for (final permissionCode in roleEntry.value) {
-          final existing = await (select(rolePermissions)
-                ..where(
-                  (rp) =>
-                      rp.role.equals(roleEntry.key) &
-                      rp.permissionCode.equals(permissionCode),
-                ))
-              .getSingleOrNull();
-          if (existing == null) {
-            await into(rolePermissions).insert(
-              RolePermissionsCompanion.insert(
-                role: roleEntry.key,
-                permissionCode: permissionCode,
-              ),
+      // Role permissions - check existence efficiently
+      final existingRolePerms = await select(rolePermissions).get();
+      
+      await batch((b) {
+        for (final roleEntry in rolePermissionsToSeed.entries) {
+          for (final permissionCode in roleEntry.value) {
+            final alreadyExists = existingRolePerms.any(
+              (rp) => rp.role == roleEntry.key && rp.permissionCode == permissionCode,
             );
+            if (!alreadyExists) {
+              b.insert(
+                rolePermissions,
+                RolePermissionsCompanion.insert(
+                  role: roleEntry.key,
+                  permissionCode: permissionCode,
+                ),
+              );
+            }
           }
         }
-      }
+      });
     });
   }
+
 
   Future<void> _seedGLAccounts() async {
     final countExp = gLAccounts.id.count();

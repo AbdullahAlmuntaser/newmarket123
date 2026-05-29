@@ -63,8 +63,14 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     });
 
     if (!skipInit) {
-      _productSubscription = db.productsDao.watchProducts().listen((_) {
-        add(RefreshPricesEvent());
+      _productSubscription = db.productsDao
+          .watchProducts()
+          .handleError((e) => developer.log("PosBloc Error: $e"))
+          .listen((_) {
+        // Use a simple check to avoid refreshing if the cart is empty
+        if (state is PosLoaded && (state as PosLoaded).cart.isNotEmpty) {
+           add(RefreshPricesEvent());
+        }
       });
 
       // Load initial data

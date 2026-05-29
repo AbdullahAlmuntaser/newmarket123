@@ -706,15 +706,36 @@ class AccountingService {
     List<DailyValue> dailyRev = [];
     List<DailyValue> dailyExp = [];
 
+    // Optimized: Fetch daily totals using a more direct query instead of 7 full income statements
     for (int i = 0; i < 7; i++) {
       final date = last7Days.add(Duration(days: i));
-      final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
-      final dayIncomeStatement = await getIncomeStatement(
-        startDate: date,
-        endDate: endOfDay,
-      );
-      dailyRev.add(DailyValue(date, dayIncomeStatement.totalRevenue));
-      dailyExp.add(DailyValue(date, dayIncomeStatement.totalExpense));
+      final nextDate = date.add(const Duration(days: 1));
+      
+      // Calculate revenue for the day (Credit to Revenue accounts)
+      final revQuery = db.select(db.gLLines).join([
+        innerJoin(db.gLEntries, db.gLEntries.id.equalsExp(db.gLLines.entryId)),
+        innerJoin(db.gLAccounts, db.gLAccounts.id.equalsExp(db.gLLines.accountId)),
+      ])
+        ..where(db.gLAccounts.type.equals('REVENUE') & 
+                db.gLEntries.date.isBiggerOrEqual(Variable(date)) & 
+                db.gLEntries.date.isSmallerThan(Variable(nextDate)));
+      
+      final revRows = await revQuery.get();
+      double revTotal = revRows.fold(0.0, (sum, row) => sum + (row.read(db.gLLines.credit) ?? 0) - (row.read(db.gLLines.debit) ?? 0));
+      dailyRev.add(DailyValue(date, revTotal));
+
+      // Calculate expenses for the day (Debit to Expense accounts)
+      final expQuery = db.select(db.gLLines).join([
+        innerJoin(db.gLEntries, db.gLEntries.id.equalsExp(db.gLLines.entryId)),
+        innerJoin(db.gLAccounts, db.gLAccounts.id.equalsExp(db.gLLines.accountId)),
+      ])
+        ..where(db.gLAccounts.type.equals('EXPENSE') & 
+                db.gLEntries.date.isBiggerOrEqual(Variable(date)) & 
+                db.gLEntries.date.isSmallerThan(Variable(nextDate)));
+
+      final expRows = await expQuery.get();
+      double expTotal = expRows.fold(0.0, (sum, row) => sum + (row.read(db.gLLines.debit) ?? 0) - (row.read(db.gLLines.credit) ?? 0));
+      dailyExp.add(DailyValue(date, expTotal));
     }
 
     final topProductsFromDao = await db.salesDao.getTopSellingProducts(

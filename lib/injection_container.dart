@@ -295,7 +295,7 @@ Future<void> initServices() async {
     
     debugPrint("DI: Registering providers...");
     sl.registerFactory<ProductsProvider>(() => ProductsProvider(db));
-    sl.registerFactory<AccountingProvider>(() => AccountingProvider(db));
+    sl.registerFactory<AccountingProvider>(() => AccountingProvider(db, sl<AccountingService>()));
     sl.registerFactory<PurchaseProvider>(
       () => PurchaseProvider(db, sl<PurchaseService>()),
     );
@@ -368,6 +368,7 @@ List<SingleChildWidget> buildAppProviders() {
     ChangeNotifierProvider<AssetProvider>(
       create: (_) => sl<AssetProvider>(),
     ),
+
     ChangeNotifierProvider<CustomerStatementProvider>(
       create: (_) => sl<CustomerStatementProvider>(),
     ),

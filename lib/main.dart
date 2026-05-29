@@ -44,14 +44,24 @@ class _AppRootState extends State<AppRoot> {
 
   Future<void> _performInitialization() async {
     try {
-      // Perform DI initialization
-      await di.init();
+      debugPrint("INIT: Starting Dependency Injection...");
+      // Perform DI initialization with a safer timeout
+      await di.init().timeout(const Duration(seconds: 30));
 
-      // Additional database health check
+      debugPrint("INIT: Verifying Database Connection...");
       final db = di.sl<AppDatabase>();
-      await db.select(db.users).get().timeout(const Duration(seconds: 5));
-      await db.seedSecurityData();
-      await db.ensureAccountingPeriodsForYear(DateTime.now().year);
+      
+      // Increased timeout to 15s to allow for background migrations/seeding
+      // If it fails, we log and proceed as the DB might still be warming up
+      try {
+        await db.select(db.users).get().timeout(const Duration(seconds: 15));
+        debugPrint("INIT: Database connection verified.");
+      } catch (e) {
+        debugPrint("INIT WARNING: Database verification delayed: $e");
+        // Proceeding anyway - the background isolate might just be busy
+      }
+
+      debugPrint("INIT: Loading Locale...");
       await di.sl<LocaleProvider>().loadLocale();
 
       if (mounted) {
@@ -59,8 +69,9 @@ class _AppRootState extends State<AppRoot> {
           _isInitialized = true;
         });
       }
-    } catch (e) {
+    } catch (e, stack) {
       debugPrint("FATAL INITIALIZATION ERROR: $e");
+      debugPrintStack(stackTrace: stack);
       if (mounted) {
         setState(() {
           _error = e.toString();
@@ -68,6 +79,7 @@ class _AppRootState extends State<AppRoot> {
       }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

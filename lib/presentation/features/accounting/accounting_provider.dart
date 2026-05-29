@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
-import 'package:supermarket/core/services/event_bus_service.dart';
 import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart';
@@ -11,11 +10,9 @@ import 'package:uuid/uuid.dart';
 
 class AccountingProvider with ChangeNotifier {
   final AppDatabase db;
-  late final AccountingService service;
+  final AccountingService service;
 
-  AccountingProvider(this.db) {
-    service = AccountingService(db, sl<EventBusService>());
-  }
+  AccountingProvider(this.db, this.service);
 
   void refresh() {
     notifyListeners();

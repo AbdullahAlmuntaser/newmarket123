@@ -231,7 +231,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => di.sl<ThemeProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<AuthProvider>()),
         ChangeNotifierProvider(
-            create: (_) => AccountingProvider(di.sl<AppDatabase>())),
+            create: (_) => AccountingProvider(di.sl<AppDatabase>(), di.sl<AccountingService>())),
         ChangeNotifierProvider(create: (_) => di.sl<ProductsProvider>()),
         ChangeNotifierProvider(
           create: (_) =>
