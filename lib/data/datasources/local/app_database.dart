@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:ffi';
 // ignore_for_file: deprecated_member_use
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -7,7 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqlite3/sqlite3.dart' as sqlite;
-import 'package:sqlite3/open.dart';
+import 'package:supermarket/native_sql_override.dart';
+// 'open' override is applied from native_sql_override.dart in main.dart
 import 'package:uuid/uuid.dart';
 import 'package:supermarket/core/services/security_service.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
@@ -1743,19 +1743,27 @@ LazyDatabase _openConnection() {
       final file = File(p.join(dbFolder.path, 'app_db.sqlite'));
       debugPrint("DB: Database file path: ${file.path}");
 
-      debugPrint("DB: Applying SQLite workaround (SQLCipher override)...");
-      if (Platform.isAndroid) {
-        open.overrideFor(OperatingSystem.android, () {
-          return DynamicLibrary.open('libsqlcipher.so');
-        });
-      }
+      debugPrint("DB: SQLite override should already be applied by native_sql_override.dart import in main.dart");
+      // The override is applied early in application startup (see
+      // lib/native_sql_override.dart). Do not re-apply here to avoid
+      // surprises during tests or when the database is opened from other
+      // entrypoints.
       await Future<void>.value();
 
       final cachebase = (await getTemporaryDirectory()).path;
       sqlite.sqlite3.tempDirectory = cachebase;
 
-      debugPrint("DB: Creating Encrypted NativeDatabase...");
-      final db = NativeDatabase.createInBackground(file, logStatements: kDebugMode);
+      debugPrint("DB: Creating Encrypted NativeDatabase with isolateSetup...");
+      final db = NativeDatabase.createInBackground(
+        file,
+        logStatements: kDebugMode,
+        isolateSetup: () async {
+          // This is critical: apply the override in the background isolate
+          // spawned by drift, otherwise it will try to load the default
+          // libsqlite3.so which is missing.
+          applyNativeSqlOverride();
+        },
+      );
       debugPrint("DB: NativeDatabase created successfully");
       return db;
     } catch (e, stack) {
