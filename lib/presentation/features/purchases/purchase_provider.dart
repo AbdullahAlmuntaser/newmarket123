@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/purchase_service.dart';
@@ -100,8 +101,8 @@ class PurchaseItemData {
     double? wholesalePrice,
   })  : _quantity = quantity,
         _unitPrice = unitPrice,
-        retailPrice = retailPrice ?? product.sellPrice,
-        wholesalePrice = wholesalePrice ?? product.wholesalePrice;
+        retailPrice = retailPrice ?? product.sellPrice.toDouble(),
+        wholesalePrice = wholesalePrice ?? product.wholesalePrice.toDouble();
 
   double get quantity => _quantity;
   set quantity(double value) {
@@ -179,17 +180,17 @@ class PurchaseProvider with ChangeNotifier {
 
   void addItem(Product product) {
     // Validate quantity > 0 and price >= 0
-    if (product.stock < 0) {
+    if (product.stock < Decimal.zero) {
       throw Exception('الكمية يجب أن تكون أكبر من الصفر.');
     }
-    if (product.buyPrice < 0) {
+    if (product.buyPrice < Decimal.zero) {
       throw Exception('السعر يجب أن يكون أكبر من أو يساوي الصفر.');
     }
     items.add(
       PurchaseItemData(
         product: product,
-        unitPrice: product.buyPrice,
-        taxPercent: product.taxRate,
+        unitPrice: product.buyPrice.toDouble(),
+        taxPercent: product.taxRate.toDouble(),
       ),
     );
     notifyListeners();
@@ -231,15 +232,17 @@ class PurchaseProvider with ChangeNotifier {
           (item) => PurchaseItemsCompanion.insert(
             purchaseId: purchaseId,
             productId: item.product.id,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            price: item.total,
-            discount: Value(item.discountAmount),
-            tax: Value(
-              (item.subtotal - item.discountAmount) * (item.taxPercent / 100),
-            ),
+            quantity: Decimal.parse(item.quantity.toString()),
+            unitPrice: Decimal.parse(item.unitPrice.toString()),
+            price: Decimal.parse(item.total.toString()),
+            discount: Value(Decimal.parse(item.discountAmount.toString())),
+            tax: Value(Decimal.parse(
+              ((item.subtotal - item.discountAmount) * (item.taxPercent / 100))
+                  .toString(),
+            )),
             unitId: Value(item.selectedUnit?.unitName),
-            unitFactor: Value(item.selectedUnit?.factor ?? 1.0),
+            unitFactor:
+                Value(Decimal.parse((item.selectedUnit?.factor ?? 1.0).toString())),
             batchNumber: Value(item.batchNumber),
             expiryDate: Value(item.expiryDate),
           ),
@@ -283,7 +286,7 @@ class PurchaseProvider with ChangeNotifier {
   Future<void> loadSupplierInfo(Supplier supplier) async {
     // Get supplier balance from database
     _supplierInfo = SupplierSmartInfo(
-      balance: supplier.balance,
+      balance: supplier.balance.toDouble(),
       totalInvoices: 0,
       totalAmount: 0,
       lastPurchaseDate: null,
@@ -299,14 +302,14 @@ class PurchaseProvider with ChangeNotifier {
     if (purchases.isNotEmpty) {
       double totalAmount = 0;
       for (var p in purchases) {
-        totalAmount += p.total;
+        totalAmount += p.total.toDouble();
       }
       _supplierInfo = SupplierSmartInfo(
-        balance: supplier.balance,
+        balance: supplier.balance.toDouble(),
         totalInvoices: purchases.length,
         totalAmount: totalAmount,
         lastPurchaseDate: purchases.first.date,
-        lastPurchaseAmount: purchases.first.total,
+        lastPurchaseAmount: purchases.first.total.toDouble(),
       );
     }
 
@@ -344,9 +347,9 @@ class PurchaseProvider with ChangeNotifier {
         final avgCost = await _calculateAverageCost(product.id);
 
         _productInfoCache[product.id] = ProductSmartInfo(
-          currentStock: product.stock,
+          currentStock: product.stock.toDouble(),
           averageCost: avgCost,
-          lastPurchasePrice: item.unitPrice,
+          lastPurchasePrice: item.unitPrice.toDouble(),
           lastPurchaseDate: purchase.date,
           priceHistory: [],
         );
@@ -359,7 +362,7 @@ class PurchaseProvider with ChangeNotifier {
   /// Load product info when adding a product
   Future<void> loadProductInfo(Product product, {String? supplierId}) async {
     // Get current stock from inventory
-    double currentStock = product.stock;
+    double currentStock = product.stock.toDouble();
 
     // Get inventory transactions for this product
     final transactions = await (db.select(db.inventoryTransactions)
@@ -400,7 +403,7 @@ class PurchaseProvider with ChangeNotifier {
     if (lastPurchase != null) {
       final purchase = lastPurchase.readTable(db.purchases);
       final item = lastPurchase.readTable(db.purchaseItems);
-      lastPrice = item.unitPrice;
+      lastPrice = item.unitPrice.toDouble();
       lastDate = purchase.date;
     }
 
@@ -410,7 +413,7 @@ class PurchaseProvider with ChangeNotifier {
     _productInfoCache[product.id] = ProductSmartInfo(
       currentStock: currentStock,
       averageCost: avgCost,
-      lastPurchasePrice: lastPrice ?? product.buyPrice,
+      lastPurchasePrice: lastPrice ?? product.buyPrice.toDouble(),
       lastPurchaseDate: lastDate,
       priceHistory: priceHistory,
     );
@@ -431,8 +434,8 @@ class PurchaseProvider with ChangeNotifier {
     double totalQty = 0;
 
     for (var item in items) {
-      totalCost += item.unitPrice * item.quantity;
-      totalQty += item.quantity;
+      totalCost += (item.unitPrice * item.quantity).toDouble();
+      totalQty += item.quantity.toDouble();
     }
 
     return totalQty > 0 ? totalCost / totalQty : 0;
@@ -464,7 +467,7 @@ class PurchaseProvider with ChangeNotifier {
 
       history.add(
         ProductPriceHistory(
-          price: item.unitPrice,
+          price: item.unitPrice.toDouble(),
           date: purchase.date,
           supplierName: supplier?.name ?? 'غير محدد',
         ),
@@ -529,7 +532,7 @@ class PurchaseProvider with ChangeNotifier {
         }
 
         // Check for low stock
-        if (productInfo.currentStock < item.product.alertLimit) {
+        if (productInfo.currentStock < item.product.alertLimit.toDouble()) {
           _alerts.add(
             PurchaseAlert(
               type: PurchaseAlertType.lowStock,
@@ -541,7 +544,7 @@ class PurchaseProvider with ChangeNotifier {
         }
 
         // Check for high stock
-        if (productInfo.currentStock > item.product.alertLimit * 10) {
+        if (productInfo.currentStock > (item.product.alertLimit * Decimal.fromInt(10)).toDouble()) {
           _alerts.add(
             PurchaseAlert(
               type: PurchaseAlertType.highStock,
@@ -584,8 +587,8 @@ class PurchaseProvider with ChangeNotifier {
     items.add(
       PurchaseItemData(
         product: product,
-        unitPrice: product.buyPrice,
-        taxPercent: product.taxRate,
+        unitPrice: product.buyPrice.toDouble(),
+        taxPercent: product.taxRate.toDouble(),
       ),
     );
 

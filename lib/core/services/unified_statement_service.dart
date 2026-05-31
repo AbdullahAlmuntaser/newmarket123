@@ -18,10 +18,10 @@ class UnifiedStatementService {
           ..orderBy([(t) => OrderingTerm(expression: t.date)]))
         .get();
 
-    double runningBalance = await db.accountingDao.getAccountBalanceAsOfDate(
+    double runningBalance = (await db.accountingDao.getAccountBalanceAsOfDate(
       accountId,
       startDate.subtract(const Duration(milliseconds: 1)),
-    );
+    )).toDouble();
 
     List<UnifiedStatementEntry> entries = [];
     
@@ -38,15 +38,15 @@ class UnifiedStatementService {
 
     for (var t in transactions) {
       if (account?.type == 'ASSET' || account?.type == 'EXPENSE') {
-        runningBalance += (t.debit - t.credit);
+        runningBalance += (t.debit - t.credit).toDouble();
       } else {
-        runningBalance += (t.credit - t.debit);
+        runningBalance += (t.credit - t.debit).toDouble();
       }
       entries.add(UnifiedStatementEntry(
         date: t.date,
         description: await _getTransactionDescription(t),
-        debit: t.debit,
-        credit: t.credit,
+        debit: t.debit.toDouble(),
+        credit: t.credit.toDouble(),
         balance: runningBalance,
         referenceId: t.referenceId ?? '',
         type: t.type,

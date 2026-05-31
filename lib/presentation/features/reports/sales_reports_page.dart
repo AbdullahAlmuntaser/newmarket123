@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:drift/drift.dart' hide Column;
@@ -94,16 +95,16 @@ class _SalesReportsPageState extends State<SalesReportsPage> {
           .get(),
       builder: (context, snapshot) {
         final sales = snapshot.data ?? [];
-        final totalRevenue = sales.fold(0.0, (sum, sale) => sum + sale.total);
+        final totalRevenue = sales.fold<Decimal>(Decimal.zero, (sum, sale) => sum + sale.total).toDouble();
 
         final retailSales = sales.where((s) => s.saleType == 'retail');
         final wholesaleSales = sales.where((s) => s.saleType == 'wholesale');
 
-        final retailTotal = retailSales.fold(0.0, (sum, s) => sum + s.total);
-        final wholesaleTotal = wholesaleSales.fold(
-          0.0,
+        final retailTotal = retailSales.fold<Decimal>(Decimal.zero, (sum, s) => sum + s.total).toDouble();
+        final wholesaleTotal = wholesaleSales.fold<Decimal>(
+          Decimal.zero,
           (sum, s) => sum + s.total,
-        );
+        ).toDouble();
 
         return Column(
           children: [
@@ -201,7 +202,7 @@ class _SalesReportsPageState extends State<SalesReportsPage> {
           Map<int, double> dailyTotals = {};
           for (var sale in sales) {
             final day = sale.createdAt.difference(_startDate).inDays;
-            dailyTotals[day] = (dailyTotals[day] ?? 0) + sale.total;
+            dailyTotals[day] = (dailyTotals[day] ?? 0) + sale.total.toDouble();
           }
 
           List<FlSpot> spots = dailyTotals.entries

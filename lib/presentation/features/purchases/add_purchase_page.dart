@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
@@ -110,7 +111,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         final matchesUnitId = item.unitId != null &&
             (conversion.id == item.unitId || conversion.unitName == item.unitId);
         final matchesFactor = item.unitId == null &&
-            (conversion.factor - item.unitFactor).abs() < 0.0001;
+            (conversion.factor - item.unitFactor.toDouble()).abs() < 0.0001;
         if (matchesUnitId || matchesFactor) {
           selectedUnit = conversion;
           break;
@@ -120,10 +121,10 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
       loadedItems.add(
         PurchaseItemData(
           product: product,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          discountAmount: item.discount,
-          taxPercent: item.taxPercent,
+          quantity: item.quantity.toDouble(),
+          unitPrice: item.unitPrice.toDouble(),
+          discountAmount: item.discount.toDouble(),
+          taxPercent: item.taxPercent.toDouble(),
           expiryDate: item.expiryDate,
           batchNumber: item.batchNumber,
           selectedUnit: selectedUnit,
@@ -143,13 +144,13 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         ..clear()
         ..addAll(loadedItems);
       _discountController.text =
-          purchase.discount == 0 ? '' : purchase.discount.toString();
+          purchase.discount == Decimal.zero ? '' : purchase.discount.toString();
       _shippingCostController.text =
-          purchase.shippingCost == 0 ? '' : purchase.shippingCost.toString();
+          purchase.shippingCost == Decimal.zero ? '' : purchase.shippingCost.toString();
       _otherExpensesController.text =
-          purchase.otherExpenses == 0 ? '' : purchase.otherExpenses.toString();
-      _originalTax = purchase.tax;
-      _taxController.text = purchase.tax == 0 ? '' : purchase.tax.toString();
+          purchase.otherExpenses == Decimal.zero ? '' : purchase.otherExpenses.toString();
+      _originalTax = purchase.tax.toDouble();
+      _taxController.text = purchase.tax == Decimal.zero ? '' : purchase.tax.toString();
     });
   }
 
@@ -348,7 +349,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         _items.add(PurchaseItemData(
           product: product,
           quantity: 1.0,
-          unitPrice: product.buyPrice,
+          unitPrice: product.buyPrice.toDouble(),
         ));
       });
     }
@@ -363,7 +364,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
             _items.add(PurchaseItemData(
               product: product,
               quantity: 1.0,
-              unitPrice: product.buyPrice,
+              unitPrice: product.buyPrice.toDouble(),
             ));
           });
         },
@@ -531,19 +532,18 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
             .map((item) => PurchaseItemsCompanion.insert(
                   purchaseId: purchaseId,
                   productId: item.product.id,
-                  quantity: item.quantity,
-                  unitPrice: item.unitPrice,
+                  quantity: Decimal.parse(item.quantity.toString()),
+                  unitPrice: Decimal.parse(item.unitPrice.toString()),
                   unitId: drift.Value(item.selectedUnit?.unitName),
-                  unitFactor: drift.Value(item.selectedUnit?.factor ?? 1.0),
+                  unitFactor: drift.Value(Decimal.parse((item.selectedUnit?.factor ?? 1.0).toString())),
                   quantityInBaseUnit: drift.Value(
-                      item.quantity * (item.selectedUnit?.factor ?? 1.0)),
-                  price: item.subtotal,
-                  discount: drift.Value(item.discountAmount),
-                  tax: drift.Value(
-                    (item.subtotal - item.discountAmount) *
-                        (item.taxPercent / 100),
-                  ),
-                  taxPercent: drift.Value(item.taxPercent),
+                      Decimal.parse((item.quantity * (item.selectedUnit?.factor ?? 1.0)).toString())),
+                  price: Decimal.parse(item.subtotal.toString()),
+                  discount: drift.Value(Decimal.parse(item.discountAmount.toString())),
+                  tax: drift.Value(Decimal.parse(
+                    ((item.subtotal - item.discountAmount) * (item.taxPercent / 100)).toString()
+                  )),
+                  taxPercent: drift.Value(Decimal.parse(item.taxPercent.toString())),
                   batchNumber: drift.Value(item.batchNumber),
                   expiryDate: drift.Value(item.expiryDate),
                 ))
@@ -556,9 +556,9 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
           
           await (db.update(db.products)..where((p) => p.id.equals(item.product.id)))
               .write(ProductsCompanion(
-            buyPrice: drift.Value(baseBuyPrice),
-            sellPrice: drift.Value(item.retailPrice),
-            wholesalePrice: drift.Value(item.wholesalePrice),
+            buyPrice: drift.Value(Decimal.parse(baseBuyPrice.toString())),
+            sellPrice: drift.Value(Decimal.parse(item.retailPrice.toString())),
+            wholesalePrice: drift.Value(Decimal.parse(item.wholesalePrice.toString())),
           ));
         }
 
@@ -571,11 +571,11 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
               currencyId: drift.Value(_selectedCurrency),
               purchaseType: drift.Value(_paymentMethod),
               isCredit: drift.Value(_paymentMethod == 'credit'),
-              total: _total,
-              discount: drift.Value(_discount),
-              tax: drift.Value(_tax),
-              shippingCost: drift.Value(_shippingCost),
-              otherExpenses: drift.Value(_otherExpenses),
+              total: Decimal.parse(_total.toString()),
+              discount: drift.Value(Decimal.parse(_discount.toString())),
+              tax: drift.Value(Decimal.parse(_tax.toString())),
+              shippingCost: drift.Value(Decimal.parse(_shippingCost.toString())),
+              otherExpenses: drift.Value(Decimal.parse(_otherExpenses.toString())),
               date: drift.Value(_selectedDate),
               status: const drift.Value(DocumentStatus.draft),
             ),
@@ -598,11 +598,11 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
               currencyId: drift.Value(_selectedCurrency),
               purchaseType: drift.Value(_paymentMethod),
               isCredit: drift.Value(_paymentMethod == 'credit'),
-              total: drift.Value(_total),
-              discount: drift.Value(_discount),
-              tax: drift.Value(_tax),
-              shippingCost: drift.Value(_shippingCost),
-              otherExpenses: drift.Value(_otherExpenses),
+              total: drift.Value(Decimal.parse(_total.toString())),
+              discount: drift.Value(Decimal.parse(_discount.toString())),
+              tax: drift.Value(Decimal.parse(_tax.toString())),
+              shippingCost: drift.Value(Decimal.parse(_shippingCost.toString())),
+              otherExpenses: drift.Value(Decimal.parse(_otherExpenses.toString())),
               date: drift.Value(_selectedDate),
             ),
             itemsCompanions: itemsCompanions,

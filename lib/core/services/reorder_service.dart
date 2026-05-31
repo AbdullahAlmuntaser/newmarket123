@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
@@ -45,8 +46,8 @@ class ReorderService {
               PurchaseOrdersCompanion(
                 id: Value(orderId),
                 supplierId: Value(supplierId),
-                total: Value(product.buyPrice *
-                    (product.alertLimit - product.stock + 10.0)),
+                total: Value((product.buyPrice *
+                    (((product.alertLimit - product.stock) + Decimal.fromInt(10)))).toDouble()),
                 warehouseId: Value(warehouseId),
                 status: const Value('DRAFT'),
                 date: Value(DateTime.now()),
@@ -60,8 +61,8 @@ class ReorderService {
                 orderId: Value(orderId),
                 productId: Value(product.id),
                 quantity: Value(
-                    ((product.alertLimit - product.stock) + 10.0).toDouble()),
-                price: Value(product.buyPrice),
+                    ((product.alertLimit - product.stock) + Decimal.parse('10')).toDouble()),
+                price: Value(product.buyPrice.toDouble()),
               ),
             );
       });

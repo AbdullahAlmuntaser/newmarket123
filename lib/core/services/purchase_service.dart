@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/core/services/inventory_costing_service.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -26,7 +27,7 @@ class PurchaseService {
       id: Value(purchaseId),
       supplierId: Value(supplierId),
       date: Value(DateTime.now()),
-      total: total,
+      total: Decimal.parse(total.toString()),
       status: const Value(DocumentStatus.draft),
       warehouseId: Value(warehouseId),
     );
@@ -67,16 +68,16 @@ class PurchaseService {
 
       double subtotal = 0;
       for (var item in items) {
-        subtotal += (item.quantity * item.unitFactor * item.unitPrice);
+        subtotal += (item.quantity * item.unitFactor * item.unitPrice).toDouble();
       }
 
       // حساب إجمالي المصاريف الإضافية
-      double totalExpenses = (purchase.shippingCost + purchase.otherExpenses);
+      double totalExpenses = (purchase.shippingCost + purchase.otherExpenses).toDouble();
 
-      double discount = purchase.discount;
+      double discount = purchase.discount.toDouble();
 
       // استخدام قيمة الضريبة الموجودة في الفاتورة مباشرة
-      double tax = (purchase.tax > 0) ? purchase.tax : 0.0;
+      double tax = (purchase.tax > Decimal.zero) ? purchase.tax.toDouble() : 0.0;
 
       await postingEngine.post(
         type: TransactionType.purchase,

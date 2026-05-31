@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/events/app_events.dart';
@@ -6,6 +7,7 @@ import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/core/services/inventory_costing_service.dart';
 import 'package:supermarket/core/services/app_config_service.dart';
 import 'package:supermarket/core/services/cash_management_service.dart';
+import 'package:supermarket/core/services/accounting_service.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:developer' as developer;
@@ -15,11 +17,13 @@ class TransactionEngine {
   final EventBusService eventBus;
   late final AuditService _auditService;
   late final AppConfigService _configService;
+  late final AccountingService _accountingService;
   InventoryCostingService? _costingService;
 
   TransactionEngine(this.db, this.eventBus) {
     _auditService = AuditService(db);
     _configService = AppConfigService(db);
+    _accountingService = AccountingService(db, eventBus);
   }
 
   void setCostingService(InventoryCostingService costingService) {
@@ -82,28 +86,28 @@ class TransactionEngine {
         // 2. Calculate Subtotal for Landed Cost Allocation
         double subtotal = 0;
         for (var item in items) {
-          if (item.quantity <= 0) {
+          if (item.quantity <= Decimal.zero) {
             throw Exception('كمية الشراء يجب أن تكون أكبر من الصفر.');
           }
-          subtotal += item.quantity * item.price;
+          subtotal += (item.quantity * item.price).toDouble();
         }
 
         // 3. Process each item
         for (var item in items) {
           // Landed Cost Allocation (by value proportion)
-          double itemValue = item.quantity * item.price;
+          double itemValue = (item.quantity * item.price).toDouble();
           double proportion = subtotal > 0 ? itemValue / subtotal : 0;
-          double allocatedLandedCost = purchase.landedCosts * proportion;
+          double allocatedLandedCost = (purchase.landedCosts * Decimal.parse(proportion.toString())).toDouble();
           double landedCostPerUnit =
-              item.quantity > 0 ? allocatedLandedCost / item.quantity : 0;
-          double finalUnitCost = item.price + landedCostPerUnit;
+              item.quantity > Decimal.zero ? allocatedLandedCost / item.quantity.toDouble() : 0;
+          double finalUnitCost = item.price.toDouble() + landedCostPerUnit;
 
           final product = await (db.select(
             db.products,
           )..where((p) => p.id.equals(item.productId)))
               .getSingle();
 
-          double qtyInBaseUnit = item.quantity * item.unitFactor;
+          double qtyInBaseUnit = (item.quantity * item.unitFactor).toDouble();
 
           // A. Create Product Batch
           final batchId = const Uuid().v4();
@@ -117,10 +121,10 @@ class TransactionEngine {
                           ? item.batchNumber!
                           : 'PUR-${purchase.id.substring(0, 8)}',
                   expiryDate: Value(item.expiryDate),
-                  quantity: Value(qtyInBaseUnit),
-                  initialQuantity: Value(qtyInBaseUnit),
+                  quantity: Value(Decimal.parse(qtyInBaseUnit.toString())),
+                  initialQuantity: Value(Decimal.parse(qtyInBaseUnit.toString())),
                   costPrice: Value(
-                    finalUnitCost / item.unitFactor,
+                    Decimal.parse((finalUnitCost / item.unitFactor.toDouble()).toString()),
                   ), // Cost per base unit
                   syncStatus: const Value.absent(),
                 ),
@@ -149,8 +153,8 @@ class TransactionEngine {
           )..where((p) => p.id.equals(item.productId)))
               .write(
             ProductsCompanion(
-              stock: Value(product.stock + qtyInBaseUnit),
-              buyPrice: Value(finalUnitCost),
+              stock: Value(product.stock + Decimal.parse(qtyInBaseUnit.toString())),
+              buyPrice: Value(Decimal.parse(finalUnitCost.toString())),
             ),
           );
         }
@@ -176,8 +180,8 @@ class TransactionEngine {
           );
         }
 
-        // 6. Trigger Accounting & Events
-        eventBus.fire(PurchasePostedEvent(purchase, items, userId: userId));
+        // 6. Trigger Accounting & Audit within same transaction
+        await _accountingService.postPurchase(purchase, items);
 
         await _auditService.log(
           action: 'POST_PURCHASE',
@@ -186,6 +190,9 @@ class TransactionEngine {
           userId: userId,
           details: 'Posted purchase invoice $purchaseId',
         );
+
+        // Notify UI (Non-critical events can still be fired)
+        eventBus.fire(PurchasePostedEvent(purchase, items, userId: userId));
       });
     } catch (e) {
       throw Exception('خطأ في العملية: $e');
@@ -251,17 +258,17 @@ class TransactionEngine {
       }
 
       // 2. Process each item (Inventory Update - FEFO)
-      double saleCogs = 0.0;
+      Decimal saleCogs = Decimal.zero;
       for (var item in items) {
-        if (item.quantity <= 0) {
+        if (item.quantity <= Decimal.zero) {
           throw Exception('الكمية يجب أن تكون أكبر من الصفر.');
         }
 
-        if (item.price < 0) {
+        if (item.price < Decimal.zero) {
           throw Exception('السعر يجب أن يكون أكبر من أو يساوي الصفر.');
         }
 
-        double remainingToDeduct = item.quantity * item.unitFactor;
+        Decimal remainingToDeduct = item.quantity * item.unitFactor;
 
         // Stock Validation
         final product = await (db.select(
@@ -279,21 +286,22 @@ class TransactionEngine {
         if (_costingService != null) {
           final batches = await _costingService!.getBatchesForSale(
             item.productId,
-            remainingToDeduct,
+            remainingToDeduct.toDouble(),
           );
 
-          double totalDeducted = 0;
+          Decimal totalDeducted = Decimal.zero;
           for (var batchData in batches) {
             if (batchData.remainingQuantity <= 0) continue;
 
             // Update Batch Quantity
+            final batchRemainingDecimal = Decimal.parse(batchData.remainingQuantity.toString());
             await (db.update(
               db.productBatches,
             )..where((b) => b.id.equals(batchData.batch.id)))
                 .write(
               ProductBatchesCompanion(
                 quantity: Value(
-                    batchData.batch.quantity - batchData.remainingQuantity),
+                    batchData.batch.quantity - batchRemainingDecimal),
               ),
             );
 
@@ -309,8 +317,8 @@ class TransactionEngine {
                   ),
                 );
 
-            totalDeducted += batchData.remainingQuantity;
-            saleCogs += (batchData.remainingQuantity * batchData.costPerUnit);
+            totalDeducted += batchRemainingDecimal;
+            saleCogs += (batchRemainingDecimal * Decimal.parse(batchData.costPerUnit.toString()));
           }
 
           // Update Product Total Stock
@@ -322,10 +330,9 @@ class TransactionEngine {
           );
         } else {
           // Fallback: استخدام المنطق الأصلي FEFO
-          // Prioritize: expiryDate ASC (nulls last), then createdAt ASC
           final batches = await (db.select(db.productBatches)
                 ..where((b) => b.productId.equals(item.productId))
-                ..where((b) => b.quantity.isBiggerThan(const Variable(0)))
+                ..where((b) => b.quantity.isBiggerThan(Variable(Decimal.zero.toString())))
                 ..orderBy([
                   (b) => OrderingTerm(
                         expression: b.expiryDate.isNull(),
@@ -342,11 +349,11 @@ class TransactionEngine {
                 ]))
               .get();
 
-          double totalDeducted = 0;
+          Decimal totalDeducted = Decimal.zero;
           for (var batch in batches) {
-            if (remainingToDeduct <= 0) break;
+            if (remainingToDeduct <= Decimal.zero) break;
 
-            double deductFromThisBatch = batch.quantity >= remainingToDeduct
+            Decimal deductFromThisBatch = batch.quantity >= remainingToDeduct
                 ? remainingToDeduct
                 : batch.quantity;
 
@@ -366,7 +373,7 @@ class TransactionEngine {
                     productId: item.productId,
                     warehouseId: batch.warehouseId,
                     batchId: Value(batch.id),
-                    quantity: -deductFromThisBatch,
+                    quantity: -(deductFromThisBatch.toDouble()),
                     type: 'SALE',
                     referenceId: saleId,
                   ),
@@ -406,10 +413,8 @@ class TransactionEngine {
         );
       }
 
-      // 5. Trigger Accounting & Events
-      eventBus.fire(
-        SaleCreatedEvent(sale, items, cogs: saleCogs, userId: userId),
-      );
+      // 5. Trigger Accounting & Audit within same transaction
+      await _accountingService.postSale(sale, items, cogs: saleCogs, userId: userId);
 
       await _auditService.log(
         action: 'POST_SALE',
@@ -417,6 +422,11 @@ class TransactionEngine {
         entityId: saleId,
         userId: userId,
         details: 'Posted sale invoice $saleId',
+      );
+
+      // Notify UI (Non-critical events)
+      eventBus.fire(
+        SaleCreatedEvent(sale, items, cogs: saleCogs, userId: userId),
       );
     });
   }
@@ -462,7 +472,7 @@ class TransactionEngine {
         final product = await (db.select(db.products)
               ..where((p) => p.id.equals(item.productId)))
             .getSingle();
-        double qtyInBaseUnit = returnQty;
+        Decimal qtyInBaseUnit = Decimal.parse(returnQty.toString());
 
         // Return stock to the specific batch or create new batch if none
         final batchId = item.batchId;
@@ -485,7 +495,7 @@ class TransactionEngine {
           // Find or create batch - use FEFO logic to find existing batch first (nulls last)
           final existingBatches = await (db.select(db.productBatches)
                 ..where((b) => b.productId.equals(item.productId))
-                ..where((b) => b.quantity.isBiggerThan(const Variable(0)))
+                ..where((b) => b.quantity.isBiggerThan(Constant(Decimal.zero.toString())))
                 ..orderBy([
                   (b) => OrderingTerm(
                         expression: b.expiryDate.isNull(),
@@ -538,10 +548,10 @@ class TransactionEngine {
             .get();
         double batchSum = 0;
         for (var b in batchesAfterReturn) {
-          batchSum += b.quantity;
+          batchSum += b.quantity.toDouble();
         }
-        final newStock = product.stock + qtyInBaseUnit;
-        if ((batchSum - newStock).abs() > 0.01) {
+        final Decimal newStock = product.stock + qtyInBaseUnit;
+        if ((batchSum - newStock.toDouble()).abs() > 0.01) {
           developer.log(
             'WARNING: Stock/Batch mismatch after return. Product stock: $newStock, Batch sum: $batchSum',
             name: 'transaction_engine',
@@ -554,7 +564,7 @@ class TransactionEngine {
                 productId: item.productId,
                 warehouseId: batch?.warehouseId ?? defaultWarehouse,
                 batchId: Value(batch?.id ?? ''),
-                quantity: qtyInBaseUnit,
+                quantity: qtyInBaseUnit.toDouble(),
                 type: 'RETURN',
                 referenceId: returnId,
               ),
@@ -568,11 +578,14 @@ class TransactionEngine {
             .getSingle();
         await (db.update(db.customers)..where((c) => c.id.equals(customer.id)))
             .write(CustomersCompanion(
-          balance: Value(customer.balance - saleReturn.amountReturned),
+          balance: Value(customer.balance - Decimal.parse(saleReturn.amountReturned.toString())),
         ));
       }
 
-      // 4. Trigger Accounting & Events
+      // 4. Trigger Accounting & Audit within same transaction
+      await _accountingService.postSaleReturn(saleReturn, items, userId ?? 'SYSTEM');
+
+      // Notify UI
       eventBus.fire(SaleReturnCreatedEvent(saleReturn, items, userId: userId));
     });
   }
@@ -610,12 +623,12 @@ class TransactionEngine {
 
       // 2. Process each item (Inventory Update - Remove from Batch)
       for (var item in items) {
-        double remainingToDeduct = item.quantity;
+        Decimal remainingToDeduct = Decimal.parse(item.quantity.toString());
 
         // FEFO Logic for purchase return - nulls last
         final batches = await (db.select(db.productBatches)
               ..where((b) => b.productId.equals(item.productId))
-              ..where((b) => b.quantity.isBiggerThan(const Variable(0)))
+              ..where((b) => b.quantity.isBiggerThan(Constant(Decimal.zero.toString())))
               ..orderBy([
                 (b) => OrderingTerm(
                       expression: b.expiryDate.isNull(),
@@ -629,9 +642,9 @@ class TransactionEngine {
             .get();
 
         for (var batch in batches) {
-          if (remainingToDeduct <= 0) break;
+          if (remainingToDeduct <= Decimal.zero) break;
 
-          double deduct = batch.quantity >= remainingToDeduct
+          Decimal deduct = batch.quantity >= remainingToDeduct
               ? remainingToDeduct
               : batch.quantity;
 
@@ -648,7 +661,7 @@ class TransactionEngine {
                   productId: item.productId,
                   warehouseId: batch.warehouseId,
                   batchId: Value(batch.id),
-                  quantity: -deduct,
+                  quantity: -(deduct.toDouble()),
                   type: 'PURCHASE_RETURN',
                   referenceId: returnId,
                 ),
@@ -667,7 +680,7 @@ class TransactionEngine {
           db.products,
         )..where((p) => p.id.equals(item.productId)))
             .write(
-          ProductsCompanion(stock: Value(product.stock - item.quantity)),
+          ProductsCompanion(stock: Value(product.stock - Decimal.parse(item.quantity.toString()))),
         );
       }
 
@@ -683,12 +696,15 @@ class TransactionEngine {
         )..where((s) => s.id.equals(supplier.id)))
             .write(
           SuppliersCompanion(
-            balance: Value(supplier.balance - purchaseReturn.amountReturned),
+            balance: Value(supplier.balance - Decimal.parse(purchaseReturn.amountReturned.toString())),
           ),
         );
       }
 
-      // 4. Trigger Accounting & Events
+      // 4. Trigger Accounting & Audit within same transaction
+      await _accountingService.postPurchaseReturn(purchaseReturn, items, userId ?? 'SYSTEM');
+
+      // Notify UI
       eventBus.fire(
         PurchaseReturnCreatedEvent(purchaseReturn, items, userId: userId),
       );
@@ -725,13 +741,13 @@ class TransactionEngine {
           .getSingle();
 
       await (db.update(db.customers)..where((c) => c.id.equals(customerId)))
-          .write(CustomersCompanion(balance: Value(customer.balance - amount)));
+          .write(CustomersCompanion(balance: Value(customer.balance - Decimal.parse(amount.toString()))));
 
       // 3. Trigger Accounting
       eventBus.fire(
         CustomerPaymentEvent(
           customerId: customerId,
-          amount: amount,
+          amount: Decimal.parse(amount.toString()),
           paymentMethod: paymentMethod,
           note: note,
           paymentId: paymentId,
@@ -771,13 +787,13 @@ class TransactionEngine {
           .getSingle();
 
       await (db.update(db.suppliers)..where((s) => s.id.equals(supplierId)))
-          .write(SuppliersCompanion(balance: Value(supplier.balance - amount)));
+          .write(SuppliersCompanion(balance: Value(supplier.balance - Decimal.parse(amount.toString()))));
 
       // 3. Trigger Accounting
       eventBus.fire(
         SupplierPaymentEvent(
           supplierId: supplierId,
-          amount: amount,
+          amount: Decimal.parse(amount.toString()),
           paymentMethod: paymentMethod,
           note: note,
           paymentId: paymentId,
@@ -802,10 +818,10 @@ class TransactionEngine {
 
       double totalPaid = 0;
       for (final payment in payments) {
-        totalPaid += (payment.credit - payment.debit);
+        totalPaid += (payment.credit - payment.debit).toDouble();
       }
 
-      final balance = sale.total - totalPaid;
+      final balance = sale.total.toDouble() - totalPaid;
       if (balance > 0) {
         result.add(SaleWithBalance(sale: sale, balance: balance));
       }

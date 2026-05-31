@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -54,7 +55,7 @@ class PosProductCard extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: product.stock > 0 ? Colors.green : Colors.red,
+                      color: product.stock > Decimal.zero ? Colors.green : Colors.red,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(

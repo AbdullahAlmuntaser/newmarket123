@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/data/datasources/local/daos/customers_dao.dart';
@@ -98,7 +99,7 @@ class QuickCustomerService {
         CustomersCompanion(
           isQuickCustomer: const Value(false),
           customerType: Value(customerType),
-          creditLimit: Value(creditLimit),
+          creditLimit: Value(Decimal.parse(creditLimit.toString())),
           phone: Value(phone),
           address: Value(address),
           email: Value(email),
@@ -163,7 +164,7 @@ class QuickCustomerService {
             ..where((c) => c.isQuickCustomer.equals(true))
             ..where((c) => c.createdAt.isSmallerThanValue(cutoffDate))
             ..where(
-              (c) => c.balance.equals(0.0),
+              (c) => c.balance.equals(Decimal.zero.toString()),
             )) // Only if no outstanding balance
           .get();
 

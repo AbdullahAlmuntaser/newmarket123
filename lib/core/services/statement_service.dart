@@ -14,6 +14,6 @@ class StatementService {
   }
 
   Future<double> getCurrentBalance(String partnerId) async {
-    return await postingEngine.getBalanceForAccount(partnerId);
+    return (await postingEngine.getBalanceForAccount(partnerId)).toDouble();
   }
 }

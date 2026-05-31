@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
@@ -148,7 +149,7 @@ class _ChartOfAccountsPageState extends State<ChartOfAccountsPage> {
         account.balance.toStringAsFixed(2),
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          color: account.balance < 0 ? Colors.red : Colors.green,
+          color: account.balance < Decimal.zero ? Colors.red : Colors.green,
         ),
       ),
     );

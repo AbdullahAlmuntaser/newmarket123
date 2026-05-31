@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -145,7 +146,7 @@ class InventoryService {
     ])
       ..where(db.productBatches.expiryDate.isBiggerOrEqual(Variable(now)) &
           db.productBatches.expiryDate.isSmallerOrEqual(Variable(threshold)) &
-          db.productBatches.quantity.isBiggerThan(const Variable(0)));
+          db.productBatches.quantity.isBiggerThan(Constant(Decimal.zero.toString())));
 
     return query.watch().map((rows) {
       return rows.map((row) {
@@ -182,7 +183,7 @@ class InventoryService {
           db.products,
         )..where((p) => p.id.equals(productId)))
             .getSingle();
-        final systemStock = product.stock;
+        final systemStock = product.stock.toDouble();
         final difference = actualStock - systemStock;
 
         // 3. تحديث سجل الجرد بالتفاصيل المحسوبة
@@ -197,16 +198,16 @@ class InventoryService {
         if (difference != 0) {
           // 4. تحديث كمية المنتج في جدول المنتجات
           await (db.update(db.products)..where((p) => p.id.equals(productId)))
-              .write(ProductsCompanion(stock: drift.Value(actualStock)));
+              .write(ProductsCompanion(stock: drift.Value(Decimal.parse(actualStock.toString()))));
 
           // 5. تحديث الدفعات (Batches) - منطق التسوية
           if (difference < 0) {
-            double remainingToDeduct = difference.abs();
+            Decimal remainingToDeduct = Decimal.parse(difference.abs().toString());
             final batches = await (db.select(db.productBatches)
                   ..where(
                     (b) =>
                         b.productId.equals(productId) &
-                        b.quantity.isBiggerThan(const Variable(0)),
+                        b.quantity.isBiggerThan(Constant(Decimal.zero.toString())),
                   )
                   ..orderBy([
                     (b) => drift.OrderingTerm(
@@ -217,8 +218,8 @@ class InventoryService {
                 .get();
 
             for (var batch in batches) {
-              if (remainingToDeduct <= 0) break;
-              double deductFromThisBatch = batch.quantity >= remainingToDeduct
+              if (remainingToDeduct <= Decimal.zero) break;
+              final Decimal deductFromThisBatch = batch.quantity >= remainingToDeduct
                   ? remainingToDeduct
                   : batch.quantity;
 
@@ -232,7 +233,7 @@ class InventoryService {
               );
               remainingToDeduct -= deductFromThisBatch;
               totalInventoryAdjustmentValue -=
-                  deductFromThisBatch * batch.costPrice;
+                  (deductFromThisBatch * batch.costPrice).toDouble();
             }
           } else {
             // فائض - إنشاء دفعة جديدة
@@ -249,12 +250,12 @@ class InventoryService {
                     batchNumber: drift.Value(
                         'AUDIT-${auditId.substring(0, 8)}'),
                     expiryDate: const drift.Value(null),
-                    quantity: drift.Value(difference),
-                    initialQuantity: drift.Value(difference),
+                    quantity: drift.Value(Decimal.parse(difference.toString())),
+                    initialQuantity: drift.Value(Decimal.parse(difference.toString())),
                     costPrice: drift.Value(averageCost),
                   ),
                 );
-            totalInventoryAdjustmentValue += difference * averageCost;
+            totalInventoryAdjustmentValue += (Decimal.parse(difference.toString()) * averageCost).toDouble();
           }
         }
       }
@@ -311,16 +312,16 @@ class InventoryService {
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: inventoryAccount.id,
-          debit: drift.Value(value.abs()),
-          credit: const drift.Value(0.0),
+          debit: drift.Value(Decimal.parse(value.abs().toString())),
+          credit: drift.Value(Decimal.zero),
         ),
       );
       lines.add(
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: adjustmentAccount.id,
-          debit: const drift.Value(0.0),
-          credit: drift.Value(value.abs()),
+          debit: drift.Value(Decimal.zero),
+          credit: drift.Value(Decimal.parse(value.abs().toString())),
         ),
       );
     } else {
@@ -328,16 +329,16 @@ class InventoryService {
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: adjustmentAccount.id,
-          debit: drift.Value(value.abs()),
-          credit: const drift.Value(0.0),
+          debit: drift.Value(Decimal.parse(value.abs().toString())),
+          credit: drift.Value(Decimal.zero),
         ),
       );
       lines.add(
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: inventoryAccount.id,
-          debit: const drift.Value(0.0),
-          credit: drift.Value(value.abs()),
+          debit: drift.Value(Decimal.zero),
+          credit: drift.Value(Decimal.parse(value.abs().toString())),
         ),
       );
     }
@@ -362,12 +363,13 @@ class InventoryService {
       final allowNegative = await _configService.getBool('allow_negative_stock',
           defaultValue: false);
 
-      if (!allowNegative && product.stock < quantity) {
+      final qtyDecimal = Decimal.parse(quantity.toString());
+      if (!allowNegative && product.stock < qtyDecimal) {
         throw Exception(
             'الرصيد الحالي (${product.stock}) غير كافٍ لخصم الكمية ($quantity). العملية مرفوضة.');
       }
 
-      final newStock = product.stock - quantity;
+      final newStock = product.stock - qtyDecimal;
 
       await (db.update(db.products)..where((p) => p.id.equals(itemId))).write(
         ProductsCompanion(stock: drift.Value(newStock)),
@@ -376,7 +378,7 @@ class InventoryService {
       await db.into(db.stockMovements).insert(
             StockMovementsCompanion.insert(
               productId: itemId,
-              quantity: -quantity,
+              quantity: Decimal.parse((-quantity).toString()),
               type: 'SALE',
               referenceId: drift.Value(referenceId),
               transactionId: drift.Value(userId),
@@ -384,7 +386,7 @@ class InventoryService {
           );
 
       // تسجيل Audit Log إذا تم السماح بالمخزون السلبي
-      if (allowNegative && newStock < 0) {
+      if (allowNegative && newStock < Decimal.zero) {
         await _auditService.log(
           action: 'NEGATIVE_STOCK_ALLOWED',
           targetEntity: 'Products',
@@ -430,14 +432,15 @@ class InventoryService {
               ..where((b) => b.id.equals(batchId)))
             .getSingle();
 
-        if (sourceBatch.quantity < qty) {
+        final qtyDecimal = Decimal.parse(qty.toString());
+        if (sourceBatch.quantity < qtyDecimal) {
           throw Exception(
               'الكمية غير كافية في الدفعة المصدر لمستودع ${sourceBatch.warehouseId}');
         }
 
         await (db.update(db.productBatches)..where((b) => b.id.equals(batchId)))
             .write(ProductBatchesCompanion(
-                quantity: drift.Value(sourceBatch.quantity - qty)));
+                quantity: drift.Value(sourceBatch.quantity - qtyDecimal)));
 
         // 3. تحديث أو إنشاء الدفعة في المستودع الهدف (Batch In)
         // نحاول البحث عن دفعة بنفس رقم التشغيلة وتاريخ الانتهاء في المستودع الهدف
@@ -451,10 +454,11 @@ class InventoryService {
             .getSingleOrNull();
 
         if (targetBatch != null) {
+          final qtyDecimal = Decimal.parse(qty.toString());
           await (db.update(db.productBatches)
                 ..where((b) => b.id.equals(targetBatch.id)))
               .write(ProductBatchesCompanion(
-                  quantity: drift.Value(targetBatch.quantity + qty)));
+                  quantity: drift.Value(targetBatch.quantity + qtyDecimal)));
         } else {
           // إنشاء دفعة جديدة في المستودع الهدف
           await db.into(db.productBatches).insert(
@@ -463,8 +467,8 @@ class InventoryService {
                   warehouseId: toWarehouseId,
                   batchNumber: sourceBatch.batchNumber,
                   expiryDate: drift.Value(sourceBatch.expiryDate),
-                  quantity: drift.Value(qty),
-                  initialQuantity: drift.Value(qty),
+                  quantity: drift.Value(Decimal.parse(qty.toString())),
+                  initialQuantity: drift.Value(Decimal.parse(qty.toString())),
                   costPrice: drift.Value(sourceBatch.costPrice),
                 ),
               );

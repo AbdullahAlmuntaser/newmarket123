@@ -15,6 +15,7 @@ mixin _$AccountingDaoMixin on DatabaseAccessor<AppDatabase> {
       attachedDatabase.accountingPeriods;
   $AccountTransactionsTable get accountTransactions =>
       attachedDatabase.accountTransactions;
+  $SyncQueueTable get syncQueue => attachedDatabase.syncQueue;
 }
 
 // **************************************************************************

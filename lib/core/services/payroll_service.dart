@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
@@ -36,8 +37,8 @@ class PayrollService {
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: salaryExpenseAccountId,
-            debit: Value(payrollRun.totalSalaries + payrollRun.totalAllowances),
-            credit: const Value(0.0),
+            debit: Value(Decimal.parse((payrollRun.totalSalaries + payrollRun.totalAllowances).toString())),
+            credit: Value(Decimal.zero),
             memo: const Value('مصروف الرواتب والبدلات'),
           ));
 
@@ -46,8 +47,8 @@ class PayrollService {
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: deductionsLiabilityAccountId,
-            debit: const Value(0.0),
-            credit: Value(payrollRun.totalDeductions),
+            debit: Value(Decimal.zero),
+            credit: Value(Decimal.parse(payrollRun.totalDeductions.toString())),
             memo: const Value('الخصومات المستحقة'),
           ));
 
@@ -56,8 +57,8 @@ class PayrollService {
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: salariesPayableAccountId,
-            debit: const Value(0.0),
-            credit: Value(payrollRun.netPayable),
+            debit: Value(Decimal.zero),
+            credit: Value(Decimal.parse(payrollRun.netPayable.toString())),
             memo: const Value('رواتب مستحقة الدفع'),
           ));
     });
@@ -106,8 +107,8 @@ class PayrollService {
           GLLinesCompanion.insert(
             entryId: paymentEntryId,
             accountId: salariesPayableAccountId,
-            debit: Value(payrollRun.netPayable),
-            credit: const Value(0.0),
+            debit: Value(Decimal.parse(payrollRun.netPayable.toString())),
+            credit: Value(Decimal.zero),
             memo: const Value('سداد الرواتب المستحقة'),
           ));
       batch.insert(
@@ -115,8 +116,8 @@ class PayrollService {
           GLLinesCompanion.insert(
             entryId: paymentEntryId,
             accountId: bankAccountId,
-            debit: const Value(0.0),
-            credit: Value(payrollRun.netPayable),
+            debit: Value(Decimal.zero),
+            credit: Value(Decimal.parse(payrollRun.netPayable.toString())),
             memo: const Value('خروج من البنك'),
           ));
     });

@@ -61,12 +61,29 @@ class _ProductsPageState extends State<ProductsPage> {
       _currentPage = 0;
       _totalProducts = 0;
     });
+    _updateTotalCount();
+  }
+
+  Future<void> _updateTotalCount() async {
+    final db = Provider.of<AppDatabase>(context, listen: false);
+    final count = await db.productsDao.countProducts(
+      searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+      categoryId: _selectedCategoryId,
+    );
+    if (mounted) {
+      setState(() => _totalProducts = count);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final db = Provider.of<AppDatabase>(context);
     final l10n = AppLocalizations.of(context)!;
+
+    // Trigger count update on build if total is 0
+    if (_totalProducts == 0) {
+      _updateTotalCount();
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -129,27 +146,18 @@ class _ProductsPageState extends State<ProductsPage> {
         stream: db.productsDao.watchProducts(
           searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
           categoryId: _selectedCategoryId,
+          limit: (_currentPage + 1) * _pageSize,
+          offset: 0,
         ),
         builder: (context, snapshot) {
-          final allProducts = snapshot.data ?? [];
+          final displayedProducts = snapshot.data ?? [];
           
-          if (_totalProducts == 0 && allProducts.isNotEmpty) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              setState(() => _totalProducts = allProducts.length);
-            });
-          }
-          
-          if (allProducts.isEmpty && _currentPage == 0) {
+          if (displayedProducts.isEmpty && _currentPage == 0) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
             return Center(child: Text(l10n.noProductsFound));
           }
-          
-          // Calculate pagination
-          final start = _currentPage * _pageSize;
-          final end = start + _pageSize;
-          final displayedProducts = allProducts.sublist(
-            start, 
-            end > allProducts.length ? allProducts.length : end
-          );
 
           return Column(
             children: [

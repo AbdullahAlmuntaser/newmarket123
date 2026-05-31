@@ -259,7 +259,7 @@ class _PosViewState extends State<PosView> {
                 await commService.sendInvoiceViaWhatsApp(
                   phoneNumber: customerPhone!,
                   invoiceNumber: state.sale.id.substring(0, 8),
-                  total: state.sale.total,
+                  total: state.sale.total.toDouble(),
                   customerName: customerName,
                 );
               },

@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
@@ -46,14 +47,14 @@ class HRService {
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: advanceAccount.id,
-            debit: Value(amount),
-            credit: const Value(0.0),
+            debit: Value(Decimal.parse(amount.toString())),
+            credit: Value(Decimal.zero),
           ),
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: cashAccount.id,
-            debit: const Value(0.0),
-            credit: Value(amount),
+            debit: Value(Decimal.zero),
+            credit: Value(Decimal.parse(amount.toString())),
           ),
         ];
 
@@ -85,7 +86,7 @@ class HRService {
         final additions = await (db.select(db.hRAdditionalDeductions)
           ..where((t) => t.employeeId.equals(emp.id))).get();
         
-        double monthlyDeductions = additions.fold(0, (sum, item) => sum + item.amount);
+        double monthlyDeductions = additions.fold<double>(0.0, (sum, item) => sum + item.amount);
 
         final gross = emp.basicSalary + emp.housingAllowance + emp.transportAllowance + emp.otherAllowances;
         final net = gross - monthlyDeductions;

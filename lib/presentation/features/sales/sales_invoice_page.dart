@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:supermarket/presentation/widgets/permission_guard.dart';
 import 'package:supermarket/core/services/permission_service.dart';
@@ -61,18 +62,18 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
   double _creditPayment = 0.0;
   bool _isSplitPayment = false;
 
-  double get _subtotal => _items.fold(0.0, (sum, item) => sum + item.lineTotal);
-  double _moneyValue(TextEditingController controller) =>
-      MoneyFormField.valueOf(controller);
+  Decimal get _subtotal => _items.fold<Decimal>(Decimal.zero, (sum, item) => sum + Decimal.parse(item.lineTotal.toString()));
+  Decimal _moneyValue(TextEditingController controller) =>
+      Decimal.parse(MoneyFormField.valueOf(controller).toString());
 
-  double get _discount => _moneyValue(_discountController);
-  double get _shippingCost => _moneyValue(_shippingCostController);
-  double get _otherExpenses => _moneyValue(_otherExpensesController);
-  double get _tax => _moneyValue(_taxController);
+  Decimal get _discount => _moneyValue(_discountController);
+  Decimal get _shippingCost => _moneyValue(_shippingCostController);
+  Decimal get _otherExpenses => _moneyValue(_otherExpensesController);
+  Decimal get _tax => _moneyValue(_taxController);
 
-  double get _totalTax => _tax;
+  Decimal get _totalTax => _tax;
 
-  double get _total =>
+  Decimal get _total =>
       _subtotal + _totalTax - _discount + _shippingCost + _otherExpenses;
 
   bool get isEditMode => widget.saleId != null;
@@ -126,8 +127,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
         _discountController.text = sale.discount.toString();
         _shippingCostController.text = sale.shippingCost.toString();
         _otherExpensesController.text = sale.otherExpenses.toString();
-        _originalTax = sale.tax;
-        _taxController.text = sale.tax == 0 ? '' : sale.tax.toString();
+        _originalTax = sale.tax.toDouble();
+        _taxController.text = sale.tax == Decimal.zero ? '' : sale.tax.toString();
         _selectedCustomer = customer;
         _selectedWarehouse = warehouse;
         _paymentType = sale.isCredit
@@ -137,8 +138,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
         for (int i = 0; i < items.length && i < products.length; i++) {
           _items.add(SalesLineItem(
             product: products[i],
-            quantity: items[i].quantity,
-            price: items[i].price,
+            quantity: items[i].quantity.toDouble(),
+            price: items[i].price.toDouble(),
             selectedUnit: items[i].unitName,
           ));
         }
@@ -182,7 +183,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
 
     if (products.isNotEmpty) {
       final product = products.first;
-      _addItemToInvoice(product, 1, product.sellPrice, product.unit);
+      _addItemToInvoice(product, 1, product.sellPrice.toDouble(), product.unit);
       _barcodeController.clear();
       return;
     }
@@ -200,7 +201,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       final product = row.readTable(db.products);
       final unit = row.readTable(db.productUnits);
       _addItemToInvoice(
-          product, 1, unit.sellPrice ?? product.sellPrice, unit.unitName);
+          product, 1, (unit.sellPrice ?? product.sellPrice).toDouble(), unit.unitName);
       _barcodeController.clear();
       return;
     }
@@ -465,10 +466,10 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       final product = item.product;
       if (product != null) {
         double newPrice;
-        if (_isWholesaleMode && product.wholesalePrice > 0) {
-          newPrice = product.wholesalePrice;
+        if (_isWholesaleMode && product.wholesalePrice > Decimal.zero) {
+          newPrice = product.wholesalePrice.toDouble();
         } else {
-          newPrice = product.sellPrice;
+          newPrice = product.sellPrice.toDouble();
         }
         _items[i] = SalesLineItem(
           product: product,
@@ -514,8 +515,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     if (_selectedCustomer == null || _customerSmartData == null) {
       return const SizedBox.shrink();
     }
-    final isExceeding = (_customerSmartData!.currentBalance + _total) >
-            _customerSmartData!.creditLimit &&
+    final isExceeding = (Decimal.parse(_customerSmartData!.currentBalance.toString()) + _total) >
+            Decimal.parse(_customerSmartData!.creditLimit.toString()) &&
         _customerSmartData!.creditLimit > 0;
 
     return Container(
@@ -630,7 +631,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       ),
       child: Column(
         children: [
-          _row('المجموع الفرعي', _subtotal),
+          _row('المجموع الفرعي', _subtotal.toDouble()),
           _buildTaxEditableRow(),
           _editableRow('الخصم', _discountController),
           _editableRow('الشحن', _shippingCostController),
@@ -638,7 +639,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
           const Divider(),
           _row(
             'الصافي المستحق',
-            _total,
+            _total.toDouble(),
             isBold: true,
             color: Theme.of(context).colorScheme.primary,
           ),
@@ -770,7 +771,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'المتبقي: ${(_total - _cashPayment - _creditPayment).toStringAsFixed(2)}',
+            'المتبقي: ${(_total - Decimal.parse(_cashPayment.toString()) - Decimal.parse(_creditPayment.toString())).toStringAsFixed(2)}',
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               color: Colors.red,
@@ -852,7 +853,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       return;
     }
 
-    final taxChanged = (_tax - _originalTax).abs() > 0.0001;
+    final taxChanged = (_tax - Decimal.parse(_originalTax.toString())).abs() > Decimal.parse('0.0001');
     if (taxChanged &&
         (currentUser == null ||
             !await sl<PermissionService>()
@@ -902,8 +903,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     if (_paymentType == 'credit' &&
         _selectedCustomer != null &&
         _customerSmartData != null) {
-      final newBalance = _customerSmartData!.currentBalance + _total;
-      if (newBalance > _customerSmartData!.creditLimit &&
+      final newBalance = Decimal.parse(_customerSmartData!.currentBalance.toString()) + _total;
+      if (newBalance > Decimal.parse(_customerSmartData!.creditLimit.toString()) &&
           _customerSmartData!.creditLimit > 0) {
         if (!mounted) return;
         AppSnackBar.error(
@@ -947,10 +948,10 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
             SaleItemsCompanion.insert(
               saleId: saleId,
               productId: item.product!.id,
-              quantity: baseQuantity,
-              price: item.price,
+              quantity: Decimal.parse(baseQuantity.toString()),
+              price: Decimal.parse(item.price.toString()),
               unitName: drift.Value(item.selectedUnit),
-              unitFactor: drift.Value(item.unitFactor),
+              unitFactor: drift.Value(Decimal.parse(item.unitFactor.toString())),
               costCenterId: drift.Value(item.costCenterId),
             ),
           );
@@ -962,7 +963,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
             customerId: drift.Value(_selectedCustomer?.id),
             total: _total,
             tax: drift.Value(_totalTax),
-            discount: drift.Value(_discount + totalItemDiscount),
+            discount: drift.Value(_discount + Decimal.parse(totalItemDiscount.toString())),
             paymentMethod: method,
             isCredit: drift.Value(_paymentType == 'credit'),
             status: const drift.Value(DocumentStatus.draft),
@@ -989,7 +990,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
             customerId: drift.Value(_selectedCustomer?.id),
             total: drift.Value(_total),
             tax: drift.Value(_totalTax),
-            discount: drift.Value(_discount + totalItemDiscount),
+            discount: drift.Value(_discount + Decimal.parse(totalItemDiscount.toString())),
             paymentMethod: drift.Value(method),
             isCredit: drift.Value(_paymentType == 'credit'),
             shippingCost: drift.Value(_shippingCost),

@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
@@ -222,8 +223,8 @@ class FinancialClosingService {
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: acc.id,
-            debit: Value(balance),
-            credit: const Value(0.0),
+            debit: Value(Decimal.parse(balance.toString())),
+            credit: Value(Decimal.zero),
           ),
         );
       }
@@ -239,8 +240,8 @@ class FinancialClosingService {
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: acc.id,
-            debit: const Value(0.0),
-            credit: Value(balance),
+            debit: Value(Decimal.zero),
+            credit: Value(Decimal.parse(balance.toString())),
           ),
         );
       }
@@ -251,8 +252,8 @@ class FinancialClosingService {
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: retainedEarnings.id,
-          debit: const Value(0.0),
-          credit: Value(netIncome),
+          debit: Value(Decimal.zero),
+          credit: Value(Decimal.parse(netIncome.toString())),
         ),
       );
     } else {
@@ -260,8 +261,8 @@ class FinancialClosingService {
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: retainedEarnings.id,
-          debit: Value(netIncome.abs()),
-          credit: const Value(0.0),
+          debit: Value(Decimal.parse(netIncome.abs().toString())),
+          credit: Value(Decimal.zero),
         ),
       );
     }
@@ -312,8 +313,8 @@ class FinancialClosingService {
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: acc.id,
-            debit: Value(balance),
-            credit: const Value(0.0),
+            debit: Value(Decimal.parse(balance.toString())),
+            credit: Value(Decimal.zero),
           ),
         );
       } else {
@@ -321,8 +322,8 @@ class FinancialClosingService {
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: acc.id,
-            debit: const Value(0.0),
-            credit: Value(balance.abs()),
+            debit: Value(Decimal.zero),
+            credit: Value(Decimal.parse(balance.abs().toString())),
           ),
         );
       }
@@ -461,8 +462,8 @@ class FinancialClosingService {
     await (db.update(db.shifts)..where((s) => s.id.equals(shiftId))).write(
       ShiftsCompanion(
         isOpen: const Value(false),
-        closingCash: Value(actualCash),
-        expectedCash: Value(expectedCash),
+        closingCash: Value(Decimal.parse(actualCash.toString())),
+        expectedCash: Value(Decimal.parse(expectedCash.toString())),
         endTime: Value(DateTime.now()),
       ),
     );
@@ -507,24 +508,24 @@ class FinancialClosingService {
             GLLinesCompanion.insert(
               entryId: entryId,
               accountId: cashAccount.id,
-              debit: Value(difference),
+              debit: Value(Decimal.parse(difference.toString())),
             ),
             GLLinesCompanion.insert(
               entryId: entryId,
               accountId: diffAccount.id,
-              credit: Value(difference),
+              credit: Value(Decimal.parse(difference.toString())),
             ),
           ]
         : [
             GLLinesCompanion.insert(
               entryId: entryId,
               accountId: diffAccount.id,
-              debit: Value(difference.abs()),
+              debit: Value(Decimal.parse(difference.abs().toString())),
             ),
             GLLinesCompanion.insert(
               entryId: entryId,
               accountId: cashAccount.id,
-              credit: Value(difference.abs()),
+              credit: Value(Decimal.parse(difference.abs().toString())),
             ),
           ];
 

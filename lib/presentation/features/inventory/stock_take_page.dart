@@ -576,9 +576,9 @@ class _StockTakePageState extends State<StockTakePage> {
                       StockTakeItemsCompanion.insert(
                         stockTakeId: stockTakeId,
                         productId: product.id,
-                        expectedQty: product.stock,
+                        expectedQty: product.stock.toDouble(),
                         actualQty: actual,
-                        variance: actual - product.stock,
+                        variance: actual - product.stock.toDouble(),
                       ),
                     );
                 if (ctx.mounted) Navigator.pop(ctx);

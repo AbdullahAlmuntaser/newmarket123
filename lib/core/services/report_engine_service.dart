@@ -54,8 +54,8 @@ class ReportEngineService {
         };
       }
 
-      productStats[productId]!['totalQuantity'] = (productStats[productId]!['totalQuantity'] as double) + quantity;
-      productStats[productId]!['totalRevenue'] = (productStats[productId]!['totalRevenue'] as double) + (quantity * price);
+      productStats[productId]!['totalQuantity'] = (productStats[productId]!['totalQuantity'] as double) + quantity.toDouble();
+      productStats[productId]!['totalRevenue'] = (productStats[productId]!['totalRevenue'] as double) + (quantity * price).toDouble();
     }
 
     final report = productStats.values.toList()
@@ -88,14 +88,14 @@ class ReportEngineService {
           .get();
 
       double totalCost = 0;
-      double totalRevenue = sale.total;
+      double totalRevenue = sale.total.toDouble();
 
       for (final item in items) {
         final product = await (_db.select(_db.products)
               ..where((p) => p.id.equals(item.productId)))
             .getSingle();
 
-        totalCost += (product.buyPrice * item.quantity);
+        totalCost += (product.buyPrice * item.quantity).toDouble();
       }
 
       final profit = totalRevenue - totalCost;
@@ -227,13 +227,13 @@ class ReportEngineService {
         };
       }
 
-      dailySales[dateKey]!['totalSales'] += sale.total;
+      dailySales[dateKey]!['totalSales'] = (dailySales[dateKey]!['totalSales'] as double) + sale.total.toDouble();
       dailySales[dateKey]!['totalTransactions']++;
 
       if (sale.paymentMethod == PaymentMethod.cash) {
-        dailySales[dateKey]!['cashSales'] += sale.total;
+        dailySales[dateKey]!['cashSales'] = (dailySales[dateKey]!['cashSales'] as double) + sale.total.toDouble();
       } else {
-        dailySales[dateKey]!['cardSales'] += sale.total;
+        dailySales[dateKey]!['cardSales'] = (dailySales[dateKey]!['cardSales'] as double) + sale.total.toDouble();
       }
     }
 
@@ -250,9 +250,9 @@ class ReportEngineService {
     final categories = <String, double>{};
 
     for (final product in products) {
-      final value = product.buyPrice * product.stock;
+      final value = (product.buyPrice * product.stock).toDouble();
       totalValue += value;
-      totalItems += product.stock;
+      totalItems += product.stock.toDouble();
 
       final categoryName = product.categoryId ?? 'Uncategorized';
       categories[categoryName] = (categories[categoryName] ?? 0) + value;

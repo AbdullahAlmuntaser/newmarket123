@@ -54,7 +54,7 @@ class _SalesItemRowState extends State<SalesItemRow> {
                         setState(() {
                           widget.item.product = p;
                           widget.item.selectedUnit = p.unit;
-                          widget.item.price = p.sellPrice;
+                          widget.item.price = p.sellPrice.toDouble();
                         });
                         widget.onChanged();
                       },

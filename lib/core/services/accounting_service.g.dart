@@ -122,11 +122,12 @@ Map<String, dynamic> _$FinancialRatiosDataToJson(
 
 VatReportData _$VatReportDataFromJson(Map<String, dynamic> json) =>
     VatReportData(
-      totalTaxableSales: (json['totalTaxableSales'] as num).toDouble(),
-      totalOutputVat: (json['totalOutputVat'] as num).toDouble(),
-      totalTaxablePurchases: (json['totalTaxablePurchases'] as num).toDouble(),
-      totalInputVat: (json['totalInputVat'] as num).toDouble(),
-      netVatPayable: (json['netVatPayable'] as num).toDouble(),
+      totalTaxableSales: Decimal.fromJson(json['totalTaxableSales'] as String),
+      totalOutputVat: Decimal.fromJson(json['totalOutputVat'] as String),
+      totalTaxablePurchases:
+          Decimal.fromJson(json['totalTaxablePurchases'] as String),
+      totalInputVat: Decimal.fromJson(json['totalInputVat'] as String),
+      netVatPayable: Decimal.fromJson(json['netVatPayable'] as String),
       startDate: DateTime.parse(json['startDate'] as String),
       endDate: DateTime.parse(json['endDate'] as String),
     );

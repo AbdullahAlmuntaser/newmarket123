@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:decimal/decimal.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
 import 'accounting_service.dart';
@@ -24,21 +25,26 @@ class AssetService {
     final assets = await getAllAssets();
     final dao = db.accountingDao;
     final entryId = const Uuid().v4();
-    double totalDepreciation = 0;
+    Decimal totalDepreciation = Decimal.zero;
 
     await db.transaction(() async {
       for (var asset in assets) {
         // Simple Monthly Straight-line Depreciation
-        double monthlyDepreciation =
-            (asset.cost - asset.salvageValue) / (asset.usefulLifeYears * 12);
+        // Asset uses Decimal internally in Drift if configured correctly via DecimalConverter
+        final cost = Decimal.parse(asset.cost.toString());
+        final salvageValue = Decimal.parse(asset.salvageValue.toString());
+        final accumulatedDepreciation = Decimal.parse(asset.accumulatedDepreciation.toString());
 
-        if (asset.accumulatedDepreciation + monthlyDepreciation >
-            asset.cost - asset.salvageValue) {
+        Decimal monthlyDepreciation =
+            ((cost - salvageValue) / Decimal.fromInt(asset.usefulLifeYears * 12)).toDecimal();
+
+        if (accumulatedDepreciation + monthlyDepreciation >
+            cost - salvageValue) {
           monthlyDepreciation =
-              (asset.cost - asset.salvageValue) - asset.accumulatedDepreciation;
+              (cost - salvageValue) - accumulatedDepreciation;
         }
 
-        if (monthlyDepreciation > 0) {
+        if (monthlyDepreciation > Decimal.zero) {
           totalDepreciation += monthlyDepreciation;
 
           await (db.update(
@@ -47,14 +53,14 @@ class AssetService {
               .write(
             FixedAssetsCompanion(
               accumulatedDepreciation: Value(
-                asset.accumulatedDepreciation + monthlyDepreciation,
+                (accumulatedDepreciation + monthlyDepreciation).toDouble(),
               ),
             ),
           );
         }
       }
 
-      if (totalDepreciation > 0) {
+      if (totalDepreciation > Decimal.zero) {
         // Accounting Entry
         // Debit: Depreciation Expense, Credit: Accumulated Depreciation (Contra-Asset)
         final entry = GLEntriesCompanion.insert(
@@ -79,10 +85,12 @@ class AssetService {
               entryId: entryId,
               accountId: expenseAccount.id,
               debit: Value(totalDepreciation),
+              credit: Value(Decimal.zero),
             ),
             GLLinesCompanion.insert(
               entryId: entryId,
               accountId: contraAssetAccount.id,
+              debit: Value(Decimal.zero),
               credit: Value(totalDepreciation),
             ),
           ];

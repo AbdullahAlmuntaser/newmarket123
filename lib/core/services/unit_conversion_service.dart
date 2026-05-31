@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/daos/products_dao.dart';
 import 'package:supermarket/data/datasources/local/daos/product_units_dao.dart';
@@ -31,7 +32,7 @@ class UnitConversionService {
           throw Exception('Unit "$unitName" not found for product $productId'),
     );
 
-    return quantity * productUnit.unitFactor;
+    return quantity * productUnit.unitFactor.toDouble();
   }
 
   /// Convert a quantity from base unit to target unit
@@ -52,7 +53,7 @@ class UnitConversionService {
           throw Exception('Unit "$unitName" not found for product $productId'),
     );
 
-    return baseQuantity / productUnit.unitFactor;
+    return baseQuantity / productUnit.unitFactor.toDouble();
   }
 
   /// Get all available units for a product (including base unit)
@@ -95,9 +96,9 @@ class UnitConversionService {
         productId: productId,
         unitName: unitName,
         barcode: Value(barcode),
-        unitFactor: Value(conversionFactor),
-        buyPrice: Value(buyPrice),
-        sellPrice: Value(sellPrice),
+        unitFactor: Value(Decimal.parse(conversionFactor.toString())),
+        buyPrice: Value(buyPrice != null ? Decimal.parse(buyPrice.toString()) : null),
+        sellPrice: Value(sellPrice != null ? Decimal.parse(sellPrice.toString()) : null),
         isDefault: const Value(false),
       ),
     );

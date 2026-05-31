@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -50,7 +51,7 @@ class _PromotionsPageState extends State<PromotionsPage> {
             value: 10,
             startDate: now,
             endDate: now.add(const Duration(days: 30)),
-            minPurchaseAmount: const drift.Value(0),
+            minPurchaseAmount: drift.Value(Decimal.zero),
           ),
         );
     await _loadPromotions();

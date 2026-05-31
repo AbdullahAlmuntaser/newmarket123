@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:drift/drift.dart';
 
@@ -20,7 +21,7 @@ class ChartService {
 
       result.add(ChartDataPoint(
         label: '${dayStart.day}/${dayStart.month}',
-        value: sales.fold(0.0, (sum, s) => sum + s.total),
+        value: sales.fold<Decimal>(Decimal.zero, (sum, s) => sum + s.total).toDouble(),
       ));
     }
 
@@ -67,7 +68,7 @@ class ChartService {
 
       double revenue = 0;
       if (sales.isNotEmpty) {
-        revenue += product.sellPrice * product.stock;
+        revenue += (product.sellPrice * product.stock).toDouble();
       }
 
       categoryRevenue[categoryName] =
@@ -99,10 +100,10 @@ class ChartService {
       for (var m in movements) {
         final qty = m.quantity;
         if (m.fromWarehouseId == warehouse.id) {
-          totalStock -= qty;
+          totalStock -= qty.toDouble();
         }
         if (m.toWarehouseId == warehouse.id) {
-          totalStock += qty;
+          totalStock += qty.toDouble();
         }
       }
 
@@ -119,7 +120,7 @@ class ChartService {
     final categoryValues = <String, double>{};
 
     for (var product in products) {
-      final value = product.stock * product.buyPrice;
+      final value = (product.stock * product.buyPrice).toDouble();
       totalValue += value;
 
       final categoryId = product.categoryId ?? 'Other';

@@ -1,5 +1,6 @@
 // Fixed Repository
 import 'package:dartz/dartz.dart';
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/core/utils/failures.dart';
 import 'package:supermarket/domain/entities/item.dart' as entity;
@@ -22,10 +23,10 @@ class ItemRepositoryImpl implements ItemRepository {
           sku: item.sku,
           barcode: Value(item.primaryBarcode),
           categoryId: Value(item.categoryId),
-          buyPrice: Value(item.defaultUnit?.buyPrice ?? 0.0),
-          sellPrice: Value(item.defaultUnit?.sellPrice ?? 0.0),
-          wholesalePrice: Value(item.defaultUnit?.wholesalePrice ?? 0.0),
-          alertLimit: Value(item.alertLimit),
+          buyPrice: Value(Decimal.parse((item.defaultUnit?.buyPrice ?? 0.0).toString())),
+          sellPrice: Value(Decimal.parse((item.defaultUnit?.sellPrice ?? 0.0).toString())),
+          wholesalePrice: Value(Decimal.parse((item.defaultUnit?.wholesalePrice ?? 0.0).toString())),
+          alertLimit: Value(Decimal.parse(item.alertLimit.toString())),
           isActive: Value(item.isActive),
           createdAt: Value(item.createdAt),
           updatedAt: Value(item.updatedAt),
@@ -50,8 +51,8 @@ class ItemRepositoryImpl implements ItemRepository {
             primaryBarcode: product.barcode,
             categoryId: product.categoryId,
             isActive: product.isActive,
-            alertLimit: product.alertLimit,
-            taxRate: product.taxRate,
+            alertLimit: product.alertLimit.toDouble(),
+            taxRate: product.taxRate.toDouble(),
             createdAt: product.createdAt,
             updatedAt: product.updatedAt,
           ),
@@ -77,8 +78,8 @@ class ItemRepositoryImpl implements ItemRepository {
                 primaryBarcode: p.barcode,
                 categoryId: p.categoryId,
                 isActive: p.isActive,
-                alertLimit: p.alertLimit,
-                taxRate: p.taxRate,
+                alertLimit: p.alertLimit.toDouble(),
+                taxRate: p.taxRate.toDouble(),
                 createdAt: p.createdAt,
                 updatedAt: p.updatedAt,
               ),
@@ -111,8 +112,8 @@ class ItemRepositoryImpl implements ItemRepository {
                 primaryBarcode: p.barcode,
                 categoryId: p.categoryId,
                 isActive: p.isActive,
-                alertLimit: p.alertLimit,
-                taxRate: p.taxRate,
+                alertLimit: p.alertLimit.toDouble(),
+                taxRate: p.taxRate.toDouble(),
                 createdAt: p.createdAt,
                 updatedAt: p.updatedAt,
               ),
@@ -138,8 +139,8 @@ class ItemRepositoryImpl implements ItemRepository {
         barcode: Value(item.primaryBarcode),
         categoryId: Value(item.categoryId),
         isActive: item.isActive,
-        alertLimit: item.alertLimit,
-        taxRate: item.taxRate,
+        alertLimit: Decimal.parse(item.alertLimit.toString()),
+        taxRate: Decimal.parse(item.taxRate.toString()),
         updatedAt: item.updatedAt,
       );
 

@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
@@ -40,7 +41,7 @@ class ProductionService {
           ProductionOrderItemsCompanion.insert(
             productionOrderId: orderId,
             componentProductId: item.componentProductId,
-            plannedQuantity: item.quantity * quantity,
+            plannedQuantity: (Decimal.parse(item.quantity.toString()) * Decimal.parse(quantity.toString())).toDouble(),
           ),
         );
       }
@@ -57,7 +58,7 @@ class ProductionService {
         await db.stockMovementDao.insertStockMovement(
           StockMovementsCompanion.insert(
             productId: item.componentProductId,
-            quantity: -item.plannedQuantity,
+            quantity: Decimal.parse((-item.plannedQuantity).toString()),
             type: 'PRODUCTION_CONSUME',
             referenceId: Value(orderId),
             movementDate: Value(DateTime.now()),
@@ -69,7 +70,7 @@ class ProductionService {
       await db.stockMovementDao.insertStockMovement(
         StockMovementsCompanion.insert(
           productId: order.finishedProductId,
-          quantity: order.plannedQuantity,
+          quantity: Decimal.parse(order.plannedQuantity.toString()),
           type: 'PRODUCTION_OUTPUT',
           referenceId: Value(orderId),
           movementDate: Value(DateTime.now()),
@@ -80,7 +81,7 @@ class ProductionService {
       await (db.update(db.productionOrders)..where((t) => t.id.equals(orderId))).write(
         ProductionOrdersCompanion(
           status: const Value('COMPLETED'),
-          actualQuantity: Value(order.plannedQuantity),
+          actualQuantity: Value(Decimal.parse(order.plannedQuantity.toString())),
         ),
       );
     });

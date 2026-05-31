@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:drift/drift.dart' as drift;
@@ -301,7 +302,7 @@ class _CustomersPageState extends State<CustomersPage> {
     AppLocalizations l10n,
     ColorScheme colorScheme,
   ) {
-    final bool isDebit = customer.balance > 0;
+    final bool isDebit = customer.balance > Decimal.zero;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -424,8 +425,9 @@ class _CustomersPageState extends State<CustomersPage> {
 
   Stream<String> _getTotalBalance(AppDatabase db) {
     return db.select(db.customers).watch().map(
-          (customers) => customers
-              .fold(0.0, (sum, item) => sum + item.balance)
+            (customers) => customers
+              .fold<Decimal>(Decimal.zero, (sum, item) => sum + item.balance)
+              .toDouble()
               .toStringAsFixed(2),
         );
   }

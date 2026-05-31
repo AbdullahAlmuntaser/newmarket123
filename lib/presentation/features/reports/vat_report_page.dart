@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:decimal/decimal.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/widgets/main_drawer.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
@@ -129,17 +130,17 @@ class _VatReportPageState extends State<VatReportPage> {
     );
   }
 
-  Widget _buildCard(String title, double amount, {bool isHighlight = false}) {
+  Widget _buildCard(String title, Decimal amount, {bool isHighlight = false}) {
     return Card(
       child: ListTile(
         title: Text(title),
         trailing: Text(
-          NumberFormat.currency(symbol: '').format(amount),
+          amount.toString(),
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
             color:
-                isHighlight ? (amount >= 0 ? Colors.red : Colors.green) : null,
+                isHighlight ? (amount >= Decimal.zero ? Colors.red : Colors.green) : null,
           ),
         ),
       ),

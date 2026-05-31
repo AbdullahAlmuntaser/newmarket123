@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
@@ -97,14 +98,14 @@ class AccountingProvider with ChangeNotifier {
     required String? userId,
   }) async {
     // Basic validation for balanced entry
-    double totalDebit = 0;
-    double totalCredit = 0;
+    Decimal totalDebit = Decimal.zero;
+    Decimal totalCredit = Decimal.zero;
     for (var line in lines) {
       totalDebit += line.debit.value;
       totalCredit += line.credit.value;
     }
 
-    if ((totalDebit - totalCredit).abs() > 0.001) {
+    if ((totalDebit - totalCredit).abs() > Decimal.parse('0.001')) {
       throw Exception(
         'القيد غير متوازن. المدين: $totalDebit, الدائن: $totalCredit',
       );
@@ -170,8 +171,8 @@ class AccountingProvider with ChangeNotifier {
       id: l.line.id,
       entryId: l.line.entryId,
       accountId: l.line.accountId,
-      debit: l.line.debit,
-      credit: l.line.credit,
+      debit: l.line.debit.toDouble(),
+      credit: l.line.credit.toDouble(),
       memo: l.line.memo,
     )).toList();
   }

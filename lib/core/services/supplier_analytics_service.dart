@@ -31,7 +31,7 @@ class SupplierAnalyticsService {
 
       double total = 0;
       for (var p in purchases) {
-        total += p.total;
+        total += p.total.toDouble();
       }
 
       report.add(

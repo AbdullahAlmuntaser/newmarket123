@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -341,7 +342,7 @@ class _ChecksPageState extends State<ChecksPage> {
           )..where((c) => c.id.equals(customer.id)))
               .write(
             CustomersCompanion(
-              balance: drift.Value(customer.balance + check.amount),
+              balance: drift.Value(customer.balance + Decimal.parse(check.amount.toString())),
             ),
           );
         }
@@ -356,7 +357,7 @@ class _ChecksPageState extends State<ChecksPage> {
           )..where((s) => s.id.equals(supplier.id)))
               .write(
             SuppliersCompanion(
-              balance: drift.Value(supplier.balance + check.amount),
+              balance: drift.Value(supplier.balance + Decimal.parse(check.amount.toString())),
             ),
           );
         }

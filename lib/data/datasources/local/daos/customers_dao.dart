@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart';
@@ -127,7 +128,7 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
               ? Value(parentAccount!.id)
               : const Value.absent(),
           isHeader: const Value(false),
-          balance: const Value(0.0),
+          balance: Value(Decimal.zero),
         ),
       );
 
@@ -191,7 +192,7 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
         CustomerTransaction(
           date: sale.createdAt,
           description: 'فاتورة مبيعات آجل رقم ${sale.id.substring(0, 8)}',
-          debit: sale.total,
+          debit: sale.total.toDouble(),
           credit: 0,
           referenceId: sale.id,
           type: 'SALE',
@@ -351,8 +352,8 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
           phone: Value(phone),
           isQuickCustomer: const Value(true),
           createdFromPOS: const Value(true),
-          creditLimit: const Value(0.0),
-          balance: const Value(0.0),
+          creditLimit: Value(Decimal.zero),
+          balance: Value(Decimal.zero),
           isActive: const Value(true),
         ),
       );

@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
@@ -109,10 +110,10 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   void _saveProduct() async {
     if (_formKey.currentState!.validate()) {
       final db = Provider.of<AppDatabase>(context, listen: false);
-      final initialStock = double.tryParse(_stockController.text) ?? 0.0;
-      final buyPrice = double.tryParse(_buyPriceController.text) ?? 0.0;
-      final sellPrice = double.tryParse(_sellPriceController.text) ?? 0.0;
-      final wholesalePrice = double.tryParse(_wholesalePriceController.text) ?? 0.0;
+      final initialStock = Decimal.tryParse(_stockController.text) ?? Decimal.zero;
+      final buyPrice = Decimal.tryParse(_buyPriceController.text) ?? Decimal.zero;
+      final sellPrice = Decimal.tryParse(_sellPriceController.text) ?? Decimal.zero;
+      final wholesalePrice = Decimal.tryParse(_wholesalePriceController.text) ?? Decimal.zero;
 
       try {
         await db.transaction(() async {
@@ -129,7 +130,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 ))
                 .then((p) => p.id);
 
-            if (initialStock > 0) {
+            if (initialStock > Decimal.zero) {
               final defaultWarehouse = await (db.select(db.warehouses)
                     ..where((w) => w.isDefault.equals(true)))
                   .getSingleOrNull();
@@ -141,7 +142,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                   .insert(InventoryTransactionsCompanion.insert(
                     productId: productId,
                     warehouseId: warehouseId,
-                    quantity: initialStock,
+                    quantity: initialStock.toDouble(),
                     type: 'ADJUSTMENT',
                     referenceId: productId,
                   ));

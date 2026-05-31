@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -49,7 +50,7 @@ class _UnitConversionPageState extends State<UnitConversionPage> {
               sellPrice: drift.Value(
                 _priceController.text.isEmpty
                     ? null
-                    : double.parse(_priceController.text),
+                    : Decimal.parse(_priceController.text),
               ),
             ),
           );

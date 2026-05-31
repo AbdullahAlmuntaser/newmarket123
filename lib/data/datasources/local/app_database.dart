@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqlite3/sqlite3.dart' as sqlite;
+import 'package:decimal/decimal.dart';
 import 'package:supermarket/native_sql_override.dart';
 // 'open' override is applied from native_sql_override.dart in main.dart
 import 'package:uuid/uuid.dart';
@@ -51,6 +52,14 @@ class PaymentMethodConverter extends TypeConverter<PaymentMethod, int> {
   int toSql(PaymentMethod value) => value.index;
 }
 
+class DecimalConverter extends TypeConverter<Decimal, String> {
+  const DecimalConverter();
+  @override
+  Decimal fromSql(String fromDb) => Decimal.parse(fromDb);
+  @override
+  String toSql(Decimal value) => value.toString();
+}
+
 mixin SyncableTable on Table {
   TextColumn get id => text().clientDefault(() => const Uuid().v4())();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -94,19 +103,19 @@ class Products extends Table with SyncableTable {
   IntColumn get piecesPerCarton => integer().withDefault(const Constant(1))();
   TextColumn get kiloUnit => text().nullable()();
   TextColumn get boxUnit => text().nullable()();
-  RealColumn get buyPrice => real().withDefault(const Constant(0.0))();
-  RealColumn get sellPrice => real().withDefault(const Constant(0.0))();
-  RealColumn get wholesalePrice => real().withDefault(const Constant(0.0))();
-  RealColumn get stock => real().withDefault(const Constant(0.0))();
-  RealColumn get maxStock => real().withDefault(const Constant(1000.0))();
+  TextColumn get buyPrice => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get sellPrice => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get wholesalePrice => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get stock => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get maxStock => text().map(const DecimalConverter()).withDefault(Constant(Decimal.fromInt(1000).toString()))();
   TextColumn get supplierId => text().nullable().references(Suppliers, #id)();
   TextColumn get valuationMethod =>
       text().withDefault(const Constant('FIFO'))(); // FIFO, AVCO
   BoolColumn get allowFreeQty => boolean().withDefault(const Constant(false))();
   BoolColumn get isService => boolean().withDefault(const Constant(false))();
-  RealColumn get alertLimit => real().withDefault(const Constant(10.0))();
+  TextColumn get alertLimit => text().map(const DecimalConverter()).withDefault(Constant(Decimal.fromInt(10).toString()))();
   DateTimeColumn get expiryDate => dateTime().nullable()();
-  RealColumn get taxRate => real().withDefault(const Constant(0.0))();
+  TextColumn get taxRate => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   // Variant support
   TextColumn get parentProductId => text().nullable().references(
@@ -115,8 +124,8 @@ class Products extends Table with SyncableTable {
       )(); // Null for main items; points to parent for variants
   TextColumn get attributes =>
       text().nullable()(); // JSON: {"color":"Red","size":"XL"}
-  RealColumn get additionalCost =>
-      real().nullable()(); // Extra cost for variant over base product
+  TextColumn get additionalCost =>
+      text().map(const DecimalConverter()).nullable()(); // Extra cost for variant over base product
 }
 
 class ProductUnits extends Table with SyncableTable {
@@ -125,14 +134,14 @@ class ProductUnits extends Table with SyncableTable {
   TextColumn get unitName => text()(); // e.g., carton, box, kilo
   TextColumn get barcode =>
       text().unique().nullable()(); // Barcode for this unit
-  RealColumn get unitFactor =>
-      real().withDefault(const Constant(1.0))(); // How many base units
-  RealColumn get buyPrice => real().nullable()(); // Unit-specific buy price
-  RealColumn get sellPrice => real().nullable()(); // Unit-specific sell price
-  RealColumn get wholesalePrice =>
-      real().nullable()(); // Wholesale price for this unit
-  RealColumn get halfWholesalePrice =>
-      real().nullable()(); // Half-wholesale price
+  TextColumn get unitFactor =>
+      text().map(const DecimalConverter()).withDefault(Constant(Decimal.one.toString()))(); // How many base units
+  TextColumn get buyPrice => text().map(const DecimalConverter()).nullable()(); // Unit-specific buy price
+  TextColumn get sellPrice => text().map(const DecimalConverter()).nullable()(); // Unit-specific sell price
+  TextColumn get wholesalePrice =>
+      text().map(const DecimalConverter()).nullable()(); // Wholesale price for this unit
+  TextColumn get halfWholesalePrice =>
+      text().map(const DecimalConverter()).nullable()(); // Half-wholesale price
   BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
 }
 
@@ -148,18 +157,18 @@ class Customers extends Table with SyncableTable {
       )(); // New: RETAIL, WHOLESALE, VIP
   BoolColumn get isActive =>
       boolean().withDefault(const Constant(true))(); // New: Status
-  RealColumn get creditLimit => real().withDefault(const Constant(0.0))();
-  RealColumn get balance => real().withDefault(const Constant(0.0))();
+  TextColumn get creditLimit => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get balance => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get accountId =>
       text().nullable().references(GLAccounts, #id)(); // New: Linked to GL
   TextColumn get currencyId => text().nullable().references(Currencies, #id)();
-  RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
+  TextColumn get exchangeRate => text().map(const DecimalConverter()).withDefault(Constant(Decimal.one.toString()))();
   BoolColumn get isQuickCustomer =>
       boolean().withDefault(const Constant(false))(); // Quick customer flag
   BoolColumn get createdFromPOS =>
       boolean().withDefault(const Constant(false))(); // Created from POS
-  RealColumn get discountRate =>
-      real().withDefault(const Constant(0.0))(); // Customer-specific discount
+  TextColumn get discountRate =>
+      text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))(); // Customer-specific discount
 }
 
 class Suppliers extends Table with SyncableTable {
@@ -174,7 +183,7 @@ class Suppliers extends Table with SyncableTable {
       )(); // New: LOCAL, INTERNATIONAL
   BoolColumn get isActive =>
       boolean().withDefault(const Constant(true))(); // New: Status
-  RealColumn get balance => real().withDefault(const Constant(0.0))();
+  TextColumn get balance => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get accountId =>
       text().nullable().references(GLAccounts, #id)(); // New: Linked to GL
 }
@@ -187,9 +196,9 @@ class GlobalUnits extends Table with SyncableTable {
 
 class Sales extends Table with SyncableTable {
   TextColumn get customerId => text().nullable().references(Customers, #id)();
-  RealColumn get total => real()();
-  RealColumn get discount => real().withDefault(const Constant(0.0))();
-  RealColumn get tax => real().withDefault(const Constant(0.0))();
+  TextColumn get total => text().map(const DecimalConverter())();
+  TextColumn get discount => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get tax => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   IntColumn get paymentMethod =>
       integer().map(const PaymentMethodConverter())();
   BoolColumn get isCredit => boolean().withDefault(const Constant(false))();
@@ -199,9 +208,9 @@ class Sales extends Table with SyncableTable {
   TextColumn get saleType =>
       text().withDefault(const Constant('retail'))(); // retail / wholesale
   TextColumn get currencyId => text().nullable()();
-  RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
-  RealColumn get shippingCost => real().withDefault(const Constant(0.0))();
-  RealColumn get otherExpenses => real().withDefault(const Constant(0.0))();
+  TextColumn get exchangeRate => text().map(const DecimalConverter()).withDefault(Constant(Decimal.one.toString()))();
+  TextColumn get shippingCost => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get otherExpenses => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
   TextColumn get representativeId => text().nullable()();
   // ZATCA Fields
@@ -213,11 +222,11 @@ class Sales extends Table with SyncableTable {
 class SaleItems extends Table with SyncableTable {
   TextColumn get saleId => text().references(Sales, #id)();
   TextColumn get productId => text().references(Products, #id)();
-  RealColumn get quantity => real()();
-  RealColumn get price => real()();
+  TextColumn get quantity => text().map(const DecimalConverter())();
+  TextColumn get price => text().map(const DecimalConverter())();
   TextColumn get unitId => text().nullable().references(GlobalUnits, #id)();
   TextColumn get unitName => text().withDefault(const Constant('حبة'))();
-  RealColumn get unitFactor => real().withDefault(const Constant(1.0))();
+  TextColumn get unitFactor => text().map(const DecimalConverter()).withDefault(Constant(Decimal.one.toString()))();
   TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
   TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
   TextColumn get costCenterId =>
@@ -233,9 +242,9 @@ class StockMovements extends Table with SyncableTable {
   @ReferenceName('toWarehouseStockMovements')
   TextColumn get toWarehouseId =>
       text().nullable().references(Warehouses, #id)();
-  RealColumn get quantity => real()();
-  RealColumn get cost =>
-      real().withDefault(const Constant(0.0))(); // ADDED COST
+  TextColumn get quantity => text().map(const DecimalConverter())();
+  TextColumn get cost =>
+      text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))(); // ADDED COST
   TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
   DateTimeColumn get movementDate =>
       dateTime().withDefault(currentDateAndTime)();
@@ -249,12 +258,12 @@ class StockMovements extends Table with SyncableTable {
 
 class Purchases extends Table with SyncableTable {
   TextColumn get supplierId => text().nullable().references(Suppliers, #id)();
-  RealColumn get total => real()();
-  RealColumn get tax => real().withDefault(const Constant(0.0))();
-  RealColumn get discount => real().withDefault(const Constant(0.0))();
-  RealColumn get landedCosts => real().withDefault(const Constant(0.0))();
-  RealColumn get shippingCost => real().withDefault(const Constant(0.0))();
-  RealColumn get otherExpenses => real().withDefault(const Constant(0.0))();
+  TextColumn get total => text().map(const DecimalConverter())();
+  TextColumn get tax => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get discount => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get landedCosts => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get shippingCost => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get otherExpenses => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get invoiceNumber => text().nullable()();
   TextColumn get purchaseType => text().withDefault(const Constant('cash'))();
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
@@ -265,7 +274,7 @@ class Purchases extends Table with SyncableTable {
       .withDefault(const Constant(0))(); // 0 = DRAFT
   TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
   TextColumn get currencyId => text().nullable()();
-  RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
+  TextColumn get exchangeRate => text().map(const DecimalConverter()).withDefault(Constant(Decimal.one.toString()))();
   TextColumn get notes => text().nullable()();
   TextColumn get referenceDocument => text().nullable()();
   TextColumn get attachmentPath => text().nullable()();
@@ -276,23 +285,23 @@ class PurchaseItems extends Table with SyncableTable {
   TextColumn get productId => text().references(Products, #id)();
   TextColumn get unitId =>
       text().nullable()(); // New: Unit ID (e.g., carton, kilo)
-  RealColumn get unitFactor =>
-      real().withDefault(const Constant(1.0))(); // New: Conversion to base unit
-  RealColumn get quantity => real()();
-  RealColumn get quantityInBaseUnit =>
-      real().nullable()(); // New: Calculated base quantity
-  RealColumn get unitPrice => real()(); // New: Price per selected unit
-  RealColumn get price => real()(); // Total price (kept for compatibility)
-  RealColumn get discount =>
-      real().withDefault(const Constant(0.0))(); // New: Item discount
-  RealColumn get discountPercent =>
-      real().withDefault(const Constant(0.0))(); // New: Discount percentage
-  RealColumn get tax =>
-      real().withDefault(const Constant(0.0))(); // New: Tax amount
-  RealColumn get taxPercent =>
-      real().withDefault(const Constant(0.0))(); // New: Tax percentage
-  RealColumn get landedCostShare =>
-      real().withDefault(const Constant(0.0))(); // New: Share of landed costs
+  TextColumn get unitFactor =>
+      text().map(const DecimalConverter()).withDefault(Constant(Decimal.one.toString()))(); // New: Conversion to base unit
+  TextColumn get quantity => text().map(const DecimalConverter())();
+  TextColumn get quantityInBaseUnit =>
+      text().map(const DecimalConverter()).nullable()(); // New: Calculated base quantity
+  TextColumn get unitPrice => text().map(const DecimalConverter())(); // New: Price per selected unit
+  TextColumn get price => text().map(const DecimalConverter())(); // Total price (kept for compatibility)
+  TextColumn get discount =>
+      text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))(); // New: Item discount
+  TextColumn get discountPercent =>
+      text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))(); // New: Discount percentage
+  TextColumn get tax =>
+      text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))(); // New: Tax amount
+  TextColumn get taxPercent =>
+      text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))(); // New: Tax percentage
+  TextColumn get landedCostShare =>
+      text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))(); // New: Share of landed costs
   TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
   TextColumn get batchNumber => text().nullable()(); // New
   DateTimeColumn get expiryDate => dateTime().nullable()(); // New
@@ -320,9 +329,9 @@ class ProductBatches extends Table with SyncableTable {
   TextColumn get warehouseId => text().references(Warehouses, #id)();
   TextColumn get batchNumber => text()();
   DateTimeColumn get expiryDate => dateTime().nullable()();
-  RealColumn get quantity => real().withDefault(const Constant(0.0))();
-  RealColumn get initialQuantity => real().withDefault(const Constant(0.0))();
-  RealColumn get costPrice => real().withDefault(const Constant(0.0))();
+  TextColumn get quantity => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get initialQuantity => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get costPrice => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
 }
 
 /// Item variants (e.g., color, size) for products with multiple attributes
@@ -342,7 +351,7 @@ class SalesReturnItems extends Table with SyncableTable {
   TextColumn get productId => text().references(Products, #id)();
   RealColumn get quantity => real()();
   RealColumn get price => real()();
-  RealColumn get unitFactor => real().withDefault(const Constant(1.0))();
+  TextColumn get unitFactor => text().map(const DecimalConverter()).withDefault(Constant(Decimal.one.toString()))();
   TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
 }
 
@@ -398,7 +407,7 @@ class GLAccounts extends Table with SyncableTable {
       text().nullable()(); // جديد: صندوق، بنك، عميل، مورد، موظف، مركز تكلفة
   TextColumn get parentId => text().nullable().references(GLAccounts, #id)();
   BoolColumn get isHeader => boolean().withDefault(const Constant(false))();
-  RealColumn get balance => real().withDefault(const Constant(0.0))();
+  TextColumn get balance => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
 }
 
 class CostCenters extends Table with SyncableTable {
@@ -424,7 +433,7 @@ class GLEntries extends Table with SyncableTable {
   DateTimeColumn get postedAt => dateTime().nullable()(); // New
   TextColumn get postedBy => text().nullable()(); // New
   TextColumn get currencyId => text().nullable()();
-  RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
+  TextColumn get exchangeRate => text().map(const DecimalConverter()).withDefault(Constant(Decimal.one.toString()))();
 }
 
 class GLLines extends Table with SyncableTable {
@@ -435,10 +444,10 @@ class GLLines extends Table with SyncableTable {
   TextColumn get accountId => text().references(GLAccounts, #id)();
   TextColumn get costCenterId =>
       text().nullable().references(CostCenters, #id)();
-  RealColumn get debit => real().withDefault(const Constant(0.0))();
-  RealColumn get credit => real().withDefault(const Constant(0.0))();
+  TextColumn get debit => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get credit => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get currencyId => text().nullable().references(Currencies, #id)();
-  RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
+  TextColumn get exchangeRate => text().map(const DecimalConverter()).withDefault(Constant(Decimal.one.toString()))();
   TextColumn get memo => text().nullable()();
 }
 
@@ -492,9 +501,9 @@ class Shifts extends Table with SyncableTable {
   TextColumn get userId => text().references(Users, #id)();
   DateTimeColumn get startTime => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get endTime => dateTime().nullable()();
-  RealColumn get openingCash => real().withDefault(const Constant(0.0))();
-  RealColumn get closingCash => real().nullable()();
-  RealColumn get expectedCash => real().nullable()();
+  TextColumn get openingCash => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get closingCash => text().map(const DecimalConverter()).nullable()();
+  TextColumn get expectedCash => text().map(const DecimalConverter()).nullable()();
   TextColumn get note => text().nullable()();
   BoolColumn get isOpen => boolean().withDefault(const Constant(true))();
 }
@@ -541,7 +550,7 @@ class Employees extends Table with SyncableTable {
   TextColumn get jobTitle => text().nullable()();
   TextColumn get role =>
       text().withDefault(const Constant('USER'))(); // ADMIN or USER
-  RealColumn get basicSalary => real().withDefault(const Constant(0.0))();
+  TextColumn get basicSalary => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   DateTimeColumn get hireDate => dateTime().nullable()();
   TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
@@ -560,8 +569,8 @@ class PayrollLines extends Table with SyncableTable {
   TextColumn get payrollEntryId => text().references(PayrollEntries, #id)();
   TextColumn get employeeId => text().references(Employees, #id)();
   RealColumn get basicSalary => real()();
-  RealColumn get allowances => real().withDefault(const Constant(0.0))();
-  RealColumn get deductions => real().withDefault(const Constant(0.0))();
+  TextColumn get allowances => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get deductions => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   RealColumn get netSalary => real()();
 }
 
@@ -589,7 +598,7 @@ class FinancialTransfers extends Table with SyncableTable {
   @ReferenceName('receiverAccountFinancialTransfers')
   TextColumn get receiverAccountId => text().references(GLAccounts, #id)();
   RealColumn get amount => real()();
-  RealColumn get commission => real().withDefault(const Constant(0.0))();
+  TextColumn get commission => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get company => text().nullable()();
   TextColumn get transferType => text()(); // CASH, BANK, CHECK
   TextColumn get checkId => text().nullable().references(Checks, #id)();
@@ -609,7 +618,7 @@ class PriceListItems extends Table with SyncableTable {
   TextColumn get priceListId => text().references(PriceLists, #id)();
   TextColumn get productId => text().references(Products, #id)();
   RealColumn get price => real()();
-  RealColumn get minQuantity => real().withDefault(const Constant(0.0))();
+  TextColumn get minQuantity => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
 }
 
 class Promotions extends Table with SyncableTable {
@@ -622,7 +631,7 @@ class Promotions extends Table with SyncableTable {
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   TextColumn get categoryId => text().nullable().references(Categories, #id)();
   TextColumn get productId => text().nullable().references(Products, #id)();
-  RealColumn get minPurchaseAmount => real().withDefault(const Constant(0.0))();
+  TextColumn get minPurchaseAmount => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
 }
 
 class PriceHistory extends Table with SyncableTable {
@@ -638,7 +647,7 @@ class Currencies extends Table with SyncableTable {
   TextColumn get fractionalUnit => text().nullable()(); // فكة العملة
   IntColumn get decimalPlaces =>
       integer().withDefault(const Constant(2))(); // عدد الكسور
-  RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
+  TextColumn get exchangeRate => text().map(const DecimalConverter()).withDefault(Constant(Decimal.one.toString()))();
   BoolColumn get isBase => boolean().withDefault(const Constant(false))();
 }
 
@@ -648,8 +657,8 @@ class UnitConversions extends Table with SyncableTable {
   RealColumn get factor =>
       real()(); // How many of this unit equal the base unit
   BoolColumn get isBaseUnit => boolean().withDefault(const Constant(false))();
-  RealColumn get buyPrice => real().nullable()(); // Unit-specific buy price
-  RealColumn get sellPrice => real().nullable()(); // Unit-specific sell price
+  TextColumn get buyPrice => text().map(const DecimalConverter()).nullable()(); // Unit-specific buy price
+  TextColumn get sellPrice => text().map(const DecimalConverter()).nullable()(); // Unit-specific sell price
   TextColumn get barcode =>
       text().unique().nullable()(); // Barcode for this unit
 }
@@ -661,8 +670,8 @@ class APInvoices extends Table with SyncableTable {
       dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get dueDate => dateTime().nullable()();
   RealColumn get totalAmount => real()();
-  RealColumn get taxAmount => real().withDefault(const Constant(0.0))();
-  RealColumn get paidAmount => real().withDefault(const Constant(0.0))();
+  TextColumn get taxAmount => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get paidAmount => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get status => text()
       .withDefault(const Constant('DRAFT'))(); // DRAFT, POSTED, PAID, PARTIAL
   TextColumn get notes => text().nullable()();
@@ -676,8 +685,8 @@ class ARInvoices extends Table with SyncableTable {
       dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get dueDate => dateTime().nullable()();
   RealColumn get totalAmount => real()();
-  RealColumn get taxAmount => real().withDefault(const Constant(0.0))();
-  RealColumn get paidAmount => real().withDefault(const Constant(0.0))();
+  TextColumn get taxAmount => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get paidAmount => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get status => text()
       .withDefault(const Constant('DRAFT'))(); // DRAFT, POSTED, PAID, PARTIAL
   TextColumn get notes => text().nullable()();
@@ -700,8 +709,8 @@ class AccountTransactions extends Table with SyncableTable {
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
   TextColumn get type => text()(); // INVOICE, PAYMENT, RETURN
   TextColumn get referenceId => text().nullable()();
-  RealColumn get debit => real().withDefault(const Constant(0.0))();
-  RealColumn get credit => real().withDefault(const Constant(0.0))();
+  TextColumn get debit => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get credit => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
 }
 
 class StockTakes extends Table with SyncableTable {
@@ -797,7 +806,7 @@ class Checks extends Table with SyncableTable {
       text().nullable().references(GLAccounts, #id)();
   TextColumn get note => text().nullable()();
   TextColumn get currencyId => text().nullable().references(Currencies, #id)();
-  RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
+  TextColumn get exchangeRate => text().map(const DecimalConverter()).withDefault(Constant(Decimal.one.toString()))();
 }
 
 class BillOfMaterials extends Table with SyncableTable {
@@ -812,7 +821,7 @@ class BillOfMaterials extends Table with SyncableTable {
 class ProductionOrders extends Table with SyncableTable {
   TextColumn get finishedProductId => text().references(Products, #id)();
   RealColumn get plannedQuantity => real()();
-  RealColumn get actualQuantity => real().withDefault(const Constant(0.0))();
+  TextColumn get actualQuantity => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
   TextColumn get status => text().withDefault(const Constant('PLANNED'))(); // PLANNED, IN_PROGRESS, COMPLETED, CANCELLED
   TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
@@ -823,8 +832,8 @@ class ProductionOrderItems extends Table with SyncableTable {
   TextColumn get productionOrderId => text().references(ProductionOrders, #id)();
   TextColumn get componentProductId => text().references(Products, #id)();
   RealColumn get plannedQuantity => real()();
-  RealColumn get actualQuantity => real().withDefault(const Constant(0.0))();
-  RealColumn get unitCost => real().withDefault(const Constant(0.0))();
+  TextColumn get actualQuantity => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get unitCost => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
 }
 
 
@@ -1270,13 +1279,13 @@ class AppDatabase extends _$AppDatabase {
     final query = selectOnly(productBatches)
       ..addColumns([productBatches.quantity, productBatches.costPrice]);
     final rows = await query.get();
-    double total = 0.0;
+    Decimal total = Decimal.zero;
     for (final row in rows) {
-      final qty = row.read(productBatches.quantity) ?? 0.0;
-      final cost = row.read(productBatches.costPrice) ?? 0.0;
+      final qty = (row.read(productBatches.quantity) as Decimal?) ?? Decimal.zero;
+      final cost = (row.read(productBatches.costPrice) as Decimal?) ?? Decimal.zero;
       total += qty * cost;
     }
-    return total;
+    return total.toDouble();
   }
 
   Stream<List<Product>> watchLowStockProducts() {
@@ -1315,7 +1324,7 @@ class AppDatabase extends _$AppDatabase {
                 code: 'SAR',
                 name: 'ريال سعودي',
                 isBase: const Value(true),
-                exchangeRate: const Value(1.0),
+                exchangeRate: Value(Decimal.one),
               ));
           b.insert(
               currencies,
@@ -1323,7 +1332,7 @@ class AppDatabase extends _$AppDatabase {
                 code: 'USD',
                 name: 'دولار أمريكي',
                 isBase: const Value(false),
-                exchangeRate: const Value(3.75),
+                exchangeRate: Value(Decimal.parse('3.75')),
               ));
         });
       }

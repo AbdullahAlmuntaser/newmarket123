@@ -1582,11 +1582,12 @@ class $GLAccountsTable extends GLAccounts
   static const VerificationMeta _balanceMeta =
       const VerificationMeta('balance');
   @override
-  late final GeneratedColumn<double> balance = GeneratedColumn<double>(
-      'balance', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> balance =
+      GeneratedColumn<String>('balance', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($GLAccountsTable.$converterbalance);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -1670,10 +1671,7 @@ class $GLAccountsTable extends GLAccounts
       context.handle(_isHeaderMeta,
           isHeader.isAcceptableOrUnknown(data['is_header']!, _isHeaderMeta));
     }
-    if (data.containsKey('balance')) {
-      context.handle(_balanceMeta,
-          balance.isAcceptableOrUnknown(data['balance']!, _balanceMeta));
-    }
+    context.handle(_balanceMeta, const VerificationResult.success());
     return context;
   }
 
@@ -1707,8 +1705,9 @@ class $GLAccountsTable extends GLAccounts
           .read(DriftSqlType.string, data['${effectivePrefix}parent_id']),
       isHeader: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_header'])!,
-      balance: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}balance'])!,
+      balance: $GLAccountsTable.$converterbalance.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}balance'])!),
     );
   }
 
@@ -1716,6 +1715,9 @@ class $GLAccountsTable extends GLAccounts
   $GLAccountsTable createAlias(String alias) {
     return $GLAccountsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterbalance =
+      const DecimalConverter();
 }
 
 class GLAccount extends DataClass implements Insertable<GLAccount> {
@@ -1731,7 +1733,7 @@ class GLAccount extends DataClass implements Insertable<GLAccount> {
   final String? analyticType;
   final String? parentId;
   final bool isHeader;
-  final double balance;
+  final Decimal balance;
   const GLAccount(
       {required this.id,
       required this.createdAt,
@@ -1769,7 +1771,10 @@ class GLAccount extends DataClass implements Insertable<GLAccount> {
       map['parent_id'] = Variable<String>(parentId);
     }
     map['is_header'] = Variable<bool>(isHeader);
-    map['balance'] = Variable<double>(balance);
+    {
+      map['balance'] =
+          Variable<String>($GLAccountsTable.$converterbalance.toSql(balance));
+    }
     return map;
   }
 
@@ -1815,7 +1820,7 @@ class GLAccount extends DataClass implements Insertable<GLAccount> {
       analyticType: serializer.fromJson<String?>(json['analyticType']),
       parentId: serializer.fromJson<String?>(json['parentId']),
       isHeader: serializer.fromJson<bool>(json['isHeader']),
-      balance: serializer.fromJson<double>(json['balance']),
+      balance: serializer.fromJson<Decimal>(json['balance']),
     );
   }
   @override
@@ -1834,7 +1839,7 @@ class GLAccount extends DataClass implements Insertable<GLAccount> {
       'analyticType': serializer.toJson<String?>(analyticType),
       'parentId': serializer.toJson<String?>(parentId),
       'isHeader': serializer.toJson<bool>(isHeader),
-      'balance': serializer.toJson<double>(balance),
+      'balance': serializer.toJson<Decimal>(balance),
     };
   }
 
@@ -1851,7 +1856,7 @@ class GLAccount extends DataClass implements Insertable<GLAccount> {
           Value<String?> analyticType = const Value.absent(),
           Value<String?> parentId = const Value.absent(),
           bool? isHeader,
-          double? balance}) =>
+          Decimal? balance}) =>
       GLAccount(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -1956,7 +1961,7 @@ class GLAccountsCompanion extends UpdateCompanion<GLAccount> {
   final Value<String?> analyticType;
   final Value<String?> parentId;
   final Value<bool> isHeader;
-  final Value<double> balance;
+  final Value<Decimal> balance;
   final Value<int> rowid;
   const GLAccountsCompanion({
     this.id = const Value.absent(),
@@ -2005,7 +2010,7 @@ class GLAccountsCompanion extends UpdateCompanion<GLAccount> {
     Expression<String>? analyticType,
     Expression<String>? parentId,
     Expression<bool>? isHeader,
-    Expression<double>? balance,
+    Expression<String>? balance,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2039,7 +2044,7 @@ class GLAccountsCompanion extends UpdateCompanion<GLAccount> {
       Value<String?>? analyticType,
       Value<String?>? parentId,
       Value<bool>? isHeader,
-      Value<double>? balance,
+      Value<Decimal>? balance,
       Value<int>? rowid}) {
     return GLAccountsCompanion(
       id: id ?? this.id,
@@ -2099,7 +2104,8 @@ class GLAccountsCompanion extends UpdateCompanion<GLAccount> {
       map['is_header'] = Variable<bool>(isHeader.value);
     }
     if (balance.present) {
-      map['balance'] = Variable<double>(balance.value);
+      map['balance'] = Variable<String>(
+          $GLAccountsTable.$converterbalance.toSql(balance.value));
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -2235,11 +2241,12 @@ class $SuppliersTable extends Suppliers
   static const VerificationMeta _balanceMeta =
       const VerificationMeta('balance');
   @override
-  late final GeneratedColumn<double> balance = GeneratedColumn<double>(
-      'balance', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> balance =
+      GeneratedColumn<String>('balance', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($SuppliersTable.$converterbalance);
   static const VerificationMeta _accountIdMeta =
       const VerificationMeta('accountId');
   @override
@@ -2341,10 +2348,7 @@ class $SuppliersTable extends Suppliers
       context.handle(_isActiveMeta,
           isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
     }
-    if (data.containsKey('balance')) {
-      context.handle(_balanceMeta,
-          balance.isAcceptableOrUnknown(data['balance']!, _balanceMeta));
-    }
+    context.handle(_balanceMeta, const VerificationResult.success());
     if (data.containsKey('account_id')) {
       context.handle(_accountIdMeta,
           accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta));
@@ -2386,8 +2390,9 @@ class $SuppliersTable extends Suppliers
           .read(DriftSqlType.string, data['${effectivePrefix}supplier_type'])!,
       isActive: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
-      balance: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}balance'])!,
+      balance: $SuppliersTable.$converterbalance.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}balance'])!),
       accountId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}account_id']),
     );
@@ -2397,6 +2402,9 @@ class $SuppliersTable extends Suppliers
   $SuppliersTable createAlias(String alias) {
     return $SuppliersTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterbalance =
+      const DecimalConverter();
 }
 
 class Supplier extends DataClass implements Insertable<Supplier> {
@@ -2414,7 +2422,7 @@ class Supplier extends DataClass implements Insertable<Supplier> {
   final String? email;
   final String supplierType;
   final bool isActive;
-  final double balance;
+  final Decimal balance;
   final String? accountId;
   const Supplier(
       {required this.id,
@@ -2464,7 +2472,10 @@ class Supplier extends DataClass implements Insertable<Supplier> {
     }
     map['supplier_type'] = Variable<String>(supplierType);
     map['is_active'] = Variable<bool>(isActive);
-    map['balance'] = Variable<double>(balance);
+    {
+      map['balance'] =
+          Variable<String>($SuppliersTable.$converterbalance.toSql(balance));
+    }
     if (!nullToAbsent || accountId != null) {
       map['account_id'] = Variable<String>(accountId);
     }
@@ -2524,7 +2535,7 @@ class Supplier extends DataClass implements Insertable<Supplier> {
       email: serializer.fromJson<String?>(json['email']),
       supplierType: serializer.fromJson<String>(json['supplierType']),
       isActive: serializer.fromJson<bool>(json['isActive']),
-      balance: serializer.fromJson<double>(json['balance']),
+      balance: serializer.fromJson<Decimal>(json['balance']),
       accountId: serializer.fromJson<String?>(json['accountId']),
     );
   }
@@ -2546,7 +2557,7 @@ class Supplier extends DataClass implements Insertable<Supplier> {
       'email': serializer.toJson<String?>(email),
       'supplierType': serializer.toJson<String>(supplierType),
       'isActive': serializer.toJson<bool>(isActive),
-      'balance': serializer.toJson<double>(balance),
+      'balance': serializer.toJson<Decimal>(balance),
       'accountId': serializer.toJson<String?>(accountId),
     };
   }
@@ -2566,7 +2577,7 @@ class Supplier extends DataClass implements Insertable<Supplier> {
           Value<String?> email = const Value.absent(),
           String? supplierType,
           bool? isActive,
-          double? balance,
+          Decimal? balance,
           Value<String?> accountId = const Value.absent()}) =>
       Supplier(
         id: id ?? this.id,
@@ -2691,7 +2702,7 @@ class SuppliersCompanion extends UpdateCompanion<Supplier> {
   final Value<String?> email;
   final Value<String> supplierType;
   final Value<bool> isActive;
-  final Value<double> balance;
+  final Value<Decimal> balance;
   final Value<String?> accountId;
   final Value<int> rowid;
   const SuppliersCompanion({
@@ -2747,7 +2758,7 @@ class SuppliersCompanion extends UpdateCompanion<Supplier> {
     Expression<String>? email,
     Expression<String>? supplierType,
     Expression<bool>? isActive,
-    Expression<double>? balance,
+    Expression<String>? balance,
     Expression<String>? accountId,
     Expression<int>? rowid,
   }) {
@@ -2787,7 +2798,7 @@ class SuppliersCompanion extends UpdateCompanion<Supplier> {
       Value<String?>? email,
       Value<String>? supplierType,
       Value<bool>? isActive,
-      Value<double>? balance,
+      Value<Decimal>? balance,
       Value<String?>? accountId,
       Value<int>? rowid}) {
     return SuppliersCompanion(
@@ -2857,7 +2868,8 @@ class SuppliersCompanion extends UpdateCompanion<Supplier> {
       map['is_active'] = Variable<bool>(isActive.value);
     }
     if (balance.present) {
-      map['balance'] = Variable<double>(balance.value);
+      map['balance'] = Variable<String>(
+          $SuppliersTable.$converterbalance.toSql(balance.value));
     }
     if (accountId.present) {
       map['account_id'] = Variable<String>(accountId.value);
@@ -3009,42 +3021,47 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
   static const VerificationMeta _buyPriceMeta =
       const VerificationMeta('buyPrice');
   @override
-  late final GeneratedColumn<double> buyPrice = GeneratedColumn<double>(
-      'buy_price', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> buyPrice =
+      GeneratedColumn<String>('buy_price', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($ProductsTable.$converterbuyPrice);
   static const VerificationMeta _sellPriceMeta =
       const VerificationMeta('sellPrice');
   @override
-  late final GeneratedColumn<double> sellPrice = GeneratedColumn<double>(
-      'sell_price', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> sellPrice =
+      GeneratedColumn<String>('sell_price', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($ProductsTable.$convertersellPrice);
   static const VerificationMeta _wholesalePriceMeta =
       const VerificationMeta('wholesalePrice');
   @override
-  late final GeneratedColumn<double> wholesalePrice = GeneratedColumn<double>(
-      'wholesale_price', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> wholesalePrice =
+      GeneratedColumn<String>('wholesale_price', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($ProductsTable.$converterwholesalePrice);
   static const VerificationMeta _stockMeta = const VerificationMeta('stock');
   @override
-  late final GeneratedColumn<double> stock = GeneratedColumn<double>(
-      'stock', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> stock =
+      GeneratedColumn<String>('stock', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($ProductsTable.$converterstock);
   static const VerificationMeta _maxStockMeta =
       const VerificationMeta('maxStock');
   @override
-  late final GeneratedColumn<double> maxStock = GeneratedColumn<double>(
-      'max_stock', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(1000.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> maxStock =
+      GeneratedColumn<String>('max_stock', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.fromInt(1000).toString()))
+          .withConverter<Decimal>($ProductsTable.$convertermaxStock);
   static const VerificationMeta _supplierIdMeta =
       const VerificationMeta('supplierId');
   @override
@@ -3085,11 +3102,12 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
   static const VerificationMeta _alertLimitMeta =
       const VerificationMeta('alertLimit');
   @override
-  late final GeneratedColumn<double> alertLimit = GeneratedColumn<double>(
-      'alert_limit', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(10.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> alertLimit =
+      GeneratedColumn<String>('alert_limit', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.fromInt(10).toString()))
+          .withConverter<Decimal>($ProductsTable.$converteralertLimit);
   static const VerificationMeta _expiryDateMeta =
       const VerificationMeta('expiryDate');
   @override
@@ -3099,11 +3117,12 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
   static const VerificationMeta _taxRateMeta =
       const VerificationMeta('taxRate');
   @override
-  late final GeneratedColumn<double> taxRate = GeneratedColumn<double>(
-      'tax_rate', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> taxRate =
+      GeneratedColumn<String>('tax_rate', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($ProductsTable.$convertertaxRate);
   static const VerificationMeta _isActiveMeta =
       const VerificationMeta('isActive');
   @override
@@ -3132,9 +3151,10 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
   static const VerificationMeta _additionalCostMeta =
       const VerificationMeta('additionalCost');
   @override
-  late final GeneratedColumn<double> additionalCost = GeneratedColumn<double>(
-      'additional_cost', aliasedName, true,
-      type: DriftSqlType.double, requiredDuringInsert: false);
+  late final GeneratedColumnWithTypeConverter<Decimal?, String> additionalCost =
+      GeneratedColumn<String>('additional_cost', aliasedName, true,
+              type: DriftSqlType.string, requiredDuringInsert: false)
+          .withConverter<Decimal?>($ProductsTable.$converteradditionalCostn);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -3250,28 +3270,11 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
       context.handle(_boxUnitMeta,
           boxUnit.isAcceptableOrUnknown(data['box_unit']!, _boxUnitMeta));
     }
-    if (data.containsKey('buy_price')) {
-      context.handle(_buyPriceMeta,
-          buyPrice.isAcceptableOrUnknown(data['buy_price']!, _buyPriceMeta));
-    }
-    if (data.containsKey('sell_price')) {
-      context.handle(_sellPriceMeta,
-          sellPrice.isAcceptableOrUnknown(data['sell_price']!, _sellPriceMeta));
-    }
-    if (data.containsKey('wholesale_price')) {
-      context.handle(
-          _wholesalePriceMeta,
-          wholesalePrice.isAcceptableOrUnknown(
-              data['wholesale_price']!, _wholesalePriceMeta));
-    }
-    if (data.containsKey('stock')) {
-      context.handle(
-          _stockMeta, stock.isAcceptableOrUnknown(data['stock']!, _stockMeta));
-    }
-    if (data.containsKey('max_stock')) {
-      context.handle(_maxStockMeta,
-          maxStock.isAcceptableOrUnknown(data['max_stock']!, _maxStockMeta));
-    }
+    context.handle(_buyPriceMeta, const VerificationResult.success());
+    context.handle(_sellPriceMeta, const VerificationResult.success());
+    context.handle(_wholesalePriceMeta, const VerificationResult.success());
+    context.handle(_stockMeta, const VerificationResult.success());
+    context.handle(_maxStockMeta, const VerificationResult.success());
     if (data.containsKey('supplier_id')) {
       context.handle(
           _supplierIdMeta,
@@ -3294,22 +3297,14 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
       context.handle(_isServiceMeta,
           isService.isAcceptableOrUnknown(data['is_service']!, _isServiceMeta));
     }
-    if (data.containsKey('alert_limit')) {
-      context.handle(
-          _alertLimitMeta,
-          alertLimit.isAcceptableOrUnknown(
-              data['alert_limit']!, _alertLimitMeta));
-    }
+    context.handle(_alertLimitMeta, const VerificationResult.success());
     if (data.containsKey('expiry_date')) {
       context.handle(
           _expiryDateMeta,
           expiryDate.isAcceptableOrUnknown(
               data['expiry_date']!, _expiryDateMeta));
     }
-    if (data.containsKey('tax_rate')) {
-      context.handle(_taxRateMeta,
-          taxRate.isAcceptableOrUnknown(data['tax_rate']!, _taxRateMeta));
-    }
+    context.handle(_taxRateMeta, const VerificationResult.success());
     if (data.containsKey('is_active')) {
       context.handle(_isActiveMeta,
           isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
@@ -3326,12 +3321,7 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
           attributes.isAcceptableOrUnknown(
               data['attributes']!, _attributesMeta));
     }
-    if (data.containsKey('additional_cost')) {
-      context.handle(
-          _additionalCostMeta,
-          additionalCost.isAcceptableOrUnknown(
-              data['additional_cost']!, _additionalCostMeta));
-    }
+    context.handle(_additionalCostMeta, const VerificationResult.success());
     return context;
   }
 
@@ -3371,16 +3361,20 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
           .read(DriftSqlType.string, data['${effectivePrefix}kilo_unit']),
       boxUnit: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}box_unit']),
-      buyPrice: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}buy_price'])!,
-      sellPrice: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}sell_price'])!,
-      wholesalePrice: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}wholesale_price'])!,
-      stock: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}stock'])!,
-      maxStock: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}max_stock'])!,
+      buyPrice: $ProductsTable.$converterbuyPrice.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}buy_price'])!),
+      sellPrice: $ProductsTable.$convertersellPrice.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}sell_price'])!),
+      wholesalePrice: $ProductsTable.$converterwholesalePrice.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}wholesale_price'])!),
+      stock: $ProductsTable.$converterstock.fromSql(attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}stock'])!),
+      maxStock: $ProductsTable.$convertermaxStock.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}max_stock'])!),
       supplierId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}supplier_id']),
       valuationMethod: attachedDatabase.typeMapping.read(
@@ -3389,20 +3383,23 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
           .read(DriftSqlType.bool, data['${effectivePrefix}allow_free_qty'])!,
       isService: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_service'])!,
-      alertLimit: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}alert_limit'])!,
+      alertLimit: $ProductsTable.$converteralertLimit.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}alert_limit'])!),
       expiryDate: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}expiry_date']),
-      taxRate: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}tax_rate'])!,
+      taxRate: $ProductsTable.$convertertaxRate.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tax_rate'])!),
       isActive: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
       parentProductId: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}parent_product_id']),
       attributes: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}attributes']),
-      additionalCost: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}additional_cost']),
+      additionalCost: $ProductsTable.$converteradditionalCostn.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}additional_cost'])),
     );
   }
 
@@ -3410,6 +3407,25 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
   $ProductsTable createAlias(String alias) {
     return $ProductsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterbuyPrice =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $convertersellPrice =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterwholesalePrice =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterstock =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $convertermaxStock =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converteralertLimit =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $convertertaxRate =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converteradditionalCost =
+      const DecimalConverter();
+  static TypeConverter<Decimal?, String?> $converteradditionalCostn =
+      NullAwareTypeConverter.wrap($converteradditionalCost);
 }
 
 class Product extends DataClass implements Insertable<Product> {
@@ -3428,22 +3444,22 @@ class Product extends DataClass implements Insertable<Product> {
   final int piecesPerCarton;
   final String? kiloUnit;
   final String? boxUnit;
-  final double buyPrice;
-  final double sellPrice;
-  final double wholesalePrice;
-  final double stock;
-  final double maxStock;
+  final Decimal buyPrice;
+  final Decimal sellPrice;
+  final Decimal wholesalePrice;
+  final Decimal stock;
+  final Decimal maxStock;
   final String? supplierId;
   final String valuationMethod;
   final bool allowFreeQty;
   final bool isService;
-  final double alertLimit;
+  final Decimal alertLimit;
   final DateTime? expiryDate;
-  final double taxRate;
+  final Decimal taxRate;
   final bool isActive;
   final String? parentProductId;
   final String? attributes;
-  final double? additionalCost;
+  final Decimal? additionalCost;
   const Product(
       {required this.id,
       required this.createdAt,
@@ -3506,22 +3522,43 @@ class Product extends DataClass implements Insertable<Product> {
     if (!nullToAbsent || boxUnit != null) {
       map['box_unit'] = Variable<String>(boxUnit);
     }
-    map['buy_price'] = Variable<double>(buyPrice);
-    map['sell_price'] = Variable<double>(sellPrice);
-    map['wholesale_price'] = Variable<double>(wholesalePrice);
-    map['stock'] = Variable<double>(stock);
-    map['max_stock'] = Variable<double>(maxStock);
+    {
+      map['buy_price'] =
+          Variable<String>($ProductsTable.$converterbuyPrice.toSql(buyPrice));
+    }
+    {
+      map['sell_price'] =
+          Variable<String>($ProductsTable.$convertersellPrice.toSql(sellPrice));
+    }
+    {
+      map['wholesale_price'] = Variable<String>(
+          $ProductsTable.$converterwholesalePrice.toSql(wholesalePrice));
+    }
+    {
+      map['stock'] =
+          Variable<String>($ProductsTable.$converterstock.toSql(stock));
+    }
+    {
+      map['max_stock'] =
+          Variable<String>($ProductsTable.$convertermaxStock.toSql(maxStock));
+    }
     if (!nullToAbsent || supplierId != null) {
       map['supplier_id'] = Variable<String>(supplierId);
     }
     map['valuation_method'] = Variable<String>(valuationMethod);
     map['allow_free_qty'] = Variable<bool>(allowFreeQty);
     map['is_service'] = Variable<bool>(isService);
-    map['alert_limit'] = Variable<double>(alertLimit);
+    {
+      map['alert_limit'] = Variable<String>(
+          $ProductsTable.$converteralertLimit.toSql(alertLimit));
+    }
     if (!nullToAbsent || expiryDate != null) {
       map['expiry_date'] = Variable<DateTime>(expiryDate);
     }
-    map['tax_rate'] = Variable<double>(taxRate);
+    {
+      map['tax_rate'] =
+          Variable<String>($ProductsTable.$convertertaxRate.toSql(taxRate));
+    }
     map['is_active'] = Variable<bool>(isActive);
     if (!nullToAbsent || parentProductId != null) {
       map['parent_product_id'] = Variable<String>(parentProductId);
@@ -3530,7 +3567,8 @@ class Product extends DataClass implements Insertable<Product> {
       map['attributes'] = Variable<String>(attributes);
     }
     if (!nullToAbsent || additionalCost != null) {
-      map['additional_cost'] = Variable<double>(additionalCost);
+      map['additional_cost'] = Variable<String>(
+          $ProductsTable.$converteradditionalCostn.toSql(additionalCost));
     }
     return map;
   }
@@ -3612,22 +3650,22 @@ class Product extends DataClass implements Insertable<Product> {
       piecesPerCarton: serializer.fromJson<int>(json['piecesPerCarton']),
       kiloUnit: serializer.fromJson<String?>(json['kiloUnit']),
       boxUnit: serializer.fromJson<String?>(json['boxUnit']),
-      buyPrice: serializer.fromJson<double>(json['buyPrice']),
-      sellPrice: serializer.fromJson<double>(json['sellPrice']),
-      wholesalePrice: serializer.fromJson<double>(json['wholesalePrice']),
-      stock: serializer.fromJson<double>(json['stock']),
-      maxStock: serializer.fromJson<double>(json['maxStock']),
+      buyPrice: serializer.fromJson<Decimal>(json['buyPrice']),
+      sellPrice: serializer.fromJson<Decimal>(json['sellPrice']),
+      wholesalePrice: serializer.fromJson<Decimal>(json['wholesalePrice']),
+      stock: serializer.fromJson<Decimal>(json['stock']),
+      maxStock: serializer.fromJson<Decimal>(json['maxStock']),
       supplierId: serializer.fromJson<String?>(json['supplierId']),
       valuationMethod: serializer.fromJson<String>(json['valuationMethod']),
       allowFreeQty: serializer.fromJson<bool>(json['allowFreeQty']),
       isService: serializer.fromJson<bool>(json['isService']),
-      alertLimit: serializer.fromJson<double>(json['alertLimit']),
+      alertLimit: serializer.fromJson<Decimal>(json['alertLimit']),
       expiryDate: serializer.fromJson<DateTime?>(json['expiryDate']),
-      taxRate: serializer.fromJson<double>(json['taxRate']),
+      taxRate: serializer.fromJson<Decimal>(json['taxRate']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       parentProductId: serializer.fromJson<String?>(json['parentProductId']),
       attributes: serializer.fromJson<String?>(json['attributes']),
-      additionalCost: serializer.fromJson<double?>(json['additionalCost']),
+      additionalCost: serializer.fromJson<Decimal?>(json['additionalCost']),
     );
   }
   @override
@@ -3649,22 +3687,22 @@ class Product extends DataClass implements Insertable<Product> {
       'piecesPerCarton': serializer.toJson<int>(piecesPerCarton),
       'kiloUnit': serializer.toJson<String?>(kiloUnit),
       'boxUnit': serializer.toJson<String?>(boxUnit),
-      'buyPrice': serializer.toJson<double>(buyPrice),
-      'sellPrice': serializer.toJson<double>(sellPrice),
-      'wholesalePrice': serializer.toJson<double>(wholesalePrice),
-      'stock': serializer.toJson<double>(stock),
-      'maxStock': serializer.toJson<double>(maxStock),
+      'buyPrice': serializer.toJson<Decimal>(buyPrice),
+      'sellPrice': serializer.toJson<Decimal>(sellPrice),
+      'wholesalePrice': serializer.toJson<Decimal>(wholesalePrice),
+      'stock': serializer.toJson<Decimal>(stock),
+      'maxStock': serializer.toJson<Decimal>(maxStock),
       'supplierId': serializer.toJson<String?>(supplierId),
       'valuationMethod': serializer.toJson<String>(valuationMethod),
       'allowFreeQty': serializer.toJson<bool>(allowFreeQty),
       'isService': serializer.toJson<bool>(isService),
-      'alertLimit': serializer.toJson<double>(alertLimit),
+      'alertLimit': serializer.toJson<Decimal>(alertLimit),
       'expiryDate': serializer.toJson<DateTime?>(expiryDate),
-      'taxRate': serializer.toJson<double>(taxRate),
+      'taxRate': serializer.toJson<Decimal>(taxRate),
       'isActive': serializer.toJson<bool>(isActive),
       'parentProductId': serializer.toJson<String?>(parentProductId),
       'attributes': serializer.toJson<String?>(attributes),
-      'additionalCost': serializer.toJson<double?>(additionalCost),
+      'additionalCost': serializer.toJson<Decimal?>(additionalCost),
     };
   }
 
@@ -3684,22 +3722,22 @@ class Product extends DataClass implements Insertable<Product> {
           int? piecesPerCarton,
           Value<String?> kiloUnit = const Value.absent(),
           Value<String?> boxUnit = const Value.absent(),
-          double? buyPrice,
-          double? sellPrice,
-          double? wholesalePrice,
-          double? stock,
-          double? maxStock,
+          Decimal? buyPrice,
+          Decimal? sellPrice,
+          Decimal? wholesalePrice,
+          Decimal? stock,
+          Decimal? maxStock,
           Value<String?> supplierId = const Value.absent(),
           String? valuationMethod,
           bool? allowFreeQty,
           bool? isService,
-          double? alertLimit,
+          Decimal? alertLimit,
           Value<DateTime?> expiryDate = const Value.absent(),
-          double? taxRate,
+          Decimal? taxRate,
           bool? isActive,
           Value<String?> parentProductId = const Value.absent(),
           Value<String?> attributes = const Value.absent(),
-          Value<double?> additionalCost = const Value.absent()}) =>
+          Value<Decimal?> additionalCost = const Value.absent()}) =>
       Product(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -3916,22 +3954,22 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   final Value<int> piecesPerCarton;
   final Value<String?> kiloUnit;
   final Value<String?> boxUnit;
-  final Value<double> buyPrice;
-  final Value<double> sellPrice;
-  final Value<double> wholesalePrice;
-  final Value<double> stock;
-  final Value<double> maxStock;
+  final Value<Decimal> buyPrice;
+  final Value<Decimal> sellPrice;
+  final Value<Decimal> wholesalePrice;
+  final Value<Decimal> stock;
+  final Value<Decimal> maxStock;
   final Value<String?> supplierId;
   final Value<String> valuationMethod;
   final Value<bool> allowFreeQty;
   final Value<bool> isService;
-  final Value<double> alertLimit;
+  final Value<Decimal> alertLimit;
   final Value<DateTime?> expiryDate;
-  final Value<double> taxRate;
+  final Value<Decimal> taxRate;
   final Value<bool> isActive;
   final Value<String?> parentProductId;
   final Value<String?> attributes;
-  final Value<double?> additionalCost;
+  final Value<Decimal?> additionalCost;
   final Value<int> rowid;
   const ProductsCompanion({
     this.id = const Value.absent(),
@@ -4018,22 +4056,22 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Expression<int>? piecesPerCarton,
     Expression<String>? kiloUnit,
     Expression<String>? boxUnit,
-    Expression<double>? buyPrice,
-    Expression<double>? sellPrice,
-    Expression<double>? wholesalePrice,
-    Expression<double>? stock,
-    Expression<double>? maxStock,
+    Expression<String>? buyPrice,
+    Expression<String>? sellPrice,
+    Expression<String>? wholesalePrice,
+    Expression<String>? stock,
+    Expression<String>? maxStock,
     Expression<String>? supplierId,
     Expression<String>? valuationMethod,
     Expression<bool>? allowFreeQty,
     Expression<bool>? isService,
-    Expression<double>? alertLimit,
+    Expression<String>? alertLimit,
     Expression<DateTime>? expiryDate,
-    Expression<double>? taxRate,
+    Expression<String>? taxRate,
     Expression<bool>? isActive,
     Expression<String>? parentProductId,
     Expression<String>? attributes,
-    Expression<double>? additionalCost,
+    Expression<String>? additionalCost,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -4088,22 +4126,22 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       Value<int>? piecesPerCarton,
       Value<String?>? kiloUnit,
       Value<String?>? boxUnit,
-      Value<double>? buyPrice,
-      Value<double>? sellPrice,
-      Value<double>? wholesalePrice,
-      Value<double>? stock,
-      Value<double>? maxStock,
+      Value<Decimal>? buyPrice,
+      Value<Decimal>? sellPrice,
+      Value<Decimal>? wholesalePrice,
+      Value<Decimal>? stock,
+      Value<Decimal>? maxStock,
       Value<String?>? supplierId,
       Value<String>? valuationMethod,
       Value<bool>? allowFreeQty,
       Value<bool>? isService,
-      Value<double>? alertLimit,
+      Value<Decimal>? alertLimit,
       Value<DateTime?>? expiryDate,
-      Value<double>? taxRate,
+      Value<Decimal>? taxRate,
       Value<bool>? isActive,
       Value<String?>? parentProductId,
       Value<String?>? attributes,
-      Value<double?>? additionalCost,
+      Value<Decimal?>? additionalCost,
       Value<int>? rowid}) {
     return ProductsCompanion(
       id: id ?? this.id,
@@ -4190,19 +4228,24 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       map['box_unit'] = Variable<String>(boxUnit.value);
     }
     if (buyPrice.present) {
-      map['buy_price'] = Variable<double>(buyPrice.value);
+      map['buy_price'] = Variable<String>(
+          $ProductsTable.$converterbuyPrice.toSql(buyPrice.value));
     }
     if (sellPrice.present) {
-      map['sell_price'] = Variable<double>(sellPrice.value);
+      map['sell_price'] = Variable<String>(
+          $ProductsTable.$convertersellPrice.toSql(sellPrice.value));
     }
     if (wholesalePrice.present) {
-      map['wholesale_price'] = Variable<double>(wholesalePrice.value);
+      map['wholesale_price'] = Variable<String>(
+          $ProductsTable.$converterwholesalePrice.toSql(wholesalePrice.value));
     }
     if (stock.present) {
-      map['stock'] = Variable<double>(stock.value);
+      map['stock'] =
+          Variable<String>($ProductsTable.$converterstock.toSql(stock.value));
     }
     if (maxStock.present) {
-      map['max_stock'] = Variable<double>(maxStock.value);
+      map['max_stock'] = Variable<String>(
+          $ProductsTable.$convertermaxStock.toSql(maxStock.value));
     }
     if (supplierId.present) {
       map['supplier_id'] = Variable<String>(supplierId.value);
@@ -4217,13 +4260,15 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       map['is_service'] = Variable<bool>(isService.value);
     }
     if (alertLimit.present) {
-      map['alert_limit'] = Variable<double>(alertLimit.value);
+      map['alert_limit'] = Variable<String>(
+          $ProductsTable.$converteralertLimit.toSql(alertLimit.value));
     }
     if (expiryDate.present) {
       map['expiry_date'] = Variable<DateTime>(expiryDate.value);
     }
     if (taxRate.present) {
-      map['tax_rate'] = Variable<double>(taxRate.value);
+      map['tax_rate'] = Variable<String>(
+          $ProductsTable.$convertertaxRate.toSql(taxRate.value));
     }
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
@@ -4235,7 +4280,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       map['attributes'] = Variable<String>(attributes.value);
     }
     if (additionalCost.present) {
-      map['additional_cost'] = Variable<double>(additionalCost.value);
+      map['additional_cost'] = Variable<String>(
+          $ProductsTable.$converteradditionalCostn.toSql(additionalCost.value));
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -4364,11 +4410,12 @@ class $CurrenciesTable extends Currencies
   static const VerificationMeta _exchangeRateMeta =
       const VerificationMeta('exchangeRate');
   @override
-  late final GeneratedColumn<double> exchangeRate = GeneratedColumn<double>(
-      'exchange_rate', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(1.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> exchangeRate =
+      GeneratedColumn<String>('exchange_rate', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.one.toString()))
+          .withConverter<Decimal>($CurrenciesTable.$converterexchangeRate);
   static const VerificationMeta _isBaseMeta = const VerificationMeta('isBase');
   @override
   late final GeneratedColumn<bool> isBase = GeneratedColumn<bool>(
@@ -4452,12 +4499,7 @@ class $CurrenciesTable extends Currencies
           decimalPlaces.isAcceptableOrUnknown(
               data['decimal_places']!, _decimalPlacesMeta));
     }
-    if (data.containsKey('exchange_rate')) {
-      context.handle(
-          _exchangeRateMeta,
-          exchangeRate.isAcceptableOrUnknown(
-              data['exchange_rate']!, _exchangeRateMeta));
-    }
+    context.handle(_exchangeRateMeta, const VerificationResult.success());
     if (data.containsKey('is_base')) {
       context.handle(_isBaseMeta,
           isBase.isAcceptableOrUnknown(data['is_base']!, _isBaseMeta));
@@ -4491,8 +4533,9 @@ class $CurrenciesTable extends Currencies
           .read(DriftSqlType.string, data['${effectivePrefix}fractional_unit']),
       decimalPlaces: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}decimal_places'])!,
-      exchangeRate: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}exchange_rate'])!,
+      exchangeRate: $CurrenciesTable.$converterexchangeRate.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}exchange_rate'])!),
       isBase: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_base'])!,
     );
@@ -4502,6 +4545,9 @@ class $CurrenciesTable extends Currencies
   $CurrenciesTable createAlias(String alias) {
     return $CurrenciesTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterexchangeRate =
+      const DecimalConverter();
 }
 
 class Currency extends DataClass implements Insertable<Currency> {
@@ -4515,7 +4561,7 @@ class Currency extends DataClass implements Insertable<Currency> {
   final String name;
   final String? fractionalUnit;
   final int decimalPlaces;
-  final double exchangeRate;
+  final Decimal exchangeRate;
   final bool isBase;
   const Currency(
       {required this.id,
@@ -4549,7 +4595,10 @@ class Currency extends DataClass implements Insertable<Currency> {
       map['fractional_unit'] = Variable<String>(fractionalUnit);
     }
     map['decimal_places'] = Variable<int>(decimalPlaces);
-    map['exchange_rate'] = Variable<double>(exchangeRate);
+    {
+      map['exchange_rate'] = Variable<String>(
+          $CurrenciesTable.$converterexchangeRate.toSql(exchangeRate));
+    }
     map['is_base'] = Variable<bool>(isBase);
     return map;
   }
@@ -4591,7 +4640,7 @@ class Currency extends DataClass implements Insertable<Currency> {
       name: serializer.fromJson<String>(json['name']),
       fractionalUnit: serializer.fromJson<String?>(json['fractionalUnit']),
       decimalPlaces: serializer.fromJson<int>(json['decimalPlaces']),
-      exchangeRate: serializer.fromJson<double>(json['exchangeRate']),
+      exchangeRate: serializer.fromJson<Decimal>(json['exchangeRate']),
       isBase: serializer.fromJson<bool>(json['isBase']),
     );
   }
@@ -4609,7 +4658,7 @@ class Currency extends DataClass implements Insertable<Currency> {
       'name': serializer.toJson<String>(name),
       'fractionalUnit': serializer.toJson<String?>(fractionalUnit),
       'decimalPlaces': serializer.toJson<int>(decimalPlaces),
-      'exchangeRate': serializer.toJson<double>(exchangeRate),
+      'exchangeRate': serializer.toJson<Decimal>(exchangeRate),
       'isBase': serializer.toJson<bool>(isBase),
     };
   }
@@ -4625,7 +4674,7 @@ class Currency extends DataClass implements Insertable<Currency> {
           String? name,
           Value<String?> fractionalUnit = const Value.absent(),
           int? decimalPlaces,
-          double? exchangeRate,
+          Decimal? exchangeRate,
           bool? isBase}) =>
       Currency(
         id: id ?? this.id,
@@ -4728,7 +4777,7 @@ class CurrenciesCompanion extends UpdateCompanion<Currency> {
   final Value<String> name;
   final Value<String?> fractionalUnit;
   final Value<int> decimalPlaces;
-  final Value<double> exchangeRate;
+  final Value<Decimal> exchangeRate;
   final Value<bool> isBase;
   final Value<int> rowid;
   const CurrenciesCompanion({
@@ -4773,7 +4822,7 @@ class CurrenciesCompanion extends UpdateCompanion<Currency> {
     Expression<String>? name,
     Expression<String>? fractionalUnit,
     Expression<int>? decimalPlaces,
-    Expression<double>? exchangeRate,
+    Expression<String>? exchangeRate,
     Expression<bool>? isBase,
     Expression<int>? rowid,
   }) {
@@ -4805,7 +4854,7 @@ class CurrenciesCompanion extends UpdateCompanion<Currency> {
       Value<String>? name,
       Value<String?>? fractionalUnit,
       Value<int>? decimalPlaces,
-      Value<double>? exchangeRate,
+      Value<Decimal>? exchangeRate,
       Value<bool>? isBase,
       Value<int>? rowid}) {
     return CurrenciesCompanion(
@@ -4859,7 +4908,8 @@ class CurrenciesCompanion extends UpdateCompanion<Currency> {
       map['decimal_places'] = Variable<int>(decimalPlaces.value);
     }
     if (exchangeRate.present) {
-      map['exchange_rate'] = Variable<double>(exchangeRate.value);
+      map['exchange_rate'] = Variable<String>(
+          $CurrenciesTable.$converterexchangeRate.toSql(exchangeRate.value));
     }
     if (isBase.present) {
       map['is_base'] = Variable<bool>(isBase.value);
@@ -4997,19 +5047,21 @@ class $CustomersTable extends Customers
   static const VerificationMeta _creditLimitMeta =
       const VerificationMeta('creditLimit');
   @override
-  late final GeneratedColumn<double> creditLimit = GeneratedColumn<double>(
-      'credit_limit', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> creditLimit =
+      GeneratedColumn<String>('credit_limit', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($CustomersTable.$convertercreditLimit);
   static const VerificationMeta _balanceMeta =
       const VerificationMeta('balance');
   @override
-  late final GeneratedColumn<double> balance = GeneratedColumn<double>(
-      'balance', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> balance =
+      GeneratedColumn<String>('balance', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($CustomersTable.$converterbalance);
   static const VerificationMeta _accountIdMeta =
       const VerificationMeta('accountId');
   @override
@@ -5031,11 +5083,12 @@ class $CustomersTable extends Customers
   static const VerificationMeta _exchangeRateMeta =
       const VerificationMeta('exchangeRate');
   @override
-  late final GeneratedColumn<double> exchangeRate = GeneratedColumn<double>(
-      'exchange_rate', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(1.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> exchangeRate =
+      GeneratedColumn<String>('exchange_rate', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.one.toString()))
+          .withConverter<Decimal>($CustomersTable.$converterexchangeRate);
   static const VerificationMeta _isQuickCustomerMeta =
       const VerificationMeta('isQuickCustomer');
   @override
@@ -5059,11 +5112,12 @@ class $CustomersTable extends Customers
   static const VerificationMeta _discountRateMeta =
       const VerificationMeta('discountRate');
   @override
-  late final GeneratedColumn<double> discountRate = GeneratedColumn<double>(
-      'discount_rate', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> discountRate =
+      GeneratedColumn<String>('discount_rate', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($CustomersTable.$converterdiscountRate);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -5162,16 +5216,8 @@ class $CustomersTable extends Customers
       context.handle(_isActiveMeta,
           isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
     }
-    if (data.containsKey('credit_limit')) {
-      context.handle(
-          _creditLimitMeta,
-          creditLimit.isAcceptableOrUnknown(
-              data['credit_limit']!, _creditLimitMeta));
-    }
-    if (data.containsKey('balance')) {
-      context.handle(_balanceMeta,
-          balance.isAcceptableOrUnknown(data['balance']!, _balanceMeta));
-    }
+    context.handle(_creditLimitMeta, const VerificationResult.success());
+    context.handle(_balanceMeta, const VerificationResult.success());
     if (data.containsKey('account_id')) {
       context.handle(_accountIdMeta,
           accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta));
@@ -5182,12 +5228,7 @@ class $CustomersTable extends Customers
           currencyId.isAcceptableOrUnknown(
               data['currency_id']!, _currencyIdMeta));
     }
-    if (data.containsKey('exchange_rate')) {
-      context.handle(
-          _exchangeRateMeta,
-          exchangeRate.isAcceptableOrUnknown(
-              data['exchange_rate']!, _exchangeRateMeta));
-    }
+    context.handle(_exchangeRateMeta, const VerificationResult.success());
     if (data.containsKey('is_quick_customer')) {
       context.handle(
           _isQuickCustomerMeta,
@@ -5200,12 +5241,7 @@ class $CustomersTable extends Customers
           createdFromPOS.isAcceptableOrUnknown(
               data['created_from_p_o_s']!, _createdFromPOSMeta));
     }
-    if (data.containsKey('discount_rate')) {
-      context.handle(
-          _discountRateMeta,
-          discountRate.isAcceptableOrUnknown(
-              data['discount_rate']!, _discountRateMeta));
-    }
+    context.handle(_discountRateMeta, const VerificationResult.success());
     return context;
   }
 
@@ -5243,22 +5279,26 @@ class $CustomersTable extends Customers
           .read(DriftSqlType.string, data['${effectivePrefix}customer_type'])!,
       isActive: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
-      creditLimit: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}credit_limit'])!,
-      balance: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}balance'])!,
+      creditLimit: $CustomersTable.$convertercreditLimit.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}credit_limit'])!),
+      balance: $CustomersTable.$converterbalance.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}balance'])!),
       accountId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}account_id']),
       currencyId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}currency_id']),
-      exchangeRate: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}exchange_rate'])!,
+      exchangeRate: $CustomersTable.$converterexchangeRate.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}exchange_rate'])!),
       isQuickCustomer: attachedDatabase.typeMapping.read(
           DriftSqlType.bool, data['${effectivePrefix}is_quick_customer'])!,
       createdFromPOS: attachedDatabase.typeMapping.read(
           DriftSqlType.bool, data['${effectivePrefix}created_from_p_o_s'])!,
-      discountRate: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}discount_rate'])!,
+      discountRate: $CustomersTable.$converterdiscountRate.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}discount_rate'])!),
     );
   }
 
@@ -5266,6 +5306,15 @@ class $CustomersTable extends Customers
   $CustomersTable createAlias(String alias) {
     return $CustomersTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $convertercreditLimit =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterbalance =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterexchangeRate =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterdiscountRate =
+      const DecimalConverter();
 }
 
 class Customer extends DataClass implements Insertable<Customer> {
@@ -5283,14 +5332,14 @@ class Customer extends DataClass implements Insertable<Customer> {
   final String? email;
   final String customerType;
   final bool isActive;
-  final double creditLimit;
-  final double balance;
+  final Decimal creditLimit;
+  final Decimal balance;
   final String? accountId;
   final String? currencyId;
-  final double exchangeRate;
+  final Decimal exchangeRate;
   final bool isQuickCustomer;
   final bool createdFromPOS;
-  final double discountRate;
+  final Decimal discountRate;
   const Customer(
       {required this.id,
       required this.createdAt,
@@ -5345,18 +5394,30 @@ class Customer extends DataClass implements Insertable<Customer> {
     }
     map['customer_type'] = Variable<String>(customerType);
     map['is_active'] = Variable<bool>(isActive);
-    map['credit_limit'] = Variable<double>(creditLimit);
-    map['balance'] = Variable<double>(balance);
+    {
+      map['credit_limit'] = Variable<String>(
+          $CustomersTable.$convertercreditLimit.toSql(creditLimit));
+    }
+    {
+      map['balance'] =
+          Variable<String>($CustomersTable.$converterbalance.toSql(balance));
+    }
     if (!nullToAbsent || accountId != null) {
       map['account_id'] = Variable<String>(accountId);
     }
     if (!nullToAbsent || currencyId != null) {
       map['currency_id'] = Variable<String>(currencyId);
     }
-    map['exchange_rate'] = Variable<double>(exchangeRate);
+    {
+      map['exchange_rate'] = Variable<String>(
+          $CustomersTable.$converterexchangeRate.toSql(exchangeRate));
+    }
     map['is_quick_customer'] = Variable<bool>(isQuickCustomer);
     map['created_from_p_o_s'] = Variable<bool>(createdFromPOS);
-    map['discount_rate'] = Variable<double>(discountRate);
+    {
+      map['discount_rate'] = Variable<String>(
+          $CustomersTable.$converterdiscountRate.toSql(discountRate));
+    }
     return map;
   }
 
@@ -5421,14 +5482,14 @@ class Customer extends DataClass implements Insertable<Customer> {
       email: serializer.fromJson<String?>(json['email']),
       customerType: serializer.fromJson<String>(json['customerType']),
       isActive: serializer.fromJson<bool>(json['isActive']),
-      creditLimit: serializer.fromJson<double>(json['creditLimit']),
-      balance: serializer.fromJson<double>(json['balance']),
+      creditLimit: serializer.fromJson<Decimal>(json['creditLimit']),
+      balance: serializer.fromJson<Decimal>(json['balance']),
       accountId: serializer.fromJson<String?>(json['accountId']),
       currencyId: serializer.fromJson<String?>(json['currencyId']),
-      exchangeRate: serializer.fromJson<double>(json['exchangeRate']),
+      exchangeRate: serializer.fromJson<Decimal>(json['exchangeRate']),
       isQuickCustomer: serializer.fromJson<bool>(json['isQuickCustomer']),
       createdFromPOS: serializer.fromJson<bool>(json['createdFromPOS']),
-      discountRate: serializer.fromJson<double>(json['discountRate']),
+      discountRate: serializer.fromJson<Decimal>(json['discountRate']),
     );
   }
   @override
@@ -5449,14 +5510,14 @@ class Customer extends DataClass implements Insertable<Customer> {
       'email': serializer.toJson<String?>(email),
       'customerType': serializer.toJson<String>(customerType),
       'isActive': serializer.toJson<bool>(isActive),
-      'creditLimit': serializer.toJson<double>(creditLimit),
-      'balance': serializer.toJson<double>(balance),
+      'creditLimit': serializer.toJson<Decimal>(creditLimit),
+      'balance': serializer.toJson<Decimal>(balance),
       'accountId': serializer.toJson<String?>(accountId),
       'currencyId': serializer.toJson<String?>(currencyId),
-      'exchangeRate': serializer.toJson<double>(exchangeRate),
+      'exchangeRate': serializer.toJson<Decimal>(exchangeRate),
       'isQuickCustomer': serializer.toJson<bool>(isQuickCustomer),
       'createdFromPOS': serializer.toJson<bool>(createdFromPOS),
-      'discountRate': serializer.toJson<double>(discountRate),
+      'discountRate': serializer.toJson<Decimal>(discountRate),
     };
   }
 
@@ -5475,14 +5536,14 @@ class Customer extends DataClass implements Insertable<Customer> {
           Value<String?> email = const Value.absent(),
           String? customerType,
           bool? isActive,
-          double? creditLimit,
-          double? balance,
+          Decimal? creditLimit,
+          Decimal? balance,
           Value<String?> accountId = const Value.absent(),
           Value<String?> currencyId = const Value.absent(),
-          double? exchangeRate,
+          Decimal? exchangeRate,
           bool? isQuickCustomer,
           bool? createdFromPOS,
-          double? discountRate}) =>
+          Decimal? discountRate}) =>
       Customer(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -5647,14 +5708,14 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
   final Value<String?> email;
   final Value<String> customerType;
   final Value<bool> isActive;
-  final Value<double> creditLimit;
-  final Value<double> balance;
+  final Value<Decimal> creditLimit;
+  final Value<Decimal> balance;
   final Value<String?> accountId;
   final Value<String?> currencyId;
-  final Value<double> exchangeRate;
+  final Value<Decimal> exchangeRate;
   final Value<bool> isQuickCustomer;
   final Value<bool> createdFromPOS;
-  final Value<double> discountRate;
+  final Value<Decimal> discountRate;
   final Value<int> rowid;
   const CustomersCompanion({
     this.id = const Value.absent(),
@@ -5721,14 +5782,14 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     Expression<String>? email,
     Expression<String>? customerType,
     Expression<bool>? isActive,
-    Expression<double>? creditLimit,
-    Expression<double>? balance,
+    Expression<String>? creditLimit,
+    Expression<String>? balance,
     Expression<String>? accountId,
     Expression<String>? currencyId,
-    Expression<double>? exchangeRate,
+    Expression<String>? exchangeRate,
     Expression<bool>? isQuickCustomer,
     Expression<bool>? createdFromPOS,
-    Expression<double>? discountRate,
+    Expression<String>? discountRate,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -5773,14 +5834,14 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
       Value<String?>? email,
       Value<String>? customerType,
       Value<bool>? isActive,
-      Value<double>? creditLimit,
-      Value<double>? balance,
+      Value<Decimal>? creditLimit,
+      Value<Decimal>? balance,
       Value<String?>? accountId,
       Value<String?>? currencyId,
-      Value<double>? exchangeRate,
+      Value<Decimal>? exchangeRate,
       Value<bool>? isQuickCustomer,
       Value<bool>? createdFromPOS,
-      Value<double>? discountRate,
+      Value<Decimal>? discountRate,
       Value<int>? rowid}) {
     return CustomersCompanion(
       id: id ?? this.id,
@@ -5855,10 +5916,12 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
       map['is_active'] = Variable<bool>(isActive.value);
     }
     if (creditLimit.present) {
-      map['credit_limit'] = Variable<double>(creditLimit.value);
+      map['credit_limit'] = Variable<String>(
+          $CustomersTable.$convertercreditLimit.toSql(creditLimit.value));
     }
     if (balance.present) {
-      map['balance'] = Variable<double>(balance.value);
+      map['balance'] = Variable<String>(
+          $CustomersTable.$converterbalance.toSql(balance.value));
     }
     if (accountId.present) {
       map['account_id'] = Variable<String>(accountId.value);
@@ -5867,7 +5930,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
       map['currency_id'] = Variable<String>(currencyId.value);
     }
     if (exchangeRate.present) {
-      map['exchange_rate'] = Variable<double>(exchangeRate.value);
+      map['exchange_rate'] = Variable<String>(
+          $CustomersTable.$converterexchangeRate.toSql(exchangeRate.value));
     }
     if (isQuickCustomer.present) {
       map['is_quick_customer'] = Variable<bool>(isQuickCustomer.value);
@@ -5876,7 +5940,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
       map['created_from_p_o_s'] = Variable<bool>(createdFromPOS.value);
     }
     if (discountRate.present) {
-      map['discount_rate'] = Variable<double>(discountRate.value);
+      map['discount_rate'] = Variable<String>(
+          $CustomersTable.$converterdiscountRate.toSql(discountRate.value));
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -6491,24 +6556,27 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
           GeneratedColumn.constraintIsAlways('REFERENCES customers (id)'));
   static const VerificationMeta _totalMeta = const VerificationMeta('total');
   @override
-  late final GeneratedColumn<double> total = GeneratedColumn<double>(
-      'total', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> total =
+      GeneratedColumn<String>('total', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($SalesTable.$convertertotal);
   static const VerificationMeta _discountMeta =
       const VerificationMeta('discount');
   @override
-  late final GeneratedColumn<double> discount = GeneratedColumn<double>(
-      'discount', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> discount =
+      GeneratedColumn<String>('discount', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($SalesTable.$converterdiscount);
   static const VerificationMeta _taxMeta = const VerificationMeta('tax');
   @override
-  late final GeneratedColumn<double> tax = GeneratedColumn<double>(
-      'tax', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> tax =
+      GeneratedColumn<String>('tax', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($SalesTable.$convertertax);
   static const VerificationMeta _paymentMethodMeta =
       const VerificationMeta('paymentMethod');
   @override
@@ -6551,27 +6619,30 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
   static const VerificationMeta _exchangeRateMeta =
       const VerificationMeta('exchangeRate');
   @override
-  late final GeneratedColumn<double> exchangeRate = GeneratedColumn<double>(
-      'exchange_rate', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(1.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> exchangeRate =
+      GeneratedColumn<String>('exchange_rate', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.one.toString()))
+          .withConverter<Decimal>($SalesTable.$converterexchangeRate);
   static const VerificationMeta _shippingCostMeta =
       const VerificationMeta('shippingCost');
   @override
-  late final GeneratedColumn<double> shippingCost = GeneratedColumn<double>(
-      'shipping_cost', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> shippingCost =
+      GeneratedColumn<String>('shipping_cost', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($SalesTable.$convertershippingCost);
   static const VerificationMeta _otherExpensesMeta =
       const VerificationMeta('otherExpenses');
   @override
-  late final GeneratedColumn<double> otherExpenses = GeneratedColumn<double>(
-      'other_expenses', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> otherExpenses =
+      GeneratedColumn<String>('other_expenses', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($SalesTable.$converterotherExpenses);
   static const VerificationMeta _warehouseIdMeta =
       const VerificationMeta('warehouseId');
   @override
@@ -6670,20 +6741,9 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
           customerId.isAcceptableOrUnknown(
               data['customer_id']!, _customerIdMeta));
     }
-    if (data.containsKey('total')) {
-      context.handle(
-          _totalMeta, total.isAcceptableOrUnknown(data['total']!, _totalMeta));
-    } else if (isInserting) {
-      context.missing(_totalMeta);
-    }
-    if (data.containsKey('discount')) {
-      context.handle(_discountMeta,
-          discount.isAcceptableOrUnknown(data['discount']!, _discountMeta));
-    }
-    if (data.containsKey('tax')) {
-      context.handle(
-          _taxMeta, tax.isAcceptableOrUnknown(data['tax']!, _taxMeta));
-    }
+    context.handle(_totalMeta, const VerificationResult.success());
+    context.handle(_discountMeta, const VerificationResult.success());
+    context.handle(_taxMeta, const VerificationResult.success());
     context.handle(_paymentMethodMeta, const VerificationResult.success());
     if (data.containsKey('is_credit')) {
       context.handle(_isCreditMeta,
@@ -6700,24 +6760,9 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
           currencyId.isAcceptableOrUnknown(
               data['currency_id']!, _currencyIdMeta));
     }
-    if (data.containsKey('exchange_rate')) {
-      context.handle(
-          _exchangeRateMeta,
-          exchangeRate.isAcceptableOrUnknown(
-              data['exchange_rate']!, _exchangeRateMeta));
-    }
-    if (data.containsKey('shipping_cost')) {
-      context.handle(
-          _shippingCostMeta,
-          shippingCost.isAcceptableOrUnknown(
-              data['shipping_cost']!, _shippingCostMeta));
-    }
-    if (data.containsKey('other_expenses')) {
-      context.handle(
-          _otherExpensesMeta,
-          otherExpenses.isAcceptableOrUnknown(
-              data['other_expenses']!, _otherExpensesMeta));
-    }
+    context.handle(_exchangeRateMeta, const VerificationResult.success());
+    context.handle(_shippingCostMeta, const VerificationResult.success());
+    context.handle(_otherExpensesMeta, const VerificationResult.success());
     if (data.containsKey('warehouse_id')) {
       context.handle(
           _warehouseIdMeta,
@@ -6765,12 +6810,13 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
           .read(DriftSqlType.string, data['${effectivePrefix}branch_id']),
       customerId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}customer_id']),
-      total: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}total'])!,
-      discount: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}discount'])!,
-      tax: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}tax'])!,
+      total: $SalesTable.$convertertotal.fromSql(attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}total'])!),
+      discount: $SalesTable.$converterdiscount.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}discount'])!),
+      tax: $SalesTable.$convertertax.fromSql(attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tax'])!),
       paymentMethod: $SalesTable.$converterpaymentMethod.fromSql(
           attachedDatabase.typeMapping.read(
               DriftSqlType.int, data['${effectivePrefix}payment_method'])!),
@@ -6782,12 +6828,15 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
           .read(DriftSqlType.string, data['${effectivePrefix}sale_type'])!,
       currencyId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}currency_id']),
-      exchangeRate: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}exchange_rate'])!,
-      shippingCost: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}shipping_cost'])!,
-      otherExpenses: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}other_expenses'])!,
+      exchangeRate: $SalesTable.$converterexchangeRate.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}exchange_rate'])!),
+      shippingCost: $SalesTable.$convertershippingCost.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}shipping_cost'])!),
+      otherExpenses: $SalesTable.$converterotherExpenses.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}other_expenses'])!),
       warehouseId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}warehouse_id']),
       representativeId: attachedDatabase.typeMapping.read(
@@ -6806,10 +6855,22 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
     return $SalesTable(attachedDatabase, alias);
   }
 
+  static TypeConverter<Decimal, String> $convertertotal =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterdiscount =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $convertertax =
+      const DecimalConverter();
   static TypeConverter<PaymentMethod, int> $converterpaymentMethod =
       const PaymentMethodConverter();
   static TypeConverter<DocumentStatus, int> $converterstatus =
       const DocumentStatusConverter();
+  static TypeConverter<Decimal, String> $converterexchangeRate =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $convertershippingCost =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterotherExpenses =
+      const DecimalConverter();
 }
 
 class Sale extends DataClass implements Insertable<Sale> {
@@ -6820,17 +6881,17 @@ class Sale extends DataClass implements Insertable<Sale> {
   final int syncStatus;
   final String? branchId;
   final String? customerId;
-  final double total;
-  final double discount;
-  final double tax;
+  final Decimal total;
+  final Decimal discount;
+  final Decimal tax;
   final PaymentMethod paymentMethod;
   final bool isCredit;
   final DocumentStatus status;
   final String saleType;
   final String? currencyId;
-  final double exchangeRate;
-  final double shippingCost;
-  final double otherExpenses;
+  final Decimal exchangeRate;
+  final Decimal shippingCost;
+  final Decimal otherExpenses;
   final String? warehouseId;
   final String? representativeId;
   final String? qrCode;
@@ -6876,9 +6937,16 @@ class Sale extends DataClass implements Insertable<Sale> {
     if (!nullToAbsent || customerId != null) {
       map['customer_id'] = Variable<String>(customerId);
     }
-    map['total'] = Variable<double>(total);
-    map['discount'] = Variable<double>(discount);
-    map['tax'] = Variable<double>(tax);
+    {
+      map['total'] = Variable<String>($SalesTable.$convertertotal.toSql(total));
+    }
+    {
+      map['discount'] =
+          Variable<String>($SalesTable.$converterdiscount.toSql(discount));
+    }
+    {
+      map['tax'] = Variable<String>($SalesTable.$convertertax.toSql(tax));
+    }
     {
       map['payment_method'] = Variable<int>(
           $SalesTable.$converterpaymentMethod.toSql(paymentMethod));
@@ -6891,9 +6959,18 @@ class Sale extends DataClass implements Insertable<Sale> {
     if (!nullToAbsent || currencyId != null) {
       map['currency_id'] = Variable<String>(currencyId);
     }
-    map['exchange_rate'] = Variable<double>(exchangeRate);
-    map['shipping_cost'] = Variable<double>(shippingCost);
-    map['other_expenses'] = Variable<double>(otherExpenses);
+    {
+      map['exchange_rate'] = Variable<String>(
+          $SalesTable.$converterexchangeRate.toSql(exchangeRate));
+    }
+    {
+      map['shipping_cost'] = Variable<String>(
+          $SalesTable.$convertershippingCost.toSql(shippingCost));
+    }
+    {
+      map['other_expenses'] = Variable<String>(
+          $SalesTable.$converterotherExpenses.toSql(otherExpenses));
+    }
     if (!nullToAbsent || warehouseId != null) {
       map['warehouse_id'] = Variable<String>(warehouseId);
     }
@@ -6966,17 +7043,17 @@ class Sale extends DataClass implements Insertable<Sale> {
       syncStatus: serializer.fromJson<int>(json['syncStatus']),
       branchId: serializer.fromJson<String?>(json['branchId']),
       customerId: serializer.fromJson<String?>(json['customerId']),
-      total: serializer.fromJson<double>(json['total']),
-      discount: serializer.fromJson<double>(json['discount']),
-      tax: serializer.fromJson<double>(json['tax']),
+      total: serializer.fromJson<Decimal>(json['total']),
+      discount: serializer.fromJson<Decimal>(json['discount']),
+      tax: serializer.fromJson<Decimal>(json['tax']),
       paymentMethod: serializer.fromJson<PaymentMethod>(json['paymentMethod']),
       isCredit: serializer.fromJson<bool>(json['isCredit']),
       status: serializer.fromJson<DocumentStatus>(json['status']),
       saleType: serializer.fromJson<String>(json['saleType']),
       currencyId: serializer.fromJson<String?>(json['currencyId']),
-      exchangeRate: serializer.fromJson<double>(json['exchangeRate']),
-      shippingCost: serializer.fromJson<double>(json['shippingCost']),
-      otherExpenses: serializer.fromJson<double>(json['otherExpenses']),
+      exchangeRate: serializer.fromJson<Decimal>(json['exchangeRate']),
+      shippingCost: serializer.fromJson<Decimal>(json['shippingCost']),
+      otherExpenses: serializer.fromJson<Decimal>(json['otherExpenses']),
       warehouseId: serializer.fromJson<String?>(json['warehouseId']),
       representativeId: serializer.fromJson<String?>(json['representativeId']),
       qrCode: serializer.fromJson<String?>(json['qrCode']),
@@ -6995,17 +7072,17 @@ class Sale extends DataClass implements Insertable<Sale> {
       'syncStatus': serializer.toJson<int>(syncStatus),
       'branchId': serializer.toJson<String?>(branchId),
       'customerId': serializer.toJson<String?>(customerId),
-      'total': serializer.toJson<double>(total),
-      'discount': serializer.toJson<double>(discount),
-      'tax': serializer.toJson<double>(tax),
+      'total': serializer.toJson<Decimal>(total),
+      'discount': serializer.toJson<Decimal>(discount),
+      'tax': serializer.toJson<Decimal>(tax),
       'paymentMethod': serializer.toJson<PaymentMethod>(paymentMethod),
       'isCredit': serializer.toJson<bool>(isCredit),
       'status': serializer.toJson<DocumentStatus>(status),
       'saleType': serializer.toJson<String>(saleType),
       'currencyId': serializer.toJson<String?>(currencyId),
-      'exchangeRate': serializer.toJson<double>(exchangeRate),
-      'shippingCost': serializer.toJson<double>(shippingCost),
-      'otherExpenses': serializer.toJson<double>(otherExpenses),
+      'exchangeRate': serializer.toJson<Decimal>(exchangeRate),
+      'shippingCost': serializer.toJson<Decimal>(shippingCost),
+      'otherExpenses': serializer.toJson<Decimal>(otherExpenses),
       'warehouseId': serializer.toJson<String?>(warehouseId),
       'representativeId': serializer.toJson<String?>(representativeId),
       'qrCode': serializer.toJson<String?>(qrCode),
@@ -7022,17 +7099,17 @@ class Sale extends DataClass implements Insertable<Sale> {
           int? syncStatus,
           Value<String?> branchId = const Value.absent(),
           Value<String?> customerId = const Value.absent(),
-          double? total,
-          double? discount,
-          double? tax,
+          Decimal? total,
+          Decimal? discount,
+          Decimal? tax,
           PaymentMethod? paymentMethod,
           bool? isCredit,
           DocumentStatus? status,
           String? saleType,
           Value<String?> currencyId = const Value.absent(),
-          double? exchangeRate,
-          double? shippingCost,
-          double? otherExpenses,
+          Decimal? exchangeRate,
+          Decimal? shippingCost,
+          Decimal? otherExpenses,
           Value<String?> warehouseId = const Value.absent(),
           Value<String?> representativeId = const Value.absent(),
           Value<String?> qrCode = const Value.absent(),
@@ -7200,17 +7277,17 @@ class SalesCompanion extends UpdateCompanion<Sale> {
   final Value<int> syncStatus;
   final Value<String?> branchId;
   final Value<String?> customerId;
-  final Value<double> total;
-  final Value<double> discount;
-  final Value<double> tax;
+  final Value<Decimal> total;
+  final Value<Decimal> discount;
+  final Value<Decimal> tax;
   final Value<PaymentMethod> paymentMethod;
   final Value<bool> isCredit;
   final Value<DocumentStatus> status;
   final Value<String> saleType;
   final Value<String?> currencyId;
-  final Value<double> exchangeRate;
-  final Value<double> shippingCost;
-  final Value<double> otherExpenses;
+  final Value<Decimal> exchangeRate;
+  final Value<Decimal> shippingCost;
+  final Value<Decimal> otherExpenses;
   final Value<String?> warehouseId;
   final Value<String?> representativeId;
   final Value<String?> qrCode;
@@ -7251,7 +7328,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     this.syncStatus = const Value.absent(),
     this.branchId = const Value.absent(),
     this.customerId = const Value.absent(),
-    required double total,
+    required Decimal total,
     this.discount = const Value.absent(),
     this.tax = const Value.absent(),
     required PaymentMethod paymentMethod,
@@ -7278,17 +7355,17 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     Expression<int>? syncStatus,
     Expression<String>? branchId,
     Expression<String>? customerId,
-    Expression<double>? total,
-    Expression<double>? discount,
-    Expression<double>? tax,
+    Expression<String>? total,
+    Expression<String>? discount,
+    Expression<String>? tax,
     Expression<int>? paymentMethod,
     Expression<bool>? isCredit,
     Expression<int>? status,
     Expression<String>? saleType,
     Expression<String>? currencyId,
-    Expression<double>? exchangeRate,
-    Expression<double>? shippingCost,
-    Expression<double>? otherExpenses,
+    Expression<String>? exchangeRate,
+    Expression<String>? shippingCost,
+    Expression<String>? otherExpenses,
     Expression<String>? warehouseId,
     Expression<String>? representativeId,
     Expression<String>? qrCode,
@@ -7332,17 +7409,17 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       Value<int>? syncStatus,
       Value<String?>? branchId,
       Value<String?>? customerId,
-      Value<double>? total,
-      Value<double>? discount,
-      Value<double>? tax,
+      Value<Decimal>? total,
+      Value<Decimal>? discount,
+      Value<Decimal>? tax,
       Value<PaymentMethod>? paymentMethod,
       Value<bool>? isCredit,
       Value<DocumentStatus>? status,
       Value<String>? saleType,
       Value<String?>? currencyId,
-      Value<double>? exchangeRate,
-      Value<double>? shippingCost,
-      Value<double>? otherExpenses,
+      Value<Decimal>? exchangeRate,
+      Value<Decimal>? shippingCost,
+      Value<Decimal>? otherExpenses,
       Value<String?>? warehouseId,
       Value<String?>? representativeId,
       Value<String?>? qrCode,
@@ -7402,13 +7479,15 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       map['customer_id'] = Variable<String>(customerId.value);
     }
     if (total.present) {
-      map['total'] = Variable<double>(total.value);
+      map['total'] =
+          Variable<String>($SalesTable.$convertertotal.toSql(total.value));
     }
     if (discount.present) {
-      map['discount'] = Variable<double>(discount.value);
+      map['discount'] = Variable<String>(
+          $SalesTable.$converterdiscount.toSql(discount.value));
     }
     if (tax.present) {
-      map['tax'] = Variable<double>(tax.value);
+      map['tax'] = Variable<String>($SalesTable.$convertertax.toSql(tax.value));
     }
     if (paymentMethod.present) {
       map['payment_method'] = Variable<int>(
@@ -7428,13 +7507,16 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       map['currency_id'] = Variable<String>(currencyId.value);
     }
     if (exchangeRate.present) {
-      map['exchange_rate'] = Variable<double>(exchangeRate.value);
+      map['exchange_rate'] = Variable<String>(
+          $SalesTable.$converterexchangeRate.toSql(exchangeRate.value));
     }
     if (shippingCost.present) {
-      map['shipping_cost'] = Variable<double>(shippingCost.value);
+      map['shipping_cost'] = Variable<String>(
+          $SalesTable.$convertershippingCost.toSql(shippingCost.value));
     }
     if (otherExpenses.present) {
-      map['other_expenses'] = Variable<double>(otherExpenses.value);
+      map['other_expenses'] = Variable<String>(
+          $SalesTable.$converterotherExpenses.toSql(otherExpenses.value));
     }
     if (warehouseId.present) {
       map['warehouse_id'] = Variable<String>(warehouseId.value);
@@ -8046,27 +8128,31 @@ class $ProductBatchesTable extends ProductBatches
   static const VerificationMeta _quantityMeta =
       const VerificationMeta('quantity');
   @override
-  late final GeneratedColumn<double> quantity = GeneratedColumn<double>(
-      'quantity', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> quantity =
+      GeneratedColumn<String>('quantity', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($ProductBatchesTable.$converterquantity);
   static const VerificationMeta _initialQuantityMeta =
       const VerificationMeta('initialQuantity');
   @override
-  late final GeneratedColumn<double> initialQuantity = GeneratedColumn<double>(
-      'initial_quantity', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> initialQuantity =
+      GeneratedColumn<String>('initial_quantity', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>(
+              $ProductBatchesTable.$converterinitialQuantity);
   static const VerificationMeta _costPriceMeta =
       const VerificationMeta('costPrice');
   @override
-  late final GeneratedColumn<double> costPrice = GeneratedColumn<double>(
-      'cost_price', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> costPrice =
+      GeneratedColumn<String>('cost_price', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($ProductBatchesTable.$convertercostPrice);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -8146,20 +8232,9 @@ class $ProductBatchesTable extends ProductBatches
           expiryDate.isAcceptableOrUnknown(
               data['expiry_date']!, _expiryDateMeta));
     }
-    if (data.containsKey('quantity')) {
-      context.handle(_quantityMeta,
-          quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta));
-    }
-    if (data.containsKey('initial_quantity')) {
-      context.handle(
-          _initialQuantityMeta,
-          initialQuantity.isAcceptableOrUnknown(
-              data['initial_quantity']!, _initialQuantityMeta));
-    }
-    if (data.containsKey('cost_price')) {
-      context.handle(_costPriceMeta,
-          costPrice.isAcceptableOrUnknown(data['cost_price']!, _costPriceMeta));
-    }
+    context.handle(_quantityMeta, const VerificationResult.success());
+    context.handle(_initialQuantityMeta, const VerificationResult.success());
+    context.handle(_costPriceMeta, const VerificationResult.success());
     return context;
   }
 
@@ -8189,12 +8264,15 @@ class $ProductBatchesTable extends ProductBatches
           .read(DriftSqlType.string, data['${effectivePrefix}batch_number'])!,
       expiryDate: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}expiry_date']),
-      quantity: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}quantity'])!,
-      initialQuantity: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}initial_quantity'])!,
-      costPrice: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}cost_price'])!,
+      quantity: $ProductBatchesTable.$converterquantity.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}quantity'])!),
+      initialQuantity: $ProductBatchesTable.$converterinitialQuantity.fromSql(
+          attachedDatabase.typeMapping.read(DriftSqlType.string,
+              data['${effectivePrefix}initial_quantity'])!),
+      costPrice: $ProductBatchesTable.$convertercostPrice.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}cost_price'])!),
     );
   }
 
@@ -8202,6 +8280,13 @@ class $ProductBatchesTable extends ProductBatches
   $ProductBatchesTable createAlias(String alias) {
     return $ProductBatchesTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterquantity =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterinitialQuantity =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $convertercostPrice =
+      const DecimalConverter();
 }
 
 class ProductBatch extends DataClass implements Insertable<ProductBatch> {
@@ -8215,9 +8300,9 @@ class ProductBatch extends DataClass implements Insertable<ProductBatch> {
   final String warehouseId;
   final String batchNumber;
   final DateTime? expiryDate;
-  final double quantity;
-  final double initialQuantity;
-  final double costPrice;
+  final Decimal quantity;
+  final Decimal initialQuantity;
+  final Decimal costPrice;
   const ProductBatch(
       {required this.id,
       required this.createdAt,
@@ -8251,9 +8336,19 @@ class ProductBatch extends DataClass implements Insertable<ProductBatch> {
     if (!nullToAbsent || expiryDate != null) {
       map['expiry_date'] = Variable<DateTime>(expiryDate);
     }
-    map['quantity'] = Variable<double>(quantity);
-    map['initial_quantity'] = Variable<double>(initialQuantity);
-    map['cost_price'] = Variable<double>(costPrice);
+    {
+      map['quantity'] = Variable<String>(
+          $ProductBatchesTable.$converterquantity.toSql(quantity));
+    }
+    {
+      map['initial_quantity'] = Variable<String>($ProductBatchesTable
+          .$converterinitialQuantity
+          .toSql(initialQuantity));
+    }
+    {
+      map['cost_price'] = Variable<String>(
+          $ProductBatchesTable.$convertercostPrice.toSql(costPrice));
+    }
     return map;
   }
 
@@ -8295,9 +8390,9 @@ class ProductBatch extends DataClass implements Insertable<ProductBatch> {
       warehouseId: serializer.fromJson<String>(json['warehouseId']),
       batchNumber: serializer.fromJson<String>(json['batchNumber']),
       expiryDate: serializer.fromJson<DateTime?>(json['expiryDate']),
-      quantity: serializer.fromJson<double>(json['quantity']),
-      initialQuantity: serializer.fromJson<double>(json['initialQuantity']),
-      costPrice: serializer.fromJson<double>(json['costPrice']),
+      quantity: serializer.fromJson<Decimal>(json['quantity']),
+      initialQuantity: serializer.fromJson<Decimal>(json['initialQuantity']),
+      costPrice: serializer.fromJson<Decimal>(json['costPrice']),
     );
   }
   @override
@@ -8314,9 +8409,9 @@ class ProductBatch extends DataClass implements Insertable<ProductBatch> {
       'warehouseId': serializer.toJson<String>(warehouseId),
       'batchNumber': serializer.toJson<String>(batchNumber),
       'expiryDate': serializer.toJson<DateTime?>(expiryDate),
-      'quantity': serializer.toJson<double>(quantity),
-      'initialQuantity': serializer.toJson<double>(initialQuantity),
-      'costPrice': serializer.toJson<double>(costPrice),
+      'quantity': serializer.toJson<Decimal>(quantity),
+      'initialQuantity': serializer.toJson<Decimal>(initialQuantity),
+      'costPrice': serializer.toJson<Decimal>(costPrice),
     };
   }
 
@@ -8331,9 +8426,9 @@ class ProductBatch extends DataClass implements Insertable<ProductBatch> {
           String? warehouseId,
           String? batchNumber,
           Value<DateTime?> expiryDate = const Value.absent(),
-          double? quantity,
-          double? initialQuantity,
-          double? costPrice}) =>
+          Decimal? quantity,
+          Decimal? initialQuantity,
+          Decimal? costPrice}) =>
       ProductBatch(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -8438,9 +8533,9 @@ class ProductBatchesCompanion extends UpdateCompanion<ProductBatch> {
   final Value<String> warehouseId;
   final Value<String> batchNumber;
   final Value<DateTime?> expiryDate;
-  final Value<double> quantity;
-  final Value<double> initialQuantity;
-  final Value<double> costPrice;
+  final Value<Decimal> quantity;
+  final Value<Decimal> initialQuantity;
+  final Value<Decimal> costPrice;
   final Value<int> rowid;
   const ProductBatchesCompanion({
     this.id = const Value.absent(),
@@ -8487,9 +8582,9 @@ class ProductBatchesCompanion extends UpdateCompanion<ProductBatch> {
     Expression<String>? warehouseId,
     Expression<String>? batchNumber,
     Expression<DateTime>? expiryDate,
-    Expression<double>? quantity,
-    Expression<double>? initialQuantity,
-    Expression<double>? costPrice,
+    Expression<String>? quantity,
+    Expression<String>? initialQuantity,
+    Expression<String>? costPrice,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -8521,9 +8616,9 @@ class ProductBatchesCompanion extends UpdateCompanion<ProductBatch> {
       Value<String>? warehouseId,
       Value<String>? batchNumber,
       Value<DateTime?>? expiryDate,
-      Value<double>? quantity,
-      Value<double>? initialQuantity,
-      Value<double>? costPrice,
+      Value<Decimal>? quantity,
+      Value<Decimal>? initialQuantity,
+      Value<Decimal>? costPrice,
       Value<int>? rowid}) {
     return ProductBatchesCompanion(
       id: id ?? this.id,
@@ -8577,13 +8672,17 @@ class ProductBatchesCompanion extends UpdateCompanion<ProductBatch> {
       map['expiry_date'] = Variable<DateTime>(expiryDate.value);
     }
     if (quantity.present) {
-      map['quantity'] = Variable<double>(quantity.value);
+      map['quantity'] = Variable<String>(
+          $ProductBatchesTable.$converterquantity.toSql(quantity.value));
     }
     if (initialQuantity.present) {
-      map['initial_quantity'] = Variable<double>(initialQuantity.value);
+      map['initial_quantity'] = Variable<String>($ProductBatchesTable
+          .$converterinitialQuantity
+          .toSql(initialQuantity.value));
     }
     if (costPrice.present) {
-      map['cost_price'] = Variable<double>(costPrice.value);
+      map['cost_price'] = Variable<String>(
+          $ProductBatchesTable.$convertercostPrice.toSql(costPrice.value));
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -9235,14 +9334,16 @@ class $SaleItemsTable extends SaleItems
   static const VerificationMeta _quantityMeta =
       const VerificationMeta('quantity');
   @override
-  late final GeneratedColumn<double> quantity = GeneratedColumn<double>(
-      'quantity', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> quantity =
+      GeneratedColumn<String>('quantity', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($SaleItemsTable.$converterquantity);
   static const VerificationMeta _priceMeta = const VerificationMeta('price');
   @override
-  late final GeneratedColumn<double> price = GeneratedColumn<double>(
-      'price', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> price =
+      GeneratedColumn<String>('price', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($SaleItemsTable.$converterprice);
   static const VerificationMeta _unitIdMeta = const VerificationMeta('unitId');
   @override
   late final GeneratedColumn<String> unitId = GeneratedColumn<String>(
@@ -9262,11 +9363,12 @@ class $SaleItemsTable extends SaleItems
   static const VerificationMeta _unitFactorMeta =
       const VerificationMeta('unitFactor');
   @override
-  late final GeneratedColumn<double> unitFactor = GeneratedColumn<double>(
-      'unit_factor', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(1.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> unitFactor =
+      GeneratedColumn<String>('unit_factor', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.one.toString()))
+          .withConverter<Decimal>($SaleItemsTable.$converterunitFactor);
   static const VerificationMeta _warehouseIdMeta =
       const VerificationMeta('warehouseId');
   @override
@@ -9360,18 +9462,8 @@ class $SaleItemsTable extends SaleItems
     } else if (isInserting) {
       context.missing(_productIdMeta);
     }
-    if (data.containsKey('quantity')) {
-      context.handle(_quantityMeta,
-          quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta));
-    } else if (isInserting) {
-      context.missing(_quantityMeta);
-    }
-    if (data.containsKey('price')) {
-      context.handle(
-          _priceMeta, price.isAcceptableOrUnknown(data['price']!, _priceMeta));
-    } else if (isInserting) {
-      context.missing(_priceMeta);
-    }
+    context.handle(_quantityMeta, const VerificationResult.success());
+    context.handle(_priceMeta, const VerificationResult.success());
     if (data.containsKey('unit_id')) {
       context.handle(_unitIdMeta,
           unitId.isAcceptableOrUnknown(data['unit_id']!, _unitIdMeta));
@@ -9380,12 +9472,7 @@ class $SaleItemsTable extends SaleItems
       context.handle(_unitNameMeta,
           unitName.isAcceptableOrUnknown(data['unit_name']!, _unitNameMeta));
     }
-    if (data.containsKey('unit_factor')) {
-      context.handle(
-          _unitFactorMeta,
-          unitFactor.isAcceptableOrUnknown(
-              data['unit_factor']!, _unitFactorMeta));
-    }
+    context.handle(_unitFactorMeta, const VerificationResult.success());
     if (data.containsKey('warehouse_id')) {
       context.handle(
           _warehouseIdMeta,
@@ -9427,16 +9514,19 @@ class $SaleItemsTable extends SaleItems
           .read(DriftSqlType.string, data['${effectivePrefix}sale_id'])!,
       productId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}product_id'])!,
-      quantity: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}quantity'])!,
-      price: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}price'])!,
+      quantity: $SaleItemsTable.$converterquantity.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}quantity'])!),
+      price: $SaleItemsTable.$converterprice.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}price'])!),
       unitId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}unit_id']),
       unitName: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}unit_name'])!,
-      unitFactor: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}unit_factor'])!,
+      unitFactor: $SaleItemsTable.$converterunitFactor.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}unit_factor'])!),
       warehouseId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}warehouse_id']),
       batchId: attachedDatabase.typeMapping
@@ -9450,6 +9540,13 @@ class $SaleItemsTable extends SaleItems
   $SaleItemsTable createAlias(String alias) {
     return $SaleItemsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterquantity =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterprice =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterunitFactor =
+      const DecimalConverter();
 }
 
 class SaleItem extends DataClass implements Insertable<SaleItem> {
@@ -9461,11 +9558,11 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
   final String? branchId;
   final String saleId;
   final String productId;
-  final double quantity;
-  final double price;
+  final Decimal quantity;
+  final Decimal price;
   final String? unitId;
   final String unitName;
-  final double unitFactor;
+  final Decimal unitFactor;
   final String? warehouseId;
   final String? batchId;
   final String? costCenterId;
@@ -9501,13 +9598,22 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
     }
     map['sale_id'] = Variable<String>(saleId);
     map['product_id'] = Variable<String>(productId);
-    map['quantity'] = Variable<double>(quantity);
-    map['price'] = Variable<double>(price);
+    {
+      map['quantity'] =
+          Variable<String>($SaleItemsTable.$converterquantity.toSql(quantity));
+    }
+    {
+      map['price'] =
+          Variable<String>($SaleItemsTable.$converterprice.toSql(price));
+    }
     if (!nullToAbsent || unitId != null) {
       map['unit_id'] = Variable<String>(unitId);
     }
     map['unit_name'] = Variable<String>(unitName);
-    map['unit_factor'] = Variable<double>(unitFactor);
+    {
+      map['unit_factor'] = Variable<String>(
+          $SaleItemsTable.$converterunitFactor.toSql(unitFactor));
+    }
     if (!nullToAbsent || warehouseId != null) {
       map['warehouse_id'] = Variable<String>(warehouseId);
     }
@@ -9564,11 +9670,11 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       branchId: serializer.fromJson<String?>(json['branchId']),
       saleId: serializer.fromJson<String>(json['saleId']),
       productId: serializer.fromJson<String>(json['productId']),
-      quantity: serializer.fromJson<double>(json['quantity']),
-      price: serializer.fromJson<double>(json['price']),
+      quantity: serializer.fromJson<Decimal>(json['quantity']),
+      price: serializer.fromJson<Decimal>(json['price']),
       unitId: serializer.fromJson<String?>(json['unitId']),
       unitName: serializer.fromJson<String>(json['unitName']),
-      unitFactor: serializer.fromJson<double>(json['unitFactor']),
+      unitFactor: serializer.fromJson<Decimal>(json['unitFactor']),
       warehouseId: serializer.fromJson<String?>(json['warehouseId']),
       batchId: serializer.fromJson<String?>(json['batchId']),
       costCenterId: serializer.fromJson<String?>(json['costCenterId']),
@@ -9586,11 +9692,11 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       'branchId': serializer.toJson<String?>(branchId),
       'saleId': serializer.toJson<String>(saleId),
       'productId': serializer.toJson<String>(productId),
-      'quantity': serializer.toJson<double>(quantity),
-      'price': serializer.toJson<double>(price),
+      'quantity': serializer.toJson<Decimal>(quantity),
+      'price': serializer.toJson<Decimal>(price),
       'unitId': serializer.toJson<String?>(unitId),
       'unitName': serializer.toJson<String>(unitName),
-      'unitFactor': serializer.toJson<double>(unitFactor),
+      'unitFactor': serializer.toJson<Decimal>(unitFactor),
       'warehouseId': serializer.toJson<String?>(warehouseId),
       'batchId': serializer.toJson<String?>(batchId),
       'costCenterId': serializer.toJson<String?>(costCenterId),
@@ -9606,11 +9712,11 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
           Value<String?> branchId = const Value.absent(),
           String? saleId,
           String? productId,
-          double? quantity,
-          double? price,
+          Decimal? quantity,
+          Decimal? price,
           Value<String?> unitId = const Value.absent(),
           String? unitName,
-          double? unitFactor,
+          Decimal? unitFactor,
           Value<String?> warehouseId = const Value.absent(),
           Value<String?> batchId = const Value.absent(),
           Value<String?> costCenterId = const Value.absent()}) =>
@@ -9731,11 +9837,11 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
   final Value<String?> branchId;
   final Value<String> saleId;
   final Value<String> productId;
-  final Value<double> quantity;
-  final Value<double> price;
+  final Value<Decimal> quantity;
+  final Value<Decimal> price;
   final Value<String?> unitId;
   final Value<String> unitName;
-  final Value<double> unitFactor;
+  final Value<Decimal> unitFactor;
   final Value<String?> warehouseId;
   final Value<String?> batchId;
   final Value<String?> costCenterId;
@@ -9768,8 +9874,8 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     this.branchId = const Value.absent(),
     required String saleId,
     required String productId,
-    required double quantity,
-    required double price,
+    required Decimal quantity,
+    required Decimal price,
     this.unitId = const Value.absent(),
     this.unitName = const Value.absent(),
     this.unitFactor = const Value.absent(),
@@ -9790,11 +9896,11 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     Expression<String>? branchId,
     Expression<String>? saleId,
     Expression<String>? productId,
-    Expression<double>? quantity,
-    Expression<double>? price,
+    Expression<String>? quantity,
+    Expression<String>? price,
     Expression<String>? unitId,
     Expression<String>? unitName,
-    Expression<double>? unitFactor,
+    Expression<String>? unitFactor,
     Expression<String>? warehouseId,
     Expression<String>? batchId,
     Expression<String>? costCenterId,
@@ -9830,11 +9936,11 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
       Value<String?>? branchId,
       Value<String>? saleId,
       Value<String>? productId,
-      Value<double>? quantity,
-      Value<double>? price,
+      Value<Decimal>? quantity,
+      Value<Decimal>? price,
       Value<String?>? unitId,
       Value<String>? unitName,
-      Value<double>? unitFactor,
+      Value<Decimal>? unitFactor,
       Value<String?>? warehouseId,
       Value<String?>? batchId,
       Value<String?>? costCenterId,
@@ -9888,10 +9994,12 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
       map['product_id'] = Variable<String>(productId.value);
     }
     if (quantity.present) {
-      map['quantity'] = Variable<double>(quantity.value);
+      map['quantity'] = Variable<String>(
+          $SaleItemsTable.$converterquantity.toSql(quantity.value));
     }
     if (price.present) {
-      map['price'] = Variable<double>(price.value);
+      map['price'] =
+          Variable<String>($SaleItemsTable.$converterprice.toSql(price.value));
     }
     if (unitId.present) {
       map['unit_id'] = Variable<String>(unitId.value);
@@ -9900,7 +10008,8 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
       map['unit_name'] = Variable<String>(unitName.value);
     }
     if (unitFactor.present) {
-      map['unit_factor'] = Variable<double>(unitFactor.value);
+      map['unit_factor'] = Variable<String>(
+          $SaleItemsTable.$converterunitFactor.toSql(unitFactor.value));
     }
     if (warehouseId.present) {
       map['warehouse_id'] = Variable<String>(warehouseId.value);
@@ -10005,48 +10114,54 @@ class $PurchasesTable extends Purchases
           GeneratedColumn.constraintIsAlways('REFERENCES suppliers (id)'));
   static const VerificationMeta _totalMeta = const VerificationMeta('total');
   @override
-  late final GeneratedColumn<double> total = GeneratedColumn<double>(
-      'total', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> total =
+      GeneratedColumn<String>('total', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($PurchasesTable.$convertertotal);
   static const VerificationMeta _taxMeta = const VerificationMeta('tax');
   @override
-  late final GeneratedColumn<double> tax = GeneratedColumn<double>(
-      'tax', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> tax =
+      GeneratedColumn<String>('tax', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($PurchasesTable.$convertertax);
   static const VerificationMeta _discountMeta =
       const VerificationMeta('discount');
   @override
-  late final GeneratedColumn<double> discount = GeneratedColumn<double>(
-      'discount', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> discount =
+      GeneratedColumn<String>('discount', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($PurchasesTable.$converterdiscount);
   static const VerificationMeta _landedCostsMeta =
       const VerificationMeta('landedCosts');
   @override
-  late final GeneratedColumn<double> landedCosts = GeneratedColumn<double>(
-      'landed_costs', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> landedCosts =
+      GeneratedColumn<String>('landed_costs', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($PurchasesTable.$converterlandedCosts);
   static const VerificationMeta _shippingCostMeta =
       const VerificationMeta('shippingCost');
   @override
-  late final GeneratedColumn<double> shippingCost = GeneratedColumn<double>(
-      'shipping_cost', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> shippingCost =
+      GeneratedColumn<String>('shipping_cost', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($PurchasesTable.$convertershippingCost);
   static const VerificationMeta _otherExpensesMeta =
       const VerificationMeta('otherExpenses');
   @override
-  late final GeneratedColumn<double> otherExpenses = GeneratedColumn<double>(
-      'other_expenses', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> otherExpenses =
+      GeneratedColumn<String>('other_expenses', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($PurchasesTable.$converterotherExpenses);
   static const VerificationMeta _invoiceNumberMeta =
       const VerificationMeta('invoiceNumber');
   @override
@@ -10109,11 +10224,12 @@ class $PurchasesTable extends Purchases
   static const VerificationMeta _exchangeRateMeta =
       const VerificationMeta('exchangeRate');
   @override
-  late final GeneratedColumn<double> exchangeRate = GeneratedColumn<double>(
-      'exchange_rate', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(1.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> exchangeRate =
+      GeneratedColumn<String>('exchange_rate', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.one.toString()))
+          .withConverter<Decimal>($PurchasesTable.$converterexchangeRate);
   static const VerificationMeta _notesMeta = const VerificationMeta('notes');
   @override
   late final GeneratedColumn<String> notes = GeneratedColumn<String>(
@@ -10200,38 +10316,12 @@ class $PurchasesTable extends Purchases
           supplierId.isAcceptableOrUnknown(
               data['supplier_id']!, _supplierIdMeta));
     }
-    if (data.containsKey('total')) {
-      context.handle(
-          _totalMeta, total.isAcceptableOrUnknown(data['total']!, _totalMeta));
-    } else if (isInserting) {
-      context.missing(_totalMeta);
-    }
-    if (data.containsKey('tax')) {
-      context.handle(
-          _taxMeta, tax.isAcceptableOrUnknown(data['tax']!, _taxMeta));
-    }
-    if (data.containsKey('discount')) {
-      context.handle(_discountMeta,
-          discount.isAcceptableOrUnknown(data['discount']!, _discountMeta));
-    }
-    if (data.containsKey('landed_costs')) {
-      context.handle(
-          _landedCostsMeta,
-          landedCosts.isAcceptableOrUnknown(
-              data['landed_costs']!, _landedCostsMeta));
-    }
-    if (data.containsKey('shipping_cost')) {
-      context.handle(
-          _shippingCostMeta,
-          shippingCost.isAcceptableOrUnknown(
-              data['shipping_cost']!, _shippingCostMeta));
-    }
-    if (data.containsKey('other_expenses')) {
-      context.handle(
-          _otherExpensesMeta,
-          otherExpenses.isAcceptableOrUnknown(
-              data['other_expenses']!, _otherExpensesMeta));
-    }
+    context.handle(_totalMeta, const VerificationResult.success());
+    context.handle(_taxMeta, const VerificationResult.success());
+    context.handle(_discountMeta, const VerificationResult.success());
+    context.handle(_landedCostsMeta, const VerificationResult.success());
+    context.handle(_shippingCostMeta, const VerificationResult.success());
+    context.handle(_otherExpensesMeta, const VerificationResult.success());
     if (data.containsKey('invoice_number')) {
       context.handle(
           _invoiceNumberMeta,
@@ -10269,12 +10359,7 @@ class $PurchasesTable extends Purchases
           currencyId.isAcceptableOrUnknown(
               data['currency_id']!, _currencyIdMeta));
     }
-    if (data.containsKey('exchange_rate')) {
-      context.handle(
-          _exchangeRateMeta,
-          exchangeRate.isAcceptableOrUnknown(
-              data['exchange_rate']!, _exchangeRateMeta));
-    }
+    context.handle(_exchangeRateMeta, const VerificationResult.success());
     if (data.containsKey('notes')) {
       context.handle(
           _notesMeta, notes.isAcceptableOrUnknown(data['notes']!, _notesMeta));
@@ -10314,18 +10399,23 @@ class $PurchasesTable extends Purchases
           .read(DriftSqlType.string, data['${effectivePrefix}branch_id']),
       supplierId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}supplier_id']),
-      total: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}total'])!,
-      tax: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}tax'])!,
-      discount: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}discount'])!,
-      landedCosts: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}landed_costs'])!,
-      shippingCost: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}shipping_cost'])!,
-      otherExpenses: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}other_expenses'])!,
+      total: $PurchasesTable.$convertertotal.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}total'])!),
+      tax: $PurchasesTable.$convertertax.fromSql(attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tax'])!),
+      discount: $PurchasesTable.$converterdiscount.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}discount'])!),
+      landedCosts: $PurchasesTable.$converterlandedCosts.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}landed_costs'])!),
+      shippingCost: $PurchasesTable.$convertershippingCost.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}shipping_cost'])!),
+      otherExpenses: $PurchasesTable.$converterotherExpenses.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}other_expenses'])!),
       invoiceNumber: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}invoice_number']),
       purchaseType: attachedDatabase.typeMapping
@@ -10343,8 +10433,9 @@ class $PurchasesTable extends Purchases
           .read(DriftSqlType.string, data['${effectivePrefix}warehouse_id']),
       currencyId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}currency_id']),
-      exchangeRate: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}exchange_rate'])!,
+      exchangeRate: $PurchasesTable.$converterexchangeRate.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}exchange_rate'])!),
       notes: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}notes']),
       referenceDocument: attachedDatabase.typeMapping.read(
@@ -10359,8 +10450,22 @@ class $PurchasesTable extends Purchases
     return $PurchasesTable(attachedDatabase, alias);
   }
 
+  static TypeConverter<Decimal, String> $convertertotal =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $convertertax =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterdiscount =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterlandedCosts =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $convertershippingCost =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterotherExpenses =
+      const DecimalConverter();
   static TypeConverter<DocumentStatus, int> $converterstatus =
       const DocumentStatusConverter();
+  static TypeConverter<Decimal, String> $converterexchangeRate =
+      const DecimalConverter();
 }
 
 class Purchase extends DataClass implements Insertable<Purchase> {
@@ -10371,12 +10476,12 @@ class Purchase extends DataClass implements Insertable<Purchase> {
   final int syncStatus;
   final String? branchId;
   final String? supplierId;
-  final double total;
-  final double tax;
-  final double discount;
-  final double landedCosts;
-  final double shippingCost;
-  final double otherExpenses;
+  final Decimal total;
+  final Decimal tax;
+  final Decimal discount;
+  final Decimal landedCosts;
+  final Decimal shippingCost;
+  final Decimal otherExpenses;
   final String? invoiceNumber;
   final String purchaseType;
   final DateTime date;
@@ -10385,7 +10490,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
   final DocumentStatus status;
   final String? warehouseId;
   final String? currencyId;
-  final double exchangeRate;
+  final Decimal exchangeRate;
   final String? notes;
   final String? referenceDocument;
   final String? attachmentPath;
@@ -10431,12 +10536,29 @@ class Purchase extends DataClass implements Insertable<Purchase> {
     if (!nullToAbsent || supplierId != null) {
       map['supplier_id'] = Variable<String>(supplierId);
     }
-    map['total'] = Variable<double>(total);
-    map['tax'] = Variable<double>(tax);
-    map['discount'] = Variable<double>(discount);
-    map['landed_costs'] = Variable<double>(landedCosts);
-    map['shipping_cost'] = Variable<double>(shippingCost);
-    map['other_expenses'] = Variable<double>(otherExpenses);
+    {
+      map['total'] =
+          Variable<String>($PurchasesTable.$convertertotal.toSql(total));
+    }
+    {
+      map['tax'] = Variable<String>($PurchasesTable.$convertertax.toSql(tax));
+    }
+    {
+      map['discount'] =
+          Variable<String>($PurchasesTable.$converterdiscount.toSql(discount));
+    }
+    {
+      map['landed_costs'] = Variable<String>(
+          $PurchasesTable.$converterlandedCosts.toSql(landedCosts));
+    }
+    {
+      map['shipping_cost'] = Variable<String>(
+          $PurchasesTable.$convertershippingCost.toSql(shippingCost));
+    }
+    {
+      map['other_expenses'] = Variable<String>(
+          $PurchasesTable.$converterotherExpenses.toSql(otherExpenses));
+    }
     if (!nullToAbsent || invoiceNumber != null) {
       map['invoice_number'] = Variable<String>(invoiceNumber);
     }
@@ -10456,7 +10578,10 @@ class Purchase extends DataClass implements Insertable<Purchase> {
     if (!nullToAbsent || currencyId != null) {
       map['currency_id'] = Variable<String>(currencyId);
     }
-    map['exchange_rate'] = Variable<double>(exchangeRate);
+    {
+      map['exchange_rate'] = Variable<String>(
+          $PurchasesTable.$converterexchangeRate.toSql(exchangeRate));
+    }
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
@@ -10527,12 +10652,12 @@ class Purchase extends DataClass implements Insertable<Purchase> {
       syncStatus: serializer.fromJson<int>(json['syncStatus']),
       branchId: serializer.fromJson<String?>(json['branchId']),
       supplierId: serializer.fromJson<String?>(json['supplierId']),
-      total: serializer.fromJson<double>(json['total']),
-      tax: serializer.fromJson<double>(json['tax']),
-      discount: serializer.fromJson<double>(json['discount']),
-      landedCosts: serializer.fromJson<double>(json['landedCosts']),
-      shippingCost: serializer.fromJson<double>(json['shippingCost']),
-      otherExpenses: serializer.fromJson<double>(json['otherExpenses']),
+      total: serializer.fromJson<Decimal>(json['total']),
+      tax: serializer.fromJson<Decimal>(json['tax']),
+      discount: serializer.fromJson<Decimal>(json['discount']),
+      landedCosts: serializer.fromJson<Decimal>(json['landedCosts']),
+      shippingCost: serializer.fromJson<Decimal>(json['shippingCost']),
+      otherExpenses: serializer.fromJson<Decimal>(json['otherExpenses']),
       invoiceNumber: serializer.fromJson<String?>(json['invoiceNumber']),
       purchaseType: serializer.fromJson<String>(json['purchaseType']),
       date: serializer.fromJson<DateTime>(json['date']),
@@ -10541,7 +10666,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
       status: serializer.fromJson<DocumentStatus>(json['status']),
       warehouseId: serializer.fromJson<String?>(json['warehouseId']),
       currencyId: serializer.fromJson<String?>(json['currencyId']),
-      exchangeRate: serializer.fromJson<double>(json['exchangeRate']),
+      exchangeRate: serializer.fromJson<Decimal>(json['exchangeRate']),
       notes: serializer.fromJson<String?>(json['notes']),
       referenceDocument:
           serializer.fromJson<String?>(json['referenceDocument']),
@@ -10559,12 +10684,12 @@ class Purchase extends DataClass implements Insertable<Purchase> {
       'syncStatus': serializer.toJson<int>(syncStatus),
       'branchId': serializer.toJson<String?>(branchId),
       'supplierId': serializer.toJson<String?>(supplierId),
-      'total': serializer.toJson<double>(total),
-      'tax': serializer.toJson<double>(tax),
-      'discount': serializer.toJson<double>(discount),
-      'landedCosts': serializer.toJson<double>(landedCosts),
-      'shippingCost': serializer.toJson<double>(shippingCost),
-      'otherExpenses': serializer.toJson<double>(otherExpenses),
+      'total': serializer.toJson<Decimal>(total),
+      'tax': serializer.toJson<Decimal>(tax),
+      'discount': serializer.toJson<Decimal>(discount),
+      'landedCosts': serializer.toJson<Decimal>(landedCosts),
+      'shippingCost': serializer.toJson<Decimal>(shippingCost),
+      'otherExpenses': serializer.toJson<Decimal>(otherExpenses),
       'invoiceNumber': serializer.toJson<String?>(invoiceNumber),
       'purchaseType': serializer.toJson<String>(purchaseType),
       'date': serializer.toJson<DateTime>(date),
@@ -10573,7 +10698,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
       'status': serializer.toJson<DocumentStatus>(status),
       'warehouseId': serializer.toJson<String?>(warehouseId),
       'currencyId': serializer.toJson<String?>(currencyId),
-      'exchangeRate': serializer.toJson<double>(exchangeRate),
+      'exchangeRate': serializer.toJson<Decimal>(exchangeRate),
       'notes': serializer.toJson<String?>(notes),
       'referenceDocument': serializer.toJson<String?>(referenceDocument),
       'attachmentPath': serializer.toJson<String?>(attachmentPath),
@@ -10588,12 +10713,12 @@ class Purchase extends DataClass implements Insertable<Purchase> {
           int? syncStatus,
           Value<String?> branchId = const Value.absent(),
           Value<String?> supplierId = const Value.absent(),
-          double? total,
-          double? tax,
-          double? discount,
-          double? landedCosts,
-          double? shippingCost,
-          double? otherExpenses,
+          Decimal? total,
+          Decimal? tax,
+          Decimal? discount,
+          Decimal? landedCosts,
+          Decimal? shippingCost,
+          Decimal? otherExpenses,
           Value<String?> invoiceNumber = const Value.absent(),
           String? purchaseType,
           DateTime? date,
@@ -10602,7 +10727,7 @@ class Purchase extends DataClass implements Insertable<Purchase> {
           DocumentStatus? status,
           Value<String?> warehouseId = const Value.absent(),
           Value<String?> currencyId = const Value.absent(),
-          double? exchangeRate,
+          Decimal? exchangeRate,
           Value<String?> notes = const Value.absent(),
           Value<String?> referenceDocument = const Value.absent(),
           Value<String?> attachmentPath = const Value.absent()}) =>
@@ -10785,12 +10910,12 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
   final Value<int> syncStatus;
   final Value<String?> branchId;
   final Value<String?> supplierId;
-  final Value<double> total;
-  final Value<double> tax;
-  final Value<double> discount;
-  final Value<double> landedCosts;
-  final Value<double> shippingCost;
-  final Value<double> otherExpenses;
+  final Value<Decimal> total;
+  final Value<Decimal> tax;
+  final Value<Decimal> discount;
+  final Value<Decimal> landedCosts;
+  final Value<Decimal> shippingCost;
+  final Value<Decimal> otherExpenses;
   final Value<String?> invoiceNumber;
   final Value<String> purchaseType;
   final Value<DateTime> date;
@@ -10799,7 +10924,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
   final Value<DocumentStatus> status;
   final Value<String?> warehouseId;
   final Value<String?> currencyId;
-  final Value<double> exchangeRate;
+  final Value<Decimal> exchangeRate;
   final Value<String?> notes;
   final Value<String?> referenceDocument;
   final Value<String?> attachmentPath;
@@ -10840,7 +10965,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
     this.syncStatus = const Value.absent(),
     this.branchId = const Value.absent(),
     this.supplierId = const Value.absent(),
-    required double total,
+    required Decimal total,
     this.tax = const Value.absent(),
     this.discount = const Value.absent(),
     this.landedCosts = const Value.absent(),
@@ -10868,12 +10993,12 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
     Expression<int>? syncStatus,
     Expression<String>? branchId,
     Expression<String>? supplierId,
-    Expression<double>? total,
-    Expression<double>? tax,
-    Expression<double>? discount,
-    Expression<double>? landedCosts,
-    Expression<double>? shippingCost,
-    Expression<double>? otherExpenses,
+    Expression<String>? total,
+    Expression<String>? tax,
+    Expression<String>? discount,
+    Expression<String>? landedCosts,
+    Expression<String>? shippingCost,
+    Expression<String>? otherExpenses,
     Expression<String>? invoiceNumber,
     Expression<String>? purchaseType,
     Expression<DateTime>? date,
@@ -10882,7 +11007,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
     Expression<int>? status,
     Expression<String>? warehouseId,
     Expression<String>? currencyId,
-    Expression<double>? exchangeRate,
+    Expression<String>? exchangeRate,
     Expression<String>? notes,
     Expression<String>? referenceDocument,
     Expression<String>? attachmentPath,
@@ -10926,12 +11051,12 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
       Value<int>? syncStatus,
       Value<String?>? branchId,
       Value<String?>? supplierId,
-      Value<double>? total,
-      Value<double>? tax,
-      Value<double>? discount,
-      Value<double>? landedCosts,
-      Value<double>? shippingCost,
-      Value<double>? otherExpenses,
+      Value<Decimal>? total,
+      Value<Decimal>? tax,
+      Value<Decimal>? discount,
+      Value<Decimal>? landedCosts,
+      Value<Decimal>? shippingCost,
+      Value<Decimal>? otherExpenses,
       Value<String?>? invoiceNumber,
       Value<String>? purchaseType,
       Value<DateTime>? date,
@@ -10940,7 +11065,7 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
       Value<DocumentStatus>? status,
       Value<String?>? warehouseId,
       Value<String?>? currencyId,
-      Value<double>? exchangeRate,
+      Value<Decimal>? exchangeRate,
       Value<String?>? notes,
       Value<String?>? referenceDocument,
       Value<String?>? attachmentPath,
@@ -11000,22 +11125,28 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
       map['supplier_id'] = Variable<String>(supplierId.value);
     }
     if (total.present) {
-      map['total'] = Variable<double>(total.value);
+      map['total'] =
+          Variable<String>($PurchasesTable.$convertertotal.toSql(total.value));
     }
     if (tax.present) {
-      map['tax'] = Variable<double>(tax.value);
+      map['tax'] =
+          Variable<String>($PurchasesTable.$convertertax.toSql(tax.value));
     }
     if (discount.present) {
-      map['discount'] = Variable<double>(discount.value);
+      map['discount'] = Variable<String>(
+          $PurchasesTable.$converterdiscount.toSql(discount.value));
     }
     if (landedCosts.present) {
-      map['landed_costs'] = Variable<double>(landedCosts.value);
+      map['landed_costs'] = Variable<String>(
+          $PurchasesTable.$converterlandedCosts.toSql(landedCosts.value));
     }
     if (shippingCost.present) {
-      map['shipping_cost'] = Variable<double>(shippingCost.value);
+      map['shipping_cost'] = Variable<String>(
+          $PurchasesTable.$convertershippingCost.toSql(shippingCost.value));
     }
     if (otherExpenses.present) {
-      map['other_expenses'] = Variable<double>(otherExpenses.value);
+      map['other_expenses'] = Variable<String>(
+          $PurchasesTable.$converterotherExpenses.toSql(otherExpenses.value));
     }
     if (invoiceNumber.present) {
       map['invoice_number'] = Variable<String>(invoiceNumber.value);
@@ -11043,7 +11174,8 @@ class PurchasesCompanion extends UpdateCompanion<Purchase> {
       map['currency_id'] = Variable<String>(currencyId.value);
     }
     if (exchangeRate.present) {
-      map['exchange_rate'] = Variable<double>(exchangeRate.value);
+      map['exchange_rate'] = Variable<String>(
+          $PurchasesTable.$converterexchangeRate.toSql(exchangeRate.value));
     }
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
@@ -11172,73 +11304,87 @@ class $PurchaseItemsTable extends PurchaseItems
   static const VerificationMeta _unitFactorMeta =
       const VerificationMeta('unitFactor');
   @override
-  late final GeneratedColumn<double> unitFactor = GeneratedColumn<double>(
-      'unit_factor', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(1.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> unitFactor =
+      GeneratedColumn<String>('unit_factor', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.one.toString()))
+          .withConverter<Decimal>($PurchaseItemsTable.$converterunitFactor);
   static const VerificationMeta _quantityMeta =
       const VerificationMeta('quantity');
   @override
-  late final GeneratedColumn<double> quantity = GeneratedColumn<double>(
-      'quantity', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> quantity =
+      GeneratedColumn<String>('quantity', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($PurchaseItemsTable.$converterquantity);
   static const VerificationMeta _quantityInBaseUnitMeta =
       const VerificationMeta('quantityInBaseUnit');
   @override
-  late final GeneratedColumn<double> quantityInBaseUnit =
-      GeneratedColumn<double>('quantity_in_base_unit', aliasedName, true,
-          type: DriftSqlType.double, requiredDuringInsert: false);
+  late final GeneratedColumnWithTypeConverter<Decimal?, String>
+      quantityInBaseUnit = GeneratedColumn<String>(
+              'quantity_in_base_unit', aliasedName, true,
+              type: DriftSqlType.string, requiredDuringInsert: false)
+          .withConverter<Decimal?>(
+              $PurchaseItemsTable.$converterquantityInBaseUnitn);
   static const VerificationMeta _unitPriceMeta =
       const VerificationMeta('unitPrice');
   @override
-  late final GeneratedColumn<double> unitPrice = GeneratedColumn<double>(
-      'unit_price', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> unitPrice =
+      GeneratedColumn<String>('unit_price', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($PurchaseItemsTable.$converterunitPrice);
   static const VerificationMeta _priceMeta = const VerificationMeta('price');
   @override
-  late final GeneratedColumn<double> price = GeneratedColumn<double>(
-      'price', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> price =
+      GeneratedColumn<String>('price', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($PurchaseItemsTable.$converterprice);
   static const VerificationMeta _discountMeta =
       const VerificationMeta('discount');
   @override
-  late final GeneratedColumn<double> discount = GeneratedColumn<double>(
-      'discount', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> discount =
+      GeneratedColumn<String>('discount', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($PurchaseItemsTable.$converterdiscount);
   static const VerificationMeta _discountPercentMeta =
       const VerificationMeta('discountPercent');
   @override
-  late final GeneratedColumn<double> discountPercent = GeneratedColumn<double>(
-      'discount_percent', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> discountPercent =
+      GeneratedColumn<String>('discount_percent', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>(
+              $PurchaseItemsTable.$converterdiscountPercent);
   static const VerificationMeta _taxMeta = const VerificationMeta('tax');
   @override
-  late final GeneratedColumn<double> tax = GeneratedColumn<double>(
-      'tax', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> tax =
+      GeneratedColumn<String>('tax', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($PurchaseItemsTable.$convertertax);
   static const VerificationMeta _taxPercentMeta =
       const VerificationMeta('taxPercent');
   @override
-  late final GeneratedColumn<double> taxPercent = GeneratedColumn<double>(
-      'tax_percent', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> taxPercent =
+      GeneratedColumn<String>('tax_percent', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($PurchaseItemsTable.$convertertaxPercent);
   static const VerificationMeta _landedCostShareMeta =
       const VerificationMeta('landedCostShare');
   @override
-  late final GeneratedColumn<double> landedCostShare = GeneratedColumn<double>(
-      'landed_cost_share', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> landedCostShare =
+      GeneratedColumn<String>('landed_cost_share', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>(
+              $PurchaseItemsTable.$converterlandedCostShare);
   static const VerificationMeta _batchIdMeta =
       const VerificationMeta('batchId');
   @override
@@ -11359,62 +11505,16 @@ class $PurchaseItemsTable extends PurchaseItems
       context.handle(_unitIdMeta,
           unitId.isAcceptableOrUnknown(data['unit_id']!, _unitIdMeta));
     }
-    if (data.containsKey('unit_factor')) {
-      context.handle(
-          _unitFactorMeta,
-          unitFactor.isAcceptableOrUnknown(
-              data['unit_factor']!, _unitFactorMeta));
-    }
-    if (data.containsKey('quantity')) {
-      context.handle(_quantityMeta,
-          quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta));
-    } else if (isInserting) {
-      context.missing(_quantityMeta);
-    }
-    if (data.containsKey('quantity_in_base_unit')) {
-      context.handle(
-          _quantityInBaseUnitMeta,
-          quantityInBaseUnit.isAcceptableOrUnknown(
-              data['quantity_in_base_unit']!, _quantityInBaseUnitMeta));
-    }
-    if (data.containsKey('unit_price')) {
-      context.handle(_unitPriceMeta,
-          unitPrice.isAcceptableOrUnknown(data['unit_price']!, _unitPriceMeta));
-    } else if (isInserting) {
-      context.missing(_unitPriceMeta);
-    }
-    if (data.containsKey('price')) {
-      context.handle(
-          _priceMeta, price.isAcceptableOrUnknown(data['price']!, _priceMeta));
-    } else if (isInserting) {
-      context.missing(_priceMeta);
-    }
-    if (data.containsKey('discount')) {
-      context.handle(_discountMeta,
-          discount.isAcceptableOrUnknown(data['discount']!, _discountMeta));
-    }
-    if (data.containsKey('discount_percent')) {
-      context.handle(
-          _discountPercentMeta,
-          discountPercent.isAcceptableOrUnknown(
-              data['discount_percent']!, _discountPercentMeta));
-    }
-    if (data.containsKey('tax')) {
-      context.handle(
-          _taxMeta, tax.isAcceptableOrUnknown(data['tax']!, _taxMeta));
-    }
-    if (data.containsKey('tax_percent')) {
-      context.handle(
-          _taxPercentMeta,
-          taxPercent.isAcceptableOrUnknown(
-              data['tax_percent']!, _taxPercentMeta));
-    }
-    if (data.containsKey('landed_cost_share')) {
-      context.handle(
-          _landedCostShareMeta,
-          landedCostShare.isAcceptableOrUnknown(
-              data['landed_cost_share']!, _landedCostShareMeta));
-    }
+    context.handle(_unitFactorMeta, const VerificationResult.success());
+    context.handle(_quantityMeta, const VerificationResult.success());
+    context.handle(_quantityInBaseUnitMeta, const VerificationResult.success());
+    context.handle(_unitPriceMeta, const VerificationResult.success());
+    context.handle(_priceMeta, const VerificationResult.success());
+    context.handle(_discountMeta, const VerificationResult.success());
+    context.handle(_discountPercentMeta, const VerificationResult.success());
+    context.handle(_taxMeta, const VerificationResult.success());
+    context.handle(_taxPercentMeta, const VerificationResult.success());
+    context.handle(_landedCostShareMeta, const VerificationResult.success());
     if (data.containsKey('batch_id')) {
       context.handle(_batchIdMeta,
           batchId.isAcceptableOrUnknown(data['batch_id']!, _batchIdMeta));
@@ -11468,26 +11568,36 @@ class $PurchaseItemsTable extends PurchaseItems
           .read(DriftSqlType.string, data['${effectivePrefix}product_id'])!,
       unitId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}unit_id']),
-      unitFactor: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}unit_factor'])!,
-      quantity: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}quantity'])!,
-      quantityInBaseUnit: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}quantity_in_base_unit']),
-      unitPrice: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}unit_price'])!,
-      price: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}price'])!,
-      discount: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}discount'])!,
-      discountPercent: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}discount_percent'])!,
-      tax: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}tax'])!,
-      taxPercent: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}tax_percent'])!,
-      landedCostShare: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}landed_cost_share'])!,
+      unitFactor: $PurchaseItemsTable.$converterunitFactor.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}unit_factor'])!),
+      quantity: $PurchaseItemsTable.$converterquantity.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}quantity'])!),
+      quantityInBaseUnit: $PurchaseItemsTable.$converterquantityInBaseUnitn
+          .fromSql(attachedDatabase.typeMapping.read(DriftSqlType.string,
+              data['${effectivePrefix}quantity_in_base_unit'])),
+      unitPrice: $PurchaseItemsTable.$converterunitPrice.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}unit_price'])!),
+      price: $PurchaseItemsTable.$converterprice.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}price'])!),
+      discount: $PurchaseItemsTable.$converterdiscount.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}discount'])!),
+      discountPercent: $PurchaseItemsTable.$converterdiscountPercent.fromSql(
+          attachedDatabase.typeMapping.read(DriftSqlType.string,
+              data['${effectivePrefix}discount_percent'])!),
+      tax: $PurchaseItemsTable.$convertertax.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tax'])!),
+      taxPercent: $PurchaseItemsTable.$convertertaxPercent.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}tax_percent'])!),
+      landedCostShare: $PurchaseItemsTable.$converterlandedCostShare.fromSql(
+          attachedDatabase.typeMapping.read(DriftSqlType.string,
+              data['${effectivePrefix}landed_cost_share'])!),
       batchId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}batch_id']),
       batchNumber: attachedDatabase.typeMapping
@@ -11505,6 +11615,29 @@ class $PurchaseItemsTable extends PurchaseItems
   $PurchaseItemsTable createAlias(String alias) {
     return $PurchaseItemsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterunitFactor =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterquantity =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterquantityInBaseUnit =
+      const DecimalConverter();
+  static TypeConverter<Decimal?, String?> $converterquantityInBaseUnitn =
+      NullAwareTypeConverter.wrap($converterquantityInBaseUnit);
+  static TypeConverter<Decimal, String> $converterunitPrice =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterprice =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterdiscount =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterdiscountPercent =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $convertertax =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $convertertaxPercent =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterlandedCostShare =
+      const DecimalConverter();
 }
 
 class PurchaseItem extends DataClass implements Insertable<PurchaseItem> {
@@ -11517,16 +11650,16 @@ class PurchaseItem extends DataClass implements Insertable<PurchaseItem> {
   final String purchaseId;
   final String productId;
   final String? unitId;
-  final double unitFactor;
-  final double quantity;
-  final double? quantityInBaseUnit;
-  final double unitPrice;
-  final double price;
-  final double discount;
-  final double discountPercent;
-  final double tax;
-  final double taxPercent;
-  final double landedCostShare;
+  final Decimal unitFactor;
+  final Decimal quantity;
+  final Decimal? quantityInBaseUnit;
+  final Decimal unitPrice;
+  final Decimal price;
+  final Decimal discount;
+  final Decimal discountPercent;
+  final Decimal tax;
+  final Decimal taxPercent;
+  final Decimal landedCostShare;
   final String? batchId;
   final String? batchNumber;
   final DateTime? expiryDate;
@@ -11575,18 +11708,47 @@ class PurchaseItem extends DataClass implements Insertable<PurchaseItem> {
     if (!nullToAbsent || unitId != null) {
       map['unit_id'] = Variable<String>(unitId);
     }
-    map['unit_factor'] = Variable<double>(unitFactor);
-    map['quantity'] = Variable<double>(quantity);
-    if (!nullToAbsent || quantityInBaseUnit != null) {
-      map['quantity_in_base_unit'] = Variable<double>(quantityInBaseUnit);
+    {
+      map['unit_factor'] = Variable<String>(
+          $PurchaseItemsTable.$converterunitFactor.toSql(unitFactor));
     }
-    map['unit_price'] = Variable<double>(unitPrice);
-    map['price'] = Variable<double>(price);
-    map['discount'] = Variable<double>(discount);
-    map['discount_percent'] = Variable<double>(discountPercent);
-    map['tax'] = Variable<double>(tax);
-    map['tax_percent'] = Variable<double>(taxPercent);
-    map['landed_cost_share'] = Variable<double>(landedCostShare);
+    {
+      map['quantity'] = Variable<String>(
+          $PurchaseItemsTable.$converterquantity.toSql(quantity));
+    }
+    if (!nullToAbsent || quantityInBaseUnit != null) {
+      map['quantity_in_base_unit'] = Variable<String>($PurchaseItemsTable
+          .$converterquantityInBaseUnitn
+          .toSql(quantityInBaseUnit));
+    }
+    {
+      map['unit_price'] = Variable<String>(
+          $PurchaseItemsTable.$converterunitPrice.toSql(unitPrice));
+    }
+    {
+      map['price'] =
+          Variable<String>($PurchaseItemsTable.$converterprice.toSql(price));
+    }
+    {
+      map['discount'] = Variable<String>(
+          $PurchaseItemsTable.$converterdiscount.toSql(discount));
+    }
+    {
+      map['discount_percent'] = Variable<String>(
+          $PurchaseItemsTable.$converterdiscountPercent.toSql(discountPercent));
+    }
+    {
+      map['tax'] =
+          Variable<String>($PurchaseItemsTable.$convertertax.toSql(tax));
+    }
+    {
+      map['tax_percent'] = Variable<String>(
+          $PurchaseItemsTable.$convertertaxPercent.toSql(taxPercent));
+    }
+    {
+      map['landed_cost_share'] = Variable<String>(
+          $PurchaseItemsTable.$converterlandedCostShare.toSql(landedCostShare));
+    }
     if (!nullToAbsent || batchId != null) {
       map['batch_id'] = Variable<String>(batchId);
     }
@@ -11660,17 +11822,17 @@ class PurchaseItem extends DataClass implements Insertable<PurchaseItem> {
       purchaseId: serializer.fromJson<String>(json['purchaseId']),
       productId: serializer.fromJson<String>(json['productId']),
       unitId: serializer.fromJson<String?>(json['unitId']),
-      unitFactor: serializer.fromJson<double>(json['unitFactor']),
-      quantity: serializer.fromJson<double>(json['quantity']),
+      unitFactor: serializer.fromJson<Decimal>(json['unitFactor']),
+      quantity: serializer.fromJson<Decimal>(json['quantity']),
       quantityInBaseUnit:
-          serializer.fromJson<double?>(json['quantityInBaseUnit']),
-      unitPrice: serializer.fromJson<double>(json['unitPrice']),
-      price: serializer.fromJson<double>(json['price']),
-      discount: serializer.fromJson<double>(json['discount']),
-      discountPercent: serializer.fromJson<double>(json['discountPercent']),
-      tax: serializer.fromJson<double>(json['tax']),
-      taxPercent: serializer.fromJson<double>(json['taxPercent']),
-      landedCostShare: serializer.fromJson<double>(json['landedCostShare']),
+          serializer.fromJson<Decimal?>(json['quantityInBaseUnit']),
+      unitPrice: serializer.fromJson<Decimal>(json['unitPrice']),
+      price: serializer.fromJson<Decimal>(json['price']),
+      discount: serializer.fromJson<Decimal>(json['discount']),
+      discountPercent: serializer.fromJson<Decimal>(json['discountPercent']),
+      tax: serializer.fromJson<Decimal>(json['tax']),
+      taxPercent: serializer.fromJson<Decimal>(json['taxPercent']),
+      landedCostShare: serializer.fromJson<Decimal>(json['landedCostShare']),
       batchId: serializer.fromJson<String?>(json['batchId']),
       batchNumber: serializer.fromJson<String?>(json['batchNumber']),
       expiryDate: serializer.fromJson<DateTime?>(json['expiryDate']),
@@ -11691,16 +11853,16 @@ class PurchaseItem extends DataClass implements Insertable<PurchaseItem> {
       'purchaseId': serializer.toJson<String>(purchaseId),
       'productId': serializer.toJson<String>(productId),
       'unitId': serializer.toJson<String?>(unitId),
-      'unitFactor': serializer.toJson<double>(unitFactor),
-      'quantity': serializer.toJson<double>(quantity),
-      'quantityInBaseUnit': serializer.toJson<double?>(quantityInBaseUnit),
-      'unitPrice': serializer.toJson<double>(unitPrice),
-      'price': serializer.toJson<double>(price),
-      'discount': serializer.toJson<double>(discount),
-      'discountPercent': serializer.toJson<double>(discountPercent),
-      'tax': serializer.toJson<double>(tax),
-      'taxPercent': serializer.toJson<double>(taxPercent),
-      'landedCostShare': serializer.toJson<double>(landedCostShare),
+      'unitFactor': serializer.toJson<Decimal>(unitFactor),
+      'quantity': serializer.toJson<Decimal>(quantity),
+      'quantityInBaseUnit': serializer.toJson<Decimal?>(quantityInBaseUnit),
+      'unitPrice': serializer.toJson<Decimal>(unitPrice),
+      'price': serializer.toJson<Decimal>(price),
+      'discount': serializer.toJson<Decimal>(discount),
+      'discountPercent': serializer.toJson<Decimal>(discountPercent),
+      'tax': serializer.toJson<Decimal>(tax),
+      'taxPercent': serializer.toJson<Decimal>(taxPercent),
+      'landedCostShare': serializer.toJson<Decimal>(landedCostShare),
       'batchId': serializer.toJson<String?>(batchId),
       'batchNumber': serializer.toJson<String?>(batchNumber),
       'expiryDate': serializer.toJson<DateTime?>(expiryDate),
@@ -11719,16 +11881,16 @@ class PurchaseItem extends DataClass implements Insertable<PurchaseItem> {
           String? purchaseId,
           String? productId,
           Value<String?> unitId = const Value.absent(),
-          double? unitFactor,
-          double? quantity,
-          Value<double?> quantityInBaseUnit = const Value.absent(),
-          double? unitPrice,
-          double? price,
-          double? discount,
-          double? discountPercent,
-          double? tax,
-          double? taxPercent,
-          double? landedCostShare,
+          Decimal? unitFactor,
+          Decimal? quantity,
+          Value<Decimal?> quantityInBaseUnit = const Value.absent(),
+          Decimal? unitPrice,
+          Decimal? price,
+          Decimal? discount,
+          Decimal? discountPercent,
+          Decimal? tax,
+          Decimal? taxPercent,
+          Decimal? landedCostShare,
           Value<String?> batchId = const Value.absent(),
           Value<String?> batchNumber = const Value.absent(),
           Value<DateTime?> expiryDate = const Value.absent(),
@@ -11902,16 +12064,16 @@ class PurchaseItemsCompanion extends UpdateCompanion<PurchaseItem> {
   final Value<String> purchaseId;
   final Value<String> productId;
   final Value<String?> unitId;
-  final Value<double> unitFactor;
-  final Value<double> quantity;
-  final Value<double?> quantityInBaseUnit;
-  final Value<double> unitPrice;
-  final Value<double> price;
-  final Value<double> discount;
-  final Value<double> discountPercent;
-  final Value<double> tax;
-  final Value<double> taxPercent;
-  final Value<double> landedCostShare;
+  final Value<Decimal> unitFactor;
+  final Value<Decimal> quantity;
+  final Value<Decimal?> quantityInBaseUnit;
+  final Value<Decimal> unitPrice;
+  final Value<Decimal> price;
+  final Value<Decimal> discount;
+  final Value<Decimal> discountPercent;
+  final Value<Decimal> tax;
+  final Value<Decimal> taxPercent;
+  final Value<Decimal> landedCostShare;
   final Value<String?> batchId;
   final Value<String?> batchNumber;
   final Value<DateTime?> expiryDate;
@@ -11956,10 +12118,10 @@ class PurchaseItemsCompanion extends UpdateCompanion<PurchaseItem> {
     required String productId,
     this.unitId = const Value.absent(),
     this.unitFactor = const Value.absent(),
-    required double quantity,
+    required Decimal quantity,
     this.quantityInBaseUnit = const Value.absent(),
-    required double unitPrice,
-    required double price,
+    required Decimal unitPrice,
+    required Decimal price,
     this.discount = const Value.absent(),
     this.discountPercent = const Value.absent(),
     this.tax = const Value.absent(),
@@ -11986,16 +12148,16 @@ class PurchaseItemsCompanion extends UpdateCompanion<PurchaseItem> {
     Expression<String>? purchaseId,
     Expression<String>? productId,
     Expression<String>? unitId,
-    Expression<double>? unitFactor,
-    Expression<double>? quantity,
-    Expression<double>? quantityInBaseUnit,
-    Expression<double>? unitPrice,
-    Expression<double>? price,
-    Expression<double>? discount,
-    Expression<double>? discountPercent,
-    Expression<double>? tax,
-    Expression<double>? taxPercent,
-    Expression<double>? landedCostShare,
+    Expression<String>? unitFactor,
+    Expression<String>? quantity,
+    Expression<String>? quantityInBaseUnit,
+    Expression<String>? unitPrice,
+    Expression<String>? price,
+    Expression<String>? discount,
+    Expression<String>? discountPercent,
+    Expression<String>? tax,
+    Expression<String>? taxPercent,
+    Expression<String>? landedCostShare,
     Expression<String>? batchId,
     Expression<String>? batchNumber,
     Expression<DateTime>? expiryDate,
@@ -12043,16 +12205,16 @@ class PurchaseItemsCompanion extends UpdateCompanion<PurchaseItem> {
       Value<String>? purchaseId,
       Value<String>? productId,
       Value<String?>? unitId,
-      Value<double>? unitFactor,
-      Value<double>? quantity,
-      Value<double?>? quantityInBaseUnit,
-      Value<double>? unitPrice,
-      Value<double>? price,
-      Value<double>? discount,
-      Value<double>? discountPercent,
-      Value<double>? tax,
-      Value<double>? taxPercent,
-      Value<double>? landedCostShare,
+      Value<Decimal>? unitFactor,
+      Value<Decimal>? quantity,
+      Value<Decimal?>? quantityInBaseUnit,
+      Value<Decimal>? unitPrice,
+      Value<Decimal>? price,
+      Value<Decimal>? discount,
+      Value<Decimal>? discountPercent,
+      Value<Decimal>? tax,
+      Value<Decimal>? taxPercent,
+      Value<Decimal>? landedCostShare,
       Value<String?>? batchId,
       Value<String?>? batchNumber,
       Value<DateTime?>? expiryDate,
@@ -12119,34 +12281,47 @@ class PurchaseItemsCompanion extends UpdateCompanion<PurchaseItem> {
       map['unit_id'] = Variable<String>(unitId.value);
     }
     if (unitFactor.present) {
-      map['unit_factor'] = Variable<double>(unitFactor.value);
+      map['unit_factor'] = Variable<String>(
+          $PurchaseItemsTable.$converterunitFactor.toSql(unitFactor.value));
     }
     if (quantity.present) {
-      map['quantity'] = Variable<double>(quantity.value);
+      map['quantity'] = Variable<String>(
+          $PurchaseItemsTable.$converterquantity.toSql(quantity.value));
     }
     if (quantityInBaseUnit.present) {
-      map['quantity_in_base_unit'] = Variable<double>(quantityInBaseUnit.value);
+      map['quantity_in_base_unit'] = Variable<String>($PurchaseItemsTable
+          .$converterquantityInBaseUnitn
+          .toSql(quantityInBaseUnit.value));
     }
     if (unitPrice.present) {
-      map['unit_price'] = Variable<double>(unitPrice.value);
+      map['unit_price'] = Variable<String>(
+          $PurchaseItemsTable.$converterunitPrice.toSql(unitPrice.value));
     }
     if (price.present) {
-      map['price'] = Variable<double>(price.value);
+      map['price'] = Variable<String>(
+          $PurchaseItemsTable.$converterprice.toSql(price.value));
     }
     if (discount.present) {
-      map['discount'] = Variable<double>(discount.value);
+      map['discount'] = Variable<String>(
+          $PurchaseItemsTable.$converterdiscount.toSql(discount.value));
     }
     if (discountPercent.present) {
-      map['discount_percent'] = Variable<double>(discountPercent.value);
+      map['discount_percent'] = Variable<String>($PurchaseItemsTable
+          .$converterdiscountPercent
+          .toSql(discountPercent.value));
     }
     if (tax.present) {
-      map['tax'] = Variable<double>(tax.value);
+      map['tax'] =
+          Variable<String>($PurchaseItemsTable.$convertertax.toSql(tax.value));
     }
     if (taxPercent.present) {
-      map['tax_percent'] = Variable<double>(taxPercent.value);
+      map['tax_percent'] = Variable<String>(
+          $PurchaseItemsTable.$convertertaxPercent.toSql(taxPercent.value));
     }
     if (landedCostShare.present) {
-      map['landed_cost_share'] = Variable<double>(landedCostShare.value);
+      map['landed_cost_share'] = Variable<String>($PurchaseItemsTable
+          .$converterlandedCostShare
+          .toSql(landedCostShare.value));
     }
     if (batchId.present) {
       map['batch_id'] = Variable<String>(batchId.value);
@@ -14623,11 +14798,13 @@ class $ProductionOrdersTable extends ProductionOrders
   static const VerificationMeta _actualQuantityMeta =
       const VerificationMeta('actualQuantity');
   @override
-  late final GeneratedColumn<double> actualQuantity = GeneratedColumn<double>(
-      'actual_quantity', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> actualQuantity =
+      GeneratedColumn<String>('actual_quantity', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>(
+              $ProductionOrdersTable.$converteractualQuantity);
   static const VerificationMeta _dateMeta = const VerificationMeta('date');
   @override
   late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
@@ -14723,12 +14900,7 @@ class $ProductionOrdersTable extends ProductionOrders
     } else if (isInserting) {
       context.missing(_plannedQuantityMeta);
     }
-    if (data.containsKey('actual_quantity')) {
-      context.handle(
-          _actualQuantityMeta,
-          actualQuantity.isAcceptableOrUnknown(
-              data['actual_quantity']!, _actualQuantityMeta));
-    }
+    context.handle(_actualQuantityMeta, const VerificationResult.success());
     if (data.containsKey('date')) {
       context.handle(
           _dateMeta, date.isAcceptableOrUnknown(data['date']!, _dateMeta));
@@ -14772,8 +14944,9 @@ class $ProductionOrdersTable extends ProductionOrders
           DriftSqlType.string, data['${effectivePrefix}finished_product_id'])!,
       plannedQuantity: attachedDatabase.typeMapping.read(
           DriftSqlType.double, data['${effectivePrefix}planned_quantity'])!,
-      actualQuantity: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}actual_quantity'])!,
+      actualQuantity: $ProductionOrdersTable.$converteractualQuantity.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}actual_quantity'])!),
       date: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}date'])!,
       status: attachedDatabase.typeMapping
@@ -14789,6 +14962,9 @@ class $ProductionOrdersTable extends ProductionOrders
   $ProductionOrdersTable createAlias(String alias) {
     return $ProductionOrdersTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converteractualQuantity =
+      const DecimalConverter();
 }
 
 class ProductionOrder extends DataClass implements Insertable<ProductionOrder> {
@@ -14800,7 +14976,7 @@ class ProductionOrder extends DataClass implements Insertable<ProductionOrder> {
   final String? branchId;
   final String finishedProductId;
   final double plannedQuantity;
-  final double actualQuantity;
+  final Decimal actualQuantity;
   final DateTime date;
   final String status;
   final String? warehouseId;
@@ -14834,7 +15010,11 @@ class ProductionOrder extends DataClass implements Insertable<ProductionOrder> {
     }
     map['finished_product_id'] = Variable<String>(finishedProductId);
     map['planned_quantity'] = Variable<double>(plannedQuantity);
-    map['actual_quantity'] = Variable<double>(actualQuantity);
+    {
+      map['actual_quantity'] = Variable<String>($ProductionOrdersTable
+          .$converteractualQuantity
+          .toSql(actualQuantity));
+    }
     map['date'] = Variable<DateTime>(date);
     map['status'] = Variable<String>(status);
     if (!nullToAbsent || warehouseId != null) {
@@ -14882,7 +15062,7 @@ class ProductionOrder extends DataClass implements Insertable<ProductionOrder> {
       branchId: serializer.fromJson<String?>(json['branchId']),
       finishedProductId: serializer.fromJson<String>(json['finishedProductId']),
       plannedQuantity: serializer.fromJson<double>(json['plannedQuantity']),
-      actualQuantity: serializer.fromJson<double>(json['actualQuantity']),
+      actualQuantity: serializer.fromJson<Decimal>(json['actualQuantity']),
       date: serializer.fromJson<DateTime>(json['date']),
       status: serializer.fromJson<String>(json['status']),
       warehouseId: serializer.fromJson<String?>(json['warehouseId']),
@@ -14901,7 +15081,7 @@ class ProductionOrder extends DataClass implements Insertable<ProductionOrder> {
       'branchId': serializer.toJson<String?>(branchId),
       'finishedProductId': serializer.toJson<String>(finishedProductId),
       'plannedQuantity': serializer.toJson<double>(plannedQuantity),
-      'actualQuantity': serializer.toJson<double>(actualQuantity),
+      'actualQuantity': serializer.toJson<Decimal>(actualQuantity),
       'date': serializer.toJson<DateTime>(date),
       'status': serializer.toJson<String>(status),
       'warehouseId': serializer.toJson<String?>(warehouseId),
@@ -14918,7 +15098,7 @@ class ProductionOrder extends DataClass implements Insertable<ProductionOrder> {
           Value<String?> branchId = const Value.absent(),
           String? finishedProductId,
           double? plannedQuantity,
-          double? actualQuantity,
+          Decimal? actualQuantity,
           DateTime? date,
           String? status,
           Value<String?> warehouseId = const Value.absent(),
@@ -15027,7 +15207,7 @@ class ProductionOrdersCompanion extends UpdateCompanion<ProductionOrder> {
   final Value<String?> branchId;
   final Value<String> finishedProductId;
   final Value<double> plannedQuantity;
-  final Value<double> actualQuantity;
+  final Value<Decimal> actualQuantity;
   final Value<DateTime> date;
   final Value<String> status;
   final Value<String?> warehouseId;
@@ -15075,7 +15255,7 @@ class ProductionOrdersCompanion extends UpdateCompanion<ProductionOrder> {
     Expression<String>? branchId,
     Expression<String>? finishedProductId,
     Expression<double>? plannedQuantity,
-    Expression<double>? actualQuantity,
+    Expression<String>? actualQuantity,
     Expression<DateTime>? date,
     Expression<String>? status,
     Expression<String>? warehouseId,
@@ -15109,7 +15289,7 @@ class ProductionOrdersCompanion extends UpdateCompanion<ProductionOrder> {
       Value<String?>? branchId,
       Value<String>? finishedProductId,
       Value<double>? plannedQuantity,
-      Value<double>? actualQuantity,
+      Value<Decimal>? actualQuantity,
       Value<DateTime>? date,
       Value<String>? status,
       Value<String?>? warehouseId,
@@ -15161,7 +15341,9 @@ class ProductionOrdersCompanion extends UpdateCompanion<ProductionOrder> {
       map['planned_quantity'] = Variable<double>(plannedQuantity.value);
     }
     if (actualQuantity.present) {
-      map['actual_quantity'] = Variable<double>(actualQuantity.value);
+      map['actual_quantity'] = Variable<String>($ProductionOrdersTable
+          .$converteractualQuantity
+          .toSql(actualQuantity.value));
     }
     if (date.present) {
       map['date'] = Variable<DateTime>(date.value);
@@ -15282,19 +15464,23 @@ class $ProductionOrderItemsTable extends ProductionOrderItems
   static const VerificationMeta _actualQuantityMeta =
       const VerificationMeta('actualQuantity');
   @override
-  late final GeneratedColumn<double> actualQuantity = GeneratedColumn<double>(
-      'actual_quantity', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> actualQuantity =
+      GeneratedColumn<String>('actual_quantity', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>(
+              $ProductionOrderItemsTable.$converteractualQuantity);
   static const VerificationMeta _unitCostMeta =
       const VerificationMeta('unitCost');
   @override
-  late final GeneratedColumn<double> unitCost = GeneratedColumn<double>(
-      'unit_cost', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> unitCost =
+      GeneratedColumn<String>('unit_cost', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>(
+              $ProductionOrderItemsTable.$converterunitCost);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -15369,16 +15555,8 @@ class $ProductionOrderItemsTable extends ProductionOrderItems
     } else if (isInserting) {
       context.missing(_plannedQuantityMeta);
     }
-    if (data.containsKey('actual_quantity')) {
-      context.handle(
-          _actualQuantityMeta,
-          actualQuantity.isAcceptableOrUnknown(
-              data['actual_quantity']!, _actualQuantityMeta));
-    }
-    if (data.containsKey('unit_cost')) {
-      context.handle(_unitCostMeta,
-          unitCost.isAcceptableOrUnknown(data['unit_cost']!, _unitCostMeta));
-    }
+    context.handle(_actualQuantityMeta, const VerificationResult.success());
+    context.handle(_unitCostMeta, const VerificationResult.success());
     return context;
   }
 
@@ -15406,10 +15584,12 @@ class $ProductionOrderItemsTable extends ProductionOrderItems
           DriftSqlType.string, data['${effectivePrefix}component_product_id'])!,
       plannedQuantity: attachedDatabase.typeMapping.read(
           DriftSqlType.double, data['${effectivePrefix}planned_quantity'])!,
-      actualQuantity: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}actual_quantity'])!,
-      unitCost: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}unit_cost'])!,
+      actualQuantity: $ProductionOrderItemsTable.$converteractualQuantity
+          .fromSql(attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}actual_quantity'])!),
+      unitCost: $ProductionOrderItemsTable.$converterunitCost.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.string, data['${effectivePrefix}unit_cost'])!),
     );
   }
 
@@ -15417,6 +15597,11 @@ class $ProductionOrderItemsTable extends ProductionOrderItems
   $ProductionOrderItemsTable createAlias(String alias) {
     return $ProductionOrderItemsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converteractualQuantity =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterunitCost =
+      const DecimalConverter();
 }
 
 class ProductionOrderItem extends DataClass
@@ -15430,8 +15615,8 @@ class ProductionOrderItem extends DataClass
   final String productionOrderId;
   final String componentProductId;
   final double plannedQuantity;
-  final double actualQuantity;
-  final double unitCost;
+  final Decimal actualQuantity;
+  final Decimal unitCost;
   const ProductionOrderItem(
       {required this.id,
       required this.createdAt,
@@ -15460,8 +15645,15 @@ class ProductionOrderItem extends DataClass
     map['production_order_id'] = Variable<String>(productionOrderId);
     map['component_product_id'] = Variable<String>(componentProductId);
     map['planned_quantity'] = Variable<double>(plannedQuantity);
-    map['actual_quantity'] = Variable<double>(actualQuantity);
-    map['unit_cost'] = Variable<double>(unitCost);
+    {
+      map['actual_quantity'] = Variable<String>($ProductionOrderItemsTable
+          .$converteractualQuantity
+          .toSql(actualQuantity));
+    }
+    {
+      map['unit_cost'] = Variable<String>(
+          $ProductionOrderItemsTable.$converterunitCost.toSql(unitCost));
+    }
     return map;
   }
 
@@ -15499,8 +15691,8 @@ class ProductionOrderItem extends DataClass
       componentProductId:
           serializer.fromJson<String>(json['componentProductId']),
       plannedQuantity: serializer.fromJson<double>(json['plannedQuantity']),
-      actualQuantity: serializer.fromJson<double>(json['actualQuantity']),
-      unitCost: serializer.fromJson<double>(json['unitCost']),
+      actualQuantity: serializer.fromJson<Decimal>(json['actualQuantity']),
+      unitCost: serializer.fromJson<Decimal>(json['unitCost']),
     );
   }
   @override
@@ -15516,8 +15708,8 @@ class ProductionOrderItem extends DataClass
       'productionOrderId': serializer.toJson<String>(productionOrderId),
       'componentProductId': serializer.toJson<String>(componentProductId),
       'plannedQuantity': serializer.toJson<double>(plannedQuantity),
-      'actualQuantity': serializer.toJson<double>(actualQuantity),
-      'unitCost': serializer.toJson<double>(unitCost),
+      'actualQuantity': serializer.toJson<Decimal>(actualQuantity),
+      'unitCost': serializer.toJson<Decimal>(unitCost),
     };
   }
 
@@ -15531,8 +15723,8 @@ class ProductionOrderItem extends DataClass
           String? productionOrderId,
           String? componentProductId,
           double? plannedQuantity,
-          double? actualQuantity,
-          double? unitCost}) =>
+          Decimal? actualQuantity,
+          Decimal? unitCost}) =>
       ProductionOrderItem(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -15630,8 +15822,8 @@ class ProductionOrderItemsCompanion
   final Value<String> productionOrderId;
   final Value<String> componentProductId;
   final Value<double> plannedQuantity;
-  final Value<double> actualQuantity;
-  final Value<double> unitCost;
+  final Value<Decimal> actualQuantity;
+  final Value<Decimal> unitCost;
   final Value<int> rowid;
   const ProductionOrderItemsCompanion({
     this.id = const Value.absent(),
@@ -15673,8 +15865,8 @@ class ProductionOrderItemsCompanion
     Expression<String>? productionOrderId,
     Expression<String>? componentProductId,
     Expression<double>? plannedQuantity,
-    Expression<double>? actualQuantity,
-    Expression<double>? unitCost,
+    Expression<String>? actualQuantity,
+    Expression<String>? unitCost,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -15704,8 +15896,8 @@ class ProductionOrderItemsCompanion
       Value<String>? productionOrderId,
       Value<String>? componentProductId,
       Value<double>? plannedQuantity,
-      Value<double>? actualQuantity,
-      Value<double>? unitCost,
+      Value<Decimal>? actualQuantity,
+      Value<Decimal>? unitCost,
       Value<int>? rowid}) {
     return ProductionOrderItemsCompanion(
       id: id ?? this.id,
@@ -15754,10 +15946,13 @@ class ProductionOrderItemsCompanion
       map['planned_quantity'] = Variable<double>(plannedQuantity.value);
     }
     if (actualQuantity.present) {
-      map['actual_quantity'] = Variable<double>(actualQuantity.value);
+      map['actual_quantity'] = Variable<String>($ProductionOrderItemsTable
+          .$converteractualQuantity
+          .toSql(actualQuantity.value));
     }
     if (unitCost.present) {
-      map['unit_cost'] = Variable<double>(unitCost.value);
+      map['unit_cost'] = Variable<String>(
+          $ProductionOrderItemsTable.$converterunitCost.toSql(unitCost.value));
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -16345,11 +16540,12 @@ class $SalesReturnItemsTable extends SalesReturnItems
   static const VerificationMeta _unitFactorMeta =
       const VerificationMeta('unitFactor');
   @override
-  late final GeneratedColumn<double> unitFactor = GeneratedColumn<double>(
-      'unit_factor', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(1.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> unitFactor =
+      GeneratedColumn<String>('unit_factor', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.one.toString()))
+          .withConverter<Decimal>($SalesReturnItemsTable.$converterunitFactor);
   static const VerificationMeta _batchIdMeta =
       const VerificationMeta('batchId');
   @override
@@ -16435,12 +16631,7 @@ class $SalesReturnItemsTable extends SalesReturnItems
     } else if (isInserting) {
       context.missing(_priceMeta);
     }
-    if (data.containsKey('unit_factor')) {
-      context.handle(
-          _unitFactorMeta,
-          unitFactor.isAcceptableOrUnknown(
-              data['unit_factor']!, _unitFactorMeta));
-    }
+    context.handle(_unitFactorMeta, const VerificationResult.success());
     if (data.containsKey('batch_id')) {
       context.handle(_batchIdMeta,
           batchId.isAcceptableOrUnknown(data['batch_id']!, _batchIdMeta));
@@ -16474,8 +16665,9 @@ class $SalesReturnItemsTable extends SalesReturnItems
           .read(DriftSqlType.double, data['${effectivePrefix}quantity'])!,
       price: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}price'])!,
-      unitFactor: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}unit_factor'])!,
+      unitFactor: $SalesReturnItemsTable.$converterunitFactor.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}unit_factor'])!),
       batchId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}batch_id']),
     );
@@ -16485,6 +16677,9 @@ class $SalesReturnItemsTable extends SalesReturnItems
   $SalesReturnItemsTable createAlias(String alias) {
     return $SalesReturnItemsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterunitFactor =
+      const DecimalConverter();
 }
 
 class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
@@ -16498,7 +16693,7 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
   final String productId;
   final double quantity;
   final double price;
-  final double unitFactor;
+  final Decimal unitFactor;
   final String? batchId;
   const SalesReturnItem(
       {required this.id,
@@ -16530,7 +16725,10 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
     map['product_id'] = Variable<String>(productId);
     map['quantity'] = Variable<double>(quantity);
     map['price'] = Variable<double>(price);
-    map['unit_factor'] = Variable<double>(unitFactor);
+    {
+      map['unit_factor'] = Variable<String>(
+          $SalesReturnItemsTable.$converterunitFactor.toSql(unitFactor));
+    }
     if (!nullToAbsent || batchId != null) {
       map['batch_id'] = Variable<String>(batchId);
     }
@@ -16574,7 +16772,7 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
       productId: serializer.fromJson<String>(json['productId']),
       quantity: serializer.fromJson<double>(json['quantity']),
       price: serializer.fromJson<double>(json['price']),
-      unitFactor: serializer.fromJson<double>(json['unitFactor']),
+      unitFactor: serializer.fromJson<Decimal>(json['unitFactor']),
       batchId: serializer.fromJson<String?>(json['batchId']),
     );
   }
@@ -16592,7 +16790,7 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
       'productId': serializer.toJson<String>(productId),
       'quantity': serializer.toJson<double>(quantity),
       'price': serializer.toJson<double>(price),
-      'unitFactor': serializer.toJson<double>(unitFactor),
+      'unitFactor': serializer.toJson<Decimal>(unitFactor),
       'batchId': serializer.toJson<String?>(batchId),
     };
   }
@@ -16608,7 +16806,7 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
           String? productId,
           double? quantity,
           double? price,
-          double? unitFactor,
+          Decimal? unitFactor,
           Value<String?> batchId = const Value.absent()}) =>
       SalesReturnItem(
         id: id ?? this.id,
@@ -16707,7 +16905,7 @@ class SalesReturnItemsCompanion extends UpdateCompanion<SalesReturnItem> {
   final Value<String> productId;
   final Value<double> quantity;
   final Value<double> price;
-  final Value<double> unitFactor;
+  final Value<Decimal> unitFactor;
   final Value<String?> batchId;
   final Value<int> rowid;
   const SalesReturnItemsCompanion({
@@ -16754,7 +16952,7 @@ class SalesReturnItemsCompanion extends UpdateCompanion<SalesReturnItem> {
     Expression<String>? productId,
     Expression<double>? quantity,
     Expression<double>? price,
-    Expression<double>? unitFactor,
+    Expression<String>? unitFactor,
     Expression<String>? batchId,
     Expression<int>? rowid,
   }) {
@@ -16786,7 +16984,7 @@ class SalesReturnItemsCompanion extends UpdateCompanion<SalesReturnItem> {
       Value<String>? productId,
       Value<double>? quantity,
       Value<double>? price,
-      Value<double>? unitFactor,
+      Value<Decimal>? unitFactor,
       Value<String?>? batchId,
       Value<int>? rowid}) {
     return SalesReturnItemsCompanion(
@@ -16840,7 +17038,8 @@ class SalesReturnItemsCompanion extends UpdateCompanion<SalesReturnItem> {
       map['price'] = Variable<double>(price.value);
     }
     if (unitFactor.present) {
-      map['unit_factor'] = Variable<double>(unitFactor.value);
+      map['unit_factor'] = Variable<String>(
+          $SalesReturnItemsTable.$converterunitFactor.toSql(unitFactor.value));
     }
     if (batchId.present) {
       map['batch_id'] = Variable<String>(batchId.value);
@@ -20597,11 +20796,12 @@ class $GLEntriesTable extends GLEntries
   static const VerificationMeta _exchangeRateMeta =
       const VerificationMeta('exchangeRate');
   @override
-  late final GeneratedColumn<double> exchangeRate = GeneratedColumn<double>(
-      'exchange_rate', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(1.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> exchangeRate =
+      GeneratedColumn<String>('exchange_rate', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.one.toString()))
+          .withConverter<Decimal>($GLEntriesTable.$converterexchangeRate);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -20697,12 +20897,7 @@ class $GLEntriesTable extends GLEntries
           currencyId.isAcceptableOrUnknown(
               data['currency_id']!, _currencyIdMeta));
     }
-    if (data.containsKey('exchange_rate')) {
-      context.handle(
-          _exchangeRateMeta,
-          exchangeRate.isAcceptableOrUnknown(
-              data['exchange_rate']!, _exchangeRateMeta));
-    }
+    context.handle(_exchangeRateMeta, const VerificationResult.success());
     return context;
   }
 
@@ -20740,8 +20935,9 @@ class $GLEntriesTable extends GLEntries
           .read(DriftSqlType.string, data['${effectivePrefix}posted_by']),
       currencyId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}currency_id']),
-      exchangeRate: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}exchange_rate'])!,
+      exchangeRate: $GLEntriesTable.$converterexchangeRate.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}exchange_rate'])!),
     );
   }
 
@@ -20749,6 +20945,9 @@ class $GLEntriesTable extends GLEntries
   $GLEntriesTable createAlias(String alias) {
     return $GLEntriesTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterexchangeRate =
+      const DecimalConverter();
 }
 
 class GLEntry extends DataClass implements Insertable<GLEntry> {
@@ -20766,7 +20965,7 @@ class GLEntry extends DataClass implements Insertable<GLEntry> {
   final DateTime? postedAt;
   final String? postedBy;
   final String? currencyId;
-  final double exchangeRate;
+  final Decimal exchangeRate;
   const GLEntry(
       {required this.id,
       required this.createdAt,
@@ -20814,7 +21013,10 @@ class GLEntry extends DataClass implements Insertable<GLEntry> {
     if (!nullToAbsent || currencyId != null) {
       map['currency_id'] = Variable<String>(currencyId);
     }
-    map['exchange_rate'] = Variable<double>(exchangeRate);
+    {
+      map['exchange_rate'] = Variable<String>(
+          $GLEntriesTable.$converterexchangeRate.toSql(exchangeRate));
+    }
     return map;
   }
 
@@ -20870,7 +21072,7 @@ class GLEntry extends DataClass implements Insertable<GLEntry> {
       postedAt: serializer.fromJson<DateTime?>(json['postedAt']),
       postedBy: serializer.fromJson<String?>(json['postedBy']),
       currencyId: serializer.fromJson<String?>(json['currencyId']),
-      exchangeRate: serializer.fromJson<double>(json['exchangeRate']),
+      exchangeRate: serializer.fromJson<Decimal>(json['exchangeRate']),
     );
   }
   @override
@@ -20891,7 +21093,7 @@ class GLEntry extends DataClass implements Insertable<GLEntry> {
       'postedAt': serializer.toJson<DateTime?>(postedAt),
       'postedBy': serializer.toJson<String?>(postedBy),
       'currencyId': serializer.toJson<String?>(currencyId),
-      'exchangeRate': serializer.toJson<double>(exchangeRate),
+      'exchangeRate': serializer.toJson<Decimal>(exchangeRate),
     };
   }
 
@@ -20910,7 +21112,7 @@ class GLEntry extends DataClass implements Insertable<GLEntry> {
           Value<DateTime?> postedAt = const Value.absent(),
           Value<String?> postedBy = const Value.absent(),
           Value<String?> currencyId = const Value.absent(),
-          double? exchangeRate}) =>
+          Decimal? exchangeRate}) =>
       GLEntry(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -21032,7 +21234,7 @@ class GLEntriesCompanion extends UpdateCompanion<GLEntry> {
   final Value<DateTime?> postedAt;
   final Value<String?> postedBy;
   final Value<String?> currencyId;
-  final Value<double> exchangeRate;
+  final Value<Decimal> exchangeRate;
   final Value<int> rowid;
   const GLEntriesCompanion({
     this.id = const Value.absent(),
@@ -21085,7 +21287,7 @@ class GLEntriesCompanion extends UpdateCompanion<GLEntry> {
     Expression<DateTime>? postedAt,
     Expression<String>? postedBy,
     Expression<String>? currencyId,
-    Expression<double>? exchangeRate,
+    Expression<String>? exchangeRate,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -21123,7 +21325,7 @@ class GLEntriesCompanion extends UpdateCompanion<GLEntry> {
       Value<DateTime?>? postedAt,
       Value<String?>? postedBy,
       Value<String?>? currencyId,
-      Value<double>? exchangeRate,
+      Value<Decimal>? exchangeRate,
       Value<int>? rowid}) {
     return GLEntriesCompanion(
       id: id ?? this.id,
@@ -21191,7 +21393,8 @@ class GLEntriesCompanion extends UpdateCompanion<GLEntry> {
       map['currency_id'] = Variable<String>(currencyId.value);
     }
     if (exchangeRate.present) {
-      map['exchange_rate'] = Variable<double>(exchangeRate.value);
+      map['exchange_rate'] = Variable<String>(
+          $GLEntriesTable.$converterexchangeRate.toSql(exchangeRate.value));
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -21303,18 +21506,20 @@ class $GLLinesTable extends GLLines with TableInfo<$GLLinesTable, GLLine> {
           GeneratedColumn.constraintIsAlways('REFERENCES cost_centers (id)'));
   static const VerificationMeta _debitMeta = const VerificationMeta('debit');
   @override
-  late final GeneratedColumn<double> debit = GeneratedColumn<double>(
-      'debit', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> debit =
+      GeneratedColumn<String>('debit', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($GLLinesTable.$converterdebit);
   static const VerificationMeta _creditMeta = const VerificationMeta('credit');
   @override
-  late final GeneratedColumn<double> credit = GeneratedColumn<double>(
-      'credit', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> credit =
+      GeneratedColumn<String>('credit', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($GLLinesTable.$convertercredit);
   static const VerificationMeta _currencyIdMeta =
       const VerificationMeta('currencyId');
   @override
@@ -21327,11 +21532,12 @@ class $GLLinesTable extends GLLines with TableInfo<$GLLinesTable, GLLine> {
   static const VerificationMeta _exchangeRateMeta =
       const VerificationMeta('exchangeRate');
   @override
-  late final GeneratedColumn<double> exchangeRate = GeneratedColumn<double>(
-      'exchange_rate', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(1.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> exchangeRate =
+      GeneratedColumn<String>('exchange_rate', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.one.toString()))
+          .withConverter<Decimal>($GLLinesTable.$converterexchangeRate);
   static const VerificationMeta _memoMeta = const VerificationMeta('memo');
   @override
   late final GeneratedColumn<String> memo = GeneratedColumn<String>(
@@ -21407,26 +21613,15 @@ class $GLLinesTable extends GLLines with TableInfo<$GLLinesTable, GLLine> {
           costCenterId.isAcceptableOrUnknown(
               data['cost_center_id']!, _costCenterIdMeta));
     }
-    if (data.containsKey('debit')) {
-      context.handle(
-          _debitMeta, debit.isAcceptableOrUnknown(data['debit']!, _debitMeta));
-    }
-    if (data.containsKey('credit')) {
-      context.handle(_creditMeta,
-          credit.isAcceptableOrUnknown(data['credit']!, _creditMeta));
-    }
+    context.handle(_debitMeta, const VerificationResult.success());
+    context.handle(_creditMeta, const VerificationResult.success());
     if (data.containsKey('currency_id')) {
       context.handle(
           _currencyIdMeta,
           currencyId.isAcceptableOrUnknown(
               data['currency_id']!, _currencyIdMeta));
     }
-    if (data.containsKey('exchange_rate')) {
-      context.handle(
-          _exchangeRateMeta,
-          exchangeRate.isAcceptableOrUnknown(
-              data['exchange_rate']!, _exchangeRateMeta));
-    }
+    context.handle(_exchangeRateMeta, const VerificationResult.success());
     if (data.containsKey('memo')) {
       context.handle(
           _memoMeta, memo.isAcceptableOrUnknown(data['memo']!, _memoMeta));
@@ -21458,14 +21653,16 @@ class $GLLinesTable extends GLLines with TableInfo<$GLLinesTable, GLLine> {
           .read(DriftSqlType.string, data['${effectivePrefix}account_id'])!,
       costCenterId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}cost_center_id']),
-      debit: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}debit'])!,
-      credit: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}credit'])!,
+      debit: $GLLinesTable.$converterdebit.fromSql(attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}debit'])!),
+      credit: $GLLinesTable.$convertercredit.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}credit'])!),
       currencyId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}currency_id']),
-      exchangeRate: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}exchange_rate'])!,
+      exchangeRate: $GLLinesTable.$converterexchangeRate.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}exchange_rate'])!),
       memo: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}memo']),
     );
@@ -21475,6 +21672,13 @@ class $GLLinesTable extends GLLines with TableInfo<$GLLinesTable, GLLine> {
   $GLLinesTable createAlias(String alias) {
     return $GLLinesTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterdebit =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $convertercredit =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterexchangeRate =
+      const DecimalConverter();
 }
 
 class GLLine extends DataClass implements Insertable<GLLine> {
@@ -21487,10 +21691,10 @@ class GLLine extends DataClass implements Insertable<GLLine> {
   final String entryId;
   final String accountId;
   final String? costCenterId;
-  final double debit;
-  final double credit;
+  final Decimal debit;
+  final Decimal credit;
   final String? currencyId;
-  final double exchangeRate;
+  final Decimal exchangeRate;
   final String? memo;
   const GLLine(
       {required this.id,
@@ -21525,12 +21729,21 @@ class GLLine extends DataClass implements Insertable<GLLine> {
     if (!nullToAbsent || costCenterId != null) {
       map['cost_center_id'] = Variable<String>(costCenterId);
     }
-    map['debit'] = Variable<double>(debit);
-    map['credit'] = Variable<double>(credit);
+    {
+      map['debit'] =
+          Variable<String>($GLLinesTable.$converterdebit.toSql(debit));
+    }
+    {
+      map['credit'] =
+          Variable<String>($GLLinesTable.$convertercredit.toSql(credit));
+    }
     if (!nullToAbsent || currencyId != null) {
       map['currency_id'] = Variable<String>(currencyId);
     }
-    map['exchange_rate'] = Variable<double>(exchangeRate);
+    {
+      map['exchange_rate'] = Variable<String>(
+          $GLLinesTable.$converterexchangeRate.toSql(exchangeRate));
+    }
     if (!nullToAbsent || memo != null) {
       map['memo'] = Variable<String>(memo);
     }
@@ -21577,10 +21790,10 @@ class GLLine extends DataClass implements Insertable<GLLine> {
       entryId: serializer.fromJson<String>(json['entryId']),
       accountId: serializer.fromJson<String>(json['accountId']),
       costCenterId: serializer.fromJson<String?>(json['costCenterId']),
-      debit: serializer.fromJson<double>(json['debit']),
-      credit: serializer.fromJson<double>(json['credit']),
+      debit: serializer.fromJson<Decimal>(json['debit']),
+      credit: serializer.fromJson<Decimal>(json['credit']),
       currencyId: serializer.fromJson<String?>(json['currencyId']),
-      exchangeRate: serializer.fromJson<double>(json['exchangeRate']),
+      exchangeRate: serializer.fromJson<Decimal>(json['exchangeRate']),
       memo: serializer.fromJson<String?>(json['memo']),
     );
   }
@@ -21597,10 +21810,10 @@ class GLLine extends DataClass implements Insertable<GLLine> {
       'entryId': serializer.toJson<String>(entryId),
       'accountId': serializer.toJson<String>(accountId),
       'costCenterId': serializer.toJson<String?>(costCenterId),
-      'debit': serializer.toJson<double>(debit),
-      'credit': serializer.toJson<double>(credit),
+      'debit': serializer.toJson<Decimal>(debit),
+      'credit': serializer.toJson<Decimal>(credit),
       'currencyId': serializer.toJson<String?>(currencyId),
-      'exchangeRate': serializer.toJson<double>(exchangeRate),
+      'exchangeRate': serializer.toJson<Decimal>(exchangeRate),
       'memo': serializer.toJson<String?>(memo),
     };
   }
@@ -21615,10 +21828,10 @@ class GLLine extends DataClass implements Insertable<GLLine> {
           String? entryId,
           String? accountId,
           Value<String?> costCenterId = const Value.absent(),
-          double? debit,
-          double? credit,
+          Decimal? debit,
+          Decimal? credit,
           Value<String?> currencyId = const Value.absent(),
-          double? exchangeRate,
+          Decimal? exchangeRate,
           Value<String?> memo = const Value.absent()}) =>
       GLLine(
         id: id ?? this.id,
@@ -21729,10 +21942,10 @@ class GLLinesCompanion extends UpdateCompanion<GLLine> {
   final Value<String> entryId;
   final Value<String> accountId;
   final Value<String?> costCenterId;
-  final Value<double> debit;
-  final Value<double> credit;
+  final Value<Decimal> debit;
+  final Value<Decimal> credit;
   final Value<String?> currencyId;
-  final Value<double> exchangeRate;
+  final Value<Decimal> exchangeRate;
   final Value<String?> memo;
   final Value<int> rowid;
   const GLLinesCompanion({
@@ -21780,10 +21993,10 @@ class GLLinesCompanion extends UpdateCompanion<GLLine> {
     Expression<String>? entryId,
     Expression<String>? accountId,
     Expression<String>? costCenterId,
-    Expression<double>? debit,
-    Expression<double>? credit,
+    Expression<String>? debit,
+    Expression<String>? credit,
     Expression<String>? currencyId,
-    Expression<double>? exchangeRate,
+    Expression<String>? exchangeRate,
     Expression<String>? memo,
     Expression<int>? rowid,
   }) {
@@ -21816,10 +22029,10 @@ class GLLinesCompanion extends UpdateCompanion<GLLine> {
       Value<String>? entryId,
       Value<String>? accountId,
       Value<String?>? costCenterId,
-      Value<double>? debit,
-      Value<double>? credit,
+      Value<Decimal>? debit,
+      Value<Decimal>? credit,
       Value<String?>? currencyId,
-      Value<double>? exchangeRate,
+      Value<Decimal>? exchangeRate,
       Value<String?>? memo,
       Value<int>? rowid}) {
     return GLLinesCompanion(
@@ -21872,16 +22085,19 @@ class GLLinesCompanion extends UpdateCompanion<GLLine> {
       map['cost_center_id'] = Variable<String>(costCenterId.value);
     }
     if (debit.present) {
-      map['debit'] = Variable<double>(debit.value);
+      map['debit'] =
+          Variable<String>($GLLinesTable.$converterdebit.toSql(debit.value));
     }
     if (credit.present) {
-      map['credit'] = Variable<double>(credit.value);
+      map['credit'] =
+          Variable<String>($GLLinesTable.$convertercredit.toSql(credit.value));
     }
     if (currencyId.present) {
       map['currency_id'] = Variable<String>(currencyId.value);
     }
     if (exchangeRate.present) {
-      map['exchange_rate'] = Variable<double>(exchangeRate.value);
+      map['exchange_rate'] = Variable<String>(
+          $GLLinesTable.$converterexchangeRate.toSql(exchangeRate.value));
     }
     if (memo.present) {
       map['memo'] = Variable<String>(memo.value);
@@ -23755,23 +23971,26 @@ class $ShiftsTable extends Shifts with TableInfo<$ShiftsTable, Shift> {
   static const VerificationMeta _openingCashMeta =
       const VerificationMeta('openingCash');
   @override
-  late final GeneratedColumn<double> openingCash = GeneratedColumn<double>(
-      'opening_cash', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> openingCash =
+      GeneratedColumn<String>('opening_cash', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($ShiftsTable.$converteropeningCash);
   static const VerificationMeta _closingCashMeta =
       const VerificationMeta('closingCash');
   @override
-  late final GeneratedColumn<double> closingCash = GeneratedColumn<double>(
-      'closing_cash', aliasedName, true,
-      type: DriftSqlType.double, requiredDuringInsert: false);
+  late final GeneratedColumnWithTypeConverter<Decimal?, String> closingCash =
+      GeneratedColumn<String>('closing_cash', aliasedName, true,
+              type: DriftSqlType.string, requiredDuringInsert: false)
+          .withConverter<Decimal?>($ShiftsTable.$converterclosingCashn);
   static const VerificationMeta _expectedCashMeta =
       const VerificationMeta('expectedCash');
   @override
-  late final GeneratedColumn<double> expectedCash = GeneratedColumn<double>(
-      'expected_cash', aliasedName, true,
-      type: DriftSqlType.double, requiredDuringInsert: false);
+  late final GeneratedColumnWithTypeConverter<Decimal?, String> expectedCash =
+      GeneratedColumn<String>('expected_cash', aliasedName, true,
+              type: DriftSqlType.string, requiredDuringInsert: false)
+          .withConverter<Decimal?>($ShiftsTable.$converterexpectedCashn);
   static const VerificationMeta _noteMeta = const VerificationMeta('note');
   @override
   late final GeneratedColumn<String> note = GeneratedColumn<String>(
@@ -23852,24 +24071,9 @@ class $ShiftsTable extends Shifts with TableInfo<$ShiftsTable, Shift> {
       context.handle(_endTimeMeta,
           endTime.isAcceptableOrUnknown(data['end_time']!, _endTimeMeta));
     }
-    if (data.containsKey('opening_cash')) {
-      context.handle(
-          _openingCashMeta,
-          openingCash.isAcceptableOrUnknown(
-              data['opening_cash']!, _openingCashMeta));
-    }
-    if (data.containsKey('closing_cash')) {
-      context.handle(
-          _closingCashMeta,
-          closingCash.isAcceptableOrUnknown(
-              data['closing_cash']!, _closingCashMeta));
-    }
-    if (data.containsKey('expected_cash')) {
-      context.handle(
-          _expectedCashMeta,
-          expectedCash.isAcceptableOrUnknown(
-              data['expected_cash']!, _expectedCashMeta));
-    }
+    context.handle(_openingCashMeta, const VerificationResult.success());
+    context.handle(_closingCashMeta, const VerificationResult.success());
+    context.handle(_expectedCashMeta, const VerificationResult.success());
     if (data.containsKey('note')) {
       context.handle(
           _noteMeta, note.isAcceptableOrUnknown(data['note']!, _noteMeta));
@@ -23905,12 +24109,15 @@ class $ShiftsTable extends Shifts with TableInfo<$ShiftsTable, Shift> {
           .read(DriftSqlType.dateTime, data['${effectivePrefix}start_time'])!,
       endTime: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}end_time']),
-      openingCash: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}opening_cash'])!,
-      closingCash: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}closing_cash']),
-      expectedCash: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}expected_cash']),
+      openingCash: $ShiftsTable.$converteropeningCash.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}opening_cash'])!),
+      closingCash: $ShiftsTable.$converterclosingCashn.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}closing_cash'])),
+      expectedCash: $ShiftsTable.$converterexpectedCashn.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}expected_cash'])),
       note: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}note']),
       isOpen: attachedDatabase.typeMapping
@@ -23922,6 +24129,17 @@ class $ShiftsTable extends Shifts with TableInfo<$ShiftsTable, Shift> {
   $ShiftsTable createAlias(String alias) {
     return $ShiftsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converteropeningCash =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterclosingCash =
+      const DecimalConverter();
+  static TypeConverter<Decimal?, String?> $converterclosingCashn =
+      NullAwareTypeConverter.wrap($converterclosingCash);
+  static TypeConverter<Decimal, String> $converterexpectedCash =
+      const DecimalConverter();
+  static TypeConverter<Decimal?, String?> $converterexpectedCashn =
+      NullAwareTypeConverter.wrap($converterexpectedCash);
 }
 
 class Shift extends DataClass implements Insertable<Shift> {
@@ -23934,9 +24152,9 @@ class Shift extends DataClass implements Insertable<Shift> {
   final String userId;
   final DateTime startTime;
   final DateTime? endTime;
-  final double openingCash;
-  final double? closingCash;
-  final double? expectedCash;
+  final Decimal openingCash;
+  final Decimal? closingCash;
+  final Decimal? expectedCash;
   final String? note;
   final bool isOpen;
   const Shift(
@@ -23972,12 +24190,17 @@ class Shift extends DataClass implements Insertable<Shift> {
     if (!nullToAbsent || endTime != null) {
       map['end_time'] = Variable<DateTime>(endTime);
     }
-    map['opening_cash'] = Variable<double>(openingCash);
+    {
+      map['opening_cash'] = Variable<String>(
+          $ShiftsTable.$converteropeningCash.toSql(openingCash));
+    }
     if (!nullToAbsent || closingCash != null) {
-      map['closing_cash'] = Variable<double>(closingCash);
+      map['closing_cash'] = Variable<String>(
+          $ShiftsTable.$converterclosingCashn.toSql(closingCash));
     }
     if (!nullToAbsent || expectedCash != null) {
-      map['expected_cash'] = Variable<double>(expectedCash);
+      map['expected_cash'] = Variable<String>(
+          $ShiftsTable.$converterexpectedCashn.toSql(expectedCash));
     }
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
@@ -24028,9 +24251,9 @@ class Shift extends DataClass implements Insertable<Shift> {
       userId: serializer.fromJson<String>(json['userId']),
       startTime: serializer.fromJson<DateTime>(json['startTime']),
       endTime: serializer.fromJson<DateTime?>(json['endTime']),
-      openingCash: serializer.fromJson<double>(json['openingCash']),
-      closingCash: serializer.fromJson<double?>(json['closingCash']),
-      expectedCash: serializer.fromJson<double?>(json['expectedCash']),
+      openingCash: serializer.fromJson<Decimal>(json['openingCash']),
+      closingCash: serializer.fromJson<Decimal?>(json['closingCash']),
+      expectedCash: serializer.fromJson<Decimal?>(json['expectedCash']),
       note: serializer.fromJson<String?>(json['note']),
       isOpen: serializer.fromJson<bool>(json['isOpen']),
     );
@@ -24048,9 +24271,9 @@ class Shift extends DataClass implements Insertable<Shift> {
       'userId': serializer.toJson<String>(userId),
       'startTime': serializer.toJson<DateTime>(startTime),
       'endTime': serializer.toJson<DateTime?>(endTime),
-      'openingCash': serializer.toJson<double>(openingCash),
-      'closingCash': serializer.toJson<double?>(closingCash),
-      'expectedCash': serializer.toJson<double?>(expectedCash),
+      'openingCash': serializer.toJson<Decimal>(openingCash),
+      'closingCash': serializer.toJson<Decimal?>(closingCash),
+      'expectedCash': serializer.toJson<Decimal?>(expectedCash),
       'note': serializer.toJson<String?>(note),
       'isOpen': serializer.toJson<bool>(isOpen),
     };
@@ -24066,9 +24289,9 @@ class Shift extends DataClass implements Insertable<Shift> {
           String? userId,
           DateTime? startTime,
           Value<DateTime?> endTime = const Value.absent(),
-          double? openingCash,
-          Value<double?> closingCash = const Value.absent(),
-          Value<double?> expectedCash = const Value.absent(),
+          Decimal? openingCash,
+          Value<Decimal?> closingCash = const Value.absent(),
+          Value<Decimal?> expectedCash = const Value.absent(),
           Value<String?> note = const Value.absent(),
           bool? isOpen}) =>
       Shift(
@@ -24179,9 +24402,9 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
   final Value<String> userId;
   final Value<DateTime> startTime;
   final Value<DateTime?> endTime;
-  final Value<double> openingCash;
-  final Value<double?> closingCash;
-  final Value<double?> expectedCash;
+  final Value<Decimal> openingCash;
+  final Value<Decimal?> closingCash;
+  final Value<Decimal?> expectedCash;
   final Value<String?> note;
   final Value<bool> isOpen;
   final Value<int> rowid;
@@ -24229,9 +24452,9 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
     Expression<String>? userId,
     Expression<DateTime>? startTime,
     Expression<DateTime>? endTime,
-    Expression<double>? openingCash,
-    Expression<double>? closingCash,
-    Expression<double>? expectedCash,
+    Expression<String>? openingCash,
+    Expression<String>? closingCash,
+    Expression<String>? expectedCash,
     Expression<String>? note,
     Expression<bool>? isOpen,
     Expression<int>? rowid,
@@ -24265,9 +24488,9 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
       Value<String>? userId,
       Value<DateTime>? startTime,
       Value<DateTime?>? endTime,
-      Value<double>? openingCash,
-      Value<double?>? closingCash,
-      Value<double?>? expectedCash,
+      Value<Decimal>? openingCash,
+      Value<Decimal?>? closingCash,
+      Value<Decimal?>? expectedCash,
       Value<String?>? note,
       Value<bool>? isOpen,
       Value<int>? rowid}) {
@@ -24321,13 +24544,16 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
       map['end_time'] = Variable<DateTime>(endTime.value);
     }
     if (openingCash.present) {
-      map['opening_cash'] = Variable<double>(openingCash.value);
+      map['opening_cash'] = Variable<String>(
+          $ShiftsTable.$converteropeningCash.toSql(openingCash.value));
     }
     if (closingCash.present) {
-      map['closing_cash'] = Variable<double>(closingCash.value);
+      map['closing_cash'] = Variable<String>(
+          $ShiftsTable.$converterclosingCashn.toSql(closingCash.value));
     }
     if (expectedCash.present) {
-      map['expected_cash'] = Variable<double>(expectedCash.value);
+      map['expected_cash'] = Variable<String>(
+          $ShiftsTable.$converterexpectedCashn.toSql(expectedCash.value));
     }
     if (note.present) {
       map['note'] = Variable<String>(note.value);
@@ -27092,11 +27318,12 @@ class $EmployeesTable extends Employees
   static const VerificationMeta _basicSalaryMeta =
       const VerificationMeta('basicSalary');
   @override
-  late final GeneratedColumn<double> basicSalary = GeneratedColumn<double>(
-      'basic_salary', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> basicSalary =
+      GeneratedColumn<String>('basic_salary', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($EmployeesTable.$converterbasicSalary);
   static const VerificationMeta _hireDateMeta =
       const VerificationMeta('hireDate');
   @override
@@ -27196,12 +27423,7 @@ class $EmployeesTable extends Employees
       context.handle(
           _roleMeta, role.isAcceptableOrUnknown(data['role']!, _roleMeta));
     }
-    if (data.containsKey('basic_salary')) {
-      context.handle(
-          _basicSalaryMeta,
-          basicSalary.isAcceptableOrUnknown(
-              data['basic_salary']!, _basicSalaryMeta));
-    }
+    context.handle(_basicSalaryMeta, const VerificationResult.success());
     if (data.containsKey('hire_date')) {
       context.handle(_hireDateMeta,
           hireDate.isAcceptableOrUnknown(data['hire_date']!, _hireDateMeta));
@@ -27245,8 +27467,9 @@ class $EmployeesTable extends Employees
           .read(DriftSqlType.string, data['${effectivePrefix}job_title']),
       role: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}role'])!,
-      basicSalary: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}basic_salary'])!,
+      basicSalary: $EmployeesTable.$converterbasicSalary.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}basic_salary'])!),
       hireDate: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}hire_date']),
       warehouseId: attachedDatabase.typeMapping
@@ -27260,6 +27483,9 @@ class $EmployeesTable extends Employees
   $EmployeesTable createAlias(String alias) {
     return $EmployeesTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterbasicSalary =
+      const DecimalConverter();
 }
 
 class Employee extends DataClass implements Insertable<Employee> {
@@ -27273,7 +27499,7 @@ class Employee extends DataClass implements Insertable<Employee> {
   final String employeeCode;
   final String? jobTitle;
   final String role;
-  final double basicSalary;
+  final Decimal basicSalary;
   final DateTime? hireDate;
   final String? warehouseId;
   final bool isActive;
@@ -27311,7 +27537,10 @@ class Employee extends DataClass implements Insertable<Employee> {
       map['job_title'] = Variable<String>(jobTitle);
     }
     map['role'] = Variable<String>(role);
-    map['basic_salary'] = Variable<double>(basicSalary);
+    {
+      map['basic_salary'] = Variable<String>(
+          $EmployeesTable.$converterbasicSalary.toSql(basicSalary));
+    }
     if (!nullToAbsent || hireDate != null) {
       map['hire_date'] = Variable<DateTime>(hireDate);
     }
@@ -27365,7 +27594,7 @@ class Employee extends DataClass implements Insertable<Employee> {
       employeeCode: serializer.fromJson<String>(json['employeeCode']),
       jobTitle: serializer.fromJson<String?>(json['jobTitle']),
       role: serializer.fromJson<String>(json['role']),
-      basicSalary: serializer.fromJson<double>(json['basicSalary']),
+      basicSalary: serializer.fromJson<Decimal>(json['basicSalary']),
       hireDate: serializer.fromJson<DateTime?>(json['hireDate']),
       warehouseId: serializer.fromJson<String?>(json['warehouseId']),
       isActive: serializer.fromJson<bool>(json['isActive']),
@@ -27385,7 +27614,7 @@ class Employee extends DataClass implements Insertable<Employee> {
       'employeeCode': serializer.toJson<String>(employeeCode),
       'jobTitle': serializer.toJson<String?>(jobTitle),
       'role': serializer.toJson<String>(role),
-      'basicSalary': serializer.toJson<double>(basicSalary),
+      'basicSalary': serializer.toJson<Decimal>(basicSalary),
       'hireDate': serializer.toJson<DateTime?>(hireDate),
       'warehouseId': serializer.toJson<String?>(warehouseId),
       'isActive': serializer.toJson<bool>(isActive),
@@ -27403,7 +27632,7 @@ class Employee extends DataClass implements Insertable<Employee> {
           String? employeeCode,
           Value<String?> jobTitle = const Value.absent(),
           String? role,
-          double? basicSalary,
+          Decimal? basicSalary,
           Value<DateTime?> hireDate = const Value.absent(),
           Value<String?> warehouseId = const Value.absent(),
           bool? isActive}) =>
@@ -27515,7 +27744,7 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
   final Value<String> employeeCode;
   final Value<String?> jobTitle;
   final Value<String> role;
-  final Value<double> basicSalary;
+  final Value<Decimal> basicSalary;
   final Value<DateTime?> hireDate;
   final Value<String?> warehouseId;
   final Value<bool> isActive;
@@ -27566,7 +27795,7 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
     Expression<String>? employeeCode,
     Expression<String>? jobTitle,
     Expression<String>? role,
-    Expression<double>? basicSalary,
+    Expression<String>? basicSalary,
     Expression<DateTime>? hireDate,
     Expression<String>? warehouseId,
     Expression<bool>? isActive,
@@ -27602,7 +27831,7 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
       Value<String>? employeeCode,
       Value<String?>? jobTitle,
       Value<String>? role,
-      Value<double>? basicSalary,
+      Value<Decimal>? basicSalary,
       Value<DateTime?>? hireDate,
       Value<String?>? warehouseId,
       Value<bool>? isActive,
@@ -27660,7 +27889,8 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
       map['role'] = Variable<String>(role.value);
     }
     if (basicSalary.present) {
-      map['basic_salary'] = Variable<double>(basicSalary.value);
+      map['basic_salary'] = Variable<String>(
+          $EmployeesTable.$converterbasicSalary.toSql(basicSalary.value));
     }
     if (hireDate.present) {
       map['hire_date'] = Variable<DateTime>(hireDate.value);
@@ -28323,19 +28553,21 @@ class $PayrollLinesTable extends PayrollLines
   static const VerificationMeta _allowancesMeta =
       const VerificationMeta('allowances');
   @override
-  late final GeneratedColumn<double> allowances = GeneratedColumn<double>(
-      'allowances', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> allowances =
+      GeneratedColumn<String>('allowances', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($PayrollLinesTable.$converterallowances);
   static const VerificationMeta _deductionsMeta =
       const VerificationMeta('deductions');
   @override
-  late final GeneratedColumn<double> deductions = GeneratedColumn<double>(
-      'deductions', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> deductions =
+      GeneratedColumn<String>('deductions', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($PayrollLinesTable.$converterdeductions);
   static const VerificationMeta _netSalaryMeta =
       const VerificationMeta('netSalary');
   @override
@@ -28416,18 +28648,8 @@ class $PayrollLinesTable extends PayrollLines
     } else if (isInserting) {
       context.missing(_basicSalaryMeta);
     }
-    if (data.containsKey('allowances')) {
-      context.handle(
-          _allowancesMeta,
-          allowances.isAcceptableOrUnknown(
-              data['allowances']!, _allowancesMeta));
-    }
-    if (data.containsKey('deductions')) {
-      context.handle(
-          _deductionsMeta,
-          deductions.isAcceptableOrUnknown(
-              data['deductions']!, _deductionsMeta));
-    }
+    context.handle(_allowancesMeta, const VerificationResult.success());
+    context.handle(_deductionsMeta, const VerificationResult.success());
     if (data.containsKey('net_salary')) {
       context.handle(_netSalaryMeta,
           netSalary.isAcceptableOrUnknown(data['net_salary']!, _netSalaryMeta));
@@ -28461,10 +28683,12 @@ class $PayrollLinesTable extends PayrollLines
           .read(DriftSqlType.string, data['${effectivePrefix}employee_id'])!,
       basicSalary: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}basic_salary'])!,
-      allowances: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}allowances'])!,
-      deductions: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}deductions'])!,
+      allowances: $PayrollLinesTable.$converterallowances.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}allowances'])!),
+      deductions: $PayrollLinesTable.$converterdeductions.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}deductions'])!),
       netSalary: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}net_salary'])!,
     );
@@ -28474,6 +28698,11 @@ class $PayrollLinesTable extends PayrollLines
   $PayrollLinesTable createAlias(String alias) {
     return $PayrollLinesTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterallowances =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterdeductions =
+      const DecimalConverter();
 }
 
 class PayrollLine extends DataClass implements Insertable<PayrollLine> {
@@ -28486,8 +28715,8 @@ class PayrollLine extends DataClass implements Insertable<PayrollLine> {
   final String payrollEntryId;
   final String employeeId;
   final double basicSalary;
-  final double allowances;
-  final double deductions;
+  final Decimal allowances;
+  final Decimal deductions;
   final double netSalary;
   const PayrollLine(
       {required this.id,
@@ -28518,8 +28747,14 @@ class PayrollLine extends DataClass implements Insertable<PayrollLine> {
     map['payroll_entry_id'] = Variable<String>(payrollEntryId);
     map['employee_id'] = Variable<String>(employeeId);
     map['basic_salary'] = Variable<double>(basicSalary);
-    map['allowances'] = Variable<double>(allowances);
-    map['deductions'] = Variable<double>(deductions);
+    {
+      map['allowances'] = Variable<String>(
+          $PayrollLinesTable.$converterallowances.toSql(allowances));
+    }
+    {
+      map['deductions'] = Variable<String>(
+          $PayrollLinesTable.$converterdeductions.toSql(deductions));
+    }
     map['net_salary'] = Variable<double>(netSalary);
     return map;
   }
@@ -28558,8 +28793,8 @@ class PayrollLine extends DataClass implements Insertable<PayrollLine> {
       payrollEntryId: serializer.fromJson<String>(json['payrollEntryId']),
       employeeId: serializer.fromJson<String>(json['employeeId']),
       basicSalary: serializer.fromJson<double>(json['basicSalary']),
-      allowances: serializer.fromJson<double>(json['allowances']),
-      deductions: serializer.fromJson<double>(json['deductions']),
+      allowances: serializer.fromJson<Decimal>(json['allowances']),
+      deductions: serializer.fromJson<Decimal>(json['deductions']),
       netSalary: serializer.fromJson<double>(json['netSalary']),
     );
   }
@@ -28576,8 +28811,8 @@ class PayrollLine extends DataClass implements Insertable<PayrollLine> {
       'payrollEntryId': serializer.toJson<String>(payrollEntryId),
       'employeeId': serializer.toJson<String>(employeeId),
       'basicSalary': serializer.toJson<double>(basicSalary),
-      'allowances': serializer.toJson<double>(allowances),
-      'deductions': serializer.toJson<double>(deductions),
+      'allowances': serializer.toJson<Decimal>(allowances),
+      'deductions': serializer.toJson<Decimal>(deductions),
       'netSalary': serializer.toJson<double>(netSalary),
     };
   }
@@ -28592,8 +28827,8 @@ class PayrollLine extends DataClass implements Insertable<PayrollLine> {
           String? payrollEntryId,
           String? employeeId,
           double? basicSalary,
-          double? allowances,
-          double? deductions,
+          Decimal? allowances,
+          Decimal? deductions,
           double? netSalary}) =>
       PayrollLine(
         id: id ?? this.id,
@@ -28694,8 +28929,8 @@ class PayrollLinesCompanion extends UpdateCompanion<PayrollLine> {
   final Value<String> payrollEntryId;
   final Value<String> employeeId;
   final Value<double> basicSalary;
-  final Value<double> allowances;
-  final Value<double> deductions;
+  final Value<Decimal> allowances;
+  final Value<Decimal> deductions;
   final Value<double> netSalary;
   final Value<int> rowid;
   const PayrollLinesCompanion({
@@ -28741,8 +28976,8 @@ class PayrollLinesCompanion extends UpdateCompanion<PayrollLine> {
     Expression<String>? payrollEntryId,
     Expression<String>? employeeId,
     Expression<double>? basicSalary,
-    Expression<double>? allowances,
-    Expression<double>? deductions,
+    Expression<String>? allowances,
+    Expression<String>? deductions,
     Expression<double>? netSalary,
     Expression<int>? rowid,
   }) {
@@ -28773,8 +29008,8 @@ class PayrollLinesCompanion extends UpdateCompanion<PayrollLine> {
       Value<String>? payrollEntryId,
       Value<String>? employeeId,
       Value<double>? basicSalary,
-      Value<double>? allowances,
-      Value<double>? deductions,
+      Value<Decimal>? allowances,
+      Value<Decimal>? deductions,
       Value<double>? netSalary,
       Value<int>? rowid}) {
     return PayrollLinesCompanion(
@@ -28825,10 +29060,12 @@ class PayrollLinesCompanion extends UpdateCompanion<PayrollLine> {
       map['basic_salary'] = Variable<double>(basicSalary.value);
     }
     if (allowances.present) {
-      map['allowances'] = Variable<double>(allowances.value);
+      map['allowances'] = Variable<String>(
+          $PayrollLinesTable.$converterallowances.toSql(allowances.value));
     }
     if (deductions.present) {
-      map['deductions'] = Variable<double>(deductions.value);
+      map['deductions'] = Variable<String>(
+          $PayrollLinesTable.$converterdeductions.toSql(deductions.value));
     }
     if (netSalary.present) {
       map['net_salary'] = Variable<double>(netSalary.value);
@@ -30443,11 +30680,12 @@ class $ChecksTable extends Checks with TableInfo<$ChecksTable, Check> {
   static const VerificationMeta _exchangeRateMeta =
       const VerificationMeta('exchangeRate');
   @override
-  late final GeneratedColumn<double> exchangeRate = GeneratedColumn<double>(
-      'exchange_rate', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(1.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> exchangeRate =
+      GeneratedColumn<String>('exchange_rate', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.one.toString()))
+          .withConverter<Decimal>($ChecksTable.$converterexchangeRate);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -30559,12 +30797,7 @@ class $ChecksTable extends Checks with TableInfo<$ChecksTable, Check> {
           currencyId.isAcceptableOrUnknown(
               data['currency_id']!, _currencyIdMeta));
     }
-    if (data.containsKey('exchange_rate')) {
-      context.handle(
-          _exchangeRateMeta,
-          exchangeRate.isAcceptableOrUnknown(
-              data['exchange_rate']!, _exchangeRateMeta));
-    }
+    context.handle(_exchangeRateMeta, const VerificationResult.success());
     return context;
   }
 
@@ -30606,8 +30839,9 @@ class $ChecksTable extends Checks with TableInfo<$ChecksTable, Check> {
           .read(DriftSqlType.string, data['${effectivePrefix}note']),
       currencyId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}currency_id']),
-      exchangeRate: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}exchange_rate'])!,
+      exchangeRate: $ChecksTable.$converterexchangeRate.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}exchange_rate'])!),
     );
   }
 
@@ -30615,6 +30849,9 @@ class $ChecksTable extends Checks with TableInfo<$ChecksTable, Check> {
   $ChecksTable createAlias(String alias) {
     return $ChecksTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterexchangeRate =
+      const DecimalConverter();
 }
 
 class Check extends DataClass implements Insertable<Check> {
@@ -30634,7 +30871,7 @@ class Check extends DataClass implements Insertable<Check> {
   final String? paymentAccountId;
   final String? note;
   final String? currencyId;
-  final double exchangeRate;
+  final Decimal exchangeRate;
   const Check(
       {required this.id,
       required this.createdAt,
@@ -30684,7 +30921,10 @@ class Check extends DataClass implements Insertable<Check> {
     if (!nullToAbsent || currencyId != null) {
       map['currency_id'] = Variable<String>(currencyId);
     }
-    map['exchange_rate'] = Variable<double>(exchangeRate);
+    {
+      map['exchange_rate'] = Variable<String>(
+          $ChecksTable.$converterexchangeRate.toSql(exchangeRate));
+    }
     return map;
   }
 
@@ -30740,7 +30980,7 @@ class Check extends DataClass implements Insertable<Check> {
       paymentAccountId: serializer.fromJson<String?>(json['paymentAccountId']),
       note: serializer.fromJson<String?>(json['note']),
       currencyId: serializer.fromJson<String?>(json['currencyId']),
-      exchangeRate: serializer.fromJson<double>(json['exchangeRate']),
+      exchangeRate: serializer.fromJson<Decimal>(json['exchangeRate']),
     );
   }
   @override
@@ -30763,7 +31003,7 @@ class Check extends DataClass implements Insertable<Check> {
       'paymentAccountId': serializer.toJson<String?>(paymentAccountId),
       'note': serializer.toJson<String?>(note),
       'currencyId': serializer.toJson<String?>(currencyId),
-      'exchangeRate': serializer.toJson<double>(exchangeRate),
+      'exchangeRate': serializer.toJson<Decimal>(exchangeRate),
     };
   }
 
@@ -30784,7 +31024,7 @@ class Check extends DataClass implements Insertable<Check> {
           Value<String?> paymentAccountId = const Value.absent(),
           Value<String?> note = const Value.absent(),
           Value<String?> currencyId = const Value.absent(),
-          double? exchangeRate}) =>
+          Decimal? exchangeRate}) =>
       Check(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -30918,7 +31158,7 @@ class ChecksCompanion extends UpdateCompanion<Check> {
   final Value<String?> paymentAccountId;
   final Value<String?> note;
   final Value<String?> currencyId;
-  final Value<double> exchangeRate;
+  final Value<Decimal> exchangeRate;
   final Value<int> rowid;
   const ChecksCompanion({
     this.id = const Value.absent(),
@@ -30981,7 +31221,7 @@ class ChecksCompanion extends UpdateCompanion<Check> {
     Expression<String>? paymentAccountId,
     Expression<String>? note,
     Expression<String>? currencyId,
-    Expression<double>? exchangeRate,
+    Expression<String>? exchangeRate,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -31023,7 +31263,7 @@ class ChecksCompanion extends UpdateCompanion<Check> {
       Value<String?>? paymentAccountId,
       Value<String?>? note,
       Value<String?>? currencyId,
-      Value<double>? exchangeRate,
+      Value<Decimal>? exchangeRate,
       Value<int>? rowid}) {
     return ChecksCompanion(
       id: id ?? this.id,
@@ -31099,7 +31339,8 @@ class ChecksCompanion extends UpdateCompanion<Check> {
       map['currency_id'] = Variable<String>(currencyId.value);
     }
     if (exchangeRate.present) {
-      map['exchange_rate'] = Variable<double>(exchangeRate.value);
+      map['exchange_rate'] = Variable<String>(
+          $ChecksTable.$converterexchangeRate.toSql(exchangeRate.value));
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -31211,11 +31452,13 @@ class $FinancialTransfersTable extends FinancialTransfers
   static const VerificationMeta _commissionMeta =
       const VerificationMeta('commission');
   @override
-  late final GeneratedColumn<double> commission = GeneratedColumn<double>(
-      'commission', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> commission =
+      GeneratedColumn<String>('commission', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>(
+              $FinancialTransfersTable.$convertercommission);
   static const VerificationMeta _companyMeta =
       const VerificationMeta('company');
   @override
@@ -31332,12 +31575,7 @@ class $FinancialTransfersTable extends FinancialTransfers
     } else if (isInserting) {
       context.missing(_amountMeta);
     }
-    if (data.containsKey('commission')) {
-      context.handle(
-          _commissionMeta,
-          commission.isAcceptableOrUnknown(
-              data['commission']!, _commissionMeta));
-    }
+    context.handle(_commissionMeta, const VerificationResult.success());
     if (data.containsKey('company')) {
       context.handle(_companyMeta,
           company.isAcceptableOrUnknown(data['company']!, _companyMeta));
@@ -31393,8 +31631,9 @@ class $FinancialTransfersTable extends FinancialTransfers
           DriftSqlType.string, data['${effectivePrefix}receiver_account_id'])!,
       amount: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}amount'])!,
-      commission: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}commission'])!,
+      commission: $FinancialTransfersTable.$convertercommission.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}commission'])!),
       company: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}company']),
       transferType: attachedDatabase.typeMapping
@@ -31414,6 +31653,9 @@ class $FinancialTransfersTable extends FinancialTransfers
   $FinancialTransfersTable createAlias(String alias) {
     return $FinancialTransfersTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $convertercommission =
+      const DecimalConverter();
 }
 
 class FinancialTransfer extends DataClass
@@ -31427,7 +31669,7 @@ class FinancialTransfer extends DataClass
   final String senderAccountId;
   final String receiverAccountId;
   final double amount;
-  final double commission;
+  final Decimal commission;
   final String? company;
   final String transferType;
   final String? checkId;
@@ -31467,7 +31709,10 @@ class FinancialTransfer extends DataClass
     map['sender_account_id'] = Variable<String>(senderAccountId);
     map['receiver_account_id'] = Variable<String>(receiverAccountId);
     map['amount'] = Variable<double>(amount);
-    map['commission'] = Variable<double>(commission);
+    {
+      map['commission'] = Variable<String>(
+          $FinancialTransfersTable.$convertercommission.toSql(commission));
+    }
     if (!nullToAbsent || company != null) {
       map['company'] = Variable<String>(company);
     }
@@ -31525,7 +31770,7 @@ class FinancialTransfer extends DataClass
       senderAccountId: serializer.fromJson<String>(json['senderAccountId']),
       receiverAccountId: serializer.fromJson<String>(json['receiverAccountId']),
       amount: serializer.fromJson<double>(json['amount']),
-      commission: serializer.fromJson<double>(json['commission']),
+      commission: serializer.fromJson<Decimal>(json['commission']),
       company: serializer.fromJson<String?>(json['company']),
       transferType: serializer.fromJson<String>(json['transferType']),
       checkId: serializer.fromJson<String?>(json['checkId']),
@@ -31547,7 +31792,7 @@ class FinancialTransfer extends DataClass
       'senderAccountId': serializer.toJson<String>(senderAccountId),
       'receiverAccountId': serializer.toJson<String>(receiverAccountId),
       'amount': serializer.toJson<double>(amount),
-      'commission': serializer.toJson<double>(commission),
+      'commission': serializer.toJson<Decimal>(commission),
       'company': serializer.toJson<String?>(company),
       'transferType': serializer.toJson<String>(transferType),
       'checkId': serializer.toJson<String?>(checkId),
@@ -31567,7 +31812,7 @@ class FinancialTransfer extends DataClass
           String? senderAccountId,
           String? receiverAccountId,
           double? amount,
-          double? commission,
+          Decimal? commission,
           Value<String?> company = const Value.absent(),
           String? transferType,
           Value<String?> checkId = const Value.absent(),
@@ -31694,7 +31939,7 @@ class FinancialTransfersCompanion extends UpdateCompanion<FinancialTransfer> {
   final Value<String> senderAccountId;
   final Value<String> receiverAccountId;
   final Value<double> amount;
-  final Value<double> commission;
+  final Value<Decimal> commission;
   final Value<String?> company;
   final Value<String> transferType;
   final Value<String?> checkId;
@@ -31753,7 +31998,7 @@ class FinancialTransfersCompanion extends UpdateCompanion<FinancialTransfer> {
     Expression<String>? senderAccountId,
     Expression<String>? receiverAccountId,
     Expression<double>? amount,
-    Expression<double>? commission,
+    Expression<String>? commission,
     Expression<String>? company,
     Expression<String>? transferType,
     Expression<String>? checkId,
@@ -31793,7 +32038,7 @@ class FinancialTransfersCompanion extends UpdateCompanion<FinancialTransfer> {
       Value<String>? senderAccountId,
       Value<String>? receiverAccountId,
       Value<double>? amount,
-      Value<double>? commission,
+      Value<Decimal>? commission,
       Value<String?>? company,
       Value<String>? transferType,
       Value<String?>? checkId,
@@ -31853,7 +32098,9 @@ class FinancialTransfersCompanion extends UpdateCompanion<FinancialTransfer> {
       map['amount'] = Variable<double>(amount.value);
     }
     if (commission.present) {
-      map['commission'] = Variable<double>(commission.value);
+      map['commission'] = Variable<String>($FinancialTransfersTable
+          .$convertercommission
+          .toSql(commission.value));
     }
     if (company.present) {
       map['company'] = Variable<String>(company.value);
@@ -32494,11 +32741,12 @@ class $PriceListItemsTable extends PriceListItems
   static const VerificationMeta _minQuantityMeta =
       const VerificationMeta('minQuantity');
   @override
-  late final GeneratedColumn<double> minQuantity = GeneratedColumn<double>(
-      'min_quantity', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> minQuantity =
+      GeneratedColumn<String>('min_quantity', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($PriceListItemsTable.$converterminQuantity);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -32567,12 +32815,7 @@ class $PriceListItemsTable extends PriceListItems
     } else if (isInserting) {
       context.missing(_priceMeta);
     }
-    if (data.containsKey('min_quantity')) {
-      context.handle(
-          _minQuantityMeta,
-          minQuantity.isAcceptableOrUnknown(
-              data['min_quantity']!, _minQuantityMeta));
-    }
+    context.handle(_minQuantityMeta, const VerificationResult.success());
     return context;
   }
 
@@ -32600,8 +32843,9 @@ class $PriceListItemsTable extends PriceListItems
           .read(DriftSqlType.string, data['${effectivePrefix}product_id'])!,
       price: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}price'])!,
-      minQuantity: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}min_quantity'])!,
+      minQuantity: $PriceListItemsTable.$converterminQuantity.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}min_quantity'])!),
     );
   }
 
@@ -32609,6 +32853,9 @@ class $PriceListItemsTable extends PriceListItems
   $PriceListItemsTable createAlias(String alias) {
     return $PriceListItemsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterminQuantity =
+      const DecimalConverter();
 }
 
 class PriceListItem extends DataClass implements Insertable<PriceListItem> {
@@ -32621,7 +32868,7 @@ class PriceListItem extends DataClass implements Insertable<PriceListItem> {
   final String priceListId;
   final String productId;
   final double price;
-  final double minQuantity;
+  final Decimal minQuantity;
   const PriceListItem(
       {required this.id,
       required this.createdAt,
@@ -32649,7 +32896,10 @@ class PriceListItem extends DataClass implements Insertable<PriceListItem> {
     map['price_list_id'] = Variable<String>(priceListId);
     map['product_id'] = Variable<String>(productId);
     map['price'] = Variable<double>(price);
-    map['min_quantity'] = Variable<double>(minQuantity);
+    {
+      map['min_quantity'] = Variable<String>(
+          $PriceListItemsTable.$converterminQuantity.toSql(minQuantity));
+    }
     return map;
   }
 
@@ -32685,7 +32935,7 @@ class PriceListItem extends DataClass implements Insertable<PriceListItem> {
       priceListId: serializer.fromJson<String>(json['priceListId']),
       productId: serializer.fromJson<String>(json['productId']),
       price: serializer.fromJson<double>(json['price']),
-      minQuantity: serializer.fromJson<double>(json['minQuantity']),
+      minQuantity: serializer.fromJson<Decimal>(json['minQuantity']),
     );
   }
   @override
@@ -32701,7 +32951,7 @@ class PriceListItem extends DataClass implements Insertable<PriceListItem> {
       'priceListId': serializer.toJson<String>(priceListId),
       'productId': serializer.toJson<String>(productId),
       'price': serializer.toJson<double>(price),
-      'minQuantity': serializer.toJson<double>(minQuantity),
+      'minQuantity': serializer.toJson<Decimal>(minQuantity),
     };
   }
 
@@ -32715,7 +32965,7 @@ class PriceListItem extends DataClass implements Insertable<PriceListItem> {
           String? priceListId,
           String? productId,
           double? price,
-          double? minQuantity}) =>
+          Decimal? minQuantity}) =>
       PriceListItem(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -32792,7 +33042,7 @@ class PriceListItemsCompanion extends UpdateCompanion<PriceListItem> {
   final Value<String> priceListId;
   final Value<String> productId;
   final Value<double> price;
-  final Value<double> minQuantity;
+  final Value<Decimal> minQuantity;
   final Value<int> rowid;
   const PriceListItemsCompanion({
     this.id = const Value.absent(),
@@ -32832,7 +33082,7 @@ class PriceListItemsCompanion extends UpdateCompanion<PriceListItem> {
     Expression<String>? priceListId,
     Expression<String>? productId,
     Expression<double>? price,
-    Expression<double>? minQuantity,
+    Expression<String>? minQuantity,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -32860,7 +33110,7 @@ class PriceListItemsCompanion extends UpdateCompanion<PriceListItem> {
       Value<String>? priceListId,
       Value<String>? productId,
       Value<double>? price,
-      Value<double>? minQuantity,
+      Value<Decimal>? minQuantity,
       Value<int>? rowid}) {
     return PriceListItemsCompanion(
       id: id ?? this.id,
@@ -32908,7 +33158,8 @@ class PriceListItemsCompanion extends UpdateCompanion<PriceListItem> {
       map['price'] = Variable<double>(price.value);
     }
     if (minQuantity.present) {
-      map['min_quantity'] = Variable<double>(minQuantity.value);
+      map['min_quantity'] = Variable<String>(
+          $PriceListItemsTable.$converterminQuantity.toSql(minQuantity.value));
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -33045,11 +33296,13 @@ class $PromotionsTable extends Promotions
   static const VerificationMeta _minPurchaseAmountMeta =
       const VerificationMeta('minPurchaseAmount');
   @override
-  late final GeneratedColumn<double> minPurchaseAmount =
-      GeneratedColumn<double>('min_purchase_amount', aliasedName, false,
-          type: DriftSqlType.double,
-          requiredDuringInsert: false,
-          defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String>
+      minPurchaseAmount = GeneratedColumn<String>(
+              'min_purchase_amount', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($PromotionsTable.$converterminPurchaseAmount);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -33147,12 +33400,7 @@ class $PromotionsTable extends Promotions
       context.handle(_productIdMeta,
           productId.isAcceptableOrUnknown(data['product_id']!, _productIdMeta));
     }
-    if (data.containsKey('min_purchase_amount')) {
-      context.handle(
-          _minPurchaseAmountMeta,
-          minPurchaseAmount.isAcceptableOrUnknown(
-              data['min_purchase_amount']!, _minPurchaseAmountMeta));
-    }
+    context.handle(_minPurchaseAmountMeta, const VerificationResult.success());
     return context;
   }
 
@@ -33190,8 +33438,9 @@ class $PromotionsTable extends Promotions
           .read(DriftSqlType.string, data['${effectivePrefix}category_id']),
       productId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}product_id']),
-      minPurchaseAmount: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}min_purchase_amount'])!,
+      minPurchaseAmount: $PromotionsTable.$converterminPurchaseAmount.fromSql(
+          attachedDatabase.typeMapping.read(DriftSqlType.string,
+              data['${effectivePrefix}min_purchase_amount'])!),
     );
   }
 
@@ -33199,6 +33448,9 @@ class $PromotionsTable extends Promotions
   $PromotionsTable createAlias(String alias) {
     return $PromotionsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterminPurchaseAmount =
+      const DecimalConverter();
 }
 
 class Promotion extends DataClass implements Insertable<Promotion> {
@@ -33216,7 +33468,7 @@ class Promotion extends DataClass implements Insertable<Promotion> {
   final bool isActive;
   final String? categoryId;
   final String? productId;
-  final double minPurchaseAmount;
+  final Decimal minPurchaseAmount;
   const Promotion(
       {required this.id,
       required this.createdAt,
@@ -33258,7 +33510,11 @@ class Promotion extends DataClass implements Insertable<Promotion> {
     if (!nullToAbsent || productId != null) {
       map['product_id'] = Variable<String>(productId);
     }
-    map['min_purchase_amount'] = Variable<double>(minPurchaseAmount);
+    {
+      map['min_purchase_amount'] = Variable<String>($PromotionsTable
+          .$converterminPurchaseAmount
+          .toSql(minPurchaseAmount));
+    }
     return map;
   }
 
@@ -33308,7 +33564,8 @@ class Promotion extends DataClass implements Insertable<Promotion> {
       isActive: serializer.fromJson<bool>(json['isActive']),
       categoryId: serializer.fromJson<String?>(json['categoryId']),
       productId: serializer.fromJson<String?>(json['productId']),
-      minPurchaseAmount: serializer.fromJson<double>(json['minPurchaseAmount']),
+      minPurchaseAmount:
+          serializer.fromJson<Decimal>(json['minPurchaseAmount']),
     );
   }
   @override
@@ -33329,7 +33586,7 @@ class Promotion extends DataClass implements Insertable<Promotion> {
       'isActive': serializer.toJson<bool>(isActive),
       'categoryId': serializer.toJson<String?>(categoryId),
       'productId': serializer.toJson<String?>(productId),
-      'minPurchaseAmount': serializer.toJson<double>(minPurchaseAmount),
+      'minPurchaseAmount': serializer.toJson<Decimal>(minPurchaseAmount),
     };
   }
 
@@ -33348,7 +33605,7 @@ class Promotion extends DataClass implements Insertable<Promotion> {
           bool? isActive,
           Value<String?> categoryId = const Value.absent(),
           Value<String?> productId = const Value.absent(),
-          double? minPurchaseAmount}) =>
+          Decimal? minPurchaseAmount}) =>
       Promotion(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -33465,7 +33722,7 @@ class PromotionsCompanion extends UpdateCompanion<Promotion> {
   final Value<bool> isActive;
   final Value<String?> categoryId;
   final Value<String?> productId;
-  final Value<double> minPurchaseAmount;
+  final Value<Decimal> minPurchaseAmount;
   final Value<int> rowid;
   const PromotionsCompanion({
     this.id = const Value.absent(),
@@ -33522,7 +33779,7 @@ class PromotionsCompanion extends UpdateCompanion<Promotion> {
     Expression<bool>? isActive,
     Expression<String>? categoryId,
     Expression<String>? productId,
-    Expression<double>? minPurchaseAmount,
+    Expression<String>? minPurchaseAmount,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -33560,7 +33817,7 @@ class PromotionsCompanion extends UpdateCompanion<Promotion> {
       Value<bool>? isActive,
       Value<String?>? categoryId,
       Value<String?>? productId,
-      Value<double>? minPurchaseAmount,
+      Value<Decimal>? minPurchaseAmount,
       Value<int>? rowid}) {
     return PromotionsCompanion(
       id: id ?? this.id,
@@ -33628,7 +33885,9 @@ class PromotionsCompanion extends UpdateCompanion<Promotion> {
       map['product_id'] = Variable<String>(productId.value);
     }
     if (minPurchaseAmount.present) {
-      map['min_purchase_amount'] = Variable<double>(minPurchaseAmount.value);
+      map['min_purchase_amount'] = Variable<String>($PromotionsTable
+          .$converterminPurchaseAmount
+          .toSql(minPurchaseAmount.value));
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -34257,15 +34516,17 @@ class $UnitConversionsTable extends UnitConversions
   static const VerificationMeta _buyPriceMeta =
       const VerificationMeta('buyPrice');
   @override
-  late final GeneratedColumn<double> buyPrice = GeneratedColumn<double>(
-      'buy_price', aliasedName, true,
-      type: DriftSqlType.double, requiredDuringInsert: false);
+  late final GeneratedColumnWithTypeConverter<Decimal?, String> buyPrice =
+      GeneratedColumn<String>('buy_price', aliasedName, true,
+              type: DriftSqlType.string, requiredDuringInsert: false)
+          .withConverter<Decimal?>($UnitConversionsTable.$converterbuyPricen);
   static const VerificationMeta _sellPriceMeta =
       const VerificationMeta('sellPrice');
   @override
-  late final GeneratedColumn<double> sellPrice = GeneratedColumn<double>(
-      'sell_price', aliasedName, true,
-      type: DriftSqlType.double, requiredDuringInsert: false);
+  late final GeneratedColumnWithTypeConverter<Decimal?, String> sellPrice =
+      GeneratedColumn<String>('sell_price', aliasedName, true,
+              type: DriftSqlType.string, requiredDuringInsert: false)
+          .withConverter<Decimal?>($UnitConversionsTable.$convertersellPricen);
   static const VerificationMeta _barcodeMeta =
       const VerificationMeta('barcode');
   @override
@@ -34349,14 +34610,8 @@ class $UnitConversionsTable extends UnitConversions
           isBaseUnit.isAcceptableOrUnknown(
               data['is_base_unit']!, _isBaseUnitMeta));
     }
-    if (data.containsKey('buy_price')) {
-      context.handle(_buyPriceMeta,
-          buyPrice.isAcceptableOrUnknown(data['buy_price']!, _buyPriceMeta));
-    }
-    if (data.containsKey('sell_price')) {
-      context.handle(_sellPriceMeta,
-          sellPrice.isAcceptableOrUnknown(data['sell_price']!, _sellPriceMeta));
-    }
+    context.handle(_buyPriceMeta, const VerificationResult.success());
+    context.handle(_sellPriceMeta, const VerificationResult.success());
     if (data.containsKey('barcode')) {
       context.handle(_barcodeMeta,
           barcode.isAcceptableOrUnknown(data['barcode']!, _barcodeMeta));
@@ -34390,10 +34645,12 @@ class $UnitConversionsTable extends UnitConversions
           .read(DriftSqlType.double, data['${effectivePrefix}factor'])!,
       isBaseUnit: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_base_unit'])!,
-      buyPrice: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}buy_price']),
-      sellPrice: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}sell_price']),
+      buyPrice: $UnitConversionsTable.$converterbuyPricen.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.string, data['${effectivePrefix}buy_price'])),
+      sellPrice: $UnitConversionsTable.$convertersellPricen.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.string, data['${effectivePrefix}sell_price'])),
       barcode: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}barcode']),
     );
@@ -34403,6 +34660,15 @@ class $UnitConversionsTable extends UnitConversions
   $UnitConversionsTable createAlias(String alias) {
     return $UnitConversionsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterbuyPrice =
+      const DecimalConverter();
+  static TypeConverter<Decimal?, String?> $converterbuyPricen =
+      NullAwareTypeConverter.wrap($converterbuyPrice);
+  static TypeConverter<Decimal, String> $convertersellPrice =
+      const DecimalConverter();
+  static TypeConverter<Decimal?, String?> $convertersellPricen =
+      NullAwareTypeConverter.wrap($convertersellPrice);
 }
 
 class UnitConversion extends DataClass implements Insertable<UnitConversion> {
@@ -34416,8 +34682,8 @@ class UnitConversion extends DataClass implements Insertable<UnitConversion> {
   final String unitName;
   final double factor;
   final bool isBaseUnit;
-  final double? buyPrice;
-  final double? sellPrice;
+  final Decimal? buyPrice;
+  final Decimal? sellPrice;
   final String? barcode;
   const UnitConversion(
       {required this.id,
@@ -34451,10 +34717,12 @@ class UnitConversion extends DataClass implements Insertable<UnitConversion> {
     map['factor'] = Variable<double>(factor);
     map['is_base_unit'] = Variable<bool>(isBaseUnit);
     if (!nullToAbsent || buyPrice != null) {
-      map['buy_price'] = Variable<double>(buyPrice);
+      map['buy_price'] = Variable<String>(
+          $UnitConversionsTable.$converterbuyPricen.toSql(buyPrice));
     }
     if (!nullToAbsent || sellPrice != null) {
-      map['sell_price'] = Variable<double>(sellPrice);
+      map['sell_price'] = Variable<String>(
+          $UnitConversionsTable.$convertersellPricen.toSql(sellPrice));
     }
     if (!nullToAbsent || barcode != null) {
       map['barcode'] = Variable<String>(barcode);
@@ -34504,8 +34772,8 @@ class UnitConversion extends DataClass implements Insertable<UnitConversion> {
       unitName: serializer.fromJson<String>(json['unitName']),
       factor: serializer.fromJson<double>(json['factor']),
       isBaseUnit: serializer.fromJson<bool>(json['isBaseUnit']),
-      buyPrice: serializer.fromJson<double?>(json['buyPrice']),
-      sellPrice: serializer.fromJson<double?>(json['sellPrice']),
+      buyPrice: serializer.fromJson<Decimal?>(json['buyPrice']),
+      sellPrice: serializer.fromJson<Decimal?>(json['sellPrice']),
       barcode: serializer.fromJson<String?>(json['barcode']),
     );
   }
@@ -34523,8 +34791,8 @@ class UnitConversion extends DataClass implements Insertable<UnitConversion> {
       'unitName': serializer.toJson<String>(unitName),
       'factor': serializer.toJson<double>(factor),
       'isBaseUnit': serializer.toJson<bool>(isBaseUnit),
-      'buyPrice': serializer.toJson<double?>(buyPrice),
-      'sellPrice': serializer.toJson<double?>(sellPrice),
+      'buyPrice': serializer.toJson<Decimal?>(buyPrice),
+      'sellPrice': serializer.toJson<Decimal?>(sellPrice),
       'barcode': serializer.toJson<String?>(barcode),
     };
   }
@@ -34540,8 +34808,8 @@ class UnitConversion extends DataClass implements Insertable<UnitConversion> {
           String? unitName,
           double? factor,
           bool? isBaseUnit,
-          Value<double?> buyPrice = const Value.absent(),
-          Value<double?> sellPrice = const Value.absent(),
+          Value<Decimal?> buyPrice = const Value.absent(),
+          Value<Decimal?> sellPrice = const Value.absent(),
           Value<String?> barcode = const Value.absent()}) =>
       UnitConversion(
         id: id ?? this.id,
@@ -34643,8 +34911,8 @@ class UnitConversionsCompanion extends UpdateCompanion<UnitConversion> {
   final Value<String> unitName;
   final Value<double> factor;
   final Value<bool> isBaseUnit;
-  final Value<double?> buyPrice;
-  final Value<double?> sellPrice;
+  final Value<Decimal?> buyPrice;
+  final Value<Decimal?> sellPrice;
   final Value<String?> barcode;
   final Value<int> rowid;
   const UnitConversionsCompanion({
@@ -34692,8 +34960,8 @@ class UnitConversionsCompanion extends UpdateCompanion<UnitConversion> {
     Expression<String>? unitName,
     Expression<double>? factor,
     Expression<bool>? isBaseUnit,
-    Expression<double>? buyPrice,
-    Expression<double>? sellPrice,
+    Expression<String>? buyPrice,
+    Expression<String>? sellPrice,
     Expression<String>? barcode,
     Expression<int>? rowid,
   }) {
@@ -34726,8 +34994,8 @@ class UnitConversionsCompanion extends UpdateCompanion<UnitConversion> {
       Value<String>? unitName,
       Value<double>? factor,
       Value<bool>? isBaseUnit,
-      Value<double?>? buyPrice,
-      Value<double?>? sellPrice,
+      Value<Decimal?>? buyPrice,
+      Value<Decimal?>? sellPrice,
       Value<String?>? barcode,
       Value<int>? rowid}) {
     return UnitConversionsCompanion(
@@ -34782,10 +35050,12 @@ class UnitConversionsCompanion extends UpdateCompanion<UnitConversion> {
       map['is_base_unit'] = Variable<bool>(isBaseUnit.value);
     }
     if (buyPrice.present) {
-      map['buy_price'] = Variable<double>(buyPrice.value);
+      map['buy_price'] = Variable<String>(
+          $UnitConversionsTable.$converterbuyPricen.toSql(buyPrice.value));
     }
     if (sellPrice.present) {
-      map['sell_price'] = Variable<double>(sellPrice.value);
+      map['sell_price'] = Variable<String>(
+          $UnitConversionsTable.$convertersellPricen.toSql(sellPrice.value));
     }
     if (barcode.present) {
       map['barcode'] = Variable<String>(barcode.value);
@@ -37115,18 +37385,20 @@ class $AccountTransactionsTable extends AccountTransactions
       type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _debitMeta = const VerificationMeta('debit');
   @override
-  late final GeneratedColumn<double> debit = GeneratedColumn<double>(
-      'debit', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> debit =
+      GeneratedColumn<String>('debit', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($AccountTransactionsTable.$converterdebit);
   static const VerificationMeta _creditMeta = const VerificationMeta('credit');
   @override
-  late final GeneratedColumn<double> credit = GeneratedColumn<double>(
-      'credit', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> credit =
+      GeneratedColumn<String>('credit', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($AccountTransactionsTable.$convertercredit);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -37199,14 +37471,8 @@ class $AccountTransactionsTable extends AccountTransactions
           referenceId.isAcceptableOrUnknown(
               data['reference_id']!, _referenceIdMeta));
     }
-    if (data.containsKey('debit')) {
-      context.handle(
-          _debitMeta, debit.isAcceptableOrUnknown(data['debit']!, _debitMeta));
-    }
-    if (data.containsKey('credit')) {
-      context.handle(_creditMeta,
-          credit.isAcceptableOrUnknown(data['credit']!, _creditMeta));
-    }
+    context.handle(_debitMeta, const VerificationResult.success());
+    context.handle(_creditMeta, const VerificationResult.success());
     return context;
   }
 
@@ -37236,10 +37502,12 @@ class $AccountTransactionsTable extends AccountTransactions
           .read(DriftSqlType.string, data['${effectivePrefix}type'])!,
       referenceId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}reference_id']),
-      debit: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}debit'])!,
-      credit: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}credit'])!,
+      debit: $AccountTransactionsTable.$converterdebit.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}debit'])!),
+      credit: $AccountTransactionsTable.$convertercredit.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.string, data['${effectivePrefix}credit'])!),
     );
   }
 
@@ -37247,6 +37515,11 @@ class $AccountTransactionsTable extends AccountTransactions
   $AccountTransactionsTable createAlias(String alias) {
     return $AccountTransactionsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterdebit =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $convertercredit =
+      const DecimalConverter();
 }
 
 class AccountTransaction extends DataClass
@@ -37261,8 +37534,8 @@ class AccountTransaction extends DataClass
   final DateTime date;
   final String type;
   final String? referenceId;
-  final double debit;
-  final double credit;
+  final Decimal debit;
+  final Decimal credit;
   const AccountTransaction(
       {required this.id,
       required this.createdAt,
@@ -37295,8 +37568,14 @@ class AccountTransaction extends DataClass
     if (!nullToAbsent || referenceId != null) {
       map['reference_id'] = Variable<String>(referenceId);
     }
-    map['debit'] = Variable<double>(debit);
-    map['credit'] = Variable<double>(credit);
+    {
+      map['debit'] = Variable<String>(
+          $AccountTransactionsTable.$converterdebit.toSql(debit));
+    }
+    {
+      map['credit'] = Variable<String>(
+          $AccountTransactionsTable.$convertercredit.toSql(credit));
+    }
     return map;
   }
 
@@ -37337,8 +37616,8 @@ class AccountTransaction extends DataClass
       date: serializer.fromJson<DateTime>(json['date']),
       type: serializer.fromJson<String>(json['type']),
       referenceId: serializer.fromJson<String?>(json['referenceId']),
-      debit: serializer.fromJson<double>(json['debit']),
-      credit: serializer.fromJson<double>(json['credit']),
+      debit: serializer.fromJson<Decimal>(json['debit']),
+      credit: serializer.fromJson<Decimal>(json['credit']),
     );
   }
   @override
@@ -37355,8 +37634,8 @@ class AccountTransaction extends DataClass
       'date': serializer.toJson<DateTime>(date),
       'type': serializer.toJson<String>(type),
       'referenceId': serializer.toJson<String?>(referenceId),
-      'debit': serializer.toJson<double>(debit),
-      'credit': serializer.toJson<double>(credit),
+      'debit': serializer.toJson<Decimal>(debit),
+      'credit': serializer.toJson<Decimal>(credit),
     };
   }
 
@@ -37371,8 +37650,8 @@ class AccountTransaction extends DataClass
           DateTime? date,
           String? type,
           Value<String?> referenceId = const Value.absent(),
-          double? debit,
-          double? credit}) =>
+          Decimal? debit,
+          Decimal? credit}) =>
       AccountTransaction(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -37457,8 +37736,8 @@ class AccountTransactionsCompanion extends UpdateCompanion<AccountTransaction> {
   final Value<DateTime> date;
   final Value<String> type;
   final Value<String?> referenceId;
-  final Value<double> debit;
-  final Value<double> credit;
+  final Value<Decimal> debit;
+  final Value<Decimal> credit;
   final Value<int> rowid;
   const AccountTransactionsCompanion({
     this.id = const Value.absent(),
@@ -37502,8 +37781,8 @@ class AccountTransactionsCompanion extends UpdateCompanion<AccountTransaction> {
     Expression<DateTime>? date,
     Expression<String>? type,
     Expression<String>? referenceId,
-    Expression<double>? debit,
-    Expression<double>? credit,
+    Expression<String>? debit,
+    Expression<String>? credit,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -37534,8 +37813,8 @@ class AccountTransactionsCompanion extends UpdateCompanion<AccountTransaction> {
       Value<DateTime>? date,
       Value<String>? type,
       Value<String?>? referenceId,
-      Value<double>? debit,
-      Value<double>? credit,
+      Value<Decimal>? debit,
+      Value<Decimal>? credit,
       Value<int>? rowid}) {
     return AccountTransactionsCompanion(
       id: id ?? this.id,
@@ -37588,10 +37867,12 @@ class AccountTransactionsCompanion extends UpdateCompanion<AccountTransaction> {
       map['reference_id'] = Variable<String>(referenceId.value);
     }
     if (debit.present) {
-      map['debit'] = Variable<double>(debit.value);
+      map['debit'] = Variable<String>(
+          $AccountTransactionsTable.$converterdebit.toSql(debit.value));
     }
     if (credit.present) {
-      map['credit'] = Variable<double>(credit.value);
+      map['credit'] = Variable<String>(
+          $AccountTransactionsTable.$convertercredit.toSql(credit.value));
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -38311,16 +38592,18 @@ class $StockMovementsTable extends StockMovements
   static const VerificationMeta _quantityMeta =
       const VerificationMeta('quantity');
   @override
-  late final GeneratedColumn<double> quantity = GeneratedColumn<double>(
-      'quantity', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> quantity =
+      GeneratedColumn<String>('quantity', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($StockMovementsTable.$converterquantity);
   static const VerificationMeta _costMeta = const VerificationMeta('cost');
   @override
-  late final GeneratedColumn<double> cost = GeneratedColumn<double>(
-      'cost', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> cost =
+      GeneratedColumn<String>('cost', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($StockMovementsTable.$convertercost);
   static const VerificationMeta _batchIdMeta =
       const VerificationMeta('batchId');
   @override
@@ -38433,16 +38716,8 @@ class $StockMovementsTable extends StockMovements
           toWarehouseId.isAcceptableOrUnknown(
               data['to_warehouse_id']!, _toWarehouseIdMeta));
     }
-    if (data.containsKey('quantity')) {
-      context.handle(_quantityMeta,
-          quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta));
-    } else if (isInserting) {
-      context.missing(_quantityMeta);
-    }
-    if (data.containsKey('cost')) {
-      context.handle(
-          _costMeta, cost.isAcceptableOrUnknown(data['cost']!, _costMeta));
-    }
+    context.handle(_quantityMeta, const VerificationResult.success());
+    context.handle(_costMeta, const VerificationResult.success());
     if (data.containsKey('batch_id')) {
       context.handle(_batchIdMeta,
           batchId.isAcceptableOrUnknown(data['batch_id']!, _batchIdMeta));
@@ -38502,10 +38777,12 @@ class $StockMovementsTable extends StockMovements
           DriftSqlType.string, data['${effectivePrefix}from_warehouse_id']),
       toWarehouseId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}to_warehouse_id']),
-      quantity: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}quantity'])!,
-      cost: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}cost'])!,
+      quantity: $StockMovementsTable.$converterquantity.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}quantity'])!),
+      cost: $StockMovementsTable.$convertercost.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}cost'])!),
       batchId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}batch_id']),
       movementDate: attachedDatabase.typeMapping.read(
@@ -38525,6 +38802,11 @@ class $StockMovementsTable extends StockMovements
   $StockMovementsTable createAlias(String alias) {
     return $StockMovementsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterquantity =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $convertercost =
+      const DecimalConverter();
 }
 
 class StockMovement extends DataClass implements Insertable<StockMovement> {
@@ -38537,8 +38819,8 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
   final String productId;
   final String? fromWarehouseId;
   final String? toWarehouseId;
-  final double quantity;
-  final double cost;
+  final Decimal quantity;
+  final Decimal cost;
   final String? batchId;
   final DateTime movementDate;
   final String type;
@@ -38583,8 +38865,14 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
     if (!nullToAbsent || toWarehouseId != null) {
       map['to_warehouse_id'] = Variable<String>(toWarehouseId);
     }
-    map['quantity'] = Variable<double>(quantity);
-    map['cost'] = Variable<double>(cost);
+    {
+      map['quantity'] = Variable<String>(
+          $StockMovementsTable.$converterquantity.toSql(quantity));
+    }
+    {
+      map['cost'] =
+          Variable<String>($StockMovementsTable.$convertercost.toSql(cost));
+    }
     if (!nullToAbsent || batchId != null) {
       map['batch_id'] = Variable<String>(batchId);
     }
@@ -38651,8 +38939,8 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
       productId: serializer.fromJson<String>(json['productId']),
       fromWarehouseId: serializer.fromJson<String?>(json['fromWarehouseId']),
       toWarehouseId: serializer.fromJson<String?>(json['toWarehouseId']),
-      quantity: serializer.fromJson<double>(json['quantity']),
-      cost: serializer.fromJson<double>(json['cost']),
+      quantity: serializer.fromJson<Decimal>(json['quantity']),
+      cost: serializer.fromJson<Decimal>(json['cost']),
       batchId: serializer.fromJson<String?>(json['batchId']),
       movementDate: serializer.fromJson<DateTime>(json['movementDate']),
       type: serializer.fromJson<String>(json['type']),
@@ -38674,8 +38962,8 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
       'productId': serializer.toJson<String>(productId),
       'fromWarehouseId': serializer.toJson<String?>(fromWarehouseId),
       'toWarehouseId': serializer.toJson<String?>(toWarehouseId),
-      'quantity': serializer.toJson<double>(quantity),
-      'cost': serializer.toJson<double>(cost),
+      'quantity': serializer.toJson<Decimal>(quantity),
+      'cost': serializer.toJson<Decimal>(cost),
       'batchId': serializer.toJson<String?>(batchId),
       'movementDate': serializer.toJson<DateTime>(movementDate),
       'type': serializer.toJson<String>(type),
@@ -38695,8 +38983,8 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
           String? productId,
           Value<String?> fromWarehouseId = const Value.absent(),
           Value<String?> toWarehouseId = const Value.absent(),
-          double? quantity,
-          double? cost,
+          Decimal? quantity,
+          Decimal? cost,
           Value<String?> batchId = const Value.absent(),
           DateTime? movementDate,
           String? type,
@@ -38834,8 +39122,8 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
   final Value<String> productId;
   final Value<String?> fromWarehouseId;
   final Value<String?> toWarehouseId;
-  final Value<double> quantity;
-  final Value<double> cost;
+  final Value<Decimal> quantity;
+  final Value<Decimal> cost;
   final Value<String?> batchId;
   final Value<DateTime> movementDate;
   final Value<String> type;
@@ -38873,7 +39161,7 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
     required String productId,
     this.fromWarehouseId = const Value.absent(),
     this.toWarehouseId = const Value.absent(),
-    required double quantity,
+    required Decimal quantity,
     this.cost = const Value.absent(),
     this.batchId = const Value.absent(),
     this.movementDate = const Value.absent(),
@@ -38895,8 +39183,8 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
     Expression<String>? productId,
     Expression<String>? fromWarehouseId,
     Expression<String>? toWarehouseId,
-    Expression<double>? quantity,
-    Expression<double>? cost,
+    Expression<String>? quantity,
+    Expression<String>? cost,
     Expression<String>? batchId,
     Expression<DateTime>? movementDate,
     Expression<String>? type,
@@ -38937,8 +39225,8 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
       Value<String>? productId,
       Value<String?>? fromWarehouseId,
       Value<String?>? toWarehouseId,
-      Value<double>? quantity,
-      Value<double>? cost,
+      Value<Decimal>? quantity,
+      Value<Decimal>? cost,
       Value<String?>? batchId,
       Value<DateTime>? movementDate,
       Value<String>? type,
@@ -38999,10 +39287,12 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
       map['to_warehouse_id'] = Variable<String>(toWarehouseId.value);
     }
     if (quantity.present) {
-      map['quantity'] = Variable<double>(quantity.value);
+      map['quantity'] = Variable<String>(
+          $StockMovementsTable.$converterquantity.toSql(quantity.value));
     }
     if (cost.present) {
-      map['cost'] = Variable<double>(cost.value);
+      map['cost'] = Variable<String>(
+          $StockMovementsTable.$convertercost.toSql(cost.value));
     }
     if (batchId.present) {
       map['batch_id'] = Variable<String>(batchId.value);
@@ -39132,35 +39422,43 @@ class $ProductUnitsTable extends ProductUnits
   static const VerificationMeta _unitFactorMeta =
       const VerificationMeta('unitFactor');
   @override
-  late final GeneratedColumn<double> unitFactor = GeneratedColumn<double>(
-      'unit_factor', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(1.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> unitFactor =
+      GeneratedColumn<String>('unit_factor', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.one.toString()))
+          .withConverter<Decimal>($ProductUnitsTable.$converterunitFactor);
   static const VerificationMeta _buyPriceMeta =
       const VerificationMeta('buyPrice');
   @override
-  late final GeneratedColumn<double> buyPrice = GeneratedColumn<double>(
-      'buy_price', aliasedName, true,
-      type: DriftSqlType.double, requiredDuringInsert: false);
+  late final GeneratedColumnWithTypeConverter<Decimal?, String> buyPrice =
+      GeneratedColumn<String>('buy_price', aliasedName, true,
+              type: DriftSqlType.string, requiredDuringInsert: false)
+          .withConverter<Decimal?>($ProductUnitsTable.$converterbuyPricen);
   static const VerificationMeta _sellPriceMeta =
       const VerificationMeta('sellPrice');
   @override
-  late final GeneratedColumn<double> sellPrice = GeneratedColumn<double>(
-      'sell_price', aliasedName, true,
-      type: DriftSqlType.double, requiredDuringInsert: false);
+  late final GeneratedColumnWithTypeConverter<Decimal?, String> sellPrice =
+      GeneratedColumn<String>('sell_price', aliasedName, true,
+              type: DriftSqlType.string, requiredDuringInsert: false)
+          .withConverter<Decimal?>($ProductUnitsTable.$convertersellPricen);
   static const VerificationMeta _wholesalePriceMeta =
       const VerificationMeta('wholesalePrice');
   @override
-  late final GeneratedColumn<double> wholesalePrice = GeneratedColumn<double>(
-      'wholesale_price', aliasedName, true,
-      type: DriftSqlType.double, requiredDuringInsert: false);
+  late final GeneratedColumnWithTypeConverter<Decimal?, String> wholesalePrice =
+      GeneratedColumn<String>('wholesale_price', aliasedName, true,
+              type: DriftSqlType.string, requiredDuringInsert: false)
+          .withConverter<Decimal?>(
+              $ProductUnitsTable.$converterwholesalePricen);
   static const VerificationMeta _halfWholesalePriceMeta =
       const VerificationMeta('halfWholesalePrice');
   @override
-  late final GeneratedColumn<double> halfWholesalePrice =
-      GeneratedColumn<double>('half_wholesale_price', aliasedName, true,
-          type: DriftSqlType.double, requiredDuringInsert: false);
+  late final GeneratedColumnWithTypeConverter<Decimal?, String>
+      halfWholesalePrice = GeneratedColumn<String>(
+              'half_wholesale_price', aliasedName, true,
+              type: DriftSqlType.string, requiredDuringInsert: false)
+          .withConverter<Decimal?>(
+              $ProductUnitsTable.$converterhalfWholesalePricen);
   static const VerificationMeta _isDefaultMeta =
       const VerificationMeta('isDefault');
   @override
@@ -39240,32 +39538,11 @@ class $ProductUnitsTable extends ProductUnits
       context.handle(_barcodeMeta,
           barcode.isAcceptableOrUnknown(data['barcode']!, _barcodeMeta));
     }
-    if (data.containsKey('unit_factor')) {
-      context.handle(
-          _unitFactorMeta,
-          unitFactor.isAcceptableOrUnknown(
-              data['unit_factor']!, _unitFactorMeta));
-    }
-    if (data.containsKey('buy_price')) {
-      context.handle(_buyPriceMeta,
-          buyPrice.isAcceptableOrUnknown(data['buy_price']!, _buyPriceMeta));
-    }
-    if (data.containsKey('sell_price')) {
-      context.handle(_sellPriceMeta,
-          sellPrice.isAcceptableOrUnknown(data['sell_price']!, _sellPriceMeta));
-    }
-    if (data.containsKey('wholesale_price')) {
-      context.handle(
-          _wholesalePriceMeta,
-          wholesalePrice.isAcceptableOrUnknown(
-              data['wholesale_price']!, _wholesalePriceMeta));
-    }
-    if (data.containsKey('half_wholesale_price')) {
-      context.handle(
-          _halfWholesalePriceMeta,
-          halfWholesalePrice.isAcceptableOrUnknown(
-              data['half_wholesale_price']!, _halfWholesalePriceMeta));
-    }
+    context.handle(_unitFactorMeta, const VerificationResult.success());
+    context.handle(_buyPriceMeta, const VerificationResult.success());
+    context.handle(_sellPriceMeta, const VerificationResult.success());
+    context.handle(_wholesalePriceMeta, const VerificationResult.success());
+    context.handle(_halfWholesalePriceMeta, const VerificationResult.success());
     if (data.containsKey('is_default')) {
       context.handle(_isDefaultMeta,
           isDefault.isAcceptableOrUnknown(data['is_default']!, _isDefaultMeta));
@@ -39297,16 +39574,21 @@ class $ProductUnitsTable extends ProductUnits
           .read(DriftSqlType.string, data['${effectivePrefix}unit_name'])!,
       barcode: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}barcode']),
-      unitFactor: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}unit_factor'])!,
-      buyPrice: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}buy_price']),
-      sellPrice: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}sell_price']),
-      wholesalePrice: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}wholesale_price']),
-      halfWholesalePrice: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}half_wholesale_price']),
+      unitFactor: $ProductUnitsTable.$converterunitFactor.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}unit_factor'])!),
+      buyPrice: $ProductUnitsTable.$converterbuyPricen.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}buy_price'])),
+      sellPrice: $ProductUnitsTable.$convertersellPricen.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.string, data['${effectivePrefix}sell_price'])),
+      wholesalePrice: $ProductUnitsTable.$converterwholesalePricen.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}wholesale_price'])),
+      halfWholesalePrice: $ProductUnitsTable.$converterhalfWholesalePricen
+          .fromSql(attachedDatabase.typeMapping.read(DriftSqlType.string,
+              data['${effectivePrefix}half_wholesale_price'])),
       isDefault: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_default'])!,
     );
@@ -39316,6 +39598,25 @@ class $ProductUnitsTable extends ProductUnits
   $ProductUnitsTable createAlias(String alias) {
     return $ProductUnitsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterunitFactor =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterbuyPrice =
+      const DecimalConverter();
+  static TypeConverter<Decimal?, String?> $converterbuyPricen =
+      NullAwareTypeConverter.wrap($converterbuyPrice);
+  static TypeConverter<Decimal, String> $convertersellPrice =
+      const DecimalConverter();
+  static TypeConverter<Decimal?, String?> $convertersellPricen =
+      NullAwareTypeConverter.wrap($convertersellPrice);
+  static TypeConverter<Decimal, String> $converterwholesalePrice =
+      const DecimalConverter();
+  static TypeConverter<Decimal?, String?> $converterwholesalePricen =
+      NullAwareTypeConverter.wrap($converterwholesalePrice);
+  static TypeConverter<Decimal, String> $converterhalfWholesalePrice =
+      const DecimalConverter();
+  static TypeConverter<Decimal?, String?> $converterhalfWholesalePricen =
+      NullAwareTypeConverter.wrap($converterhalfWholesalePrice);
 }
 
 class ProductUnit extends DataClass implements Insertable<ProductUnit> {
@@ -39328,11 +39629,11 @@ class ProductUnit extends DataClass implements Insertable<ProductUnit> {
   final String productId;
   final String unitName;
   final String? barcode;
-  final double unitFactor;
-  final double? buyPrice;
-  final double? sellPrice;
-  final double? wholesalePrice;
-  final double? halfWholesalePrice;
+  final Decimal unitFactor;
+  final Decimal? buyPrice;
+  final Decimal? sellPrice;
+  final Decimal? wholesalePrice;
+  final Decimal? halfWholesalePrice;
   final bool isDefault;
   const ProductUnit(
       {required this.id,
@@ -39368,18 +39669,26 @@ class ProductUnit extends DataClass implements Insertable<ProductUnit> {
     if (!nullToAbsent || barcode != null) {
       map['barcode'] = Variable<String>(barcode);
     }
-    map['unit_factor'] = Variable<double>(unitFactor);
+    {
+      map['unit_factor'] = Variable<String>(
+          $ProductUnitsTable.$converterunitFactor.toSql(unitFactor));
+    }
     if (!nullToAbsent || buyPrice != null) {
-      map['buy_price'] = Variable<double>(buyPrice);
+      map['buy_price'] = Variable<String>(
+          $ProductUnitsTable.$converterbuyPricen.toSql(buyPrice));
     }
     if (!nullToAbsent || sellPrice != null) {
-      map['sell_price'] = Variable<double>(sellPrice);
+      map['sell_price'] = Variable<String>(
+          $ProductUnitsTable.$convertersellPricen.toSql(sellPrice));
     }
     if (!nullToAbsent || wholesalePrice != null) {
-      map['wholesale_price'] = Variable<double>(wholesalePrice);
+      map['wholesale_price'] = Variable<String>(
+          $ProductUnitsTable.$converterwholesalePricen.toSql(wholesalePrice));
     }
     if (!nullToAbsent || halfWholesalePrice != null) {
-      map['half_wholesale_price'] = Variable<double>(halfWholesalePrice);
+      map['half_wholesale_price'] = Variable<String>($ProductUnitsTable
+          .$converterhalfWholesalePricen
+          .toSql(halfWholesalePrice));
     }
     map['is_default'] = Variable<bool>(isDefault);
     return map;
@@ -39432,12 +39741,12 @@ class ProductUnit extends DataClass implements Insertable<ProductUnit> {
       productId: serializer.fromJson<String>(json['productId']),
       unitName: serializer.fromJson<String>(json['unitName']),
       barcode: serializer.fromJson<String?>(json['barcode']),
-      unitFactor: serializer.fromJson<double>(json['unitFactor']),
-      buyPrice: serializer.fromJson<double?>(json['buyPrice']),
-      sellPrice: serializer.fromJson<double?>(json['sellPrice']),
-      wholesalePrice: serializer.fromJson<double?>(json['wholesalePrice']),
+      unitFactor: serializer.fromJson<Decimal>(json['unitFactor']),
+      buyPrice: serializer.fromJson<Decimal?>(json['buyPrice']),
+      sellPrice: serializer.fromJson<Decimal?>(json['sellPrice']),
+      wholesalePrice: serializer.fromJson<Decimal?>(json['wholesalePrice']),
       halfWholesalePrice:
-          serializer.fromJson<double?>(json['halfWholesalePrice']),
+          serializer.fromJson<Decimal?>(json['halfWholesalePrice']),
       isDefault: serializer.fromJson<bool>(json['isDefault']),
     );
   }
@@ -39454,11 +39763,11 @@ class ProductUnit extends DataClass implements Insertable<ProductUnit> {
       'productId': serializer.toJson<String>(productId),
       'unitName': serializer.toJson<String>(unitName),
       'barcode': serializer.toJson<String?>(barcode),
-      'unitFactor': serializer.toJson<double>(unitFactor),
-      'buyPrice': serializer.toJson<double?>(buyPrice),
-      'sellPrice': serializer.toJson<double?>(sellPrice),
-      'wholesalePrice': serializer.toJson<double?>(wholesalePrice),
-      'halfWholesalePrice': serializer.toJson<double?>(halfWholesalePrice),
+      'unitFactor': serializer.toJson<Decimal>(unitFactor),
+      'buyPrice': serializer.toJson<Decimal?>(buyPrice),
+      'sellPrice': serializer.toJson<Decimal?>(sellPrice),
+      'wholesalePrice': serializer.toJson<Decimal?>(wholesalePrice),
+      'halfWholesalePrice': serializer.toJson<Decimal?>(halfWholesalePrice),
       'isDefault': serializer.toJson<bool>(isDefault),
     };
   }
@@ -39473,11 +39782,11 @@ class ProductUnit extends DataClass implements Insertable<ProductUnit> {
           String? productId,
           String? unitName,
           Value<String?> barcode = const Value.absent(),
-          double? unitFactor,
-          Value<double?> buyPrice = const Value.absent(),
-          Value<double?> sellPrice = const Value.absent(),
-          Value<double?> wholesalePrice = const Value.absent(),
-          Value<double?> halfWholesalePrice = const Value.absent(),
+          Decimal? unitFactor,
+          Value<Decimal?> buyPrice = const Value.absent(),
+          Value<Decimal?> sellPrice = const Value.absent(),
+          Value<Decimal?> wholesalePrice = const Value.absent(),
+          Value<Decimal?> halfWholesalePrice = const Value.absent(),
           bool? isDefault}) =>
       ProductUnit(
         id: id ?? this.id,
@@ -39595,11 +39904,11 @@ class ProductUnitsCompanion extends UpdateCompanion<ProductUnit> {
   final Value<String> productId;
   final Value<String> unitName;
   final Value<String?> barcode;
-  final Value<double> unitFactor;
-  final Value<double?> buyPrice;
-  final Value<double?> sellPrice;
-  final Value<double?> wholesalePrice;
-  final Value<double?> halfWholesalePrice;
+  final Value<Decimal> unitFactor;
+  final Value<Decimal?> buyPrice;
+  final Value<Decimal?> sellPrice;
+  final Value<Decimal?> wholesalePrice;
+  final Value<Decimal?> halfWholesalePrice;
   final Value<bool> isDefault;
   final Value<int> rowid;
   const ProductUnitsCompanion({
@@ -39649,11 +39958,11 @@ class ProductUnitsCompanion extends UpdateCompanion<ProductUnit> {
     Expression<String>? productId,
     Expression<String>? unitName,
     Expression<String>? barcode,
-    Expression<double>? unitFactor,
-    Expression<double>? buyPrice,
-    Expression<double>? sellPrice,
-    Expression<double>? wholesalePrice,
-    Expression<double>? halfWholesalePrice,
+    Expression<String>? unitFactor,
+    Expression<String>? buyPrice,
+    Expression<String>? sellPrice,
+    Expression<String>? wholesalePrice,
+    Expression<String>? halfWholesalePrice,
     Expression<bool>? isDefault,
     Expression<int>? rowid,
   }) {
@@ -39688,11 +39997,11 @@ class ProductUnitsCompanion extends UpdateCompanion<ProductUnit> {
       Value<String>? productId,
       Value<String>? unitName,
       Value<String?>? barcode,
-      Value<double>? unitFactor,
-      Value<double?>? buyPrice,
-      Value<double?>? sellPrice,
-      Value<double?>? wholesalePrice,
-      Value<double?>? halfWholesalePrice,
+      Value<Decimal>? unitFactor,
+      Value<Decimal?>? buyPrice,
+      Value<Decimal?>? sellPrice,
+      Value<Decimal?>? wholesalePrice,
+      Value<Decimal?>? halfWholesalePrice,
       Value<bool>? isDefault,
       Value<int>? rowid}) {
     return ProductUnitsCompanion(
@@ -39746,19 +40055,26 @@ class ProductUnitsCompanion extends UpdateCompanion<ProductUnit> {
       map['barcode'] = Variable<String>(barcode.value);
     }
     if (unitFactor.present) {
-      map['unit_factor'] = Variable<double>(unitFactor.value);
+      map['unit_factor'] = Variable<String>(
+          $ProductUnitsTable.$converterunitFactor.toSql(unitFactor.value));
     }
     if (buyPrice.present) {
-      map['buy_price'] = Variable<double>(buyPrice.value);
+      map['buy_price'] = Variable<String>(
+          $ProductUnitsTable.$converterbuyPricen.toSql(buyPrice.value));
     }
     if (sellPrice.present) {
-      map['sell_price'] = Variable<double>(sellPrice.value);
+      map['sell_price'] = Variable<String>(
+          $ProductUnitsTable.$convertersellPricen.toSql(sellPrice.value));
     }
     if (wholesalePrice.present) {
-      map['wholesale_price'] = Variable<double>(wholesalePrice.value);
+      map['wholesale_price'] = Variable<String>($ProductUnitsTable
+          .$converterwholesalePricen
+          .toSql(wholesalePrice.value));
     }
     if (halfWholesalePrice.present) {
-      map['half_wholesale_price'] = Variable<double>(halfWholesalePrice.value);
+      map['half_wholesale_price'] = Variable<String>($ProductUnitsTable
+          .$converterhalfWholesalePricen
+          .toSql(halfWholesalePrice.value));
     }
     if (isDefault.present) {
       map['is_default'] = Variable<bool>(isDefault.value);
@@ -39883,19 +40199,21 @@ class $APInvoicesTable extends APInvoices
   static const VerificationMeta _taxAmountMeta =
       const VerificationMeta('taxAmount');
   @override
-  late final GeneratedColumn<double> taxAmount = GeneratedColumn<double>(
-      'tax_amount', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> taxAmount =
+      GeneratedColumn<String>('tax_amount', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($APInvoicesTable.$convertertaxAmount);
   static const VerificationMeta _paidAmountMeta =
       const VerificationMeta('paidAmount');
   @override
-  late final GeneratedColumn<double> paidAmount = GeneratedColumn<double>(
-      'paid_amount', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> paidAmount =
+      GeneratedColumn<String>('paid_amount', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($APInvoicesTable.$converterpaidAmount);
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -40005,16 +40323,8 @@ class $APInvoicesTable extends APInvoices
     } else if (isInserting) {
       context.missing(_totalAmountMeta);
     }
-    if (data.containsKey('tax_amount')) {
-      context.handle(_taxAmountMeta,
-          taxAmount.isAcceptableOrUnknown(data['tax_amount']!, _taxAmountMeta));
-    }
-    if (data.containsKey('paid_amount')) {
-      context.handle(
-          _paidAmountMeta,
-          paidAmount.isAcceptableOrUnknown(
-              data['paid_amount']!, _paidAmountMeta));
-    }
+    context.handle(_taxAmountMeta, const VerificationResult.success());
+    context.handle(_paidAmountMeta, const VerificationResult.success());
     if (data.containsKey('status')) {
       context.handle(_statusMeta,
           status.isAcceptableOrUnknown(data['status']!, _statusMeta));
@@ -40058,10 +40368,12 @@ class $APInvoicesTable extends APInvoices
           .read(DriftSqlType.dateTime, data['${effectivePrefix}due_date']),
       totalAmount: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}total_amount'])!,
-      taxAmount: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}tax_amount'])!,
-      paidAmount: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}paid_amount'])!,
+      taxAmount: $APInvoicesTable.$convertertaxAmount.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tax_amount'])!),
+      paidAmount: $APInvoicesTable.$converterpaidAmount.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}paid_amount'])!),
       status: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
       notes: attachedDatabase.typeMapping
@@ -40075,6 +40387,11 @@ class $APInvoicesTable extends APInvoices
   $APInvoicesTable createAlias(String alias) {
     return $APInvoicesTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $convertertaxAmount =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterpaidAmount =
+      const DecimalConverter();
 }
 
 class APInvoice extends DataClass implements Insertable<APInvoice> {
@@ -40089,8 +40406,8 @@ class APInvoice extends DataClass implements Insertable<APInvoice> {
   final DateTime invoiceDate;
   final DateTime? dueDate;
   final double totalAmount;
-  final double taxAmount;
-  final double paidAmount;
+  final Decimal taxAmount;
+  final Decimal paidAmount;
   final String status;
   final String? notes;
   final String? accountId;
@@ -40131,8 +40448,14 @@ class APInvoice extends DataClass implements Insertable<APInvoice> {
       map['due_date'] = Variable<DateTime>(dueDate);
     }
     map['total_amount'] = Variable<double>(totalAmount);
-    map['tax_amount'] = Variable<double>(taxAmount);
-    map['paid_amount'] = Variable<double>(paidAmount);
+    {
+      map['tax_amount'] = Variable<String>(
+          $APInvoicesTable.$convertertaxAmount.toSql(taxAmount));
+    }
+    {
+      map['paid_amount'] = Variable<String>(
+          $APInvoicesTable.$converterpaidAmount.toSql(paidAmount));
+    }
     map['status'] = Variable<String>(status);
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
@@ -40188,8 +40511,8 @@ class APInvoice extends DataClass implements Insertable<APInvoice> {
       invoiceDate: serializer.fromJson<DateTime>(json['invoiceDate']),
       dueDate: serializer.fromJson<DateTime?>(json['dueDate']),
       totalAmount: serializer.fromJson<double>(json['totalAmount']),
-      taxAmount: serializer.fromJson<double>(json['taxAmount']),
-      paidAmount: serializer.fromJson<double>(json['paidAmount']),
+      taxAmount: serializer.fromJson<Decimal>(json['taxAmount']),
+      paidAmount: serializer.fromJson<Decimal>(json['paidAmount']),
       status: serializer.fromJson<String>(json['status']),
       notes: serializer.fromJson<String?>(json['notes']),
       accountId: serializer.fromJson<String?>(json['accountId']),
@@ -40210,8 +40533,8 @@ class APInvoice extends DataClass implements Insertable<APInvoice> {
       'invoiceDate': serializer.toJson<DateTime>(invoiceDate),
       'dueDate': serializer.toJson<DateTime?>(dueDate),
       'totalAmount': serializer.toJson<double>(totalAmount),
-      'taxAmount': serializer.toJson<double>(taxAmount),
-      'paidAmount': serializer.toJson<double>(paidAmount),
+      'taxAmount': serializer.toJson<Decimal>(taxAmount),
+      'paidAmount': serializer.toJson<Decimal>(paidAmount),
       'status': serializer.toJson<String>(status),
       'notes': serializer.toJson<String?>(notes),
       'accountId': serializer.toJson<String?>(accountId),
@@ -40230,8 +40553,8 @@ class APInvoice extends DataClass implements Insertable<APInvoice> {
           DateTime? invoiceDate,
           Value<DateTime?> dueDate = const Value.absent(),
           double? totalAmount,
-          double? taxAmount,
-          double? paidAmount,
+          Decimal? taxAmount,
+          Decimal? paidAmount,
           String? status,
           Value<String?> notes = const Value.absent(),
           Value<String?> accountId = const Value.absent()}) =>
@@ -40356,8 +40679,8 @@ class APInvoicesCompanion extends UpdateCompanion<APInvoice> {
   final Value<DateTime> invoiceDate;
   final Value<DateTime?> dueDate;
   final Value<double> totalAmount;
-  final Value<double> taxAmount;
-  final Value<double> paidAmount;
+  final Value<Decimal> taxAmount;
+  final Value<Decimal> paidAmount;
   final Value<String> status;
   final Value<String?> notes;
   final Value<String?> accountId;
@@ -40414,8 +40737,8 @@ class APInvoicesCompanion extends UpdateCompanion<APInvoice> {
     Expression<DateTime>? invoiceDate,
     Expression<DateTime>? dueDate,
     Expression<double>? totalAmount,
-    Expression<double>? taxAmount,
-    Expression<double>? paidAmount,
+    Expression<String>? taxAmount,
+    Expression<String>? paidAmount,
     Expression<String>? status,
     Expression<String>? notes,
     Expression<String>? accountId,
@@ -40454,8 +40777,8 @@ class APInvoicesCompanion extends UpdateCompanion<APInvoice> {
       Value<DateTime>? invoiceDate,
       Value<DateTime?>? dueDate,
       Value<double>? totalAmount,
-      Value<double>? taxAmount,
-      Value<double>? paidAmount,
+      Value<Decimal>? taxAmount,
+      Value<Decimal>? paidAmount,
       Value<String>? status,
       Value<String?>? notes,
       Value<String?>? accountId,
@@ -40518,10 +40841,12 @@ class APInvoicesCompanion extends UpdateCompanion<APInvoice> {
       map['total_amount'] = Variable<double>(totalAmount.value);
     }
     if (taxAmount.present) {
-      map['tax_amount'] = Variable<double>(taxAmount.value);
+      map['tax_amount'] = Variable<String>(
+          $APInvoicesTable.$convertertaxAmount.toSql(taxAmount.value));
     }
     if (paidAmount.present) {
-      map['paid_amount'] = Variable<double>(paidAmount.value);
+      map['paid_amount'] = Variable<String>(
+          $APInvoicesTable.$converterpaidAmount.toSql(paidAmount.value));
     }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
@@ -40653,19 +40978,21 @@ class $ARInvoicesTable extends ARInvoices
   static const VerificationMeta _taxAmountMeta =
       const VerificationMeta('taxAmount');
   @override
-  late final GeneratedColumn<double> taxAmount = GeneratedColumn<double>(
-      'tax_amount', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> taxAmount =
+      GeneratedColumn<String>('tax_amount', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($ARInvoicesTable.$convertertaxAmount);
   static const VerificationMeta _paidAmountMeta =
       const VerificationMeta('paidAmount');
   @override
-  late final GeneratedColumn<double> paidAmount = GeneratedColumn<double>(
-      'paid_amount', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> paidAmount =
+      GeneratedColumn<String>('paid_amount', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($ARInvoicesTable.$converterpaidAmount);
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -40775,16 +41102,8 @@ class $ARInvoicesTable extends ARInvoices
     } else if (isInserting) {
       context.missing(_totalAmountMeta);
     }
-    if (data.containsKey('tax_amount')) {
-      context.handle(_taxAmountMeta,
-          taxAmount.isAcceptableOrUnknown(data['tax_amount']!, _taxAmountMeta));
-    }
-    if (data.containsKey('paid_amount')) {
-      context.handle(
-          _paidAmountMeta,
-          paidAmount.isAcceptableOrUnknown(
-              data['paid_amount']!, _paidAmountMeta));
-    }
+    context.handle(_taxAmountMeta, const VerificationResult.success());
+    context.handle(_paidAmountMeta, const VerificationResult.success());
     if (data.containsKey('status')) {
       context.handle(_statusMeta,
           status.isAcceptableOrUnknown(data['status']!, _statusMeta));
@@ -40828,10 +41147,12 @@ class $ARInvoicesTable extends ARInvoices
           .read(DriftSqlType.dateTime, data['${effectivePrefix}due_date']),
       totalAmount: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}total_amount'])!,
-      taxAmount: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}tax_amount'])!,
-      paidAmount: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}paid_amount'])!,
+      taxAmount: $ARInvoicesTable.$convertertaxAmount.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tax_amount'])!),
+      paidAmount: $ARInvoicesTable.$converterpaidAmount.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}paid_amount'])!),
       status: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
       notes: attachedDatabase.typeMapping
@@ -40845,6 +41166,11 @@ class $ARInvoicesTable extends ARInvoices
   $ARInvoicesTable createAlias(String alias) {
     return $ARInvoicesTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $convertertaxAmount =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterpaidAmount =
+      const DecimalConverter();
 }
 
 class ARInvoice extends DataClass implements Insertable<ARInvoice> {
@@ -40859,8 +41185,8 @@ class ARInvoice extends DataClass implements Insertable<ARInvoice> {
   final DateTime invoiceDate;
   final DateTime? dueDate;
   final double totalAmount;
-  final double taxAmount;
-  final double paidAmount;
+  final Decimal taxAmount;
+  final Decimal paidAmount;
   final String status;
   final String? notes;
   final String? accountId;
@@ -40901,8 +41227,14 @@ class ARInvoice extends DataClass implements Insertable<ARInvoice> {
       map['due_date'] = Variable<DateTime>(dueDate);
     }
     map['total_amount'] = Variable<double>(totalAmount);
-    map['tax_amount'] = Variable<double>(taxAmount);
-    map['paid_amount'] = Variable<double>(paidAmount);
+    {
+      map['tax_amount'] = Variable<String>(
+          $ARInvoicesTable.$convertertaxAmount.toSql(taxAmount));
+    }
+    {
+      map['paid_amount'] = Variable<String>(
+          $ARInvoicesTable.$converterpaidAmount.toSql(paidAmount));
+    }
     map['status'] = Variable<String>(status);
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
@@ -40958,8 +41290,8 @@ class ARInvoice extends DataClass implements Insertable<ARInvoice> {
       invoiceDate: serializer.fromJson<DateTime>(json['invoiceDate']),
       dueDate: serializer.fromJson<DateTime?>(json['dueDate']),
       totalAmount: serializer.fromJson<double>(json['totalAmount']),
-      taxAmount: serializer.fromJson<double>(json['taxAmount']),
-      paidAmount: serializer.fromJson<double>(json['paidAmount']),
+      taxAmount: serializer.fromJson<Decimal>(json['taxAmount']),
+      paidAmount: serializer.fromJson<Decimal>(json['paidAmount']),
       status: serializer.fromJson<String>(json['status']),
       notes: serializer.fromJson<String?>(json['notes']),
       accountId: serializer.fromJson<String?>(json['accountId']),
@@ -40980,8 +41312,8 @@ class ARInvoice extends DataClass implements Insertable<ARInvoice> {
       'invoiceDate': serializer.toJson<DateTime>(invoiceDate),
       'dueDate': serializer.toJson<DateTime?>(dueDate),
       'totalAmount': serializer.toJson<double>(totalAmount),
-      'taxAmount': serializer.toJson<double>(taxAmount),
-      'paidAmount': serializer.toJson<double>(paidAmount),
+      'taxAmount': serializer.toJson<Decimal>(taxAmount),
+      'paidAmount': serializer.toJson<Decimal>(paidAmount),
       'status': serializer.toJson<String>(status),
       'notes': serializer.toJson<String?>(notes),
       'accountId': serializer.toJson<String?>(accountId),
@@ -41000,8 +41332,8 @@ class ARInvoice extends DataClass implements Insertable<ARInvoice> {
           DateTime? invoiceDate,
           Value<DateTime?> dueDate = const Value.absent(),
           double? totalAmount,
-          double? taxAmount,
-          double? paidAmount,
+          Decimal? taxAmount,
+          Decimal? paidAmount,
           String? status,
           Value<String?> notes = const Value.absent(),
           Value<String?> accountId = const Value.absent()}) =>
@@ -41126,8 +41458,8 @@ class ARInvoicesCompanion extends UpdateCompanion<ARInvoice> {
   final Value<DateTime> invoiceDate;
   final Value<DateTime?> dueDate;
   final Value<double> totalAmount;
-  final Value<double> taxAmount;
-  final Value<double> paidAmount;
+  final Value<Decimal> taxAmount;
+  final Value<Decimal> paidAmount;
   final Value<String> status;
   final Value<String?> notes;
   final Value<String?> accountId;
@@ -41184,8 +41516,8 @@ class ARInvoicesCompanion extends UpdateCompanion<ARInvoice> {
     Expression<DateTime>? invoiceDate,
     Expression<DateTime>? dueDate,
     Expression<double>? totalAmount,
-    Expression<double>? taxAmount,
-    Expression<double>? paidAmount,
+    Expression<String>? taxAmount,
+    Expression<String>? paidAmount,
     Expression<String>? status,
     Expression<String>? notes,
     Expression<String>? accountId,
@@ -41224,8 +41556,8 @@ class ARInvoicesCompanion extends UpdateCompanion<ARInvoice> {
       Value<DateTime>? invoiceDate,
       Value<DateTime?>? dueDate,
       Value<double>? totalAmount,
-      Value<double>? taxAmount,
-      Value<double>? paidAmount,
+      Value<Decimal>? taxAmount,
+      Value<Decimal>? paidAmount,
       Value<String>? status,
       Value<String?>? notes,
       Value<String?>? accountId,
@@ -41288,10 +41620,12 @@ class ARInvoicesCompanion extends UpdateCompanion<ARInvoice> {
       map['total_amount'] = Variable<double>(totalAmount.value);
     }
     if (taxAmount.present) {
-      map['tax_amount'] = Variable<double>(taxAmount.value);
+      map['tax_amount'] = Variable<String>(
+          $ARInvoicesTable.$convertertaxAmount.toSql(taxAmount.value));
     }
     if (paidAmount.present) {
-      map['paid_amount'] = Variable<double>(paidAmount.value);
+      map['paid_amount'] = Variable<String>(
+          $ARInvoicesTable.$converterpaidAmount.toSql(paidAmount.value));
     }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
@@ -57580,7 +57914,7 @@ typedef $$GLAccountsTableCreateCompanionBuilder = GLAccountsCompanion Function({
   Value<String?> analyticType,
   Value<String?> parentId,
   Value<bool> isHeader,
-  Value<double> balance,
+  Value<Decimal> balance,
   Value<int> rowid,
 });
 typedef $$GLAccountsTableUpdateCompanionBuilder = GLAccountsCompanion Function({
@@ -57596,7 +57930,7 @@ typedef $$GLAccountsTableUpdateCompanionBuilder = GLAccountsCompanion Function({
   Value<String?> analyticType,
   Value<String?> parentId,
   Value<bool> isHeader,
-  Value<double> balance,
+  Value<Decimal> balance,
   Value<int> rowid,
 });
 
@@ -57896,8 +58230,10 @@ class $$GLAccountsTableFilterComposer
   ColumnFilters<bool> get isHeader => $composableBuilder(
       column: $table.isHeader, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get balance => $composableBuilder(
-      column: $table.balance, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get balance =>
+      $composableBuilder(
+          column: $table.balance,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -58274,7 +58610,7 @@ class $$GLAccountsTableOrderingComposer
   ColumnOrderings<bool> get isHeader => $composableBuilder(
       column: $table.isHeader, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get balance => $composableBuilder(
+  ColumnOrderings<String> get balance => $composableBuilder(
       column: $table.balance, builder: (column) => ColumnOrderings(column));
 
   $$BranchesTableOrderingComposer get branchId {
@@ -58357,7 +58693,7 @@ class $$GLAccountsTableAnnotationComposer
   GeneratedColumn<bool> get isHeader =>
       $composableBuilder(column: $table.isHeader, builder: (column) => column);
 
-  GeneratedColumn<double> get balance =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get balance =>
       $composableBuilder(column: $table.balance, builder: (column) => column);
 
   $$BranchesTableAnnotationComposer get branchId {
@@ -58751,7 +59087,7 @@ class $$GLAccountsTableTableManager extends RootTableManager<
             Value<String?> analyticType = const Value.absent(),
             Value<String?> parentId = const Value.absent(),
             Value<bool> isHeader = const Value.absent(),
-            Value<double> balance = const Value.absent(),
+            Value<Decimal> balance = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               GLAccountsCompanion(
@@ -58783,7 +59119,7 @@ class $$GLAccountsTableTableManager extends RootTableManager<
             Value<String?> analyticType = const Value.absent(),
             Value<String?> parentId = const Value.absent(),
             Value<bool> isHeader = const Value.absent(),
-            Value<double> balance = const Value.absent(),
+            Value<Decimal> balance = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               GLAccountsCompanion.insert(
@@ -59099,7 +59435,7 @@ typedef $$SuppliersTableCreateCompanionBuilder = SuppliersCompanion Function({
   Value<String?> email,
   Value<String> supplierType,
   Value<bool> isActive,
-  Value<double> balance,
+  Value<Decimal> balance,
   Value<String?> accountId,
   Value<int> rowid,
 });
@@ -59118,7 +59454,7 @@ typedef $$SuppliersTableUpdateCompanionBuilder = SuppliersCompanion Function({
   Value<String?> email,
   Value<String> supplierType,
   Value<bool> isActive,
-  Value<double> balance,
+  Value<Decimal> balance,
   Value<String?> accountId,
   Value<int> rowid,
 });
@@ -59297,8 +59633,10 @@ class $$SuppliersTableFilterComposer
   ColumnFilters<bool> get isActive => $composableBuilder(
       column: $table.isActive, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get balance => $composableBuilder(
-      column: $table.balance, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get balance =>
+      $composableBuilder(
+          column: $table.balance,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -59517,7 +59855,7 @@ class $$SuppliersTableOrderingComposer
   ColumnOrderings<bool> get isActive => $composableBuilder(
       column: $table.isActive, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get balance => $composableBuilder(
+  ColumnOrderings<String> get balance => $composableBuilder(
       column: $table.balance, builder: (column) => ColumnOrderings(column));
 
   $$BranchesTableOrderingComposer get branchId {
@@ -59609,7 +59947,7 @@ class $$SuppliersTableAnnotationComposer
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
 
-  GeneratedColumn<double> get balance =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get balance =>
       $composableBuilder(column: $table.balance, builder: (column) => column);
 
   $$BranchesTableAnnotationComposer get branchId {
@@ -59825,7 +60163,7 @@ class $$SuppliersTableTableManager extends RootTableManager<
             Value<String?> email = const Value.absent(),
             Value<String> supplierType = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
-            Value<double> balance = const Value.absent(),
+            Value<Decimal> balance = const Value.absent(),
             Value<String?> accountId = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -59863,7 +60201,7 @@ class $$SuppliersTableTableManager extends RootTableManager<
             Value<String?> email = const Value.absent(),
             Value<String> supplierType = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
-            Value<double> balance = const Value.absent(),
+            Value<Decimal> balance = const Value.absent(),
             Value<String?> accountId = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -60064,22 +60402,22 @@ typedef $$ProductsTableCreateCompanionBuilder = ProductsCompanion Function({
   Value<int> piecesPerCarton,
   Value<String?> kiloUnit,
   Value<String?> boxUnit,
-  Value<double> buyPrice,
-  Value<double> sellPrice,
-  Value<double> wholesalePrice,
-  Value<double> stock,
-  Value<double> maxStock,
+  Value<Decimal> buyPrice,
+  Value<Decimal> sellPrice,
+  Value<Decimal> wholesalePrice,
+  Value<Decimal> stock,
+  Value<Decimal> maxStock,
   Value<String?> supplierId,
   Value<String> valuationMethod,
   Value<bool> allowFreeQty,
   Value<bool> isService,
-  Value<double> alertLimit,
+  Value<Decimal> alertLimit,
   Value<DateTime?> expiryDate,
-  Value<double> taxRate,
+  Value<Decimal> taxRate,
   Value<bool> isActive,
   Value<String?> parentProductId,
   Value<String?> attributes,
-  Value<double?> additionalCost,
+  Value<Decimal?> additionalCost,
   Value<int> rowid,
 });
 typedef $$ProductsTableUpdateCompanionBuilder = ProductsCompanion Function({
@@ -60098,22 +60436,22 @@ typedef $$ProductsTableUpdateCompanionBuilder = ProductsCompanion Function({
   Value<int> piecesPerCarton,
   Value<String?> kiloUnit,
   Value<String?> boxUnit,
-  Value<double> buyPrice,
-  Value<double> sellPrice,
-  Value<double> wholesalePrice,
-  Value<double> stock,
-  Value<double> maxStock,
+  Value<Decimal> buyPrice,
+  Value<Decimal> sellPrice,
+  Value<Decimal> wholesalePrice,
+  Value<Decimal> stock,
+  Value<Decimal> maxStock,
   Value<String?> supplierId,
   Value<String> valuationMethod,
   Value<bool> allowFreeQty,
   Value<bool> isService,
-  Value<double> alertLimit,
+  Value<Decimal> alertLimit,
   Value<DateTime?> expiryDate,
-  Value<double> taxRate,
+  Value<Decimal> taxRate,
   Value<bool> isActive,
   Value<String?> parentProductId,
   Value<String?> attributes,
-  Value<double?> additionalCost,
+  Value<Decimal?> additionalCost,
   Value<int> rowid,
 });
 
@@ -60606,21 +60944,30 @@ class $$ProductsTableFilterComposer
   ColumnFilters<String> get boxUnit => $composableBuilder(
       column: $table.boxUnit, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get buyPrice => $composableBuilder(
-      column: $table.buyPrice, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get buyPrice =>
+      $composableBuilder(
+          column: $table.buyPrice,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get sellPrice => $composableBuilder(
-      column: $table.sellPrice, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get sellPrice =>
+      $composableBuilder(
+          column: $table.sellPrice,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get wholesalePrice => $composableBuilder(
-      column: $table.wholesalePrice,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get wholesalePrice =>
+      $composableBuilder(
+          column: $table.wholesalePrice,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get stock => $composableBuilder(
-      column: $table.stock, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get stock =>
+      $composableBuilder(
+          column: $table.stock,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get maxStock => $composableBuilder(
-      column: $table.maxStock, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get maxStock =>
+      $composableBuilder(
+          column: $table.maxStock,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get valuationMethod => $composableBuilder(
       column: $table.valuationMethod,
@@ -60632,14 +60979,18 @@ class $$ProductsTableFilterComposer
   ColumnFilters<bool> get isService => $composableBuilder(
       column: $table.isService, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get alertLimit => $composableBuilder(
-      column: $table.alertLimit, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get alertLimit =>
+      $composableBuilder(
+          column: $table.alertLimit,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<DateTime> get expiryDate => $composableBuilder(
       column: $table.expiryDate, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get taxRate => $composableBuilder(
-      column: $table.taxRate, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get taxRate =>
+      $composableBuilder(
+          column: $table.taxRate,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<bool> get isActive => $composableBuilder(
       column: $table.isActive, builder: (column) => ColumnFilters(column));
@@ -60647,9 +60998,10 @@ class $$ProductsTableFilterComposer
   ColumnFilters<String> get attributes => $composableBuilder(
       column: $table.attributes, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get additionalCost => $composableBuilder(
-      column: $table.additionalCost,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal?, Decimal, String>
+      get additionalCost => $composableBuilder(
+          column: $table.additionalCost,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -61269,20 +61621,20 @@ class $$ProductsTableOrderingComposer
   ColumnOrderings<String> get boxUnit => $composableBuilder(
       column: $table.boxUnit, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get buyPrice => $composableBuilder(
+  ColumnOrderings<String> get buyPrice => $composableBuilder(
       column: $table.buyPrice, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get sellPrice => $composableBuilder(
+  ColumnOrderings<String> get sellPrice => $composableBuilder(
       column: $table.sellPrice, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get wholesalePrice => $composableBuilder(
+  ColumnOrderings<String> get wholesalePrice => $composableBuilder(
       column: $table.wholesalePrice,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get stock => $composableBuilder(
+  ColumnOrderings<String> get stock => $composableBuilder(
       column: $table.stock, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get maxStock => $composableBuilder(
+  ColumnOrderings<String> get maxStock => $composableBuilder(
       column: $table.maxStock, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get valuationMethod => $composableBuilder(
@@ -61296,13 +61648,13 @@ class $$ProductsTableOrderingComposer
   ColumnOrderings<bool> get isService => $composableBuilder(
       column: $table.isService, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get alertLimit => $composableBuilder(
+  ColumnOrderings<String> get alertLimit => $composableBuilder(
       column: $table.alertLimit, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<DateTime> get expiryDate => $composableBuilder(
       column: $table.expiryDate, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get taxRate => $composableBuilder(
+  ColumnOrderings<String> get taxRate => $composableBuilder(
       column: $table.taxRate, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<bool> get isActive => $composableBuilder(
@@ -61311,7 +61663,7 @@ class $$ProductsTableOrderingComposer
   ColumnOrderings<String> get attributes => $composableBuilder(
       column: $table.attributes, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get additionalCost => $composableBuilder(
+  ColumnOrderings<String> get additionalCost => $composableBuilder(
       column: $table.additionalCost,
       builder: (column) => ColumnOrderings(column));
 
@@ -61444,19 +61796,20 @@ class $$ProductsTableAnnotationComposer
   GeneratedColumn<String> get boxUnit =>
       $composableBuilder(column: $table.boxUnit, builder: (column) => column);
 
-  GeneratedColumn<double> get buyPrice =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get buyPrice =>
       $composableBuilder(column: $table.buyPrice, builder: (column) => column);
 
-  GeneratedColumn<double> get sellPrice =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get sellPrice =>
       $composableBuilder(column: $table.sellPrice, builder: (column) => column);
 
-  GeneratedColumn<double> get wholesalePrice => $composableBuilder(
-      column: $table.wholesalePrice, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get wholesalePrice =>
+      $composableBuilder(
+          column: $table.wholesalePrice, builder: (column) => column);
 
-  GeneratedColumn<double> get stock =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get stock =>
       $composableBuilder(column: $table.stock, builder: (column) => column);
 
-  GeneratedColumn<double> get maxStock =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get maxStock =>
       $composableBuilder(column: $table.maxStock, builder: (column) => column);
 
   GeneratedColumn<String> get valuationMethod => $composableBuilder(
@@ -61468,13 +61821,14 @@ class $$ProductsTableAnnotationComposer
   GeneratedColumn<bool> get isService =>
       $composableBuilder(column: $table.isService, builder: (column) => column);
 
-  GeneratedColumn<double> get alertLimit => $composableBuilder(
-      column: $table.alertLimit, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get alertLimit =>
+      $composableBuilder(
+          column: $table.alertLimit, builder: (column) => column);
 
   GeneratedColumn<DateTime> get expiryDate => $composableBuilder(
       column: $table.expiryDate, builder: (column) => column);
 
-  GeneratedColumn<double> get taxRate =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get taxRate =>
       $composableBuilder(column: $table.taxRate, builder: (column) => column);
 
   GeneratedColumn<bool> get isActive =>
@@ -61483,8 +61837,9 @@ class $$ProductsTableAnnotationComposer
   GeneratedColumn<String> get attributes => $composableBuilder(
       column: $table.attributes, builder: (column) => column);
 
-  GeneratedColumn<double> get additionalCost => $composableBuilder(
-      column: $table.additionalCost, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal?, String> get additionalCost =>
+      $composableBuilder(
+          column: $table.additionalCost, builder: (column) => column);
 
   $$BranchesTableAnnotationComposer get branchId {
     final $$BranchesTableAnnotationComposer composer = $composerBuilder(
@@ -62128,22 +62483,22 @@ class $$ProductsTableTableManager extends RootTableManager<
             Value<int> piecesPerCarton = const Value.absent(),
             Value<String?> kiloUnit = const Value.absent(),
             Value<String?> boxUnit = const Value.absent(),
-            Value<double> buyPrice = const Value.absent(),
-            Value<double> sellPrice = const Value.absent(),
-            Value<double> wholesalePrice = const Value.absent(),
-            Value<double> stock = const Value.absent(),
-            Value<double> maxStock = const Value.absent(),
+            Value<Decimal> buyPrice = const Value.absent(),
+            Value<Decimal> sellPrice = const Value.absent(),
+            Value<Decimal> wholesalePrice = const Value.absent(),
+            Value<Decimal> stock = const Value.absent(),
+            Value<Decimal> maxStock = const Value.absent(),
             Value<String?> supplierId = const Value.absent(),
             Value<String> valuationMethod = const Value.absent(),
             Value<bool> allowFreeQty = const Value.absent(),
             Value<bool> isService = const Value.absent(),
-            Value<double> alertLimit = const Value.absent(),
+            Value<Decimal> alertLimit = const Value.absent(),
             Value<DateTime?> expiryDate = const Value.absent(),
-            Value<double> taxRate = const Value.absent(),
+            Value<Decimal> taxRate = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
             Value<String?> parentProductId = const Value.absent(),
             Value<String?> attributes = const Value.absent(),
-            Value<double?> additionalCost = const Value.absent(),
+            Value<Decimal?> additionalCost = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ProductsCompanion(
@@ -62196,22 +62551,22 @@ class $$ProductsTableTableManager extends RootTableManager<
             Value<int> piecesPerCarton = const Value.absent(),
             Value<String?> kiloUnit = const Value.absent(),
             Value<String?> boxUnit = const Value.absent(),
-            Value<double> buyPrice = const Value.absent(),
-            Value<double> sellPrice = const Value.absent(),
-            Value<double> wholesalePrice = const Value.absent(),
-            Value<double> stock = const Value.absent(),
-            Value<double> maxStock = const Value.absent(),
+            Value<Decimal> buyPrice = const Value.absent(),
+            Value<Decimal> sellPrice = const Value.absent(),
+            Value<Decimal> wholesalePrice = const Value.absent(),
+            Value<Decimal> stock = const Value.absent(),
+            Value<Decimal> maxStock = const Value.absent(),
             Value<String?> supplierId = const Value.absent(),
             Value<String> valuationMethod = const Value.absent(),
             Value<bool> allowFreeQty = const Value.absent(),
             Value<bool> isService = const Value.absent(),
-            Value<double> alertLimit = const Value.absent(),
+            Value<Decimal> alertLimit = const Value.absent(),
             Value<DateTime?> expiryDate = const Value.absent(),
-            Value<double> taxRate = const Value.absent(),
+            Value<Decimal> taxRate = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
             Value<String?> parentProductId = const Value.absent(),
             Value<String?> attributes = const Value.absent(),
-            Value<double?> additionalCost = const Value.absent(),
+            Value<Decimal?> additionalCost = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ProductsCompanion.insert(
@@ -62698,7 +63053,7 @@ typedef $$CurrenciesTableCreateCompanionBuilder = CurrenciesCompanion Function({
   required String name,
   Value<String?> fractionalUnit,
   Value<int> decimalPlaces,
-  Value<double> exchangeRate,
+  Value<Decimal> exchangeRate,
   Value<bool> isBase,
   Value<int> rowid,
 });
@@ -62713,7 +63068,7 @@ typedef $$CurrenciesTableUpdateCompanionBuilder = CurrenciesCompanion Function({
   Value<String> name,
   Value<String?> fractionalUnit,
   Value<int> decimalPlaces,
-  Value<double> exchangeRate,
+  Value<Decimal> exchangeRate,
   Value<bool> isBase,
   Value<int> rowid,
 });
@@ -62819,8 +63174,10 @@ class $$CurrenciesTableFilterComposer
   ColumnFilters<int> get decimalPlaces => $composableBuilder(
       column: $table.decimalPlaces, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get exchangeRate => $composableBuilder(
-      column: $table.exchangeRate, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get exchangeRate =>
+      $composableBuilder(
+          column: $table.exchangeRate,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<bool> get isBase => $composableBuilder(
       column: $table.isBase, builder: (column) => ColumnFilters(column));
@@ -62947,7 +63304,7 @@ class $$CurrenciesTableOrderingComposer
       column: $table.decimalPlaces,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get exchangeRate => $composableBuilder(
+  ColumnOrderings<String> get exchangeRate => $composableBuilder(
       column: $table.exchangeRate,
       builder: (column) => ColumnOrderings(column));
 
@@ -63011,8 +63368,9 @@ class $$CurrenciesTableAnnotationComposer
   GeneratedColumn<int> get decimalPlaces => $composableBuilder(
       column: $table.decimalPlaces, builder: (column) => column);
 
-  GeneratedColumn<double> get exchangeRate => $composableBuilder(
-      column: $table.exchangeRate, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get exchangeRate =>
+      $composableBuilder(
+          column: $table.exchangeRate, builder: (column) => column);
 
   GeneratedColumn<bool> get isBase =>
       $composableBuilder(column: $table.isBase, builder: (column) => column);
@@ -63138,7 +63496,7 @@ class $$CurrenciesTableTableManager extends RootTableManager<
             Value<String> name = const Value.absent(),
             Value<String?> fractionalUnit = const Value.absent(),
             Value<int> decimalPlaces = const Value.absent(),
-            Value<double> exchangeRate = const Value.absent(),
+            Value<Decimal> exchangeRate = const Value.absent(),
             Value<bool> isBase = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -63168,7 +63526,7 @@ class $$CurrenciesTableTableManager extends RootTableManager<
             required String name,
             Value<String?> fractionalUnit = const Value.absent(),
             Value<int> decimalPlaces = const Value.absent(),
-            Value<double> exchangeRate = const Value.absent(),
+            Value<Decimal> exchangeRate = const Value.absent(),
             Value<bool> isBase = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -63307,14 +63665,14 @@ typedef $$CustomersTableCreateCompanionBuilder = CustomersCompanion Function({
   Value<String?> email,
   Value<String> customerType,
   Value<bool> isActive,
-  Value<double> creditLimit,
-  Value<double> balance,
+  Value<Decimal> creditLimit,
+  Value<Decimal> balance,
   Value<String?> accountId,
   Value<String?> currencyId,
-  Value<double> exchangeRate,
+  Value<Decimal> exchangeRate,
   Value<bool> isQuickCustomer,
   Value<bool> createdFromPOS,
-  Value<double> discountRate,
+  Value<Decimal> discountRate,
   Value<int> rowid,
 });
 typedef $$CustomersTableUpdateCompanionBuilder = CustomersCompanion Function({
@@ -63332,14 +63690,14 @@ typedef $$CustomersTableUpdateCompanionBuilder = CustomersCompanion Function({
   Value<String?> email,
   Value<String> customerType,
   Value<bool> isActive,
-  Value<double> creditLimit,
-  Value<double> balance,
+  Value<Decimal> creditLimit,
+  Value<Decimal> balance,
   Value<String?> accountId,
   Value<String?> currencyId,
-  Value<double> exchangeRate,
+  Value<Decimal> exchangeRate,
   Value<bool> isQuickCustomer,
   Value<bool> createdFromPOS,
-  Value<double> discountRate,
+  Value<Decimal> discountRate,
   Value<int> rowid,
 });
 
@@ -63500,14 +63858,20 @@ class $$CustomersTableFilterComposer
   ColumnFilters<bool> get isActive => $composableBuilder(
       column: $table.isActive, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get creditLimit => $composableBuilder(
-      column: $table.creditLimit, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get creditLimit =>
+      $composableBuilder(
+          column: $table.creditLimit,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get balance => $composableBuilder(
-      column: $table.balance, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get balance =>
+      $composableBuilder(
+          column: $table.balance,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get exchangeRate => $composableBuilder(
-      column: $table.exchangeRate, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get exchangeRate =>
+      $composableBuilder(
+          column: $table.exchangeRate,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<bool> get isQuickCustomer => $composableBuilder(
       column: $table.isQuickCustomer,
@@ -63517,8 +63881,10 @@ class $$CustomersTableFilterComposer
       column: $table.createdFromPOS,
       builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get discountRate => $composableBuilder(
-      column: $table.discountRate, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get discountRate =>
+      $composableBuilder(
+          column: $table.discountRate,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -63715,13 +64081,13 @@ class $$CustomersTableOrderingComposer
   ColumnOrderings<bool> get isActive => $composableBuilder(
       column: $table.isActive, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get creditLimit => $composableBuilder(
+  ColumnOrderings<String> get creditLimit => $composableBuilder(
       column: $table.creditLimit, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get balance => $composableBuilder(
+  ColumnOrderings<String> get balance => $composableBuilder(
       column: $table.balance, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get exchangeRate => $composableBuilder(
+  ColumnOrderings<String> get exchangeRate => $composableBuilder(
       column: $table.exchangeRate,
       builder: (column) => ColumnOrderings(column));
 
@@ -63733,7 +64099,7 @@ class $$CustomersTableOrderingComposer
       column: $table.createdFromPOS,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get discountRate => $composableBuilder(
+  ColumnOrderings<String> get discountRate => $composableBuilder(
       column: $table.discountRate,
       builder: (column) => ColumnOrderings(column));
 
@@ -63846,14 +64212,16 @@ class $$CustomersTableAnnotationComposer
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
 
-  GeneratedColumn<double> get creditLimit => $composableBuilder(
-      column: $table.creditLimit, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get creditLimit =>
+      $composableBuilder(
+          column: $table.creditLimit, builder: (column) => column);
 
-  GeneratedColumn<double> get balance =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get balance =>
       $composableBuilder(column: $table.balance, builder: (column) => column);
 
-  GeneratedColumn<double> get exchangeRate => $composableBuilder(
-      column: $table.exchangeRate, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get exchangeRate =>
+      $composableBuilder(
+          column: $table.exchangeRate, builder: (column) => column);
 
   GeneratedColumn<bool> get isQuickCustomer => $composableBuilder(
       column: $table.isQuickCustomer, builder: (column) => column);
@@ -63861,8 +64229,9 @@ class $$CustomersTableAnnotationComposer
   GeneratedColumn<bool> get createdFromPOS => $composableBuilder(
       column: $table.createdFromPOS, builder: (column) => column);
 
-  GeneratedColumn<double> get discountRate => $composableBuilder(
-      column: $table.discountRate, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get discountRate =>
+      $composableBuilder(
+          column: $table.discountRate, builder: (column) => column);
 
   $$BranchesTableAnnotationComposer get branchId {
     final $$BranchesTableAnnotationComposer composer = $composerBuilder(
@@ -64053,14 +64422,14 @@ class $$CustomersTableTableManager extends RootTableManager<
             Value<String?> email = const Value.absent(),
             Value<String> customerType = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
-            Value<double> creditLimit = const Value.absent(),
-            Value<double> balance = const Value.absent(),
+            Value<Decimal> creditLimit = const Value.absent(),
+            Value<Decimal> balance = const Value.absent(),
             Value<String?> accountId = const Value.absent(),
             Value<String?> currencyId = const Value.absent(),
-            Value<double> exchangeRate = const Value.absent(),
+            Value<Decimal> exchangeRate = const Value.absent(),
             Value<bool> isQuickCustomer = const Value.absent(),
             Value<bool> createdFromPOS = const Value.absent(),
-            Value<double> discountRate = const Value.absent(),
+            Value<Decimal> discountRate = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               CustomersCompanion(
@@ -64103,14 +64472,14 @@ class $$CustomersTableTableManager extends RootTableManager<
             Value<String?> email = const Value.absent(),
             Value<String> customerType = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
-            Value<double> creditLimit = const Value.absent(),
-            Value<double> balance = const Value.absent(),
+            Value<Decimal> creditLimit = const Value.absent(),
+            Value<Decimal> balance = const Value.absent(),
             Value<String?> accountId = const Value.absent(),
             Value<String?> currencyId = const Value.absent(),
-            Value<double> exchangeRate = const Value.absent(),
+            Value<Decimal> exchangeRate = const Value.absent(),
             Value<bool> isQuickCustomer = const Value.absent(),
             Value<bool> createdFromPOS = const Value.absent(),
-            Value<double> discountRate = const Value.absent(),
+            Value<Decimal> discountRate = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               CustomersCompanion.insert(
@@ -65904,17 +66273,17 @@ typedef $$SalesTableCreateCompanionBuilder = SalesCompanion Function({
   Value<int> syncStatus,
   Value<String?> branchId,
   Value<String?> customerId,
-  required double total,
-  Value<double> discount,
-  Value<double> tax,
+  required Decimal total,
+  Value<Decimal> discount,
+  Value<Decimal> tax,
   required PaymentMethod paymentMethod,
   Value<bool> isCredit,
   Value<DocumentStatus> status,
   Value<String> saleType,
   Value<String?> currencyId,
-  Value<double> exchangeRate,
-  Value<double> shippingCost,
-  Value<double> otherExpenses,
+  Value<Decimal> exchangeRate,
+  Value<Decimal> shippingCost,
+  Value<Decimal> otherExpenses,
   Value<String?> warehouseId,
   Value<String?> representativeId,
   Value<String?> qrCode,
@@ -65930,17 +66299,17 @@ typedef $$SalesTableUpdateCompanionBuilder = SalesCompanion Function({
   Value<int> syncStatus,
   Value<String?> branchId,
   Value<String?> customerId,
-  Value<double> total,
-  Value<double> discount,
-  Value<double> tax,
+  Value<Decimal> total,
+  Value<Decimal> discount,
+  Value<Decimal> tax,
   Value<PaymentMethod> paymentMethod,
   Value<bool> isCredit,
   Value<DocumentStatus> status,
   Value<String> saleType,
   Value<String?> currencyId,
-  Value<double> exchangeRate,
-  Value<double> shippingCost,
-  Value<double> otherExpenses,
+  Value<Decimal> exchangeRate,
+  Value<Decimal> shippingCost,
+  Value<Decimal> otherExpenses,
   Value<String?> warehouseId,
   Value<String?> representativeId,
   Value<String?> qrCode,
@@ -66064,14 +66433,20 @@ class $$SalesTableFilterComposer extends Composer<_$AppDatabase, $SalesTable> {
   ColumnFilters<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get total => $composableBuilder(
-      column: $table.total, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get total =>
+      $composableBuilder(
+          column: $table.total,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get discount => $composableBuilder(
-      column: $table.discount, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get discount =>
+      $composableBuilder(
+          column: $table.discount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get tax => $composableBuilder(
-      column: $table.tax, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get tax =>
+      $composableBuilder(
+          column: $table.tax,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnWithTypeConverterFilters<PaymentMethod, PaymentMethod, int>
       get paymentMethod => $composableBuilder(
@@ -66092,14 +66467,20 @@ class $$SalesTableFilterComposer extends Composer<_$AppDatabase, $SalesTable> {
   ColumnFilters<String> get currencyId => $composableBuilder(
       column: $table.currencyId, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get exchangeRate => $composableBuilder(
-      column: $table.exchangeRate, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get exchangeRate =>
+      $composableBuilder(
+          column: $table.exchangeRate,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get shippingCost => $composableBuilder(
-      column: $table.shippingCost, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get shippingCost =>
+      $composableBuilder(
+          column: $table.shippingCost,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get otherExpenses => $composableBuilder(
-      column: $table.otherExpenses, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get otherExpenses =>
+      $composableBuilder(
+          column: $table.otherExpenses,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get representativeId => $composableBuilder(
       column: $table.representativeId,
@@ -66263,13 +66644,13 @@ class $$SalesTableOrderingComposer
   ColumnOrderings<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get total => $composableBuilder(
+  ColumnOrderings<String> get total => $composableBuilder(
       column: $table.total, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get discount => $composableBuilder(
+  ColumnOrderings<String> get discount => $composableBuilder(
       column: $table.discount, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get tax => $composableBuilder(
+  ColumnOrderings<String> get tax => $composableBuilder(
       column: $table.tax, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<int> get paymentMethod => $composableBuilder(
@@ -66288,15 +66669,15 @@ class $$SalesTableOrderingComposer
   ColumnOrderings<String> get currencyId => $composableBuilder(
       column: $table.currencyId, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get exchangeRate => $composableBuilder(
+  ColumnOrderings<String> get exchangeRate => $composableBuilder(
       column: $table.exchangeRate,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get shippingCost => $composableBuilder(
+  ColumnOrderings<String> get shippingCost => $composableBuilder(
       column: $table.shippingCost,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get otherExpenses => $composableBuilder(
+  ColumnOrderings<String> get otherExpenses => $composableBuilder(
       column: $table.otherExpenses,
       builder: (column) => ColumnOrderings(column));
 
@@ -66398,13 +66779,13 @@ class $$SalesTableAnnotationComposer
   GeneratedColumn<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => column);
 
-  GeneratedColumn<double> get total =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get total =>
       $composableBuilder(column: $table.total, builder: (column) => column);
 
-  GeneratedColumn<double> get discount =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get discount =>
       $composableBuilder(column: $table.discount, builder: (column) => column);
 
-  GeneratedColumn<double> get tax =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get tax =>
       $composableBuilder(column: $table.tax, builder: (column) => column);
 
   GeneratedColumnWithTypeConverter<PaymentMethod, int> get paymentMethod =>
@@ -66423,14 +66804,17 @@ class $$SalesTableAnnotationComposer
   GeneratedColumn<String> get currencyId => $composableBuilder(
       column: $table.currencyId, builder: (column) => column);
 
-  GeneratedColumn<double> get exchangeRate => $composableBuilder(
-      column: $table.exchangeRate, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get exchangeRate =>
+      $composableBuilder(
+          column: $table.exchangeRate, builder: (column) => column);
 
-  GeneratedColumn<double> get shippingCost => $composableBuilder(
-      column: $table.shippingCost, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get shippingCost =>
+      $composableBuilder(
+          column: $table.shippingCost, builder: (column) => column);
 
-  GeneratedColumn<double> get otherExpenses => $composableBuilder(
-      column: $table.otherExpenses, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get otherExpenses =>
+      $composableBuilder(
+          column: $table.otherExpenses, builder: (column) => column);
 
   GeneratedColumn<String> get representativeId => $composableBuilder(
       column: $table.representativeId, builder: (column) => column);
@@ -66606,17 +66990,17 @@ class $$SalesTableTableManager extends RootTableManager<
             Value<int> syncStatus = const Value.absent(),
             Value<String?> branchId = const Value.absent(),
             Value<String?> customerId = const Value.absent(),
-            Value<double> total = const Value.absent(),
-            Value<double> discount = const Value.absent(),
-            Value<double> tax = const Value.absent(),
+            Value<Decimal> total = const Value.absent(),
+            Value<Decimal> discount = const Value.absent(),
+            Value<Decimal> tax = const Value.absent(),
             Value<PaymentMethod> paymentMethod = const Value.absent(),
             Value<bool> isCredit = const Value.absent(),
             Value<DocumentStatus> status = const Value.absent(),
             Value<String> saleType = const Value.absent(),
             Value<String?> currencyId = const Value.absent(),
-            Value<double> exchangeRate = const Value.absent(),
-            Value<double> shippingCost = const Value.absent(),
-            Value<double> otherExpenses = const Value.absent(),
+            Value<Decimal> exchangeRate = const Value.absent(),
+            Value<Decimal> shippingCost = const Value.absent(),
+            Value<Decimal> otherExpenses = const Value.absent(),
             Value<String?> warehouseId = const Value.absent(),
             Value<String?> representativeId = const Value.absent(),
             Value<String?> qrCode = const Value.absent(),
@@ -66658,17 +67042,17 @@ class $$SalesTableTableManager extends RootTableManager<
             Value<int> syncStatus = const Value.absent(),
             Value<String?> branchId = const Value.absent(),
             Value<String?> customerId = const Value.absent(),
-            required double total,
-            Value<double> discount = const Value.absent(),
-            Value<double> tax = const Value.absent(),
+            required Decimal total,
+            Value<Decimal> discount = const Value.absent(),
+            Value<Decimal> tax = const Value.absent(),
             required PaymentMethod paymentMethod,
             Value<bool> isCredit = const Value.absent(),
             Value<DocumentStatus> status = const Value.absent(),
             Value<String> saleType = const Value.absent(),
             Value<String?> currencyId = const Value.absent(),
-            Value<double> exchangeRate = const Value.absent(),
-            Value<double> shippingCost = const Value.absent(),
-            Value<double> otherExpenses = const Value.absent(),
+            Value<Decimal> exchangeRate = const Value.absent(),
+            Value<Decimal> shippingCost = const Value.absent(),
+            Value<Decimal> otherExpenses = const Value.absent(),
             Value<String?> warehouseId = const Value.absent(),
             Value<String?> representativeId = const Value.absent(),
             Value<String?> qrCode = const Value.absent(),
@@ -67243,9 +67627,9 @@ typedef $$ProductBatchesTableCreateCompanionBuilder = ProductBatchesCompanion
   required String warehouseId,
   required String batchNumber,
   Value<DateTime?> expiryDate,
-  Value<double> quantity,
-  Value<double> initialQuantity,
-  Value<double> costPrice,
+  Value<Decimal> quantity,
+  Value<Decimal> initialQuantity,
+  Value<Decimal> costPrice,
   Value<int> rowid,
 });
 typedef $$ProductBatchesTableUpdateCompanionBuilder = ProductBatchesCompanion
@@ -67260,9 +67644,9 @@ typedef $$ProductBatchesTableUpdateCompanionBuilder = ProductBatchesCompanion
   Value<String> warehouseId,
   Value<String> batchNumber,
   Value<DateTime?> expiryDate,
-  Value<double> quantity,
-  Value<double> initialQuantity,
-  Value<double> costPrice,
+  Value<Decimal> quantity,
+  Value<Decimal> initialQuantity,
+  Value<Decimal> costPrice,
   Value<int> rowid,
 });
 
@@ -67459,15 +67843,20 @@ class $$ProductBatchesTableFilterComposer
   ColumnFilters<DateTime> get expiryDate => $composableBuilder(
       column: $table.expiryDate, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get quantity => $composableBuilder(
-      column: $table.quantity, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get quantity =>
+      $composableBuilder(
+          column: $table.quantity,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get initialQuantity => $composableBuilder(
-      column: $table.initialQuantity,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String>
+      get initialQuantity => $composableBuilder(
+          column: $table.initialQuantity,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get costPrice => $composableBuilder(
-      column: $table.costPrice, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get costPrice =>
+      $composableBuilder(
+          column: $table.costPrice,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -67709,14 +68098,14 @@ class $$ProductBatchesTableOrderingComposer
   ColumnOrderings<DateTime> get expiryDate => $composableBuilder(
       column: $table.expiryDate, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get quantity => $composableBuilder(
+  ColumnOrderings<String> get quantity => $composableBuilder(
       column: $table.quantity, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get initialQuantity => $composableBuilder(
+  ColumnOrderings<String> get initialQuantity => $composableBuilder(
       column: $table.initialQuantity,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get costPrice => $composableBuilder(
+  ColumnOrderings<String> get costPrice => $composableBuilder(
       column: $table.costPrice, builder: (column) => ColumnOrderings(column));
 
   $$BranchesTableOrderingComposer get branchId {
@@ -67810,13 +68199,14 @@ class $$ProductBatchesTableAnnotationComposer
   GeneratedColumn<DateTime> get expiryDate => $composableBuilder(
       column: $table.expiryDate, builder: (column) => column);
 
-  GeneratedColumn<double> get quantity =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get quantity =>
       $composableBuilder(column: $table.quantity, builder: (column) => column);
 
-  GeneratedColumn<double> get initialQuantity => $composableBuilder(
-      column: $table.initialQuantity, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get initialQuantity =>
+      $composableBuilder(
+          column: $table.initialQuantity, builder: (column) => column);
 
-  GeneratedColumn<double> get costPrice =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get costPrice =>
       $composableBuilder(column: $table.costPrice, builder: (column) => column);
 
   $$BranchesTableAnnotationComposer get branchId {
@@ -68075,9 +68465,9 @@ class $$ProductBatchesTableTableManager extends RootTableManager<
             Value<String> warehouseId = const Value.absent(),
             Value<String> batchNumber = const Value.absent(),
             Value<DateTime?> expiryDate = const Value.absent(),
-            Value<double> quantity = const Value.absent(),
-            Value<double> initialQuantity = const Value.absent(),
-            Value<double> costPrice = const Value.absent(),
+            Value<Decimal> quantity = const Value.absent(),
+            Value<Decimal> initialQuantity = const Value.absent(),
+            Value<Decimal> costPrice = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ProductBatchesCompanion(
@@ -68107,9 +68497,9 @@ class $$ProductBatchesTableTableManager extends RootTableManager<
             required String warehouseId,
             required String batchNumber,
             Value<DateTime?> expiryDate = const Value.absent(),
-            Value<double> quantity = const Value.absent(),
-            Value<double> initialQuantity = const Value.absent(),
-            Value<double> costPrice = const Value.absent(),
+            Value<Decimal> quantity = const Value.absent(),
+            Value<Decimal> initialQuantity = const Value.absent(),
+            Value<Decimal> costPrice = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ProductBatchesCompanion.insert(
@@ -68993,11 +69383,11 @@ typedef $$SaleItemsTableCreateCompanionBuilder = SaleItemsCompanion Function({
   Value<String?> branchId,
   required String saleId,
   required String productId,
-  required double quantity,
-  required double price,
+  required Decimal quantity,
+  required Decimal price,
   Value<String?> unitId,
   Value<String> unitName,
-  Value<double> unitFactor,
+  Value<Decimal> unitFactor,
   Value<String?> warehouseId,
   Value<String?> batchId,
   Value<String?> costCenterId,
@@ -69012,11 +69402,11 @@ typedef $$SaleItemsTableUpdateCompanionBuilder = SaleItemsCompanion Function({
   Value<String?> branchId,
   Value<String> saleId,
   Value<String> productId,
-  Value<double> quantity,
-  Value<double> price,
+  Value<Decimal> quantity,
+  Value<Decimal> price,
   Value<String?> unitId,
   Value<String> unitName,
-  Value<double> unitFactor,
+  Value<Decimal> unitFactor,
   Value<String?> warehouseId,
   Value<String?> batchId,
   Value<String?> costCenterId,
@@ -69148,17 +69538,23 @@ class $$SaleItemsTableFilterComposer
   ColumnFilters<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get quantity => $composableBuilder(
-      column: $table.quantity, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get quantity =>
+      $composableBuilder(
+          column: $table.quantity,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get price => $composableBuilder(
-      column: $table.price, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get price =>
+      $composableBuilder(
+          column: $table.price,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get unitName => $composableBuilder(
       column: $table.unitName, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get unitFactor => $composableBuilder(
-      column: $table.unitFactor, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get unitFactor =>
+      $composableBuilder(
+          column: $table.unitFactor,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -69325,16 +69721,16 @@ class $$SaleItemsTableOrderingComposer
   ColumnOrderings<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get quantity => $composableBuilder(
+  ColumnOrderings<String> get quantity => $composableBuilder(
       column: $table.quantity, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get price => $composableBuilder(
+  ColumnOrderings<String> get price => $composableBuilder(
       column: $table.price, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get unitName => $composableBuilder(
       column: $table.unitName, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get unitFactor => $composableBuilder(
+  ColumnOrderings<String> get unitFactor => $composableBuilder(
       column: $table.unitFactor, builder: (column) => ColumnOrderings(column));
 
   $$BranchesTableOrderingComposer get branchId {
@@ -69502,17 +69898,18 @@ class $$SaleItemsTableAnnotationComposer
   GeneratedColumn<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => column);
 
-  GeneratedColumn<double> get quantity =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get quantity =>
       $composableBuilder(column: $table.quantity, builder: (column) => column);
 
-  GeneratedColumn<double> get price =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get price =>
       $composableBuilder(column: $table.price, builder: (column) => column);
 
   GeneratedColumn<String> get unitName =>
       $composableBuilder(column: $table.unitName, builder: (column) => column);
 
-  GeneratedColumn<double> get unitFactor => $composableBuilder(
-      column: $table.unitFactor, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get unitFactor =>
+      $composableBuilder(
+          column: $table.unitFactor, builder: (column) => column);
 
   $$BranchesTableAnnotationComposer get branchId {
     final $$BranchesTableAnnotationComposer composer = $composerBuilder(
@@ -69693,11 +70090,11 @@ class $$SaleItemsTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             Value<String> saleId = const Value.absent(),
             Value<String> productId = const Value.absent(),
-            Value<double> quantity = const Value.absent(),
-            Value<double> price = const Value.absent(),
+            Value<Decimal> quantity = const Value.absent(),
+            Value<Decimal> price = const Value.absent(),
             Value<String?> unitId = const Value.absent(),
             Value<String> unitName = const Value.absent(),
-            Value<double> unitFactor = const Value.absent(),
+            Value<Decimal> unitFactor = const Value.absent(),
             Value<String?> warehouseId = const Value.absent(),
             Value<String?> batchId = const Value.absent(),
             Value<String?> costCenterId = const Value.absent(),
@@ -69731,11 +70128,11 @@ class $$SaleItemsTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             required String saleId,
             required String productId,
-            required double quantity,
-            required double price,
+            required Decimal quantity,
+            required Decimal price,
             Value<String?> unitId = const Value.absent(),
             Value<String> unitName = const Value.absent(),
-            Value<double> unitFactor = const Value.absent(),
+            Value<Decimal> unitFactor = const Value.absent(),
             Value<String?> warehouseId = const Value.absent(),
             Value<String?> batchId = const Value.absent(),
             Value<String?> costCenterId = const Value.absent(),
@@ -69898,12 +70295,12 @@ typedef $$PurchasesTableCreateCompanionBuilder = PurchasesCompanion Function({
   Value<int> syncStatus,
   Value<String?> branchId,
   Value<String?> supplierId,
-  required double total,
-  Value<double> tax,
-  Value<double> discount,
-  Value<double> landedCosts,
-  Value<double> shippingCost,
-  Value<double> otherExpenses,
+  required Decimal total,
+  Value<Decimal> tax,
+  Value<Decimal> discount,
+  Value<Decimal> landedCosts,
+  Value<Decimal> shippingCost,
+  Value<Decimal> otherExpenses,
   Value<String?> invoiceNumber,
   Value<String> purchaseType,
   Value<DateTime> date,
@@ -69912,7 +70309,7 @@ typedef $$PurchasesTableCreateCompanionBuilder = PurchasesCompanion Function({
   Value<DocumentStatus> status,
   Value<String?> warehouseId,
   Value<String?> currencyId,
-  Value<double> exchangeRate,
+  Value<Decimal> exchangeRate,
   Value<String?> notes,
   Value<String?> referenceDocument,
   Value<String?> attachmentPath,
@@ -69926,12 +70323,12 @@ typedef $$PurchasesTableUpdateCompanionBuilder = PurchasesCompanion Function({
   Value<int> syncStatus,
   Value<String?> branchId,
   Value<String?> supplierId,
-  Value<double> total,
-  Value<double> tax,
-  Value<double> discount,
-  Value<double> landedCosts,
-  Value<double> shippingCost,
-  Value<double> otherExpenses,
+  Value<Decimal> total,
+  Value<Decimal> tax,
+  Value<Decimal> discount,
+  Value<Decimal> landedCosts,
+  Value<Decimal> shippingCost,
+  Value<Decimal> otherExpenses,
   Value<String?> invoiceNumber,
   Value<String> purchaseType,
   Value<DateTime> date,
@@ -69940,7 +70337,7 @@ typedef $$PurchasesTableUpdateCompanionBuilder = PurchasesCompanion Function({
   Value<DocumentStatus> status,
   Value<String?> warehouseId,
   Value<String?> currencyId,
-  Value<double> exchangeRate,
+  Value<Decimal> exchangeRate,
   Value<String?> notes,
   Value<String?> referenceDocument,
   Value<String?> attachmentPath,
@@ -70085,23 +70482,35 @@ class $$PurchasesTableFilterComposer
   ColumnFilters<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get total => $composableBuilder(
-      column: $table.total, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get total =>
+      $composableBuilder(
+          column: $table.total,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get tax => $composableBuilder(
-      column: $table.tax, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get tax =>
+      $composableBuilder(
+          column: $table.tax,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get discount => $composableBuilder(
-      column: $table.discount, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get discount =>
+      $composableBuilder(
+          column: $table.discount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get landedCosts => $composableBuilder(
-      column: $table.landedCosts, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get landedCosts =>
+      $composableBuilder(
+          column: $table.landedCosts,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get shippingCost => $composableBuilder(
-      column: $table.shippingCost, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get shippingCost =>
+      $composableBuilder(
+          column: $table.shippingCost,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get otherExpenses => $composableBuilder(
-      column: $table.otherExpenses, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get otherExpenses =>
+      $composableBuilder(
+          column: $table.otherExpenses,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get invoiceNumber => $composableBuilder(
       column: $table.invoiceNumber, builder: (column) => ColumnFilters(column));
@@ -70126,8 +70535,10 @@ class $$PurchasesTableFilterComposer
   ColumnFilters<String> get currencyId => $composableBuilder(
       column: $table.currencyId, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get exchangeRate => $composableBuilder(
-      column: $table.exchangeRate, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get exchangeRate =>
+      $composableBuilder(
+          column: $table.exchangeRate,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get notes => $composableBuilder(
       column: $table.notes, builder: (column) => ColumnFilters(column));
@@ -70310,23 +70721,23 @@ class $$PurchasesTableOrderingComposer
   ColumnOrderings<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get total => $composableBuilder(
+  ColumnOrderings<String> get total => $composableBuilder(
       column: $table.total, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get tax => $composableBuilder(
+  ColumnOrderings<String> get tax => $composableBuilder(
       column: $table.tax, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get discount => $composableBuilder(
+  ColumnOrderings<String> get discount => $composableBuilder(
       column: $table.discount, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get landedCosts => $composableBuilder(
+  ColumnOrderings<String> get landedCosts => $composableBuilder(
       column: $table.landedCosts, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get shippingCost => $composableBuilder(
+  ColumnOrderings<String> get shippingCost => $composableBuilder(
       column: $table.shippingCost,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get otherExpenses => $composableBuilder(
+  ColumnOrderings<String> get otherExpenses => $composableBuilder(
       column: $table.otherExpenses,
       builder: (column) => ColumnOrderings(column));
 
@@ -70353,7 +70764,7 @@ class $$PurchasesTableOrderingComposer
   ColumnOrderings<String> get currencyId => $composableBuilder(
       column: $table.currencyId, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get exchangeRate => $composableBuilder(
+  ColumnOrderings<String> get exchangeRate => $composableBuilder(
       column: $table.exchangeRate,
       builder: (column) => ColumnOrderings(column));
 
@@ -70453,23 +70864,26 @@ class $$PurchasesTableAnnotationComposer
   GeneratedColumn<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => column);
 
-  GeneratedColumn<double> get total =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get total =>
       $composableBuilder(column: $table.total, builder: (column) => column);
 
-  GeneratedColumn<double> get tax =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get tax =>
       $composableBuilder(column: $table.tax, builder: (column) => column);
 
-  GeneratedColumn<double> get discount =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get discount =>
       $composableBuilder(column: $table.discount, builder: (column) => column);
 
-  GeneratedColumn<double> get landedCosts => $composableBuilder(
-      column: $table.landedCosts, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get landedCosts =>
+      $composableBuilder(
+          column: $table.landedCosts, builder: (column) => column);
 
-  GeneratedColumn<double> get shippingCost => $composableBuilder(
-      column: $table.shippingCost, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get shippingCost =>
+      $composableBuilder(
+          column: $table.shippingCost, builder: (column) => column);
 
-  GeneratedColumn<double> get otherExpenses => $composableBuilder(
-      column: $table.otherExpenses, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get otherExpenses =>
+      $composableBuilder(
+          column: $table.otherExpenses, builder: (column) => column);
 
   GeneratedColumn<String> get invoiceNumber => $composableBuilder(
       column: $table.invoiceNumber, builder: (column) => column);
@@ -70492,8 +70906,9 @@ class $$PurchasesTableAnnotationComposer
   GeneratedColumn<String> get currencyId => $composableBuilder(
       column: $table.currencyId, builder: (column) => column);
 
-  GeneratedColumn<double> get exchangeRate => $composableBuilder(
-      column: $table.exchangeRate, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get exchangeRate =>
+      $composableBuilder(
+          column: $table.exchangeRate, builder: (column) => column);
 
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
@@ -70689,12 +71104,12 @@ class $$PurchasesTableTableManager extends RootTableManager<
             Value<int> syncStatus = const Value.absent(),
             Value<String?> branchId = const Value.absent(),
             Value<String?> supplierId = const Value.absent(),
-            Value<double> total = const Value.absent(),
-            Value<double> tax = const Value.absent(),
-            Value<double> discount = const Value.absent(),
-            Value<double> landedCosts = const Value.absent(),
-            Value<double> shippingCost = const Value.absent(),
-            Value<double> otherExpenses = const Value.absent(),
+            Value<Decimal> total = const Value.absent(),
+            Value<Decimal> tax = const Value.absent(),
+            Value<Decimal> discount = const Value.absent(),
+            Value<Decimal> landedCosts = const Value.absent(),
+            Value<Decimal> shippingCost = const Value.absent(),
+            Value<Decimal> otherExpenses = const Value.absent(),
             Value<String?> invoiceNumber = const Value.absent(),
             Value<String> purchaseType = const Value.absent(),
             Value<DateTime> date = const Value.absent(),
@@ -70703,7 +71118,7 @@ class $$PurchasesTableTableManager extends RootTableManager<
             Value<DocumentStatus> status = const Value.absent(),
             Value<String?> warehouseId = const Value.absent(),
             Value<String?> currencyId = const Value.absent(),
-            Value<double> exchangeRate = const Value.absent(),
+            Value<Decimal> exchangeRate = const Value.absent(),
             Value<String?> notes = const Value.absent(),
             Value<String?> referenceDocument = const Value.absent(),
             Value<String?> attachmentPath = const Value.absent(),
@@ -70745,12 +71160,12 @@ class $$PurchasesTableTableManager extends RootTableManager<
             Value<int> syncStatus = const Value.absent(),
             Value<String?> branchId = const Value.absent(),
             Value<String?> supplierId = const Value.absent(),
-            required double total,
-            Value<double> tax = const Value.absent(),
-            Value<double> discount = const Value.absent(),
-            Value<double> landedCosts = const Value.absent(),
-            Value<double> shippingCost = const Value.absent(),
-            Value<double> otherExpenses = const Value.absent(),
+            required Decimal total,
+            Value<Decimal> tax = const Value.absent(),
+            Value<Decimal> discount = const Value.absent(),
+            Value<Decimal> landedCosts = const Value.absent(),
+            Value<Decimal> shippingCost = const Value.absent(),
+            Value<Decimal> otherExpenses = const Value.absent(),
             Value<String?> invoiceNumber = const Value.absent(),
             Value<String> purchaseType = const Value.absent(),
             Value<DateTime> date = const Value.absent(),
@@ -70759,7 +71174,7 @@ class $$PurchasesTableTableManager extends RootTableManager<
             Value<DocumentStatus> status = const Value.absent(),
             Value<String?> warehouseId = const Value.absent(),
             Value<String?> currencyId = const Value.absent(),
-            Value<double> exchangeRate = const Value.absent(),
+            Value<Decimal> exchangeRate = const Value.absent(),
             Value<String?> notes = const Value.absent(),
             Value<String?> referenceDocument = const Value.absent(),
             Value<String?> attachmentPath = const Value.absent(),
@@ -70948,16 +71363,16 @@ typedef $$PurchaseItemsTableCreateCompanionBuilder = PurchaseItemsCompanion
   required String purchaseId,
   required String productId,
   Value<String?> unitId,
-  Value<double> unitFactor,
-  required double quantity,
-  Value<double?> quantityInBaseUnit,
-  required double unitPrice,
-  required double price,
-  Value<double> discount,
-  Value<double> discountPercent,
-  Value<double> tax,
-  Value<double> taxPercent,
-  Value<double> landedCostShare,
+  Value<Decimal> unitFactor,
+  required Decimal quantity,
+  Value<Decimal?> quantityInBaseUnit,
+  required Decimal unitPrice,
+  required Decimal price,
+  Value<Decimal> discount,
+  Value<Decimal> discountPercent,
+  Value<Decimal> tax,
+  Value<Decimal> taxPercent,
+  Value<Decimal> landedCostShare,
   Value<String?> batchId,
   Value<String?> batchNumber,
   Value<DateTime?> expiryDate,
@@ -70976,16 +71391,16 @@ typedef $$PurchaseItemsTableUpdateCompanionBuilder = PurchaseItemsCompanion
   Value<String> purchaseId,
   Value<String> productId,
   Value<String?> unitId,
-  Value<double> unitFactor,
-  Value<double> quantity,
-  Value<double?> quantityInBaseUnit,
-  Value<double> unitPrice,
-  Value<double> price,
-  Value<double> discount,
-  Value<double> discountPercent,
-  Value<double> tax,
-  Value<double> taxPercent,
-  Value<double> landedCostShare,
+  Value<Decimal> unitFactor,
+  Value<Decimal> quantity,
+  Value<Decimal?> quantityInBaseUnit,
+  Value<Decimal> unitPrice,
+  Value<Decimal> price,
+  Value<Decimal> discount,
+  Value<Decimal> discountPercent,
+  Value<Decimal> tax,
+  Value<Decimal> taxPercent,
+  Value<Decimal> landedCostShare,
   Value<String?> batchId,
   Value<String?> batchNumber,
   Value<DateTime?> expiryDate,
@@ -71097,38 +71512,55 @@ class $$PurchaseItemsTableFilterComposer
   ColumnFilters<String> get unitId => $composableBuilder(
       column: $table.unitId, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get unitFactor => $composableBuilder(
-      column: $table.unitFactor, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get unitFactor =>
+      $composableBuilder(
+          column: $table.unitFactor,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get quantity => $composableBuilder(
-      column: $table.quantity, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get quantity =>
+      $composableBuilder(
+          column: $table.quantity,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get quantityInBaseUnit => $composableBuilder(
-      column: $table.quantityInBaseUnit,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal?, Decimal, String>
+      get quantityInBaseUnit => $composableBuilder(
+          column: $table.quantityInBaseUnit,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get unitPrice => $composableBuilder(
-      column: $table.unitPrice, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get unitPrice =>
+      $composableBuilder(
+          column: $table.unitPrice,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get price => $composableBuilder(
-      column: $table.price, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get price =>
+      $composableBuilder(
+          column: $table.price,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get discount => $composableBuilder(
-      column: $table.discount, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get discount =>
+      $composableBuilder(
+          column: $table.discount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get discountPercent => $composableBuilder(
-      column: $table.discountPercent,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String>
+      get discountPercent => $composableBuilder(
+          column: $table.discountPercent,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get tax => $composableBuilder(
-      column: $table.tax, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get tax =>
+      $composableBuilder(
+          column: $table.tax,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get taxPercent => $composableBuilder(
-      column: $table.taxPercent, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get taxPercent =>
+      $composableBuilder(
+          column: $table.taxPercent,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get landedCostShare => $composableBuilder(
-      column: $table.landedCostShare,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String>
+      get landedCostShare => $composableBuilder(
+          column: $table.landedCostShare,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get batchNumber => $composableBuilder(
       column: $table.batchNumber, builder: (column) => ColumnFilters(column));
@@ -71267,36 +71699,36 @@ class $$PurchaseItemsTableOrderingComposer
   ColumnOrderings<String> get unitId => $composableBuilder(
       column: $table.unitId, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get unitFactor => $composableBuilder(
+  ColumnOrderings<String> get unitFactor => $composableBuilder(
       column: $table.unitFactor, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get quantity => $composableBuilder(
+  ColumnOrderings<String> get quantity => $composableBuilder(
       column: $table.quantity, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get quantityInBaseUnit => $composableBuilder(
+  ColumnOrderings<String> get quantityInBaseUnit => $composableBuilder(
       column: $table.quantityInBaseUnit,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get unitPrice => $composableBuilder(
+  ColumnOrderings<String> get unitPrice => $composableBuilder(
       column: $table.unitPrice, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get price => $composableBuilder(
+  ColumnOrderings<String> get price => $composableBuilder(
       column: $table.price, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get discount => $composableBuilder(
+  ColumnOrderings<String> get discount => $composableBuilder(
       column: $table.discount, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get discountPercent => $composableBuilder(
+  ColumnOrderings<String> get discountPercent => $composableBuilder(
       column: $table.discountPercent,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get tax => $composableBuilder(
+  ColumnOrderings<String> get tax => $composableBuilder(
       column: $table.tax, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get taxPercent => $composableBuilder(
+  ColumnOrderings<String> get taxPercent => $composableBuilder(
       column: $table.taxPercent, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get landedCostShare => $composableBuilder(
+  ColumnOrderings<String> get landedCostShare => $composableBuilder(
       column: $table.landedCostShare,
       builder: (column) => ColumnOrderings(column));
 
@@ -71437,35 +71869,40 @@ class $$PurchaseItemsTableAnnotationComposer
   GeneratedColumn<String> get unitId =>
       $composableBuilder(column: $table.unitId, builder: (column) => column);
 
-  GeneratedColumn<double> get unitFactor => $composableBuilder(
-      column: $table.unitFactor, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get unitFactor =>
+      $composableBuilder(
+          column: $table.unitFactor, builder: (column) => column);
 
-  GeneratedColumn<double> get quantity =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get quantity =>
       $composableBuilder(column: $table.quantity, builder: (column) => column);
 
-  GeneratedColumn<double> get quantityInBaseUnit => $composableBuilder(
-      column: $table.quantityInBaseUnit, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal?, String> get quantityInBaseUnit =>
+      $composableBuilder(
+          column: $table.quantityInBaseUnit, builder: (column) => column);
 
-  GeneratedColumn<double> get unitPrice =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get unitPrice =>
       $composableBuilder(column: $table.unitPrice, builder: (column) => column);
 
-  GeneratedColumn<double> get price =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get price =>
       $composableBuilder(column: $table.price, builder: (column) => column);
 
-  GeneratedColumn<double> get discount =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get discount =>
       $composableBuilder(column: $table.discount, builder: (column) => column);
 
-  GeneratedColumn<double> get discountPercent => $composableBuilder(
-      column: $table.discountPercent, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get discountPercent =>
+      $composableBuilder(
+          column: $table.discountPercent, builder: (column) => column);
 
-  GeneratedColumn<double> get tax =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get tax =>
       $composableBuilder(column: $table.tax, builder: (column) => column);
 
-  GeneratedColumn<double> get taxPercent => $composableBuilder(
-      column: $table.taxPercent, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get taxPercent =>
+      $composableBuilder(
+          column: $table.taxPercent, builder: (column) => column);
 
-  GeneratedColumn<double> get landedCostShare => $composableBuilder(
-      column: $table.landedCostShare, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get landedCostShare =>
+      $composableBuilder(
+          column: $table.landedCostShare, builder: (column) => column);
 
   GeneratedColumn<String> get batchNumber => $composableBuilder(
       column: $table.batchNumber, builder: (column) => column);
@@ -71614,16 +72051,16 @@ class $$PurchaseItemsTableTableManager extends RootTableManager<
             Value<String> purchaseId = const Value.absent(),
             Value<String> productId = const Value.absent(),
             Value<String?> unitId = const Value.absent(),
-            Value<double> unitFactor = const Value.absent(),
-            Value<double> quantity = const Value.absent(),
-            Value<double?> quantityInBaseUnit = const Value.absent(),
-            Value<double> unitPrice = const Value.absent(),
-            Value<double> price = const Value.absent(),
-            Value<double> discount = const Value.absent(),
-            Value<double> discountPercent = const Value.absent(),
-            Value<double> tax = const Value.absent(),
-            Value<double> taxPercent = const Value.absent(),
-            Value<double> landedCostShare = const Value.absent(),
+            Value<Decimal> unitFactor = const Value.absent(),
+            Value<Decimal> quantity = const Value.absent(),
+            Value<Decimal?> quantityInBaseUnit = const Value.absent(),
+            Value<Decimal> unitPrice = const Value.absent(),
+            Value<Decimal> price = const Value.absent(),
+            Value<Decimal> discount = const Value.absent(),
+            Value<Decimal> discountPercent = const Value.absent(),
+            Value<Decimal> tax = const Value.absent(),
+            Value<Decimal> taxPercent = const Value.absent(),
+            Value<Decimal> landedCostShare = const Value.absent(),
             Value<String?> batchId = const Value.absent(),
             Value<String?> batchNumber = const Value.absent(),
             Value<DateTime?> expiryDate = const Value.absent(),
@@ -71668,16 +72105,16 @@ class $$PurchaseItemsTableTableManager extends RootTableManager<
             required String purchaseId,
             required String productId,
             Value<String?> unitId = const Value.absent(),
-            Value<double> unitFactor = const Value.absent(),
-            required double quantity,
-            Value<double?> quantityInBaseUnit = const Value.absent(),
-            required double unitPrice,
-            required double price,
-            Value<double> discount = const Value.absent(),
-            Value<double> discountPercent = const Value.absent(),
-            Value<double> tax = const Value.absent(),
-            Value<double> taxPercent = const Value.absent(),
-            Value<double> landedCostShare = const Value.absent(),
+            Value<Decimal> unitFactor = const Value.absent(),
+            required Decimal quantity,
+            Value<Decimal?> quantityInBaseUnit = const Value.absent(),
+            required Decimal unitPrice,
+            required Decimal price,
+            Value<Decimal> discount = const Value.absent(),
+            Value<Decimal> discountPercent = const Value.absent(),
+            Value<Decimal> tax = const Value.absent(),
+            Value<Decimal> taxPercent = const Value.absent(),
+            Value<Decimal> landedCostShare = const Value.absent(),
             Value<String?> batchId = const Value.absent(),
             Value<String?> batchNumber = const Value.absent(),
             Value<DateTime?> expiryDate = const Value.absent(),
@@ -74110,7 +74547,7 @@ typedef $$ProductionOrdersTableCreateCompanionBuilder
   Value<String?> branchId,
   required String finishedProductId,
   required double plannedQuantity,
-  Value<double> actualQuantity,
+  Value<Decimal> actualQuantity,
   Value<DateTime> date,
   Value<String> status,
   Value<String?> warehouseId,
@@ -74127,7 +74564,7 @@ typedef $$ProductionOrdersTableUpdateCompanionBuilder
   Value<String?> branchId,
   Value<String> finishedProductId,
   Value<double> plannedQuantity,
-  Value<double> actualQuantity,
+  Value<Decimal> actualQuantity,
   Value<DateTime> date,
   Value<String> status,
   Value<String?> warehouseId,
@@ -74230,9 +74667,10 @@ class $$ProductionOrdersTableFilterComposer
       column: $table.plannedQuantity,
       builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get actualQuantity => $composableBuilder(
-      column: $table.actualQuantity,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get actualQuantity =>
+      $composableBuilder(
+          column: $table.actualQuantity,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<DateTime> get date => $composableBuilder(
       column: $table.date, builder: (column) => ColumnFilters(column));
@@ -74354,7 +74792,7 @@ class $$ProductionOrdersTableOrderingComposer
       column: $table.plannedQuantity,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get actualQuantity => $composableBuilder(
+  ColumnOrderings<String> get actualQuantity => $composableBuilder(
       column: $table.actualQuantity,
       builder: (column) => ColumnOrderings(column));
 
@@ -74455,8 +74893,9 @@ class $$ProductionOrdersTableAnnotationComposer
   GeneratedColumn<double> get plannedQuantity => $composableBuilder(
       column: $table.plannedQuantity, builder: (column) => column);
 
-  GeneratedColumn<double> get actualQuantity => $composableBuilder(
-      column: $table.actualQuantity, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get actualQuantity =>
+      $composableBuilder(
+          column: $table.actualQuantity, builder: (column) => column);
 
   GeneratedColumn<DateTime> get date =>
       $composableBuilder(column: $table.date, builder: (column) => column);
@@ -74587,7 +75026,7 @@ class $$ProductionOrdersTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             Value<String> finishedProductId = const Value.absent(),
             Value<double> plannedQuantity = const Value.absent(),
-            Value<double> actualQuantity = const Value.absent(),
+            Value<Decimal> actualQuantity = const Value.absent(),
             Value<DateTime> date = const Value.absent(),
             Value<String> status = const Value.absent(),
             Value<String?> warehouseId = const Value.absent(),
@@ -74619,7 +75058,7 @@ class $$ProductionOrdersTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             required String finishedProductId,
             required double plannedQuantity,
-            Value<double> actualQuantity = const Value.absent(),
+            Value<Decimal> actualQuantity = const Value.absent(),
             Value<DateTime> date = const Value.absent(),
             Value<String> status = const Value.absent(),
             Value<String?> warehouseId = const Value.absent(),
@@ -74754,8 +75193,8 @@ typedef $$ProductionOrderItemsTableCreateCompanionBuilder
   required String productionOrderId,
   required String componentProductId,
   required double plannedQuantity,
-  Value<double> actualQuantity,
-  Value<double> unitCost,
+  Value<Decimal> actualQuantity,
+  Value<Decimal> unitCost,
   Value<int> rowid,
 });
 typedef $$ProductionOrderItemsTableUpdateCompanionBuilder
@@ -74769,8 +75208,8 @@ typedef $$ProductionOrderItemsTableUpdateCompanionBuilder
   Value<String> productionOrderId,
   Value<String> componentProductId,
   Value<double> plannedQuantity,
-  Value<double> actualQuantity,
-  Value<double> unitCost,
+  Value<Decimal> actualQuantity,
+  Value<Decimal> unitCost,
   Value<int> rowid,
 });
 
@@ -74851,12 +75290,15 @@ class $$ProductionOrderItemsTableFilterComposer
       column: $table.plannedQuantity,
       builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get actualQuantity => $composableBuilder(
-      column: $table.actualQuantity,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get actualQuantity =>
+      $composableBuilder(
+          column: $table.actualQuantity,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get unitCost => $composableBuilder(
-      column: $table.unitCost, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get unitCost =>
+      $composableBuilder(
+          column: $table.unitCost,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -74947,11 +75389,11 @@ class $$ProductionOrderItemsTableOrderingComposer
       column: $table.plannedQuantity,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get actualQuantity => $composableBuilder(
+  ColumnOrderings<String> get actualQuantity => $composableBuilder(
       column: $table.actualQuantity,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get unitCost => $composableBuilder(
+  ColumnOrderings<String> get unitCost => $composableBuilder(
       column: $table.unitCost, builder: (column) => ColumnOrderings(column));
 
   $$BranchesTableOrderingComposer get branchId {
@@ -75042,10 +75484,11 @@ class $$ProductionOrderItemsTableAnnotationComposer
   GeneratedColumn<double> get plannedQuantity => $composableBuilder(
       column: $table.plannedQuantity, builder: (column) => column);
 
-  GeneratedColumn<double> get actualQuantity => $composableBuilder(
-      column: $table.actualQuantity, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get actualQuantity =>
+      $composableBuilder(
+          column: $table.actualQuantity, builder: (column) => column);
 
-  GeneratedColumn<double> get unitCost =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get unitCost =>
       $composableBuilder(column: $table.unitCost, builder: (column) => column);
 
   $$BranchesTableAnnotationComposer get branchId {
@@ -75145,8 +75588,8 @@ class $$ProductionOrderItemsTableTableManager extends RootTableManager<
             Value<String> productionOrderId = const Value.absent(),
             Value<String> componentProductId = const Value.absent(),
             Value<double> plannedQuantity = const Value.absent(),
-            Value<double> actualQuantity = const Value.absent(),
-            Value<double> unitCost = const Value.absent(),
+            Value<Decimal> actualQuantity = const Value.absent(),
+            Value<Decimal> unitCost = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ProductionOrderItemsCompanion(
@@ -75173,8 +75616,8 @@ class $$ProductionOrderItemsTableTableManager extends RootTableManager<
             required String productionOrderId,
             required String componentProductId,
             required double plannedQuantity,
-            Value<double> actualQuantity = const Value.absent(),
-            Value<double> unitCost = const Value.absent(),
+            Value<Decimal> actualQuantity = const Value.absent(),
+            Value<Decimal> unitCost = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ProductionOrderItemsCompanion.insert(
@@ -75776,7 +76219,7 @@ typedef $$SalesReturnItemsTableCreateCompanionBuilder
   required String productId,
   required double quantity,
   required double price,
-  Value<double> unitFactor,
+  Value<Decimal> unitFactor,
   Value<String?> batchId,
   Value<int> rowid,
 });
@@ -75792,7 +76235,7 @@ typedef $$SalesReturnItemsTableUpdateCompanionBuilder
   Value<String> productId,
   Value<double> quantity,
   Value<double> price,
-  Value<double> unitFactor,
+  Value<Decimal> unitFactor,
   Value<String?> batchId,
   Value<int> rowid,
 });
@@ -75889,8 +76332,10 @@ class $$SalesReturnItemsTableFilterComposer
   ColumnFilters<double> get price => $composableBuilder(
       column: $table.price, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get unitFactor => $composableBuilder(
-      column: $table.unitFactor, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get unitFactor =>
+      $composableBuilder(
+          column: $table.unitFactor,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -76003,7 +76448,7 @@ class $$SalesReturnItemsTableOrderingComposer
   ColumnOrderings<double> get price => $composableBuilder(
       column: $table.price, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get unitFactor => $composableBuilder(
+  ColumnOrderings<String> get unitFactor => $composableBuilder(
       column: $table.unitFactor, builder: (column) => ColumnOrderings(column));
 
   $$BranchesTableOrderingComposer get branchId {
@@ -76117,8 +76562,9 @@ class $$SalesReturnItemsTableAnnotationComposer
   GeneratedColumn<double> get price =>
       $composableBuilder(column: $table.price, builder: (column) => column);
 
-  GeneratedColumn<double> get unitFactor => $composableBuilder(
-      column: $table.unitFactor, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get unitFactor =>
+      $composableBuilder(
+          column: $table.unitFactor, builder: (column) => column);
 
   $$BranchesTableAnnotationComposer get branchId {
     final $$BranchesTableAnnotationComposer composer = $composerBuilder(
@@ -76236,7 +76682,7 @@ class $$SalesReturnItemsTableTableManager extends RootTableManager<
             Value<String> productId = const Value.absent(),
             Value<double> quantity = const Value.absent(),
             Value<double> price = const Value.absent(),
-            Value<double> unitFactor = const Value.absent(),
+            Value<Decimal> unitFactor = const Value.absent(),
             Value<String?> batchId = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -76266,7 +76712,7 @@ class $$SalesReturnItemsTableTableManager extends RootTableManager<
             required String productId,
             required double quantity,
             required double price,
-            Value<double> unitFactor = const Value.absent(),
+            Value<Decimal> unitFactor = const Value.absent(),
             Value<String?> batchId = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -79702,7 +80148,7 @@ typedef $$GLEntriesTableCreateCompanionBuilder = GLEntriesCompanion Function({
   Value<DateTime?> postedAt,
   Value<String?> postedBy,
   Value<String?> currencyId,
-  Value<double> exchangeRate,
+  Value<Decimal> exchangeRate,
   Value<int> rowid,
 });
 typedef $$GLEntriesTableUpdateCompanionBuilder = GLEntriesCompanion Function({
@@ -79720,7 +80166,7 @@ typedef $$GLEntriesTableUpdateCompanionBuilder = GLEntriesCompanion Function({
   Value<DateTime?> postedAt,
   Value<String?> postedBy,
   Value<String?> currencyId,
-  Value<double> exchangeRate,
+  Value<Decimal> exchangeRate,
   Value<int> rowid,
 });
 
@@ -79823,8 +80269,10 @@ class $$GLEntriesTableFilterComposer
   ColumnFilters<String> get currencyId => $composableBuilder(
       column: $table.currencyId, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get exchangeRate => $composableBuilder(
-      column: $table.exchangeRate, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get exchangeRate =>
+      $composableBuilder(
+          column: $table.exchangeRate,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -79940,7 +80388,7 @@ class $$GLEntriesTableOrderingComposer
   ColumnOrderings<String> get currencyId => $composableBuilder(
       column: $table.currencyId, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get exchangeRate => $composableBuilder(
+  ColumnOrderings<String> get exchangeRate => $composableBuilder(
       column: $table.exchangeRate,
       builder: (column) => ColumnOrderings(column));
 
@@ -80013,8 +80461,9 @@ class $$GLEntriesTableAnnotationComposer
   GeneratedColumn<String> get currencyId => $composableBuilder(
       column: $table.currencyId, builder: (column) => column);
 
-  GeneratedColumn<double> get exchangeRate => $composableBuilder(
-      column: $table.exchangeRate, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get exchangeRate =>
+      $composableBuilder(
+          column: $table.exchangeRate, builder: (column) => column);
 
   $$BranchesTableAnnotationComposer get branchId {
     final $$BranchesTableAnnotationComposer composer = $composerBuilder(
@@ -80119,7 +80568,7 @@ class $$GLEntriesTableTableManager extends RootTableManager<
             Value<DateTime?> postedAt = const Value.absent(),
             Value<String?> postedBy = const Value.absent(),
             Value<String?> currencyId = const Value.absent(),
-            Value<double> exchangeRate = const Value.absent(),
+            Value<Decimal> exchangeRate = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               GLEntriesCompanion(
@@ -80155,7 +80604,7 @@ class $$GLEntriesTableTableManager extends RootTableManager<
             Value<DateTime?> postedAt = const Value.absent(),
             Value<String?> postedBy = const Value.absent(),
             Value<String?> currencyId = const Value.absent(),
-            Value<double> exchangeRate = const Value.absent(),
+            Value<Decimal> exchangeRate = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               GLEntriesCompanion.insert(
@@ -80274,10 +80723,10 @@ typedef $$GLLinesTableCreateCompanionBuilder = GLLinesCompanion Function({
   required String entryId,
   required String accountId,
   Value<String?> costCenterId,
-  Value<double> debit,
-  Value<double> credit,
+  Value<Decimal> debit,
+  Value<Decimal> credit,
   Value<String?> currencyId,
-  Value<double> exchangeRate,
+  Value<Decimal> exchangeRate,
   Value<String?> memo,
   Value<int> rowid,
 });
@@ -80291,10 +80740,10 @@ typedef $$GLLinesTableUpdateCompanionBuilder = GLLinesCompanion Function({
   Value<String> entryId,
   Value<String> accountId,
   Value<String?> costCenterId,
-  Value<double> debit,
-  Value<double> credit,
+  Value<Decimal> debit,
+  Value<Decimal> credit,
   Value<String?> currencyId,
-  Value<double> exchangeRate,
+  Value<Decimal> exchangeRate,
   Value<String?> memo,
   Value<int> rowid,
 });
@@ -80396,14 +80845,20 @@ class $$GLLinesTableFilterComposer
   ColumnFilters<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get debit => $composableBuilder(
-      column: $table.debit, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get debit =>
+      $composableBuilder(
+          column: $table.debit,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get credit => $composableBuilder(
-      column: $table.credit, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get credit =>
+      $composableBuilder(
+          column: $table.credit,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get exchangeRate => $composableBuilder(
-      column: $table.exchangeRate, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get exchangeRate =>
+      $composableBuilder(
+          column: $table.exchangeRate,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get memo => $composableBuilder(
       column: $table.memo, builder: (column) => ColumnFilters(column));
@@ -80533,13 +80988,13 @@ class $$GLLinesTableOrderingComposer
   ColumnOrderings<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get debit => $composableBuilder(
+  ColumnOrderings<String> get debit => $composableBuilder(
       column: $table.debit, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get credit => $composableBuilder(
+  ColumnOrderings<String> get credit => $composableBuilder(
       column: $table.credit, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get exchangeRate => $composableBuilder(
+  ColumnOrderings<String> get exchangeRate => $composableBuilder(
       column: $table.exchangeRate,
       builder: (column) => ColumnOrderings(column));
 
@@ -80671,14 +81126,15 @@ class $$GLLinesTableAnnotationComposer
   GeneratedColumn<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => column);
 
-  GeneratedColumn<double> get debit =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get debit =>
       $composableBuilder(column: $table.debit, builder: (column) => column);
 
-  GeneratedColumn<double> get credit =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get credit =>
       $composableBuilder(column: $table.credit, builder: (column) => column);
 
-  GeneratedColumn<double> get exchangeRate => $composableBuilder(
-      column: $table.exchangeRate, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get exchangeRate =>
+      $composableBuilder(
+          column: $table.exchangeRate, builder: (column) => column);
 
   GeneratedColumn<String> get memo =>
       $composableBuilder(column: $table.memo, builder: (column) => column);
@@ -80821,10 +81277,10 @@ class $$GLLinesTableTableManager extends RootTableManager<
             Value<String> entryId = const Value.absent(),
             Value<String> accountId = const Value.absent(),
             Value<String?> costCenterId = const Value.absent(),
-            Value<double> debit = const Value.absent(),
-            Value<double> credit = const Value.absent(),
+            Value<Decimal> debit = const Value.absent(),
+            Value<Decimal> credit = const Value.absent(),
             Value<String?> currencyId = const Value.absent(),
-            Value<double> exchangeRate = const Value.absent(),
+            Value<Decimal> exchangeRate = const Value.absent(),
             Value<String?> memo = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -80855,10 +81311,10 @@ class $$GLLinesTableTableManager extends RootTableManager<
             required String entryId,
             required String accountId,
             Value<String?> costCenterId = const Value.absent(),
-            Value<double> debit = const Value.absent(),
-            Value<double> credit = const Value.absent(),
+            Value<Decimal> debit = const Value.absent(),
+            Value<Decimal> credit = const Value.absent(),
             Value<String?> currencyId = const Value.absent(),
-            Value<double> exchangeRate = const Value.absent(),
+            Value<Decimal> exchangeRate = const Value.absent(),
             Value<String?> memo = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -82357,9 +82813,9 @@ typedef $$ShiftsTableCreateCompanionBuilder = ShiftsCompanion Function({
   required String userId,
   Value<DateTime> startTime,
   Value<DateTime?> endTime,
-  Value<double> openingCash,
-  Value<double?> closingCash,
-  Value<double?> expectedCash,
+  Value<Decimal> openingCash,
+  Value<Decimal?> closingCash,
+  Value<Decimal?> expectedCash,
   Value<String?> note,
   Value<bool> isOpen,
   Value<int> rowid,
@@ -82374,9 +82830,9 @@ typedef $$ShiftsTableUpdateCompanionBuilder = ShiftsCompanion Function({
   Value<String> userId,
   Value<DateTime> startTime,
   Value<DateTime?> endTime,
-  Value<double> openingCash,
-  Value<double?> closingCash,
-  Value<double?> expectedCash,
+  Value<Decimal> openingCash,
+  Value<Decimal?> closingCash,
+  Value<Decimal?> expectedCash,
   Value<String?> note,
   Value<bool> isOpen,
   Value<int> rowid,
@@ -82443,14 +82899,20 @@ class $$ShiftsTableFilterComposer
   ColumnFilters<DateTime> get endTime => $composableBuilder(
       column: $table.endTime, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get openingCash => $composableBuilder(
-      column: $table.openingCash, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get openingCash =>
+      $composableBuilder(
+          column: $table.openingCash,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get closingCash => $composableBuilder(
-      column: $table.closingCash, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal?, Decimal, String> get closingCash =>
+      $composableBuilder(
+          column: $table.closingCash,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get expectedCash => $composableBuilder(
-      column: $table.expectedCash, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal?, Decimal, String> get expectedCash =>
+      $composableBuilder(
+          column: $table.expectedCash,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get note => $composableBuilder(
       column: $table.note, builder: (column) => ColumnFilters(column));
@@ -82529,13 +82991,13 @@ class $$ShiftsTableOrderingComposer
   ColumnOrderings<DateTime> get endTime => $composableBuilder(
       column: $table.endTime, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get openingCash => $composableBuilder(
+  ColumnOrderings<String> get openingCash => $composableBuilder(
       column: $table.openingCash, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get closingCash => $composableBuilder(
+  ColumnOrderings<String> get closingCash => $composableBuilder(
       column: $table.closingCash, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get expectedCash => $composableBuilder(
+  ColumnOrderings<String> get expectedCash => $composableBuilder(
       column: $table.expectedCash,
       builder: (column) => ColumnOrderings(column));
 
@@ -82616,14 +83078,17 @@ class $$ShiftsTableAnnotationComposer
   GeneratedColumn<DateTime> get endTime =>
       $composableBuilder(column: $table.endTime, builder: (column) => column);
 
-  GeneratedColumn<double> get openingCash => $composableBuilder(
-      column: $table.openingCash, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get openingCash =>
+      $composableBuilder(
+          column: $table.openingCash, builder: (column) => column);
 
-  GeneratedColumn<double> get closingCash => $composableBuilder(
-      column: $table.closingCash, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal?, String> get closingCash =>
+      $composableBuilder(
+          column: $table.closingCash, builder: (column) => column);
 
-  GeneratedColumn<double> get expectedCash => $composableBuilder(
-      column: $table.expectedCash, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal?, String> get expectedCash =>
+      $composableBuilder(
+          column: $table.expectedCash, builder: (column) => column);
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
@@ -82704,9 +83169,9 @@ class $$ShiftsTableTableManager extends RootTableManager<
             Value<String> userId = const Value.absent(),
             Value<DateTime> startTime = const Value.absent(),
             Value<DateTime?> endTime = const Value.absent(),
-            Value<double> openingCash = const Value.absent(),
-            Value<double?> closingCash = const Value.absent(),
-            Value<double?> expectedCash = const Value.absent(),
+            Value<Decimal> openingCash = const Value.absent(),
+            Value<Decimal?> closingCash = const Value.absent(),
+            Value<Decimal?> expectedCash = const Value.absent(),
             Value<String?> note = const Value.absent(),
             Value<bool> isOpen = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -82738,9 +83203,9 @@ class $$ShiftsTableTableManager extends RootTableManager<
             required String userId,
             Value<DateTime> startTime = const Value.absent(),
             Value<DateTime?> endTime = const Value.absent(),
-            Value<double> openingCash = const Value.absent(),
-            Value<double?> closingCash = const Value.absent(),
-            Value<double?> expectedCash = const Value.absent(),
+            Value<Decimal> openingCash = const Value.absent(),
+            Value<Decimal?> closingCash = const Value.absent(),
+            Value<Decimal?> expectedCash = const Value.absent(),
             Value<String?> note = const Value.absent(),
             Value<bool> isOpen = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -85151,7 +85616,7 @@ typedef $$EmployeesTableCreateCompanionBuilder = EmployeesCompanion Function({
   required String employeeCode,
   Value<String?> jobTitle,
   Value<String> role,
-  Value<double> basicSalary,
+  Value<Decimal> basicSalary,
   Value<DateTime?> hireDate,
   Value<String?> warehouseId,
   Value<bool> isActive,
@@ -85168,7 +85633,7 @@ typedef $$EmployeesTableUpdateCompanionBuilder = EmployeesCompanion Function({
   Value<String> employeeCode,
   Value<String?> jobTitle,
   Value<String> role,
-  Value<double> basicSalary,
+  Value<Decimal> basicSalary,
   Value<DateTime?> hireDate,
   Value<String?> warehouseId,
   Value<bool> isActive,
@@ -85258,8 +85723,10 @@ class $$EmployeesTableFilterComposer
   ColumnFilters<String> get role => $composableBuilder(
       column: $table.role, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get basicSalary => $composableBuilder(
-      column: $table.basicSalary, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get basicSalary =>
+      $composableBuilder(
+          column: $table.basicSalary,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<DateTime> get hireDate => $composableBuilder(
       column: $table.hireDate, builder: (column) => ColumnFilters(column));
@@ -85366,7 +85833,7 @@ class $$EmployeesTableOrderingComposer
   ColumnOrderings<String> get role => $composableBuilder(
       column: $table.role, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get basicSalary => $composableBuilder(
+  ColumnOrderings<String> get basicSalary => $composableBuilder(
       column: $table.basicSalary, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<DateTime> get hireDate => $composableBuilder(
@@ -85452,8 +85919,9 @@ class $$EmployeesTableAnnotationComposer
   GeneratedColumn<String> get role =>
       $composableBuilder(column: $table.role, builder: (column) => column);
 
-  GeneratedColumn<double> get basicSalary => $composableBuilder(
-      column: $table.basicSalary, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get basicSalary =>
+      $composableBuilder(
+          column: $table.basicSalary, builder: (column) => column);
 
   GeneratedColumn<DateTime> get hireDate =>
       $composableBuilder(column: $table.hireDate, builder: (column) => column);
@@ -85557,7 +86025,7 @@ class $$EmployeesTableTableManager extends RootTableManager<
             Value<String> employeeCode = const Value.absent(),
             Value<String?> jobTitle = const Value.absent(),
             Value<String> role = const Value.absent(),
-            Value<double> basicSalary = const Value.absent(),
+            Value<Decimal> basicSalary = const Value.absent(),
             Value<DateTime?> hireDate = const Value.absent(),
             Value<String?> warehouseId = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
@@ -85591,7 +86059,7 @@ class $$EmployeesTableTableManager extends RootTableManager<
             required String employeeCode,
             Value<String?> jobTitle = const Value.absent(),
             Value<String> role = const Value.absent(),
-            Value<double> basicSalary = const Value.absent(),
+            Value<Decimal> basicSalary = const Value.absent(),
             Value<DateTime?> hireDate = const Value.absent(),
             Value<String?> warehouseId = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
@@ -86147,8 +86615,8 @@ typedef $$PayrollLinesTableCreateCompanionBuilder = PayrollLinesCompanion
   required String payrollEntryId,
   required String employeeId,
   required double basicSalary,
-  Value<double> allowances,
-  Value<double> deductions,
+  Value<Decimal> allowances,
+  Value<Decimal> deductions,
   required double netSalary,
   Value<int> rowid,
 });
@@ -86163,8 +86631,8 @@ typedef $$PayrollLinesTableUpdateCompanionBuilder = PayrollLinesCompanion
   Value<String> payrollEntryId,
   Value<String> employeeId,
   Value<double> basicSalary,
-  Value<double> allowances,
-  Value<double> deductions,
+  Value<Decimal> allowances,
+  Value<Decimal> deductions,
   Value<double> netSalary,
   Value<int> rowid,
 });
@@ -86243,11 +86711,15 @@ class $$PayrollLinesTableFilterComposer
   ColumnFilters<double> get basicSalary => $composableBuilder(
       column: $table.basicSalary, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get allowances => $composableBuilder(
-      column: $table.allowances, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get allowances =>
+      $composableBuilder(
+          column: $table.allowances,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get deductions => $composableBuilder(
-      column: $table.deductions, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get deductions =>
+      $composableBuilder(
+          column: $table.deductions,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<double> get netSalary => $composableBuilder(
       column: $table.netSalary, builder: (column) => ColumnFilters(column));
@@ -86340,10 +86812,10 @@ class $$PayrollLinesTableOrderingComposer
   ColumnOrderings<double> get basicSalary => $composableBuilder(
       column: $table.basicSalary, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get allowances => $composableBuilder(
+  ColumnOrderings<String> get allowances => $composableBuilder(
       column: $table.allowances, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get deductions => $composableBuilder(
+  ColumnOrderings<String> get deductions => $composableBuilder(
       column: $table.deductions, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<double> get netSalary => $composableBuilder(
@@ -86437,11 +86909,13 @@ class $$PayrollLinesTableAnnotationComposer
   GeneratedColumn<double> get basicSalary => $composableBuilder(
       column: $table.basicSalary, builder: (column) => column);
 
-  GeneratedColumn<double> get allowances => $composableBuilder(
-      column: $table.allowances, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get allowances =>
+      $composableBuilder(
+          column: $table.allowances, builder: (column) => column);
 
-  GeneratedColumn<double> get deductions => $composableBuilder(
-      column: $table.deductions, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get deductions =>
+      $composableBuilder(
+          column: $table.deductions, builder: (column) => column);
 
   GeneratedColumn<double> get netSalary =>
       $composableBuilder(column: $table.netSalary, builder: (column) => column);
@@ -86540,8 +87014,8 @@ class $$PayrollLinesTableTableManager extends RootTableManager<
             Value<String> payrollEntryId = const Value.absent(),
             Value<String> employeeId = const Value.absent(),
             Value<double> basicSalary = const Value.absent(),
-            Value<double> allowances = const Value.absent(),
-            Value<double> deductions = const Value.absent(),
+            Value<Decimal> allowances = const Value.absent(),
+            Value<Decimal> deductions = const Value.absent(),
             Value<double> netSalary = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -86570,8 +87044,8 @@ class $$PayrollLinesTableTableManager extends RootTableManager<
             required String payrollEntryId,
             required String employeeId,
             required double basicSalary,
-            Value<double> allowances = const Value.absent(),
-            Value<double> deductions = const Value.absent(),
+            Value<Decimal> allowances = const Value.absent(),
+            Value<Decimal> deductions = const Value.absent(),
             required double netSalary,
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -87936,7 +88410,7 @@ typedef $$ChecksTableCreateCompanionBuilder = ChecksCompanion Function({
   Value<String?> paymentAccountId,
   Value<String?> note,
   Value<String?> currencyId,
-  Value<double> exchangeRate,
+  Value<Decimal> exchangeRate,
   Value<int> rowid,
 });
 typedef $$ChecksTableUpdateCompanionBuilder = ChecksCompanion Function({
@@ -87956,7 +88430,7 @@ typedef $$ChecksTableUpdateCompanionBuilder = ChecksCompanion Function({
   Value<String?> paymentAccountId,
   Value<String?> note,
   Value<String?> currencyId,
-  Value<double> exchangeRate,
+  Value<Decimal> exchangeRate,
   Value<int> rowid,
 });
 
@@ -88071,8 +88545,10 @@ class $$ChecksTableFilterComposer
   ColumnFilters<String> get note => $composableBuilder(
       column: $table.note, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get exchangeRate => $composableBuilder(
-      column: $table.exchangeRate, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get exchangeRate =>
+      $composableBuilder(
+          column: $table.exchangeRate,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -88204,7 +88680,7 @@ class $$ChecksTableOrderingComposer
   ColumnOrderings<String> get note => $composableBuilder(
       column: $table.note, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get exchangeRate => $composableBuilder(
+  ColumnOrderings<String> get exchangeRate => $composableBuilder(
       column: $table.exchangeRate,
       builder: (column) => ColumnOrderings(column));
 
@@ -88317,8 +88793,9 @@ class $$ChecksTableAnnotationComposer
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
 
-  GeneratedColumn<double> get exchangeRate => $composableBuilder(
-      column: $table.exchangeRate, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get exchangeRate =>
+      $composableBuilder(
+          column: $table.exchangeRate, builder: (column) => column);
 
   $$BranchesTableAnnotationComposer get branchId {
     final $$BranchesTableAnnotationComposer composer = $composerBuilder(
@@ -88446,7 +88923,7 @@ class $$ChecksTableTableManager extends RootTableManager<
             Value<String?> paymentAccountId = const Value.absent(),
             Value<String?> note = const Value.absent(),
             Value<String?> currencyId = const Value.absent(),
-            Value<double> exchangeRate = const Value.absent(),
+            Value<Decimal> exchangeRate = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ChecksCompanion(
@@ -88486,7 +88963,7 @@ class $$ChecksTableTableManager extends RootTableManager<
             Value<String?> paymentAccountId = const Value.absent(),
             Value<String?> note = const Value.absent(),
             Value<String?> currencyId = const Value.absent(),
-            Value<double> exchangeRate = const Value.absent(),
+            Value<Decimal> exchangeRate = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ChecksCompanion.insert(
@@ -88616,7 +89093,7 @@ typedef $$FinancialTransfersTableCreateCompanionBuilder
   required String senderAccountId,
   required String receiverAccountId,
   required double amount,
-  Value<double> commission,
+  Value<Decimal> commission,
   Value<String?> company,
   required String transferType,
   Value<String?> checkId,
@@ -88636,7 +89113,7 @@ typedef $$FinancialTransfersTableUpdateCompanionBuilder
   Value<String> senderAccountId,
   Value<String> receiverAccountId,
   Value<double> amount,
-  Value<double> commission,
+  Value<Decimal> commission,
   Value<String?> company,
   Value<String> transferType,
   Value<String?> checkId,
@@ -88734,8 +89211,10 @@ class $$FinancialTransfersTableFilterComposer
   ColumnFilters<double> get amount => $composableBuilder(
       column: $table.amount, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get commission => $composableBuilder(
-      column: $table.commission, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get commission =>
+      $composableBuilder(
+          column: $table.commission,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get company => $composableBuilder(
       column: $table.company, builder: (column) => ColumnFilters(column));
@@ -88860,7 +89339,7 @@ class $$FinancialTransfersTableOrderingComposer
   ColumnOrderings<double> get amount => $composableBuilder(
       column: $table.amount, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get commission => $composableBuilder(
+  ColumnOrderings<String> get commission => $composableBuilder(
       column: $table.commission, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get company => $composableBuilder(
@@ -88987,8 +89466,9 @@ class $$FinancialTransfersTableAnnotationComposer
   GeneratedColumn<double> get amount =>
       $composableBuilder(column: $table.amount, builder: (column) => column);
 
-  GeneratedColumn<double> get commission => $composableBuilder(
-      column: $table.commission, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get commission =>
+      $composableBuilder(
+          column: $table.commission, builder: (column) => column);
 
   GeneratedColumn<String> get company =>
       $composableBuilder(column: $table.company, builder: (column) => column);
@@ -89124,7 +89604,7 @@ class $$FinancialTransfersTableTableManager extends RootTableManager<
             Value<String> senderAccountId = const Value.absent(),
             Value<String> receiverAccountId = const Value.absent(),
             Value<double> amount = const Value.absent(),
-            Value<double> commission = const Value.absent(),
+            Value<Decimal> commission = const Value.absent(),
             Value<String?> company = const Value.absent(),
             Value<String> transferType = const Value.absent(),
             Value<String?> checkId = const Value.absent(),
@@ -89162,7 +89642,7 @@ class $$FinancialTransfersTableTableManager extends RootTableManager<
             required String senderAccountId,
             required String receiverAccountId,
             required double amount,
-            Value<double> commission = const Value.absent(),
+            Value<Decimal> commission = const Value.absent(),
             Value<String?> company = const Value.absent(),
             required String transferType,
             Value<String?> checkId = const Value.absent(),
@@ -89719,7 +90199,7 @@ typedef $$PriceListItemsTableCreateCompanionBuilder = PriceListItemsCompanion
   required String priceListId,
   required String productId,
   required double price,
-  Value<double> minQuantity,
+  Value<Decimal> minQuantity,
   Value<int> rowid,
 });
 typedef $$PriceListItemsTableUpdateCompanionBuilder = PriceListItemsCompanion
@@ -89733,7 +90213,7 @@ typedef $$PriceListItemsTableUpdateCompanionBuilder = PriceListItemsCompanion
   Value<String> priceListId,
   Value<String> productId,
   Value<double> price,
-  Value<double> minQuantity,
+  Value<Decimal> minQuantity,
   Value<int> rowid,
 });
 
@@ -89812,8 +90292,10 @@ class $$PriceListItemsTableFilterComposer
   ColumnFilters<double> get price => $composableBuilder(
       column: $table.price, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get minQuantity => $composableBuilder(
-      column: $table.minQuantity, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get minQuantity =>
+      $composableBuilder(
+          column: $table.minQuantity,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -89903,7 +90385,7 @@ class $$PriceListItemsTableOrderingComposer
   ColumnOrderings<double> get price => $composableBuilder(
       column: $table.price, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get minQuantity => $composableBuilder(
+  ColumnOrderings<String> get minQuantity => $composableBuilder(
       column: $table.minQuantity, builder: (column) => ColumnOrderings(column));
 
   $$BranchesTableOrderingComposer get branchId {
@@ -89994,8 +90476,9 @@ class $$PriceListItemsTableAnnotationComposer
   GeneratedColumn<double> get price =>
       $composableBuilder(column: $table.price, builder: (column) => column);
 
-  GeneratedColumn<double> get minQuantity => $composableBuilder(
-      column: $table.minQuantity, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get minQuantity =>
+      $composableBuilder(
+          column: $table.minQuantity, builder: (column) => column);
 
   $$BranchesTableAnnotationComposer get branchId {
     final $$BranchesTableAnnotationComposer composer = $composerBuilder(
@@ -90091,7 +90574,7 @@ class $$PriceListItemsTableTableManager extends RootTableManager<
             Value<String> priceListId = const Value.absent(),
             Value<String> productId = const Value.absent(),
             Value<double> price = const Value.absent(),
-            Value<double> minQuantity = const Value.absent(),
+            Value<Decimal> minQuantity = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               PriceListItemsCompanion(
@@ -90117,7 +90600,7 @@ class $$PriceListItemsTableTableManager extends RootTableManager<
             required String priceListId,
             required String productId,
             required double price,
-            Value<double> minQuantity = const Value.absent(),
+            Value<Decimal> minQuantity = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               PriceListItemsCompanion.insert(
@@ -90226,7 +90709,7 @@ typedef $$PromotionsTableCreateCompanionBuilder = PromotionsCompanion Function({
   Value<bool> isActive,
   Value<String?> categoryId,
   Value<String?> productId,
-  Value<double> minPurchaseAmount,
+  Value<Decimal> minPurchaseAmount,
   Value<int> rowid,
 });
 typedef $$PromotionsTableUpdateCompanionBuilder = PromotionsCompanion Function({
@@ -90244,7 +90727,7 @@ typedef $$PromotionsTableUpdateCompanionBuilder = PromotionsCompanion Function({
   Value<bool> isActive,
   Value<String?> categoryId,
   Value<String?> productId,
-  Value<double> minPurchaseAmount,
+  Value<Decimal> minPurchaseAmount,
   Value<int> rowid,
 });
 
@@ -90337,9 +90820,10 @@ class $$PromotionsTableFilterComposer
   ColumnFilters<bool> get isActive => $composableBuilder(
       column: $table.isActive, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get minPurchaseAmount => $composableBuilder(
-      column: $table.minPurchaseAmount,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String>
+      get minPurchaseAmount => $composableBuilder(
+          column: $table.minPurchaseAmount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -90444,7 +90928,7 @@ class $$PromotionsTableOrderingComposer
   ColumnOrderings<bool> get isActive => $composableBuilder(
       column: $table.isActive, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get minPurchaseAmount => $composableBuilder(
+  ColumnOrderings<String> get minPurchaseAmount => $composableBuilder(
       column: $table.minPurchaseAmount,
       builder: (column) => ColumnOrderings(column));
 
@@ -90551,8 +91035,9 @@ class $$PromotionsTableAnnotationComposer
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
 
-  GeneratedColumn<double> get minPurchaseAmount => $composableBuilder(
-      column: $table.minPurchaseAmount, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get minPurchaseAmount =>
+      $composableBuilder(
+          column: $table.minPurchaseAmount, builder: (column) => column);
 
   $$BranchesTableAnnotationComposer get branchId {
     final $$BranchesTableAnnotationComposer composer = $composerBuilder(
@@ -90652,7 +91137,7 @@ class $$PromotionsTableTableManager extends RootTableManager<
             Value<bool> isActive = const Value.absent(),
             Value<String?> categoryId = const Value.absent(),
             Value<String?> productId = const Value.absent(),
-            Value<double> minPurchaseAmount = const Value.absent(),
+            Value<Decimal> minPurchaseAmount = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               PromotionsCompanion(
@@ -90688,7 +91173,7 @@ class $$PromotionsTableTableManager extends RootTableManager<
             Value<bool> isActive = const Value.absent(),
             Value<String?> categoryId = const Value.absent(),
             Value<String?> productId = const Value.absent(),
-            Value<double> minPurchaseAmount = const Value.absent(),
+            Value<Decimal> minPurchaseAmount = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               PromotionsCompanion.insert(
@@ -91222,8 +91707,8 @@ typedef $$UnitConversionsTableCreateCompanionBuilder = UnitConversionsCompanion
   required String unitName,
   required double factor,
   Value<bool> isBaseUnit,
-  Value<double?> buyPrice,
-  Value<double?> sellPrice,
+  Value<Decimal?> buyPrice,
+  Value<Decimal?> sellPrice,
   Value<String?> barcode,
   Value<int> rowid,
 });
@@ -91239,8 +91724,8 @@ typedef $$UnitConversionsTableUpdateCompanionBuilder = UnitConversionsCompanion
   Value<String> unitName,
   Value<double> factor,
   Value<bool> isBaseUnit,
-  Value<double?> buyPrice,
-  Value<double?> sellPrice,
+  Value<Decimal?> buyPrice,
+  Value<Decimal?> sellPrice,
   Value<String?> barcode,
   Value<int> rowid,
 });
@@ -91312,11 +91797,15 @@ class $$UnitConversionsTableFilterComposer
   ColumnFilters<bool> get isBaseUnit => $composableBuilder(
       column: $table.isBaseUnit, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get buyPrice => $composableBuilder(
-      column: $table.buyPrice, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal?, Decimal, String> get buyPrice =>
+      $composableBuilder(
+          column: $table.buyPrice,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get sellPrice => $composableBuilder(
-      column: $table.sellPrice, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal?, Decimal, String> get sellPrice =>
+      $composableBuilder(
+          column: $table.sellPrice,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get barcode => $composableBuilder(
       column: $table.barcode, builder: (column) => ColumnFilters(column));
@@ -91395,10 +91884,10 @@ class $$UnitConversionsTableOrderingComposer
   ColumnOrderings<bool> get isBaseUnit => $composableBuilder(
       column: $table.isBaseUnit, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get buyPrice => $composableBuilder(
+  ColumnOrderings<String> get buyPrice => $composableBuilder(
       column: $table.buyPrice, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get sellPrice => $composableBuilder(
+  ColumnOrderings<String> get sellPrice => $composableBuilder(
       column: $table.sellPrice, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get barcode => $composableBuilder(
@@ -91478,10 +91967,10 @@ class $$UnitConversionsTableAnnotationComposer
   GeneratedColumn<bool> get isBaseUnit => $composableBuilder(
       column: $table.isBaseUnit, builder: (column) => column);
 
-  GeneratedColumn<double> get buyPrice =>
+  GeneratedColumnWithTypeConverter<Decimal?, String> get buyPrice =>
       $composableBuilder(column: $table.buyPrice, builder: (column) => column);
 
-  GeneratedColumn<double> get sellPrice =>
+  GeneratedColumnWithTypeConverter<Decimal?, String> get sellPrice =>
       $composableBuilder(column: $table.sellPrice, builder: (column) => column);
 
   GeneratedColumn<String> get barcode =>
@@ -91562,8 +92051,8 @@ class $$UnitConversionsTableTableManager extends RootTableManager<
             Value<String> unitName = const Value.absent(),
             Value<double> factor = const Value.absent(),
             Value<bool> isBaseUnit = const Value.absent(),
-            Value<double?> buyPrice = const Value.absent(),
-            Value<double?> sellPrice = const Value.absent(),
+            Value<Decimal?> buyPrice = const Value.absent(),
+            Value<Decimal?> sellPrice = const Value.absent(),
             Value<String?> barcode = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -91594,8 +92083,8 @@ class $$UnitConversionsTableTableManager extends RootTableManager<
             required String unitName,
             required double factor,
             Value<bool> isBaseUnit = const Value.absent(),
-            Value<double?> buyPrice = const Value.absent(),
-            Value<double?> sellPrice = const Value.absent(),
+            Value<Decimal?> buyPrice = const Value.absent(),
+            Value<Decimal?> sellPrice = const Value.absent(),
             Value<String?> barcode = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -93838,8 +94327,8 @@ typedef $$AccountTransactionsTableCreateCompanionBuilder
   Value<DateTime> date,
   required String type,
   Value<String?> referenceId,
-  Value<double> debit,
-  Value<double> credit,
+  Value<Decimal> debit,
+  Value<Decimal> credit,
   Value<int> rowid,
 });
 typedef $$AccountTransactionsTableUpdateCompanionBuilder
@@ -93854,8 +94343,8 @@ typedef $$AccountTransactionsTableUpdateCompanionBuilder
   Value<DateTime> date,
   Value<String> type,
   Value<String?> referenceId,
-  Value<double> debit,
-  Value<double> credit,
+  Value<Decimal> debit,
+  Value<Decimal> credit,
   Value<int> rowid,
 });
 
@@ -93926,11 +94415,15 @@ class $$AccountTransactionsTableFilterComposer
   ColumnFilters<String> get referenceId => $composableBuilder(
       column: $table.referenceId, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get debit => $composableBuilder(
-      column: $table.debit, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get debit =>
+      $composableBuilder(
+          column: $table.debit,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get credit => $composableBuilder(
-      column: $table.credit, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get credit =>
+      $composableBuilder(
+          column: $table.credit,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -94006,10 +94499,10 @@ class $$AccountTransactionsTableOrderingComposer
   ColumnOrderings<String> get referenceId => $composableBuilder(
       column: $table.referenceId, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get debit => $composableBuilder(
+  ColumnOrderings<String> get debit => $composableBuilder(
       column: $table.debit, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get credit => $composableBuilder(
+  ColumnOrderings<String> get credit => $composableBuilder(
       column: $table.credit, builder: (column) => ColumnOrderings(column));
 
   $$BranchesTableOrderingComposer get branchId {
@@ -94086,10 +94579,10 @@ class $$AccountTransactionsTableAnnotationComposer
   GeneratedColumn<String> get referenceId => $composableBuilder(
       column: $table.referenceId, builder: (column) => column);
 
-  GeneratedColumn<double> get debit =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get debit =>
       $composableBuilder(column: $table.debit, builder: (column) => column);
 
-  GeneratedColumn<double> get credit =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get credit =>
       $composableBuilder(column: $table.credit, builder: (column) => column);
 
   $$BranchesTableAnnotationComposer get branchId {
@@ -94169,8 +94662,8 @@ class $$AccountTransactionsTableTableManager extends RootTableManager<
             Value<DateTime> date = const Value.absent(),
             Value<String> type = const Value.absent(),
             Value<String?> referenceId = const Value.absent(),
-            Value<double> debit = const Value.absent(),
-            Value<double> credit = const Value.absent(),
+            Value<Decimal> debit = const Value.absent(),
+            Value<Decimal> credit = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               AccountTransactionsCompanion(
@@ -94199,8 +94692,8 @@ class $$AccountTransactionsTableTableManager extends RootTableManager<
             Value<DateTime> date = const Value.absent(),
             required String type,
             Value<String?> referenceId = const Value.absent(),
-            Value<double> debit = const Value.absent(),
-            Value<double> credit = const Value.absent(),
+            Value<Decimal> debit = const Value.absent(),
+            Value<Decimal> credit = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               AccountTransactionsCompanion.insert(
@@ -94679,8 +95172,8 @@ typedef $$StockMovementsTableCreateCompanionBuilder = StockMovementsCompanion
   required String productId,
   Value<String?> fromWarehouseId,
   Value<String?> toWarehouseId,
-  required double quantity,
-  Value<double> cost,
+  required Decimal quantity,
+  Value<Decimal> cost,
   Value<String?> batchId,
   Value<DateTime> movementDate,
   required String type,
@@ -94700,8 +95193,8 @@ typedef $$StockMovementsTableUpdateCompanionBuilder = StockMovementsCompanion
   Value<String> productId,
   Value<String?> fromWarehouseId,
   Value<String?> toWarehouseId,
-  Value<double> quantity,
-  Value<double> cost,
+  Value<Decimal> quantity,
+  Value<Decimal> cost,
   Value<String?> batchId,
   Value<DateTime> movementDate,
   Value<String> type,
@@ -94811,11 +95304,15 @@ class $$StockMovementsTableFilterComposer
   ColumnFilters<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get quantity => $composableBuilder(
-      column: $table.quantity, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get quantity =>
+      $composableBuilder(
+          column: $table.quantity,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get cost => $composableBuilder(
-      column: $table.cost, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get cost =>
+      $composableBuilder(
+          column: $table.cost,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<DateTime> get movementDate => $composableBuilder(
       column: $table.movementDate, builder: (column) => ColumnFilters(column));
@@ -94957,10 +95454,10 @@ class $$StockMovementsTableOrderingComposer
   ColumnOrderings<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get quantity => $composableBuilder(
+  ColumnOrderings<String> get quantity => $composableBuilder(
       column: $table.quantity, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get cost => $composableBuilder(
+  ColumnOrderings<String> get cost => $composableBuilder(
       column: $table.cost, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<DateTime> get movementDate => $composableBuilder(
@@ -95105,10 +95602,10 @@ class $$StockMovementsTableAnnotationComposer
   GeneratedColumn<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => column);
 
-  GeneratedColumn<double> get quantity =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get quantity =>
       $composableBuilder(column: $table.quantity, builder: (column) => column);
 
-  GeneratedColumn<double> get cost =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get cost =>
       $composableBuilder(column: $table.cost, builder: (column) => column);
 
   GeneratedColumn<DateTime> get movementDate => $composableBuilder(
@@ -95265,8 +95762,8 @@ class $$StockMovementsTableTableManager extends RootTableManager<
             Value<String> productId = const Value.absent(),
             Value<String?> fromWarehouseId = const Value.absent(),
             Value<String?> toWarehouseId = const Value.absent(),
-            Value<double> quantity = const Value.absent(),
-            Value<double> cost = const Value.absent(),
+            Value<Decimal> quantity = const Value.absent(),
+            Value<Decimal> cost = const Value.absent(),
             Value<String?> batchId = const Value.absent(),
             Value<DateTime> movementDate = const Value.absent(),
             Value<String> type = const Value.absent(),
@@ -95305,8 +95802,8 @@ class $$StockMovementsTableTableManager extends RootTableManager<
             required String productId,
             Value<String?> fromWarehouseId = const Value.absent(),
             Value<String?> toWarehouseId = const Value.absent(),
-            required double quantity,
-            Value<double> cost = const Value.absent(),
+            required Decimal quantity,
+            Value<Decimal> cost = const Value.absent(),
             Value<String?> batchId = const Value.absent(),
             Value<DateTime> movementDate = const Value.absent(),
             required String type,
@@ -95454,11 +95951,11 @@ typedef $$ProductUnitsTableCreateCompanionBuilder = ProductUnitsCompanion
   required String productId,
   required String unitName,
   Value<String?> barcode,
-  Value<double> unitFactor,
-  Value<double?> buyPrice,
-  Value<double?> sellPrice,
-  Value<double?> wholesalePrice,
-  Value<double?> halfWholesalePrice,
+  Value<Decimal> unitFactor,
+  Value<Decimal?> buyPrice,
+  Value<Decimal?> sellPrice,
+  Value<Decimal?> wholesalePrice,
+  Value<Decimal?> halfWholesalePrice,
   Value<bool> isDefault,
   Value<int> rowid,
 });
@@ -95473,11 +95970,11 @@ typedef $$ProductUnitsTableUpdateCompanionBuilder = ProductUnitsCompanion
   Value<String> productId,
   Value<String> unitName,
   Value<String?> barcode,
-  Value<double> unitFactor,
-  Value<double?> buyPrice,
-  Value<double?> sellPrice,
-  Value<double?> wholesalePrice,
-  Value<double?> halfWholesalePrice,
+  Value<Decimal> unitFactor,
+  Value<Decimal?> buyPrice,
+  Value<Decimal?> sellPrice,
+  Value<Decimal?> wholesalePrice,
+  Value<Decimal?> halfWholesalePrice,
   Value<bool> isDefault,
   Value<int> rowid,
 });
@@ -95545,22 +96042,30 @@ class $$ProductUnitsTableFilterComposer
   ColumnFilters<String> get barcode => $composableBuilder(
       column: $table.barcode, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get unitFactor => $composableBuilder(
-      column: $table.unitFactor, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get unitFactor =>
+      $composableBuilder(
+          column: $table.unitFactor,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get buyPrice => $composableBuilder(
-      column: $table.buyPrice, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal?, Decimal, String> get buyPrice =>
+      $composableBuilder(
+          column: $table.buyPrice,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get sellPrice => $composableBuilder(
-      column: $table.sellPrice, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal?, Decimal, String> get sellPrice =>
+      $composableBuilder(
+          column: $table.sellPrice,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get wholesalePrice => $composableBuilder(
-      column: $table.wholesalePrice,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal?, Decimal, String>
+      get wholesalePrice => $composableBuilder(
+          column: $table.wholesalePrice,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get halfWholesalePrice => $composableBuilder(
-      column: $table.halfWholesalePrice,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal?, Decimal, String>
+      get halfWholesalePrice => $composableBuilder(
+          column: $table.halfWholesalePrice,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<bool> get isDefault => $composableBuilder(
       column: $table.isDefault, builder: (column) => ColumnFilters(column));
@@ -95636,20 +96141,20 @@ class $$ProductUnitsTableOrderingComposer
   ColumnOrderings<String> get barcode => $composableBuilder(
       column: $table.barcode, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get unitFactor => $composableBuilder(
+  ColumnOrderings<String> get unitFactor => $composableBuilder(
       column: $table.unitFactor, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get buyPrice => $composableBuilder(
+  ColumnOrderings<String> get buyPrice => $composableBuilder(
       column: $table.buyPrice, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get sellPrice => $composableBuilder(
+  ColumnOrderings<String> get sellPrice => $composableBuilder(
       column: $table.sellPrice, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get wholesalePrice => $composableBuilder(
+  ColumnOrderings<String> get wholesalePrice => $composableBuilder(
       column: $table.wholesalePrice,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get halfWholesalePrice => $composableBuilder(
+  ColumnOrderings<String> get halfWholesalePrice => $composableBuilder(
       column: $table.halfWholesalePrice,
       builder: (column) => ColumnOrderings(column));
 
@@ -95727,20 +96232,23 @@ class $$ProductUnitsTableAnnotationComposer
   GeneratedColumn<String> get barcode =>
       $composableBuilder(column: $table.barcode, builder: (column) => column);
 
-  GeneratedColumn<double> get unitFactor => $composableBuilder(
-      column: $table.unitFactor, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get unitFactor =>
+      $composableBuilder(
+          column: $table.unitFactor, builder: (column) => column);
 
-  GeneratedColumn<double> get buyPrice =>
+  GeneratedColumnWithTypeConverter<Decimal?, String> get buyPrice =>
       $composableBuilder(column: $table.buyPrice, builder: (column) => column);
 
-  GeneratedColumn<double> get sellPrice =>
+  GeneratedColumnWithTypeConverter<Decimal?, String> get sellPrice =>
       $composableBuilder(column: $table.sellPrice, builder: (column) => column);
 
-  GeneratedColumn<double> get wholesalePrice => $composableBuilder(
-      column: $table.wholesalePrice, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal?, String> get wholesalePrice =>
+      $composableBuilder(
+          column: $table.wholesalePrice, builder: (column) => column);
 
-  GeneratedColumn<double> get halfWholesalePrice => $composableBuilder(
-      column: $table.halfWholesalePrice, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal?, String> get halfWholesalePrice =>
+      $composableBuilder(
+          column: $table.halfWholesalePrice, builder: (column) => column);
 
   GeneratedColumn<bool> get isDefault =>
       $composableBuilder(column: $table.isDefault, builder: (column) => column);
@@ -95818,11 +96326,11 @@ class $$ProductUnitsTableTableManager extends RootTableManager<
             Value<String> productId = const Value.absent(),
             Value<String> unitName = const Value.absent(),
             Value<String?> barcode = const Value.absent(),
-            Value<double> unitFactor = const Value.absent(),
-            Value<double?> buyPrice = const Value.absent(),
-            Value<double?> sellPrice = const Value.absent(),
-            Value<double?> wholesalePrice = const Value.absent(),
-            Value<double?> halfWholesalePrice = const Value.absent(),
+            Value<Decimal> unitFactor = const Value.absent(),
+            Value<Decimal?> buyPrice = const Value.absent(),
+            Value<Decimal?> sellPrice = const Value.absent(),
+            Value<Decimal?> wholesalePrice = const Value.absent(),
+            Value<Decimal?> halfWholesalePrice = const Value.absent(),
             Value<bool> isDefault = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -95854,11 +96362,11 @@ class $$ProductUnitsTableTableManager extends RootTableManager<
             required String productId,
             required String unitName,
             Value<String?> barcode = const Value.absent(),
-            Value<double> unitFactor = const Value.absent(),
-            Value<double?> buyPrice = const Value.absent(),
-            Value<double?> sellPrice = const Value.absent(),
-            Value<double?> wholesalePrice = const Value.absent(),
-            Value<double?> halfWholesalePrice = const Value.absent(),
+            Value<Decimal> unitFactor = const Value.absent(),
+            Value<Decimal?> buyPrice = const Value.absent(),
+            Value<Decimal?> sellPrice = const Value.absent(),
+            Value<Decimal?> wholesalePrice = const Value.absent(),
+            Value<Decimal?> halfWholesalePrice = const Value.absent(),
             Value<bool> isDefault = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -95958,8 +96466,8 @@ typedef $$APInvoicesTableCreateCompanionBuilder = APInvoicesCompanion Function({
   Value<DateTime> invoiceDate,
   Value<DateTime?> dueDate,
   required double totalAmount,
-  Value<double> taxAmount,
-  Value<double> paidAmount,
+  Value<Decimal> taxAmount,
+  Value<Decimal> paidAmount,
   Value<String> status,
   Value<String?> notes,
   Value<String?> accountId,
@@ -95977,8 +96485,8 @@ typedef $$APInvoicesTableUpdateCompanionBuilder = APInvoicesCompanion Function({
   Value<DateTime> invoiceDate,
   Value<DateTime?> dueDate,
   Value<double> totalAmount,
-  Value<double> taxAmount,
-  Value<double> paidAmount,
+  Value<Decimal> taxAmount,
+  Value<Decimal> paidAmount,
   Value<String> status,
   Value<String?> notes,
   Value<String?> accountId,
@@ -96068,11 +96576,15 @@ class $$APInvoicesTableFilterComposer
   ColumnFilters<double> get totalAmount => $composableBuilder(
       column: $table.totalAmount, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get taxAmount => $composableBuilder(
-      column: $table.taxAmount, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get taxAmount =>
+      $composableBuilder(
+          column: $table.taxAmount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get paidAmount => $composableBuilder(
-      column: $table.paidAmount, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get paidAmount =>
+      $composableBuilder(
+          column: $table.paidAmount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get status => $composableBuilder(
       column: $table.status, builder: (column) => ColumnFilters(column));
@@ -96178,10 +96690,10 @@ class $$APInvoicesTableOrderingComposer
   ColumnOrderings<double> get totalAmount => $composableBuilder(
       column: $table.totalAmount, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get taxAmount => $composableBuilder(
+  ColumnOrderings<String> get taxAmount => $composableBuilder(
       column: $table.taxAmount, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get paidAmount => $composableBuilder(
+  ColumnOrderings<String> get paidAmount => $composableBuilder(
       column: $table.paidAmount, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get status => $composableBuilder(
@@ -96287,11 +96799,12 @@ class $$APInvoicesTableAnnotationComposer
   GeneratedColumn<double> get totalAmount => $composableBuilder(
       column: $table.totalAmount, builder: (column) => column);
 
-  GeneratedColumn<double> get taxAmount =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get taxAmount =>
       $composableBuilder(column: $table.taxAmount, builder: (column) => column);
 
-  GeneratedColumn<double> get paidAmount => $composableBuilder(
-      column: $table.paidAmount, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get paidAmount =>
+      $composableBuilder(
+          column: $table.paidAmount, builder: (column) => column);
 
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
@@ -96394,8 +96907,8 @@ class $$APInvoicesTableTableManager extends RootTableManager<
             Value<DateTime> invoiceDate = const Value.absent(),
             Value<DateTime?> dueDate = const Value.absent(),
             Value<double> totalAmount = const Value.absent(),
-            Value<double> taxAmount = const Value.absent(),
-            Value<double> paidAmount = const Value.absent(),
+            Value<Decimal> taxAmount = const Value.absent(),
+            Value<Decimal> paidAmount = const Value.absent(),
             Value<String> status = const Value.absent(),
             Value<String?> notes = const Value.absent(),
             Value<String?> accountId = const Value.absent(),
@@ -96432,8 +96945,8 @@ class $$APInvoicesTableTableManager extends RootTableManager<
             Value<DateTime> invoiceDate = const Value.absent(),
             Value<DateTime?> dueDate = const Value.absent(),
             required double totalAmount,
-            Value<double> taxAmount = const Value.absent(),
-            Value<double> paidAmount = const Value.absent(),
+            Value<Decimal> taxAmount = const Value.absent(),
+            Value<Decimal> paidAmount = const Value.absent(),
             Value<String> status = const Value.absent(),
             Value<String?> notes = const Value.absent(),
             Value<String?> accountId = const Value.absent(),
@@ -96547,8 +97060,8 @@ typedef $$ARInvoicesTableCreateCompanionBuilder = ARInvoicesCompanion Function({
   Value<DateTime> invoiceDate,
   Value<DateTime?> dueDate,
   required double totalAmount,
-  Value<double> taxAmount,
-  Value<double> paidAmount,
+  Value<Decimal> taxAmount,
+  Value<Decimal> paidAmount,
   Value<String> status,
   Value<String?> notes,
   Value<String?> accountId,
@@ -96566,8 +97079,8 @@ typedef $$ARInvoicesTableUpdateCompanionBuilder = ARInvoicesCompanion Function({
   Value<DateTime> invoiceDate,
   Value<DateTime?> dueDate,
   Value<double> totalAmount,
-  Value<double> taxAmount,
-  Value<double> paidAmount,
+  Value<Decimal> taxAmount,
+  Value<Decimal> paidAmount,
   Value<String> status,
   Value<String?> notes,
   Value<String?> accountId,
@@ -96657,11 +97170,15 @@ class $$ARInvoicesTableFilterComposer
   ColumnFilters<double> get totalAmount => $composableBuilder(
       column: $table.totalAmount, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get taxAmount => $composableBuilder(
-      column: $table.taxAmount, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get taxAmount =>
+      $composableBuilder(
+          column: $table.taxAmount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get paidAmount => $composableBuilder(
-      column: $table.paidAmount, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get paidAmount =>
+      $composableBuilder(
+          column: $table.paidAmount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get status => $composableBuilder(
       column: $table.status, builder: (column) => ColumnFilters(column));
@@ -96767,10 +97284,10 @@ class $$ARInvoicesTableOrderingComposer
   ColumnOrderings<double> get totalAmount => $composableBuilder(
       column: $table.totalAmount, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get taxAmount => $composableBuilder(
+  ColumnOrderings<String> get taxAmount => $composableBuilder(
       column: $table.taxAmount, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get paidAmount => $composableBuilder(
+  ColumnOrderings<String> get paidAmount => $composableBuilder(
       column: $table.paidAmount, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get status => $composableBuilder(
@@ -96876,11 +97393,12 @@ class $$ARInvoicesTableAnnotationComposer
   GeneratedColumn<double> get totalAmount => $composableBuilder(
       column: $table.totalAmount, builder: (column) => column);
 
-  GeneratedColumn<double> get taxAmount =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get taxAmount =>
       $composableBuilder(column: $table.taxAmount, builder: (column) => column);
 
-  GeneratedColumn<double> get paidAmount => $composableBuilder(
-      column: $table.paidAmount, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get paidAmount =>
+      $composableBuilder(
+          column: $table.paidAmount, builder: (column) => column);
 
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
@@ -96983,8 +97501,8 @@ class $$ARInvoicesTableTableManager extends RootTableManager<
             Value<DateTime> invoiceDate = const Value.absent(),
             Value<DateTime?> dueDate = const Value.absent(),
             Value<double> totalAmount = const Value.absent(),
-            Value<double> taxAmount = const Value.absent(),
-            Value<double> paidAmount = const Value.absent(),
+            Value<Decimal> taxAmount = const Value.absent(),
+            Value<Decimal> paidAmount = const Value.absent(),
             Value<String> status = const Value.absent(),
             Value<String?> notes = const Value.absent(),
             Value<String?> accountId = const Value.absent(),
@@ -97021,8 +97539,8 @@ class $$ARInvoicesTableTableManager extends RootTableManager<
             Value<DateTime> invoiceDate = const Value.absent(),
             Value<DateTime?> dueDate = const Value.absent(),
             required double totalAmount,
-            Value<double> taxAmount = const Value.absent(),
-            Value<double> paidAmount = const Value.absent(),
+            Value<Decimal> taxAmount = const Value.absent(),
+            Value<Decimal> paidAmount = const Value.absent(),
             Value<String> status = const Value.absent(),
             Value<String?> notes = const Value.absent(),
             Value<String?> accountId = const Value.absent(),

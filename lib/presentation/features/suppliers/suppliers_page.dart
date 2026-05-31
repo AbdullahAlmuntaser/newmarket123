@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -154,7 +155,7 @@ class _SuppliersPageState extends State<SuppliersPage> {
     AppLocalizations l10n,
     ColorScheme colorScheme,
   ) {
-    final bool hasDebt = supplier.balance > 0;
+    final bool hasDebt = supplier.balance > Decimal.zero;
     final commService = sl<CommunicationService>();
 
     return Card(

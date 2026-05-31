@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:provider/provider.dart';
@@ -191,7 +192,7 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
                             name: 'US Dollar',
                             fractionalUnit: 'cent',
                             decimalPlaces: 2,
-                            exchangeRate: 1.0,
+                            exchangeRate: Decimal.one,
                             isBase: true,
                             createdAt: DateTime.now(),
                             updatedAt: DateTime.now(),
@@ -300,13 +301,13 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
         email: drift.Value(_emailController.text),
         customerType: drift.Value(_customerType),
         creditLimit: drift.Value(
-          double.tryParse(_creditLimitController.text) ?? 0.0,
+          Decimal.tryParse(_creditLimitController.text) ?? Decimal.zero,
         ),
         isActive: const drift.Value(true),
         syncStatus: const drift.Value(1),
         currencyId: drift.Value(_selectedCurrencyId),
         exchangeRate: drift.Value(
-          double.tryParse(_exchangeRateController.text) ?? 1.0,
+          Decimal.tryParse(_exchangeRateController.text) ?? Decimal.one,
         ),
       );
       Navigator.pop(context, companion);

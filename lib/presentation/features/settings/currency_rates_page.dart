@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -198,7 +199,7 @@ class _CurrencyRatesPageState extends State<CurrencyRatesPage> {
                           fractionalUnit:
                               drift.Value(fractionalUnitController.text.trim()),
                           decimalPlaces: drift.Value(decimals),
-                          exchangeRate: drift.Value(rate),
+                          exchangeRate: drift.Value(Decimal.parse(rate.toString())),
                           isBase: drift.Value(isBase),
                         ),
                       );
@@ -311,13 +312,13 @@ class _CurrencyRatesPageState extends State<CurrencyRatesPage> {
                             isBase: drift.Value(false)));
                   }
 
-                  await db.update(db.currencies).replace(
+                      await db.update(db.currencies).replace(
                         currency.copyWith(
                           name: nameController.text.trim(),
                           fractionalUnit:
                               drift.Value(fractionalUnitController.text.trim()),
                           decimalPlaces: decimals,
-                          exchangeRate: rate,
+                          exchangeRate: Decimal.parse(rate.toString()),
                           isBase: isBase,
                         ),
                       );

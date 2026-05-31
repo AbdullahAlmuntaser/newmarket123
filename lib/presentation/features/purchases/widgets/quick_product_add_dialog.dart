@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -59,12 +60,12 @@ class _QuickProductAddDialogState extends State<QuickProductAddDialog> {
         ),
         categoryId: drift.Value(_selectedCategory?.id),
         unit: drift.Value(_unitController.text),
-        buyPrice: drift.Value(buyPrice),
-        sellPrice: drift.Value(sellPrice),
-        wholesalePrice: const drift.Value(0.0),
-        stock: const drift.Value(0.0),
-        alertLimit: const drift.Value(5.0),
-        taxRate: const drift.Value(15.0),
+        buyPrice: drift.Value(Decimal.parse(buyPrice.toString())),
+        sellPrice: drift.Value(Decimal.parse(sellPrice.toString())),
+        wholesalePrice: drift.Value(Decimal.zero),
+        stock: drift.Value(Decimal.zero),
+        alertLimit: drift.Value(Decimal.fromInt(5)),
+        taxRate: drift.Value(Decimal.fromInt(15)),
         isActive: const drift.Value(true),
         syncStatus: const drift.Value(1),
         updatedAt: drift.Value(DateTime.now()),

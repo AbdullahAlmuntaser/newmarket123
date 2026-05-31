@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/core/utils/failures.dart';
 import 'package:supermarket/domain/entities/stock_movement.dart' as entity;
@@ -21,7 +22,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
       await _stockMovementDao.insertStockMovement(
         StockMovementsCompanion.insert(
           productId: movement.itemId,
-          quantity: movement.quantity,
+          quantity: Decimal.parse(movement.quantity.toString()),
           type: movement.type.name,
           referenceId: Value(movement.referenceId),
         ),
@@ -46,7 +47,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
                 id: m.id,
                 itemId: m.productId,
                 unitId: '',
-                quantity: m.quantity,
+                quantity: m.quantity.toDouble(),
                 cost: 0.0,
                 type: entity.MovementType.values.firstWhere(
                   (t) => t.name == m.type,
@@ -68,7 +69,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
   Future<Either<Failure, double>> getCurrentStock(String itemId) async {
     try {
       final product = await _productsDao.getProductById(itemId);
-      return Right(product?.stock ?? 0.0);
+      return Right(product?.stock.toDouble() ?? 0.0);
     } catch (e) {
       return Left(DatabaseFailure(e.toString()));
     }

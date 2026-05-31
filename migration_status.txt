@@ -1,0 +1,1 @@
+Completed initial migration analysis and partially addressed accounting_service.dart. The migration effort is substantial and requires iterative, file-by-file correction to resolve all 700+ type mismatch errors due to the move from double to Decimal.

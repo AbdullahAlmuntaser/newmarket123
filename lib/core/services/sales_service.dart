@@ -33,7 +33,7 @@ class SalesService {
             // حساب الإجماليات (استخدام الضريبة من الفاتورة مباشرة)
             double subtotal = 0;
             for (var item in invoice.items) {
-              subtotal += (item.quantity * item.unitFactor * item.price);
+              subtotal += (item.quantity * item.unitFactor * item.price).toDouble();
             }
 
             double discount = invoice.discount;

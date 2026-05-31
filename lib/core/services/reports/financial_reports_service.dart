@@ -45,8 +45,8 @@ class FinancialReportsService {
 
       // Calculate sales VAT
       for (var invoice in salesInvoices) {
-        final subtotal = invoice.total - invoice.tax;
-        final tax = invoice.tax;
+        final subtotal = (invoice.total - invoice.tax).toDouble();
+        final tax = invoice.tax.toDouble();
 
         totalSalesExcludingVAT += subtotal;
         totalVATCollected += tax;
@@ -54,7 +54,7 @@ class FinancialReportsService {
 
       // Calculate purchases VAT (PurchaseOrder doesn't have tax field)
       for (var invoice in purchaseInvoices) {
-        final subtotal = invoice.total;
+        final subtotal = invoice.total.toDouble();
         const tax = 0.0; // PurchaseOrder doesn't have tax field
 
         totalPurchasesExcludingVAT += subtotal;
@@ -107,18 +107,18 @@ class FinancialReportsService {
       int totalQuantity = 0;
 
       for (var invoice in invoices) {
-        final subtotal = invoice.total - invoice.tax;
+        final subtotal = (invoice.total - invoice.tax).toDouble();
         totalRevenue += subtotal;
-        totalDiscount += invoice.discount;
-        totalTax += invoice.tax;
-        totalNet += invoice.total;
+        totalDiscount += invoice.discount.toDouble();
+        totalTax += invoice.tax.toDouble();
+        totalNet += invoice.total.toDouble();
       }
 
       // Get items count
       for (var invoice in invoices) {
         final items = await salesDao.getInvoiceItems(invoice.id);
         for (var item in items) {
-          totalQuantity += item.quantity.toInt();
+          totalQuantity += item.quantity.toDouble().toInt();
         }
       }
 
@@ -166,10 +166,10 @@ class FinancialReportsService {
       int totalQuantity = 0;
 
       for (var invoice in invoices) {
-        totalPurchases += invoice.total;
+        totalPurchases += invoice.total.toDouble();
         totalDiscount += 0.0; // PurchaseOrder doesn't have discount field
         totalTax += 0.0; // PurchaseOrder doesn't have tax field
-        totalNet += invoice.total;
+        totalNet += invoice.total.toDouble();
       }
 
       return PurchaseReport(
@@ -219,11 +219,11 @@ class FinancialReportsService {
       for (final account in expenseAccounts) {
         // Exclude COGS account if it is considered an expense account (usually 5010)
         if (account.code != '5010') {
-          operatingExpenses += await accountingDao.getAccountBalanceInRange(
+          operatingExpenses += (await accountingDao.getAccountBalanceInRange(
             account.id,
             startDate,
             endDate,
-          );
+          )).toDouble();
         }
       }
 

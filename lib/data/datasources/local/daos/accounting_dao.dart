@@ -1,6 +1,8 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'sync_log_mixin.dart';
 
 part 'accounting_dao.g.dart';
 
@@ -95,10 +97,11 @@ class BalanceSheet {
     Reconciliations,
     AccountingPeriods,
     AccountTransactions,
+    SyncQueue,
   ],
 )
 class AccountingDao extends DatabaseAccessor<AppDatabase>
-    with _$AccountingDaoMixin {
+    with _$AccountingDaoMixin, SyncLogMixin {
   AccountingDao(super.db);
 
   // New: Check if a date is within a closed accounting period
@@ -143,11 +146,25 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
 
   Future<String> createAccount(GLAccountsCompanion account) async {
     final row = await into(gLAccounts).insertReturning(account);
+    await logSyncOperation(
+      table: 'gl_accounts',
+      entityId: row.id,
+      operation: 'CREATE',
+    );
     return row.id;
   }
 
-  Future<bool> updateAccount(GLAccount account) =>
-      update(gLAccounts).replace(account);
+  Future<bool> updateAccount(GLAccount account) async {
+    final result = await update(gLAccounts).replace(account);
+    if (result) {
+      await logSyncOperation(
+        table: 'gl_accounts',
+        entityId: account.id,
+        operation: 'UPDATE',
+      );
+    }
+    return result;
+  }
 
   // New: Get accounts by type
   Future<List<GLAccount>> getAccountsByType(String type) =>
@@ -163,26 +180,32 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
   Future<bool> updateCostCenter(CostCenter cc) =>
       update(costCenters).replace(cc);
 
-  // --- GL Entries ---
   Future<void> createEntry(
     GLEntriesCompanion entry,
     List<GLLinesCompanion> lines,
   ) {
     return transaction(() async {
       // Validate accounting balance: Sum of Debits == Sum of Credits
-      double totalDebit = 0.0;
-      double totalCredit = 0.0;
+      Decimal totalDebit = Decimal.zero;
+      Decimal totalCredit = Decimal.zero;
       for (var line in lines) {
         totalDebit += line.debit.value;
         totalCredit += line.credit.value;
       }
-      if ((totalDebit - totalCredit).abs() > 0.001) {
+      if (totalDebit != totalCredit) {
         throw Exception(
           'القيد المحاسبي غير متوازن! (المدين: $totalDebit، الدائن: $totalCredit)',
         );
       }
 
       final entryRow = await into(gLEntries).insertReturning(entry);
+      
+      await logSyncOperation(
+        table: 'gl_entries',
+        entityId: entryRow.id,
+        operation: 'CREATE',
+      );
+
       for (var line in lines) {
         // Propagate branchId from entry if not present in line
         final lineToInsert = line.copyWith(
@@ -217,8 +240,10 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     final account = await getAccountById(accountId);
     if (account == null) return 0.0;
 
-    final debitSum = db.accountTransactions.debit.sum();
-    final creditSum = db.accountTransactions.credit.sum();
+    final debitSum = CustomExpression<double>(
+        'SUM(${db.accountTransactions.debit.name})');
+    final creditSum = CustomExpression<double>(
+        'SUM(${db.accountTransactions.credit.name})');
 
     final query = selectOnly(db.accountTransactions)..addColumns([debitSum, creditSum]);
     
@@ -232,8 +257,8 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
 
     if (result == null) return 0.0;
 
-    final debit = result.read(debitSum) ?? 0.0;
-    final credit = result.read(creditSum) ?? 0.0;
+    final debit = (result.read(debitSum) ?? 0).toDouble();
+    final credit = (result.read(creditSum) ?? 0).toDouble();
 
     if ([AccountType.asset, AccountType.expense].contains(account.type)) {
       return debit - credit;
@@ -302,8 +327,10 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     for (final account in accounts) {
       if (account.isHeader) continue;
 
-      final debitSum = gLLines.debit.sum();
-      final creditSum = gLLines.credit.sum();
+      final debitSum = CustomExpression<double>(
+          'SUM(${gLLines.debit.name})');
+      final creditSum = CustomExpression<double>(
+          'SUM(${gLLines.credit.name})');
 
       final query = selectOnly(gLLines)..addColumns([debitSum, creditSum]);
 
@@ -315,8 +342,8 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
       }
 
       final result = await query.getSingle();
-      final debit = result.read(debitSum) ?? 0.0;
-      final credit = result.read(creditSum) ?? 0.0;
+      final debit = (result.read(debitSum) ?? 0).toDouble();
+      final credit = (result.read(creditSum) ?? 0).toDouble();
 
       items.add(TrialBalanceItem(account, debit, credit));
     }
@@ -332,8 +359,10 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     final account = await getAccountById(accountId);
     if (account == null) return 0.0;
 
-    final debitSum = gLLines.debit.sum();
-    final creditSum = gLLines.credit.sum();
+    final debitSum = CustomExpression<double>(
+        'SUM(${gLLines.debit.name})');
+    final creditSum = CustomExpression<double>(
+        'SUM(${gLLines.credit.name})');
 
     final query = selectOnly(gLLines).join([
       innerJoin(gLEntries, gLEntries.id.equalsExp(db.gLLines.entryId)),
@@ -355,8 +384,8 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
       return 0.0;
     }
 
-    final debit = result.read(debitSum) ?? 0.0;
-    final credit = result.read(creditSum) ?? 0.0;
+    final debit = (result.read(debitSum) ?? 0).toDouble();
+    final credit = (result.read(creditSum) ?? 0).toDouble();
 
     if (account.type == AccountType.asset ||
         account.type == AccountType.expense) {
@@ -376,8 +405,10 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     final account = await getAccountById(accountId);
     if (account == null) return 0.0;
 
-    final debitSum = gLLines.debit.sum();
-    final creditSum = gLLines.credit.sum();
+    final debitSum = CustomExpression<double>(
+        'SUM(${gLLines.debit.name})');
+    final creditSum = CustomExpression<double>(
+        'SUM(${gLLines.credit.name})');
 
     final query = selectOnly(gLLines).join([
       innerJoin(gLEntries, gLEntries.id.equalsExp(db.gLLines.entryId)),
@@ -399,8 +430,8 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
       return 0.0;
     }
 
-    final debit = result.read(debitSum) ?? 0.0;
-    final credit = result.read(creditSum) ?? 0.0;
+    final debit = (result.read(debitSum) ?? 0).toDouble();
+    final credit = (result.read(creditSum) ?? 0).toDouble();
 
     if (account.type == AccountType.asset ||
         account.type == AccountType.expense) {
@@ -416,8 +447,10 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     String? branchId,
   }) async {
     final allAccounts = await getAllAccounts();
-    final debitSum = gLLines.debit.sum();
-    final creditSum = gLLines.credit.sum();
+    final debitSum = CustomExpression<double>(
+        'SUM(${gLLines.debit.name})');
+    final creditSum = CustomExpression<double>(
+        'SUM(${gLLines.credit.name})');
 
     final query = selectOnly(gLLines).join([
       innerJoin(gLEntries, gLEntries.id.equalsExp(db.gLLines.entryId)),
@@ -436,8 +469,8 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     final Map<String, ({double debit, double credit})> balanceMap = {
       for (final row in rows)
         row.read(gLLines.accountId)!: (
-          debit: row.read(debitSum) ?? 0.0,
-          credit: row.read(creditSum) ?? 0.0,
+          debit: (row.read(debitSum) ?? 0).toDouble(),
+          credit: (row.read(creditSum) ?? 0).toDouble(),
         ),
     };
 
@@ -566,8 +599,10 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     required DateTime endDate,
     String? branchId,
   }) async {
-    final debitSum = gLLines.debit.sum();
-    final creditSum = gLLines.credit.sum();
+    final debitSum = CustomExpression<double>(
+        'SUM(${gLLines.debit.name})');
+    final creditSum = CustomExpression<double>(
+        'SUM(${gLLines.credit.name})');
 
     final query = selectOnly(gLLines).join([
       innerJoin(gLEntries, gLEntries.id.equalsExp(gLLines.entryId)),
@@ -588,7 +623,8 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     return rows.map((row) {
       return CostCenterExpense(
         name: row.read(costCenters.name)!,
-        total: (row.read(debitSum) ?? 0.0) - (row.read(creditSum) ?? 0.0),
+        total: ((row.read(debitSum) ?? 0).toDouble()) -
+            ((row.read(creditSum) ?? 0).toDouble()),
       );
     }).toList();
   }

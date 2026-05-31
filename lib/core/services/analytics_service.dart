@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
@@ -25,15 +26,15 @@ class AnalyticsService {
       ));
 
     final cogsLines = await cogsQuery.get();
-    double totalCogs = cogsLines.fold(
-        0.0, (sum, line) => sum + (line.read(db.gLLines.debit) ?? 0.0));
+    double totalCogs = cogsLines.fold<Decimal>(
+        Decimal.zero, (sum, line) => sum + ((line.read(db.gLLines.debit) as Decimal?) ?? Decimal.zero)).toDouble();
 
     // 2. Get Average Inventory (Beginning + Ending) / 2
-    double beginningInventory = await db.accountingDao
+    double beginningInventory = (await db.accountingDao
         .getAccountBalanceAsOfDate(
-            'inventory', startDate.subtract(const Duration(days: 1)));
+            'inventory', startDate.subtract(const Duration(days: 1)))).toDouble();
     double endingInventory =
-        await db.accountingDao.getAccountBalanceAsOfDate('inventory', endDate);
+        (await db.accountingDao.getAccountBalanceAsOfDate('inventory', endDate)).toDouble();
 
     double averageInventory = (beginningInventory + endingInventory) / 2;
 
@@ -52,7 +53,8 @@ class AnalyticsService {
 
     if (sales.isEmpty) return 0.0;
 
-    double totalMonthSales = sales.fold(0.0, (sum, s) => sum + s.total);
+    double totalMonthSales = sales.fold<Decimal>(Decimal.zero, (sum, s) => sum + s.total).toDouble();
+
     return totalMonthSales / 4; // المتوسط الأسبوعي
   }
 

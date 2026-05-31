@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/events/app_events.dart';
@@ -20,12 +21,13 @@ class CashManagementService {
   }) async {
     await db.transaction(() async {
       final id = const Uuid().v4();
+      final decimalAmount = Decimal.parse(amount.toString());
       
       // 1. Cashbox Transaction
       await db.cashboxDao.insertTransaction(
         CashboxTransactionsCompanion.insert(
           id: Value(id),
-          amount: amount,
+          amount: decimalAmount.toDouble(),
           type: 'IN',
           category: category,
           note: Value(note),
@@ -36,7 +38,7 @@ class CashManagementService {
 
       // 2. Fire Event for Accounting
       eventBus.fire(CashTransactionEvent(
-        amount: amount,
+        amount: decimalAmount,
         type: 'IN',
         category: category,
         accountId: accountId,
@@ -57,12 +59,13 @@ class CashManagementService {
   }) async {
     await db.transaction(() async {
       final id = const Uuid().v4();
+      final decimalAmount = Decimal.parse(amount.toString());
       
       // 1. Cashbox Transaction
       await db.cashboxDao.insertTransaction(
         CashboxTransactionsCompanion.insert(
           id: Value(id),
-          amount: amount,
+          amount: decimalAmount.toDouble(),
           type: 'OUT',
           category: category,
           note: Value(note),
@@ -73,7 +76,7 @@ class CashManagementService {
 
       // 2. Fire Event for Accounting
       eventBus.fire(CashTransactionEvent(
-        amount: amount,
+        amount: decimalAmount,
         type: 'OUT',
         category: category,
         accountId: accountId,

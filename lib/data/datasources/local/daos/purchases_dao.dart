@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import '../app_database.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
+import 'sync_log_mixin.dart';
 
 part 'purchases_dao.g.dart';
 
@@ -20,7 +21,7 @@ part 'purchases_dao.g.dart';
   ],
 )
 class PurchasesDao extends DatabaseAccessor<AppDatabase>
-    with _$PurchasesDaoMixin {
+    with _$PurchasesDaoMixin, SyncLogMixin {
   PurchasesDao(super.db);
 
   Stream<List<Purchase>> watchAllPurchases() => select(purchases).watch();
@@ -71,7 +72,14 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase>
         await into(purchaseItems).insert(item);
       }
 
-      // 3. Audit Log
+      // 3. Sync Queue
+      await logSyncOperation(
+        table: 'purchases',
+        entityId: purchaseId,
+        operation: 'CREATE',
+      );
+
+      // 4. Audit Log
       await into(auditLogs).insert(
         AuditLogsCompanion.insert(
           userId: Value(userId),
@@ -99,7 +107,14 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase>
         await into(purchaseReturnItems).insert(item);
       }
 
-      // 3. Audit Log
+      // 3. Sync Queue
+      await logSyncOperation(
+        table: 'purchase_returns',
+        entityId: returnId,
+        operation: 'CREATE',
+      );
+
+      // 4. Audit Log
       await into(auditLogs).insert(
         AuditLogsCompanion.insert(
           userId: Value(userId),
@@ -160,12 +175,14 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase>
   }
 
   Future<double?> getBestPurchasePrice(String productId) async {
+    final minPriceExpr = CustomExpression<double>(
+        'MIN(${purchaseItems.unitPrice.name})');
     final query = selectOnly(purchaseItems)
-      ..addColumns([purchaseItems.unitPrice.min()])
+      ..addColumns([minPriceExpr])
       ..where(purchaseItems.productId.equals(productId));
 
     final row = await query.getSingle();
-    return row.read(purchaseItems.unitPrice.min());
+    return row.read(minPriceExpr)?.toDouble();
   }
 
   // --- Purchase Orders ---
@@ -233,6 +250,12 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase>
           .go();
       await (delete(purchases)..where((p) => p.id.equals(purchaseId))).go();
 
+      await logSyncOperation(
+        table: 'purchases',
+        entityId: purchaseId,
+        operation: 'DELETE',
+      );
+
       await into(auditLogs).insert(
         AuditLogsCompanion.insert(
           action: 'DELETE',
@@ -276,6 +299,12 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase>
       for (var item in itemsCompanions) {
         await into(purchaseItems).insert(item);
       }
+
+      await logSyncOperation(
+        table: 'purchases',
+        entityId: purchaseId,
+        operation: 'UPDATE',
+      );
 
       await into(auditLogs).insert(
         AuditLogsCompanion.insert(

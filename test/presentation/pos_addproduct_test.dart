@@ -40,11 +40,11 @@ void main() {
       id: const drift.Value(productId),
       name: 'Test Product',
       sku: 'SKU-TEST',
-      buyPrice: const drift.Value(10.0),
-      sellPrice: const drift.Value(20.0),
-      wholesalePrice: const drift.Value(15.0),
-      stock: const drift.Value(100.0),
-      maxStock: const drift.Value(100.0),
+      buyPrice: drift.Value(Decimal.parse('10')),
+      sellPrice: drift.Value(Decimal.parse('20')),
+      wholesalePrice: drift.Value(Decimal.parse('15')),
+      stock: drift.Value(Decimal.parse('100')),
+      maxStock: drift.Value(Decimal.parse('100')),
       unit: const drift.Value('حبة'),
     ));
 

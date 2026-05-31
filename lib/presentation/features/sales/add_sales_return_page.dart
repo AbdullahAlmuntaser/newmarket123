@@ -133,7 +133,7 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
     _returnedQuantities.forEach((productId, qty) {
       final item = _saleItemsMap[productId];
       if (item != null) {
-        totalAmount += qty * item.price;
+        totalAmount += qty * item.price.toDouble();
       }
     });
 
@@ -242,7 +242,7 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
                             ),
                             IconButton(
                               icon: const Icon(Icons.add_circle_outline),
-                              onPressed: returnedQty < item.quantity
+                              onPressed: returnedQty < item.quantity.toDouble()
                                   ? () => setState(
                                         () => _returnedQuantities[
                                             item.productId] = returnedQty + 1,
@@ -277,14 +277,14 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
     _returnedQuantities.forEach((productId, qty) {
       if (qty > 0) {
         final item = _saleItemsMap[productId]!;
-        totalReturnedAmount += qty * item.price;
+        totalReturnedAmount += qty * item.price.toDouble();
         itemCompanions.add(
           SalesReturnItemsCompanion.insert(
             id: Value(const Uuid().v4()),
             salesReturnId: returnId,
             productId: productId,
             quantity: qty,
-            price: item.price,
+            price: item.price.toDouble(),
             syncStatus: const Value(1),
           ),
         );

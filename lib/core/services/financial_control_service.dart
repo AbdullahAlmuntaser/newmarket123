@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/inventory_costing_service.dart';
@@ -56,7 +57,7 @@ class FinancialControlService {
       errors.add('الفاتورة ملغاة');
     }
 
-    if (sale.total <= 0) {
+    if (sale.total <= Decimal.zero) {
       errors.add('إجمالي الفاتورة يجب أن يكون أكبر من صفر');
     }
 
@@ -69,10 +70,10 @@ class FinancialControlService {
     }
 
     for (var item in items) {
-      if (item.quantity <= 0) {
+      if (item.quantity <= Decimal.zero) {
         errors.add('الكمية يجب أن تكون أكبر من صفر للمنتج');
       }
-      if (item.price < 0) {
+      if (item.price < Decimal.zero) {
         errors.add('السعر لا يمكن أن يكون سالب');
       }
     }
@@ -99,7 +100,7 @@ class FinancialControlService {
       errors.add('الفاتورة ملغاة');
     }
 
-    if (purchase.total <= 0) {
+    if (purchase.total <= Decimal.zero) {
       errors.add('إجمالي الفاتورة يجب أن يكون أكبر من صفر');
     }
 
@@ -143,8 +144,8 @@ class FinancialControlService {
     double totalCredit = 0;
 
     for (var line in lines) {
-      totalDebit += line.debit;
-      totalCredit += line.credit;
+      totalDebit += line.debit.toDouble();
+      totalCredit += line.credit.toDouble();
     }
 
     final difference = (totalDebit - totalCredit).abs();
@@ -345,7 +346,7 @@ class FinancialControlService {
               InventoryTransactionsCompanion.insert(
                 productId: item.productId,
                 warehouseId: '',
-                quantity: item.quantity * item.unitFactor,
+                quantity: (item.quantity * item.unitFactor).toDouble(),
                 type: 'RETURN',
                 referenceId: saleId,
               ),
@@ -357,7 +358,7 @@ class FinancialControlService {
         description: 'إلغاء فاتورة مبيعات #${sale.id.substring(0, 8)}',
         referenceType: 'SALE_VOID',
         referenceId: saleId,
-        amount: sale.total,
+        amount: sale.total.toDouble(),
         date: sale.createdAt,
       );
 
@@ -429,7 +430,7 @@ class FinancialControlService {
               InventoryTransactionsCompanion.insert(
                 productId: item.productId,
                 warehouseId: '',
-                quantity: -item.quantity,
+                quantity: -(item.quantity.toDouble()),
                 type: 'PURCHASE_RETURN',
                 referenceId: purchaseId,
               ),
@@ -441,7 +442,7 @@ class FinancialControlService {
         description: 'إلغاء فاتورة مشتريات #${purchase.id.substring(0, 8)}',
         referenceType: 'PURCHASE_VOID',
         referenceId: purchaseId,
-        amount: purchase.total,
+        amount: purchase.total.toDouble(),
         date: purchase.date,
         isPurchase: true,
       );
@@ -495,27 +496,27 @@ class FinancialControlService {
       line1 = GLLinesCompanion.insert(
         entryId: entryId,
         accountId: apAccount.id,
-        debit: Value(amount),
-        credit: const Value(0.0),
+        debit: Value(Decimal.parse(amount.toString())),
+        credit: Value(Decimal.zero),
       );
       line2 = GLLinesCompanion.insert(
         entryId: entryId,
         accountId: cashAccount.id,
-        debit: const Value(0.0),
-        credit: Value(amount),
+        debit: Value(Decimal.zero),
+        credit: Value(Decimal.parse(amount.toString())),
       );
     } else {
       line1 = GLLinesCompanion.insert(
         entryId: entryId,
         accountId: cashAccount.id,
-        debit: Value(amount),
-        credit: const Value(0.0),
+        debit: Value(Decimal.parse(amount.toString())),
+        credit: Value(Decimal.zero),
       );
       line2 = GLLinesCompanion.insert(
         entryId: entryId,
         accountId: arAccount.id,
-        debit: const Value(0.0),
-        credit: Value(amount),
+        debit: Value(Decimal.zero),
+        credit: Value(Decimal.parse(amount.toString())),
       );
     }
 

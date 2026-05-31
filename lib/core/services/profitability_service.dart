@@ -35,7 +35,7 @@ class ProfitabilityService {
     double totalCost = 0;
 
     for (var sale in sales) {
-      totalRevenue += sale.total;
+      totalRevenue += sale.total.toDouble();
 
       // 2. Get items for this sale and calculate COGS
       final items = await (db.select(
@@ -49,7 +49,7 @@ class ProfitabilityService {
           db.products,
         )..where((p) => p.id.equals(item.productId)))
             .getSingle();
-        totalCost += (item.quantity * item.unitFactor) * (product.buyPrice);
+        totalCost += ((item.quantity * item.unitFactor) * (product.buyPrice)).toDouble();
       }
     }
 

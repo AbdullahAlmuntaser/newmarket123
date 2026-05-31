@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/audit_service.dart';
@@ -44,7 +45,8 @@ class StockTransferService {
         )..where((t) => t.id.equals(item.batchId)))
             .getSingle();
 
-        if (sourceBatch.quantity < item.quantity) {
+        final itemQtyDecimal = Decimal.parse(item.quantity.toString());
+        if (sourceBatch.quantity < itemQtyDecimal) {
           throw Exception(
             'Insufficient stock in batch ${sourceBatch.batchNumber} for product ${item.productId}',
           );
@@ -56,7 +58,7 @@ class StockTransferService {
         )..where((t) => t.id.equals(sourceBatch.id)))
             .write(
           ProductBatchesCompanion(
-            quantity: Value(sourceBatch.quantity - item.quantity),
+            quantity: Value(sourceBatch.quantity - itemQtyDecimal),
           ),
         );
 
@@ -91,7 +93,7 @@ class StockTransferService {
           )..where((t) => t.id.equals(destBatchId)))
               .write(
             ProductBatchesCompanion(
-              quantity: Value(existingDestBatch.quantity + item.quantity),
+              quantity: Value(existingDestBatch.quantity + Decimal.parse(item.quantity.toString())),
             ),
           );
         } else {
@@ -103,8 +105,8 @@ class StockTransferService {
                   warehouseId: toWarehouseId,
                   batchNumber: sourceBatch.batchNumber,
                   expiryDate: Value(sourceBatch.expiryDate),
-                  quantity: Value(item.quantity),
-                  initialQuantity: Value(item.quantity),
+                  quantity: Value(Decimal.parse(item.quantity.toString())),
+                  initialQuantity: Value(Decimal.parse(item.quantity.toString())),
                   costPrice: Value(sourceBatch.costPrice),
                 ),
               );
@@ -155,7 +157,7 @@ class StockTransferService {
           ..where(
             (t) =>
                 t.warehouseId.equals(warehouseId) &
-                t.quantity.isBiggerThan(const Variable(0)),
+                t.quantity.isBiggerThan(Constant(Decimal.zero.toString())),
           ))
         .get();
   }

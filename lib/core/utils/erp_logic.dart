@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:decimal/decimal.dart';
 import 'package:intl/intl.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
@@ -17,17 +18,17 @@ class ErpLogic {
       double price = 0.0;
 
       if (item is SaleItemsCompanion) {
-        quantity = item.quantity.value;
-        price = item.price.value;
+        quantity = item.quantity.value.toDouble();
+        price = item.price.value.toDouble();
       } else if (item is PurchaseItemsCompanion) {
-        quantity = item.quantity.value;
-        price = item.price.value;
+        quantity = item.quantity.value.toDouble();
+        price = item.price.value.toDouble();
       } else if (item is SaleItem) {
-        quantity = item.quantity;
-        price = item.price;
+        quantity = item.quantity.toDouble();
+        price = item.price.toDouble();
       } else if (item is PurchaseItem) {
-        quantity = item.quantity;
-        price = item.price;
+        quantity = item.quantity.toDouble();
+        price = item.price.toDouble();
       }
 
       subtotal += quantity * price;
@@ -85,7 +86,7 @@ class ErpLogic {
   ) {
     double actualQty =
         isCarton ? requestedQty * product.piecesPerCarton : requestedQty;
-    return product.stock >= actualQty;
+    return product.stock >= Decimal.parse(actualQty.toString());
   }
 
   /// عرض المخزون بشكل نصي ذكي (مثلاً: 2 كرتون و 5 حبات)

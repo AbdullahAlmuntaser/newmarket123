@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:supermarket/core/services/inventory_service.dart';
 import 'package:supermarket/injection_container.dart';
@@ -47,7 +48,7 @@ class ProductBatchesReportWidget extends StatelessWidget {
                       DataColumn(label: Text('سعر التكلفة'), numeric: true),
                       DataColumn(label: Text('المستودع')),
                     ],
-                    rows: batches.where((b) => b.batch.quantity > 0).map((b) {
+                    rows: batches.where((b) => b.batch.quantity > Decimal.zero).map((b) {
                       return DataRow(
                         cells: [
                           DataCell(Text(b.batch.id.substring(0, 8))),

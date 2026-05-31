@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -48,7 +49,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                   final expenseLine = lines.isEmpty
                       ? null
                       : lines.cast<dao.GLLineWithAccount?>().firstWhere(
-                            (l) => l != null && l.line.debit > 0,
+                            (l) => l != null && l.line.debit > Decimal.zero,
                             orElse: () => null,
                           );
                   return ListTile(
@@ -173,7 +174,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                   amountController.text.isNotEmpty &&
                   selectedExpenseAccount != null &&
                   selectedPaymentAccount != null) {
-                final amount = double.tryParse(amountController.text) ?? 0.0;
+                final amount = Decimal.tryParse(amountController.text) ?? Decimal.zero;
                 try {
                   await accountingService.recordExpense(
                     description: descriptionController.text,

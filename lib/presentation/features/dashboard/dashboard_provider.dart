@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -45,7 +46,7 @@ class DashboardProvider with ChangeNotifier {
       final sales = await (db.select(db.sales)
             ..where((s) => s.createdAt.isBiggerOrEqual(Variable(startOfDay))))
           .get();
-      double totalSales = sales.fold(0.0, (sum, s) => sum + s.total);
+      double totalSales = sales.fold<Decimal>(Decimal.zero, (sum, s) => sum + s.total).toDouble();
 
       // 2. القيمة الإجمالية للمخزون
       double invValue = await db.calculateTotalInventoryValue();

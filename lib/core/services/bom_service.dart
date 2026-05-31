@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
@@ -84,13 +85,13 @@ class BomService {
               (b) =>
                   b.productId.equals(component.componentProductId) &
                   b.warehouseId.equals(warehouseId) &
-                  b.quantity.isBiggerThan(const Constant(0)),
+                  b.quantity.isBiggerThan(Constant(Decimal.zero.toString())),
             ))
           .get();
 
       double totalAvailable = 0;
       for (final batch in available) {
-        totalAvailable += batch.quantity;
+        totalAvailable += batch.quantity.toDouble();
       }
 
       if (totalAvailable < requiredQty) {
@@ -123,9 +124,9 @@ class BomService {
               productId: finishedProductId,
               warehouseId: warehouseId,
               batchNumber: finalBatchNumber,
-              quantity: Value(producedQuantity),
-              initialQuantity: Value(producedQuantity),
-              costPrice: Value(cost),
+              quantity: Value(Decimal.parse(producedQuantity.toString())),
+              initialQuantity: Value(Decimal.parse(producedQuantity.toString())),
+              costPrice: Value(Decimal.parse(cost.toString())),
               expiryDate: Value(expiryDate),
             ),
           );
@@ -161,7 +162,7 @@ class BomService {
             (b) =>
                 b.productId.equals(productId) &
                 b.warehouseId.equals(warehouseId) &
-                b.quantity.isBiggerThan(const Constant(0)),
+                b.quantity.isBiggerThan(Constant(Decimal.zero.toString())),
           )
           ..orderBy([
             (b) => OrderingTerm.asc(b.expiryDate),
@@ -173,9 +174,9 @@ class BomService {
       if (remaining <= 0) break;
 
       final consumeQty =
-          batch.quantity < remaining ? batch.quantity : remaining;
+          batch.quantity < Decimal.parse(remaining.toString()) ? batch.quantity : Decimal.parse(remaining.toString());
       final newQty = batch.quantity - consumeQty;
-      remaining -= consumeQty;
+      remaining -= consumeQty.toDouble();
 
       await (db.update(db.productBatches)..where((b) => b.id.equals(batch.id)))
           .write(ProductBatchesCompanion(quantity: Value(newQty)));
@@ -186,7 +187,7 @@ class BomService {
               productId: productId,
               warehouseId: warehouseId,
               batchId: Value(batch.id),
-              quantity: -consumeQty,
+              quantity: -consumeQty.toDouble(),
               type: type,
               referenceId: referenceId,
             ),
@@ -202,7 +203,7 @@ class BomService {
             ..where((p) => p.id.equals(component.componentProductId)))
           .getSingleOrNull();
       if (product != null) {
-        totalCost += product.buyPrice * component.quantity;
+        totalCost += (product.buyPrice * Decimal.parse(component.quantity.toString())).toDouble();
       }
     }
     return totalCost;

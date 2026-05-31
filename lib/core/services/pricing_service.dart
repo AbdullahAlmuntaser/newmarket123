@@ -45,7 +45,7 @@ class PricingService {
     )..where((p) => p.id.equals(productId)))
         .getSingleOrNull();
     
-    if (isWholesale && (product?.wholesalePrice ?? 0) > 0) {
+    if (isWholesale && (product?.wholesalePrice ?? Decimal.zero) > Decimal.zero) {
       return Decimal.parse((product!.wholesalePrice).toString());
     }
     return Decimal.parse((product?.sellPrice ?? 0.0).toString());
@@ -72,10 +72,10 @@ class PricingService {
       final customer = await (db.select(db.customers)
             ..where((c) => c.id.equals(customerId)))
           .getSingleOrNull();
-      if (customer != null && customer.discountRate > 0) {
-        final customerDiscountFactor =
-            Decimal.parse((customer.discountRate / 100).toString());
-        finalPrice -= (finalPrice * customerDiscountFactor);
+      if (customer != null && customer.discountRate > Decimal.zero) {
+        final Decimal customerDiscountFactor =
+            Decimal.parse((customer.discountRate / Decimal.fromInt(100)).toString());
+        finalPrice = finalPrice - (finalPrice * customerDiscountFactor);
       }
     }
 
@@ -125,7 +125,7 @@ class PricingService {
       db.products,
     )..where((p) => p.id.equals(productId)))
         .getSingleOrNull();
-    if (product != null && product.wholesalePrice > 0) {
+    if (product != null && product.wholesalePrice > Decimal.zero) {
       return Decimal.parse(product.wholesalePrice.toString());
     }
     // Fallback to sell price if wholesale price is not set

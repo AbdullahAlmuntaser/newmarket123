@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:drift/drift.dart' as drift;
@@ -238,7 +239,7 @@ class _AddAPInvoiceDialogState extends State<AddAPInvoiceDialog> {
                   dueDate: drift.Value(_dueDate),
                   totalAmount: totalAmount,
                   taxAmount: drift.Value(
-                    MoneyFormField.valueOf(_taxAmountController),
+                    Decimal.parse(MoneyFormField.valueOf(_taxAmountController).toString()),
                   ),
                   status: const drift.Value('POSTED'),
                 ),

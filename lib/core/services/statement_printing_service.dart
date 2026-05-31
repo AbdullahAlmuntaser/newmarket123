@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -64,9 +65,9 @@ class StatementPrintingService {
       headers: headers,
       data: transactions.map((t) {
         if (account.type == 'ASSET' || account.type == 'EXPENSE') {
-          runningBalance += (t.debit - t.credit);
+          runningBalance += (t.debit - t.credit).toDouble();
         } else {
-          runningBalance += (t.credit - t.debit);
+          runningBalance += (t.credit - t.debit).toDouble();
         }
         return [
           intl.DateFormat('yyyy-MM-dd').format(t.date),
@@ -83,8 +84,8 @@ class StatementPrintingService {
   }
 
   pw.Widget _buildFooter(List<AccountTransaction> transactions, GLAccount account) {
-    double totalDebit = transactions.fold(0, (sum, t) => sum + t.debit);
-    double totalCredit = transactions.fold(0, (sum, t) => sum + t.credit);
+    double totalDebit = transactions.fold<Decimal>(Decimal.zero, (sum, t) => sum + t.debit).toDouble();
+    double totalCredit = transactions.fold<Decimal>(Decimal.zero, (sum, t) => sum + t.credit).toDouble();
     double finalBalance = 0.0;
     if (account.type == 'ASSET' || account.type == 'EXPENSE') {
       finalBalance = totalDebit - totalCredit;

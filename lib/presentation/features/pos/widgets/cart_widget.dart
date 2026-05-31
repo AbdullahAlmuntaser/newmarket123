@@ -447,7 +447,11 @@ class CartWidget extends StatelessWidget {
               unitName: result['unitName'] as String,
               factor: result['factor'] as double,
               barcode: drift.Value(result['barcode'] as String?),
-              sellPrice: drift.Value(result['sellPrice'] as double?),
+              sellPrice: drift.Value(
+                result['sellPrice'] != null
+                    ? Decimal.parse(result['sellPrice'].toString())
+                    : null,
+              ),
             ),
           );
       // Reload units in Bloc

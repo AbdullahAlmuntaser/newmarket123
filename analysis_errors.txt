@@ -1,0 +1,153 @@
+Analyzing systemmarket...                                       
+
+  error • The method 'toDouble' isn't defined for the type 'Object' • lib/core/services/accounting_service.dart:629:42 • undefined_method
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/accounting_service.dart:651:31 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/accounting_service.dart:662:36 • argument_type_not_assignable
+  error • The argument type 'GeneratedColumnWithTypeConverter<Decimal, String>' can't be assigned to the parameter type 'Expression<Decimal>'.  • lib/core/services/accounting_service.dart:717:83 • argument_type_not_assignable
+  error • The argument type 'GeneratedColumnWithTypeConverter<Decimal, String>' can't be assigned to the parameter type 'Expression<Decimal>'.  • lib/core/services/accounting_service.dart:717:131 • argument_type_not_assignable
+  error • The argument type 'GeneratedColumnWithTypeConverter<Decimal, String>' can't be assigned to the parameter type 'Expression<Decimal>'.  • lib/core/services/accounting_service.dart:729:83 • argument_type_not_assignable
+  error • The argument type 'GeneratedColumnWithTypeConverter<Decimal, String>' can't be assigned to the parameter type 'Expression<Decimal>'.  • lib/core/services/accounting_service.dart:729:130 • argument_type_not_assignable
+  error • A value of type 'double' can't be assigned to a variable of type 'Decimal' • lib/core/services/accounting_service.dart:1250:22 • invalid_assignment
+  error • A value of type 'double' can't be assigned to a variable of type 'Decimal' • lib/core/services/accounting_service.dart:1311:22 • invalid_assignment
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'Rational'.  • lib/core/services/accounting_service.dart:1395:46 • argument_type_not_assignable
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'Rational'.  • lib/core/services/accounting_service.dart:1556:46 • argument_type_not_assignable
+  error • The operator '-' isn't defined for the type 'Object' • lib/core/services/accounting_service.dart:1732:72 • undefined_operator
+  error • The operator '-' isn't defined for the type 'Object' • lib/core/services/accounting_service.dart:1753:70 • undefined_operator
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/accounting_service.dart:1774:26 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/accounting_service.dart:1775:23 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/accounting_service.dart:1776:30 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/accounting_service.dart:1777:22 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/accounting_service.dart:1778:22 • argument_type_not_assignable
+  error • A value of type 'double' can't be assigned to a variable of type 'Decimal' • lib/core/services/accounting_service.dart:1822:31 • invalid_assignment
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/accounting_service.dart:2121:33 • argument_type_not_assignable
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'double'.  • lib/core/services/asset_service.dart:56:17 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Rational'.  • lib/core/services/budget_service.dart:46:64 • argument_type_not_assignable
+  error • The method 'toStringAsFixed' isn't defined for the type 'Rational' • lib/core/services/budget_service.dart:46:69 • undefined_method
+  error • A value of type 'Object' can't be assigned to a variable of type 'double' • lib/core/services/erp_data_service.dart:76:15 • invalid_assignment
+  error • A value of type 'Object' can't be assigned to a variable of type 'double' • lib/core/services/erp_data_service.dart:77:17 • invalid_assignment
+  error • The argument type 'Object' can't be assigned to the parameter type 'double'.  • lib/core/services/erp_data_service.dart:89:26 • argument_type_not_assignable
+  error • The argument type 'Object' can't be assigned to the parameter type 'double'.  • lib/core/services/erp_data_service.dart:92:20 • argument_type_not_assignable
+  error • The argument type 'Object' can't be assigned to the parameter type 'double'.  • lib/core/services/erp_data_service.dart:93:23 • argument_type_not_assignable
+  error • A value of type 'Decimal' can't be assigned to a variable of type 'double' • lib/core/services/erp_data_service.dart:128:21 • invalid_assignment
+  error • The argument type 'Object' can't be assigned to the parameter type 'double'.  • lib/core/services/erp_data_service.dart:133:23 • argument_type_not_assignable
+  error • The argument type 'Object' can't be assigned to the parameter type 'double'.  • lib/core/services/erp_data_service.dart:134:20 • argument_type_not_assignable
+  error • A value of type 'Object' can't be assigned to a variable of type 'double' • lib/core/services/erp_data_service.dart:165:19 • invalid_assignment
+  error • The argument type 'Expression<String>' can't be assigned to the parameter type 'Expression<double>'.  • lib/core/services/erp_data_service.dart:182:28 • argument_type_not_assignable
+  error • The argument type 'Object' can't be assigned to the parameter type 'double'.  • lib/core/services/erp_data_service.dart:186:23 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/financial_closing_service.dart:226:26 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/financial_closing_service.dart:244:27 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/financial_closing_service.dart:316:26 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/financial_closing_service.dart:326:27 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal?'.  • lib/core/services/financial_closing_service.dart:465:28 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal?'.  • lib/core/services/financial_closing_service.dart:466:29 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/financial_control_service.dart:60:23 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/financial_control_service.dart:73:28 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/financial_control_service.dart:76:24 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/financial_control_service.dart:103:27 • argument_type_not_assignable
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'double'.  • lib/core/services/financial_control_service.dart:349:27 • argument_type_not_assignable
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'double'.  • lib/core/services/financial_control_service.dart:361:17 • argument_type_not_assignable
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'double'.  • lib/core/services/financial_control_service.dart:433:27 • argument_type_not_assignable
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'double'.  • lib/core/services/financial_control_service.dart:445:17 • argument_type_not_assignable
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'num'.  • lib/core/services/grn_service.dart:54:26 • argument_type_not_assignable
+  error • A value of type 'Decimal' can't be assigned to a variable of type 'double' • lib/core/services/grn_service.dart:59:28 • invalid_assignment
+  error • A value of type 'Decimal' can't be assigned to a variable of type 'double' • lib/core/services/grn_service.dart:60:35 • invalid_assignment
+  error • The argument type 'int' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/grn_service.dart:64:27 • argument_type_not_assignable
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'num'.  • lib/core/services/grn_service.dart:65:42 • argument_type_not_assignable
+  error • A value of type 'Rational' can't be assigned to a variable of type 'double' • lib/core/services/grn_service.dart:67:31 • invalid_assignment
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/grn_service.dart:67:46 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/grn_service.dart:67:60 • argument_type_not_assignable
+  error • A value of type 'Decimal' can't be assigned to a variable of type 'double' • lib/core/services/grn_service.dart:70:33 • invalid_assignment
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/grn_service.dart:70:46 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/grn_service.dart:79:33 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/grn_service.dart:80:40 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/grn_service.dart:81:34 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/grn_service.dart:93:42 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/grn_service.dart:94:29 • argument_type_not_assignable
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'double'.  • lib/core/services/grn_service.dart:228:21 • argument_type_not_assignable
+warning • Unused import: 'package:decimal/decimal.dart' • lib/core/services/inventory_audit_service.dart:1:8 • unused_import
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/inventory_audit_service.dart:22:27 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/inventory_costing_service.dart:267:19 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/inventory_costing_service.dart:284:19 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/inventory_costing_service.dart:285:21 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/inventory_service.dart:366:45 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/inventory_service.dart:371:40 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/inventory_service.dart:380:25 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/inventory_service.dart:388:39 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/inventory_service.dart:434:36 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/inventory_service.dart:441:62 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/inventory_service.dart:458:64 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/inventory_service.dart:467:41 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/inventory_service.dart:468:48 • argument_type_not_assignable
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'double'.  • lib/core/services/invoice_service.dart:32:7 • argument_type_not_assignable
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'double'.  • lib/core/services/invoice_service.dart:33:7 • argument_type_not_assignable
+  error • The operator '>' isn't defined for the type 'Object' • lib/core/services/pricing_service.dart:48:55 • undefined_operator
+  error • The argument type 'int' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/pricing_service.dart:75:55 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/pricing_service.dart:77:52 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/pricing_service.dart:128:53 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/production_service.dart:60:23 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/production_service.dart:72:21 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/production_service.dart:83:33 • argument_type_not_assignable
+warning • Unused import: 'package:decimal/decimal.dart' • lib/core/services/profitability_service.dart:1:8 • unused_import
+warning • Unused import: 'package:decimal/decimal.dart' • lib/core/services/purchase_converter.dart:1:8 • unused_import
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/purchase_converter.dart:27:20 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/purchase_converter.dart:39:25 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/purchase_converter.dart:40:26 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/purchase_converter.dart:41:22 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/purchase_service.dart:30:14 • argument_type_not_assignable
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'String'.  • lib/core/services/quick_customer_service.dart:167:39 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/reorder_service.dart:64:61 • argument_type_not_assignable
+warning • Unused import: 'package:decimal/decimal.dart' • lib/core/services/report_engine_service.dart:2:8 • unused_import
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'num'.  • lib/core/services/report_engine_service.dart:256:21 • argument_type_not_assignable
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'double'.  • lib/core/services/report_service.dart:16:32 • argument_type_not_assignable
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'double'.  • lib/core/services/report_service.dart:16:45 • argument_type_not_assignable
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'double'.  • lib/core/services/report_service.dart:16:62 • argument_type_not_assignable
+warning • Unused import: 'package:decimal/decimal.dart' • lib/core/services/reports/financial_reports_service.dart:1:8 • unused_import
+  error • A value of type 'double' can't be assigned to a variable of type 'int' • lib/core/services/reports/financial_reports_service.dart:122:28 • invalid_assignment
+  error • The method 'toInt' isn't defined for the type 'Decimal' • lib/core/services/reports/financial_reports_service.dart:122:42 • undefined_method
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/return_service.dart:63:58 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/return_service.dart:80:54 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/return_service.dart:221:58 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/return_service.dart:244:70 • argument_type_not_assignable
+warning • Unused import: 'package:decimal/decimal.dart' • lib/core/services/sales_service.dart:1:8 • unused_import
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/shift_service.dart:66:25 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/shift_service.dart:79:25 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/shift_service.dart:83:9 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/shift_service.dart:84:9 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/shift_service.dart:85:9 • argument_type_not_assignable
+  error • A value of type 'Decimal' can't be returned from the method 'getCurrentBalance' because it has a return type of 'Future<double>' • lib/core/services/statement_service.dart:17:12 • return_of_invalid_type
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/stock_transfer_service.dart:48:36 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/stock_transfer_service.dart:60:52 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/stock_transfer_service.dart:95:60 • argument_type_not_assignable
+warning • Unused import: 'package:decimal/decimal.dart' • lib/core/services/supplier_analytics_service.dart:1:8 • unused_import
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/system_auditor.dart:23:28 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/system_auditor.dart:23:46 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/transaction_engine.dart:89:32 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/transaction_engine.dart:100:64 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/transaction_engine.dart:124:35 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/transaction_engine.dart:125:42 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/transaction_engine.dart:156:44 • argument_type_not_assignable
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'num'.  • lib/core/services/transaction_engine.dart:294:48 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/transaction_engine.dart:303:48 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/transaction_engine.dart:319:30 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/transaction_engine.dart:320:26 • argument_type_not_assignable
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'String?'.  • lib/core/services/transaction_engine.dart:334:65 • argument_type_not_assignable
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'double'.  • lib/core/services/transaction_engine.dart:375:31 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/transaction_engine.dart:490:48 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/transaction_engine.dart:517:56 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/transaction_engine.dart:542:64 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/transaction_engine.dart:552:42 • argument_type_not_assignable
+  error • The argument type 'Decimal' can't be assigned to the parameter type 'num'.  • lib/core/services/transaction_engine.dart:553:25 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/transaction_engine.dart:580:45 • argument_type_not_assignable
+  error • A value of type 'Object' can't be assigned to a variable of type 'double' • lib/core/services/transaction_engine.dart:646:27 • invalid_assignment
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/transaction_engine.dart:646:45 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/transaction_engine.dart:654:70 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/transaction_engine.dart:682:58 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/transaction_engine.dart:698:47 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/transaction_engine.dart:743:71 • argument_type_not_assignable
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/transaction_engine.dart:789:71 • argument_type_not_assignable
+warning • Unused import: 'package:decimal/decimal.dart' • lib/core/services/unified_statement_service.dart:1:8 • unused_import
+  error • The argument type 'double' can't be assigned to the parameter type 'Decimal'.  • lib/core/services/unit_conversion_service.dart:98:27 • argument_type_not_assignable
+  error • The argument type 'double?' can't be assigned to the parameter type 'Decimal?'.  • lib/core/services/unit_conversion_service.dart:99:25 • argument_type_not_assignable
+  error • The argument type 'double?' can't be assigned to the parameter type 'Decimal?'.  • lib/core/services/unit_conversion_service.dart:100:26 • argument_type_not_assignable
+  error • The operator '*' isn't defined for the type 'Object' • lib/data/datasources/local/app_database.dart:1286:21 • undefined_operator
+

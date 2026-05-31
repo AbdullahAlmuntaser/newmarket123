@@ -20,7 +20,7 @@ class SmartStockWidget extends StatelessWidget {
       builder: (context, snapshot) {
         final conversions = snapshot.data ?? [];
         final formattedStock = ErpLogic.formatInventory(
-          totalBaseQty: product.stock,
+          totalBaseQty: product.stock.toDouble(),
           baseUnitName: product.unit,
           conversions: conversions,
         );

@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -85,7 +86,7 @@ class _ItemMovementReportPageState extends State<ItemMovementReportPage> {
                       return DataRow(cells: [
                         DataCell(Text(intl.DateFormat('yyyy-MM-dd HH:mm').format(m.movementDate))),
                         DataCell(Text(m.type)),
-                        DataCell(Text(m.quantity.toString(), style: TextStyle(color: m.quantity > 0 ? Colors.green : Colors.red, fontWeight: FontWeight.bold))),
+                        DataCell(Text(m.quantity.toString(), style: TextStyle(color: m.quantity > Decimal.zero ? Colors.green : Colors.red, fontWeight: FontWeight.bold))),
                         DataCell(Text(m.cost.toStringAsFixed(2))),
                         DataCell(Text(m.referenceId ?? '')),
                       ]);

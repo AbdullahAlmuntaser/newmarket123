@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
@@ -38,23 +39,23 @@ class TransferService {
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: receiverAccountId,
-          debit: Value(amount),
-          credit: const Value(0.0),
+          debit: Value(Decimal.parse(amount.toString())),
+          credit: Value(Decimal.zero),
         ),
         // Credit Sender
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: senderAccountId,
-          debit: const Value(0.0),
-          credit: Value(amount + commission),
+          debit: Value(Decimal.zero),
+          credit: Value(Decimal.parse((amount + commission).toString())),
         ),
         // Debit Commission Expense (if any)
         if (commission > 0)
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: (await db.accountingDao.getAccountByCode('6010'))!.id, // Commission Expense
-            debit: Value(commission),
-            credit: const Value(0.0),
+            debit: Value(Decimal.parse(commission.toString())),
+            credit: Value(Decimal.zero),
           ),
       ];
 
@@ -67,7 +68,7 @@ class TransferService {
           senderAccountId: senderAccountId,
           receiverAccountId: receiverAccountId,
           amount: amount,
-          commission: Value(commission),
+          commission: Value(Decimal.parse(commission.toString())),
           company: Value(company),
           transferType: transferType,
           checkId: Value(checkId),

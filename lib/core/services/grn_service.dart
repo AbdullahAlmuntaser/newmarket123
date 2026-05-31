@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/audit_service.dart';
@@ -46,27 +47,27 @@ class GrnService {
             ),
           );
 
-      final landedCosts =
+      final Decimal landedCosts =
           purchase.landedCosts + purchase.shippingCost + purchase.otherExpenses;
       double itemsSubtotal = 0;
       for (var item in purchaseItems) {
-        itemsSubtotal += item.quantity * item.price;
+        itemsSubtotal += (item.quantity * item.price).toDouble();
       }
 
       for (var item in purchaseItems) {
         final String productId = item.productId;
-        final double qty = item.quantity;
-        final double unitFactor = item.unitFactor;
+        final double qty = item.quantity.toDouble();
+        final double unitFactor = item.unitFactor.toDouble();
         final double qtyInBaseUnit = qty * unitFactor;
 
         double landedCostPerUnit = 0;
-        if (landedCosts > 0 && itemsSubtotal > 0) {
-          final double itemValue = qty * item.price;
+        if (landedCosts > Decimal.zero && itemsSubtotal > 0) {
+          final double itemValue = (Decimal.parse(qty.toString()) * item.price).toDouble();
           final double proportion = itemValue / itemsSubtotal;
-          landedCostPerUnit = (landedCosts * proportion) / qty;
+          landedCostPerUnit = (landedCosts * Decimal.parse(proportion.toString()) / Decimal.parse(qty.toString())).toDouble();
         }
 
-        final double unitCost = item.price + landedCostPerUnit;
+        final double unitCost = item.price.toDouble() + landedCostPerUnit;
 
         final String batchId = const Uuid().v4();
         await db.into(db.productBatches).insert(
@@ -75,9 +76,9 @@ class GrnService {
                 productId: productId,
                 warehouseId: warehouseId,
                 batchNumber: item.batchNumber ?? 'BATCH-$grnNumber',
-                quantity: Value(qtyInBaseUnit),
-                initialQuantity: Value(qtyInBaseUnit),
-                costPrice: Value(unitCost),
+                quantity: Value(Decimal.parse(qtyInBaseUnit.toString())),
+                initialQuantity: Value(Decimal.parse(qtyInBaseUnit.toString())),
+                costPrice: Value(Decimal.parse(unitCost.toString())),
                 expiryDate: Value(item.expiryDate),
               ),
             );
@@ -89,8 +90,8 @@ class GrnService {
         await (db.update(db.products)..where((p) => p.id.equals(productId)))
             .write(
           ProductsCompanion(
-            stock: Value(product.stock + qtyInBaseUnit),
-            buyPrice: Value(unitCost),
+            stock: Value(product.stock + Decimal.parse(qtyInBaseUnit.toString())),
+            buyPrice: Value(Decimal.parse(unitCost.toString())),
           ),
         );
 
@@ -176,7 +177,7 @@ class GrnService {
 
       double totalQty = 0;
       for (var item in items) {
-        totalQty += item.quantity;
+        totalQty += item.quantity.toDouble();
       }
 
       result.add(GrnReportItem(
@@ -218,16 +219,16 @@ class GrnService {
       if (batch.expiryDate != null &&
           batch.expiryDate!.isAfter(now) &&
           batch.expiryDate!.isBefore(threshold) &&
-          batch.quantity > 0) {
+          batch.quantity > Decimal.zero) {
         final daysUntilExpiry = batch.expiryDate!.difference(now).inDays;
         result.add(ExpiringBatchReport(
           batchNumber: batch.batchNumber,
           productName: product.name,
           warehouseName: warehouse?.name ?? 'Unknown',
-          quantity: batch.quantity,
+          quantity: batch.quantity.toDouble(),
           expiryDate: batch.expiryDate!,
           daysUntilExpiry: daysUntilExpiry,
-          costValue: batch.quantity * batch.costPrice,
+          costValue: (batch.quantity * batch.costPrice).toDouble(),
         ));
       }
     }

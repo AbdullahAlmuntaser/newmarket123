@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
@@ -29,7 +30,7 @@ class WarehousesDao extends DatabaseAccessor<AppDatabase>
       ..where(
         (t) =>
             t.warehouseId.equals(warehouseId) &
-            t.quantity.isBiggerThan(const Variable(0)),
+            t.quantity.isBiggerThan(Variable(Decimal.zero.toString())),
       );
     final results = await query.get();
     return results.isNotEmpty;

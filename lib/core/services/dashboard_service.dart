@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
@@ -77,23 +78,23 @@ class DashboardService {
     final salesQuery = db.select(db.sales)
       ..where((t) => t.createdAt.isBiggerOrEqual(Variable(todayStart)));
     final todaySalesList = await salesQuery.get();
-    double todaySales = todaySalesList.fold(0.0, (sum, item) => sum + item.total);
+    double todaySales = todaySalesList.fold<Decimal>(Decimal.zero, (sum, item) => sum + item.total).toDouble();
     int todayTransactions = todaySalesList.length;
 
     final weekSalesQuery = db.select(db.sales)
       ..where((t) => t.createdAt.isBiggerOrEqual(Variable(weekStart)));
     final weekSalesList = await weekSalesQuery.get();
-    double weeklySales = weekSalesList.fold(0.0, (sum, item) => sum + item.total);
+    double weeklySales = weekSalesList.fold<Decimal>(Decimal.zero, (sum, item) => sum + item.total).toDouble();
 
     final monthSalesQuery = db.select(db.sales)
       ..where((t) => t.createdAt.isBiggerOrEqual(Variable(monthStart)));
     final monthSalesList = await monthSalesQuery.get();
-    double monthlySales = monthSalesList.fold(0.0, (sum, item) => sum + item.total);
+    double monthlySales = monthSalesList.fold<Decimal>(Decimal.zero, (sum, item) => sum + item.total).toDouble();
 
     final purchasesQuery = db.select(db.purchases)
       ..where((t) => t.date.isBiggerOrEqual(Variable(todayStart)));
     final purchases = await purchasesQuery.get();
-    double totalPurchases = purchases.fold(0.0, (sum, item) => sum + item.total);
+    double totalPurchases = purchases.fold<Decimal>(Decimal.zero, (sum, item) => sum + item.total).toDouble();
 
     final cashAccount = await db.accountingDao.getAccountByCode('1010');
     double cashBalance = 0;
@@ -136,7 +137,7 @@ class DashboardService {
 
       result.add(SalesDataPoint(
         date: dayStart,
-        amount: daySales.fold(0.0, (sum, s) => sum + s.total),
+        amount: daySales.fold<Decimal>(Decimal.zero, (sum, s) => sum + s.total).toDouble(),
         count: daySales.length,
       ));
     }
@@ -157,7 +158,7 @@ class DashboardService {
 
       result.add(SalesDataPoint(
         date: dayStart,
-        amount: daySales.fold(0.0, (sum, s) => sum + s.total),
+        amount: daySales.fold<Decimal>(Decimal.zero, (sum, s) => sum + s.total).toDouble(),
         count: daySales.length,
       ));
     }
@@ -181,10 +182,10 @@ class DashboardService {
       
       for (var item in items) {
         if (!productTotals.containsKey(item.productId)) {
-          productTotals[item.productId] = {'revenue': 0.0, 'quantity': 0};
+          productTotals[item.productId] = {'revenue': 0.0, 'quantity': 0.0};
         }
-        productTotals[item.productId]!['revenue'] += item.price * item.quantity;
-        productTotals[item.productId]!['quantity'] += item.quantity;
+        productTotals[item.productId]!['revenue'] = (productTotals[item.productId]!['revenue'] as double) + (item.price * item.quantity).toDouble();
+        productTotals[item.productId]!['quantity'] = (productTotals[item.productId]!['quantity'] as double) + item.quantity.toDouble();
       }
     }
     
@@ -204,7 +205,7 @@ class DashboardService {
           id: entry.key,
           name: product.name,
           revenue: entry.value['revenue'] as double,
-          quantity: entry.value['quantity'] as int,
+          quantity: (entry.value['quantity'] as double).toInt(),
         ));
       }
     }
@@ -242,7 +243,7 @@ class DashboardService {
               : 'غير مصنف';
 
           categoryTotals[categoryName] =
-              (categoryTotals[categoryName] ?? 0) + (item.price * item.quantity);
+              (categoryTotals[categoryName] ?? 0.0) + (item.price * item.quantity).toDouble();
         }
       }
     }
@@ -280,8 +281,8 @@ class DashboardService {
         
         if (products.isNotEmpty) {
           final product = products.first;
-          totalRevenue += item.price * item.quantity;
-          totalCost += product.buyPrice * item.quantity;
+          totalRevenue += (item.price * item.quantity).toDouble();
+          totalCost += (product.buyPrice * item.quantity).toDouble();
         }
       }
     }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
@@ -162,7 +163,7 @@ class NotificationService extends ChangeNotifier {
     final customers = await (db.select(db.customers)
           ..where(
             (c) =>
-                c.creditLimit.isBiggerThan(const Variable(0)) &
+                c.creditLimit.isBiggerThan(Constant(Decimal.zero.toString())) &
                 c.balance.isBiggerThan(c.creditLimit),
           ))
         .get();
@@ -188,7 +189,7 @@ class NotificationService extends ChangeNotifier {
     final thresholdDate = referenceDate.add(Duration(days: expiringWithinDays));
     final batches = await (db.select(db.productBatches)
           ..where(
-            (b) => b.quantity.isBiggerThan(const Variable(0)) &
+            (b) => b.quantity.isBiggerThan(Constant(Decimal.zero.toString())) &
                 b.expiryDate.isSmallerOrEqual(Variable(thresholdDate)),
           ))
         .get();

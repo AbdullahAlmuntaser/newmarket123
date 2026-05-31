@@ -1,5 +1,6 @@
 import 'dart:developer' as developer;
 import 'package:drift/drift.dart';
+import 'package:decimal/decimal.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/inventory_costing_service.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
@@ -7,8 +8,8 @@ import 'package:uuid/uuid.dart';
 
 class PostingLine {
   final String account;
-  final double debit;
-  final double credit;
+  final Decimal debit;
+  final Decimal credit;
   PostingLine({
     required this.account,
     required this.debit,
@@ -17,7 +18,7 @@ class PostingLine {
 }
 
 class PostingEngine {
-  static const double balanceTolerance = 0.001;
+  static final Decimal balanceTolerance = Decimal.parse('0.001');
 
   final AppDatabase db;
   final InventoryCostingService? costingService;
@@ -60,23 +61,21 @@ class PostingEngine {
       throw Exception('لا يمكن الترحيل بدون قيود محاسبية.');
     }
 
-    var totalDebit = 0.0;
-    var totalCredit = 0.0;
+    var totalDebit = Decimal.zero;
+    var totalCredit = Decimal.zero;
 
     for (final entry in entries) {
       if (entry.account.trim().isEmpty) {
         throw Exception('الحساب المحاسبي غير محدد.');
       }
-      if (!entry.debit.isFinite || !entry.credit.isFinite) {
-        throw Exception('مبلغ القيد المحاسبي غير صالح.');
-      }
-      if (entry.debit < 0 || entry.credit < 0) {
+      
+      if (entry.debit < Decimal.zero || entry.credit < Decimal.zero) {
         throw Exception('المبلغ يجب أن يكون أكبر من أو يساوي الصفر.');
       }
-      if (entry.debit > 0 && entry.credit > 0) {
+      if (entry.debit > Decimal.zero && entry.credit > Decimal.zero) {
         throw Exception('لا يمكن أن يكون السطر مديناً ودائناً في نفس الوقت.');
       }
-      if (entry.debit == 0 && entry.credit == 0) {
+      if (entry.debit == Decimal.zero && entry.credit == Decimal.zero) {
         throw Exception('لا يمكن ترحيل سطر محاسبي بقيمة صفرية.');
       }
 
@@ -91,7 +90,7 @@ class PostingEngine {
     }
   }
 
-  Future<double> getTotalByAccount(
+  Future<Decimal> getTotalByAccount(
     String accountId,
     DateTime from,
     DateTime to,
@@ -100,18 +99,18 @@ class PostingEngine {
       ..where((l) => l.accountId.equals(accountId));
 
     final results = await query.get();
-    double total = 0.0;
+    Decimal total = Decimal.zero;
     for (var line in results) {
       total += (line.debit - line.credit);
     }
     return total;
   }
 
-  Future<double> getBalanceForAccount(String accountId) async {
+  Future<Decimal> getBalanceForAccount(String accountId) async {
     final query = db.select(db.gLLines)
       ..where((l) => l.accountId.equals(accountId));
     final results = await query.get();
-    double total = 0.0;
+    Decimal total = Decimal.zero;
     for (var line in results) {
       total += (line.debit - line.credit);
     }
@@ -160,12 +159,12 @@ class PostingEngine {
       switch (profileLine.side.toUpperCase()) {
         case 'DEBIT':
           postingLines.add(
-            PostingLine(account: accountId, debit: amount, credit: 0.0),
+            PostingLine(account: accountId, debit: amount, credit: Decimal.zero),
           );
           break;
         case 'CREDIT':
           postingLines.add(
-            PostingLine(account: accountId, debit: 0.0, credit: amount),
+            PostingLine(account: accountId, debit: Decimal.zero, credit: amount),
           );
           break;
         default:
@@ -192,7 +191,7 @@ class PostingEngine {
     await db.accountingDao.createEntry(entry, lines);
   }
 
-  double _resolveProfileAmount(
+  Decimal _resolveProfileAmount(
     TransactionType type,
     PostingProfile profileLine,
     Map<String, dynamic> context,
@@ -202,12 +201,12 @@ class PostingEngine {
     if (type == TransactionType.purchase &&
         accountType == 'CASH' &&
         context['paymentMethod'] != 'cash') {
-      return 0.0;
+      return Decimal.zero;
     }
     if (type == TransactionType.purchase &&
         accountType == 'PAYABLE' &&
         context['paymentMethod'] == 'cash') {
-      return 0.0;
+      return Decimal.zero;
     }
 
     if (type == TransactionType.sale &&
@@ -218,10 +217,11 @@ class PostingEngine {
     return _readAmount(context['amount']);
   }
 
-  double _readAmount(dynamic value) {
-    if (value is num) return value.toDouble();
-    if (value is String) return double.tryParse(value) ?? 0.0;
-    return 0.0;
+  Decimal _readAmount(dynamic value) {
+    if (value is Decimal) return value;
+    if (value is num) return Decimal.parse(value.toString());
+    if (value is String) return Decimal.tryParse(value) ?? Decimal.zero;
+    return Decimal.zero;
   }
 
   Future<void> _checkPeriodOpen([DateTime? postingDate]) async {

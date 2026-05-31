@@ -35,7 +35,7 @@ class ReportingService {
     double total = 0.0;
     for (var row in results) {
       final line = row.readTable(db.gLLines);
-      total += (line.debit - line.credit);
+      total += (line.debit - line.credit).toDouble();
     }
     return total;
   }

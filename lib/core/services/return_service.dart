@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
@@ -59,7 +60,7 @@ class ReturnService {
           db.products,
         )..where((t) => t.id.equals(item.productId)))
             .write(
-          ProductsCompanion(stock: Value(product.stock + item.quantity)),
+          ProductsCompanion(stock: Value(product.stock + Decimal.parse(item.quantity.toString()))),
         );
 
         // 4. Return to Batch (FIFO logic reverse)
@@ -76,10 +77,10 @@ class ReturnService {
           )..where((t) => t.id.equals(latestBatch.id)))
               .write(
             ProductBatchesCompanion(
-              quantity: Value(latestBatch.quantity + item.quantity),
+              quantity: Value(latestBatch.quantity + Decimal.parse(item.quantity.toString())),
             ),
           );
-          totalCogsToReverse += item.quantity * latestBatch.costPrice;
+          totalCogsToReverse += item.quantity * latestBatch.costPrice.toDouble();
         }
       }
 
@@ -113,14 +114,14 @@ class ReturnService {
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: salesRevenueAcc.id,
-            debit: Value(totalAmount),
-            credit: const Value(0.0),
+            debit: Value(Decimal.parse(totalAmount.toString())),
+            credit: Value(Decimal.zero),
           ),
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: creditAcc.id,
-            debit: const Value(0.0),
-            credit: Value(totalAmount),
+            debit: Value(Decimal.zero),
+            credit: Value(Decimal.parse(totalAmount.toString())),
           ),
         ];
         await dao.createEntry(entry, lines);
@@ -147,14 +148,14 @@ class ReturnService {
             GLLinesCompanion.insert(
               entryId: cogsEntryId,
               accountId: inventoryAcc.id,
-              debit: Value(totalCogsToReverse),
-              credit: const Value(0.0),
+              debit: Value(Decimal.parse(totalCogsToReverse.toString())),
+              credit: Value(Decimal.zero),
             ),
             GLLinesCompanion.insert(
               entryId: cogsEntryId,
               accountId: cogsAcc.id,
-              debit: const Value(0.0),
-              credit: Value(totalCogsToReverse),
+              debit: Value(Decimal.zero),
+              credit: Value(Decimal.parse(totalCogsToReverse.toString())),
             ),
           ];
           await dao.createEntry(cogsEntry, cogsLines);
@@ -217,7 +218,7 @@ class ReturnService {
           db.products,
         )..where((t) => t.id.equals(item.productId)))
             .write(
-          ProductsCompanion(stock: Value(product.stock - item.quantity)),
+          ProductsCompanion(stock: Value(product.stock - Decimal.parse(item.quantity.toString()))),
         );
 
         // 4. Update Batches (Decrease newest batches first)
@@ -226,21 +227,21 @@ class ReturnService {
               ..where(
                 (t) =>
                     t.productId.equals(item.productId) &
-                    t.quantity.isBiggerThan(const Variable(0)),
+                    t.quantity.isBiggerThan(Constant(Decimal.zero.toString())),
               )
               ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
             .get();
 
         for (var batch in batches) {
           if (remainingToDeduct <= 0) break;
-          double deduct = batch.quantity >= remainingToDeduct
+          double deduct = batch.quantity.toDouble() >= remainingToDeduct
               ? remainingToDeduct
-              : batch.quantity;
+              : batch.quantity.toDouble();
           await (db.update(
             db.productBatches,
           )..where((t) => t.id.equals(batch.id)))
               .write(
-            ProductBatchesCompanion(quantity: Value(batch.quantity - deduct)),
+            ProductBatchesCompanion(quantity: Value(batch.quantity - Decimal.parse(deduct.toString()))),
           );
           remainingToDeduct -= deduct;
         }
@@ -276,14 +277,14 @@ class ReturnService {
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: debtAcc.id,
-            debit: Value(totalAmount), // Debit payable/cash to decrease it
-            credit: const Value(0.0),
+            debit: Value(Decimal.parse(totalAmount.toString())), // Debit payable/cash to decrease it
+            credit: Value(Decimal.zero),
           ),
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: inventoryAcc.id,
-            debit: const Value(0.0),
-            credit: Value(totalAmount), // Credit inventory to decrease it
+            debit: Value(Decimal.zero),
+            credit: Value(Decimal.parse(totalAmount.toString())), // Credit inventory to decrease it
           ),
         ];
         await dao.createEntry(entry, lines);

@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
+import 'sync_log_mixin.dart';
 
 part 'sales_dao.g.dart';
 
@@ -19,7 +20,7 @@ part 'sales_dao.g.dart';
     SalesOrderItems,
   ],
 )
-class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
+class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin, SyncLogMixin {
   SalesDao(super.db);
 
   Stream<List<Sale>> watchAllSales() => select(sales).watch();
@@ -36,7 +37,10 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
         ),
       );
     return query.watch().map(
-          (rows) => rows.fold(0.0, (sum, sale) => sum + sale.total),
+          (rows) => rows.fold<double>(
+            0.0,
+            (sum, sale) => sum + sale.total.toDouble(),
+          ),
         );
   }
 
@@ -64,8 +68,7 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
       for (var row in rows) {
         final item = row.readTable(saleItems);
         final product = row.readTable(products);
-        // الربح = (سعر البيع - سعر الشراء) * الكمية
-        profit += (item.price - product.buyPrice) * item.quantity;
+        profit += ((item.price - product.buyPrice) * item.quantity).toDouble();
       }
       return profit;
     });
@@ -111,7 +114,14 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
         await into(saleItems).insert(item);
       }
 
-      // 3. Audit Log
+      // 3. Sync Queue
+      await logSyncOperation(
+        table: 'sales',
+        entityId: saleId,
+        operation: 'CREATE',
+      );
+
+      // 4. Audit Log
       await into(auditLogs).insert(
         AuditLogsCompanion.insert(
           userId: Value(userId),
@@ -137,6 +147,12 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
         await into(salesReturnItems).insert(item);
       }
 
+      await logSyncOperation(
+        table: 'sales_returns',
+        entityId: returnId,
+        operation: 'CREATE',
+      );
+
       await into(auditLogs).insert(
         AuditLogsCompanion.insert(
           userId: Value(userId),
@@ -152,10 +168,12 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
   }
 
   Future<List<Product>> getMostSoldProducts({int limit = 10}) async {
+    final quantitySum = CustomExpression<double>(
+        'SUM(${saleItems.quantity.name})');
     final query = selectOnly(saleItems)
-      ..addColumns([saleItems.productId, saleItems.quantity.sum()])
+      ..addColumns([saleItems.productId, quantitySum])
       ..groupBy([saleItems.productId])
-      ..orderBy([OrderingTerm.desc(saleItems.quantity.sum())])
+      ..orderBy([OrderingTerm.desc(quantitySum)])
       ..limit(limit);
 
     final rows = await query.get();
@@ -168,7 +186,8 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
   }
 
   Future<List<TopProduct>> getTopSellingProducts({int limit = 5}) async {
-    final quantitySum = saleItems.quantity.sum();
+    final quantitySum = CustomExpression<double>(
+        'SUM(${saleItems.quantity.name})');
     final query = select(saleItems).join([
       innerJoin(products, products.id.equalsExp(saleItems.productId)),
     ])
@@ -181,7 +200,7 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
     return rows.map((row) {
       return TopProduct(
         product: row.readTable(products),
-        totalQuantity: row.read(quantitySum) ?? 0.0,
+        totalQuantity: (row.read(quantitySum) ?? 0).toDouble(),
       );
     }).toList();
   }
@@ -193,9 +212,12 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
     final reportStartDate = startDate ?? DateTime(2000);
     final reportEndDate = endDate ?? DateTime.now();
 
-    final revenueSum = (saleItems.quantity * saleItems.price).sum();
-    final costSum = (saleItems.quantity * products.buyPrice).sum();
-    final quantitySum = saleItems.quantity.sum();
+    final revenueSum = CustomExpression<double>(
+        'SUM(${saleItems.quantity.name} * ${saleItems.price.name})');
+    final costSum = CustomExpression<double>(
+        'SUM(${saleItems.quantity.name} * ${products.buyPrice.name})');
+    final quantitySum = CustomExpression<double>(
+        'SUM(${saleItems.quantity.name})');
 
     final query = select(saleItems).join([
       innerJoin(sales, sales.id.equalsExp(saleItems.saleId)),
@@ -210,13 +232,13 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
 
     return rows.map((row) {
       final product = row.readTable(products);
-      final revenue = row.read(revenueSum) ?? 0.0;
-      final cost = row.read(costSum) ?? 0.0;
+      final revenue = (row.read(revenueSum) ?? 0).toDouble();
+      final cost = (row.read(costSum) ?? 0).toDouble();
 
       return ProductProfitability(
         productId: product.id,
         productName: product.name,
-        totalQuantity: row.read(quantitySum) ?? 0.0,
+        totalQuantity: (row.read(quantitySum) ?? 0).toDouble(),
         totalRevenue: revenue,
         totalCost: cost,
       );
@@ -320,6 +342,12 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
       await (delete(saleItems)..where((i) => i.saleId.equals(saleId))).go();
       await (delete(sales)..where((s) => s.id.equals(saleId))).go();
 
+      await logSyncOperation(
+        table: 'sales',
+        entityId: saleId,
+        operation: 'DELETE',
+      );
+
       await into(auditLogs).insert(
         AuditLogsCompanion.insert(
           action: 'DELETE',
@@ -360,6 +388,12 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
       for (var item in itemsCompanions) {
         await into(saleItems).insert(item);
       }
+
+      await logSyncOperation(
+        table: 'sales',
+        entityId: saleId,
+        operation: 'UPDATE',
+      );
 
       await into(auditLogs).insert(
         AuditLogsCompanion.insert(

@@ -46,13 +46,11 @@ void applyNativeSqlOverride() {
 
     if (lib != null) return lib;
 
-    // Last-resort: try to use the process' symbols.
-    try {
-      debugPrint('native_sql_override: falling back to DynamicLibrary.process()');
-      return DynamicLibrary.process();
-    } catch (e) {
-      debugPrint('native_sql_override: DynamicLibrary.process() failed: $e');
-      rethrow;
-    }
+    // Last-resort: If no candidate library could be loaded, fail.
+    // We intentionally do NOT fall back to DynamicLibrary.process() here
+    // because that would risk opening an unencrypted database if SQLCipher
+    // is expected.
+    debugPrint('native_sql_override: critical failure - no sqlite3/sqlcipher library found.');
+    throw Exception('Failed to load SQLCipher native library. Encryption cannot be guaranteed.');
   });
 }

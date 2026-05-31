@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
@@ -76,8 +77,8 @@ class InvoiceService {
     String seller,
     String vatNo,
     DateTime date,
-    double total,
-    double tax,
+    Decimal total,
+    Decimal tax,
   ) {
     // Basic QR code for now. For full ZATCA compliance, TLV encoding is required.
     final qrData =

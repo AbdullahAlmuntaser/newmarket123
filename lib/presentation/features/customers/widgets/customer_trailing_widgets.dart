@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
@@ -34,7 +35,7 @@ class CustomerTrailingWidgets extends StatelessWidget {
             Text(
               l10n.balanceLabel(customer.balance.toStringAsFixed(2)),
               style: TextStyle(
-                color: customer.balance > 0
+                color: customer.balance > Decimal.zero
                     ? colorScheme.error
                     : colorScheme.tertiary, // Themed colors
                 fontWeight: FontWeight.bold,

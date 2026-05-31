@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -195,14 +196,14 @@ class _ReconciliationPageState extends State<ReconciliationPage> {
                     GLLinesCompanion.insert(
                       entryId: entryId,
                       accountId: cashAccount.id,
-                      debit: drift.Value(absDiff),
-                      credit: const drift.Value(0.0),
+                      debit: drift.Value(Decimal.parse(absDiff.toString())),
+                      credit: drift.Value(Decimal.zero),
                     ),
                     GLLinesCompanion.insert(
                       entryId: entryId,
                       accountId: cashOverShort.id,
-                      debit: const drift.Value(0.0),
-                      credit: drift.Value(absDiff),
+                      debit: drift.Value(Decimal.zero),
+                      credit: drift.Value(Decimal.parse(absDiff.toString())),
                     ),
                   ]
                 : // Actual < Book: Cash decreased (shortage)
@@ -210,17 +211,17 @@ class _ReconciliationPageState extends State<ReconciliationPage> {
                     GLLinesCompanion.insert(
                       entryId: entryId,
                       accountId: cashOverShort.id,
-                      debit: drift.Value(absDiff),
-                      credit: const drift.Value(0.0),
+                      debit: drift.Value(Decimal.parse(absDiff.toString())),
+                      credit: drift.Value(Decimal.zero),
                     ),
                     GLLinesCompanion.insert(
                       entryId: entryId,
                       accountId: cashAccount.id,
-                      debit: const drift.Value(0.0),
-                      credit: drift.Value(absDiff),
+                      debit: drift.Value(Decimal.zero),
+                      credit: drift.Value(Decimal.parse(absDiff.toString())),
                     ),
                   ];
-
+    
             await db.accountingDao.createEntry(entry, lines);
 
             // Record reconciliation

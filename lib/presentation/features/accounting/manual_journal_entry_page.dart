@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -19,10 +20,10 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
   DateTime _selectedDate = DateTime.now();
   final List<ManualLine> _lines = [ManualLine(), ManualLine()];
 
-  double get _totalDebit => _lines.fold(0, (sum, l) => sum + l.debit);
-  double get _totalCredit => _lines.fold(0, (sum, l) => sum + l.credit);
+  Decimal get _totalDebit => _lines.fold(Decimal.zero, (sum, l) => sum + l.debit);
+  Decimal get _totalCredit => _lines.fold(Decimal.zero, (sum, l) => sum + l.credit);
   bool get _isBalanced =>
-      (_totalDebit - _totalCredit).abs() < 0.001 && _totalDebit > 0;
+      (_totalDebit - _totalCredit).abs() < Decimal.parse('0.001') && _totalDebit > Decimal.zero;
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +177,7 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
                     decoration: const InputDecoration(labelText: 'مدين'),
                     keyboardType: TextInputType.number,
                     onChanged: (val) =>
-                        setState(() => line.debit = double.tryParse(val) ?? 0),
+                        setState(() => line.debit = Decimal.tryParse(val) ?? Decimal.zero),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -185,7 +186,7 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
                     decoration: const InputDecoration(labelText: 'دائن'),
                     keyboardType: TextInputType.number,
                     onChanged: (val) =>
-                        setState(() => line.credit = double.tryParse(val) ?? 0),
+                        setState(() => line.credit = Decimal.tryParse(val) ?? Decimal.zero),
                   ),
                 ),
               ],
@@ -229,18 +230,18 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
 
     for (var i = 0; i < _lines.length; i++) {
       final line = _lines[i];
-      if (line.accountId == null && (line.debit > 0 || line.credit > 0)) {
+      if (line.accountId == null && (line.debit > Decimal.zero || line.credit > Decimal.zero)) {
         AppSnackBar.warning(context, 'يرجى اختيار حساب للسطر رقم ${i + 1}');
         return;
       }
-      if (line.debit > 0 && line.credit > 0) {
+      if (line.debit > Decimal.zero && line.credit > Decimal.zero) {
         AppSnackBar.warning(
           context,
           'لا يمكن أن يحتوي السطر رقم ${i + 1} على مدين ودائن معاً',
         );
         return;
       }
-      if (line.accountId != null && line.debit == 0 && line.credit == 0) {
+      if (line.accountId != null && line.debit == Decimal.zero && line.credit == Decimal.zero) {
         AppSnackBar.warning(
           context,
           'السطر رقم ${i + 1} يحتوي على حساب بدون قيمة مدينة أو دائنة',
@@ -282,6 +283,6 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
 class ManualLine {
   String? accountId;
   String? costCenterId;
-  double debit = 0;
-  double credit = 0;
+  Decimal debit = Decimal.zero;
+  Decimal credit = Decimal.zero;
 }

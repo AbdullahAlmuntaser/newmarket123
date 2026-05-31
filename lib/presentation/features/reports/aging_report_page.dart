@@ -92,7 +92,7 @@ class _AgingReportPageState extends State<AgingReportPage> {
         double cur = 0, d30 = 0, d60 = 0, d90 = 0;
         for (var inv in invs) {
           final diff = now.difference(inv.dueDate ?? inv.invoiceDate).inDays;
-          final amt = inv.totalAmount - inv.paidAmount;
+          final amt = inv.totalAmount - inv.paidAmount.toDouble();
           if (diff <= 0) {
             cur += amt;
           } else if (diff <= 30) {
@@ -114,7 +114,7 @@ class _AgingReportPageState extends State<AgingReportPage> {
         double cur = 0, d30 = 0, d60 = 0, d90 = 0;
         for (var inv in invs) {
           final diff = now.difference(inv.dueDate ?? inv.invoiceDate).inDays;
-          final amt = inv.totalAmount - inv.paidAmount;
+          final amt = inv.totalAmount - inv.paidAmount.toDouble();
           if (diff <= 0) {
             cur += amt;
           } else if (diff <= 30) {

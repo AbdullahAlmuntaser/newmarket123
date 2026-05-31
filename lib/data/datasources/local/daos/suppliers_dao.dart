@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart';
 import 'package:uuid/uuid.dart';
@@ -103,7 +104,7 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
               .liability, // Removed .name as AccountType.liability is already a String
           parentId: Value(parentAccount?.id),
           isHeader: const Value(false),
-          balance: const Value(0.0),
+          balance: Value(Decimal.zero),
         ),
       );
 
@@ -160,7 +161,7 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
           date: purchase.date,
           description:
               'فاتورة مشتريات رقم ${purchase.invoiceNumber ?? purchase.id.substring(0, 8)}',
-          debit: purchase.total, // له
+          debit: purchase.total.toDouble(), // له
           credit: 0,
           referenceId: purchase.id,
           type: 'PURCHASE',

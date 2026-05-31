@@ -448,26 +448,24 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       final saleCompanion = SalesCompanion.insert(
         id: Value(saleId),
         customerId: Value(event.customerId),
-        total: total.toDouble(),
-        discount: Value(totalDiscount.toDouble()),
-        tax: Value(tax.toDouble()),
+        total: Decimal.parse(total.toString()),
+        discount: Value(Decimal.parse(totalDiscount.toString())),
+        tax: Value(Decimal.parse(tax.toString())),
         paymentMethod: method,
         isCredit: Value(event.paymentMethod == 'credit'),
         syncStatus: const Value(1),
         currencyId: Value(currencyId),
-        exchangeRate: Value(exchangeRate.toDouble()),
+        exchangeRate: Value(Decimal.parse(exchangeRate.toString())),
       );
 
       final itemsCompanions = currentState.cart.map((item) {
         return SaleItemsCompanion.insert(
           saleId: saleId,
           productId: item.product.id,
-          quantity: item.quantity
-              .toDouble(), // Quantity is already in base units from CartItem
-          price: item.unitPrice
-              .toDouble(), // Unit price is already the price for the selected unit
+          quantity: item.quantity, // Already Decimal
+          price: item.unitPrice, // Already Decimal
           unitName: Value(item.unitName),
-          unitFactor: Value(item.unitFactor.toDouble()),
+          unitFactor: Value(item.unitFactor), // Already Decimal
           syncStatus: const Value(1),
         );
       }).toList();

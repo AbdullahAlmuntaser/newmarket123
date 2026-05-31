@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
@@ -119,8 +120,8 @@ class FixedAssetsService {
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: expenseAccountId,
-          debit: Value(amount),
-          credit: const Value(0.0),
+          debit: Value(Decimal.parse(amount.toString())),
+          credit: Value(Decimal.zero),
           memo: const Value('مصروف إهلاك'),
         ),
       );
@@ -129,8 +130,8 @@ class FixedAssetsService {
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: accumulatedDepreciationAccountId,
-          debit: const Value(0.0),
-          credit: Value(amount),
+          debit: Value(Decimal.zero),
+          credit: Value(Decimal.parse(amount.toString())),
           memo: const Value('مجمع إهلاك'),
         ),
       );
@@ -256,8 +257,8 @@ class FixedAssetsService {
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: accumulatedDepId,
-          debit: Value(asset.accumulatedDepreciation.toDouble()),
-          credit: const Value(0.0),
+          debit: Value(Decimal.parse(asset.accumulatedDepreciation.toString())),
+          credit: Value(Decimal.zero),
           memo: const Value('إلغاء مجمع الإهلاك'),
         ),
       );
@@ -268,8 +269,8 @@ class FixedAssetsService {
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: cashBankId,
-            debit: Value(salePrice),
-            credit: const Value(0.0),
+            debit: Value(Decimal.parse(salePrice.toString())),
+            credit: Value(Decimal.zero),
             memo: const Value('تحصيل بيع الأصل'),
           ),
         );
@@ -280,8 +281,8 @@ class FixedAssetsService {
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: fixedAssetId,
-          debit: const Value(0.0),
-          credit: Value(asset.cost),
+          debit: Value(Decimal.zero),
+          credit: Value(Decimal.parse(asset.cost.toString())),
           memo: const Value('إلغاء قيمة الأصل'),
         ),
       );
@@ -292,8 +293,8 @@ class FixedAssetsService {
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: gainLossId,
-            debit: Value(gainOrLoss > 0 ? 0.0 : -gainOrLoss),
-            credit: Value(gainOrLoss > 0 ? gainOrLoss : 0.0),
+            debit: Value(gainOrLoss > 0 ? Decimal.zero : Decimal.parse((-gainOrLoss).toString())),
+            credit: Value(gainOrLoss > 0 ? Decimal.parse(gainOrLoss.toString()) : Decimal.zero),
             memo: Value(gainOrLoss > 0 ? 'ربح بيع أصل' : 'خسارة بيع أصل'),
           ),
         );

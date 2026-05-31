@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
@@ -129,7 +130,7 @@ class _SupplierStatementPageState extends State<SupplierStatementPage> {
             '${_supplier!.balance.toStringAsFixed(2)} SAR',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: _supplier!.balance > 0 ? Colors.red : Colors.green,
+                  color: _supplier!.balance > Decimal.zero ? Colors.red : Colors.green,
                 ),
           ),
         ],

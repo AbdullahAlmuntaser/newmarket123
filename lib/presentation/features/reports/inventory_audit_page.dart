@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:drift/drift.dart' show Value, OrderingTerm;
@@ -190,7 +191,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
               ..where((b) => b.warehouseId.equals(warehouseId)))
             .get();
 
-        final warehouseStock = batches.fold(0.0, (sum, b) => sum + b.quantity);
+        final warehouseStock = batches.fold(0.0, (sum, b) => sum + b.quantity.toDouble());
         results.add(
           ProductWithStock(product: product, warehouseStock: warehouseStock),
         );
@@ -329,7 +330,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
                 ))
               .get();
 
-          final systemStock = batches.fold(0.0, (sum, b) => sum + b.quantity);
+          final systemStock = batches.fold(0.0, (sum, b) => sum + b.quantity.toDouble());
           final difference = actualStock - systemStock;
 
           await db.into(db.inventoryAuditItems).insert(
@@ -348,15 +349,15 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
             double remainingToReduce = -difference;
             for (var batch in batches) {
               if (remainingToReduce <= 0) break;
-              double reduction = remainingToReduce > batch.quantity
-                  ? batch.quantity
+              double reduction = remainingToReduce > batch.quantity.toDouble()
+                  ? batch.quantity.toDouble()
                   : remainingToReduce;
               await (db.update(
                 db.productBatches,
               )..where((b) => b.id.equals(batch.id)))
                   .write(
                 ProductBatchesCompanion(
-                  quantity: Value(batch.quantity - reduction),
+                  quantity: Value(batch.quantity - Decimal.parse(reduction.toString())),
                 ),
               );
               remainingToReduce -= reduction;
@@ -369,8 +370,8 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
                     productId: productId,
                     warehouseId: _selectedWarehouse!.id,
                     batchNumber: 'ADJ-${DateTime.now().millisecondsSinceEpoch}',
-                    quantity: Value(difference),
-                    initialQuantity: Value(difference),
+                    quantity: Value(Decimal.parse(difference.toString())),
+                    initialQuantity: Value(Decimal.parse(difference.toString())),
                     costPrice: Value(product.buyPrice),
                   ),
                 );
@@ -381,9 +382,9 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
             db.productBatches,
           )..where((b) => b.productId.equals(productId)))
               .get();
-          final totalStock = allBatches.fold(0.0, (sum, b) => sum + b.quantity);
+          final totalStock = allBatches.fold(0.0, (sum, b) => sum + b.quantity.toDouble());
           await (db.update(db.products)..where((p) => p.id.equals(productId)))
-              .write(ProductsCompanion(stock: Value(totalStock)));
+              .write(ProductsCompanion(stock: Value(Decimal.parse(totalStock.toString()))));
         }
       });
 
