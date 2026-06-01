@@ -765,16 +765,17 @@ class AccountingService {
     if (parent == null) {
       throw Exception('حساب الذمم المدينة الرئيسي غير موجود. تعذر إنشاء حساب العميل.');
     }
+    final parentAccount = parent;
 
     final existingSubAccounts = await (db.select(
       db.gLAccounts,
-    )..where((a) => a.parentId.equals(parent.id)))
+    )..where((a) => a.parentId.equals(parentAccount.id)))
         .get();
     final nextNumber = (existingSubAccounts.length + 1).toString().padLeft(
           4,
           '0',
         );
-    final newCode = '${parent.code}.$nextNumber';
+    final newCode = '${parentAccount.code}.$nextNumber';
 
     final id = const Uuid().v4();
     final defaultBranchId = await _configService.getDefaultBranchId();
@@ -790,7 +791,7 @@ class AccountingService {
         code: newCode,
         name: 'حساب عميل: $customerName',
         type: 'ASSET',
-        parentId: Value(parent.id),
+        parentId: Value(parentAccount.id),
         branchId: Value(defaultBranchId),
       ),
     );

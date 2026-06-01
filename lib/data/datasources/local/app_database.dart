@@ -1454,8 +1454,7 @@ class AppDatabase extends _$AppDatabase {
         code: 'USD',
         name: 'دولار أمريكي',
         fractionalUnit: const Value('سنت'),
-        isBase: Value(false),
-        exchangeRate: Value(Decimal.parse('0.0004')),
+        isBase: const Value(false),        exchangeRate: Value(Decimal.parse('0.0004')),
       ),
     ];
 
