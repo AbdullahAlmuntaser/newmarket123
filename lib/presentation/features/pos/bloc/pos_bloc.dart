@@ -426,6 +426,10 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       emit(PosLoading());
 
       final saleId = const Uuid().v4();
+      developer.log(
+        'Creating new POS sale draft: saleId=$saleId, payment=${event.paymentMethod}',
+        name: 'pos.lifecycle',
+      );
 
       // 1. Prepare Companions
       final currencyId = event.currencyId ?? 'USD';
@@ -456,6 +460,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         syncStatus: const Value(1),
         currencyId: Value(currencyId),
         exchangeRate: Value(Decimal.parse(exchangeRate.toString())),
+        status: const Value(DocumentStatus.draft),
       );
 
       final itemsCompanions = currentState.cart.map((item) {
@@ -478,7 +483,9 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       );
 
       // 3. Post via TransactionEngine for full processing
+      developer.log('Posting POS sale draft: saleId=$saleId', name: 'pos.lifecycle');
       await transactionEngine.postSale(saleId, userId: event.userId);
+      developer.log('Posted POS sale successfully: saleId=$saleId', name: 'pos.lifecycle');
 
       // 4. Fetch final objects for success emission
       final saleObj = await (db.select(

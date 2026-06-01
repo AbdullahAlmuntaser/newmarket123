@@ -205,6 +205,8 @@ class TransactionEngine {
     // Check if accounting period is open before posting
     await _checkAccountingPeriodOpen();
 
+    developer.log('postSale requested: saleId=$saleId, userId=$userId', name: 'invoice.lifecycle');
+
     // First check: Verify sale exists and is not already posted (outside transaction)
     final saleCheck = await (db.select(db.sales)
           ..where((s) => s.id.equals(saleId)))
@@ -213,6 +215,11 @@ class TransactionEngine {
     if (saleCheck == null) {
       throw Exception('الفاتورة غير موجودة.');
     }
+
+    developer.log(
+      'postSale pre-check: saleId=$saleId, status=${saleCheck.status.name}, payment=${saleCheck.paymentMethod.name}',
+      name: 'invoice.lifecycle',
+    );
 
     if (saleCheck.status == DocumentStatus.posted) {
       throw Exception('هذه الفاتورة تم ترحيلها بالفعل.');
@@ -394,6 +401,7 @@ class TransactionEngine {
         }
       }
       // 3. Update Sale Status
+      developer.log('Marking sale as posted: saleId=$saleId', name: 'invoice.lifecycle');
       await (db.update(db.sales)..where((s) => s.id.equals(saleId))).write(
         const SalesCompanion(status: Value(DocumentStatus.posted)),
       );

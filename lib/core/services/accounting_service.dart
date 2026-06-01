@@ -759,9 +759,11 @@ class AccountingService {
 
   Future<String> createCustomerAccount(String customerName) async {
     final dao = db.accountingDao;
-    final parent = await dao.getAccountByCode(codeAccountsReceivable);
+    await db.ensureCoreReferenceData();
+    var parent = await dao.getAccountByCode(codeAccountsReceivable);
+    parent ??= await dao.getAccountByCode('1201');
     if (parent == null) {
-      throw Exception('Accounts Receivable header account not found');
+      throw Exception('حساب الذمم المدينة الرئيسي غير موجود. تعذر إنشاء حساب العميل.');
     }
 
     final existingSubAccounts = await (db.select(
@@ -776,6 +778,12 @@ class AccountingService {
 
     final id = const Uuid().v4();
     final defaultBranchId = await _configService.getDefaultBranchId();
+    final branch = await (db.select(db.branches)
+          ..where((b) => b.id.equals(defaultBranchId)))
+        .getSingleOrNull();
+    if (branch == null) {
+      throw Exception('الفرع الافتراضي غير موجود. تعذر إنشاء حساب العميل.');
+    }
     await dao.createAccount(
       GLAccountsCompanion.insert(
         id: Value(id),
@@ -791,9 +799,10 @@ class AccountingService {
 
   Future<String> createSupplierAccount(String supplierName) async {
     final dao = db.accountingDao;
+    await db.ensureCoreReferenceData();
     final parent = await dao.getAccountByCode(codeAccountsPayable);
     if (parent == null) {
-      throw Exception('Accounts Payable header account not found');
+      throw Exception('حساب الذمم الدائنة الرئيسي غير موجود. تعذر إنشاء حساب المورد.');
     }
 
     final existingSubAccounts = await (db.select(
@@ -808,6 +817,12 @@ class AccountingService {
 
     final id = const Uuid().v4();
     final defaultBranchId = await _configService.getDefaultBranchId();
+    final branch = await (db.select(db.branches)
+          ..where((b) => b.id.equals(defaultBranchId)))
+        .getSingleOrNull();
+    if (branch == null) {
+      throw Exception('الفرع الافتراضي غير موجود. تعذر إنشاء حساب المورد.');
+    }
     await dao.createAccount(
       GLAccountsCompanion.insert(
         id: Value(id),
