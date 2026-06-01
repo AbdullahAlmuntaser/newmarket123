@@ -6600,7 +6600,7 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
       GeneratedColumn<int>('status', aliasedName, false,
               type: DriftSqlType.int,
               requiredDuringInsert: false,
-              defaultValue: const Constant(1))
+              defaultValue: const Constant(0))
           .withConverter<DocumentStatus>($SalesTable.$converterstatus);
   static const VerificationMeta _saleTypeMeta =
       const VerificationMeta('saleType');

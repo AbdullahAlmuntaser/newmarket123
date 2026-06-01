@@ -324,9 +324,12 @@ class _SuppliersPageState extends State<SuppliersPage> {
         }
       } catch (e) {
         if (mounted) {
+          final message = e.toString().contains('FOREIGN KEY')
+              ? 'تعذر إنشاء حساب المورد لأن الفرع أو الحساب الأب غير مهيأ. تمت محاولة التهيئة التلقائية، يرجى إعادة المحاولة.'
+              : 'خطأ: $e';
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text('خطأ: $e')));
+          ).showSnackBar(SnackBar(content: Text(message)));
         }
       }
     }

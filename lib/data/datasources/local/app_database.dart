@@ -204,7 +204,7 @@ class Sales extends Table with SyncableTable {
   BoolColumn get isCredit => boolean().withDefault(const Constant(false))();
   IntColumn get status => integer()
       .map(const DocumentStatusConverter())
-      .withDefault(const Constant(1))();
+      .withDefault(const Constant(0))();
   TextColumn get saleType =>
       text().withDefault(const Constant('retail'))(); // retail / wholesale
   TextColumn get currencyId => text().nullable()();
@@ -1115,6 +1115,9 @@ class AppDatabase extends _$AppDatabase {
           await customStatement('PRAGMA journal_mode = WAL;');
           await customStatement('PRAGMA synchronous = NORMAL;');
           await ensurePerformanceIndexes();
+          // Existing databases might predate critical seed data. Keep this
+          // idempotent so lookups (currencies/branches/GL headers) are never empty.
+          await ensureCoreReferenceData();
         },
       );
 
@@ -1312,30 +1315,7 @@ class AppDatabase extends _$AppDatabase {
       }
 
       // 2. Currencies
-      final currenciesCount = await (selectOnly(currencies)
-            ..addColumns([currencies.id.count()]))
-          .map((row) => row.read(currencies.id.count()))
-          .getSingle();
-      if ((currenciesCount ?? 0) == 0) {
-        await batch((b) {
-          b.insert(
-              currencies,
-              CurrenciesCompanion.insert(
-                code: 'SAR',
-                name: 'ريال سعودي',
-                isBase: const Value(true),
-                exchangeRate: Value(Decimal.one),
-              ));
-          b.insert(
-              currencies,
-              CurrenciesCompanion.insert(
-                code: 'USD',
-                name: 'دولار أمريكي',
-                isBase: const Value(false),
-                exchangeRate: Value(Decimal.parse('3.75')),
-              ));
-        });
-      }
+      await ensureDefaultCurrencies();
 
       // 3. Warehouses
       final warehousesCount = await (selectOnly(warehouses)
@@ -1369,7 +1349,10 @@ class AppDatabase extends _$AppDatabase {
         });
       }
 
-      // 5. Suppliers
+      // 5. GL Accounts must exist before suppliers/customers create linked accounts.
+      await _seedGLAccounts();
+
+      // 6. Suppliers
       final suppliersCount = await (selectOnly(suppliers)
             ..addColumns([suppliers.id.count()]))
           .map((row) => row.read(suppliers.id.count()))
@@ -1381,7 +1364,7 @@ class AppDatabase extends _$AppDatabase {
         );
       }
 
-      // 6. Customers
+      // 7. Customers
       final customersCount = await (selectOnly(customers)
             ..addColumns([customers.id.count()]))
           .map((row) => row.read(customers.id.count()))
@@ -1396,9 +1379,6 @@ class AppDatabase extends _$AppDatabase {
         );
       }
 
-      // 8. GL Accounts
-      await _seedGLAccounts();
-
       // 9. Posting Profiles
       await _seedPostingProfiles();
 
@@ -1408,6 +1388,104 @@ class AppDatabase extends _$AppDatabase {
       // 11. Accounting Periods
       await ensureAccountingPeriodsForYear(DateTime.now().year);
     });
+  }
+
+  Future<void> ensureCoreReferenceData() async {
+    await transaction(() async {
+      await ensureDefaultBranch();
+      await ensureDefaultCurrencies();
+      await _seedGLAccounts();
+    });
+  }
+
+  Future<String> ensureDefaultBranch() async {
+    final existingMain = await (select(branches)
+          ..where((b) => b.code.equals('MAIN')))
+        .getSingleOrNull();
+    if (existingMain != null) {
+      await _upsertAppConfigValue('default_branch_id', existingMain.id);
+      return existingMain.id;
+    }
+
+    final firstBranch = await (select(branches)..limit(1)).getSingleOrNull();
+    if (firstBranch != null) {
+      await _upsertAppConfigValue('default_branch_id', firstBranch.id);
+      return firstBranch.id;
+    }
+
+    final branchId = const Uuid().v4();
+    await into(branches).insert(
+      BranchesCompanion.insert(
+        id: Value(branchId),
+        name: 'الفرع الرئيسي',
+        code: 'MAIN',
+        isActive: const Value(true),
+      ),
+    );
+    await _upsertAppConfigValue('default_branch_id', branchId);
+    return branchId;
+  }
+
+  Future<void> ensureDefaultCurrencies() async {
+    final countExp = currencies.id.count();
+    final currenciesCount = await (selectOnly(currencies)..addColumns([countExp]))
+        .map((row) => row.read(countExp))
+        .getSingle();
+
+    final defaults = <CurrenciesCompanion>[
+      CurrenciesCompanion.insert(
+        id: const Value('YER'),
+        code: 'YER',
+        name: 'ريال يمني',
+        fractionalUnit: const Value('فلس'),
+        isBase: Value((currenciesCount ?? 0) == 0),
+        exchangeRate: Value(Decimal.one),
+      ),
+      CurrenciesCompanion.insert(
+        id: const Value('SAR'),
+        code: 'SAR',
+        name: 'ريال سعودي',
+        fractionalUnit: const Value('هللة'),
+        isBase: const Value(false),
+        exchangeRate: Value(Decimal.parse('0.14')),
+      ),
+      CurrenciesCompanion.insert(
+        id: const Value('USD'),
+        code: 'USD',
+        name: 'دولار أمريكي',
+        fractionalUnit: const Value('سنت'),
+        isBase: Value(false),
+        exchangeRate: Value(Decimal.parse('0.0004')),
+      ),
+    ];
+
+    for (final currency in defaults) {
+      final code = currency.code.value;
+      final exists = await (select(currencies)..where((c) => c.code.equals(code)))
+          .getSingleOrNull();
+      if (exists == null) {
+        await into(currencies).insert(currency);
+      }
+    }
+
+    final hasBase = await (select(currencies)..where((c) => c.isBase.equals(true)))
+        .getSingleOrNull();
+    if (hasBase == null) {
+      await (update(currencies)..where((c) => c.code.equals('YER'))).write(
+        const CurrenciesCompanion(isBase: Value(true)),
+      );
+    }
+  }
+
+  Future<void> _upsertAppConfigValue(String key, String value) async {
+    await into(appConfigTable).insert(
+      AppConfigTableCompanion(
+        key: Value(key),
+        value: Value(value),
+        updatedAt: Value(DateTime.now()),
+      ),
+      mode: InsertMode.insertOrReplace,
+    );
   }
 
   Future<void> ensureAccountingPeriodsForYear(int year) async {
@@ -1539,12 +1617,6 @@ class AppDatabase extends _$AppDatabase {
 
 
   Future<void> _seedGLAccounts() async {
-    final countExp = gLAccounts.id.count();
-    final countQuery = selectOnly(gLAccounts)..addColumns([countExp]);
-    final accountsCount =
-        await countQuery.map((row) => row.read(countExp)).getSingle();
-    if ((accountsCount ?? 0) > 0) return;
-
     final accounts = [
       GLAccountsCompanion.insert(
           code: '1000',
@@ -1613,11 +1685,14 @@ class AppDatabase extends _$AppDatabase {
           code: '6010', name: 'مصروفات التشغيل', type: 'EXPENSE'),
     ];
 
-    await batch((b) {
-      for (var acc in accounts) {
-        b.insert(gLAccounts, acc);
+    for (final acc in accounts) {
+      final existing = await (select(gLAccounts)
+            ..where((a) => a.code.equals(acc.code.value)))
+          .getSingleOrNull();
+      if (existing == null) {
+        await into(gLAccounts).insert(acc);
       }
-    });
+    }
   }
 
   Future<void> _seedPostingProfiles() async {
@@ -1705,10 +1780,9 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> ensureInitialized() async {
-    // Just trigger a simple query to ensure connection and migrations are run
-    selectOnly(branches)
-      ..limit(1)
-      ..get();
+    // Trigger connection, migrations, and idempotent core reference seeding.
+    await (selectOnly(branches)..limit(1)).get();
+    await ensureCoreReferenceData();
   }
 
   // DAO getters

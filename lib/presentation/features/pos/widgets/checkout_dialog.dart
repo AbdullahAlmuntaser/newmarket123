@@ -43,10 +43,16 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isWide = screenWidth > 400;
 
+    final maxHeight = MediaQuery.sizeOf(context).height * 0.78;
+
     return AlertDialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       title: const Text('إتمام عملية البيع'),
-      content: SizedBox(
-        width: isWide ? 400 : null,
+      content: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: isWide ? 420 : screenWidth * 0.92,
+          maxHeight: maxHeight,
+        ),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -146,15 +152,19 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('المتبقي (الفكة):'),
-                      Text(
-                        change.toStringAsFixed(2),
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: change >= Decimal.zero
-                              ? Colors.green
-                              : Colors.red,
+                      const Flexible(child: Text('المتبقي (الفكة):')),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          change.toStringAsFixed(2),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: change >= Decimal.zero
+                                ? Colors.green
+                                : Colors.red,
+                          ),
+                          textAlign: TextAlign.end,
                         ),
                       ),
                     ],
@@ -166,20 +176,27 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: _isProcessing ? null : () => Navigator.pop(context),
-          child: const Text('إلغاء'),
-        ),
-        FilledButton.icon(
-          onPressed: _canCheckout() ? _onCheckout : null,
-          icon: _isProcessing
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.check),
-          label: Text(_isProcessing ? 'جاري...' : 'تأكيد'),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          alignment: WrapAlignment.end,
+          children: [
+            TextButton(
+              onPressed: _isProcessing ? null : () => Navigator.pop(context),
+              child: const Text('إلغاء'),
+            ),
+            FilledButton.icon(
+              onPressed: _canCheckout() ? _onCheckout : null,
+              icon: _isProcessing
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.check),
+              label: Text(_isProcessing ? 'جاري...' : 'تأكيد'),
+            ),
+          ],
         ),
       ],
     );
