@@ -7,6 +7,7 @@ import 'audit_service.dart';
 import 'package:supermarket/core/events/app_events.dart';
 import 'event_bus_service.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'dart:async';
 import 'dart:developer' as developer;
 import 'app_config_service.dart';
 import 'permission_service.dart';
@@ -234,6 +235,7 @@ class AccountingService {
   late final AuditService _auditService;
   late final AppConfigService _configService;
   late final PermissionService _permissionService;
+  StreamSubscription<AppEvent>? _eventSubscription;
 
   AccountingService(this.db, this.eventBus) {
     _auditService = AuditService(db);
@@ -243,18 +245,54 @@ class AccountingService {
   }
 
   void _listenToEvents() {
-    eventBus.stream.listen((event) {
-      developer.log('AccountingService: Received event ${event.runtimeType}',
-          name: 'accounting.service');
-      if (event is CustomerPaymentEvent) {
-        _handleCustomerPayment(event);
-      } else if (event is SupplierPaymentEvent) {
-        _handleSupplierPayment(event);
-      } else if (event is CashTransactionEvent) {
-        _handleCashTransaction(event);
-      }
-    });
+    _eventSubscription = eventBus.stream.listen(
+      (event) async {
+        developer.log(
+          'AccountingService: Received event ${event.runtimeType}',
+          name: 'accounting.service',
+        );
+        try {
+          if (event is CustomerPaymentEvent) {
+            await postCustomerPaymentEvent(event);
+          } else if (event is SupplierPaymentEvent) {
+            await postSupplierPaymentEvent(event);
+          } else if (event is CashTransactionEvent) {
+            await postCashTransactionEvent(event);
+          }
+        } catch (error, stackTrace) {
+          developer.log(
+            'Accounting event failed: ${event.runtimeType}',
+            name: 'accounting.service',
+            error: error,
+            stackTrace: stackTrace,
+          );
+          rethrow;
+        }
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        developer.log(
+          'Accounting event stream error',
+          name: 'accounting.service',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      },
+    );
   }
+
+  Future<void> dispose() async {
+    await _eventSubscription?.cancel();
+    _eventSubscription = null;
+  }
+
+  Future<void> postCashTransactionEvent(CashTransactionEvent event) =>
+      _handleCashTransaction(event);
+
+  Future<void> postCustomerPaymentEvent(CustomerPaymentEvent event) =>
+      _handleCustomerPayment(event);
+
+  Future<void> postSupplierPaymentEvent(SupplierPaymentEvent event) =>
+      _handleSupplierPayment(event);
 
   Future<void> _handleCashTransaction(CashTransactionEvent event) async {
     final dao = db.accountingDao;
@@ -320,34 +358,6 @@ class AccountingService {
     }
   }
 
-  Future<void> _recordAccountTransaction({
-    required String accountId,
-    required String type,
-    String? referenceId,
-    Decimal? debit,
-    Decimal? credit,
-    DateTime? date,
-    String? branchId,
-  }) async {
-    await db.transaction(() async {
-      // الحصول على معرف الفرع الافتراضي من الإعدادات
-      final effectiveBranchId =
-          branchId ?? await _configService.getDefaultBranchId();
-
-      await db.into(db.accountTransactions).insert(
-            AccountTransactionsCompanion.insert(
-              accountId: accountId,
-              date: Value(date ?? DateTime.now()),
-              type: type,
-              referenceId: Value(referenceId),
-              debit: Value(debit ?? Decimal.zero),
-              credit: Value(credit ?? Decimal.zero),
-              branchId: Value(effectiveBranchId),
-            ),
-          );
-    });
-  }
-
   Future<void> _handleCustomerPayment(CustomerPaymentEvent event) async {
     final dao = db.accountingDao;
     final entryId = const Uuid().v4();
@@ -367,7 +377,7 @@ class AccountingService {
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
       description: 'سند قبض: ${customer?.name ?? "عميل"} - ${event.note ?? ""}',
-      date: Value(DateTime.now()),
+      date: Value(event.paymentDate ?? DateTime.now()),
       referenceType: const Value('RECEIPT'),
       referenceId: Value(event.paymentId),
       status: const Value('POSTED'),
@@ -393,15 +403,6 @@ class AccountingService {
     ];
 
     await dao.createEntry(entry, lines);
-
-    // Record in AccountTransactions for fast statements
-    await _recordAccountTransaction(
-      accountId: customerAccountId,
-      type: 'PAYMENT',
-      referenceId: event.paymentId,
-      credit: event.amount,
-      branchId: defaultBranchId,
-    );
   }
 
   Future<void> _handleSupplierPayment(SupplierPaymentEvent event) async {
@@ -423,7 +424,7 @@ class AccountingService {
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
       description: 'سند صرف: ${supplier?.name ?? "مورد"} - ${event.note ?? ""}',
-      date: Value(DateTime.now()),
+      date: Value(event.paymentDate ?? DateTime.now()),
       referenceType: const Value('PAYMENT'),
       referenceId: Value(event.paymentId),
       status: const Value('POSTED'),
@@ -449,15 +450,6 @@ class AccountingService {
     ];
 
     await dao.createEntry(entry, lines);
-
-    // Record in AccountTransactions for fast statements
-    await _recordAccountTransaction(
-      accountId: supplierAccountId,
-      type: 'PAYMENT',
-      referenceId: event.paymentId,
-      debit: event.amount,
-      branchId: defaultBranchId,
-    );
   }
 
   // Standard Account Codes
@@ -927,19 +919,6 @@ class AccountingService {
 
         await dao.createEntry(entry, lines);
 
-        // Record in AccountTransactions if credit
-        if (sale.isCredit) {
-          await _recordAccountTransaction(
-            accountId: debitAccountId,
-            type: 'INVOICE',
-            referenceId: sale.id,
-            debit: sale.total,
-            date: sale.createdAt,
-            branchId:
-                sale.branchId ?? await _configService.getDefaultBranchId(),
-          );
-        }
-
         await _auditService.logCreate(
           'GLEntry',
           entryId,
@@ -1116,18 +1095,6 @@ class AccountingService {
         ];
 
         await dao.createEntry(entry, lines);
-
-        if (purchase.isCredit) {
-          await _recordAccountTransaction(
-            accountId: creditAccountId,
-            type: 'INVOICE',
-            referenceId: purchase.id,
-            credit: purchase.total,
-            date: purchase.date,
-            branchId:
-                purchase.branchId ?? await _configService.getDefaultBranchId(),
-          );
-        }
 
         await _auditService.logCreate(
           'GLEntry',
@@ -1452,18 +1419,6 @@ class AccountingService {
 
       await dao.createEntry(entry, lines);
 
-      if (originalSale.isCredit) {
-        await _recordAccountTransaction(
-          accountId: creditAccount.id,
-          type: 'RETURN',
-          referenceId: saleReturn.id,
-          credit: totalReturned,
-          date: saleReturn.createdAt,
-          branchId: originalSale.branchId ??
-              await _configService.getDefaultBranchId(),
-        );
-      }
-
       Decimal totalCostReversed = Decimal.zero;
       for (var item in items) {
         final batches = await (db.select(db.productBatches)
@@ -1614,23 +1569,6 @@ class AccountingService {
       ];
 
       await dao.createEntry(entry, lines);
-
-      if (originalPurchase.isCredit) {
-        final supplier = await db.suppliersDao.getSupplierById(
-          originalPurchase.supplierId!,
-        );
-        final supplierAccountId = supplier?.accountId ?? apAccount.id;
-
-        await _recordAccountTransaction(
-          accountId: supplierAccountId,
-          type: 'RETURN',
-          referenceId: purchaseReturn.id,
-          debit: totalReturned,
-          date: purchaseReturn.createdAt,
-          branchId: originalPurchase.branchId ??
-              await _configService.getDefaultBranchId(),
-        );
-      }
     });
   }
 

@@ -2,14 +2,14 @@ import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/events/app_events.dart';
-import 'package:supermarket/core/services/event_bus_service.dart';
+import 'package:supermarket/core/services/accounting_service.dart';
 import 'package:uuid/uuid.dart';
 
 class CashManagementService {
   final AppDatabase db;
-  final EventBusService eventBus;
+  final AccountingService accountingService;
 
-  CashManagementService(this.db, this.eventBus);
+  CashManagementService(this.db, this.accountingService);
 
   Future<void> createCashReceipt({
     required double amount,
@@ -36,8 +36,8 @@ class CashManagementService {
         ),
       );
 
-      // 2. Fire Event for Accounting
-      eventBus.fire(CashTransactionEvent(
+      // 2. Post accounting atomically with the cashbox movement.
+      await accountingService.postCashTransactionEvent(CashTransactionEvent(
         amount: decimalAmount,
         type: 'IN',
         category: category,
@@ -74,8 +74,8 @@ class CashManagementService {
         ),
       );
 
-      // 2. Fire Event for Accounting
-      eventBus.fire(CashTransactionEvent(
+      // 2. Post accounting atomically with the cashbox movement.
+      await accountingService.postCashTransactionEvent(CashTransactionEvent(
         amount: decimalAmount,
         type: 'OUT',
         category: category,

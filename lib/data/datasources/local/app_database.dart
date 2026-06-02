@@ -1172,6 +1172,8 @@ class AppDatabase extends _$AppDatabase {
     'CREATE INDEX IF NOT EXISTS audit_logs_target_entity_idx '
         'ON audit_logs (target_entity)',
     'CREATE INDEX IF NOT EXISTS sync_queue_status_idx ON sync_queue (status)',
+    'CREATE INDEX IF NOT EXISTS sync_queue_pending_entity_idx '
+        'ON sync_queue (entity_table, entity_id, operation, status)',
   ];
 
   Future<void> ensurePerformanceIndexes() async {

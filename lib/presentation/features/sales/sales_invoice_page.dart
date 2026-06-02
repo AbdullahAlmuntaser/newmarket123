@@ -152,6 +152,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     _barcodeController.dispose();
     _discountController.dispose();
     _notesController.dispose();
+    _referenceController.dispose();
+    _termsController.dispose();
     _taxController.dispose();
     _shippingCostController.dispose();
     _otherExpensesController.dispose();
@@ -160,6 +162,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
 
   Future<void> _fetchCustomerSmartData(String customerId) async {
     final data = await sl<ErpDataService>().getCustomerSmartData(customerId);
+    if (!mounted) return;
     setState(() {
       _customerSmartData = data;
     });

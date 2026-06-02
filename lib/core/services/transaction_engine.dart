@@ -17,13 +17,12 @@ class TransactionEngine {
   final EventBusService eventBus;
   late final AuditService _auditService;
   late final AppConfigService _configService;
-  late final AccountingService _accountingService;
+  final AccountingService _accountingService;
   InventoryCostingService? _costingService;
 
-  TransactionEngine(this.db, this.eventBus) {
+  TransactionEngine(this.db, this.eventBus, this._accountingService) {
     _auditService = AuditService(db);
     _configService = AppConfigService(db);
-    _accountingService = AccountingService(db, eventBus);
   }
 
   void setCostingService(InventoryCostingService costingService) {
@@ -657,6 +656,7 @@ class TransactionEngine {
     required String paymentMethod,
     String? note,
     String? userId,
+    DateTime? paymentDate,
   }) async {
     await db.transaction(() async {
       final paymentId = const Uuid().v4();
@@ -666,7 +666,7 @@ class TransactionEngine {
               id: Value(paymentId),
               customerId: customerId,
               amount: amount.toDouble(),
-              paymentDate: Value(DateTime.now()),
+              paymentDate: Value(paymentDate ?? DateTime.now()),
               note: Value(note),
               syncStatus: const Value.absent(),
             ),
@@ -680,7 +680,7 @@ class TransactionEngine {
       await (db.update(db.customers)..where((c) => c.id.equals(customerId)))
           .write(CustomersCompanion(balance: Value(customer.balance - amount)));
 
-      eventBus.fire(
+      await _accountingService.postCustomerPaymentEvent(
         CustomerPaymentEvent(
           customerId: customerId,
           amount: amount,
@@ -688,6 +688,7 @@ class TransactionEngine {
           note: note,
           paymentId: paymentId,
           userId: userId,
+          paymentDate: paymentDate,
         ),
       );
     });
@@ -699,6 +700,7 @@ class TransactionEngine {
     required String paymentMethod,
     String? note,
     String? userId,
+    DateTime? paymentDate,
   }) async {
     await db.transaction(() async {
       final paymentId = const Uuid().v4();
@@ -708,7 +710,7 @@ class TransactionEngine {
               id: Value(paymentId),
               supplierId: supplierId,
               amount: amount.toDouble(),
-              paymentDate: Value(DateTime.now()),
+              paymentDate: Value(paymentDate ?? DateTime.now()),
               note: Value(note),
               syncStatus: const Value.absent(),
             ),
@@ -722,7 +724,7 @@ class TransactionEngine {
       await (db.update(db.suppliers)..where((s) => s.id.equals(supplierId)))
           .write(SuppliersCompanion(balance: Value(supplier.balance - amount)));
 
-      eventBus.fire(
+      await _accountingService.postSupplierPaymentEvent(
         SupplierPaymentEvent(
           supplierId: supplierId,
           amount: amount,
@@ -730,6 +732,7 @@ class TransactionEngine {
           note: note,
           paymentId: paymentId,
           userId: userId,
+          paymentDate: paymentDate,
         ),
       );
     });
@@ -768,7 +771,7 @@ class TransactionEngine {
     String? note,
     String? userId,
   }) async {
-    final cashService = CashManagementService(db, eventBus);
+    final cashService = CashManagementService(db, _accountingService);
     await cashService.createCashReceipt(
       amount: amount.toDouble(),
       category: category,
@@ -776,23 +779,24 @@ class TransactionEngine {
       note: note,
       userId: userId,
     );
-    }
+  }
 
-    Future<void> createCashPayment({
+  Future<void> createCashPayment({
     required Decimal amount,
     required String category,
     required String accountId,
     String? note,
     String? userId,
-    }) async {
-    final cashService = CashManagementService(db, eventBus);
+  }) async {
+    final cashService = CashManagementService(db, _accountingService);
     await cashService.createCashPayment(
       amount: amount.toDouble(),
       category: category,
       accountId: accountId,
       note: note,
       userId: userId,
-    );  }
+    );
+  }
 }
 
 class SaleWithBalance {
