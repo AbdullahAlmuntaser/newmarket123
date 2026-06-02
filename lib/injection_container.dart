@@ -79,6 +79,7 @@ import 'presentation/features/accounting/asset_provider.dart';
 import 'presentation/features/customers/customer_statement_provider.dart';
 import 'presentation/features/dashboard/dashboard_provider.dart';
 import 'presentation/features/pos/bloc/pos_bloc.dart';
+import 'core/services/fast_access_service.dart';
 import 'presentation/features/products/products_provider.dart';
 
 final sl = GetIt.instance;
@@ -292,6 +293,7 @@ Future<void> initServices() async {
     sl.registerLazySingleton<PayrollService>(
       () => PayrollService(db),
     );
+    sl.registerLazySingleton<FastAccessService>(() => FastAccessService());
     debugPrint("DI: BudgetService and PayrollService registered");
     
     debugPrint("DI: Registering providers...");
@@ -345,6 +347,7 @@ List<SingleChildWidget> buildAppProviders() {
     ChangeNotifierProvider<ThemeProvider>.value(value: sl<ThemeProvider>()),
     ChangeNotifierProvider<LocaleProvider>.value(value: sl<LocaleProvider>()),
     ChangeNotifierProvider<AuthProvider>.value(value: sl<AuthProvider>()),
+    ChangeNotifierProvider<FastAccessService>.value(value: sl<FastAccessService>()),
     ChangeNotifierProvider<AccountingProvider>(
       create: (_) => sl<AccountingProvider>(),
     ),

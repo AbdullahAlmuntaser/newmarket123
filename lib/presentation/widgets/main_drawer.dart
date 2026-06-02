@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
+import 'package:supermarket/presentation/widgets/navigation/command_palette.dart';
 
 class MainDrawer extends StatelessWidget {
   const MainDrawer({super.key});
@@ -39,6 +40,38 @@ class MainDrawer extends StatelessWidget {
         children: [
           _buildHeader(context, authProvider, drawerBgColor),
           const Divider(color: dividerColor, height: 1),
+          // Search Entry Point
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: InkWell(
+              onTap: () {
+                Navigator.pop(context);
+                showDialog(
+                  context: context,
+                  builder: (context) => const CommandPalette(),
+                );
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2D2D38),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: dividerColor),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.search, color: Colors.white38, size: 18),
+                    SizedBox(width: 8),
+                    Text(
+                      'بحث سريع... (Ctrl+K)',
+                      style: TextStyle(color: Colors.white38, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,

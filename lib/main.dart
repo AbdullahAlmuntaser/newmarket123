@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/core/theme/app_theme.dart';
 import 'package:supermarket/core/theme/theme_provider.dart';
@@ -9,7 +10,12 @@ import 'package:supermarket/injection_container.dart' as di;
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supermarket/native_sql_override.dart';
-// platform/ffi imports not used directly in this file; kept in other modules
+import 'package:supermarket/presentation/widgets/navigation/command_palette.dart';
+
+// Define a Intent for the Command Palette
+class OpenCommandPaletteIntent extends Intent {
+  const OpenCommandPaletteIntent();
+}
 
 void main() async {
   // 1. Ensure Flutter is initialized
@@ -183,24 +189,49 @@ class MyApp extends StatelessWidget {
         builder: (context) {
           final themeProvider = Provider.of<ThemeProvider>(context);
           final localeProvider = Provider.of<LocaleProvider>(context);
-          return MaterialApp.router(
-            title: 'Supermarket ERP',
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: themeProvider.themeMode,
-            routerConfig: appRouter,
-            debugShowCheckedModeBanner: false,
-            localizationsDelegates: const [
-              AppLocalizations.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            supportedLocales: AppLocalizations.supportedLocales,
-            locale: localeProvider.locale,
+          return Shortcuts(
+            shortcuts: <ShortcutActivator, Intent>{
+              LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyK):
+                  const OpenCommandPaletteIntent(),
+              LogicalKeySet(LogicalKeyboardKey.meta, LogicalKeyboardKey.keyK):
+                  const OpenCommandPaletteIntent(),
+            },
+            child: Actions(
+              actions: <Type, Action<Intent>>{
+                OpenCommandPaletteIntent: CallbackAction<OpenCommandPaletteIntent>(
+                  onInvoke: (intent) => _showCommandPalette(context),
+                ),
+              },
+              child: MaterialApp.router(
+                title: 'Supermarket ERP',
+                theme: AppTheme.lightTheme,
+                darkTheme: AppTheme.darkTheme,
+                themeMode: themeProvider.themeMode,
+                routerConfig: appRouter,
+                debugShowCheckedModeBanner: false,
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                supportedLocales: AppLocalizations.supportedLocales,
+                locale: localeProvider.locale,
+              ),
+            ),
           );
         },
       ),
     );
+  }
+
+  void _showCommandPalette(BuildContext context) {
+    final navigator = appRouter.routerDelegate.navigatorKey.currentState;
+    if (navigator != null) {
+      showDialog(
+        context: navigator.context,
+        builder: (context) => const CommandPalette(),
+      );
+    }
   }
 }
