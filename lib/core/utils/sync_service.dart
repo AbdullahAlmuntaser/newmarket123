@@ -15,28 +15,58 @@ class SyncService {
     required String operation,
     required Map<String, dynamic> payload,
   }) async {
-    await db.into(db.syncQueue).insert(
-          SyncQueueCompanion.insert(
-            entityTable: table,
-            entityId: entityId,
-            operation: operation,
-            payload: jsonEncode(payload),
+    final encodedPayload = jsonEncode(payload);
+    await db.transaction(() async {
+      final existing = await (db.select(db.syncQueue)
+            ..where((q) => q.entityTable.equals(table))
+            ..where((q) => q.entityId.equals(entityId))
+            ..where((q) => q.operation.equals(operation))
+            ..where((q) => q.status.equals(0) | q.status.equals(-1)))
+          .getSingleOrNull();
+
+      if (existing != null) {
+        await (db.update(db.syncQueue)..where((q) => q.id.equals(existing.id)))
+            .write(
+          SyncQueueCompanion(
+            payload: Value(encodedPayload),
             status: const Value(0),
-            version: const Value(1),
-            retryCount: const Value(0),
+            lastError: const Value(null),
           ),
         );
+        return;
+      }
+
+      await db.into(db.syncQueue).insert(
+            SyncQueueCompanion.insert(
+              entityTable: table,
+              entityId: entityId,
+              operation: operation,
+              payload: encodedPayload,
+              status: const Value(0),
+              version: const Value(1),
+              retryCount: const Value(0),
+            ),
+          );
+    });
   }
 
   /// Gets pending items from the queue
-  Future<List<SyncQueueData>> getPendingItems() {
-    return (db.select(db.syncQueue)..where((t) => t.status.equals(0) | t.status.equals(-1))).get();
+  Future<List<SyncQueueData>> getPendingItems({int limit = 100}) {
+    return (db.select(db.syncQueue)
+          ..where((t) => t.status.equals(0) | t.status.equals(-1))
+          ..orderBy([(t) => OrderingTerm.asc(t.createdAt)])
+          ..limit(limit))
+        .get();
   }
 
   /// Mark an item as synced
   Future<void> markAsSynced(String queueId) async {
     await (db.update(db.syncQueue)..where((t) => t.id.equals(queueId))).write(
-      const SyncQueueCompanion(status: Value(1), retryCount: Value(0), lastError: Value(null)),
+      const SyncQueueCompanion(
+        status: Value(1),
+        retryCount: Value(0),
+        lastError: Value(null),
+      ),
     );
   }
 
@@ -54,7 +84,7 @@ class SyncService {
 
   Future<void> syncWithCloud() async {
     final pending = await getPendingItems();
-    for (var item in pending) {
+    for (final item in pending) {
       // Exponential Backoff Logic: Wait 2^retryCount * 5 seconds
       if (item.retryCount > 0) {
         final waitTime = pow(2, min(item.retryCount, 6)) * 5;

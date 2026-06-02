@@ -60,6 +60,7 @@ class CustomerPaymentEvent extends AppEvent {
   final String? note;
   final String paymentId;
   final String? userId;
+  final DateTime? paymentDate;
 
   CustomerPaymentEvent({
     required this.customerId,
@@ -68,6 +69,7 @@ class CustomerPaymentEvent extends AppEvent {
     this.note,
     required this.paymentId,
     this.userId,
+    this.paymentDate,
   });
 }
 
@@ -78,6 +80,7 @@ class SupplierPaymentEvent extends AppEvent {
   final String? note;
   final String paymentId;
   final String? userId;
+  final DateTime? paymentDate;
 
   SupplierPaymentEvent({
     required this.supplierId,
@@ -86,6 +89,7 @@ class SupplierPaymentEvent extends AppEvent {
     this.note,
     required this.paymentId,
     this.userId,
+    this.paymentDate,
   });
 }
 
