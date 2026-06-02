@@ -217,12 +217,17 @@ Future<void> initServices() async {
     );
     sl.registerLazySingleton<PricingService>(() => PricingService(db));
     sl.registerLazySingleton<TransactionEngine>(() {
-      final engine = TransactionEngine(db, sl<EventBusService>());
+      final engine = TransactionEngine(
+        db,
+        sl<EventBusService>(),
+        sl<AccountingService>(),
+      );
       engine.setCostingService(sl<InventoryCostingService>());
       return engine;
     });
     sl.registerLazySingleton<CashManagementService>(
-        () => CashManagementService(db, sl<EventBusService>()));
+      () => CashManagementService(db, sl<AccountingService>()),
+    );
     sl.registerLazySingleton<TransferService>(() => TransferService(db));
     sl.registerLazySingleton<StatementPrintingService>(
         () => StatementPrintingService(db));

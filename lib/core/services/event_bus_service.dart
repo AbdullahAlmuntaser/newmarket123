@@ -7,6 +7,9 @@ class EventBusService {
   Stream<AppEvent> get stream => _controller.stream;
 
   void fire(AppEvent event) {
+    if (_controller.isClosed) {
+      return;
+    }
     _controller.add(event);
   }
 

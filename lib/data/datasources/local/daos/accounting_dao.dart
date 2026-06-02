@@ -185,6 +185,19 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     List<GLLinesCompanion> lines,
   ) {
     return transaction(() async {
+      if (entry.referenceType.present &&
+          entry.referenceType.value != null &&
+          entry.referenceId.present &&
+          entry.referenceId.value != null) {
+        final duplicate = await (select(gLEntries)
+              ..where((e) => e.referenceType.equals(entry.referenceType.value!))
+              ..where((e) => e.referenceId.equals(entry.referenceId.value!)))
+            .getSingleOrNull();
+        if (duplicate != null) {
+          return;
+        }
+      }
+
       // Validate accounting balance: Sum of Debits == Sum of Credits
       Decimal totalDebit = Decimal.zero;
       Decimal totalCredit = Decimal.zero;
