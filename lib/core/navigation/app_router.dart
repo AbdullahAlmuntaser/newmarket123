@@ -91,6 +91,12 @@ import 'package:supermarket/presentation/features/approvals/approvals_page.dart'
 import 'package:supermarket/presentation/features/loyalty/loyalty_page.dart';
 import 'package:supermarket/presentation/features/promotions/promotions_page.dart';
 import 'package:supermarket/presentation/features/admin/user_roles_page.dart';
+import 'package:supermarket/presentation/features/workspaces/operations_workspace.dart';
+import 'package:supermarket/presentation/features/workspaces/accounting_workspace.dart';
+import 'package:supermarket/presentation/features/workspaces/inventory_workspace.dart';
+import 'package:supermarket/presentation/features/workspaces/parties_workspace.dart';
+import 'package:supermarket/presentation/features/workspaces/reports_workspace.dart';
+import 'package:supermarket/presentation/features/workspaces/admin_workspace.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -137,6 +143,27 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
         path: '/admin-dashboard',
         builder: (context, state) => const AdminDashboardPage()),
+    
+    // Workspaces
+    GoRoute(
+        path: '/workspace/operations',
+        builder: (context, state) => const OperationsWorkspace()),
+    GoRoute(
+        path: '/workspace/accounting',
+        builder: (context, state) => const AccountingWorkspace()),
+    GoRoute(
+        path: '/workspace/inventory',
+        builder: (context, state) => const InventoryWorkspace()),
+    GoRoute(
+        path: '/workspace/parties',
+        builder: (context, state) => const PartiesWorkspace()),
+    GoRoute(
+        path: '/workspace/reports',
+        builder: (context, state) => const ReportsWorkspace()),
+    GoRoute(
+        path: '/workspace/admin',
+        builder: (context, state) => const AdminWorkspace()),
+
     GoRoute(path: '/pos', builder: (context, state) => const PosPage()),
     GoRoute(
         path: '/sales', builder: (context, state) => const SalesHistoryPage()),

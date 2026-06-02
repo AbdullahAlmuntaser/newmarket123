@@ -5,6 +5,9 @@ import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/presentation/widgets/navigation/command_palette.dart';
 
+import 'package:supermarket/core/auth/user_role.dart';
+import 'package:supermarket/core/auth/access_guard.dart';
+
 class MainDrawer extends StatelessWidget {
   const MainDrawer({super.key});
 
@@ -28,9 +31,7 @@ class MainDrawer extends StatelessWidget {
       );
     }
 
-    final isAdmin = authProvider.isAdmin;
-    final isManager = authProvider.isManager;
-    final isCashier = authProvider.isCashier;
+    final role = UserRole.fromString(authProvider.currentUser?.role ?? 'cashier');
 
     return Drawer(
       width: 280,
@@ -79,442 +80,101 @@ class MainDrawer extends StatelessWidget {
                 _buildDrawerItem(
                   context,
                   icon: Icons.grid_view_rounded,
-                  title: l10n?.dashboard ?? 'لوحة التحكم',
+                  title: l10n?.dashboard ?? 'لوحة التحكم الرئيسي',
                   onTap: () => context.go('/'),
                 ),
-                if (isAdmin)
-                  _buildSubItem(
-                      context, 'لوحة تحكم المدير', '/admin-dashboard'),
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.point_of_sale_rounded,
-                  title: l10n?.pos ?? 'نقطة البيع',
-                  onTap: () => context.push('/pos'),
-                ),
-                if (isCashier) ...[
-                  _buildExpansionGroup(
-                    context,
-                    icon: Icons.history_rounded,
-                    title: l10n?.sales ?? 'المبيعات',
-                    children: [
-                      _buildSubItem(
-                          context, l10n?.sales ?? 'سجل المبيعات', '/sales'),
-                      _buildSubItem(
-                        context,
-                        'فاتورة مبيعات جديدة',
-                        '/sales/invoice',
-                      ),
-                    ],
-                  ),
-                  _buildExpansionGroup(
-                    context,
-                    icon: Icons.assignment_return_rounded,
-                    title: l10n?.returns ?? 'المرتجعات',
-                    children: [
-                      _buildSubItem(
-                        context,
-                        l10n?.salesReturns ?? 'مرتجعات المبيعات',
-                        '/sales/returns',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'إنشاء مرتجع مبيعات',
-                        '/returns/new',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.purchaseReturns ?? 'مرتجعات المشتريات',
-                        '/purchases/returns',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'إنشاء مرتجع مشتريات',
-                        '/purchases/returns/new',
-                      ),
-                    ],
-                  ),
-                ],
-                if (isManager) ...[
-                  const _DrawerDivider(),
-                  _buildExpansionGroup(
-                    context,
-                    icon: Icons.inventory_2_rounded,
-                    title: l10n?.products ?? 'المنتجات',
-                    children: [
-                      _buildSubItem(context, 'قائمة المنتجات', '/products'),
-                      _buildSubItem(
-                        context,
-                        l10n?.categories ?? 'الفئات',
-                        '/categories',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'إدارة التصنيع (BOM)',
-                        '/manufacturing/bom',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'أوامر الإنتاج',
-                        '/manufacturing/production-orders',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'المنتجات أوشكت على النفاد',
-                        '/low-stock',
-                      ),
-                    ],
-                  ),
-                  _buildExpansionGroup(
-                    context,
-                    icon: Icons.shopping_cart_rounded,
-                    title: l10n?.purchases ?? 'المشتريات',
-                    children: [
-                      _buildSubItem(context, 'قائمة المشتريات', '/purchases'),
-                      _buildSubItem(
-                        context,
-                        l10n?.newPurchase ?? 'إضافة عملية شراء',
-                        '/purchases/new',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'أوامر الشراء',
-                        '/purchases/orders',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'دفعات الموردين',
-                        '/suppliers/payments',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'أداء الموردين',
-                        '/purchases/performance',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'مرتجعات المشتريات',
-                        '/purchases/returns',
-                      ),
-                    ],
-                  ),
-                  _buildDrawerItem(
-                    context,
-                    icon: Icons.swap_horiz_rounded,
-                    title: 'التحويل المخزني',
-                    onTap: () => context.push('/inventory/transfer'),
-                  ),
-                ],
                 const _DrawerDivider(),
-                _buildExpansionGroup(
-                  context,
-                  icon: Icons.people_alt_rounded,
-                  title: l10n?.customers ?? 'العملاء',
-                  children: [
-                    _buildSubItem(context, 'قائمة العملاء', '/customers'),
-                    if (isManager)
-                      _buildSubItem(context, 'نقاط الولاء', '/loyalty'),
-                  ],
-                ),
-                if (isManager) ...[
+                
+                // WORKSPACES
+                if (AccessGuard.canAccess('/workspace/operations', role))
                   _buildExpansionGroup(
                     context,
-                    icon: Icons.local_shipping_rounded,
-                    title: l10n?.suppliers ?? 'الموردين',
+                    icon: Icons.settings_input_component_rounded,
+                    title: 'مساحة عمل العمليات',
                     children: [
-                      _buildSubItem(context, 'قائمة الموردين', '/suppliers'),
-                      _buildSubItem(
-                          context, 'دفعات الموردين', '/suppliers/payments'),
+                      _buildSubItem(context, 'نظرة عامة', '/workspace/operations'),
+                      _buildSubItem(context, 'نقطة البيع (POS)', '/pos'),
+                      _buildSubItem(context, 'سجل المبيعات', '/sales'),
+                      _buildSubItem(context, 'فواتير الشراء', '/purchases'),
+                      _buildSubItem(context, 'مرتجعات المبيعات', '/sales/returns'),
+                      _buildSubItem(context, 'مرتجعات المشتريات', '/purchases/returns'),
                     ],
                   ),
-                ],
-                if (isManager) ...[
-                  const _DrawerDivider(),
-                  _buildExpansionGroup(
-                    context,
-                    icon: Icons.inventory_2_rounded,
-                    title: 'إدارة المخزون',
-                    children: [
-                      _buildSubItem(
-                        context,
-                        l10n?.noWarehousesFound ?? 'المستودعات',
-                        '/inventory/warehouses',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'مدير المستودع',
-                        '/inventory/warehouse-manager',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'التحويل المخزني',
-                        '/inventory/transfer',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.inventoryAudit ?? 'جرد المخزون',
-                        '/inventory/stock-take',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'تنبيهات المخزون',
-                        '/inventory/low-stock-alert',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'إدارة الورديات',
-                        '/inventory/shifts',
-                      ),
-                    ],
-                  ),
-                  _buildExpansionGroup(
-                    context,
-                    icon: Icons.badge_rounded,
-                    title: 'الموارد البشرية',
-                    children: [
-                      _buildSubItem(context, 'إدارة الموظفين', '/hr/employees'),
-                      _buildSubItem(context, 'مسيرات الرواتب', '/hr/payroll'),
-                      _buildSubItem(context, 'السلف والخصومات', '/hr/extras'),
-                    ],
-                  ),
-                  _buildExpansionGroup(
-                    context,
-                    icon: Icons.assessment_rounded,
-                    title: l10n?.reports ?? 'التقارير',
-                    children: [
-                      _buildSubItem(
-                        context,
-                        'تقارير المبيعات',
-                        '/reports/sales',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'ربحية المنتجات',
-                        '/reports/profitability',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'إجمالي الربح',
-                        '/reports/gross-profit',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.inventoryReports ?? 'تقارير المخزون',
-                        '/reports/inventory',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'جرد المستودعات',
-                        '/reports/inventory-audit',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'حركة صنف تفصيلية',
-                        '/reports/item-movement',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'مصروفات حسب المركز',
-                        '/reports/expenses-by-center',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.vatReport ?? 'تقرير ضريبة القيمة المضافة',
-                        '/reports/vat',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.agingReport ?? 'تقرير أعمار الديون',
-                        '/reports/aging',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.cashFlowForecast ?? 'توقعات التدفق النقدي',
-                        '/reports/cash-flow',
-                      ),
-                      _buildSubItem(context, l10n?.auditLog ?? 'سجل التدقيق',
-                          '/reports/audit'),
-                    ],
-                  ),
-                ],
-                if (isAdmin) ...[
-                  const _DrawerDivider(),
+
+                if (AccessGuard.canAccess('/workspace/accounting', role))
                   _buildExpansionGroup(
                     context,
                     icon: Icons.account_balance_rounded,
-                    title: l10n?.accounting ?? 'المحاسبة',
+                    title: 'مساحة عمل الحسابات',
                     children: [
-                      _buildSubItem(
-                        context,
-                        'الفترات المحاسبية',
-                        '/accounting/periods',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.chartOfAccounts ?? 'شجرة الحسابات',
-                        '/accounting/coa',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.generalLedger ?? 'دفتر الأستاذ',
-                        '/accounting/general-ledger',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.balanceSheet ?? 'الميزانية العمومية',
-                        '/accounting/balance-sheet',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.incomeStatement ?? 'قائمة الدخل',
-                        '/accounting/income-statement',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.cashFlow ?? 'التدفقات النقدية',
-                        '/accounting/cash-flow',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.trialBalance ?? 'ميزان المراجعة',
-                        '/accounting/trial-balance',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.supplierLedger ?? 'كشف حساب المورد',
-                        '/accounting/supplier-ledger',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.customerLedger ?? 'كشف حساب العميل',
-                        '/accounting/customer-ledger',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.expenses ?? 'المصروفات',
-                        '/accounting/expenses',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'إدارة الشيكات',
-                        '/accounting/checks',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'الحوالات المالية',
-                        '/accounting/transfers',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'إدارة النقدية',
-                        '/accounting/cashbox',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'كشف حساب موحد',
-                        '/accounting/unified-statement',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.fixedAssets ?? 'الأصول الثابتة',
-                        '/accounting/fixed-assets',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'قيود يدوية',
-                        '/accounting/manual-journal',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'سندات القبض والصرف',
-                        '/accounting/manual-voucher',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.reconciliation ?? 'التسويات',
-                        '/accounting/reconciliation',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'ورديات الكاشير',
-                        '/accounting/shifts',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.costCenters ?? 'مراكز التكلفة',
-                        '/accounting/cost-centers',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.apInvoices ?? 'فواتير الذمم الدائنة',
-                        '/accounting/ap-invoices',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.arInvoices ?? 'فواتير الذمم المدينة',
-                        '/accounting/ar-invoices',
-                      ),
+                      _buildSubItem(context, 'نظرة عامة', '/workspace/accounting'),
+                      _buildSubItem(context, 'شجرة الحسابات', '/accounting/coa'),
+                      _buildSubItem(context, 'دفتر الأستاذ', '/accounting/general-ledger'),
+                      _buildSubItem(context, 'الميزانية العمومية', '/accounting/balance-sheet'),
+                      _buildSubItem(context, 'قائمة الدخل', '/accounting/income-statement'),
+                      _buildSubItem(context, 'سندات القبض والصرف', '/accounting/manual-voucher'),
+                      _buildSubItem(context, 'القيود اليدوية', '/accounting/manual-journal'),
                     ],
                   ),
+
+                if (AccessGuard.canAccess('/workspace/inventory', role))
                   _buildExpansionGroup(
                     context,
-                    icon: Icons.settings_rounded,
-                    title: 'الإعدادات',
+                    icon: Icons.inventory_2_rounded,
+                    title: 'مساحة عمل المخزون',
                     children: [
-                      _buildSubItem(
-                          context,
-                          l10n?.staffManagement ?? 'إدارة المستخدمين',
-                          '/users'),
-                      _buildSubItem(
-                        context,
-                        'إعدادات النظام',
-                        '/settings/system',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'الإعدادات المتقدمة',
-                        '/settings/advanced',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'إعدادات قيود الترحيل',
-                        '/settings/posting-profiles',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'أسعار العملات',
-                        '/settings/currency-rates',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'الصلاحيات',
-                        '/settings/permissions',
-                      ),
-                      _buildSubItem(
-                        context,
-                        l10n?.backupAndSync ?? 'النسخ الاحتياطي',
-                        '/settings/backup',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'سير الموافقات',
-                        '/approvals',
-                      ),
-                      _buildSubItem(
-                        context,
-                        'العروض والبروموشنز',
-                        '/promotions',
-                      ),
-                      _buildSubItem(
-                          context, l10n?.cloudSync ?? 'المزامنة', '/sync'),
-                      _buildSubItem(
-                        context,
-                        'إعدادات الطابعة',
-                        '/settings/printer',
-                      ),
+                      _buildSubItem(context, 'نظرة عامة', '/workspace/inventory'),
+                      _buildSubItem(context, 'قائمة المنتجات', '/products'),
+                      _buildSubItem(context, 'المستودعات', '/inventory/warehouses'),
+                      _buildSubItem(context, 'جرد المخزون', '/inventory/stock-take'),
+                      _buildSubItem(context, 'التحويل المخزني', '/inventory/transfer'),
+                      _buildSubItem(context, 'إدارة التصنيع', '/manufacturing/bom'),
                     ],
                   ),
-                ],
-                const SizedBox(height: 20),
+
+                if (AccessGuard.canAccess('/workspace/parties', role))
+                  _buildExpansionGroup(
+                    context,
+                    icon: Icons.people_alt_rounded,
+                    title: 'مساحة عمل الأطراف',
+                    children: [
+                      _buildSubItem(context, 'نظرة عامة', '/workspace/parties'),
+                      _buildSubItem(context, 'قائمة العملاء', '/customers'),
+                      _buildSubItem(context, 'قائمة الموردين', '/suppliers'),
+                      _buildSubItem(context, 'إدارة الموظفين', '/hr/employees'),
+                      _buildSubItem(context, 'إدارة المستخدمين', '/users'),
+                    ],
+                  ),
+
+                if (AccessGuard.canAccess('/workspace/reports', role))
+                  _buildExpansionGroup(
+                    context,
+                    icon: Icons.assessment_rounded,
+                    title: 'مساحة عمل التقارير',
+                    children: [
+                      _buildSubItem(context, 'نظرة عامة', '/workspace/reports'),
+                      _buildSubItem(context, 'تقارير المبيعات', '/reports/sales'),
+                      _buildSubItem(context, 'تقارير المخزون', '/reports/inventory'),
+                      _buildSubItem(context, 'تقرير القيمة المضافة', '/reports/vat'),
+                      _buildSubItem(context, 'سجل التدقيق', '/reports/audit'),
+                    ],
+                  ),
+
+                if (AccessGuard.canAccess('/workspace/admin', role))
+                  _buildExpansionGroup(
+                    context,
+                    icon: Icons.admin_panel_settings_rounded,
+                    title: 'مساحة عمل الإدارة',
+                    children: [
+                      _buildSubItem(context, 'نظرة عامة', '/workspace/admin'),
+                      _buildSubItem(context, 'إعدادات النظام', '/settings/system'),
+                      _buildSubItem(context, 'الصلاحيات', '/settings/permissions'),
+                      _buildSubItem(context, 'النسخ الاحتياطي', '/settings/backup'),
+                      _buildSubItem(context, 'سير الموافقات', '/approvals'),
+                    ],
+                  ),
+
+                const _DrawerDivider(),
                 _buildDrawerItem(
                   context,
                   icon: Icons.logout_rounded,
