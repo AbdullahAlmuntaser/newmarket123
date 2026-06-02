@@ -313,7 +313,7 @@ class _SuppliersPageState extends State<SuppliersPage> {
       try {
         await sl<TransactionEngine>().postSupplierPayment(
           supplierId: supplier.id,
-          amount: amount,
+          amount: Decimal.parse(amount.toString()),
           paymentMethod: 'cash',
           userId: userId,
         );

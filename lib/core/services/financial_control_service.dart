@@ -193,11 +193,11 @@ class FinancialControlService {
     try {
       final valuation = await costingService!.getInventoryValuation(productId);
 
-      if (valuation.totalQuantity < 0) {
+      if (valuation.totalQuantity < Decimal.zero) {
         errors.add('الكمية السالبة غير مسموحة: ${valuation.totalQuantity}');
       }
 
-      if (valuation.totalQuantity == 0 && valuation.totalValue != 0) {
+      if (valuation.totalQuantity == Decimal.zero && valuation.totalValue != Decimal.zero) {
         errors.add(
             'تناقض في تقييم المخزون - الكمية صفر لكن القيمة: ${valuation.totalValue}');
       }

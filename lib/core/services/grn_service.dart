@@ -49,25 +49,25 @@ class GrnService {
 
       final Decimal landedCosts =
           purchase.landedCosts + purchase.shippingCost + purchase.otherExpenses;
-      double itemsSubtotal = 0;
+      Decimal itemsSubtotal = Decimal.zero;
       for (var item in purchaseItems) {
-        itemsSubtotal += (item.quantity * item.price).toDouble();
+        itemsSubtotal += item.quantity * item.price;
       }
 
       for (var item in purchaseItems) {
         final String productId = item.productId;
-        final double qty = item.quantity.toDouble();
-        final double unitFactor = item.unitFactor.toDouble();
-        final double qtyInBaseUnit = qty * unitFactor;
+        final Decimal qty = item.quantity;
+        final Decimal unitFactor = item.unitFactor;
+        final Decimal qtyInBaseUnit = qty * unitFactor;
 
-        double landedCostPerUnit = 0;
-        if (landedCosts > Decimal.zero && itemsSubtotal > 0) {
-          final double itemValue = (Decimal.parse(qty.toString()) * item.price).toDouble();
-          final double proportion = itemValue / itemsSubtotal;
-          landedCostPerUnit = (landedCosts * Decimal.parse(proportion.toString()) / Decimal.parse(qty.toString())).toDouble();
+        Decimal landedCostPerUnit = Decimal.zero;
+        if (landedCosts > Decimal.zero && itemsSubtotal > Decimal.zero) {
+          final Decimal itemValue = qty * item.price;
+          final Decimal proportion = (itemValue / itemsSubtotal).toDecimal();
+          landedCostPerUnit = (landedCosts * proportion / qty).toDecimal();
         }
 
-        final double unitCost = item.price.toDouble() + landedCostPerUnit;
+        final Decimal unitCost = item.price + landedCostPerUnit;
 
         final String batchId = const Uuid().v4();
         await db.into(db.productBatches).insert(
@@ -76,9 +76,9 @@ class GrnService {
                 productId: productId,
                 warehouseId: warehouseId,
                 batchNumber: item.batchNumber ?? 'BATCH-$grnNumber',
-                quantity: Value(Decimal.parse(qtyInBaseUnit.toString())),
-                initialQuantity: Value(Decimal.parse(qtyInBaseUnit.toString())),
-                costPrice: Value(Decimal.parse(unitCost.toString())),
+                quantity: Value(qtyInBaseUnit),
+                initialQuantity: Value(qtyInBaseUnit),
+                costPrice: Value(unitCost),
                 expiryDate: Value(item.expiryDate),
               ),
             );
@@ -90,8 +90,8 @@ class GrnService {
         await (db.update(db.products)..where((p) => p.id.equals(productId)))
             .write(
           ProductsCompanion(
-            stock: Value(product.stock + Decimal.parse(qtyInBaseUnit.toString())),
-            buyPrice: Value(Decimal.parse(unitCost.toString())),
+            stock: Value(product.stock + qtyInBaseUnit),
+            buyPrice: Value(unitCost),
           ),
         );
 
@@ -100,7 +100,7 @@ class GrnService {
                 productId: productId,
                 warehouseId: warehouseId,
                 batchId: Value(batchId),
-                quantity: qtyInBaseUnit,
+                quantity: qtyInBaseUnit.toDouble(),
                 type: 'PURCHASE',
                 referenceId: grnId,
               ),
@@ -110,7 +110,7 @@ class GrnService {
               GoodReceivedNoteItemsCompanion.insert(
                 grnId: grnId,
                 productId: productId,
-                quantity: qty,
+                quantity: qty.toDouble(),
                 batchNumber: Value(item.batchNumber),
                 expiryDate: Value(item.expiryDate),
               ),
@@ -177,7 +177,7 @@ class GrnService {
 
       double totalQty = 0;
       for (var item in items) {
-        totalQty += item.quantity.toDouble();
+        totalQty += item.quantity;
       }
 
       result.add(GrnReportItem(

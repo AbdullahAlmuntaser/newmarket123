@@ -74,8 +74,8 @@ class _BillAllocationWidgetState extends State<BillAllocationWidget> {
     for (var saleWithBalance in _outstandingSales) {
       if (remaining <= 0) break;
 
-      double toAllocate = remaining > saleWithBalance.balance
-          ? saleWithBalance.balance
+      double toAllocate = remaining > saleWithBalance.balance.toDouble()
+          ? saleWithBalance.balance.toDouble()
           : remaining;
       newAllocations[saleWithBalance.sale.id] = toAllocate;
       remaining -= toAllocate;
@@ -152,7 +152,7 @@ class _BillAllocationWidgetState extends State<BillAllocationWidget> {
                 title: Text(
                     'فاتورة #${sale.id.substring(0, 8)} - ${sale.createdAt.toString().split(' ')[0]}'),
                 subtitle: Text(
-                    'الإجمالي: ${sale.total} | المتبقي: ${saleWithBalance.balance}'),
+                    'الإجمالي: ${sale.total} | المتبقي: ${saleWithBalance.balance.toDouble()}'),
                 trailing: SizedBox(
                   width: 120,
                   child: TextField(
@@ -163,14 +163,14 @@ class _BillAllocationWidgetState extends State<BillAllocationWidget> {
                           ? IconButton(
                               icon: const Icon(Icons.clear, size: 16),
                               onPressed: () => _updateAllocation(
-                                  sale.id, 0, saleWithBalance.balance),
+                                  sale.id, 0, saleWithBalance.balance.toDouble()),
                             )
                           : null,
                     ),
                     onChanged: (val) {
                       final amount = double.tryParse(val) ?? 0;
                       _updateAllocation(
-                          sale.id, amount, saleWithBalance.balance);
+                          sale.id, amount, saleWithBalance.balance.toDouble());
                     },
                     controller: TextEditingController(
                       text: isAllocated

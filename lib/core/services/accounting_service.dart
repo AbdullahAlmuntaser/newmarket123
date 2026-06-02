@@ -622,11 +622,11 @@ class AccountingService {
     final asOfDate = DateTime.now();
 
     final cogsAccount = await dao.getAccountByCode(codeCOGS);
-    final cogsBalance = cogsAccount != null
+    final double cogsBalance = cogsAccount != null
         ? await dao.getAccountBalanceAsOfDate(cogsAccount.id, asOfDate)
-        : Decimal.zero;
+        : 0.0;
     final double totalRevenue = incomeStatement.totalRevenue;
-    final double totalCogs = double.parse(cogsBalance.toString());
+    final double totalCogs = cogsBalance;
     final double grossProfit = totalRevenue - totalCogs;
     final grossProfitMargin = totalRevenue > 0
         ? (grossProfit / totalRevenue)

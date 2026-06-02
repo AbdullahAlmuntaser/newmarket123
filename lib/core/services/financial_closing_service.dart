@@ -123,7 +123,7 @@ class FinancialClosingService {
     );
 
     await _createClosingEntry(
-      netIncome: incomeStatement.netIncome,
+      netIncome: Decimal.parse(incomeStatement.netIncome.toString()),
       periodEndDate: period.endDate,
     );
 
@@ -170,7 +170,7 @@ class FinancialClosingService {
     );
 
     await _createClosingEntry(
-      netIncome: incomeStatement.netIncome,
+      netIncome: Decimal.parse(incomeStatement.netIncome.toString()),
       periodEndDate: period.endDate,
     );
 
@@ -193,10 +193,10 @@ class FinancialClosingService {
   }
 
   Future<String> _createClosingEntry({
-    required double netIncome,
+    required Decimal netIncome,
     required DateTime periodEndDate,
   }) async {
-    if (netIncome == 0) return '';
+    if (netIncome == Decimal.zero) return '';
 
     final entryId = const Uuid().v4();
     final retainedEarnings = await db.accountingDao.getAccountByCode('3010');
@@ -214,16 +214,17 @@ class FinancialClosingService {
     final lines = <GLLinesCompanion>[];
 
     for (var acc in revenueAccounts) {
-      final balance = await db.accountingDao.getAccountBalanceAsOfDate(
+      final double rawBalance = await db.accountingDao.getAccountBalanceAsOfDate(
         acc.id,
         periodEndDate,
       );
-      if (balance > 0) {
+      final Decimal balance = Decimal.parse(rawBalance.toString());
+      if (balance > Decimal.zero) {
         lines.add(
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: acc.id,
-            debit: Value(Decimal.parse(balance.toString())),
+            debit: Value(balance),
             credit: Value(Decimal.zero),
           ),
         );
@@ -231,29 +232,30 @@ class FinancialClosingService {
     }
 
     for (var acc in expenseAccounts) {
-      final balance = await db.accountingDao.getAccountBalanceAsOfDate(
+      final double rawBalance = await db.accountingDao.getAccountBalanceAsOfDate(
         acc.id,
         periodEndDate,
       );
-      if (balance > 0) {
+      final Decimal balance = Decimal.parse(rawBalance.toString());
+      if (balance > Decimal.zero) {
         lines.add(
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: acc.id,
             debit: Value(Decimal.zero),
-            credit: Value(Decimal.parse(balance.toString())),
+            credit: Value(balance),
           ),
         );
       }
     }
 
-    if (netIncome > 0) {
+    if (netIncome > Decimal.zero) {
       lines.add(
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: retainedEarnings.id,
           debit: Value(Decimal.zero),
-          credit: Value(Decimal.parse(netIncome.toString())),
+          credit: Value(netIncome),
         ),
       );
     } else {
@@ -261,7 +263,7 @@ class FinancialClosingService {
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: retainedEarnings.id,
-          debit: Value(Decimal.parse(netIncome.abs().toString())),
+          debit: Value(netIncome.abs()),
           credit: Value(Decimal.zero),
         ),
       );
@@ -301,19 +303,20 @@ class FinancialClosingService {
 
     final lines = <GLLinesCompanion>[];
     for (var acc in permanentAccounts) {
-      final balance = await db.accountingDao.getAccountBalanceAsOfDate(
+      final double rawBalance = await db.accountingDao.getAccountBalanceAsOfDate(
         acc.id,
         openingDate.subtract(const Duration(seconds: 1)),
       );
+      final Decimal balance = Decimal.parse(rawBalance.toString());
 
-      if (balance == 0) continue;
+      if (balance == Decimal.zero) continue;
 
-      if (balance > 0) {
+      if (balance > Decimal.zero) {
         lines.add(
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: acc.id,
-            debit: Value(Decimal.parse(balance.toString())),
+            debit: Value(balance),
             credit: Value(Decimal.zero),
           ),
         );
@@ -323,7 +326,7 @@ class FinancialClosingService {
             entryId: entryId,
             accountId: acc.id,
             debit: Value(Decimal.zero),
-            credit: Value(Decimal.parse(balance.abs().toString())),
+            credit: Value(balance.abs()),
           ),
         );
       }
@@ -421,8 +424,8 @@ class FinancialClosingService {
   Future<ClosingResult> closeDailyShift({
     required String shiftId,
     required String userId,
-    required double expectedCash,
-    required double actualCash,
+    required Decimal expectedCash,
+    required Decimal actualCash,
     String? note,
   }) async {
     final shift = await (db.select(
@@ -450,7 +453,7 @@ class FinancialClosingService {
 
     final difference = actualCash - expectedCash;
 
-    if (note != null || difference.abs() > 0.01) {
+    if (note != null || difference.abs() > Decimal.parse('0.01')) {
       await _recordShiftDifference(
         shiftId: shiftId,
         difference: difference,
@@ -462,8 +465,8 @@ class FinancialClosingService {
     await (db.update(db.shifts)..where((s) => s.id.equals(shiftId))).write(
       ShiftsCompanion(
         isOpen: const Value(false),
-        closingCash: Value(Decimal.parse(actualCash.toString())),
-        expectedCash: Value(Decimal.parse(expectedCash.toString())),
+        closingCash: Value<Decimal?>(actualCash),
+        expectedCash: Value<Decimal?>(expectedCash),
         endTime: Value(DateTime.now()),
       ),
     );
@@ -484,11 +487,11 @@ class FinancialClosingService {
 
   Future<void> _recordShiftDifference({
     required String shiftId,
-    required double difference,
+    required Decimal difference,
     required String note,
     required String userId,
   }) async {
-    if (difference == 0) return;
+    if (difference == Decimal.zero) return;
 
     final cashAccount = await db.accountingDao.getAccountByCode('1010');
     final diffAccount = await db.accountingDao.getAccountByCode('5020');
@@ -503,29 +506,29 @@ class FinancialClosingService {
       status: const Value('POSTED'),
     );
 
-    final lines = difference > 0
+    final lines = difference > Decimal.zero
         ? [
             GLLinesCompanion.insert(
               entryId: entryId,
               accountId: cashAccount.id,
-              debit: Value(Decimal.parse(difference.toString())),
+              debit: Value(difference),
             ),
             GLLinesCompanion.insert(
               entryId: entryId,
               accountId: diffAccount.id,
-              credit: Value(Decimal.parse(difference.toString())),
+              credit: Value(difference),
             ),
           ]
         : [
             GLLinesCompanion.insert(
               entryId: entryId,
               accountId: diffAccount.id,
-              debit: Value(Decimal.parse(difference.abs().toString())),
+              debit: Value(difference.abs()),
             ),
             GLLinesCompanion.insert(
               entryId: entryId,
               accountId: cashAccount.id,
-              credit: Value(Decimal.parse(difference.abs().toString())),
+              credit: Value(difference.abs()),
             ),
           ];
 

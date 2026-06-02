@@ -71,8 +71,8 @@ class ErpDataService {
 
     try {
       final valuation = await costingService.getInventoryValuation(productId);
-      stock = valuation.totalQuantity;
-      avgCost = valuation.averageCost;
+      stock = valuation.totalQuantity.toDouble();
+      avgCost = valuation.averageCost.toDouble();
     } catch (_) {
       stock = (product?.stock ?? Decimal.zero).toDouble();
       avgCost = (product?.buyPrice ?? Decimal.zero).toDouble();
@@ -87,7 +87,7 @@ class ErpDataService {
     return ProductSmartData(
       currentStock: stock,
       averageCost: avgCost,
-      lastPurchasePrice: lastItem?.unitPrice.toDouble() ?? 0,
+      lastPurchasePrice: (lastItem?.unitPrice)?.toDouble() ?? 0,
       lastPurchaseDate: lastPurchase?.date,
       bestPurchasePrice: bestPrice,
       retailPrice: (product?.sellPrice ?? Decimal.zero).toDouble(),
@@ -163,11 +163,11 @@ class ErpDataService {
         productId,
         supplierId: supplierId,
       );
-      lastPrice = lastItem?.unitPrice.toDouble() ?? 0;
+      lastPrice = (lastItem?.unitPrice)?.toDouble() ?? 0;
       lastDate = lastPurchase?.date;
 
       // Best price from this supplier
-      final minExp = CustomExpression<num>('MIN(${db.purchaseItems.unitPrice.name})');
+      final minExp = CustomExpression<double>('MIN(${db.purchaseItems.unitPrice.name})');
       final query = db.selectOnly(db.purchaseItems).join([
         innerJoin(
           db.purchases,

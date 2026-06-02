@@ -30,8 +30,6 @@ class TransactionEngine {
     _costingService = costingService;
   }
 
-  /// Checks if the current accounting period is open
-  /// Throws an exception if no open period exists or if the current date is outside the open period
   Future<void> _checkAccountingPeriodOpen() async {
     final now = DateTime.now();
     final openPeriod = await (db.select(db.accountingPeriods)
@@ -47,25 +45,20 @@ class TransactionEngine {
     }
   }
 
-  /// Posts a purchase invoice (Draft -> Received)
-  /// This updates inventory, creates batches, allocates landed costs, and triggers accounting.
   Future<void> postPurchase(String purchaseId, {String? userId}) async {
     if (purchaseId.isEmpty) {
       throw Exception('معرف الفاتورة غير صالح.');
     }
 
-    // Check if accounting period is open before posting
     await _checkAccountingPeriodOpen();
 
     try {
       await db.transaction(() async {
-        // 1. Get Purchase and Items
         final purchase = await (db.select(
           db.purchases,
         )..where((p) => p.id.equals(purchaseId)))
             .getSingle();
 
-        // Validate supplier if credit purchase
         if (purchase.isCredit && purchase.supplierId == null) {
           throw Exception('يجب اختيار مورد لفاتورة الشراء الآجل.');
         }
@@ -83,33 +76,29 @@ class TransactionEngine {
           throw Exception('لا يمكن ترحيل فاتورة مشتريات بدون أصناف.');
         }
 
-        // 2. Calculate Subtotal for Landed Cost Allocation
-        double subtotal = 0;
+        Decimal subtotal = Decimal.zero;
         for (var item in items) {
           if (item.quantity <= Decimal.zero) {
             throw Exception('كمية الشراء يجب أن تكون أكبر من الصفر.');
           }
-          subtotal += (item.quantity * item.price).toDouble();
+          subtotal += item.quantity * item.price;
         }
 
-        // 3. Process each item
         for (var item in items) {
-          // Landed Cost Allocation (by value proportion)
-          double itemValue = (item.quantity * item.price).toDouble();
-          double proportion = subtotal > 0 ? itemValue / subtotal : 0;
-          double allocatedLandedCost = (purchase.landedCosts * Decimal.parse(proportion.toString())).toDouble();
-          double landedCostPerUnit =
-              item.quantity > Decimal.zero ? allocatedLandedCost / item.quantity.toDouble() : 0;
-          double finalUnitCost = item.price.toDouble() + landedCostPerUnit;
+          Decimal itemValue = item.quantity * item.price;
+          Decimal proportion = subtotal > Decimal.zero ? (itemValue / subtotal).toDecimal() : Decimal.zero;
+          Decimal allocatedLandedCost = purchase.landedCosts * proportion;
+          Decimal landedCostPerUnit =
+              item.quantity > Decimal.zero ? (allocatedLandedCost / item.quantity).toDecimal() : Decimal.zero;
+          Decimal finalUnitCost = item.price + landedCostPerUnit;
 
           final product = await (db.select(
             db.products,
           )..where((p) => p.id.equals(item.productId)))
               .getSingle();
 
-          double qtyInBaseUnit = (item.quantity * item.unitFactor).toDouble();
+          Decimal qtyInBaseUnit = item.quantity * item.unitFactor;
 
-          // A. Create Product Batch
           final batchId = const Uuid().v4();
           await db.into(db.productBatches).insert(
                 ProductBatchesCompanion.insert(
@@ -121,50 +110,45 @@ class TransactionEngine {
                           ? item.batchNumber!
                           : 'PUR-${purchase.id.substring(0, 8)}',
                   expiryDate: Value(item.expiryDate),
-                  quantity: Value(Decimal.parse(qtyInBaseUnit.toString())),
-                  initialQuantity: Value(Decimal.parse(qtyInBaseUnit.toString())),
+                  quantity: Value(qtyInBaseUnit),
+                  initialQuantity: Value(qtyInBaseUnit),
                   costPrice: Value(
-                    Decimal.parse((finalUnitCost / item.unitFactor.toDouble()).toString()),
-                  ), // Cost per base unit
+                    (finalUnitCost / item.unitFactor).toDecimal(),
+                  ),
                   syncStatus: const Value.absent(),
                 ),
               );
 
-          // B. Update Purchase Item with Batch ID
           await (db.update(db.purchaseItems)
                 ..where((pi) => pi.id.equals(item.id)))
               .write(PurchaseItemsCompanion(batchId: Value(batchId)));
 
-          // C. Record Inventory Transaction
           await db.into(db.inventoryTransactions).insert(
                 InventoryTransactionsCompanion.insert(
                   productId: item.productId,
                   warehouseId: purchase.warehouseId ?? '',
                   batchId: Value(batchId),
-                  quantity: qtyInBaseUnit,
+                  quantity: qtyInBaseUnit.toDouble(),
                   type: 'PURCHASE',
                   referenceId: purchaseId,
                 ),
               );
 
-          // D. Update Product Total Stock & Buy Price
           await (db.update(
             db.products,
           )..where((p) => p.id.equals(item.productId)))
               .write(
             ProductsCompanion(
-              stock: Value(product.stock + Decimal.parse(qtyInBaseUnit.toString())),
-              buyPrice: Value(Decimal.parse(finalUnitCost.toString())),
+              stock: Value(product.stock + qtyInBaseUnit),
+              buyPrice: Value(finalUnitCost),
             ),
           );
         }
 
-        // 4. Update Purchase Status
         await (db.update(db.purchases)..where((p) => p.id.equals(purchaseId)))
             .write(const PurchasesCompanion(
                 status: Value(DocumentStatus.received)));
 
-        // 5. Update Supplier Balance if Credit
         if (purchase.isCredit && purchase.supplierId != null) {
           final supplier = await (db.select(
             db.suppliers,
@@ -180,7 +164,6 @@ class TransactionEngine {
           );
         }
 
-        // 6. Trigger Accounting & Audit within same transaction
         await _accountingService.postPurchase(purchase, items);
 
         await _auditService.log(
@@ -191,7 +174,6 @@ class TransactionEngine {
           details: 'Posted purchase invoice $purchaseId',
         );
 
-        // Notify UI (Non-critical events can still be fired)
         eventBus.fire(PurchasePostedEvent(purchase, items, userId: userId));
       });
     } catch (e) {
@@ -199,15 +181,11 @@ class TransactionEngine {
     }
   }
 
-  /// Posts a sale (Draft -> Posted)
-  /// This updates inventory batches (FEFO), records inventory transactions, and triggers accounting.
   Future<void> postSale(String saleId, {String? userId}) async {
-    // Check if accounting period is open before posting
     await _checkAccountingPeriodOpen();
 
     developer.log('postSale requested: saleId=$saleId, userId=$userId', name: 'invoice.lifecycle');
 
-    // First check: Verify sale exists and is not already posted (outside transaction)
     final saleCheck = await (db.select(db.sales)
           ..where((s) => s.id.equals(saleId)))
         .getSingleOrNull();
@@ -225,7 +203,6 @@ class TransactionEngine {
       throw Exception('هذه الفاتورة تم ترحيلها بالفعل.');
     }
 
-    // Check if there is an active shift for cash sales
     if (saleCheck.paymentMethod == PaymentMethod.cash && userId != null) {
       final activeShift = await (db.select(db.shifts)
             ..where((s) => s.userId.equals(userId) & s.isOpen.equals(true)))
@@ -236,14 +213,12 @@ class TransactionEngine {
     }
 
     await db.transaction(() async {
-      // Re-fetch latest header within transaction to avoid race conditions
       final currentSale = await (db.select(db.sales)
             ..where((s) => s.id.equals(saleId))
             ..where((s) => s.status.equals(DocumentStatus.draft.index)))
           .getSingleOrNull();
 
       if (currentSale == null) {
-        // Sale was already posted or status changed - verify current status
         final latestSale = await (db.select(db.sales)
               ..where((s) => s.id.equals(saleId)))
             .getSingle();
@@ -264,7 +239,6 @@ class TransactionEngine {
         throw Exception('لا يمكن ترحيل فاتورة مبيعات بدون أصناف.');
       }
 
-      // 2. Process each item (Inventory Update - FEFO)
       Decimal saleCogs = Decimal.zero;
       for (var item in items) {
         if (item.quantity <= Decimal.zero) {
@@ -277,7 +251,6 @@ class TransactionEngine {
 
         Decimal remainingToDeduct = item.quantity * item.unitFactor;
 
-        // Stock Validation
         final product = await (db.select(
           db.products,
         )..where((p) => p.id.equals(item.productId)))
@@ -289,46 +262,41 @@ class TransactionEngine {
           );
         }
 
-        // استخدم InventoryCostingService إذا كان متاحاً
         if (_costingService != null) {
           final batches = await _costingService!.getBatchesForSale(
             item.productId,
-            remainingToDeduct.toDouble(),
+            remainingToDeduct,
           );
 
           Decimal totalDeducted = Decimal.zero;
           for (var batchData in batches) {
-            if (batchData.remainingQuantity <= 0) continue;
+            if (batchData.remainingQuantity <= Decimal.zero) continue;
 
-            // Update Batch Quantity
-            final batchRemainingDecimal = Decimal.parse(batchData.remainingQuantity.toString());
             await (db.update(
               db.productBatches,
             )..where((b) => b.id.equals(batchData.batch.id)))
                 .write(
               ProductBatchesCompanion(
                 quantity: Value(
-                    batchData.batch.quantity - batchRemainingDecimal),
+                    batchData.batch.quantity - batchData.remainingQuantity),
               ),
             );
 
-            // Record Inventory Transaction
             await db.into(db.inventoryTransactions).insert(
                   InventoryTransactionsCompanion.insert(
                     productId: item.productId,
                     warehouseId: batchData.batch.warehouseId,
                     batchId: Value(batchData.batch.id),
-                    quantity: -batchData.remainingQuantity,
+                    quantity: -(batchData.remainingQuantity.toDouble()),
                     type: 'SALE',
                     referenceId: saleId,
                   ),
                 );
 
-            totalDeducted += batchRemainingDecimal;
-            saleCogs += (batchRemainingDecimal * Decimal.parse(batchData.costPerUnit.toString()));
+            totalDeducted += batchData.remainingQuantity;
+            saleCogs += batchData.remainingQuantity * batchData.costPerUnit;
           }
 
-          // Update Product Total Stock
           await (db.update(
             db.products,
           )..where((p) => p.id.equals(item.productId)))
@@ -336,7 +304,6 @@ class TransactionEngine {
             ProductsCompanion(stock: Value(product.stock - totalDeducted)),
           );
         } else {
-          // Fallback: استخدام المنطق الأصلي FEFO
           final batches = await (db.select(db.productBatches)
                 ..where((b) => b.productId.equals(item.productId))
                 ..where((b) => b.quantity.isBiggerThan(Variable(Decimal.zero.toString())))
@@ -364,7 +331,6 @@ class TransactionEngine {
                 ? remainingToDeduct
                 : batch.quantity;
 
-            // Update Batch Quantity
             await (db.update(
               db.productBatches,
             )..where((b) => b.id.equals(batch.id)))
@@ -374,7 +340,6 @@ class TransactionEngine {
               ),
             );
 
-            // Record Inventory Transaction
             await db.into(db.inventoryTransactions).insert(
                   InventoryTransactionsCompanion.insert(
                     productId: item.productId,
@@ -388,10 +353,9 @@ class TransactionEngine {
 
             remainingToDeduct -= deductFromThisBatch;
             totalDeducted += deductFromThisBatch;
-            saleCogs += (deductFromThisBatch * batch.costPrice);
+            saleCogs += deductFromThisBatch * batch.costPrice;
           }
 
-          // Update Product Total Stock
           await (db.update(
             db.products,
           )..where((p) => p.id.equals(item.productId)))
@@ -400,13 +364,12 @@ class TransactionEngine {
           );
         }
       }
-      // 3. Update Sale Status
+
       developer.log('Marking sale as posted: saleId=$saleId', name: 'invoice.lifecycle');
       await (db.update(db.sales)..where((s) => s.id.equals(saleId))).write(
         const SalesCompanion(status: Value(DocumentStatus.posted)),
       );
 
-      // 4. Update Customer Balance if Credit
       if (sale.isCredit && sale.customerId != null) {
         final customer = await (db.select(
           db.customers,
@@ -421,7 +384,6 @@ class TransactionEngine {
         );
       }
 
-      // 5. Trigger Accounting & Audit within same transaction
       await _accountingService.postSale(sale, items, cogs: saleCogs, userId: userId);
 
       await _auditService.log(
@@ -432,20 +394,15 @@ class TransactionEngine {
         details: 'Posted sale invoice $saleId',
       );
 
-      // Notify UI (Non-critical events)
       eventBus.fire(
         SaleCreatedEvent(sale, items, cogs: saleCogs, userId: userId),
       );
     });
   }
 
-  /// Posts a sale return
-  /// This updates inventory batches (re-adds stock), records inventory transactions, and triggers accounting.
   Future<void> postSaleReturn(String returnId, {String? userId}) async {
-    // Check if accounting period is open before posting
     await _checkAccountingPeriodOpen();
 
-    // Check if already processed by looking for existing inventory transactions
     final existingTransactions = await (db.select(db.inventoryTransactions)
           ..where((t) => t.referenceId.equals(returnId))
           ..where((t) => t.type.equals('RETURN')))
@@ -455,7 +412,6 @@ class TransactionEngine {
     }
 
     await db.transaction(() async {
-      // 1. Get Return and Items
       final saleReturn = await (db.select(
         db.salesReturns,
       )..where((r) => r.id.equals(returnId)))
@@ -471,18 +427,15 @@ class TransactionEngine {
       )..where((s) => s.id.equals(saleReturn.saleId)))
           .getSingle();
 
-      // 2. Process each item (Inventory Update - Return to Batch)
       for (var item in items) {
-        double returnQty = item.quantity;
+        Decimal returnQty = Decimal.parse(item.quantity.toString());
         final defaultWarehouse = await _configService.getDefaultWarehouseId();
 
-        // Get current product
         final product = await (db.select(db.products)
               ..where((p) => p.id.equals(item.productId)))
             .getSingle();
         Decimal qtyInBaseUnit = Decimal.parse(returnQty.toString());
 
-        // Return stock to the specific batch or create new batch if none
         final batchId = item.batchId;
         final batch = batchId != null
             ? await (db.select(db.productBatches)
@@ -491,7 +444,6 @@ class TransactionEngine {
             : null;
 
         if (batch != null) {
-          // Update existing batch
           await (db.update(db.productBatches)
                 ..where((b) => b.id.equals(batch.id)))
               .write(
@@ -500,7 +452,6 @@ class TransactionEngine {
             ),
           );
         } else {
-          // Find or create batch - use FEFO logic to find existing batch first (nulls last)
           final existingBatches = await (db.select(db.productBatches)
                 ..where((b) => b.productId.equals(item.productId))
                 ..where((b) => b.quantity.isBiggerThan(Constant(Decimal.zero.toString())))
@@ -517,7 +468,6 @@ class TransactionEngine {
               .get();
 
           if (existingBatches.isNotEmpty) {
-            // Add to oldest batch (FEFO)
             final targetBatch = existingBatches.first;
             await (db.update(db.productBatches)
                   ..where((b) => b.id.equals(targetBatch.id)))
@@ -527,7 +477,6 @@ class TransactionEngine {
               ),
             );
           } else {
-            // Create new batch for the return
             final newBatchId = const Uuid().v4();
             await db.into(db.productBatches).insert(
                   ProductBatchesCompanion.insert(
@@ -544,29 +493,26 @@ class TransactionEngine {
           }
         }
 
-        // Update Product Total Stock (Only once)
         await (db.update(db.products)
               ..where((p) => p.id.equals(item.productId)))
             .write(
                 ProductsCompanion(stock: Value(product.stock + qtyInBaseUnit)));
 
-        // Validate batch integrity: ensure product.stock == sum(batches)
         final batchesAfterReturn = await (db.select(db.productBatches)
               ..where((b) => b.productId.equals(item.productId)))
             .get();
-        double batchSum = 0;
+        Decimal batchSum = Decimal.zero;
         for (var b in batchesAfterReturn) {
-          batchSum += b.quantity.toDouble();
+          batchSum += b.quantity;
         }
         final Decimal newStock = product.stock + qtyInBaseUnit;
-        if ((batchSum - newStock.toDouble()).abs() > 0.01) {
+        if ((batchSum - newStock).abs() > Decimal.parse('0.01')) {
           developer.log(
             'WARNING: Stock/Batch mismatch after return. Product stock: $newStock, Batch sum: $batchSum',
             name: 'transaction_engine',
           );
         }
 
-        // Record Inventory Transaction
         await db.into(db.inventoryTransactions).insert(
               InventoryTransactionsCompanion.insert(
                 productId: item.productId,
@@ -579,7 +525,6 @@ class TransactionEngine {
             );
       }
 
-      // 3. Update Customer Balance if Credit
       if (sale.isCredit && sale.customerId != null) {
         final customer = await (db.select(db.customers)
               ..where((c) => c.id.equals(sale.customerId!)))
@@ -590,20 +535,15 @@ class TransactionEngine {
         ));
       }
 
-      // 4. Trigger Accounting & Audit within same transaction
       await _accountingService.postSaleReturn(saleReturn, items, userId ?? 'SYSTEM');
 
-      // Notify UI
       eventBus.fire(SaleReturnCreatedEvent(saleReturn, items, userId: userId));
     });
   }
 
-  /// Posts a purchase return
   Future<void> postPurchaseReturn(String returnId, {String? userId}) async {
-    // Check if accounting period is open before posting
     await _checkAccountingPeriodOpen();
 
-    // Check if already processed by looking for existing inventory transactions
     final existingTransactions = await (db.select(db.inventoryTransactions)
           ..where((t) => t.referenceId.equals(returnId))
           ..where((t) => t.type.equals('PURCHASE_RETURN')))
@@ -613,7 +553,6 @@ class TransactionEngine {
     }
 
     await db.transaction(() async {
-      // 1. Get Return and Items
       final purchaseReturn = await (db.select(
         db.purchaseReturns,
       )..where((r) => r.id.equals(returnId)))
@@ -629,11 +568,9 @@ class TransactionEngine {
       )..where((p) => p.id.equals(purchaseReturn.purchaseId)))
           .getSingle();
 
-      // 2. Process each item (Inventory Update - Remove from Batch)
       for (var item in items) {
         Decimal remainingToDeduct = Decimal.parse(item.quantity.toString());
 
-        // FEFO Logic for purchase return - nulls last
         final batches = await (db.select(db.productBatches)
               ..where((b) => b.productId.equals(item.productId))
               ..where((b) => b.quantity.isBiggerThan(Constant(Decimal.zero.toString())))
@@ -663,7 +600,6 @@ class TransactionEngine {
             ProductBatchesCompanion(quantity: Value(batch.quantity - deduct)),
           );
 
-          // Record Inventory Transaction
           await db.into(db.inventoryTransactions).insert(
                 InventoryTransactionsCompanion.insert(
                   productId: item.productId,
@@ -678,7 +614,6 @@ class TransactionEngine {
           remainingToDeduct -= deduct;
         }
 
-        // Update Product Total Stock
         final product = await (db.select(
           db.products,
         )..where((p) => p.id.equals(item.productId)))
@@ -692,7 +627,6 @@ class TransactionEngine {
         );
       }
 
-      // 3. Update Supplier Balance if Credit
       if (purchase.isCredit && purchase.supplierId != null) {
         final supplier = await (db.select(
           db.suppliers,
@@ -709,53 +643,47 @@ class TransactionEngine {
         );
       }
 
-      // 4. Trigger Accounting & Audit within same transaction
       await _accountingService.postPurchaseReturn(purchaseReturn, items, userId ?? 'SYSTEM');
 
-      // Notify UI
       eventBus.fire(
         PurchaseReturnCreatedEvent(purchaseReturn, items, userId: userId),
       );
     });
   }
 
-  /// Posts a customer payment (Receipt)
   Future<void> postCustomerPayment({
     required String customerId,
-    required double amount,
-    required String paymentMethod, // cash, bank, check
+    required Decimal amount,
+    required String paymentMethod,
     String? note,
     String? userId,
   }) async {
     await db.transaction(() async {
-      // 1. Create Payment Record
       final paymentId = const Uuid().v4();
 
       await db.into(db.customerPayments).insert(
             CustomerPaymentsCompanion.insert(
               id: Value(paymentId),
               customerId: customerId,
-              amount: amount,
+              amount: amount.toDouble(),
               paymentDate: Value(DateTime.now()),
               note: Value(note),
               syncStatus: const Value.absent(),
             ),
           );
 
-      // 2. Update Customer Balance
       final customer = await (db.select(
         db.customers,
       )..where((c) => c.id.equals(customerId)))
           .getSingle();
 
       await (db.update(db.customers)..where((c) => c.id.equals(customerId)))
-          .write(CustomersCompanion(balance: Value(customer.balance - Decimal.parse(amount.toString()))));
+          .write(CustomersCompanion(balance: Value(customer.balance - amount)));
 
-      // 3. Trigger Accounting
       eventBus.fire(
         CustomerPaymentEvent(
           customerId: customerId,
-          amount: Decimal.parse(amount.toString()),
+          amount: amount,
           paymentMethod: paymentMethod,
           note: note,
           paymentId: paymentId,
@@ -765,43 +693,39 @@ class TransactionEngine {
     });
   }
 
-  /// Posts a supplier payment (Payment)
   Future<void> postSupplierPayment({
     required String supplierId,
-    required double amount,
+    required Decimal amount,
     required String paymentMethod,
     String? note,
     String? userId,
   }) async {
     await db.transaction(() async {
-      // 1. Create Payment Record
       final paymentId = const Uuid().v4();
 
       await db.into(db.supplierPayments).insert(
             SupplierPaymentsCompanion.insert(
               id: Value(paymentId),
               supplierId: supplierId,
-              amount: amount,
+              amount: amount.toDouble(),
               paymentDate: Value(DateTime.now()),
               note: Value(note),
               syncStatus: const Value.absent(),
             ),
           );
 
-      // 2. Update Supplier Balance
       final supplier = await (db.select(
         db.suppliers,
       )..where((s) => s.id.equals(supplierId)))
           .getSingle();
 
       await (db.update(db.suppliers)..where((s) => s.id.equals(supplierId)))
-          .write(SuppliersCompanion(balance: Value(supplier.balance - Decimal.parse(amount.toString()))));
+          .write(SuppliersCompanion(balance: Value(supplier.balance - amount)));
 
-      // 3. Trigger Accounting
       eventBus.fire(
         SupplierPaymentEvent(
           supplierId: supplierId,
-          amount: Decimal.parse(amount.toString()),
+          amount: amount,
           paymentMethod: paymentMethod,
           note: note,
           paymentId: paymentId,
@@ -824,13 +748,13 @@ class TransactionEngine {
             ..where((t) => t.referenceId.equals(sale.id)))
           .get();
 
-      double totalPaid = 0;
+      Decimal totalPaid = Decimal.zero;
       for (final payment in payments) {
-        totalPaid += (payment.credit - payment.debit).toDouble();
+        totalPaid += (payment.credit - payment.debit);
       }
 
-      final balance = sale.total.toDouble() - totalPaid;
-      if (balance > 0) {
+      final balance = sale.total - totalPaid;
+      if (balance > Decimal.zero) {
         result.add(SaleWithBalance(sale: sale, balance: balance));
       }
     }
@@ -838,44 +762,41 @@ class TransactionEngine {
   }
 
   Future<void> createCashReceipt({
-    required double amount,
+    required Decimal amount,
     required String category,
     required String accountId,
     String? note,
     String? userId,
   }) async {
-    // Forward to CashManagementService
     final cashService = CashManagementService(db, eventBus);
     await cashService.createCashReceipt(
-      amount: amount,
+      amount: amount.toDouble(),
       category: category,
       accountId: accountId,
       note: note,
       userId: userId,
     );
-  }
+    }
 
-  Future<void> createCashPayment({
-    required double amount,
+    Future<void> createCashPayment({
+    required Decimal amount,
     required String category,
     required String accountId,
     String? note,
     String? userId,
-  }) async {
-    // Forward to CashManagementService
+    }) async {
     final cashService = CashManagementService(db, eventBus);
     await cashService.createCashPayment(
-      amount: amount,
+      amount: amount.toDouble(),
       category: category,
       accountId: accountId,
       note: note,
       userId: userId,
-    );
-  }
+    );  }
 }
 
 class SaleWithBalance {
   final Sale sale;
-  final double balance;
+  final Decimal balance;
   SaleWithBalance({required this.sale, required this.balance});
 }

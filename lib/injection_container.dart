@@ -169,7 +169,8 @@ Future<void> initServices() async {
           sl<PostingEngine>(),
           sl<InventoryService>(),
           sl<AppSettingsService>(),
-          sl<PermissionService>()),
+          sl<PermissionService>(),
+          sl<TransactionEngine>()),
     );
     sl.registerLazySingleton<StatementService>(
       () => StatementService(sl<PostingEngine>()),

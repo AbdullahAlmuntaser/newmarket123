@@ -19,7 +19,8 @@ System Market ERP is a comprehensive enterprise resource planning system for sup
 2. **Localization Fix:** Added missing `noItemsSelected` key and localized `ProductionOrdersPage` and `BomManagementPage`.
 3. **Feature Gap:** Improved `ExpensesPage` to allow Cost Center selection, enabling budget validation.
 4. **Data Integrity:** Updated `AccountingService.recordExpense` to save `costCenterId` in `GLLines`.
-5. **Validation:** All 229 unit/integration tests passed.
+5. **Static Analysis & Cleanup:** Resolved all 22+ static analysis errors (Decimal/Rational conversion, type mismatches).
+6. **Validation:** All 244 unit/integration tests passed.
 
 ## Phase 2: Stabilization & Cleanup (NEXT)
 ### 1. Architectural Unification

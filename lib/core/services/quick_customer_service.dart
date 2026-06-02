@@ -165,7 +165,7 @@ class QuickCustomerService {
             ..where((c) => c.createdAt.isSmallerThanValue(cutoffDate))
             ..where(
               (c) => c.balance.equals(Decimal.zero.toString()),
-            )) // Only if no outstanding balance
+            ))
           .get();
 
       for (final customer in oldQuickCustomers) {

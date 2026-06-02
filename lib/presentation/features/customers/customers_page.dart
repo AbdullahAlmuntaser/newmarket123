@@ -484,7 +484,7 @@ class _CustomersPageState extends State<CustomersPage> {
       try {
         await sl<TransactionEngine>().postCustomerPayment(
           customerId: customer.id,
-          amount: amount,
+          amount: Decimal.parse(amount.toString()),
           paymentMethod: 'cash',
           userId: userId,
         );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:decimal/decimal.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -399,19 +400,18 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
       if (_selectedCustomer != null) {
         await engine.postCustomerPayment(
           customerId: _selectedCustomer!.id,
-          amount: amount,
+          amount: Decimal.parse(amount.toString()),
           paymentMethod: _paymentMethod,
           note: _noteController.text.isEmpty ? null : _noteController.text,
         );
-      } else if (_selectedSupplier != null) {
+        } else if (_selectedSupplier != null) {
         await engine.postSupplierPayment(
           supplierId: _selectedSupplier!.id,
-          amount: amount,
+          amount: Decimal.parse(amount.toString()),
           paymentMethod: _paymentMethod,
           note: _noteController.text.isEmpty ? null : _noteController.text,
         );
-      }
-
+        }
       if (mounted) {
         context.pop();
         AppSnackBar.success(

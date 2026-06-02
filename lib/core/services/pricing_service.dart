@@ -31,7 +31,7 @@ class PricingService {
     final items = await query.get();
 
     for (var item in items) {
-      if (quantity >= Decimal.parse(item.minQuantity.toString())) {
+      if (quantity >= item.minQuantity) {
         return Decimal.parse(item.price.toString());
       }
     }
@@ -46,9 +46,9 @@ class PricingService {
         .getSingleOrNull();
     
     if (isWholesale && (product?.wholesalePrice ?? Decimal.zero) > Decimal.zero) {
-      return Decimal.parse((product!.wholesalePrice).toString());
+      return product!.wholesalePrice;
     }
-    return Decimal.parse((product?.sellPrice ?? 0.0).toString());
+    return product?.sellPrice ?? Decimal.zero;
   }
 
   /// Integrated price calculation including promotions and customer discounts.
@@ -74,7 +74,7 @@ class PricingService {
           .getSingleOrNull();
       if (customer != null && customer.discountRate > Decimal.zero) {
         final Decimal customerDiscountFactor =
-            Decimal.parse((customer.discountRate / Decimal.fromInt(100)).toString());
+            (customer.discountRate / Decimal.fromInt(100)).toDecimal();
         finalPrice = finalPrice - (finalPrice * customerDiscountFactor);
       }
     }
@@ -104,7 +104,7 @@ class PricingService {
 
     Decimal finalPrice = basePrice;
     for (var promo in activePromotions) {
-      if (quantity < Decimal.parse(promo.minPurchaseAmount.toString())) {
+      if (quantity < promo.minPurchaseAmount) {
         continue;
       }
 
@@ -126,10 +126,10 @@ class PricingService {
     )..where((p) => p.id.equals(productId)))
         .getSingleOrNull();
     if (product != null && product.wholesalePrice > Decimal.zero) {
-      return Decimal.parse(product.wholesalePrice.toString());
+      return product.wholesalePrice;
     }
     // Fallback to sell price if wholesale price is not set
-    return Decimal.parse((product?.sellPrice ?? 0.0).toString());
+    return product?.sellPrice ?? Decimal.zero;
   }
 
   /// Get the sell price for a product
@@ -138,6 +138,6 @@ class PricingService {
       db.products,
     )..where((p) => p.id.equals(productId)))
         .getSingleOrNull();
-    return Decimal.parse((product?.sellPrice ?? 0.0).toString());
+    return product?.sellPrice ?? Decimal.zero;
   }
 }

@@ -1180,69 +1180,188 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-  // Safe no-op backfill placeholder used during onUpgrade to avoid running
-  // fragile in-place conversions. This writes a SQL comment so upgrades are
-  // auditable. Run an offline migration process for actual ID conversions.
-  Future<void> _backfillHrUuidIdsSafe() async {
+  // Inspect HR tables and log what would be converted during a dry run.
+  // Used during onUpgrade (safe/no-op) and dry-run mode. Never modifies data.
+  Future<void> _backfillHrUuidIdsSafe({bool verbose = false}) async {
     try {
-      final tables = await customSelect("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'h_r_%';").get();
-      if (tables.isEmpty) return;
-      await customStatement("-- HR UUID backfill skipped in automated onUpgrade. Run offline migration if needed.");
+      final tables = await customSelect(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'h_r_%';"
+      ).get();
+      if (tables.isEmpty) {
+        if (verbose) {
+          await customStatement("-- HR UUID backfill: no HR tables found.");
+        }
+        return;
+      }
+
+      if (verbose) {
+        await customStatement("-- HR UUID backfill: inspecting tables");
+      }
+
+      // Count numeric IDs in h_r_employees
+      try {
+        final empResult = await customSelect(
+          "SELECT COUNT(*) AS cnt FROM h_r_employees WHERE id GLOB '[0-9]*'"
+        ).get();
+        final empNumericCount = empResult.isNotEmpty
+            ? (empResult.first.data['cnt'] as int?) ?? 0
+            : 0;
+        if (verbose) {
+          await customStatement(
+            "-- h_r_employees: $empNumericCount record(s) with numeric IDs",
+          );
+        }
+      } catch (_) {
+        // Table may not exist yet
+      }
+
+      // Count numeric IDs in h_r_payroll_runs
+      try {
+        final runResult = await customSelect(
+          "SELECT COUNT(*) AS cnt FROM h_r_payroll_runs WHERE id GLOB '[0-9]*'"
+        ).get();
+        final runNumericCount = runResult.isNotEmpty
+            ? (runResult.first.data['cnt'] as int?) ?? 0
+            : 0;
+        if (verbose) {
+          await customStatement(
+            "-- h_r_payroll_runs: $runNumericCount record(s) with numeric IDs",
+          );
+        }
+      } catch (_) {
+        // Table may not exist yet
+      }
+
+      await customStatement(
+        "-- HR UUID backfill skipped in automated onUpgrade. "
+        "Run offline migration if needed.",
+      );
     } catch (_) {
       // Intentionally swallow errors to avoid breaking migrations.
     }
   }
 
-  // Safely detect and convert legacy numeric IDs in HR tables to UUID strings.
-  // This performs a best-effort, non-destructive migration:
-  // - Only converts IDs that look purely numeric
-  // - Temporarily disables foreign keys to allow in-place id replacement
-  // - Updates child reference columns after changing parent ids
-  // Designed to be idempotent and safe to run on upgrades.
-  // This helper is an offline migration utility and is intentionally not
-  // invoked automatically during onUpgrade. It remains in the codebase so
-  // maintainers can run or adapt it for offline migrations. Silence the
-  // unused_element analyzer warning because it's used manually.
+  // Detect and convert legacy numeric IDs in HR tables to UUID strings.
+  // Processes in batches with audit logging and rollback support.
+  // Stores old->new ID mappings in _hr_backfill_audit for rollback.
   // ignore: unused_element
-  Future<void> _backfillHrUuidIds() async {
+  Future<void> _backfillHrUuidIds({int batchSize = 50}) async {
     try {
-      // Ensure we only run if HR tables exist
-      final tables = await customSelect("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'h_r_%';").get();
+      final tables = await customSelect(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'h_r_%';"
+      ).get();
       if (tables.isEmpty) return;
 
+      await _createBackfillAuditTable();
       await customStatement('PRAGMA foreign_keys = OFF;');
 
-      // Employees
-      final empRows = await customSelect('SELECT id FROM h_r_employees').get();
-      for (final row in empRows) {
-        final oldIdRaw = row.data['id'];
-        if (oldIdRaw == null) continue;
-        final oldIdStr = oldIdRaw.toString();
-        if (RegExp(r'^\d+$').hasMatch(oldIdStr)) {
-          final newId = const Uuid().v4();
-          await customStatement('UPDATE h_r_employees SET id = ? WHERE id = ?', [newId, oldIdStr]);
-          await customStatement('UPDATE h_r_payroll_details SET employee_id = ? WHERE employee_id = ?', [newId, oldIdStr]);
-          await customStatement('UPDATE h_r_additional_deductions SET employee_id = ? WHERE employee_id = ?', [newId, oldIdStr]);
+      // Employees — process in batches
+      final empRows =
+          await customSelect('SELECT id FROM h_r_employees').get();
+      int empConverted = 0;
+      final empTotal = empRows.length;
+      final empBatches =
+          (empTotal + batchSize - 1) ~/ batchSize;
+
+      for (int i = 0; i < empTotal; i += batchSize) {
+        final batch = empRows.skip(i).take(batchSize).toList();
+        final batchNum = i ~/ batchSize + 1;
+        try {
+          for (final row in batch) {
+            final oldIdRaw = row.data['id'];
+            if (oldIdRaw == null) continue;
+            final oldIdStr = oldIdRaw.toString();
+            if (RegExp(r'^\d+$').hasMatch(oldIdStr)) {
+              final newId = const Uuid().v4();
+              await customStatement(
+                'UPDATE h_r_employees SET id = ? WHERE id = ?',
+                [newId, oldIdStr],
+              );
+              await customStatement(
+                'UPDATE h_r_payroll_details SET employee_id = ? WHERE employee_id = ?',
+                [newId, oldIdStr],
+              );
+              await customStatement(
+                'UPDATE h_r_additional_deductions SET employee_id = ? WHERE employee_id = ?',
+                [newId, oldIdStr],
+              );
+              await customStatement(
+                'INSERT INTO _hr_backfill_audit '
+                '(table_name, old_id, new_id) VALUES (?, ?, ?)',
+                ['h_r_employees', oldIdStr, newId],
+              );
+              empConverted++;
+            }
+          }
+          await customStatement(
+            "-- Employee batch $batchNum/$empBatches: "
+            "$empConverted converted so far",
+          );
+        } catch (batchErr) {
+          await customStatement(
+            "-- ERROR in employee batch $batchNum/$empBatches: "
+            "${batchErr.toString().replaceAll("'", "''")}",
+          );
         }
       }
 
-      // Payroll runs
-      final runRows = await customSelect('SELECT id FROM h_r_payroll_runs').get();
-      for (final row in runRows) {
-        final oldIdRaw = row.data['id'];
-        if (oldIdRaw == null) continue;
-        final oldIdStr = oldIdRaw.toString();
-        if (RegExp(r'^\d+$').hasMatch(oldIdStr)) {
-          final newId = const Uuid().v4();
-          await customStatement('UPDATE h_r_payroll_runs SET id = ? WHERE id = ?', [newId, oldIdStr]);
-          await customStatement('UPDATE h_r_payroll_details SET payroll_run_id = ? WHERE payroll_run_id = ?', [newId, oldIdStr]);
+      // Payroll runs — process in batches
+      final runRows =
+          await customSelect('SELECT id FROM h_r_payroll_runs').get();
+      int runConverted = 0;
+      final runTotal = runRows.length;
+      final runBatches =
+          (runTotal + batchSize - 1) ~/ batchSize;
+
+      for (int i = 0; i < runTotal; i += batchSize) {
+        final batch = runRows.skip(i).take(batchSize).toList();
+        final batchNum = i ~/ batchSize + 1;
+        try {
+          for (final row in batch) {
+            final oldIdRaw = row.data['id'];
+            if (oldIdRaw == null) continue;
+            final oldIdStr = oldIdRaw.toString();
+            if (RegExp(r'^\d+$').hasMatch(oldIdStr)) {
+              final newId = const Uuid().v4();
+              await customStatement(
+                'UPDATE h_r_payroll_runs SET id = ? WHERE id = ?',
+                [newId, oldIdStr],
+              );
+              await customStatement(
+                'UPDATE h_r_payroll_details SET payroll_run_id = ? WHERE payroll_run_id = ?',
+                [newId, oldIdStr],
+              );
+              await customStatement(
+                'INSERT INTO _hr_backfill_audit '
+                '(table_name, old_id, new_id) VALUES (?, ?, ?)',
+                ['h_r_payroll_runs', oldIdStr, newId],
+              );
+              runConverted++;
+            }
+          }
+          await customStatement(
+            "-- Payroll run batch $batchNum/$runBatches: "
+            "$runConverted converted so far",
+          );
+        } catch (batchErr) {
+          await customStatement(
+            "-- ERROR in payroll run batch $batchNum/$runBatches: "
+            "${batchErr.toString().replaceAll("'", "''")}",
+          );
         }
       }
 
+      await customStatement(
+        "-- HR backfill complete: "
+        "$empConverted employees, $runConverted payroll runs",
+      );
       await customStatement('PRAGMA foreign_keys = ON;');
     } catch (e) {
       try {
-        await customStatement("-- HR ID backfill failed: ${e.toString().replaceAll("'", "''")} ");
+        await customStatement(
+          "-- HR ID backfill failed: "
+          "${e.toString().replaceAll("'", "''")} ",
+        );
       } catch (_) {}
       try {
         await customStatement('PRAGMA foreign_keys = ON;');
@@ -1254,21 +1373,148 @@ class AppDatabase extends _$AppDatabase {
   /// script. When [dryRun] is true, the method will not perform destructive
   /// updates and will instead write SQL comments into the database for audit.
   /// Set [verbose] to true to emit debug information via customStatement.
-  Future<void> runHrBackfill({bool dryRun = true, bool verbose = false}) async {
-    if (dryRun) {
-      // Use the safe no-op that writes an audit comment and inspects tables.
+  /// When [rollback] is true, reverses a previous backfill using stored mappings.
+  /// [batchSize] controls how many rows are processed per batch for progress
+  /// tracking and error isolation.
+  Future<void> runHrBackfill({
+    bool dryRun = true,
+    bool verbose = false,
+    int batchSize = 50,
+    bool rollback = false,
+  }) async {
+    if (rollback) {
       if (verbose) {
-        try {
-          await customStatement("-- HR backfill: dryRun=true; listing HR tables before any changes");
-        } catch (_) {}
+        await customStatement("-- HR backfill: rolling back previous migration");
       }
-      await _backfillHrUuidIdsSafe();
+      await _rollbackHrBackfill(verbose: verbose);
       return;
     }
 
-    // Perform the best-effort, non-destructive backfill. Allow exceptions to
-    // bubble up to the caller so they can handle/log them appropriately.
-    await _backfillHrUuidIds();
+    if (dryRun) {
+      if (verbose) {
+        await customStatement(
+          "-- HR backfill: dryRun=true; inspecting HR tables",
+        );
+      }
+      await _backfillHrUuidIdsSafe(verbose: verbose);
+      return;
+    }
+
+    await customStatement(
+      "-- HR backfill: starting live migration (batchSize=$batchSize)",
+    );
+    await _backfillHrUuidIds(batchSize: batchSize);
+  }
+
+  // Create an audit table that stores old->new ID mappings so the
+  // migration can be rolled back if necessary.
+  Future<void> _createBackfillAuditTable() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS _hr_backfill_audit (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        table_name TEXT NOT NULL,
+        old_id TEXT NOT NULL,
+        new_id TEXT NOT NULL,
+        converted_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    ''');
+  }
+
+  // Reverse a previous HR UUID backfill by restoring old IDs from the
+  // _hr_backfill_audit table. Cleans up the audit table on completion.
+  Future<void> _rollbackHrBackfill({bool verbose = false}) async {
+    try {
+      // Check if audit table has any entries
+      final countResult = await customSelect(
+        'SELECT COUNT(*) AS cnt FROM _hr_backfill_audit',
+      ).get();
+      final total = countResult.isNotEmpty
+          ? (countResult.first.data['cnt'] as int?) ?? 0
+          : 0;
+      if (total == 0) {
+        if (verbose) {
+          await customStatement(
+            "-- HR rollback: no audit entries found; nothing to roll back",
+          );
+        }
+        return;
+      }
+
+      if (verbose) {
+        await customStatement(
+          "-- HR rollback: reversing $total ID mappings",
+        );
+      }
+
+      await customStatement('PRAGMA foreign_keys = OFF;');
+
+      // Restore employee IDs
+      final employeeMappings = await customSelect(
+        "SELECT old_id, new_id FROM _hr_backfill_audit "
+        "WHERE table_name = 'h_r_employees'",
+      ).get();
+      int empRestored = 0;
+      for (final mapping in employeeMappings) {
+        final oldId = mapping.data['old_id'].toString();
+        final newId = mapping.data['new_id'].toString();
+        await customStatement(
+          'UPDATE h_r_employees SET id = ? WHERE id = ?',
+          [oldId, newId],
+        );
+        await customStatement(
+          'UPDATE h_r_payroll_details SET employee_id = ? WHERE employee_id = ?',
+          [oldId, newId],
+        );
+        await customStatement(
+          'UPDATE h_r_additional_deductions SET employee_id = ? WHERE employee_id = ?',
+          [oldId, newId],
+        );
+        empRestored++;
+      }
+
+      // Restore payroll run IDs
+      final runMappings = await customSelect(
+        "SELECT old_id, new_id FROM _hr_backfill_audit "
+        "WHERE table_name = 'h_r_payroll_runs'",
+      ).get();
+      int runRestored = 0;
+      for (final mapping in runMappings) {
+        final oldId = mapping.data['old_id'].toString();
+        final newId = mapping.data['new_id'].toString();
+        await customStatement(
+          'UPDATE h_r_payroll_runs SET id = ? WHERE id = ?',
+          [oldId, newId],
+        );
+        await customStatement(
+          'UPDATE h_r_payroll_details SET payroll_run_id = ? WHERE payroll_run_id = ?',
+          [oldId, newId],
+        );
+        runRestored++;
+      }
+
+      // Clean up audit table
+      await customStatement('DELETE FROM _hr_backfill_audit');
+
+      await customStatement('PRAGMA foreign_keys = ON;');
+
+      if (verbose) {
+        await customStatement(
+          "-- HR rollback complete: "
+          "$empRestored employees, $runRestored payroll runs restored",
+        );
+      }
+    } catch (e) {
+      try {
+        await customStatement(
+          "-- HR rollback failed: "
+          "${e.toString().replaceAll("'", "''")}",
+        );
+      } catch (_) {}
+      try {
+        await customStatement('PRAGMA foreign_keys = ON;');
+      } catch (_) {}
+      rethrow;
+    }
   }
 
   Future<int> getUnsyncedCount() async {
