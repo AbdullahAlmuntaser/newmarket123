@@ -2,6 +2,8 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/services/packaging_engine.dart';
+import 'package:provider/provider.dart';
 
 class PosProductCard extends StatelessWidget {
   final Product product;
@@ -12,6 +14,7 @@ class PosProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final packagingEngine = context.read<PackagingEngine>();
 
     return InkWell(
       onTap: onTap,
@@ -56,21 +59,27 @@ class PosProductCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: product.stock > Decimal.zero ? Colors.green : Colors.red,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      product.stock.toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                  FutureBuilder<String>(
+                    future: packagingEngine.formatInventoryBalance(product.id, product.stock),
+                    builder: (context, snapshot) {
+                      final balanceText = snapshot.data ?? product.stock.toString();
+                      return Container(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: product.stock > Decimal.zero ? Colors.green : Colors.red,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          balanceText,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      );
+                    }
                   ),
                 ],
               ),

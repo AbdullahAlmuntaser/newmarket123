@@ -9,14 +9,17 @@ import 'package:supermarket/presentation/features/pos/bloc/pos_event.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_state.dart';
 import 'package:supermarket/core/services/pricing_service.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
+import 'package:supermarket/core/services/packaging_engine.dart';
 
 class MockPricingService extends Mock implements PricingService {}
 class MockTransactionEngine extends Mock implements TransactionEngine {}
+class MockPackagingEngine extends Mock implements PackagingEngine {}
 
 void main() {
   late AppDatabase db;
   late MockPricingService mockPricing;
   late MockTransactionEngine mockTx;
+  late MockPackagingEngine mockPkg;
 
   setUpAll(() {
     registerFallbackValue(Decimal.zero);
@@ -26,6 +29,7 @@ void main() {
     db = AppDatabase(NativeDatabase.memory());
     mockPricing = MockPricingService();
     mockTx = MockTransactionEngine();
+    mockPkg = MockPackagingEngine();
   });
 
   tearDown(() async {
@@ -48,6 +52,9 @@ void main() {
       unit: const drift.Value('حبة'),
     ));
 
+    // Stub packagingEngine to return empty list for hierarchy
+    when(() => mockPkg.getPackagingHierarchy(any())).thenAnswer((_) async => []);
+
     // Stub pricingService to return a price (e.g., wholesale price fallback)
     when(() => mockPricing.calculatePrice(
           productId: any(named: 'productId'),
@@ -62,7 +69,7 @@ void main() {
     });
 
     // create bloc with real DB but skip init to avoid LoadCategories
-    final bloc = PosBloc(db, mockPricing, mockTx, skipInit: true);
+    final bloc = PosBloc(db, mockPricing, mockTx, mockPkg, skipInit: true);
 
     // start with a PosLoaded state with wholesale mode ON
     (bloc as dynamic).emit(PosLoaded(cart: const [], isWholesaleMode: true));

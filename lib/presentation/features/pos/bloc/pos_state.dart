@@ -10,7 +10,7 @@ class CartItem extends Equatable {
   final Decimal unitFactor; // المعامل الخاص بالوحدة المختارة
   final Decimal unitPrice;
   final Decimal? discount;
-  final List<UnitConversion>
+  final List<ProductUnit>
       availableUnits; // قائمة بكل الوحدات المتاحة لهذا المنتج
 
   const CartItem({
@@ -33,7 +33,7 @@ class CartItem extends Equatable {
     Decimal? unitFactor,
     Decimal? unitPrice,
     Decimal? discount,
-    List<UnitConversion>? availableUnits,
+    List<ProductUnit>? availableUnits,
   }) {
     return CartItem(
       product: product,

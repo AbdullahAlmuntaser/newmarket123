@@ -17,6 +17,7 @@ import 'core/utils/drive_backup_service.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/theme/locale_provider.dart';
 import 'core/services/unit_conversion_service.dart';
+import 'core/services/packaging_engine.dart';
 import 'data/datasources/local/app_database.dart';
 import 'data/datasources/local/daos/products_dao.dart';
 import 'data/datasources/local/daos/product_units_dao.dart';
@@ -127,6 +128,7 @@ Future<void> initServices() async {
         productUnitsDao: sl<ProductUnitsDao>(),
       ),
     );
+    sl.registerLazySingleton<PackagingEngine>(() => PackagingEngine(db));
     debugPrint("DI: DAOs registered");
 
     debugPrint("DI: Registering core services...");
@@ -222,6 +224,7 @@ Future<void> initServices() async {
         db,
         sl<EventBusService>(),
         sl<AccountingService>(),
+        sl<PackagingEngine>(),
       );
       engine.setCostingService(sl<InventoryCostingService>());
       return engine;
@@ -325,7 +328,7 @@ Future<void> initServices() async {
     );
     sl.registerFactory<DashboardProvider>(() => DashboardProvider(db));
     sl.registerFactory<PosBloc>(
-      () => PosBloc(db, sl<PricingService>(), sl<TransactionEngine>()),
+      () => PosBloc(db, sl<PricingService>(), sl<TransactionEngine>(), sl<PackagingEngine>()),
     );
     debugPrint("DI: Providers registered");
 
@@ -410,6 +413,7 @@ List<SingleChildWidget> buildAppProviders() {
     // Provide BudgetService and PayrollService
     Provider<BudgetService>.value(value: sl<BudgetService>()),
     Provider<PayrollService>.value(value: sl<PayrollService>()),
+    Provider<PackagingEngine>.value(value: sl<PackagingEngine>()),
   ];
 }
 

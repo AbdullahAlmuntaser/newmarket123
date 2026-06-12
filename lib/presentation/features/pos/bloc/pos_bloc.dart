@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:decimal/decimal.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/pricing_service.dart';
+import 'package:supermarket/core/services/packaging_engine.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_event.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_state.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
@@ -15,10 +16,10 @@ class PosBloc extends Bloc<PosEvent, PosState> {
   final AppDatabase db;
   final PricingService pricingService;
   final TransactionEngine transactionEngine;
+  final PackagingEngine packagingEngine;
   late StreamSubscription _productSubscription;
 
-  // Added optional skipInit for tests to avoid DB-dependent initialisation
-  PosBloc(this.db, this.pricingService, this.transactionEngine,
+  PosBloc(this.db, this.pricingService, this.transactionEngine, this.packagingEngine,
       {bool skipInit = false})
       : super(PosLoading()) {
     on<LoadCategories>(_onLoadCategories);
@@ -51,7 +52,6 @@ class PosBloc extends Bloc<PosEvent, PosState> {
             selectedCategoryId: currentState.selectedCategoryId,
             filteredProducts: currentState.filteredProducts,
             taxRate: currentState.taxRate,
-            // Reset fields
             cart: const [],
             discount: Decimal.zero,
             isWholesaleMode: false,
@@ -67,16 +67,12 @@ class PosBloc extends Bloc<PosEvent, PosState> {
           .watchProducts()
           .handleError((e) => developer.log("PosBloc Error: $e"))
           .listen((_) {
-        // Use a simple check to avoid refreshing if the cart is empty
         if (state is PosLoaded && (state as PosLoaded).cart.isNotEmpty) {
            add(RefreshPricesEvent());
         }
       });
-
-      // Load initial data
       add(LoadCategories());
     } else {
-      // Provide a no-op subscription when skipping init so close() can cancel
       _productSubscription = const Stream<List<Product>>.empty().listen((_) {});
     }
   }
@@ -116,7 +112,6 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     if (state is! PosLoaded) return;
     final currentState = state as PosLoaded;
 
-    // تحديث القائمة السعرية وإعادة حساب الأسعار في السلة
     final updatedCart = <CartItem>[];
     for (final item in currentState.cart) {
       final finalPrice = await pricingService.calculatePrice(
@@ -145,7 +140,6 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     if (state is PosLoaded) {
       final currentState = state as PosLoaded;
       emit(currentState.copyWith(categories: categories));
-      // Select first category by default if available
       if (categories.isNotEmpty && currentState.selectedCategoryId == null) {
         add(SelectCategory(categories.first.id));
       }
@@ -218,9 +212,8 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     final currentState = state as PosLoaded;
 
     try {
-      // 1. البحث في باركودات الوحدات أولاً (لأنه قد يكون باركود كرتون)
-      final unitConv = await (db.select(
-        db.unitConversions,
+      final productUnit = await (db.select(
+        db.productUnits,
       )..where((t) => t.barcode.equals(event.sku)))
           .getSingleOrNull();
 
@@ -229,52 +222,41 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       Decimal factor = Decimal.one;
       Decimal? specificPrice;
 
-      if (unitConv != null) {
+      if (productUnit != null) {
         product = await (db.select(
           db.products,
-        )..where((t) => t.id.equals(unitConv.productId)))
+        )..where((t) => t.id.equals(productUnit.productId)))
             .getSingle();
-        unitName = unitConv.unitName;
-        factor = Decimal.parse(unitConv.factor.toString());
-        specificPrice = unitConv.sellPrice != null
-            ? Decimal.parse(unitConv.sellPrice.toString())
-            : null;
+        unitName = productUnit.unitName;
+        factor = productUnit.unitFactor;
+        specificPrice = productUnit.sellPrice;
       } else {
-        // 2. إذا لم يجد في الوحدات، يبحث في باركود المنتج الأساسي
         product = await (db.select(
           db.products,
-        )..where((t) => t.sku.equals(event.sku)))
+        )..where((t) => t.sku.equals(event.sku) | t.barcode.equals(event.sku)))
             .getSingleOrNull();
         if (product != null) {
           unitName = product.unit;
         }
       }
 
-      // Check if product was found
       if (product == null) {
         emit(const PosError("المنتج غير موجود"));
         return;
       }
 
-      // جلب كافة الوحدات المتاحة لهذا المنتج
-      final allUnits = await (db.select(
-        db.unitConversions,
-      )..where((t) => t.productId.equals(product!.id)))
-          .get();
+      final allUnits = await packagingEngine.getPackagingHierarchy(product.id);
 
-      // جلب السعر الأدق عبر PricingService
        Decimal finalPrice = await pricingService.calculatePrice(
          productId: product.id,
          priceListId: currentState.activePriceListId,
-         quantity: factor, // استخدام factor الوحدة للتحقق من السعر حسب الكمية
+         quantity: factor,
          isWholesale: currentState.isWholesaleMode,
        );
 
-      // إذا كانت الوحدة لها سعر محدد في جدول التحويلات، نستخدمه
       if (specificPrice != null) {
         finalPrice = specificPrice;
       } else {
-        // إذا كان هناك عامل تحويل، نضرب السعر في المعامل
         finalPrice = finalPrice * factor;
       }
 
@@ -284,9 +266,15 @@ class PosBloc extends Bloc<PosEvent, PosState> {
 
       List<CartItem> newCart = List.from(currentState.cart);
       if (existingIndex >= 0) {
+        final updatedQty = newCart[existingIndex].quantity + Decimal.one;
         newCart[existingIndex] = newCart[existingIndex].copyWith(
-          quantity: newCart[existingIndex].quantity + Decimal.one,
+          quantity: updatedQty,
         );
+        
+        final suggestion = await packagingEngine.getBestPackagingSuggestion(product.id, updatedQty * factor);
+        if (suggestion != null && suggestion.unitName != unitName) {
+           developer.log('Suggestion: Consider selling in ${suggestion.unitName} for better pricing/handling');
+        }
       } else {
         newCart.add(
           CartItem(
@@ -334,13 +322,11 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     final updatedCart = <CartItem>[];
     for (final item in currentState.cart) {
       if (item.product.id == event.productId) {
-        // Find the selected unit
-        UnitConversion? selectedUnit;
+        ProductUnit? selectedUnit;
         if (event.unitName == item.product.unit) {
-          // Base unit
           selectedUnit = null;
         } else {
-          selectedUnit = item.availableUnits.cast<UnitConversion?>().firstWhere(
+          selectedUnit = item.availableUnits.cast<ProductUnit?>().firstWhere(
                 (u) => u?.unitName == event.unitName,
                 orElse: () => null,
               );
@@ -348,7 +334,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
 
         final unitName = event.unitName;
         final factor = selectedUnit != null
-            ? Decimal.parse(selectedUnit.factor.toString())
+            ? selectedUnit.unitFactor
             : Decimal.one;
 
         Decimal finalPrice;
@@ -357,7 +343,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
               Decimal.parse(item.product.wholesalePrice.toString()) * factor;
         } else {
           finalPrice = selectedUnit?.sellPrice != null
-              ? Decimal.parse(selectedUnit!.sellPrice.toString())
+              ? selectedUnit!.sellPrice!
               : Decimal.parse(item.product.sellPrice.toString()) * factor;
         }
 
@@ -394,12 +380,12 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         newPrice = Decimal.parse(item.product.wholesalePrice.toString()) *
             item.unitFactor;
       } else {
-        final unitInfo = item.availableUnits.cast<UnitConversion?>().firstWhere(
+        final unitInfo = item.availableUnits.cast<ProductUnit?>().firstWhere(
               (u) => u?.unitName == item.unitName,
               orElse: () => null,
             );
         newPrice = (unitInfo?.sellPrice != null)
-            ? Decimal.parse(unitInfo!.sellPrice.toString())
+            ? unitInfo!.sellPrice!
             : Decimal.parse(item.product.sellPrice.toString()) *
                 item.unitFactor;
       }
@@ -431,11 +417,9 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         name: 'pos.lifecycle',
       );
 
-      // 1. Prepare Companions
       final currencyId = event.currencyId ?? 'USD';
       final exchangeRate = event.exchangeRate;
 
-      // تجميع خصومات الأصناف
       final itemDiscountSum = currentState.cart.fold<Decimal>(
         Decimal.zero,
         (sum, item) => sum + (item.discount ?? Decimal.zero),
@@ -467,27 +451,24 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         return SaleItemsCompanion.insert(
           saleId: saleId,
           productId: item.product.id,
-          quantity: item.quantity, // Already Decimal
-          price: item.unitPrice, // Already Decimal
+          quantity: item.quantity,
+          price: item.unitPrice,
           unitName: Value(item.unitName),
-          unitFactor: Value(item.unitFactor), // Already Decimal
+          unitFactor: Value(item.unitFactor),
           syncStatus: const Value(1),
         );
       }).toList();
 
-      // 2. Execute via DAO (to create the base record)
       await db.salesDao.createSale(
         saleCompanion: saleCompanion,
         itemsCompanions: itemsCompanions,
         userId: event.userId,
       );
 
-      // 3. Post via TransactionEngine for full processing
       developer.log('Posting POS sale draft: saleId=$saleId', name: 'pos.lifecycle');
       await transactionEngine.postSale(saleId, userId: event.userId);
       developer.log('Posted POS sale successfully: saleId=$saleId', name: 'pos.lifecycle');
 
-      // 4. Fetch final objects for success emission
       final saleObj = await (db.select(
         db.sales,
       )..where((s) => s.id.equals(saleId)))

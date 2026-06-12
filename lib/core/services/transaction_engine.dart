@@ -8,6 +8,7 @@ import 'package:supermarket/core/services/inventory_costing_service.dart';
 import 'package:supermarket/core/services/app_config_service.dart';
 import 'package:supermarket/core/services/cash_management_service.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:supermarket/core/services/packaging_engine.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:developer' as developer;
@@ -18,9 +19,10 @@ class TransactionEngine {
   late final AuditService _auditService;
   late final AppConfigService _configService;
   final AccountingService _accountingService;
+  final PackagingEngine packagingEngine;
   InventoryCostingService? _costingService;
 
-  TransactionEngine(this.db, this.eventBus, this._accountingService) {
+  TransactionEngine(this.db, this.eventBus, this._accountingService, this.packagingEngine) {
     _auditService = AuditService(db);
     _configService = AppConfigService(db);
   }
@@ -260,6 +262,21 @@ class TransactionEngine {
             'المخزون غير كافٍ للمنتج: ${product.name}. المتوفر: ${product.stock}',
           );
         }
+
+        // تطبيق منطق التفكيك التلقائي (Auto Break)
+        await packagingEngine.autoBreakIfNecessary(
+          productId: item.productId,
+          warehouseId: sale.warehouseId ?? '',
+          requiredQtyInBase: remainingToDeduct,
+        );
+
+        await _auditService.log(
+          action: 'AUTO_BREAK',
+          targetEntity: 'Products',
+          entityId: item.productId,
+          userId: userId,
+          details: 'Auto broke packaging for sale $saleId. Required base qty: $remainingToDeduct',
+        );
 
         if (_costingService != null) {
           final batches = await _costingService!.getBatchesForSale(

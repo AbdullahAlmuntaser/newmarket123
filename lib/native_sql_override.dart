@@ -5,9 +5,11 @@
 // when the expected .so is missing, try multiple candidate library names
 // before failing.
 import 'dart:io';
-import 'dart:ffi';
-import 'package:sqlite3/open.dart';
 import 'package:flutter/foundation.dart';
+import 'package:sqlite3/open.dart';
+
+// Import ffi only on platforms that support it
+import 'dart:ffi' if (dart.library.js) 'package:supermarket/dummy_ffi.dart';
 
 /// Apply a platform-specific override for the sqlite3 dynamic library.
 ///
@@ -16,7 +18,7 @@ import 'package:flutter/foundation.dart';
 /// succeeds with `open.overrideFor` for Android. If none are found it will
 /// fall back to `DynamicLibrary.process()` as a last resort.
 void applyNativeSqlOverride() {
-  if (!Platform.isAndroid) return;
+  if (kIsWeb || !Platform.isAndroid) return;
 
   open.overrideFor(OperatingSystem.android, () {
     DynamicLibrary? lib;

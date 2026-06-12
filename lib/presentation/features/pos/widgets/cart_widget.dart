@@ -410,7 +410,7 @@ class CartWidget extends StatelessWidget {
           ...item.availableUnits.map(
             (u) => ListTile(
               title: Text(u.unitName),
-              subtitle: Text('المعامل: ${u.factor}'),
+              subtitle: Text('المعامل: ${u.unitFactor}'),
               trailing: item.unitName == u.unitName
                   ? const Icon(Icons.check, color: Colors.green)
                   : null,
@@ -441,19 +441,22 @@ class CartWidget extends StatelessWidget {
     );
 
     if (result != null) {
-      await database.into(database.unitConversions).insert(
-            UnitConversionsCompanion.insert(
+      await database.into(database.productUnits).insert(
+            ProductUnitsCompanion.insert(
               productId: item.product.id,
               unitName: result['unitName'] as String,
-              factor: result['factor'] as double,
+              unitFactor: drift.Value(Decimal.parse(result['factor'].toString())),
               barcode: drift.Value(result['barcode'] as String?),
               sellPrice: drift.Value(
                 result['sellPrice'] != null
                     ? Decimal.parse(result['sellPrice'].toString())
                     : null,
               ),
+              buyPrice: drift.Value(Decimal.zero),
+              syncStatus: const drift.Value(1),
             ),
           );
+
       // Reload units in Bloc
       posBloc.add(UpdateCartItemUnit(item.product.id, result['unitName'] as String));
     }
