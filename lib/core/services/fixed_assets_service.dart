@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
@@ -8,23 +7,23 @@ class FixedAssetsService {
 
   FixedAssetsService(this.db);
 
-  Future<double> calculateMonthlyDepreciation(int assetId) async {
+  Future<Decimal> calculateMonthlyDepreciation(int assetId) async {
     final asset = await (db.select(db.fixedAssets)
           ..where((t) => t.id.equals(assetId)))
         .getSingle();
 
-    double depreciableAmount = asset.cost - asset.salvageValue;
+    Decimal depreciableAmount = asset.cost - asset.salvageValue;
 
     if (asset.depreciationMethod == 'straight_line') {
-      return depreciableAmount / (asset.usefulLifeYears * 12);
+      return (depreciableAmount / (Decimal.fromInt(asset.usefulLifeYears) * Decimal.fromInt(12))).toDecimal();
     } else if (asset.depreciationMethod == 'declining') {
-      final annualRate = 2.0 / asset.usefulLifeYears;
-      final monthlyRate = annualRate / 12;
-      final bookValue = asset.cost - asset.accumulatedDepreciation;
+      final Decimal annualRate = (Decimal.fromInt(2) / Decimal.fromInt(asset.usefulLifeYears)).toDecimal();
+      final Decimal monthlyRate = (annualRate / Decimal.fromInt(12)).toDecimal();
+      final Decimal bookValue = asset.cost - asset.accumulatedDepreciation;
       return bookValue * monthlyRate;
     }
 
-    return 0.0;
+    return Decimal.zero;
   }
 
   Future<List<Map<String, dynamic>>> runMonthlyDepreciation(
@@ -44,7 +43,7 @@ class FixedAssetsService {
 
       final depreciationAmount = await calculateMonthlyDepreciation(asset.id);
 
-      if (depreciationAmount > 0) {
+      if (depreciationAmount > Decimal.zero) {
         await db.into(db.accAssetDepreciationLogs).insert(
               AccAssetDepreciationLogsCompanion.insert(
                 assetId: asset.id,
@@ -95,7 +94,7 @@ class FixedAssetsService {
 
   Future<String> _createDepreciationJournalEntry(
     int assetId,
-    double amount,
+    Decimal amount,
     DateTime date,
     int categoryId,
   ) async {
@@ -120,7 +119,7 @@ class FixedAssetsService {
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: expenseAccountId,
-          debit: Value(Decimal.parse(amount.toString())),
+          debit: Value(amount),
           credit: Value(Decimal.zero),
           memo: const Value('مصروف إهلاك'),
         ),
@@ -131,7 +130,7 @@ class FixedAssetsService {
           entryId: entryId,
           accountId: accumulatedDepreciationAccountId,
           debit: Value(Decimal.zero),
-          credit: Value(Decimal.parse(amount.toString())),
+          credit: Value(amount),
           memo: const Value('مجمع إهلاك'),
         ),
       );
@@ -143,23 +142,25 @@ class FixedAssetsService {
   }
 
   Future<String> _getDepreciationExpenseAccount(int categoryId) async {
+    // Try exact code first
+    var account = await db.accountingDao.getAccountByCode('6001');
+    if (account != null) return account.id;
+    // Fall back to broader pattern
     final accounts =
-        await (db.select(db.gLAccounts)..where((t) => t.code.like('6%'))).get();
-
-    if (accounts.isNotEmpty) {
-      return accounts.first.id;
-    }
+        await (db.select(db.gLAccounts)..where((t) => t.code.like('600%'))).get();
+    if (accounts.isNotEmpty) return accounts.first.id;
     throw Exception('لم يتم العثور على حساب مصروف الإهلاك');
   }
 
   Future<String> _getAccumulatedDepreciationAccount(int assetId) async {
+    // Try exact code first
+    var account = await db.accountingDao.getAccountByCode('1201');
+    if (account != null) return account.id;
+    // Fall back to broader pattern
     final accounts = await (db.select(db.gLAccounts)
-          ..where((t) => t.code.like('16%')))
+          ..where((t) => t.code.like('120%')))
         .get();
-
-    if (accounts.isNotEmpty) {
-      return accounts.first.id;
-    }
+    if (accounts.isNotEmpty) return accounts.first.id;
     throw Exception('لم يتم العثور على حساب مجمع الإهلاك');
   }
 
@@ -174,15 +175,15 @@ class FixedAssetsService {
           ..where((t) => t.id.equals(assetId)))
         .getSingle();
 
-    double bookValue = asset.cost - asset.accumulatedDepreciation;
-    double gainOrLoss = salePrice != null ? salePrice - bookValue : -bookValue;
+    Decimal bookValue = asset.cost - asset.accumulatedDepreciation;
+    Decimal gainOrLoss = salePrice != null ? Decimal.parse(salePrice.toString()) - bookValue : -bookValue;
 
     final disposalId = await db.into(db.accAssetDisposals).insert(
           AccAssetDisposalsCompanion.insert(
             assetId: assetId,
             disposalDate: disposalDate,
             disposalType: disposalType,
-            salePrice: Value(salePrice),
+            salePrice: Value(salePrice != null ? Decimal.parse(salePrice.toString()) : null),
             gainOrLoss: Value(gainOrLoss),
             notes: Value(notes),
           ),
@@ -191,7 +192,7 @@ class FixedAssetsService {
     final journalEntryId = await _createDisposalJournalEntry(
       assetId,
       bookValue,
-      salePrice ?? 0,
+      salePrice != null ? Decimal.parse(salePrice.toString()) : Decimal.zero,
       gainOrLoss,
       disposalDate,
       disposalType,
@@ -219,9 +220,9 @@ class FixedAssetsService {
 
   Future<String> _createDisposalJournalEntry(
     int assetId,
-    double bookValue,
-    double salePrice,
-    double gainOrLoss,
+    Decimal bookValue,
+    Decimal salePrice,
+    Decimal gainOrLoss,
     DateTime date,
     String disposalType,
   ) async {
@@ -234,8 +235,8 @@ class FixedAssetsService {
         disposalType == 'sold' ? await _getCashOrBankAccount() : '';
     final fixedAssetId = await _getFixedAssetAccount(assetId);
     String? gainLossId;
-    if (gainOrLoss != 0) {
-      gainLossId = gainOrLoss > 0
+    if (gainOrLoss != Decimal.zero) {
+      gainLossId = gainOrLoss > Decimal.zero
           ? await _getGainOnDisposalAccount()
           : await _getLossOnDisposalAccount();
     }
@@ -257,19 +258,19 @@ class FixedAssetsService {
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: accumulatedDepId,
-          debit: Value(Decimal.parse(asset.accumulatedDepreciation.toString())),
+          debit: Value(asset.accumulatedDepreciation),
           credit: Value(Decimal.zero),
           memo: const Value('إلغاء مجمع الإهلاك'),
         ),
       );
 
-      if (disposalType == 'sold' && salePrice > 0) {
+      if (disposalType == 'sold' && salePrice > Decimal.zero) {
         batch.insert(
           db.gLLines,
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: cashBankId,
-            debit: Value(Decimal.parse(salePrice.toString())),
+            debit: Value(salePrice),
             credit: Value(Decimal.zero),
             memo: const Value('تحصيل بيع الأصل'),
           ),
@@ -282,20 +283,20 @@ class FixedAssetsService {
           entryId: entryId,
           accountId: fixedAssetId,
           debit: Value(Decimal.zero),
-          credit: Value(Decimal.parse(asset.cost.toString())),
+          credit: Value(asset.cost),
           memo: const Value('إلغاء قيمة الأصل'),
         ),
       );
 
-      if (gainOrLoss != 0 && gainLossId != null) {
+      if (gainOrLoss != Decimal.zero && gainLossId != null) {
         batch.insert(
           db.gLLines,
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: gainLossId,
-            debit: Value(gainOrLoss > 0 ? Decimal.zero : Decimal.parse((-gainOrLoss).toString())),
-            credit: Value(gainOrLoss > 0 ? Decimal.parse(gainOrLoss.toString()) : Decimal.zero),
-            memo: Value(gainOrLoss > 0 ? 'ربح بيع أصل' : 'خسارة بيع أصل'),
+            debit: Value(gainOrLoss > Decimal.zero ? Decimal.zero : -gainOrLoss),
+            credit: Value(gainOrLoss > Decimal.zero ? gainOrLoss : Decimal.zero),
+            memo: Value(gainOrLoss > Decimal.zero ? 'ربح بيع أصل' : 'خسارة بيع أصل'),
           ),
         );
       }
@@ -307,16 +308,20 @@ class FixedAssetsService {
   }
 
   Future<String> _getCashOrBankAccount() async {
+    var account = await db.accountingDao.getAccountByCode('1010');
+    if (account != null) return account.id;
     final accounts = await (db.select(db.gLAccounts)
-          ..where((t) => t.code.like('10%')))
+          ..where((t) => t.code.like('101%')))
         .get();
     if (accounts.isEmpty) throw Exception('لم يتم العثور على حساب الصندوق');
     return accounts.first.id;
   }
 
   Future<String> _getFixedAssetAccount(int assetId) async {
+    var account = await db.accountingDao.getAccountByCode('1200');
+    if (account != null) return account.id;
     final accounts = await (db.select(db.gLAccounts)
-          ..where((t) => t.code.like('15%')))
+          ..where((t) => t.code.like('120%')))
         .get();
     if (accounts.isEmpty) {
       throw Exception('لم يتم العثور على حساب الأصول الثابتة');
@@ -325,15 +330,19 @@ class FixedAssetsService {
   }
 
   Future<String> _getGainOnDisposalAccount() async {
+    var account = await db.accountingDao.getAccountByCode('4010');
+    if (account != null) return account.id;
     final accounts =
-        await (db.select(db.gLAccounts)..where((t) => t.code.like('4%'))).get();
+        await (db.select(db.gLAccounts)..where((t) => t.code.like('401%'))).get();
     if (accounts.isEmpty) throw Exception('لم يتم العثور على حساب الإيرادات');
     return accounts.first.id;
   }
 
   Future<String> _getLossOnDisposalAccount() async {
+    var account = await db.accountingDao.getAccountByCode('6001');
+    if (account != null) return account.id;
     final accounts =
-        await (db.select(db.gLAccounts)..where((t) => t.code.like('6%'))).get();
+        await (db.select(db.gLAccounts)..where((t) => t.code.like('600%'))).get();
     if (accounts.isEmpty) throw Exception('لم يتم العثور على حساب المصروفات');
     return accounts.first.id;
   }

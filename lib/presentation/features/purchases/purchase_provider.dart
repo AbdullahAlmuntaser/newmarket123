@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/purchase_service.dart';
@@ -374,9 +373,9 @@ class PurchaseProvider with ChangeNotifier {
     double calculatedStock = 0;
     for (var t in transactions) {
       if (t.type == 'PURCHASE' || t.type == 'RETURN_IN') {
-        calculatedStock += t.quantity;
+        calculatedStock += t.quantity.toDouble();
       } else if (t.type == 'SALE' || t.type == 'RETURN_OUT') {
-        calculatedStock -= t.quantity;
+        calculatedStock -= t.quantity.toDouble();
       }
     }
     currentStock = calculatedStock;

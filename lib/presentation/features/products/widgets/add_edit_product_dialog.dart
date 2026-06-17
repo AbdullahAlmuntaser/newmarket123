@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
@@ -142,7 +141,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                   .insert(InventoryTransactionsCompanion.insert(
                     productId: productId,
                     warehouseId: warehouseId,
-                    quantity: initialStock.toDouble(),
+                    quantity: Value(initialStock),
                     type: 'ADJUSTMENT',
                     referenceId: productId,
                   ));

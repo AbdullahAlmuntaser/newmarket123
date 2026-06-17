@@ -1,4 +1,7 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 import 'package:get_it/get_it.dart';
@@ -13,6 +16,9 @@ import 'core/services/accounting_service.dart';
 import 'core/services/event_bus_service.dart';
 import 'core/services/financial_control_service.dart';
 import 'core/services/grn_service.dart';
+import 'core/services/reconciliation_service.dart';
+import 'core/services/aging_service.dart';
+import 'core/services/security_service.dart';
 import 'core/utils/drive_backup_service.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/theme/locale_provider.dart';
@@ -101,6 +107,34 @@ Future<void> initDatabase() async {
   } catch (e, stack) {
     debugPrint("DI: Database opening error: $e");
     debugPrintStack(stackTrace: stack);
+
+    // Attempt recovery: back up corrupted file, delete it, and retry once
+    if (e.toString().contains('code 26') ||
+        e.toString().contains('file is not a database') ||
+        e.toString().contains('SqliteException')) {
+      debugPrint("DI: Attempting recovery — backing up and recreating database...");
+      try {
+        final dbFolder = await getApplicationDocumentsDirectory();
+        final file = File(p.join(dbFolder.path, 'app_db.sqlite'));
+        if (await file.exists()) {
+          final backupPath =
+              "${file.path}.recovered_${DateTime.now().millisecondsSinceEpoch}";
+          await file.copy(backupPath);
+          debugPrint("DI: Corrupted file backed up to $backupPath");
+          await file.delete();
+          debugPrint("DI: Corrupted file deleted. Retrying database creation...");
+        }
+      } catch (recoveryError) {
+        debugPrint("DI: Recovery backup failed: $recoveryError");
+      }
+
+      // Retry with a fresh database
+      _database = AppDatabase();
+      sl.registerLazySingleton<AppDatabase>(() => _database!);
+      debugPrint("DI: Database recovered and opened successfully after retry");
+      return;
+    }
+
     rethrow;
   }
 }
@@ -142,6 +176,9 @@ Future<void> initServices() async {
     sl.registerLazySingleton<AccountingService>(
       () => AccountingService(db, sl<EventBusService>()),
     );
+    sl.registerLazySingleton<SecurityService>(() => SecurityService(db));
+    sl.registerLazySingleton<ReconciliationService>(() => ReconciliationService(db));
+    sl.registerLazySingleton<AgingService>(() => AgingService(db));
     sl.registerLazySingleton<PermissionService>(() => PermissionService(db));
     sl.registerLazySingleton<AuditService>(() => AuditService(db));
     sl.registerLazySingleton<AppConfigService>(() => AppConfigService(db));
@@ -223,14 +260,14 @@ Future<void> initServices() async {
       final engine = TransactionEngine(
         db,
         sl<EventBusService>(),
-        sl<AccountingService>(),
+        sl<PostingEngine>(),
         sl<PackagingEngine>(),
       );
       engine.setCostingService(sl<InventoryCostingService>());
       return engine;
     });
     sl.registerLazySingleton<CashManagementService>(
-      () => CashManagementService(db, sl<AccountingService>()),
+      () => CashManagementService(db, sl<PostingEngine>()),
     );
     sl.registerLazySingleton<TransferService>(() => TransferService(db));
     sl.registerLazySingleton<StatementPrintingService>(

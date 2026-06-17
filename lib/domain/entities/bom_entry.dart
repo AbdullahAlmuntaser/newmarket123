@@ -1,3 +1,5 @@
+import 'package:decimal/decimal.dart';
+
 class BomEntry {
   final int id;
   final int finishedProductId;
@@ -11,7 +13,7 @@ class BomEntry {
   final double taxRate;
   final String unit;
   final DateTime updatedAt;
-  final double wholesalePrice;
+  final Decimal wholesalePrice;
 
   const BomEntry({
     required this.id,
@@ -42,7 +44,7 @@ class BomEntry {
         taxRate: (json['taxRate'] as num).toDouble(),
         unit: json['unit'] as String,
         updatedAt: DateTime.parse(json['updatedAt'] as String),
-        wholesalePrice: (json['wholesalePrice'] as num).toDouble(),
+        wholesalePrice: Decimal.parse(json['wholesalePrice'].toString()),
       );
 
   Map<String, dynamic> toJson() => {
@@ -58,6 +60,6 @@ class BomEntry {
         'taxRate': taxRate,
         'unit': unit,
         'updatedAt': updatedAt.toIso8601String(),
-        'wholesalePrice': wholesalePrice,
+        'wholesalePrice': wholesalePrice.toDouble(),
       };
 }

@@ -2,15 +2,11 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart';
 import 'package:drift/drift.dart' hide JsonKey;
 import 'package:uuid/uuid.dart';
-import 'package:decimal/decimal.dart';
 import 'audit_service.dart';
-import 'package:supermarket/core/events/app_events.dart';
 import 'event_bus_service.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'dart:async';
-import 'dart:developer' as developer;
 import 'app_config_service.dart';
-import 'permission_service.dart';
 import 'budget_service.dart';
 import 'package:supermarket/injection_container.dart';
 
@@ -18,11 +14,11 @@ part 'accounting_service.g.dart';
 
 @JsonSerializable(explicitToJson: true)
 class AccountingDashboardData {
-  final double totalRevenue;
-  final double totalExpenses;
-  final double netIncome;
-  final double totalAssets;
-  final double totalLiabilities;
+  final Decimal totalRevenue;
+  final Decimal totalExpenses;
+  final Decimal netIncome;
+  final Decimal totalAssets;
+  final Decimal totalLiabilities;
   final List<TrialBalanceItem> topExpenses;
   @GLEntryConverter()
   final List<GLEntry> recentTransactions;
@@ -55,7 +51,7 @@ class AccountingDashboardData {
 @JsonSerializable()
 class DashboardTopProduct {
   final String productName;
-  final double quantity;
+  final Decimal quantity;
   DashboardTopProduct(this.productName, this.quantity);
 
   factory DashboardTopProduct.fromJson(Map<String, dynamic> json) =>
@@ -66,7 +62,7 @@ class DashboardTopProduct {
 @JsonSerializable()
 class DailyValue {
   final DateTime date;
-  final double value;
+  final Decimal value;
   DailyValue(this.date, this.value);
 
   factory DailyValue.fromJson(Map<String, dynamic> json) =>
@@ -76,12 +72,12 @@ class DailyValue {
 
 @JsonSerializable()
 class CashFlowData {
-  final double operatingActivities;
-  final double investingActivities;
-  final double financingActivities;
-  final double netCashFlow;
-  final double beginningCashBalance;
-  final double endingCashBalance;
+  final Decimal operatingActivities;
+  final Decimal investingActivities;
+  final Decimal financingActivities;
+  final Decimal netCashFlow;
+  final Decimal beginningCashBalance;
+  final Decimal endingCashBalance;
   final DateTime? startDate;
   final DateTime endDate;
 
@@ -103,9 +99,9 @@ class CashFlowData {
 
 @JsonSerializable()
 class FinancialRatiosData {
-  final double grossProfitMargin;
-  final double netProfitMargin;
-  final double currentRatio;
+  final Decimal grossProfitMargin;
+  final Decimal netProfitMargin;
+  final Decimal currentRatio;
 
   FinancialRatiosData({
     required this.grossProfitMargin,
@@ -147,9 +143,9 @@ class VatReportData {
 class IncomeStatementData {
   final List<TrialBalanceItem> revenues;
   final List<TrialBalanceItem> expenses;
-  final double totalRevenue;
-  final double totalExpense;
-  final double netIncome;
+  final Decimal totalRevenue;
+  final Decimal totalExpense;
+  final Decimal netIncome;
   final DateTime? startDate;
   final DateTime endDate;
 
@@ -173,10 +169,10 @@ class BalanceSheetData {
   final List<BalanceSheetItem> assets;
   final List<BalanceSheetItem> liabilities;
   final List<BalanceSheetItem> equity;
-  final double totalAssets;
-  final double totalLiabilities;
-  final double totalEquity;
-  final double netIncome;
+  final Decimal totalAssets;
+  final Decimal totalLiabilities;
+  final Decimal totalEquity;
+  final Decimal netIncome;
   final DateTime date;
 
   BalanceSheetData({
@@ -199,7 +195,7 @@ class BalanceSheetData {
 class BalanceSheetItem {
   @GLAccountConverter()
   final GLAccount account;
-  final double balance;
+  final Decimal balance;
 
   BalanceSheetItem(this.account, this.balance);
 
@@ -229,228 +225,23 @@ class GLEntryConverter implements JsonConverter<GLEntry, Map<String, dynamic>> {
   Map<String, dynamic> toJson(GLEntry object) => object.toJson();
 }
 
+/// AccountingService is now a pure reporting/query service.
+/// All GL entry creation is handled by TransactionEngine through PostingEngine.
 class AccountingService {
   final AppDatabase db;
   final EventBusService eventBus;
   late final AuditService _auditService;
   late final AppConfigService _configService;
-  late final PermissionService _permissionService;
-  StreamSubscription<AppEvent>? _eventSubscription;
 
   AccountingService(this.db, this.eventBus) {
     _auditService = AuditService(db);
     _configService = AppConfigService(db);
-    _permissionService = PermissionService(db);
-    _listenToEvents();
   }
 
-  void _listenToEvents() {
-    _eventSubscription = eventBus.stream.listen(
-      (event) async {
-        developer.log(
-          'AccountingService: Received event ${event.runtimeType}',
-          name: 'accounting.service',
-        );
-        try {
-          if (event is CustomerPaymentEvent) {
-            await postCustomerPaymentEvent(event);
-          } else if (event is SupplierPaymentEvent) {
-            await postSupplierPaymentEvent(event);
-          } else if (event is CashTransactionEvent) {
-            await postCashTransactionEvent(event);
-          }
-        } catch (error, stackTrace) {
-          developer.log(
-            'Accounting event failed: ${event.runtimeType}',
-            name: 'accounting.service',
-            error: error,
-            stackTrace: stackTrace,
-          );
-          rethrow;
-        }
-      },
-      onError: (Object error, StackTrace stackTrace) {
-        developer.log(
-          'Accounting event stream error',
-          name: 'accounting.service',
-          error: error,
-          stackTrace: stackTrace,
-        );
-      },
-    );
-  }
+  Future<void> dispose() async {}
 
-  Future<void> dispose() async {
-    await _eventSubscription?.cancel();
-    _eventSubscription = null;
-  }
-
-  Future<void> postCashTransactionEvent(CashTransactionEvent event) =>
-      _handleCashTransaction(event);
-
-  Future<void> postCustomerPaymentEvent(CustomerPaymentEvent event) =>
-      _handleCustomerPayment(event);
-
-  Future<void> postSupplierPaymentEvent(SupplierPaymentEvent event) =>
-      _handleSupplierPayment(event);
-
-  Future<void> _handleCashTransaction(CashTransactionEvent event) async {
-    final dao = db.accountingDao;
-    final entryId = const Uuid().v4();
-    final cashAccount = await dao.getAccountByCode(codeCash);
-    if (cashAccount == null) return;
-
-    final defaultBranchId = await _configService.getDefaultBranchId();
-
-    final entry = GLEntriesCompanion.insert(
-      id: Value(entryId),
-      description: '${event.type == "IN" ? "سند قبض" : "سند صرف"}: ${event.category} - ${event.note ?? ""}',
-      date: Value(DateTime.now()),
-      referenceType: Value(event.type == "IN" ? 'RECEIPT' : 'PAYMENT'),
-      referenceId: Value(event.referenceId),
-      status: const Value('POSTED'),
-      postedAt: Value(DateTime.now()),
-      branchId: Value(defaultBranchId),
-    );
-
-    final lines = event.type == "IN"
-        ? [
-            GLLinesCompanion.insert(
-              entryId: entryId,
-              accountId: cashAccount.id,
-              debit: Value(event.amount),
-              credit: Value(Decimal.zero),
-              branchId: Value(defaultBranchId),
-            ),
-            GLLinesCompanion.insert(
-              entryId: entryId,
-              accountId: event.accountId,
-              debit: Value(Decimal.zero),
-              credit: Value(event.amount),
-              branchId: Value(defaultBranchId),
-            ),
-          ]
-        : [
-            GLLinesCompanion.insert(
-              entryId: entryId,
-              accountId: event.accountId,
-              debit: Value(event.amount),
-              credit: Value(Decimal.zero),
-              branchId: Value(defaultBranchId),
-            ),
-            GLLinesCompanion.insert(
-              entryId: entryId,
-              accountId: cashAccount.id,
-              debit: Value(Decimal.zero),
-              credit: Value(event.amount),
-              branchId: Value(defaultBranchId),
-            ),
-          ];
-
-    await dao.createEntry(entry, lines);
-  }
-
-
-  /// New: Generic journal entry creation from events
-  Future<void> createJournalEntry(AppEvent event) async {
-    if (event is SaleCreatedEvent) {
-      await postSale(event.sale, event.items, cogs: event.cogs);
-    }
-  }
-
-  Future<void> _handleCustomerPayment(CustomerPaymentEvent event) async {
-    final dao = db.accountingDao;
-    final entryId = const Uuid().v4();
-
-    // Accounts
-    final arAccount = await dao.getAccountByCode(codeAccountsReceivable);
-    final cashAccount = await dao.getAccountByCode(codeCash);
-
-    if (arAccount == null || cashAccount == null) return;
-
-    final customer = await db.customersDao.getCustomerById(event.customerId);
-    final customerAccountId = customer?.accountId ?? arAccount.id;
-
-    // الحصول على معرف الفرع الافتراضي من الإعدادات
-    final defaultBranchId = await _configService.getDefaultBranchId();
-
-    final entry = GLEntriesCompanion.insert(
-      id: Value(entryId),
-      description: 'سند قبض: ${customer?.name ?? "عميل"} - ${event.note ?? ""}',
-      date: Value(event.paymentDate ?? DateTime.now()),
-      referenceType: const Value('RECEIPT'),
-      referenceId: Value(event.paymentId),
-      status: const Value('POSTED'),
-      postedAt: Value(DateTime.now()),
-      branchId: Value(defaultBranchId),
-    );
-
-    final lines = [
-      GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: cashAccount.id,
-        debit: Value(event.amount),
-        credit: Value(Decimal.zero),
-        branchId: Value(defaultBranchId),
-      ),
-      GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: customerAccountId,
-        debit: Value(Decimal.zero),
-        credit: Value(event.amount),
-        branchId: Value(defaultBranchId),
-      ),
-    ];
-
-    await dao.createEntry(entry, lines);
-  }
-
-  Future<void> _handleSupplierPayment(SupplierPaymentEvent event) async {
-    final dao = db.accountingDao;
-    final entryId = const Uuid().v4();
-
-    // Accounts
-    final apAccount = await dao.getAccountByCode(codeAccountsPayable);
-    final cashAccount = await dao.getAccountByCode(codeCash);
-
-    if (apAccount == null || cashAccount == null) return;
-
-    final supplier = await db.suppliersDao.getSupplierById(event.supplierId);
-    final supplierAccountId = supplier?.accountId ?? apAccount.id;
-
-    // الحصول على معرف الفرع الافتراضي من الإعدادات
-    final defaultBranchId = await _configService.getDefaultBranchId();
-
-    final entry = GLEntriesCompanion.insert(
-      id: Value(entryId),
-      description: 'سند صرف: ${supplier?.name ?? "مورد"} - ${event.note ?? ""}',
-      date: Value(event.paymentDate ?? DateTime.now()),
-      referenceType: const Value('PAYMENT'),
-      referenceId: Value(event.paymentId),
-      status: const Value('POSTED'),
-      postedAt: Value(DateTime.now()),
-      branchId: Value(defaultBranchId),
-    );
-
-    final lines = [
-      GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: supplierAccountId,
-        debit: Value(event.amount),
-        credit: Value(Decimal.zero),
-        branchId: Value(defaultBranchId),
-      ),
-      GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: cashAccount.id,
-        debit: Value(Decimal.zero),
-        credit: Value(event.amount),
-        branchId: Value(defaultBranchId),
-      ),
-    ];
-
-    await dao.createEntry(entry, lines);
-  }
+  /// All posting operations are now handled by TransactionEngine through PostingEngine.
+  /// These methods are kept as stubs for backward compatibility only.
 
   // Standard Account Codes
   static const String codeCash = '1010';
@@ -613,54 +404,35 @@ class AccountingService {
     final dao = db.accountingDao;
     final asOfDate = DateTime.now();
 
-    final cogsAccount = await dao.getAccountByCode(codeCOGS);
-    final double cogsBalance = cogsAccount != null
-        ? await dao.getAccountBalanceAsOfDate(cogsAccount.id, asOfDate)
-        : 0.0;
-    final double totalRevenue = incomeStatement.totalRevenue;
-    final double totalCogs = cogsBalance;
-    final double grossProfit = totalRevenue - totalCogs;
-    final grossProfitMargin = totalRevenue > 0
-        ? (grossProfit / totalRevenue)
-        : 0.0;
-
-    final netProfitMargin = totalRevenue > 0
-        ? (incomeStatement.netIncome / totalRevenue)
-        : 0.0;
-
-    final currentAssetCodes = [
-      codeCash,
-      codeBank,
-      codeAccountsReceivable,
-      codeInventory,
-    ];
-    final currentLiabilityCodes = [codeAccountsPayable, codeOutputVAT];
-
-    Decimal totalCurrentAssets = Decimal.zero;
-    for (var code in currentAssetCodes) {
-      final account = await dao.getAccountByCode(code);
-      if (account != null) {
-        totalCurrentAssets += Decimal.parse((await dao.getAccountBalanceAsOfDate(
-          account.id,
-          asOfDate,
-        )).toString());
-      }
+    final allBalances = await dao.getAllAccountBalancesAsOfDate(asOfDate);
+    final Map<String, Decimal> balanceByCode = {};
+    for (final item in allBalances) {
+      balanceByCode[item.account.code] = item.netBalance;
     }
 
-    Decimal totalCurrentLiabilities = Decimal.zero;
-    for (var code in currentLiabilityCodes) {
-      final account = await dao.getAccountByCode(code);
-      if (account != null) {
-        totalCurrentLiabilities += Decimal.parse((await dao.getAccountBalanceAsOfDate(
-          account.id,
-          asOfDate,
-        )).toString());
-      }
-    }
+    final Decimal totalRevenue = incomeStatement.totalRevenue;
+    final Decimal totalCogs = balanceByCode[codeCOGS] ?? Decimal.zero;
+    final Decimal grossProfit = totalRevenue - totalCogs;
+    final Decimal grossProfitMargin = totalRevenue > Decimal.zero
+        ? (grossProfit / totalRevenue).toDecimal()
+        : Decimal.zero;
+    final Decimal netProfitMargin = totalRevenue > Decimal.zero
+        ? (incomeStatement.netIncome / totalRevenue).toDecimal()
+        : Decimal.zero;
 
-    final currentRatio = totalCurrentLiabilities > Decimal.zero
-        ? (totalCurrentAssets / totalCurrentLiabilities).toDouble()
-        : 0.0;
+    final Decimal totalCurrentAssets =
+        (balanceByCode[codeCash] ?? Decimal.zero) +
+        (balanceByCode[codeBank] ?? Decimal.zero) +
+        (balanceByCode[codeAccountsReceivable] ?? Decimal.zero) +
+        (balanceByCode[codeInventory] ?? Decimal.zero);
+
+    final Decimal totalCurrentLiabilities =
+        (balanceByCode[codeAccountsPayable] ?? Decimal.zero) +
+        (balanceByCode[codeOutputVAT] ?? Decimal.zero);
+
+    final Decimal currentRatio = totalCurrentLiabilities > Decimal.zero
+        ? (totalCurrentAssets / totalCurrentLiabilities).toDecimal()
+        : Decimal.zero;
 
     return FinancialRatiosData(
       grossProfitMargin: grossProfitMargin,
@@ -689,44 +461,45 @@ class AccountingService {
       now.month,
       now.day,
     ).subtract(const Duration(days: 6));
+    final endDate = last7Days.add(const Duration(days: 7));
+
+    final allRows = await (db.select(db.gLLines).join([
+      innerJoin(db.gLEntries, db.gLEntries.id.equalsExp(db.gLLines.entryId)),
+      innerJoin(
+          db.gLAccounts, db.gLAccounts.id.equalsExp(db.gLLines.accountId)),
+    ])
+          ..where(db.gLAccounts.type.isIn(['REVENUE', 'EXPENSE']) &
+              db.gLEntries.date.isBetweenValues(last7Days, endDate)))
+        .get();
+
+    final Map<DateTime, Decimal> dailyRevMap = {};
+    final Map<DateTime, Decimal> dailyExpMap = {};
+    for (final row in allRows) {
+      final entry = row.readTable(db.gLEntries);
+      final line = row.readTable(db.gLLines);
+      final account = row.readTable(db.gLAccounts);
+      final day = DateTime(entry.date.year, entry.date.month, entry.date.day);
+      if (account.type == 'REVENUE') {
+        dailyRevMap[day] = (dailyRevMap[day] ?? Decimal.zero) + line.credit - line.debit;
+      } else {
+        dailyExpMap[day] = (dailyExpMap[day] ?? Decimal.zero) + line.debit - line.credit;
+      }
+    }
 
     List<DailyValue> dailyRev = [];
     List<DailyValue> dailyExp = [];
-
     for (int i = 0; i < 7; i++) {
       final date = last7Days.add(Duration(days: i));
-      final nextDate = date.add(const Duration(days: 1));
-      
-      final revQuery = db.select(db.gLLines).join([
-        innerJoin(db.gLEntries, db.gLEntries.id.equalsExp(db.gLLines.entryId)),
-        innerJoin(db.gLAccounts, db.gLAccounts.id.equalsExp(db.gLLines.accountId)),
-      ])
-        ..where(db.gLAccounts.type.equals('REVENUE') & 
-                db.gLEntries.date.isBiggerOrEqual(Variable(date)) & 
-                db.gLEntries.date.isSmallerThan(Variable(nextDate)));
-      
-      final revRows = await revQuery.get();
-      Decimal revTotal = revRows.fold(Decimal.zero, (sum, row) => sum + ((row.read(db.gLLines.credit) as Decimal?) ?? Decimal.zero) - ((row.read(db.gLLines.debit) as Decimal?) ?? Decimal.zero));
-      dailyRev.add(DailyValue(date, revTotal.toDouble()));
-
-      final expQuery = db.select(db.gLLines).join([
-        innerJoin(db.gLEntries, db.gLEntries.id.equalsExp(db.gLLines.entryId)),
-        innerJoin(db.gLAccounts, db.gLAccounts.id.equalsExp(db.gLLines.accountId)),
-      ])
-        ..where(db.gLAccounts.type.equals('EXPENSE') & 
-                db.gLEntries.date.isBiggerOrEqual(Variable(date)) & 
-                db.gLEntries.date.isSmallerThan(Variable(nextDate)));
-
-      final expRows = await expQuery.get();
-      Decimal expTotal = expRows.fold(Decimal.zero, (sum, row) => sum + ((row.read(db.gLLines.debit) as Decimal?) ?? Decimal.zero) - ((row.read(db.gLLines.credit) as Decimal?) ?? Decimal.zero));
-      dailyExp.add(DailyValue(date, expTotal.toDouble()));
+      dailyRev.add(DailyValue(date, dailyRevMap[date] ?? Decimal.zero));
+      dailyExp.add(DailyValue(date, dailyExpMap[date] ?? Decimal.zero));
     }
 
     final topProductsFromDao = await db.salesDao.getTopSellingProducts(
       limit: 5,
     );
     final topSellingProducts = topProductsFromDao
-        .map((p) => DashboardTopProduct(p.product.name, p.totalQuantity.toDouble()))
+        .map((p) => DashboardTopProduct(
+            p.product.name, Decimal.parse(p.totalQuantity.toString())))
         .toList();
 
     final expiringBatches = await db.productsDao.getExpiringBatches(
@@ -755,7 +528,8 @@ class AccountingService {
     var parent = await dao.getAccountByCode(codeAccountsReceivable);
     parent ??= await dao.getAccountByCode('1201');
     if (parent == null) {
-      throw Exception('حساب الذمم المدينة الرئيسي غير موجود. تعذر إنشاء حساب العميل.');
+      throw Exception(
+          'حساب الذمم المدينة الرئيسي غير موجود. تعذر إنشاء حساب العميل.');
     }
     final parentAccount = parent;
 
@@ -795,7 +569,8 @@ class AccountingService {
     await db.ensureCoreReferenceData();
     final parent = await dao.getAccountByCode(codeAccountsPayable);
     if (parent == null) {
-      throw Exception('حساب الذمم الدائنة الرئيسي غير موجود. تعذر إنشاء حساب المورد.');
+      throw Exception(
+          'حساب الذمم الدائنة الرئيسي غير موجود. تعذر إنشاء حساب المورد.');
     }
 
     final existingSubAccounts = await (db.select(
@@ -829,749 +604,6 @@ class AccountingService {
     return id;
   }
 
-  Future<void> postSale(Sale sale, List<SaleItem> items,
-      {Decimal? cogs, String? userId}) async {
-    try {
-      if (userId != null) {
-        await _permissionService.executeIfAllowed(
-            userId, PermissionCode.postSale, () async {});
-      }
-      if (await db.accountingDao.isDateInClosedPeriod(sale.createdAt)) {
-        throw Exception('Cannot post sale in a closed accounting period.');
-      }
-      await db.transaction(() async {
-        final dao = db.accountingDao;
-        final entryId = const Uuid().v4();
-
-        String debitAccountId;
-        if (sale.isCredit) {
-          if (sale.customerId == null) {
-            throw Exception('Credit sale must have a customer.');
-          }
-          final customer =
-              await db.customersDao.getCustomerById(sale.customerId!);
-          if (customer?.accountId == null) {
-            debitAccountId = (await dao.getAccountByCode(
-              codeAccountsReceivable,
-            ))!
-                .id;
-          } else {
-            debitAccountId = customer!.accountId!;
-          }
-        } else {
-          debitAccountId = (await dao.getAccountByCode(codeCash))!.id;
-        }
-
-        final revenueAccount = await dao.getAccountByCode(codeSalesRevenue);
-        final taxAccount = await dao.getAccountByCode(codeOutputVAT);
-
-        if (revenueAccount == null || taxAccount == null) {
-          throw Exception('Missing one or more required GL accounts for sale.');
-        }
-
-        final entry = GLEntriesCompanion.insert(
-          id: Value(entryId),
-          description: 'Sale #${sale.id.substring(0, 8)}',
-          date: Value(sale.createdAt),
-          referenceType: const Value('SALE'),
-          referenceId: Value(sale.id),
-          status: const Value('POSTED'),
-          postedAt: Value(DateTime.now()),
-          currencyId: Value(sale.currencyId),
-          exchangeRate: Value(sale.exchangeRate),
-          branchId:
-              Value(sale.branchId ?? await _configService.getDefaultBranchId()),
-        );
-
-        final lines = [
-          GLLinesCompanion.insert(
-            entryId: entryId,
-            accountId: debitAccountId,
-            debit: Value(sale.total),
-            credit: Value(Decimal.zero),
-            currencyId: Value(sale.currencyId),
-            exchangeRate: Value(sale.exchangeRate),
-            branchId: Value(
-                sale.branchId ?? await _configService.getDefaultBranchId()),
-          ),
-          GLLinesCompanion.insert(
-            entryId: entryId,
-            accountId: revenueAccount.id,
-            debit: Value(Decimal.zero),
-            credit: Value(sale.total - sale.tax),
-            currencyId: Value(sale.currencyId),
-            exchangeRate: Value(sale.exchangeRate),
-            branchId: Value(
-                sale.branchId ?? await _configService.getDefaultBranchId()),
-          ),
-          if (sale.tax > Decimal.zero)
-            GLLinesCompanion.insert(
-              entryId: entryId,
-              accountId: taxAccount.id,
-              debit: Value(Decimal.zero),
-              credit: Value(sale.tax),
-              currencyId: Value(sale.currencyId),
-              exchangeRate: Value(sale.exchangeRate),
-              branchId: Value(
-                  sale.branchId ?? await _configService.getDefaultBranchId()),
-            ),
-        ];
-
-        await dao.createEntry(entry, lines);
-
-        await _auditService.logCreate(
-          'GLEntry',
-          entryId,
-          details: 'Revenue entry for Sale #${sale.id.substring(0, 8)}',
-        );
-
-        // Use actual COGS from event (calculated from batches) or calculate from batch costs
-        final Decimal totalCost = cogs ?? Decimal.zero;
-        Decimal calculatedCost = Decimal.zero;
-        if (totalCost == Decimal.zero) {
-          for (var item in items) {
-            final batches = await (db.select(db.productBatches)
-                  ..where((b) => b.productId.equals(item.productId))
-                  ..where((b) => b.quantity.isBiggerThan(Constant(Decimal.zero.toString())))
-                  ..orderBy([
-                    (b) => OrderingTerm(
-                          expression: b.expiryDate.isNull(),
-                          mode: OrderingMode.asc,
-                        ),
-                    (b) => OrderingTerm(
-                          expression: b.expiryDate,
-                          mode: OrderingMode.asc,
-                        ),
-                    (b) => OrderingTerm(
-                          expression: b.createdAt,
-                          mode: OrderingMode.asc,
-                        ),
-                  ]))
-                .get();
-            Decimal remainingQty = item.quantity * item.unitFactor;
-            for (var batch in batches) {
-              if (remainingQty <= Decimal.zero) break;
-              Decimal deductFromBatch = batch.quantity >= remainingQty
-                  ? remainingQty
-                  : batch.quantity;
-              calculatedCost += deductFromBatch * batch.costPrice;
-              remainingQty -= deductFromBatch;
-            }
-          }
-        }
-
-        final Decimal finalCost = totalCost > Decimal.zero ? totalCost : calculatedCost;
-
-        if (finalCost > Decimal.zero) {
-          final cogsEntryId = const Uuid().v4();
-          final cogsAccount = await dao.getAccountByCode(codeCOGS);
-          final inventoryAccount = await dao.getAccountByCode(codeInventory);
-
-          if (cogsAccount != null && inventoryAccount != null) {
-            final cogsEntry = GLEntriesCompanion.insert(
-              id: Value(cogsEntryId),
-              description: 'COGS for Sale #${sale.id.substring(0, 8)}',
-              date: Value(sale.createdAt),
-              referenceType: const Value('COGS'),
-              referenceId: Value(sale.id),
-              status: const Value('POSTED'),
-              postedAt: Value(DateTime.now()),
-              branchId: Value(
-                  sale.branchId ?? await _configService.getDefaultBranchId()),
-            );
-
-            final cogsLines = [
-              GLLinesCompanion.insert(
-                entryId: cogsEntryId,
-                accountId: cogsAccount.id,
-                debit: Value(finalCost),
-                credit: Value(Decimal.zero),
-                branchId: Value(
-                    sale.branchId ?? await _configService.getDefaultBranchId()),
-              ),
-              GLLinesCompanion.insert(
-                entryId: cogsEntryId,
-                accountId: inventoryAccount.id,
-                debit: Value(Decimal.zero),
-                credit: Value(finalCost),
-                branchId: Value(
-                    sale.branchId ?? await _configService.getDefaultBranchId()),
-              ),
-            ];
-            await dao.createEntry(cogsEntry, cogsLines);
-          }
-        }
-      });
-    } catch (e, s) {
-      developer.log('Error posting sale', error: e, stackTrace: s);
-      final String errorMessage = e.toString();
-      throw Exception('Failed to post sale: $errorMessage \n StackTrace: $s');
-    }
-  }
-
-  Future<void> postPurchase(Purchase purchase, List<PurchaseItem> items,
-      {String? userId}) async {
-    try {
-      if (userId != null) {
-        await _permissionService.executeIfAllowed(
-            userId, 'POST_PURCHASE', () async {});
-      }
-      if (await db.accountingDao.isDateInClosedPeriod(purchase.date)) {
-        throw Exception('Cannot post purchase in a closed accounting period.');
-      }
-      await db.transaction(() async {
-        final dao = db.accountingDao;
-        final entryId = const Uuid().v4();
-
-        final inventoryAccount = await dao.getAccountByCode(codeInventory);
-        final taxAccount = await dao.getAccountByCode(codeInputVAT);
-
-        String creditAccountId;
-        if (purchase.isCredit) {
-          if (purchase.supplierId == null) {
-            throw Exception('Credit purchase must have a supplier.');
-          }
-          final supplier = await db.suppliersDao.getSupplierById(
-            purchase.supplierId!,
-          );
-          creditAccountId = supplier?.accountId ??
-              (await dao.getAccountByCode(codeAccountsPayable))!.id;
-        } else {
-          creditAccountId = (await dao.getAccountByCode(codeCash))!.id;
-        }
-
-        if (inventoryAccount == null || taxAccount == null) {
-          throw Exception('Missing GL accounts for purchase.');
-        }
-
-        final Decimal inventoryValue = purchase.total - purchase.tax;
-
-        final entry = GLEntriesCompanion.insert(
-          id: Value(entryId),
-          description: 'إثبات فاتورة مشتريات #${purchase.id.substring(0, 8)}',
-          date: Value(purchase.date),
-          referenceType: const Value('PURCHASE'),
-          referenceId: Value(purchase.id),
-          status: const Value('POSTED'),
-          postedAt: Value(DateTime.now()),
-          currencyId: Value(purchase.currencyId),
-          exchangeRate: Value(purchase.exchangeRate),
-          branchId: Value(
-              purchase.branchId ?? await _configService.getDefaultBranchId()),
-        );
-
-        final lines = [
-          GLLinesCompanion.insert(
-            entryId: entryId,
-            accountId: inventoryAccount.id,
-            debit: Value(inventoryValue),
-            credit: Value(Decimal.zero),
-            currencyId: Value(purchase.currencyId),
-            exchangeRate: Value(purchase.exchangeRate),
-            branchId: Value(
-                purchase.branchId ?? await _configService.getDefaultBranchId()),
-          ),
-          if (purchase.tax > Decimal.zero)
-            GLLinesCompanion.insert(
-              entryId: entryId,
-              accountId: taxAccount.id,
-              debit: Value(purchase.tax),
-              credit: Value(Decimal.zero),
-              currencyId: Value(purchase.currencyId),
-              exchangeRate: Value(purchase.exchangeRate),
-              branchId: Value(purchase.branchId ??
-                  await _configService.getDefaultBranchId()),
-            ),
-          GLLinesCompanion.insert(
-            entryId: entryId,
-            accountId: creditAccountId,
-            debit: Value(Decimal.zero),
-            credit: Value(purchase.total),
-            currencyId: Value(purchase.currencyId),
-            exchangeRate: Value(purchase.exchangeRate),
-            branchId: Value(
-                purchase.branchId ?? await _configService.getDefaultBranchId()),
-          ),
-        ];
-
-        await dao.createEntry(entry, lines);
-
-        await _auditService.logCreate(
-          'GLEntry',
-          entryId,
-          details:
-              'Purchase entry for Purchase #${purchase.id.substring(0, 8)}',
-        );
-      });
-    } catch (e) {
-      throw Exception('Failed to post purchase: ${e.toString()}');
-    }
-  }
-
-  Future<void> recordCustomerPayment({
-    required String customerId,
-    required Decimal amount,
-    required String paymentAccountCode,
-    required String currencyId,
-    required Decimal exchangeRate,
-  }) async {
-    final dao = db.accountingDao;
-    final entryId = const Uuid().v4();
-
-    final arAccount = await dao.getAccountByCode(codeAccountsReceivable);
-    final paymentAccount = await dao.getAccountByCode(paymentAccountCode);
-
-    if (arAccount == null || paymentAccount == null) {
-      throw Exception('AR or Payment account not found.');
-    }
-
-    final customer = await db.customersDao.getCustomerById(customerId);
-
-    final defaultBranchId = await _configService.getDefaultBranchId();
-
-    final entry = GLEntriesCompanion.insert(
-      id: Value(entryId),
-      description: 'Payment from ${customer?.name ?? "Customer"}',
-      date: Value(DateTime.now()),
-      referenceType: const Value('CUSTOMER_PAYMENT'),
-      referenceId: Value(customerId),
-      currencyId: Value(currencyId),
-      exchangeRate: Value(exchangeRate),
-      branchId: Value(defaultBranchId),
-    );
-
-    final lines = [
-      GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: paymentAccount.id,
-        debit: Value(amount),
-        credit: Value(Decimal.zero),
-        currencyId: Value(currencyId),
-        exchangeRate: Value(exchangeRate),
-        branchId: Value(defaultBranchId),
-      ),
-      GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: arAccount.id,
-        debit: Value(Decimal.zero),
-        credit: Value(amount),
-        currencyId: Value(currencyId),
-        exchangeRate: Value(exchangeRate),
-        branchId: Value(defaultBranchId),
-      ),
-    ];
-
-    await dao.createEntry(entry, lines);
-  }
-
-  Future<void> recordPaymentToSupplier({
-    required String supplierId,
-    required Decimal amount,
-    required String paymentAccountCode,
-    required String currencyId,
-    required Decimal exchangeRate,
-  }) async {
-    final dao = db.accountingDao;
-    final entryId = const Uuid().v4();
-
-    final apAccount = await dao.getAccountByCode(codeAccountsPayable);
-    final paymentAccount = await dao.getAccountByCode(paymentAccountCode);
-
-    if (apAccount == null || paymentAccount == null) {
-      throw Exception('AP or Payment account not found.');
-    }
-
-    final defaultBranchId = await _configService.getDefaultBranchId();
-
-    final entry = GLEntriesCompanion.insert(
-      id: Value(entryId),
-      description: 'Payment to Supplier',
-      date: Value(DateTime.now()),
-      referenceType: const Value('SUPPLIER_PAYMENT'),
-      referenceId: Value(supplierId),
-      currencyId: Value(currencyId),
-      exchangeRate: Value(exchangeRate),
-      branchId: Value(defaultBranchId),
-    );
-
-    final lines = [
-      GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: apAccount.id,
-        debit: Value(amount),
-        credit: Value(Decimal.zero),
-        currencyId: Value(currencyId),
-        exchangeRate: Value(exchangeRate),
-        branchId: Value(defaultBranchId),
-      ),
-      GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: paymentAccount.id,
-        debit: Value(Decimal.zero),
-        credit: Value(amount),
-        currencyId: Value(currencyId),
-        exchangeRate: Value(exchangeRate),
-        branchId: Value(defaultBranchId),
-      ),
-    ];
-
-    await dao.createEntry(entry, lines);
-
-    await _auditService.logCreate(
-      'GLEntry',
-      entryId,
-      details: 'Payment to Supplier: $supplierId, Amount: $amount',
-    );
-  }
-
-  Future<void> recordCheckCollected(Check check) async {
-    final dao = db.accountingDao;
-    final entryId = const Uuid().v4();
-
-    GLAccount? primaryAccount;
-    GLAccount? secondaryAccount;
-    Decimal amount = Decimal.parse(check.amount.toString());
-    String description;
-
-    if (check.type == 'RECEIVED') {
-      primaryAccount = await dao.getAccountByCode(codeAccountsReceivable);
-      secondaryAccount = await dao.getAccountByCode(
-        check.paymentAccountId ?? 'UNKNOWN',
-      );
-      description = 'Collection of Check #${check.checkNumber}';
-    } else {
-      primaryAccount = await dao.getAccountByCode(codeAccountsPayable);
-      secondaryAccount = await dao.getAccountByCode(
-        check.paymentAccountId ?? 'UNKNOWN',
-      );
-      description = 'Payment via Check #${check.checkNumber}';
-    }
-
-    if (primaryAccount == null || secondaryAccount == null) {
-      throw Exception('Required GL accounts not found.');
-    }
-
-    final entry = GLEntriesCompanion.insert(
-      id: Value(entryId),
-      description: description,
-      date: Value(DateTime.now()),
-      referenceType: const Value('CHECK_COLLECTED'),
-      referenceId: Value(check.id),
-      currencyId: Value(check.currencyId),
-      exchangeRate: Value(check.exchangeRate),
-      branchId: Value(await _configService.getDefaultBranchId()),
-    );
-
-    final lines = [
-      GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: primaryAccount.id,
-        debit: Value(amount),
-        credit: Value(Decimal.zero),
-        currencyId: Value(check.currencyId),
-        exchangeRate: Value(check.exchangeRate),
-        branchId: Value(await _configService.getDefaultBranchId()),
-      ),
-      GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: secondaryAccount.id,
-        debit: Value(Decimal.zero),
-        credit: Value(amount),
-        currencyId: Value(check.currencyId),
-        exchangeRate: Value(check.exchangeRate),
-        branchId: Value(await _configService.getDefaultBranchId()),
-      ),
-    ];
-    await dao.createEntry(entry, lines);
-  }
-
-  Future<void> recordCheckBounced(Check check) async {
-    final dao = db.accountingDao;
-    final entryId = const Uuid().v4();
-
-    GLAccount? primaryAccount;
-    GLAccount? secondaryAccount;
-    Decimal amount = Decimal.parse(check.amount.toString());
-    String description;
-
-    if (check.type == 'RECEIVED') {
-      primaryAccount = await dao.getAccountByCode(codeAccountsReceivable);
-      secondaryAccount = await dao.getAccountByCode(
-        check.paymentAccountId ?? 'UNKNOWN',
-      );
-      description = 'Bounced Check #${check.checkNumber}';
-    } else {
-      primaryAccount = await dao.getAccountByCode(codeAccountsPayable);
-      secondaryAccount = await dao.getAccountByCode(
-        check.paymentAccountId ?? 'UNKNOWN',
-      );
-      description = 'Bounced Check #${check.checkNumber}';
-    }
-
-    if (primaryAccount == null || secondaryAccount == null) {
-      throw Exception('Required GL accounts not found.');
-    }
-
-    final entry = GLEntriesCompanion.insert(
-      id: Value(entryId),
-      description: description,
-      date: Value(DateTime.now()),
-      referenceType: const Value('CHECK_BOUNCED'),
-      referenceId: Value(check.id),
-      currencyId: Value(check.currencyId),
-      exchangeRate: Value(check.exchangeRate),
-      branchId: Value(await _configService.getDefaultBranchId()),
-    );
-
-    final lines = [
-      GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: primaryAccount.id,
-        debit: Value(amount),
-        credit: Value(Decimal.zero),
-        currencyId: Value(check.currencyId),
-        exchangeRate: Value(check.exchangeRate),
-        branchId: Value(await _configService.getDefaultBranchId()),
-      ),
-      GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: secondaryAccount.id,
-        debit: Value(Decimal.zero),
-        credit: Value(amount),
-        currencyId: Value(check.currencyId),
-        exchangeRate: Value(check.exchangeRate),
-        branchId: Value(await _configService.getDefaultBranchId()),
-      ),
-    ];
-    await dao.createEntry(entry, lines);
-  }
-
-  Future<void> postSaleReturn(
-    SalesReturn saleReturn,
-    List<SalesReturnItem> items,
-    String userId,
-  ) async {
-    await _permissionService
-        .executeIfAllowed(userId, PermissionCode.postSaleReturn, () async {
-      final dao = db.accountingDao;
-      final originalSale = await db.salesDao.getSaleById(saleReturn.saleId);
-      if (originalSale == null) throw Exception('Original sale not found.');
-
-      final entryId = const Uuid().v4();
-      final salesReturnAccount = await dao.getAccountByCode(codeSalesReturns);
-      final taxAccount = await dao.getAccountByCode(codeOutputVAT);
-      final arAccount = await dao.getAccountByCode(codeAccountsReceivable);
-      final cashAccount = await dao.getAccountByCode(codeCash);
-
-      if (salesReturnAccount == null ||
-          taxAccount == null ||
-          arAccount == null ||
-          cashAccount == null) {
-        throw Exception('Missing accounts for sale return.');
-      }
-
-      final Decimal totalReturned = Decimal.parse(saleReturn.amountReturned.toString());
-      final Decimal originalTotal = originalSale.total;
-      final Decimal originalTax = originalSale.tax;
-      
-      final Decimal taxPortion = originalTax > Decimal.zero
-          ? Decimal.parse((totalReturned / originalTotal).toString()) * originalTax
-          : Decimal.zero;
-      final Decimal revenuePortion = totalReturned - taxPortion;
-      final creditAccount = originalSale.isCredit ? arAccount : cashAccount;
-
-      final entry = GLEntriesCompanion.insert(
-        id: Value(entryId),
-        description: 'Sale Return for Sale #${originalSale.id.substring(0, 8)}',
-        date: Value(saleReturn.createdAt),
-        referenceType: const Value('SALE_RETURN'),
-        referenceId: Value(saleReturn.id),
-        branchId: Value(
-            originalSale.branchId ?? await _configService.getDefaultBranchId()),
-      );
-
-      final lines = [
-        GLLinesCompanion.insert(
-          entryId: entryId,
-          accountId: salesReturnAccount.id,
-          debit: Value(revenuePortion),
-          credit: Value(Decimal.zero),
-          branchId: Value(originalSale.branchId ??
-              await _configService.getDefaultBranchId()),
-        ),
-        GLLinesCompanion.insert(
-          entryId: entryId,
-          accountId: taxAccount.id,
-          debit: Value(taxPortion),
-          credit: Value(Decimal.zero),
-          branchId: Value(originalSale.branchId ??
-              await _configService.getDefaultBranchId()),
-        ),
-        GLLinesCompanion.insert(
-          entryId: entryId,
-          accountId: creditAccount.id,
-          debit: Value(Decimal.zero),
-          credit: Value(totalReturned),
-          branchId: Value(originalSale.branchId ??
-              await _configService.getDefaultBranchId()),
-        ),
-      ];
-
-      await dao.createEntry(entry, lines);
-
-      Decimal totalCostReversed = Decimal.zero;
-      for (var item in items) {
-        final batches = await (db.select(db.productBatches)
-              ..where((b) => b.productId.equals(item.productId))
-              ..where((b) => b.quantity.isBiggerThan(Constant(Decimal.zero.toString())))
-              ..orderBy([
-                (b) => OrderingTerm(
-                      expression: b.expiryDate.isNull(),
-                      mode: OrderingMode.asc,
-                    ),
-                (b) => OrderingTerm(
-                      expression: b.expiryDate,
-                      mode: OrderingMode.asc,
-                    ),
-                (b) => OrderingTerm(
-                      expression: b.createdAt,
-                      mode: OrderingMode.asc,
-                    ),
-              ]))
-            .get();
-
-        Decimal remainingQty = Decimal.parse(item.quantity.toString());
-        for (var batch in batches) {
-          if (remainingQty <= Decimal.zero) break;
-          Decimal deductFromBatch =
-              batch.quantity >= remainingQty ? remainingQty : batch.quantity;
-          totalCostReversed += deductFromBatch * batch.costPrice;
-          remainingQty -= deductFromBatch;
-        }
-      }
-
-      if (totalCostReversed > Decimal.zero) {
-        final cogsEntryId = const Uuid().v4();
-        final cogsAccount = await dao.getAccountByCode(codeCOGS);
-        final inventoryAccount = await dao.getAccountByCode(codeInventory);
-        if (cogsAccount != null && inventoryAccount != null) {
-          final cogsEntry = GLEntriesCompanion.insert(
-            id: Value(cogsEntryId),
-            description:
-                'COGS Reversal for Sale Return #${saleReturn.id.substring(0, 8)}',
-            date: Value(saleReturn.createdAt),
-            referenceType: const Value('COGS_REVERSAL'),
-            referenceId: Value(saleReturn.id),
-            branchId: Value(originalSale.branchId ??
-                await _configService.getDefaultBranchId()),
-          );
-          final cogsLines = [
-            GLLinesCompanion.insert(
-              entryId: cogsEntryId,
-              accountId: inventoryAccount.id,
-              debit: Value(totalCostReversed),
-              credit: Value(Decimal.zero),
-              branchId: Value(originalSale.branchId ??
-                  await _configService.getDefaultBranchId()),
-            ),
-            GLLinesCompanion.insert(
-              entryId: cogsEntryId,
-              accountId: cogsAccount.id,
-              debit: Value(Decimal.zero),
-              credit: Value(totalCostReversed),
-              branchId: Value(originalSale.branchId ??
-                  await _configService.getDefaultBranchId()),
-            ),
-          ];
-          await dao.createEntry(cogsEntry, cogsLines);
-        }
-      }
-    });
-  }
-
-  Future<void> postPurchaseReturn(
-    PurchaseReturn purchaseReturn,
-    List<PurchaseReturnItem> items,
-    String userId,
-  ) async {
-    await _permissionService
-        .executeIfAllowed(userId, PermissionCode.postPurchaseReturn, () async {
-      final dao = db.accountingDao;
-      final originalPurchase = await db.purchasesDao.getPurchaseById(
-        purchaseReturn.purchaseId,
-      );
-      if (originalPurchase == null) {
-        throw Exception('Original purchase not found.');
-      }
-
-      final entryId = const Uuid().v4();
-      final purchaseReturnAccount = await dao.getAccountByCode(
-        codePurchaseReturns,
-      );
-      final taxAccount = await dao.getAccountByCode(codeInputVAT);
-      final apAccount = await dao.getAccountByCode(codeAccountsPayable);
-      final cashAccount = await dao.getAccountByCode(codeCash);
-
-      if (purchaseReturnAccount == null ||
-          taxAccount == null ||
-          apAccount == null ||
-          cashAccount == null) {
-        throw Exception('Missing accounts for purchase return.');
-      }
-
-      final Decimal totalReturned = Decimal.parse(purchaseReturn.amountReturned.toString());
-      final Decimal originalTotal = originalPurchase.total;
-      final Decimal originalTax = originalPurchase.tax;
-      
-      final Decimal taxPortion = originalTax > Decimal.zero
-          ? Decimal.parse((totalReturned / originalTotal).toString()) * originalTax
-          : Decimal.zero;
-      final Decimal purchasePortion = totalReturned - taxPortion;
-      final debitAccount = originalPurchase.isCredit ? apAccount : cashAccount;
-
-      final entry = GLEntriesCompanion.insert(
-        id: Value(entryId),
-        description:
-            'Purchase Return for Purchase #${originalPurchase.id.substring(0, 8)}',
-        date: Value(purchaseReturn.createdAt),
-        referenceType: const Value('PURCHASE_RETURN'),
-        referenceId: Value(purchaseReturn.id),
-        branchId: Value(originalPurchase.branchId ??
-            await _configService.getDefaultBranchId()),
-      );
-
-      final lines = [
-        GLLinesCompanion.insert(
-          entryId: entryId,
-          accountId: debitAccount.id,
-          debit: Value(totalReturned),
-          credit: Value(Decimal.zero),
-          branchId: Value(originalPurchase.branchId ??
-              await _configService.getDefaultBranchId()),
-        ),
-        GLLinesCompanion.insert(
-          entryId: entryId,
-          accountId: purchaseReturnAccount.id,
-          debit: Value(Decimal.zero),
-          credit: Value(purchasePortion),
-          branchId: Value(originalPurchase.branchId ??
-              await _configService.getDefaultBranchId()),
-        ),
-        if (taxPortion > Decimal.zero)
-          GLLinesCompanion.insert(
-            entryId: entryId,
-            accountId: taxAccount.id,
-            debit: Value(Decimal.zero),
-            credit: Value(taxPortion),
-            branchId: Value(originalPurchase.branchId ??
-                await _configService.getDefaultBranchId()),
-          ),
-      ];
-
-      await dao.createEntry(entry, lines);
-    });
-  }
-
   Future<void> runAutomaticDepreciation(DateTime asOfDate) async {
     final dao = db.accountingDao;
     final assets = await db.select(db.fixedAssets).get();
@@ -1585,27 +617,36 @@ class AccountingService {
     if (depreciationAccount == null || accumulatedDepAccount == null) return;
 
     for (var asset in assets) {
-      double monthlyDepreciation =
-          (asset.cost - asset.salvageValue) / (asset.usefulLifeYears * 12);
+      final costDecimal = Decimal.parse(asset.cost.toString());
+      final salvageDecimal = Decimal.parse(asset.salvageValue.toString());
+      final usefulLifeMonths = asset.usefulLifeYears * 12;
+      final monthlyDepreciation =
+          ((costDecimal - salvageDecimal) / Decimal.fromInt(usefulLifeMonths)).toDecimal(scaleOnInfinitePrecision: 3);
 
-      int totalMonths = asset.usefulLifeYears * 12;
-      double alreadyDepreciatedMonths =
-          asset.accumulatedDepreciation / monthlyDepreciation;
+      final totalMonths = usefulLifeMonths;
+      final accDepDecimal = Decimal.parse(asset.accumulatedDepreciation.toString());
+      final alreadyDepreciatedMonths =
+          accDepDecimal > Decimal.zero
+              ? (accDepDecimal / monthlyDepreciation)
+                  .toDecimal(scaleOnInfinitePrecision: 0)
+              : Decimal.zero;
 
       final elapsedDuration = asOfDate.difference(asset.purchaseDate);
-      int elapsedMonths = (elapsedDuration.inDays / 30).floor();
+      final elapsedMonths =
+          Decimal.fromInt((elapsedDuration.inDays / 30).floor());
 
-      int monthsToDepreciate = elapsedMonths - alreadyDepreciatedMonths.floor();
-      if (monthsToDepreciate <= 0) continue;
+      var monthsToDepreciate = elapsedMonths - alreadyDepreciatedMonths;
+      if (monthsToDepreciate <= Decimal.zero) continue;
 
-      if (alreadyDepreciatedMonths + monthsToDepreciate > totalMonths) {
-        monthsToDepreciate = (totalMonths - alreadyDepreciatedMonths).floor();
+      if (alreadyDepreciatedMonths + monthsToDepreciate >
+          Decimal.fromInt(totalMonths)) {
+        monthsToDepreciate =
+            Decimal.fromInt(totalMonths) - alreadyDepreciatedMonths;
       }
 
-      if (monthsToDepreciate <= 0) continue;
+      if (monthsToDepreciate <= Decimal.zero) continue;
 
-      double depreciationAmount = monthsToDepreciate * monthlyDepreciation;
-      final Decimal depAmountDecimal = Decimal.parse(depreciationAmount.toString());
+      final depAmountDecimal = monthlyDepreciation * monthsToDepreciate;
       final entryId = const Uuid().v4();
 
       final entry = GLEntriesCompanion.insert(
@@ -1645,7 +686,7 @@ class AccountingService {
           .write(
         FixedAssetsCompanion(
           accumulatedDepreciation: Value(
-            asset.accumulatedDepreciation + depreciationAmount,
+            accDepDecimal + depAmountDecimal,
           ),
         ),
       );
@@ -1683,8 +724,9 @@ class AccountingService {
 
     Decimal totalOutputVat = Decimal.zero;
     for (final line in outputVatLines) {
-      totalOutputVat += ((line.read(db.gLLines.credit) as Decimal?) ?? Decimal.zero) -
-          ((line.read(db.gLLines.debit) as Decimal?) ?? Decimal.zero);
+      totalOutputVat +=
+          ((line.read(db.gLLines.credit) as Decimal?) ?? Decimal.zero) -
+              ((line.read(db.gLLines.debit) as Decimal?) ?? Decimal.zero);
     }
 
     final inputVatLines = await (db.select(db.gLLines).join([
@@ -1704,8 +746,9 @@ class AccountingService {
 
     Decimal totalInputVat = Decimal.zero;
     for (final line in inputVatLines) {
-      totalInputVat += ((line.read(db.gLLines.debit) as Decimal?) ?? Decimal.zero) -
-          ((line.read(db.gLLines.credit) as Decimal?) ?? Decimal.zero);
+      totalInputVat +=
+          ((line.read(db.gLLines.debit) as Decimal?) ?? Decimal.zero) -
+              ((line.read(db.gLLines.credit) as Decimal?) ?? Decimal.zero);
     }
 
     final taxableSales = await (db.select(db.sales)
@@ -1721,8 +764,8 @@ class AccountingService {
               p.tax.isBiggerThan(Constant(Decimal.zero.toString())) &
               p.updatedAt.isBetweenValues(reportStartDate, reportEndDate)))
         .get();
-    Decimal totalTaxablePurchases =
-        taxablePurchases.fold(Decimal.zero, (sum, p) => sum + (p.total - p.tax));
+    Decimal totalTaxablePurchases = taxablePurchases.fold(
+        Decimal.zero, (sum, p) => sum + (p.total - p.tax));
 
     return VatReportData(
       totalTaxableSales: totalTaxableSales,
@@ -1744,20 +787,22 @@ class AccountingService {
 
     final prevYearPeriod = await (db.select(db.accountingPeriods)
           ..where((p) => p.fiscalYear.equals(previousYear))
-          ..orderBy([(t) => OrderingTerm(expression: t.endDate, mode: OrderingMode.desc)])
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.endDate, mode: OrderingMode.desc)
+          ])
           ..limit(1))
         .getSingleOrNull();
 
     if (prevYearPeriod == null) {
-      throw Exception('Previous fiscal year $previousYear not found or not closed.');
+      throw Exception(
+          'Previous fiscal year $previousYear not found or not closed.');
     }
 
     final allAccounts = await dao.getAllAccounts();
-    final balanceSheetAccounts = allAccounts.where((a) => 
-        a.type == AccountType.asset || 
-        a.type == AccountType.liability || 
-        a.type == AccountType.equity
-    );
+    final balanceSheetAccounts = allAccounts.where((a) =>
+        a.type == AccountType.asset ||
+        a.type == AccountType.liability ||
+        a.type == AccountType.equity);
 
     final entryId = const Uuid().v4();
     final entry = GLEntriesCompanion.insert(
@@ -1773,8 +818,10 @@ class AccountingService {
     List<GLLinesCompanion> lines = [];
 
     for (var acc in balanceSheetAccounts) {
-      final Decimal balance = Decimal.parse((await dao.getAccountBalanceAsOfDate(acc.id, prevYearPeriod.endDate)).toString());
-      
+      final Decimal balance = Decimal.parse(
+          (await dao.getAccountBalanceAsOfDate(acc.id, prevYearPeriod.endDate))
+              .toString());
+
       if (balance == Decimal.zero) continue;
 
       if (acc.type == AccountType.asset) {
@@ -1825,40 +872,41 @@ class AccountingService {
     }
   }
 
-
   Future<IncomeStatementData> getIncomeStatement({
     DateTime? startDate,
     DateTime? endDate,
   }) async {
     final dao = db.accountingDao;
-    final allAccounts = await dao.getAllAccounts();
-    final revenueAccounts = allAccounts.where((acc) => acc.type == 'REVENUE');
-    final expenseAccounts = allAccounts.where((acc) => acc.type == 'EXPENSE');
+    final end = endDate ?? DateTime.now();
 
-    final List<TrialBalanceItem> revenues = [];
-    for (var account in revenueAccounts) {
-      final balance = startDate != null 
-        ? await dao.getAccountBalanceInRange(account.id, startDate, endDate ?? DateTime.now())
-        : await dao.getAccountBalanceAsOfDate(account.id, endDate ?? DateTime.now());
-      revenues.add(TrialBalanceItem(account, 0.0, balance.toDouble()));
+    final List<TrialBalanceItem> allItems;
+    if (startDate != null) {
+      final balances = await dao.getAllAccountBalancesInRange(startDate, end);
+      allItems = balances.map((b) {
+        if (b.account.type == 'REVENUE') {
+          return TrialBalanceItem(b.account, Decimal.zero, b.netBalance);
+        } else {
+          return TrialBalanceItem(b.account, b.netBalance, Decimal.zero);
+        }
+      }).toList();
+    } else {
+      final balances = await dao.getAllAccountBalancesAsOfDate(end);
+      allItems = balances.map((b) {
+        if (b.account.type == 'REVENUE') {
+          return TrialBalanceItem(b.account, Decimal.zero, b.netBalance);
+        } else {
+          return TrialBalanceItem(b.account, b.netBalance, Decimal.zero);
+        }
+      }).toList();
     }
 
-    final List<TrialBalanceItem> expenses = [];
-    for (var account in expenseAccounts) {
-      final balance = startDate != null
-        ? await dao.getAccountBalanceInRange(account.id, startDate, endDate ?? DateTime.now())
-        : await dao.getAccountBalanceAsOfDate(account.id, endDate ?? DateTime.now());
-      expenses.add(TrialBalanceItem(account, balance.toDouble(), 0.0));
-    }
+    final revenues = allItems.where((i) => i.account.type == 'REVENUE').toList();
+    final expenses = allItems.where((i) => i.account.type == 'EXPENSE').toList();
 
-    double totalRevenue = revenues.fold(
-      0.0,
-      (sum, item) => sum + item.totalCredit,
-    );
-    double totalExpense = expenses.fold(
-      0.0,
-      (sum, item) => sum + item.totalDebit,
-    );
+    final Decimal totalRevenue =
+        revenues.fold(Decimal.zero, (sum, item) => sum + item.totalCredit);
+    final Decimal totalExpense =
+        expenses.fold(Decimal.zero, (sum, item) => sum + item.totalDebit);
 
     return IncomeStatementData(
       revenues: revenues,
@@ -1867,7 +915,7 @@ class AccountingService {
       totalExpense: totalExpense,
       netIncome: totalRevenue - totalExpense,
       startDate: startDate,
-      endDate: endDate ?? DateTime.now(),
+      endDate: end,
     );
   }
 
@@ -1877,59 +925,45 @@ class AccountingService {
     required DateTime period2Start,
     required DateTime period2End,
   }) async {
-    final data1 = await getIncomeStatement(startDate: period1Start, endDate: period1End);
-    final data2 = await getIncomeStatement(startDate: period2Start, endDate: period2End);
+    final data1 =
+        await getIncomeStatement(startDate: period1Start, endDate: period1End);
+    final data2 =
+        await getIncomeStatement(startDate: period2Start, endDate: period2End);
     return {
       'period1': data1,
       'period2': data2,
     };
   }
 
-
   Future<BalanceSheetData> getBalanceSheet({DateTime? date}) async {
     final dao = db.accountingDao;
     final asOfDate = date ?? DateTime.now();
-    final allAccounts = await dao.getAllAccounts();
+    final allBalances = await dao.getAllAccountBalancesAsOfDate(asOfDate);
 
     final List<BalanceSheetItem> assets = [];
-    for (var account in allAccounts.where((acc) => acc.type == 'ASSET')) {
-      if (!account.isHeader) {
-        final balance = await dao.getAccountBalanceAsOfDate(
-          account.id,
-          asOfDate,
-        );
-        assets.add(BalanceSheetItem(account, balance.toDouble()));
-      }
-    }
-
     final List<BalanceSheetItem> liabilities = [];
-    for (var account in allAccounts.where((acc) => acc.type == 'LIABILITY')) {
-      if (!account.isHeader) {
-        final balance = await dao.getAccountBalanceAsOfDate(
-          account.id,
-          asOfDate,
-        );
-        liabilities.add(BalanceSheetItem(account, balance.toDouble()));
-      }
-    }
-
     final List<BalanceSheetItem> equity = [];
-    for (var account in allAccounts.where((acc) => acc.type == 'EQUITY')) {
-      if (!account.isHeader) {
-        final balance = await dao.getAccountBalanceAsOfDate(
-          account.id,
-          asOfDate,
-        );
-        equity.add(BalanceSheetItem(account, balance.toDouble()));
+
+    for (final item in allBalances) {
+      if (item.account.isHeader) continue;
+      final balance = item.netBalance;
+      if (item.account.type == 'ASSET') {
+        assets.add(BalanceSheetItem(item.account, balance));
+      } else if (item.account.type == 'LIABILITY') {
+        liabilities.add(BalanceSheetItem(item.account, balance));
+      } else if (item.account.type == 'EQUITY') {
+        equity.add(BalanceSheetItem(item.account, balance));
       }
     }
 
-    double totalAssets = assets.fold(0.0, (sum, item) => sum + item.balance);
-    double totalLiabilities = liabilities.fold(
-      0.0,
+    Decimal totalAssets =
+        assets.fold(Decimal.zero, (sum, item) => sum + item.balance);
+    Decimal totalLiabilities = liabilities.fold(
+      Decimal.zero,
       (sum, item) => sum + item.balance,
     );
-    double totalEquity = equity.fold(0.0, (sum, item) => sum + item.balance);
+    Decimal totalEquity =
+        equity.fold(Decimal.zero, (sum, item) => sum + item.balance);
 
     final incomeStatement = await getIncomeStatement(endDate: asOfDate);
     totalEquity += incomeStatement.netIncome;
@@ -1946,10 +980,55 @@ class AccountingService {
     );
   }
 
-  Future<void> createRevaluationEntry(dynamic invoice, String reason) async {
+  /// Creates a balanced double-entry revaluation posting.
+  /// [invoice] must expose: .id, .assetId, .previousValue, .newValue
+  /// or a custom revaluation with explicit [debitAccountId], [creditAccountId], [amount].
+  Future<void> createRevaluationEntry(
+    dynamic invoice,
+    String reason, {
+    String? debitAccountId,
+    String? creditAccountId,
+    Decimal? amount,
+  }) async {
     final dao = db.accountingDao;
     final entryId = const Uuid().v4();
     final branchId = await _configService.getDefaultBranchId();
+
+    Decimal revalAmount;
+    String actualDebitAccountId;
+    String actualCreditAccountId;
+
+    if (amount != null && debitAccountId != null && creditAccountId != null) {
+      // Explicit revaluation — caller provides everything
+      revalAmount = amount;
+      actualDebitAccountId = debitAccountId;
+      actualCreditAccountId = creditAccountId;
+    } else {
+      // Automatic revaluation: compute difference from invoice fields
+      final previousValue = Decimal.tryParse('${invoice.previousValue}') ?? Decimal.zero;
+      final newValue = Decimal.tryParse('${invoice.newValue}') ?? Decimal.zero;
+      revalAmount = (newValue - previousValue).abs();
+
+      if (revalAmount <= Decimal.zero) {
+        throw Exception('لا يوجد فرق في القيمة لإعادة التقييم.');
+      }
+
+      if (newValue > previousValue) {
+        // Increase: Debit asset, Credit revaluation surplus (retained earnings)
+        actualDebitAccountId =
+            (await dao.getAccountByCode(codeFixedAssets))?.id ?? invoice.assetId;
+        actualCreditAccountId =
+            (await dao.getAccountByCode(codeRetainedEarnings))?.id ??
+                'retained_earnings';
+      } else {
+        // Decrease: Debit revaluation deficit (retained earnings), Credit asset
+        actualDebitAccountId =
+            (await dao.getAccountByCode(codeRetainedEarnings))?.id ??
+                'retained_earnings';
+        actualCreditAccountId =
+            (await dao.getAccountByCode(codeFixedAssets))?.id ?? invoice.assetId;
+      }
+    }
 
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
@@ -1963,28 +1042,40 @@ class AccountingService {
     final lines = [
       GLLinesCompanion.insert(
         entryId: entryId,
-        accountId: (await dao.getAccountByCode(codeRetainedEarnings))?.id ?? 'retained_earnings',
-        debit: Value(Decimal.zero),
+        accountId: actualDebitAccountId,
+        debit: Value(revalAmount),
         credit: Value(Decimal.zero),
-        memo: Value('Adjustment for invoice ${invoice.id}'),
+        memo: Value('إعادة تقييم: $reason (مدين)'),
+        branchId: Value(branchId),
+      ),
+      GLLinesCompanion.insert(
+        entryId: entryId,
+        accountId: actualCreditAccountId,
+        debit: Value(Decimal.zero),
+        credit: Value(revalAmount),
+        memo: Value('إعادة تقييم: $reason (دائن)'),
         branchId: Value(branchId),
       ),
     ];
 
     await db.transaction(() async {
       await dao.createEntry(entry, lines);
-      await _auditService.logCreate('GLEntry', entryId, details: 'Revaluation for invoice ${invoice.id}: $reason');
+      await _auditService.logCreate('GLEntry', entryId,
+          details: 'Revaluation for invoice ${invoice.id}: $reason');
     });
   }
 
   Future<void> closeFinancialYear(DateTime date) async {
     final fiscalYear = date.year;
-    
+
     await db.transaction(() async {
-      await (db.update(db.accountingPeriods)..where((p) => p.fiscalYear.equals(fiscalYear)))
-          .write(const AccountingPeriodsCompanion(isClosed: Value(true), status: Value('CLOSED')));
-      
-      await generateOpeningBalances(newFiscalYear: fiscalYear + 1, userId: 'SYSTEM');
+      await (db.update(db.accountingPeriods)
+            ..where((p) => p.fiscalYear.equals(fiscalYear)))
+          .write(const AccountingPeriodsCompanion(
+              isClosed: Value(true), status: Value('CLOSED')));
+
+      await generateOpeningBalances(
+          newFiscalYear: fiscalYear + 1, userId: 'SYSTEM');
     });
   }
 
@@ -2003,7 +1094,7 @@ class AccountingService {
     if (costCenterId != null) {
       await budgetService.validateExpenseAgainstBudget(
         costCenterId: costCenterId,
-        expenseAmount: amount.toDouble(),
+        expenseAmount: amount,
         period: period,
       );
     }
@@ -2039,11 +1130,11 @@ class AccountingService {
     if (costCenterId != null) {
       await budgetService.updateActualBudget(
         costCenterId: costCenterId,
-        expenseAmount: amount.toDouble(),
+        expenseAmount: amount,
         period: period,
       );
     }
-    
+
     await _auditService.logCreate('EXPENSE', entryId, details: description);
   }
 
@@ -2072,10 +1163,12 @@ class AccountingService {
     Decimal beginningCashBalance = Decimal.zero;
     if (reportStartDate != DateTime(2000)) {
       for (var cashAccountId in cashAccountIds) {
-        beginningCashBalance += Decimal.parse((await dao.getAccountBalanceAsOfDate(
+        beginningCashBalance +=
+            Decimal.parse((await dao.getAccountBalanceAsOfDate(
           cashAccountId,
           reportStartDate.subtract(const Duration(milliseconds: 1)),
-        )).toString());
+        ))
+                .toString());
       }
     }
 
@@ -2131,12 +1224,12 @@ class AccountingService {
     final Decimal netCashFlow =
         operatingActivities + investingActivities + financingActivities;
     return CashFlowData(
-      operatingActivities: operatingActivities.toDouble(),
-      investingActivities: investingActivities.toDouble(),
-      financingActivities: financingActivities.toDouble(),
-      netCashFlow: netCashFlow.toDouble(),
-      beginningCashBalance: beginningCashBalance.toDouble(),
-      endingCashBalance: (beginningCashBalance + netCashFlow).toDouble(),
+      operatingActivities: operatingActivities,
+      investingActivities: investingActivities,
+      financingActivities: financingActivities,
+      netCashFlow: netCashFlow,
+      beginningCashBalance: beginningCashBalance,
+      endingCashBalance: beginningCashBalance + netCashFlow,
       startDate: reportStartDate,
       endDate: reportEndDate,
     );

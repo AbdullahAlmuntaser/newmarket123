@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/core/extensions/accounting_extensions.dart';
 
 class CostCentersPage extends StatelessWidget {
   const CostCentersPage({super.key});
@@ -66,7 +65,7 @@ class CostCentersPage extends StatelessWidget {
                 title: Text(cc.name),
                 subtitle: Text(cc.code),
                 trailing: Text(
-                  cc.totalAmount.toStringAsFixed(2),
+                  cc.code,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               );

@@ -29,25 +29,25 @@ class BalanceSheetPage extends StatelessWidget {
               children: [
                 _buildSectionHeader(l10n.assets),
                 ...data.assets.map(
-                  (item) => _buildAccountRow(item.account.name, item.balance),
+                  (item) => _buildAccountRow(item.account.name, item.balance.toDouble()),
                 ),
                 const Divider(thickness: 2),
-                _buildTotalRow(l10n.totalAssets, data.totalAssets),
+                _buildTotalRow(l10n.totalAssets, data.totalAssets.toDouble()),
                 const SizedBox(height: 24),
                 _buildSectionHeader(l10n.liabilities),
                 ...data.liabilities.map(
-                  (item) => _buildAccountRow(item.account.name, item.balance),
+                  (item) => _buildAccountRow(item.account.name, item.balance.toDouble()),
                 ),
                 const Divider(thickness: 2),
-                _buildTotalRow(l10n.totalLiabilities, data.totalLiabilities),
+                _buildTotalRow(l10n.totalLiabilities, data.totalLiabilities.toDouble()),
                 const SizedBox(height: 24),
                 _buildSectionHeader(l10n.equity),
                 ...data.equity.map(
-                  (item) => _buildAccountRow(item.account.name, item.balance),
+                  (item) => _buildAccountRow(item.account.name, item.balance.toDouble()),
                 ),
-                _buildAccountRow(l10n.netIncome, data.netIncome),
+                _buildAccountRow(l10n.netIncome, data.netIncome.toDouble()),
                 const Divider(thickness: 2),
-                _buildTotalRow(l10n.totalEquity, data.totalEquity),
+                _buildTotalRow(l10n.totalEquity, data.totalEquity.toDouble()),
                 const SizedBox(height: 32),
                 _buildBalanceCheck(data, l10n),
               ],
@@ -97,7 +97,7 @@ class BalanceSheetPage extends StatelessWidget {
 
   Widget _buildBalanceCheck(BalanceSheetData data, AppLocalizations l10n) {
     final isBalanced =
-        (data.totalAssets - (data.totalLiabilities + data.totalEquity)).abs() <
+        (data.totalAssets - (data.totalLiabilities + data.totalEquity)).abs().toDouble() <
             0.01;
     return Container(
       padding: const EdgeInsets.all(16),

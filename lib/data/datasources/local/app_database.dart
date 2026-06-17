@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 // ignore_for_file: deprecated_member_use
 import 'package:drift/drift.dart';
@@ -5,10 +6,11 @@ import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:supermarket/native_sql_override.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite;
 import 'package:decimal/decimal.dart';
-import 'package:supermarket/native_sql_override.dart';
-// 'open' override is applied from native_sql_override.dart in main.dart
+import 'package:crypto/crypto.dart';
+
 import 'package:uuid/uuid.dart';
 import 'package:supermarket/core/services/security_service.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
@@ -28,10 +30,14 @@ import 'daos/audit_dao.dart';
 import 'daos/stock_movement_dao.dart';
 import 'daos/cashbox_dao.dart';
 import 'daos/transfers_dao.dart';
+import 'converters/decimal_converter.dart';
 import 'tables/app_config_table.dart';
 import 'tables/fixed_assets_tables.dart';
 import 'tables/payroll_tables.dart';
 import 'tables/advanced_accounting_tables.dart';
+
+export 'package:decimal/decimal.dart';
+export 'converters/decimal_converter.dart';
 
 part 'app_database.g.dart';
 
@@ -50,14 +56,6 @@ class PaymentMethodConverter extends TypeConverter<PaymentMethod, int> {
   PaymentMethod fromSql(int fromDb) => PaymentMethod.values[fromDb];
   @override
   int toSql(PaymentMethod value) => value.index;
-}
-
-class DecimalConverter extends TypeConverter<Decimal, String> {
-  const DecimalConverter();
-  @override
-  Decimal fromSql(String fromDb) => Decimal.parse(fromDb);
-  @override
-  String toSql(Decimal value) => value.toString();
 }
 
 mixin SyncableTable on Table {
@@ -85,6 +83,8 @@ class Users extends Table with SyncableTable {
   TextColumn get password => text()();
   TextColumn get role => text()();
   TextColumn get fullName => text()();
+  TextColumn get passwordHash => text().nullable()();
+  TextColumn get passwordSalt => text().nullable()();
 }
 
 class Categories extends Table with SyncableTable {
@@ -186,6 +186,9 @@ class Suppliers extends Table with SyncableTable {
   TextColumn get balance => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get accountId =>
       text().nullable().references(GLAccounts, #id)(); // New: Linked to GL
+  TextColumn get creditLimit => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get currencyId => text().nullable().references(Currencies, #id)();
+  TextColumn get exchangeRate => text().map(const DecimalConverter()).withDefault(Constant(Decimal.one.toString()))();
 }
 
 class GlobalUnits extends Table with SyncableTable {
@@ -213,6 +216,7 @@ class Sales extends Table with SyncableTable {
   TextColumn get otherExpenses => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
   TextColumn get representativeId => text().nullable()();
+  DateTimeColumn get exchangeDate => dateTime().nullable()();
   // ZATCA Fields
   TextColumn get qrCode => text().nullable()();
   TextColumn get hash => text().nullable()();
@@ -342,35 +346,35 @@ class ItemVariants extends Table with SyncableTable {
 
 class SalesReturns extends Table with SyncableTable {
   TextColumn get saleId => text().references(Sales, #id)();
-  RealColumn get amountReturned => real()();
+  TextColumn get amountReturned => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get reason => text().nullable()();
 }
 
 class SalesReturnItems extends Table with SyncableTable {
   TextColumn get salesReturnId => text().references(SalesReturns, #id)();
   TextColumn get productId => text().references(Products, #id)();
-  RealColumn get quantity => real()();
-  RealColumn get price => real()();
+  TextColumn get quantity => text().map(const DecimalConverter())();
+  TextColumn get price => text().map(const DecimalConverter())();
   TextColumn get unitFactor => text().map(const DecimalConverter()).withDefault(Constant(Decimal.one.toString()))();
   TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
 }
 
 class PurchaseReturns extends Table with SyncableTable {
   TextColumn get purchaseId => text().references(Purchases, #id)();
-  RealColumn get amountReturned => real()();
+  TextColumn get amountReturned => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get reason => text().nullable()();
 }
 
 class PurchaseReturnItems extends Table with SyncableTable {
   TextColumn get purchaseReturnId => text().references(PurchaseReturns, #id)();
   TextColumn get productId => text().references(Products, #id)();
-  RealColumn get quantity => real()();
-  RealColumn get price => real()();
+  TextColumn get quantity => text().map(const DecimalConverter())();
+  TextColumn get price => text().map(const DecimalConverter())();
 }
 
 class CustomerPayments extends Table with SyncableTable {
   TextColumn get customerId => text().references(Customers, #id)();
-  RealColumn get amount => real()();
+  TextColumn get amount => text().map(const DecimalConverter())();
   DateTimeColumn get paymentDate =>
       dateTime().withDefault(currentDateAndTime)();
   TextColumn get note => text().nullable()();
@@ -378,9 +382,9 @@ class CustomerPayments extends Table with SyncableTable {
 
 class SupplierPayments extends Table with SyncableTable {
   TextColumn get supplierId => text().references(Suppliers, #id)();
-  RealColumn get amount => real()();
-  RealColumn get remainingAmount =>
-      real().withDefault(const Constant(0.0))(); // Unapplied amount
+  TextColumn get amount => text().map(const DecimalConverter())();
+  TextColumn get remainingAmount =>
+      text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))(); // Unapplied amount
   DateTimeColumn get paymentDate =>
       dateTime().withDefault(currentDateAndTime)();
   TextColumn get note => text().nullable()();
@@ -393,7 +397,7 @@ class PurchasePaymentLinks extends Table with SyncableTable {
   // Links payments to purchases for partial payment tracking
   TextColumn get paymentId => text().references(SupplierPayments, #id)();
   TextColumn get purchaseId => text().references(Purchases, #id)();
-  RealColumn get amount => real()(); // Amount applied to this purchase
+  TextColumn get amount => text().map(const DecimalConverter())(); // Amount applied to this purchase
 }
 
 class GLAccounts extends Table with SyncableTable {
@@ -492,9 +496,9 @@ class InventoryAudits extends Table with SyncableTable {
 class InventoryAuditItems extends Table with SyncableTable {
   TextColumn get auditId => text().references(InventoryAudits, #id)();
   TextColumn get productId => text().references(Products, #id)();
-  RealColumn get systemStock => real()();
-  RealColumn get actualStock => real()();
-  RealColumn get difference => real()();
+  TextColumn get systemStock => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get actualStock => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get difference => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
 }
 
 class Shifts extends Table with SyncableTable {
@@ -511,10 +515,18 @@ class Shifts extends Table with SyncableTable {
 class Reconciliations extends Table with SyncableTable {
   TextColumn get accountId => text().references(GLAccounts, #id)();
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
-  RealColumn get bookBalance => real()();
-  RealColumn get actualBalance => real()();
-  RealColumn get difference => real()();
+  TextColumn get bookBalance => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get actualBalance => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get difference => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get note => text().nullable()();
+}
+
+class ReconciliationDetails extends Table {
+  TextColumn get reconciliationId => text().references(Reconciliations, #id)();
+  TextColumn get transactionId => text().references(AccountTransactions, #id)();
+  TextColumn get statementAmount => text().map(const DecimalConverter())();
+  DateTimeColumn get statementDate => dateTime()();
+  TextColumn get reference => text().nullable()();
 }
 
 class AuditLogs extends Table with SyncableTable {
@@ -541,7 +553,7 @@ class StockTransferItems extends Table with SyncableTable {
   TextColumn get transferId => text().references(StockTransfers, #id)();
   TextColumn get productId => text().references(Products, #id)();
   TextColumn get batchId => text().references(ProductBatches, #id)();
-  RealColumn get quantity => real()();
+  TextColumn get quantity => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
 }
 
 class Employees extends Table with SyncableTable {
@@ -568,10 +580,10 @@ class PayrollEntries extends Table with SyncableTable {
 class PayrollLines extends Table with SyncableTable {
   TextColumn get payrollEntryId => text().references(PayrollEntries, #id)();
   TextColumn get employeeId => text().references(Employees, #id)();
-  RealColumn get basicSalary => real()();
+  TextColumn get basicSalary => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get allowances => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get deductions => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
-  RealColumn get netSalary => real()();
+  TextColumn get netSalary => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
 }
 
 class Permissions extends Table with SyncableTable {
@@ -585,7 +597,7 @@ class RolePermissions extends Table with SyncableTable {
 }
 
 class CashboxTransactions extends Table with SyncableTable {
-  RealColumn get amount => real()();
+  TextColumn get amount => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get type => text()();
   TextColumn get category => text()();
   TextColumn get referenceId => text().nullable()();
@@ -597,7 +609,8 @@ class FinancialTransfers extends Table with SyncableTable {
   TextColumn get senderAccountId => text().references(GLAccounts, #id)();
   @ReferenceName('receiverAccountFinancialTransfers')
   TextColumn get receiverAccountId => text().references(GLAccounts, #id)();
-  RealColumn get amount => real()();
+  TextColumn get amount => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+
   TextColumn get commission => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get company => text().nullable()();
   TextColumn get transferType => text()(); // CASH, BANK, CHECK
@@ -617,7 +630,7 @@ class PriceLists extends Table with SyncableTable {
 class PriceListItems extends Table with SyncableTable {
   TextColumn get priceListId => text().references(PriceLists, #id)();
   TextColumn get productId => text().references(Products, #id)();
-  RealColumn get price => real()();
+  TextColumn get price => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get minQuantity => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
 }
 
@@ -625,7 +638,7 @@ class Promotions extends Table with SyncableTable {
   TextColumn get name => text()();
   TextColumn get type =>
       text()(); // PERCENTAGE_DISCOUNT, FIXED_DISCOUNT, BOGO (Buy One Get One)
-  RealColumn get value => real()(); // Discount amount or percentage
+  TextColumn get value => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))(); // Discount amount or percentage
   DateTimeColumn get startDate => dateTime()();
   DateTimeColumn get endDate => dateTime()();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
@@ -636,8 +649,8 @@ class Promotions extends Table with SyncableTable {
 
 class PriceHistory extends Table with SyncableTable {
   TextColumn get productId => text().references(Products, #id)();
-  RealColumn get oldPrice => real()();
-  RealColumn get newPrice => real()();
+  TextColumn get oldPrice => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get newPrice => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get type => text()(); // PURCHASE / SALE
 }
 
@@ -651,11 +664,20 @@ class Currencies extends Table with SyncableTable {
   BoolColumn get isBase => boolean().withDefault(const Constant(false))();
 }
 
+class ExchangeRates extends Table {
+  TextColumn get fromCurrencyCode => text().references(Currencies, #code)();
+  TextColumn get toCurrencyCode => text().references(Currencies, #code)();
+  TextColumn get rate => text().map(const DecimalConverter())();
+  DateTimeColumn get effectiveDate => dateTime()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
 class UnitConversions extends Table with SyncableTable {
   TextColumn get productId => text().references(Products, #id)();
   TextColumn get unitName => text()();
-  RealColumn get factor =>
-      real()(); // How many of this unit equal the base unit
+  TextColumn get factor =>
+      text().map(const DecimalConverter()).withDefault(Constant(Decimal.one.toString()))(); // How many of this unit equal the base unit
   BoolColumn get isBaseUnit => boolean().withDefault(const Constant(false))();
   TextColumn get buyPrice => text().map(const DecimalConverter()).nullable()(); // Unit-specific buy price
   TextColumn get sellPrice => text().map(const DecimalConverter()).nullable()(); // Unit-specific sell price
@@ -697,7 +719,7 @@ class InventoryTransactions extends Table with SyncableTable {
   TextColumn get productId => text().references(Products, #id)();
   TextColumn get warehouseId => text().references(Warehouses, #id)();
   TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
-  RealColumn get quantity => real()(); // Positive for in, negative for out
+  TextColumn get quantity => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))(); // Positive for in, negative for out
   TextColumn get type =>
       text()(); // PURCHASE, SALE, RETURN, TRANSFER, ADJUSTMENT
   TextColumn get referenceId => text()(); // PurchaseId, SaleId, etc.
@@ -711,6 +733,7 @@ class AccountTransactions extends Table with SyncableTable {
   TextColumn get referenceId => text().nullable()();
   TextColumn get debit => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get credit => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  BoolColumn get reconciled => boolean().withDefault(const Constant(false))();
 }
 
 class StockTakes extends Table with SyncableTable {
@@ -964,6 +987,7 @@ class CustomerPaymentLinks extends Table with SyncableTable {
     HRPayrollRuns,
     HRPayrollDetails,
     HRAdditionalDeductions,
+    ExchangeRates,
     AccExchangeRates,
     AccBudgets,
     AccBankStatements,
@@ -993,12 +1017,23 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 39;
+  int get schemaVersion => 41;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (Migrator m) async {
           await m.createAll();
+          // Verify tables were created
+          final tables = await customSelect(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
+          ).get();
+          debugPrint("DB: Created ${tables.length} tables on first run:");
+          for (final t in tables) {
+            debugPrint("DB:   - ${t.data['name']}");
+          }
+          // Explicitly set schema version to avoid stale PRAGMA user_version issues
+          await customStatement("PRAGMA user_version = $schemaVersion");
+          debugPrint("DB: PRAGMA user_version set to $schemaVersion.");
           // Seed data immediately after creation in the same transaction
           await seedData();
         },
@@ -1081,34 +1116,54 @@ class AppDatabase extends _$AppDatabase {
             // Version 39: Add query indexes for high-volume ERP screens.
             await ensurePerformanceIndexes();
           }
-          // Run HR UUID backfill for older databases to convert numeric IDs to UUIDs
-          // We only run this for databases older than version 40 to avoid
-          // repeating the operation unnecessarily. This is a best-effort,
-          // non-destructive migration. Ensure backup before running on prod.
-            try {
-              if (from < 40) {
-                await _backfillHrUuidIdsSafe();
-              }
-            } catch (e) {
-              // If backfill fails, do not break upgrade - log via SQL comment
-              try {
-                await customStatement("-- HR backfill error during onUpgrade: ${e.toString().replaceAll("'", "''")} ");
-              } catch (_) {}
-            }
+          // Version 40: Currency unification + performance indexes + decimal precision fixes
+          if (from < 40) {
+            await _migrateToV40(m);
+          }
+          // Version 41: User sessions, password hashing, reconciliation details, decimal columns
+          if (from < 41) {
+            await _migrateToV41(m);
+          }
         },
         beforeOpen: (details) async {
-          // Apply DB encryption key (if SQLCipher is available). This must run
-          // before any schema access so encrypted databases can be opened and
-          // new databases are created encrypted.
-          try {
-            final key = await SecurityService.getDatabaseKey();
-            // Use parameterized statement to avoid injection and ensure proper
-            // quoting. If the underlying sqlite build does not support SQLCipher
-            // the PRAGMA will be ignored harmlessly.
-            await customStatement('PRAGMA key = ?;', [key]);
-          } catch (_) {
-            // If key retrieval fails, continue without setting a key to avoid
-            // breaking app startup. Errors should be rare and handled upstream.
+          debugPrint("DB: beforeOpen started. Details: ${details.wasCreated ? 'Created' : 'Opened'}");
+
+          // Apply encryption key. The key is written inline because SQLite
+          // does not support placeholders (?) in PRAGMA statements.
+          if (!SecurityService.useFakeKeyForTesting) {
+            try {
+              final key = await SecurityService.getDatabaseKey();
+              final escapedKey = key.replaceAll("'", "''");
+
+              // IMPORTANT: Set key first to initialize the cipher correctly.
+              debugPrint("DB: Applying encryption key...");
+              await customStatement("PRAGMA key = '$escapedKey'");
+
+              // Then set cipher parameters.
+              debugPrint("DB: Setting cipher parameters...");
+              await customStatement('PRAGMA cipher_page_size = 4096');
+              await customStatement('PRAGMA kdf_iter = 64000');
+
+              // Verification query to ensure key worked
+              debugPrint("DB: Verifying encryption...");
+              await customStatement('SELECT count(*) FROM sqlite_master;');
+              debugPrint("DB: Encryption verified successfully.");
+            } catch (e) {
+              debugPrint("DB ERROR during encryption setup: $e");
+              if (e.toString().contains('code 26') || e.toString().contains('file is not a database')) {
+                debugPrint("DB FATAL: Cannot decrypt database (error 26).");
+                final dbFolder = await getApplicationDocumentsDirectory();
+                final file = File(p.join(dbFolder.path, 'app_db.sqlite'));
+                final backupPath = "${file.path}.FAILED_DECRYPT_${DateTime.now().millisecondsSinceEpoch}";
+                
+                if (await file.exists()) {
+                   await file.rename(backupPath);
+                   debugPrint("DB: Renamed corrupted/unreadable DB to $backupPath for analysis.");
+                }
+                throw Exception('فشل فتح قاعدة البيانات المشفرة. تم حفظ الملف التالف للمراجعة. (Error 26)');
+              }
+              rethrow;
+            }
           }
 
           await customStatement('PRAGMA foreign_keys = ON;');
@@ -1118,8 +1173,18 @@ class AppDatabase extends _$AppDatabase {
           // Existing databases might predate critical seed data. Keep this
           // idempotent so lookups (currencies/branches/GL headers) are never empty.
           await ensureCoreReferenceData();
-        },
-      );
+
+          // Log schema version and table list for verification
+          final versionResult = await customSelect("PRAGMA user_version").get();
+          debugPrint("DB: Schema version: ${versionResult.first.data.values.first}");
+          final tables = await customSelect(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
+          ).get();
+          debugPrint("DB: Database has ${tables.length} tables:");
+          for (final t in tables) {
+            debugPrint("DB:   - ${t.data['name']}");
+          }
+        },      );
 
   static const List<String> _performanceIndexStatements = [
     'CREATE INDEX IF NOT EXISTS products_sku_idx ON products (sku)',
@@ -1862,6 +1927,231 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
+  Future<void> _migrateToV40(Migrator m) async {
+    // 1. Currency unification: Copy AccCurrencies data into Currencies
+    try {
+      await customStatement('''
+        INSERT OR IGNORE INTO currencies (id, code, name, exchange_rate, is_base, created_at, updated_at, sync_status)
+        SELECT 
+          acc.code,
+          acc.code,
+          acc.name,
+          acc.exchange_rate,
+          COALESCE((SELECT c.is_base FROM currencies c WHERE c.code = acc.code), acc.is_base),
+          acc.created_at,
+          datetime('now'),
+          1
+        FROM acc_currencies acc
+        WHERE NOT EXISTS (SELECT 1 FROM currencies c WHERE c.code = acc.code)
+      ''');
+    } catch (_) {}
+
+    // 2. Create exchange_rates table if not exists
+    try {
+      await customStatement('''
+        CREATE TABLE IF NOT EXISTS exchange_rates (
+          id TEXT PRIMARY KEY,
+          from_currency_code TEXT NOT NULL REFERENCES currencies(code),
+          to_currency_code TEXT NOT NULL REFERENCES currencies(code),
+          rate TEXT NOT NULL DEFAULT '1.0',
+          effective_date TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      ''');
+    } catch (_) {}
+
+    // 3. Migrate AccExchangeRates data to exchange_rates
+    try {
+      await customStatement('''
+        INSERT OR IGNORE INTO exchange_rates (id, from_currency_code, to_currency_code, rate, effective_date, created_at)
+        SELECT 
+          hex(randomblob(16)),
+          COALESCE((SELECT code FROM acc_currencies WHERE id = aer.from_currency_id), ''),
+          COALESCE((SELECT code FROM acc_currencies WHERE id = aer.to_currency_id), ''),
+          aer.rate,
+          aer.effective_date,
+          aer.created_at
+        FROM acc_exchange_rates aer
+        WHERE EXISTS (SELECT 1 FROM acc_currencies WHERE id = aer.from_currency_id)
+          AND EXISTS (SELECT 1 FROM acc_currencies WHERE id = aer.to_currency_id)
+      ''');
+    } catch (_) {}
+
+    // 4. Performance indexes
+    try {
+      await customStatement('CREATE INDEX IF NOT EXISTS idx_gl_lines_entry_account ON gl_lines(entry_id, account_id)');
+      await customStatement('CREATE INDEX IF NOT EXISTS idx_gl_lines_account_date ON gl_lines(account_id, entry_id)');
+      await customStatement('CREATE INDEX IF NOT EXISTS idx_gl_entries_date ON gl_entries(date)');
+      await customStatement('CREATE INDEX IF NOT EXISTS idx_gl_entries_ref ON gl_entries(reference_type, reference_id)');
+      await customStatement('CREATE INDEX IF NOT EXISTS idx_sales_customer_status ON sales(customer_id, status)');
+      await customStatement('CREATE INDEX IF NOT EXISTS idx_purchases_supplier_status ON purchases(supplier_id, status)');
+      await customStatement('CREATE INDEX IF NOT EXISTS idx_inventory_transactions_product ON inventory_transactions(product_id, warehouse_id, type)');
+      await customStatement('CREATE INDEX IF NOT EXISTS idx_account_transactions_account ON account_transactions(account_id, date)');
+      await customStatement('CREATE INDEX IF NOT EXISTS idx_product_batches_product ON product_batches(product_id, warehouse_id)');
+      await customStatement('CREATE INDEX IF NOT EXISTS idx_customer_payments_customer ON customer_payments(customer_id, payment_date)');
+      await customStatement('CREATE INDEX IF NOT EXISTS idx_supplier_payments_supplier ON supplier_payments(supplier_id, payment_date)');
+    } catch (_) {}
+
+    // 5. Add exchange_date to Sales table for multicurrency tracking
+    try {
+      await m.addColumn(sales, sales.exchangeDate);
+    } catch (_) {}
+
+    // 6. Add missing columns to Suppliers
+    try {
+      await m.addColumn(suppliers, suppliers.creditLimit);
+    } catch (_) {}
+    try {
+      await m.addColumn(suppliers, suppliers.currencyId);
+    } catch (_) {}
+    try {
+      await m.addColumn(suppliers, suppliers.exchangeRate);
+    } catch (_) {}
+  }
+
+  Future<void> _migrateToV41(Migrator m) async {
+    // 1. Create user_sessions table
+    try {
+      await customStatement('''
+        CREATE TABLE IF NOT EXISTS user_sessions (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id),
+          token TEXT UNIQUE NOT NULL,
+          login_at TEXT NOT NULL DEFAULT (datetime('now')),
+          expires_at TEXT NOT NULL,
+          is_active INTEGER NOT NULL DEFAULT 1
+        )
+      ''');
+    } catch (_) {}
+
+    // 2. Add password_hash and password_salt to users
+    try {
+      await m.addColumn(users, users.passwordHash);
+    } catch (_) {}
+    try {
+      await m.addColumn(users, users.passwordSalt);
+    } catch (_) {}
+
+    // 3. Migrate existing plain-text passwords to hashed
+    try {
+      final allUsers = await (select(users)).get();
+      for (final user in allUsers) {
+        if (user.passwordHash == null && user.password.isNotEmpty) {
+          final salt = const Uuid().v4().substring(0, 16);
+          final salted = 'SYS_MARKET_v1:$salt:${user.password}';
+          final bytes = utf8.encode(salted);
+          final digest = sha256.convert(bytes);
+          final hash = digest.toString();
+          await (update(users)..where((u) => u.id.equals(user.id))).write(
+            UsersCompanion(
+              passwordHash: Value(hash),
+              passwordSalt: Value(salt),
+            ),
+          );
+        }
+      }
+    } catch (_) {}
+
+    // 4. Add reconciled column to account_transactions
+    try {
+      await customStatement('''
+        ALTER TABLE account_transactions ADD COLUMN reconciled INTEGER NOT NULL DEFAULT 0
+      ''');
+    } catch (_) {}
+
+    // 5. Create reconciliation_details table
+    try {
+      await customStatement('''
+        CREATE TABLE IF NOT EXISTS reconciliation_details (
+          id TEXT PRIMARY KEY,
+          reconciliation_id TEXT NOT NULL REFERENCES reconciliations(id),
+          transaction_id TEXT NOT NULL REFERENCES account_transactions(id),
+          statement_amount TEXT NOT NULL DEFAULT '0',
+          statement_date TEXT NOT NULL,
+          reference TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      ''');
+    } catch (_) {}
+
+    // 6. Add decimal-precision columns alongside RealColumns for financial tables
+    // APInvoices
+    try {
+      await customStatement('ALTER TABLE ap_invoices ADD COLUMN total_amount_text TEXT');
+      await customStatement('UPDATE ap_invoices SET total_amount_text = CAST(ROUND(total_amount, 4) AS TEXT)');
+    } catch (_) {}
+
+    // StockTakeItems
+    try {
+      await customStatement('ALTER TABLE stock_take_items ADD COLUMN expected_quantity_text TEXT');
+      await customStatement('ALTER TABLE stock_take_items ADD COLUMN actual_quantity_text TEXT');
+      await customStatement('UPDATE stock_take_items SET expected_quantity_text = CAST(ROUND(expected_quantity, 4) AS TEXT)');
+      await customStatement('UPDATE stock_take_items SET actual_quantity_text = CAST(ROUND(actual_quantity, 4) AS TEXT)');
+    } catch (_) {}
+
+    // GoodReceivedNoteItems
+    try {
+      await customStatement('ALTER TABLE good_received_note_items ADD COLUMN received_quantity_text TEXT');
+      await customStatement('ALTER TABLE good_received_note_items ADD COLUMN ordered_quantity_text TEXT');
+      await customStatement('UPDATE good_received_note_items SET received_quantity_text = CAST(ROUND(received_quantity, 4) AS TEXT)');
+      await customStatement('UPDATE good_received_note_items SET ordered_quantity_text = CAST(ROUND(ordered_quantity, 4) AS TEXT)');
+    } catch (_) {}
+
+    // DeliveryNoteItems
+    try {
+      await customStatement('ALTER TABLE delivery_note_items ADD COLUMN delivered_quantity_text TEXT');
+      await customStatement('ALTER TABLE delivery_note_items ADD COLUMN ordered_quantity_text TEXT');
+      await customStatement('UPDATE delivery_note_items SET delivered_quantity_text = CAST(ROUND(delivered_quantity, 4) AS TEXT)');
+      await customStatement('UPDATE delivery_note_items SET ordered_quantity_text = CAST(ROUND(ordered_quantity, 4) AS TEXT)');
+    } catch (_) {}
+
+    // PurchaseOrders
+    try {
+      await customStatement('ALTER TABLE purchase_orders ADD COLUMN subtotal_text TEXT');
+      await customStatement('ALTER TABLE purchase_orders ADD COLUMN tax_amount_text TEXT');
+      await customStatement('ALTER TABLE purchase_orders ADD COLUMN total_amount_text TEXT');
+      await customStatement('UPDATE purchase_orders SET subtotal_text = CAST(ROUND(subtotal, 4) AS TEXT)');
+      await customStatement('UPDATE purchase_orders SET tax_amount_text = CAST(ROUND(tax_amount, 4) AS TEXT)');
+      await customStatement('UPDATE purchase_orders SET total_amount_text = CAST(ROUND(total_amount, 4) AS TEXT)');
+    } catch (_) {}
+
+    // SalesOrders
+    try {
+      await customStatement('ALTER TABLE sales_orders ADD COLUMN subtotal_text TEXT');
+      await customStatement('ALTER TABLE sales_orders ADD COLUMN tax_amount_text TEXT');
+      await customStatement('ALTER TABLE sales_orders ADD COLUMN total_amount_text TEXT');
+      await customStatement('UPDATE sales_orders SET subtotal_text = CAST(ROUND(subtotal, 4) AS TEXT)');
+      await customStatement('UPDATE sales_orders SET tax_amount_text = CAST(ROUND(tax_amount, 4) AS TEXT)');
+      await customStatement('UPDATE sales_orders SET total_amount_text = CAST(ROUND(total_amount, 4) AS TEXT)');
+    } catch (_) {}
+
+    // Checks
+    try {
+      await customStatement('ALTER TABLE checks ADD COLUMN amount_text TEXT');
+      await customStatement('UPDATE checks SET amount_text = CAST(ROUND(amount, 4) AS TEXT)');
+    } catch (_) {}
+
+    // InvoiceItems
+    try {
+      await customStatement('ALTER TABLE invoice_items ADD COLUMN quantity_text TEXT');
+      await customStatement('ALTER TABLE invoice_items ADD COLUMN unit_price_text TEXT');
+      await customStatement('ALTER TABLE invoice_items ADD COLUMN subtotal_text TEXT');
+      await customStatement('UPDATE invoice_items SET quantity_text = CAST(ROUND(quantity, 4) AS TEXT)');
+      await customStatement('UPDATE invoice_items SET unit_price_text = CAST(ROUND(unit_price, 4) AS TEXT)');
+      await customStatement('UPDATE invoice_items SET subtotal_text = CAST(ROUND(subtotal, 4) AS TEXT)');
+    } catch (_) {}
+
+    // CreditNoteItems
+    try {
+      await customStatement('ALTER TABLE credit_note_items ADD COLUMN quantity_text TEXT');
+      await customStatement('ALTER TABLE credit_note_items ADD COLUMN unit_price_text TEXT');
+      await customStatement('ALTER TABLE credit_note_items ADD COLUMN subtotal_text TEXT');
+      await customStatement('UPDATE credit_note_items SET quantity_text = CAST(ROUND(quantity, 4) AS TEXT)');
+      await customStatement('UPDATE credit_note_items SET unit_price_text = CAST(ROUND(unit_price, 4) AS TEXT)');
+      await customStatement('UPDATE credit_note_items SET subtotal_text = CAST(ROUND(subtotal, 4) AS TEXT)');
+    } catch (_) {}
+  }
 
   Future<void> _seedGLAccounts() async {
     final accounts = [
@@ -2065,6 +2355,104 @@ class AppDatabase extends _$AppDatabase {
   TransfersDao get transfersDao => TransfersDao(this);
 }
 
+/// Reads the first 16 bytes of [file] to detect the standard SQLite header
+/// magic ("SQLite format 3\0"). Returns true if the file is a plain (unencrypted)
+/// SQLite database — meaning SQLCipher encryption has never been applied.
+Future<bool> _isPlainSqliteDatabase(File file) async {
+  try {
+    final raf = await file.open(mode: FileMode.read);
+    try {
+      final bytes = await raf.read(16);
+      if (bytes.length < 16) return false;
+      return bytes[0] == 0x53 && bytes[1] == 0x51 && bytes[2] == 0x4c &&
+             bytes[3] == 0x69 && bytes[4] == 0x74 && bytes[5] == 0x65 &&
+             bytes[6] == 0x20 && bytes[7] == 0x66 && bytes[8] == 0x6f &&
+             bytes[9] == 0x72 && bytes[10] == 0x6d && bytes[11] == 0x61 &&
+             bytes[12] == 0x74 && bytes[13] == 0x20 && bytes[14] == 0x33 &&
+             bytes[15] == 0x00;
+    } finally {
+      await raf.close();
+    }
+  } catch (_) {
+    return false;
+  }
+}
+
+Future<void> _backupAndDelete(File file, String suffix) async {
+  final backupPath =
+      "${file.path}.${suffix}_${DateTime.now().millisecondsSinceEpoch}";
+  await file.copy(backupPath);
+  debugPrint("DB: Corrupted file backed up to $backupPath");
+  await file.delete();
+}
+
+/// Converts an unencrypted SQLite database at [file] to the SQLCipher format
+/// using [key]. The process:
+/// 1. Opens the plain database (SQLCipher in standard mode, no PRAGMA key).
+/// 2. ATTACHes a temporary encrypted database with the target key.
+/// 3. Uses sqlcipher_export() to copy all schema + data.
+/// 4. Verifies integrity of the new encrypted file.
+/// 5. Backs up the original, then replaces it with the encrypted version.
+///
+/// WARNING: This operation is synchronous and blocks the calling isolate. For
+/// large databases the conversion may take noticeable time.
+Future<File> _convertToEncrypted(File file, String key) async {
+  final timestamp = DateTime.now().millisecondsSinceEpoch;
+  final tempPath = '${file.path}.encrypted_$timestamp';
+  final tempFile = File(tempPath);
+
+  debugPrint("DB ENCRYPT: Converting unencrypted SQLite -> SQLCipher...");
+
+  final escapedKey = key.replaceAll("'", "''");
+  final escapedTempPath = tempPath.replaceAll("'", "''");
+
+  try {
+    final db = sqlite.sqlite3.open(file.path);
+    try {
+      db.execute("ATTACH DATABASE '$escapedTempPath' AS encrypted KEY '$escapedKey'");
+
+      db.execute("SELECT sqlcipher_export('encrypted')");
+      debugPrint("DB ENCRYPT: sqlcipher_export completed.");
+      db.execute("DETACH DATABASE encrypted");
+    } finally {
+      db.dispose();
+    }
+
+    // Verify the newly created encrypted database
+    final verifyDb = sqlite.sqlite3.open(tempPath);
+    try {
+      verifyDb.execute("PRAGMA key = '$escapedKey'");
+      final result = verifyDb.select("PRAGMA integrity_check;");
+      final status = result.first.values.first as String;
+      if (status != 'ok') {
+        throw Exception("Encrypted DB integrity check failed: $status");
+      }
+      debugPrint("DB ENCRYPT: Integrity check passed: $status");
+    } finally {
+      verifyDb.dispose();
+    }
+
+    // Keep a safe backup of the original unencrypted file
+    final backupPath = '${file.path}.unencrypted_backup_$timestamp';
+    await file.copy(backupPath);
+    debugPrint("DB ENCRYPT: Original unencrypted DB backed up to: $backupPath");
+
+    // Atomically replace the original with the encrypted version
+    await file.delete();
+    await tempFile.rename(file.path);
+    debugPrint("DB ENCRYPT: Conversion complete — encrypted DB is live.");
+
+    return file;
+  } catch (e) {
+    debugPrint("DB ENCRYPT: Conversion failed: $e");
+    // Clean up the temporary file if it was created
+    if (await tempFile.exists()) {
+      await tempFile.delete();
+    }
+    rethrow;
+  }
+}
+
 LazyDatabase _openConnection() {
   debugPrint("DB: _openConnection started");
   return LazyDatabase(() async {
@@ -2075,25 +2463,52 @@ LazyDatabase _openConnection() {
 
       final file = File(p.join(dbFolder.path, 'app_db.sqlite'));
       debugPrint("DB: Database file path: ${file.path}");
+      
+      if (await file.exists()) {
+        final size = await file.length();
+        debugPrint("DB: Existing file size: $size bytes");
+        if (size == 0) {
+          debugPrint("DB: File is empty (0 bytes). Deleting so SQLite can create a fresh valid database.");
+          await file.delete();
+        } else if (size < 100) {
+          debugPrint("DB: File too small ($size bytes) for valid SQLite. Backing up and recreating...");
+          await _backupAndDelete(file, 'corrupted');
+        } else if (!await _isPlainSqliteDatabase(file)) {
+          debugPrint("DB: File does not have a valid SQLite header. Backing up and recreating...");
+          await _backupAndDelete(file, 'invalid');
+        }
+      } else {
+        debugPrint("DB: File does not exist, it will be created.");
+      }
 
-      debugPrint("DB: SQLite override should already be applied by native_sql_override.dart import in main.dart");
-      // The override is applied early in application startup (see
-      // lib/native_sql_override.dart). Do not re-apply here to avoid
-      // surprises during tests or when the database is opened from other
-      // entrypoints.
-      await Future<void>.value();
+      // PRE-FLIGHT: Detect unencrypted SQLite databases and convert to SQLCipher.
+      // Without this, Drift's beforeOpen would send PRAGMA key on a plain file,
+      // making SQLCipher attempt to decrypt plain pages → error 26.
+      // If conversion fails we fall back to the beforeOpen error 26 recovery.
+      if (!SecurityService.useFakeKeyForTesting && await file.exists()) {
+        final size = await file.length();
+        if (size > 0 && await _isPlainSqliteDatabase(file)) {
+          debugPrint("DB: Plain (unencrypted) SQLite detected at ${file.path}");
+          debugPrint("DB: Starting automatic conversion to SQLCipher...");
+          final key = await SecurityService.getDatabaseKey();
+          try {
+            await _convertToEncrypted(file, key);
+            debugPrint("DB: Pre-flight conversion complete.");
+          } catch (conversionError) {
+            debugPrint("DB: Pre-flight conversion failed: $conversionError");
+            debugPrint("DB: Falling back to beforeOpen — error 26 recovery will handle this.");
+          }
+        }
+      }
 
       final cachebase = (await getTemporaryDirectory()).path;
       sqlite.sqlite3.tempDirectory = cachebase;
 
-      debugPrint("DB: Creating Encrypted NativeDatabase with isolateSetup...");
+      debugPrint("DB: Creating NativeDatabase with isolateSetup...");
       final db = NativeDatabase.createInBackground(
         file,
         logStatements: kDebugMode,
         isolateSetup: () async {
-          // This is critical: apply the override in the background isolate
-          // spawned by drift, otherwise it will try to load the default
-          // libsqlite3.so which is missing.
           applyNativeSqlOverride();
         },
       );
@@ -2102,6 +2517,39 @@ LazyDatabase _openConnection() {
     } catch (e, stack) {
       debugPrint("DB ERROR in _openConnection: $e");
       debugPrintStack(stackTrace: stack);
+      
+      // If we are here, something went wrong during opening
+      if (e.toString().contains('code 26')) {
+         debugPrint("DB: Cannot decrypt database with current key (error 26).");
+         debugPrint("DB WARNING: DATA LOSS POSSIBLE. The database 'app_db.sqlite'");
+         debugPrint("DB WARNING: could not be decrypted. This can happen if:");
+         debugPrint("DB WARNING:   1. FlutterSecureStorage lost its data (app reinstall / data clear)");
+         debugPrint("DB WARNING:      while the .sqlite file survived with an old key.");
+         debugPrint("DB WARNING:   2. The database file is genuinely corrupted.");
+         debugPrint("DB WARNING: A backup of the existing file will be saved before recreating.");
+         debugPrint("DB: Attempting emergency recovery — backing up and recreating...");
+         try {
+           final dbFolder = await getApplicationDocumentsDirectory();
+           final file = File(p.join(dbFolder.path, 'app_db.sqlite'));
+           if (await file.exists()) {
+              final backupPath = "${file.path}.corrupted_${DateTime.now().millisecondsSinceEpoch}";
+              await file.copy(backupPath);
+              debugPrint("DB: Corrupted file backed up to $backupPath");
+              await file.delete();
+              debugPrint("DB: Corrupted file deleted. Retrying initialization...");
+              return NativeDatabase.createInBackground(
+                file,
+                logStatements: kDebugMode,
+                isolateSetup: () async {
+                  applyNativeSqlOverride();
+                },
+              ); 
+           }
+         } catch (recoveryError) {
+           debugPrint("DB: Recovery failed: $recoveryError");
+         }
+      }
+      
       rethrow;
     }
   });

@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
@@ -111,7 +110,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         final matchesUnitId = item.unitId != null &&
             (conversion.id == item.unitId || conversion.unitName == item.unitId);
         final matchesFactor = item.unitId == null &&
-            (conversion.factor - item.unitFactor.toDouble()).abs() < 0.0001;
+            (conversion.factor - item.unitFactor).abs() < Decimal.parse('0.0001');
         if (matchesUnitId || matchesFactor) {
           selectedUnit = conversion;
           break;
@@ -537,7 +536,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
                   unitId: drift.Value(item.selectedUnit?.unitName),
                   unitFactor: drift.Value(Decimal.parse((item.selectedUnit?.factor ?? 1.0).toString())),
                   quantityInBaseUnit: drift.Value(
-                      Decimal.parse((item.quantity * (item.selectedUnit?.factor ?? 1.0)).toString())),
+                      Decimal.parse((item.quantity * (item.selectedUnit?.factor.toDouble() ?? 1.0)).toString())),
                   price: Decimal.parse(item.subtotal.toString()),
                   discount: drift.Value(Decimal.parse(item.discountAmount.toString())),
                   tax: drift.Value(Decimal.parse(
@@ -551,7 +550,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
 
         // تحديث أسعار المنتج في المستودع/النظام
         for (var item in _items) {
-          final factor = item.selectedUnit?.factor ?? 1.0;
+          final factor = item.selectedUnit?.factor.toDouble() ?? 1.0;
           final baseBuyPrice = item.unitPrice / factor;
           
           await (db.update(db.products)..where((p) => p.id.equals(item.product.id)))

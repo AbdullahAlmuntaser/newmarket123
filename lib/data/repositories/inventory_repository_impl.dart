@@ -1,5 +1,4 @@
 import 'package:dartz/dartz.dart';
-import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/core/utils/failures.dart';
 import 'package:supermarket/domain/entities/stock_movement.dart' as entity;
@@ -48,7 +47,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
                 itemId: m.productId,
                 unitId: '',
                 quantity: m.quantity.toDouble(),
-                cost: 0.0,
+                cost: Decimal.zero,
                 type: entity.MovementType.values.firstWhere(
                   (t) => t.name == m.type,
                   orElse: () => entity.MovementType.adjustment,

@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -41,7 +40,7 @@ class _UnitConversionPageState extends State<UnitConversionPage> {
             UnitConversionsCompanion.insert(
               productId: widget.productId,
               unitName: _unitNameController.text,
-              factor: double.parse(_factorController.text),
+              factor: drift.Value(Decimal.parse(_factorController.text)),
               barcode: drift.Value(
                 _barcodeController.text.isEmpty
                     ? null

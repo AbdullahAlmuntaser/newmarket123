@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/models/gl_entry_detail.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/core/extensions/accounting_extensions.dart';
 
 class GeneralLedgerPage extends StatelessWidget {
   const GeneralLedgerPage({super.key});
@@ -67,7 +66,7 @@ class GeneralLedgerPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      entry.totalAmount.toStringAsFixed(2),
+                      entry.status,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: colorScheme.onPrimaryContainer,

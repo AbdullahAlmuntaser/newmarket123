@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/daos/products_dao.dart';
 import 'package:supermarket/data/datasources/local/daos/product_units_dao.dart';

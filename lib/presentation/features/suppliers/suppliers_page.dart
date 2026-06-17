@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -6,8 +5,10 @@ import 'package:drift/drift.dart' as drift;
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'widgets/add_edit_supplier_dialog.dart';
+import 'widgets/supplier_payment_dialog.dart';
 import 'package:supermarket/presentation/widgets/main_drawer.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
 import 'package:supermarket/injection_container.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
@@ -57,8 +58,9 @@ class _SuppliersPageState extends State<SuppliersPage> {
     final db = context.read<AppDatabase>();
     final query = db.select(db.suppliers)
       ..where((t) =>
-          t.name.like('%${_searchQuery.toLowerCase()}%') |
-          t.phone.like('%$_searchQuery%'));
+          (t.name.like('%${_searchQuery.toLowerCase()}%') |
+              t.phone.like('%$_searchQuery%')) &
+          t.isActive.equals(true));
     final count = await query.get();
     setState(() => _totalSuppliers = count.length);
   }
@@ -89,8 +91,9 @@ class _SuppliersPageState extends State<SuppliersPage> {
               stream: (db.select(db.suppliers)
                     ..where(
                       (t) =>
-                          t.name.like('%${_searchQuery.toLowerCase()}%') |
-                          t.phone.like('%$_searchQuery%'),
+                          (t.name.like('%${_searchQuery.toLowerCase()}%') |
+                              t.phone.like('%$_searchQuery%')) &
+                          t.isActive.equals(true),
                     )
                     ..limit(_pageSize, offset: _currentPage * _pageSize))
                   .watch(),
@@ -144,7 +147,11 @@ class _SuppliersPageState extends State<SuppliersPage> {
           filled: true,
           fillColor: colorScheme.surface,
         ),
-        onChanged: (value) => setState(() => _searchQuery = value),
+        onChanged: (value) => setState(() {
+          _searchQuery = value;
+          _currentPage = 0;
+          _totalSuppliers = 0;
+        }),
       ),
     );
   }
@@ -265,6 +272,13 @@ class _SuppliersPageState extends State<SuppliersPage> {
                         ),
                         tooltip: 'كشف حساب',
                       ),
+                      const SizedBox(width: 4),
+                      // زر الحذف
+                      IconButton.filledTonal(
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () => _deleteSupplier(supplier),
+                        tooltip: l10n.deleteSupplier,
+                      ),
                     ],
                   ),
                 ],
@@ -283,54 +297,50 @@ class _SuppliersPageState extends State<SuppliersPage> {
       context,
       listen: false,
     ).currentUser?.id;
-    final controller = TextEditingController();
-    final amount = await showDialog<double>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.payAmount),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'المبلغ'),
-          autofocus: true,
+    final engine = sl<TransactionEngine>();
+
+    try {
+      final outstandingPurchases = await engine.getOutstandingPurchases(supplier.id);
+      if (!mounted) return;
+
+      if (outstandingPurchases.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('لا توجد فواتير مستحقة لهذا المورد')),
+        );
+        return;
+      }
+
+      final result = await showDialog<SupplierPaymentResult>(
+        context: context,
+        builder: (ctx) => SupplierPaymentDialog(
+          supplier: supplier,
+          outstandingPurchases: outstandingPurchases,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final val = double.tryParse(controller.text);
-              if (val != null && val > 0) Navigator.pop(ctx, val);
-            },
-            child: Text(l10n.save),
-          ),
-        ],
-      ),
-    );
-    if (amount != null) {
-      try {
-        await sl<TransactionEngine>().postSupplierPayment(
+      );
+
+      if (result != null) {
+        await engine.postSupplierPaymentWithAllocations(
           supplierId: supplier.id,
-          amount: Decimal.parse(amount.toString()),
+          amount: result.totalAmount,
           paymentMethod: 'cash',
+          note: result.note,
           userId: userId,
+          allocations: result.allocations,
         );
         if (mounted) {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(l10n.paymentSuccess)));
         }
-      } catch (e) {
-        if (mounted) {
-          final message = e.toString().contains('FOREIGN KEY')
-              ? 'تعذر إنشاء حساب المورد لأن الفرع أو الحساب الأب غير مهيأ. تمت محاولة التهيئة التلقائية، يرجى إعادة المحاولة.'
-              : 'خطأ: $e';
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(message)));
-        }
+      }
+    } catch (e) {
+      if (mounted) {
+        final message = e.toString().contains('FOREIGN KEY')
+            ? 'تعذر إنشاء حساب المورد لأن الفرع أو الحساب الأب غير مهيأ. تمت محاولة التهيئة التلقائية، يرجى إعادة المحاولة.'
+            : 'خطأ: $e';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
       }
     }
   }
@@ -385,6 +395,52 @@ class _SuppliersPageState extends State<SuppliersPage> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(l10n.supplierUpdated)));
+      }
+    }
+  }
+
+  Future<void> _deleteSupplier(Supplier supplier) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.deleteSupplier),
+        content: Text(l10n.confirmDeleteSupplier(supplier.name)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      try {
+        await sl<AppDatabase>().suppliersDao.deleteSupplier(supplier);
+        if (mounted) {
+          await sl<AuditService>().logDelete(
+            'Supplier',
+            supplier.id,
+            details: 'Supplier deleted: ${supplier.name}',
+          );
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.supplierDeleted)),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${l10n.failedToDeleteSupplier}: $e')),
+          );
+        }
       }
     }
   }

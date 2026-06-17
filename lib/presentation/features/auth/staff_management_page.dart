@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:bcrypt/bcrypt.dart';
+import 'package:drift/drift.dart' as drift;
+import 'package:uuid/uuid.dart';
 
 class StaffManagementPage extends StatefulWidget {
   const StaffManagementPage({super.key});
@@ -122,20 +124,41 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
                           finalPassword =
                               BCrypt.hashpw(password, BCrypt.gensalt());
                         }
+                        final oldRole = user.role;
                         await db.usersDao.updateUser(user.copyWith(
                           fullName: fullName,
                           username: username,
                           role: selectedRole,
                           password: finalPassword,
                         ));
+                        if (oldRole != selectedRole) {
+                          await db.into(db.auditLogs).insert(
+                            AuditLogsCompanion.insert(
+                              action: 'UPDATE',
+                              targetEntity: 'User',
+                              entityId: user.id,
+                              details: drift.Value('Role changed from $oldRole to $selectedRole'),
+                            ),
+                          );
+                        }
                       } else {
                         if (password.isEmpty) return;
+                        final newUserId = const Uuid().v4();
                         await db.usersDao.addUser(UsersCompanion.insert(
+                          id: drift.Value(newUserId),
                           fullName: fullName,
                           username: username,
                           password: BCrypt.hashpw(password, BCrypt.gensalt()),
                           role: selectedRole,
                         ));
+                        await db.into(db.auditLogs).insert(
+                          AuditLogsCompanion.insert(
+                            action: 'CREATE',
+                            targetEntity: 'User',
+                            entityId: newUserId,
+                            details: drift.Value('Created user: $fullName with role: $selectedRole'),
+                          ),
+                        );
                       }
                       if (context.mounted) Navigator.pop(context);
                     }

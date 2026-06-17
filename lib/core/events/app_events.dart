@@ -1,6 +1,5 @@
 
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:decimal/decimal.dart';
 
 abstract class AppEvent {}
 

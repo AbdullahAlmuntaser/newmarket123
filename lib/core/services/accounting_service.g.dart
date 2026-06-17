@@ -9,11 +9,11 @@ part of 'accounting_service.dart';
 AccountingDashboardData _$AccountingDashboardDataFromJson(
         Map<String, dynamic> json) =>
     AccountingDashboardData(
-      totalRevenue: (json['totalRevenue'] as num).toDouble(),
-      totalExpenses: (json['totalExpenses'] as num).toDouble(),
-      netIncome: (json['netIncome'] as num).toDouble(),
-      totalAssets: (json['totalAssets'] as num).toDouble(),
-      totalLiabilities: (json['totalLiabilities'] as num).toDouble(),
+      totalRevenue: Decimal.fromJson(json['totalRevenue'] as String),
+      totalExpenses: Decimal.fromJson(json['totalExpenses'] as String),
+      netIncome: Decimal.fromJson(json['netIncome'] as String),
+      totalAssets: Decimal.fromJson(json['totalAssets'] as String),
+      totalLiabilities: Decimal.fromJson(json['totalLiabilities'] as String),
       topExpenses: (json['topExpenses'] as List<dynamic>)
           .map((e) => TrialBalanceItem.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -39,11 +39,11 @@ AccountingDashboardData _$AccountingDashboardDataFromJson(
 Map<String, dynamic> _$AccountingDashboardDataToJson(
         AccountingDashboardData instance) =>
     <String, dynamic>{
-      'totalRevenue': instance.totalRevenue,
-      'totalExpenses': instance.totalExpenses,
-      'netIncome': instance.netIncome,
-      'totalAssets': instance.totalAssets,
-      'totalLiabilities': instance.totalLiabilities,
+      'totalRevenue': instance.totalRevenue.toJson(),
+      'totalExpenses': instance.totalExpenses.toJson(),
+      'netIncome': instance.netIncome.toJson(),
+      'totalAssets': instance.totalAssets.toJson(),
+      'totalLiabilities': instance.totalLiabilities.toJson(),
       'topExpenses': instance.topExpenses.map((e) => e.toJson()).toList(),
       'recentTransactions': instance.recentTransactions
           .map(const GLEntryConverter().toJson)
@@ -59,7 +59,7 @@ Map<String, dynamic> _$AccountingDashboardDataToJson(
 DashboardTopProduct _$DashboardTopProductFromJson(Map<String, dynamic> json) =>
     DashboardTopProduct(
       json['productName'] as String,
-      (json['quantity'] as num).toDouble(),
+      Decimal.fromJson(json['quantity'] as String),
     );
 
 Map<String, dynamic> _$DashboardTopProductToJson(
@@ -71,7 +71,7 @@ Map<String, dynamic> _$DashboardTopProductToJson(
 
 DailyValue _$DailyValueFromJson(Map<String, dynamic> json) => DailyValue(
       DateTime.parse(json['date'] as String),
-      (json['value'] as num).toDouble(),
+      Decimal.fromJson(json['value'] as String),
     );
 
 Map<String, dynamic> _$DailyValueToJson(DailyValue instance) =>
@@ -81,12 +81,16 @@ Map<String, dynamic> _$DailyValueToJson(DailyValue instance) =>
     };
 
 CashFlowData _$CashFlowDataFromJson(Map<String, dynamic> json) => CashFlowData(
-      operatingActivities: (json['operatingActivities'] as num).toDouble(),
-      investingActivities: (json['investingActivities'] as num).toDouble(),
-      financingActivities: (json['financingActivities'] as num).toDouble(),
-      netCashFlow: (json['netCashFlow'] as num).toDouble(),
-      beginningCashBalance: (json['beginningCashBalance'] as num).toDouble(),
-      endingCashBalance: (json['endingCashBalance'] as num).toDouble(),
+      operatingActivities:
+          Decimal.fromJson(json['operatingActivities'] as String),
+      investingActivities:
+          Decimal.fromJson(json['investingActivities'] as String),
+      financingActivities:
+          Decimal.fromJson(json['financingActivities'] as String),
+      netCashFlow: Decimal.fromJson(json['netCashFlow'] as String),
+      beginningCashBalance:
+          Decimal.fromJson(json['beginningCashBalance'] as String),
+      endingCashBalance: Decimal.fromJson(json['endingCashBalance'] as String),
       startDate: json['startDate'] == null
           ? null
           : DateTime.parse(json['startDate'] as String),
@@ -107,9 +111,9 @@ Map<String, dynamic> _$CashFlowDataToJson(CashFlowData instance) =>
 
 FinancialRatiosData _$FinancialRatiosDataFromJson(Map<String, dynamic> json) =>
     FinancialRatiosData(
-      grossProfitMargin: (json['grossProfitMargin'] as num).toDouble(),
-      netProfitMargin: (json['netProfitMargin'] as num).toDouble(),
-      currentRatio: (json['currentRatio'] as num).toDouble(),
+      grossProfitMargin: Decimal.fromJson(json['grossProfitMargin'] as String),
+      netProfitMargin: Decimal.fromJson(json['netProfitMargin'] as String),
+      currentRatio: Decimal.fromJson(json['currentRatio'] as String),
     );
 
 Map<String, dynamic> _$FinancialRatiosDataToJson(
@@ -151,9 +155,9 @@ IncomeStatementData _$IncomeStatementDataFromJson(Map<String, dynamic> json) =>
       expenses: (json['expenses'] as List<dynamic>)
           .map((e) => TrialBalanceItem.fromJson(e as Map<String, dynamic>))
           .toList(),
-      totalRevenue: (json['totalRevenue'] as num).toDouble(),
-      totalExpense: (json['totalExpense'] as num).toDouble(),
-      netIncome: (json['netIncome'] as num).toDouble(),
+      totalRevenue: Decimal.fromJson(json['totalRevenue'] as String),
+      totalExpense: Decimal.fromJson(json['totalExpense'] as String),
+      netIncome: Decimal.fromJson(json['netIncome'] as String),
       startDate: json['startDate'] == null
           ? null
           : DateTime.parse(json['startDate'] as String),
@@ -165,9 +169,9 @@ Map<String, dynamic> _$IncomeStatementDataToJson(
     <String, dynamic>{
       'revenues': instance.revenues.map((e) => e.toJson()).toList(),
       'expenses': instance.expenses.map((e) => e.toJson()).toList(),
-      'totalRevenue': instance.totalRevenue,
-      'totalExpense': instance.totalExpense,
-      'netIncome': instance.netIncome,
+      'totalRevenue': instance.totalRevenue.toJson(),
+      'totalExpense': instance.totalExpense.toJson(),
+      'netIncome': instance.netIncome.toJson(),
       'startDate': instance.startDate?.toIso8601String(),
       'endDate': instance.endDate.toIso8601String(),
     };
@@ -183,10 +187,10 @@ BalanceSheetData _$BalanceSheetDataFromJson(Map<String, dynamic> json) =>
       equity: (json['equity'] as List<dynamic>)
           .map((e) => BalanceSheetItem.fromJson(e as Map<String, dynamic>))
           .toList(),
-      totalAssets: (json['totalAssets'] as num).toDouble(),
-      totalLiabilities: (json['totalLiabilities'] as num).toDouble(),
-      totalEquity: (json['totalEquity'] as num).toDouble(),
-      netIncome: (json['netIncome'] as num).toDouble(),
+      totalAssets: Decimal.fromJson(json['totalAssets'] as String),
+      totalLiabilities: Decimal.fromJson(json['totalLiabilities'] as String),
+      totalEquity: Decimal.fromJson(json['totalEquity'] as String),
+      netIncome: Decimal.fromJson(json['netIncome'] as String),
       date: DateTime.parse(json['date'] as String),
     );
 
@@ -195,10 +199,10 @@ Map<String, dynamic> _$BalanceSheetDataToJson(BalanceSheetData instance) =>
       'assets': instance.assets.map((e) => e.toJson()).toList(),
       'liabilities': instance.liabilities.map((e) => e.toJson()).toList(),
       'equity': instance.equity.map((e) => e.toJson()).toList(),
-      'totalAssets': instance.totalAssets,
-      'totalLiabilities': instance.totalLiabilities,
-      'totalEquity': instance.totalEquity,
-      'netIncome': instance.netIncome,
+      'totalAssets': instance.totalAssets.toJson(),
+      'totalLiabilities': instance.totalLiabilities.toJson(),
+      'totalEquity': instance.totalEquity.toJson(),
+      'netIncome': instance.netIncome.toJson(),
       'date': instance.date.toIso8601String(),
     };
 
@@ -206,11 +210,11 @@ BalanceSheetItem _$BalanceSheetItemFromJson(Map<String, dynamic> json) =>
     BalanceSheetItem(
       const GLAccountConverter()
           .fromJson(json['account'] as Map<String, dynamic>),
-      (json['balance'] as num).toDouble(),
+      Decimal.fromJson(json['balance'] as String),
     );
 
 Map<String, dynamic> _$BalanceSheetItemToJson(BalanceSheetItem instance) =>
     <String, dynamic>{
       'account': const GLAccountConverter().toJson(instance.account),
-      'balance': instance.balance,
+      'balance': instance.balance.toJson(),
     };

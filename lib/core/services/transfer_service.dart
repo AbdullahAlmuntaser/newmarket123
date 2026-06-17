@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
@@ -67,7 +66,7 @@ class TransferService {
           id: Value(id),
           senderAccountId: senderAccountId,
           receiverAccountId: receiverAccountId,
-          amount: amount,
+          amount: Value(Decimal.parse(amount.toString())),
           commission: Value(Decimal.parse(commission.toString())),
           company: Value(company),
           transferType: transferType,

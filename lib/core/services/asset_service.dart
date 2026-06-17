@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart';
-import 'package:decimal/decimal.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
 import 'accounting_service.dart';
@@ -53,7 +52,7 @@ class AssetService {
               .write(
             FixedAssetsCompanion(
               accumulatedDepreciation: Value(
-                (accumulatedDepreciation + monthlyDepreciation).toDouble(),
+                accumulatedDepreciation + monthlyDepreciation,
               ),
             ),
           );

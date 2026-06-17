@@ -1,8 +1,8 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/core/services/communication_service.dart';
 import 'package:supermarket/injection_container.dart';
 
@@ -86,7 +86,60 @@ class CustomerTrailingWidgets extends StatelessWidget {
           tooltip: l10n.customerStatementTooltip,
           onPressed: () => context.push('/customers/statement/${customer.id}'),
         ),
+        const SizedBox(width: 4),
+        // زر الحذف
+        IconButton(
+          icon: const Icon(Icons.delete_outline),
+          color: colorScheme.error,
+          tooltip: l10n.deleteCustomer,
+          onPressed: () => _confirmDelete(context),
+        ),
       ],
     );
+  }
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.deleteCustomer),
+        content: Text(l10n.confirmDeleteCustomer(customer.name)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      try {
+        await db.customersDao.deleteCustomer(customer);
+        if (context.mounted) {
+          await sl<AuditService>().logDelete(
+            'Customer',
+            customer.id,
+            details: 'Customer deleted: ${customer.name}',
+          );
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.customerDeleted)),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${l10n.failedToDeleteCustomer}: $e')),
+          );
+        }
+      }
+    }
   }
 }

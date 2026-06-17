@@ -33,6 +33,12 @@ enum PaymentMethod {
 enum TransactionType {
   sale,
   purchase,
+  saleReturn,
+  purchaseReturn,
+  customerPayment,
+  supplierPayment,
+  cashReceipt,
+  cashPayment,
   returnItem,
   transfer,
   adjustment,

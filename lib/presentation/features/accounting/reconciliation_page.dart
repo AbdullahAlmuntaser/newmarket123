@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -84,7 +83,7 @@ class _ReconciliationPageState extends State<ReconciliationPage> {
               final balance = await db.accountingDao.getAccountBalance(val);
               setState(() {
                 _selectedAccountId = val;
-                _bookBalance = balance;
+                _bookBalance = balance.toDouble();
               });
             }
           },
@@ -148,9 +147,9 @@ class _ReconciliationPageState extends State<ReconciliationPage> {
             await db.into(db.reconciliations).insert(
                   ReconciliationsCompanion.insert(
                     accountId: _selectedAccountId!,
-                    bookBalance: _bookBalance,
-                    actualBalance: actual,
-                    difference: diff,
+                    bookBalance: drift.Value(Decimal.parse(_bookBalance.toString())),
+                    actualBalance: drift.Value(Decimal.parse(actual.toString())),
+                    difference: drift.Value(Decimal.parse(diff.toString())),
                     note: drift.Value(_noteController.text),
                   ),
                 );
@@ -228,9 +227,9 @@ class _ReconciliationPageState extends State<ReconciliationPage> {
             await db.into(db.reconciliations).insert(
                   ReconciliationsCompanion.insert(
                     accountId: _selectedAccountId!,
-                    bookBalance: _bookBalance,
-                    actualBalance: actual,
-                    difference: diff,
+                    bookBalance: drift.Value(Decimal.parse(_bookBalance.toString())),
+                    actualBalance: drift.Value(Decimal.parse(actual.toString())),
+                    difference: drift.Value(Decimal.parse(diff.toString())),
                     note: drift.Value(_noteController.text),
                   ),
                 );

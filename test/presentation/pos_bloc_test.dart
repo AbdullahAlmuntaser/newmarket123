@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:decimal/decimal.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_bloc.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_event.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_state.dart';

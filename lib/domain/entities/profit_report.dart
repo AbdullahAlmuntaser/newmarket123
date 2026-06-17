@@ -1,7 +1,9 @@
+import 'package:decimal/decimal.dart';
+
 class ProfitReport {
-  final double sales;
-  final double cost;
-  final double netProfit;
+  final Decimal sales;
+  final Decimal cost;
+  final Decimal netProfit;
 
   const ProfitReport({
     required this.sales,

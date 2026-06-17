@@ -1,7 +1,8 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/injection_container.dart';
+import 'package:supermarket/core/services/audit_log_service.dart';
 
 class DashboardData {
   final double totalSalesToday;
@@ -70,7 +71,13 @@ class DashboardProvider with ChangeNotifier {
       );
     } catch (e) {
       _error = e.toString();
-      debugPrint('Dashboard error: $e');
+      await sl<AuditLogService>().logAction(
+        userId: 'system',
+        action: 'DASHBOARD_REFRESH_ERROR',
+        logTableName: 'Dashboard',
+        recordId: 'all',
+        newValues: {'error': e.toString()},
+      );
     }
 
     _isLoading = false;

@@ -97,11 +97,11 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
           itemCount: budgets.length,
           itemBuilder: (context, index) {
             final budget = budgets[index];
-            final progress = budget.budgetedAmount > 0 
-                ? budget.actualAmount / budget.budgetedAmount 
-                : 0.0;
+            final progress = budget.budgetedAmount > Decimal.zero 
+                ? (budget.actualAmount / budget.budgetedAmount).toDecimal() 
+                : Decimal.zero;
             final variance = budget.budgetedAmount - budget.actualAmount;
-            final isOverBudget = variance < 0;
+            final isOverBudget = variance < Decimal.zero;
 
             return Card(
               margin: const EdgeInsets.only(bottom: 12),
@@ -171,19 +171,19 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: LinearProgressIndicator(
-                        value: progress.clamp(0.0, 1.0),
+                        value: progress.toDouble().clamp(0.0, 1.0),
                         minHeight: 8,
                         backgroundColor: Colors.grey[200],
                         valueColor: AlwaysStoppedAnimation(
-                          progress > 1.0 ? Colors.red : Colors.green,
+                          progress > Decimal.one ? Colors.red : Colors.green,
                         ),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${(progress * 100).toStringAsFixed(1)}% مستهلك',
+                      '${(progress.toDouble() * 100).toStringAsFixed(1)}% مستهلك',
                       style: TextStyle(
-                        color: progress > 1.0 ? Colors.red : Colors.grey[600],
+                        color: progress > Decimal.one ? Colors.red : Colors.grey[600],
                         fontSize: 12,
                       ),
                     ),
@@ -358,8 +358,8 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
           period: _selectedPeriod,
           costCenterId: drift.Value(_selectedCostCenterId?.toString()),
           accountId: drift.Value(_selectedAccountId?.toString()),
-          budgetedAmount: double.parse(_amountController.text),
-          variance: double.parse(_amountController.text),
+          budgetedAmount: Decimal.parse(_amountController.text),
+          variance: Decimal.parse(_amountController.text),
         ),
       );
 

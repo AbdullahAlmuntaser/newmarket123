@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
@@ -26,7 +25,7 @@ class ClosingResult {
   final String? error;
   final String message;
   final String? journalEntryId;
-  final double? netIncome;
+  final Decimal? netIncome;
 
   ClosingResult({
     required this.success,
@@ -203,18 +202,18 @@ class FinancialClosingService {
 
     if (retainedEarnings == null) return '';
 
-    final revenues = await db.accountingDao.getAllAccounts();
-    final revenueAccounts = revenues.where(
+    final allAccounts = await db.accountingDao.getAllAccounts();
+    final revenueAccounts = allAccounts.where(
       (a) => a.type == 'REVENUE' && !a.isHeader,
     );
-    final expenseAccounts = revenues.where(
+    final expenseAccounts = allAccounts.where(
       (a) => a.type == 'EXPENSE' && !a.isHeader,
     );
 
     final lines = <GLLinesCompanion>[];
 
     for (var acc in revenueAccounts) {
-      final double rawBalance = await db.accountingDao.getAccountBalanceAsOfDate(
+      final Decimal rawBalance = await db.accountingDao.getAccountBalanceAsOfDate(
         acc.id,
         periodEndDate,
       );
@@ -232,7 +231,7 @@ class FinancialClosingService {
     }
 
     for (var acc in expenseAccounts) {
-      final double rawBalance = await db.accountingDao.getAccountBalanceAsOfDate(
+      final Decimal rawBalance = await db.accountingDao.getAccountBalanceAsOfDate(
         acc.id,
         periodEndDate,
       );
@@ -303,7 +302,7 @@ class FinancialClosingService {
 
     final lines = <GLLinesCompanion>[];
     for (var acc in permanentAccounts) {
-      final double rawBalance = await db.accountingDao.getAccountBalanceAsOfDate(
+      final Decimal rawBalance = await db.accountingDao.getAccountBalanceAsOfDate(
         acc.id,
         openingDate.subtract(const Duration(seconds: 1)),
       );

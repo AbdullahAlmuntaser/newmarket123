@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/data/datasources/local/daos/products_dao.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
+import 'package:supermarket/core/services/audit_service.dart';
+import 'package:supermarket/injection_container.dart';
 import 'package:supermarket/presentation/widgets/main_drawer.dart';
 import 'package:supermarket/presentation/features/products/widgets/add_edit_product_dialog.dart';
 import 'package:supermarket/presentation/features/products/widgets/smart_stock_widget.dart';
@@ -213,6 +215,8 @@ class _ProductsPageState extends State<ProductsPage> {
                                   '/products/unit-conversion/${product.id}',
                                   extra: product.name,
                                 );
+                              } else if (value == 'delete') {
+                                _deleteProduct(context, product);
                               }
                             },
                             itemBuilder: (context) => [
@@ -223,6 +227,10 @@ class _ProductsPageState extends State<ProductsPage> {
                               const PopupMenuItem(
                                 value: 'units',
                                 child: Text('تحويل الوحدات'),
+                              ),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Text('حذف المنتج'),
                               ),
                             ],
                           ),
@@ -287,5 +295,51 @@ class _ProductsPageState extends State<ProductsPage> {
       context: context,
       builder: (context) => AddEditProductDialog(product: product),
     );
+  }
+
+  Future<void> _deleteProduct(BuildContext context, Product product) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('حذف المنتج'),
+        content: Text(l10n.deleteProductConfirmation(product.name)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      try {
+        await sl<AppDatabase>().productsDao.deleteProduct(product);
+        if (context.mounted) {
+          await sl<AuditService>().logDelete(
+            'Product',
+            product.id,
+            details: 'Product deleted: ${product.name}, SKU: ${product.sku}',
+          );
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم حذف المنتج')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${l10n.failedToDeleteProduct}: $e')),
+          );
+        }
+      }
+    }
   }
 }

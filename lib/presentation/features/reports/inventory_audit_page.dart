@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:drift/drift.dart' show Value, OrderingTerm;
@@ -279,11 +278,11 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
                       'System: ${item.systemStock} | Actual: ${item.actualStock}',
                     ),
                     trailing: Text(
-                      '${item.difference > 0 ? "+" : ""}${item.difference}',
+                      '${item.difference > Decimal.zero ? "+" : ""}${item.difference}',
                       style: TextStyle(
-                        color: item.difference == 0
+                        color: item.difference == Decimal.zero
                             ? Colors.grey
-                            : (item.difference > 0 ? Colors.green : Colors.red),
+                            : (item.difference > Decimal.zero ? Colors.green : Colors.red),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -337,16 +336,16 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
                 InventoryAuditItemsCompanion.insert(
                   auditId: auditId,
                   productId: productId,
-                  systemStock: systemStock,
-                  actualStock: actualStock,
-                  difference: difference,
+                  systemStock: Value(Decimal.parse(systemStock.toString())),
+                  actualStock: Value(Decimal.parse(actualStock.toString())),
+                  difference: Value(Decimal.parse(difference.toString())),
                 ),
               );
 
           // Adjust batches
           if (difference < 0) {
             // Loss: Reduce from batches (FIFO-like)
-            double remainingToReduce = -difference;
+            double remainingToReduce = -difference.toDouble();
             for (var batch in batches) {
               if (remainingToReduce <= 0) break;
               double reduction = remainingToReduce > batch.quantity.toDouble()

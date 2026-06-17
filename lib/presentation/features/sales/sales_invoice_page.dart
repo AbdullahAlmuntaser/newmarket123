@@ -1,8 +1,8 @@
-import 'package:decimal/decimal.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:supermarket/presentation/widgets/permission_guard.dart';
 import 'package:supermarket/core/services/permission_service.dart';
 import 'package:supermarket/core/services/audit_service.dart';
+import 'package:supermarket/core/services/audit_log_service.dart';
 import 'package:supermarket/core/services/unit_conversion_service.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
@@ -13,6 +13,7 @@ import 'package:supermarket/core/services/erp_data_service.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
 import 'package:supermarket/injection_container.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
+import 'package:supermarket/presentation/features/sales/models/sales_line_item.dart';
 import 'package:supermarket/presentation/features/sales/widgets/sales_item_row.dart';
 import 'package:supermarket/presentation/widgets/entity_picker.dart';
 import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
@@ -565,47 +566,40 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       );
     }
 
-    return FutureBuilder<List<Product>>(
-      future: db.select(db.products).get(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return const CircularProgressIndicator();
-        final products = snapshot.data!;
-        return ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _items.length,
-          itemBuilder: (context, index) {
-            final item = _items[index];
-            return Dismissible(
-              key: UniqueKey(),
-              direction: _isLockedForEditing
-                  ? DismissDirection.none
-                  : DismissDirection.endToStart,
-              background: Container(
-                color: Colors.red,
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.only(right: 20),
-                child: const Icon(Icons.delete, color: Colors.white),
-              ),
-              onDismissed: (_) => setState(() => _items.removeAt(index)),
-              child: Card(
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                child: SalesItemRow(
-                  index: index,
-                  item: item,
-                  products: products,
-                  customerId: _selectedCustomer?.id,
-                  onDelete: _isLockedForEditing
-                      ? () => AppSnackBar.warning(
-                            context,
-                            'لا يمكن حذف أصناف من فاتورة مبيعات غير مسودة',
-                          )
-                      : () => setState(() => _items.removeAt(index)),
-                  onChanged: () => setState(() {}),
-                ),
-              ),
-            );
-          },
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _items.length,
+      itemBuilder: (context, index) {
+        final item = _items[index];
+        return Dismissible(
+          key: UniqueKey(),
+          direction: _isLockedForEditing
+              ? DismissDirection.none
+              : DismissDirection.endToStart,
+          background: Container(
+            color: Colors.red,
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20),
+            child: const Icon(Icons.delete, color: Colors.white),
+          ),
+          onDismissed: (_) => setState(() => _items.removeAt(index)),
+          child: Card(
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: SalesItemRow(
+              index: index,
+              item: item,
+              db: db,
+              customerId: _selectedCustomer?.id,
+              onDelete: _isLockedForEditing
+                  ? () => AppSnackBar.warning(
+                        context,
+                        'لا يمكن حذف أصناف من فاتورة مبيعات غير مسودة',
+                      )
+                  : () => setState(() => _items.removeAt(index)),
+              onChanged: () => setState(() {}),
+            ),
+          ),
         );
       },
     );
@@ -1034,8 +1028,16 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
         post ? 'تم ترحيل الفاتورة بنجاح' : 'تم حفظ المسودة',
       );
       Navigator.of(context).pop();
-    } catch (e) {
-      debugPrint('Error saving invoice: $e');
+    } catch (e, stackTrace) {
+      if (!mounted) return;
+      final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
+      await sl<AuditLogService>().logAction(
+        userId: currentUser?.id ?? 'system',
+        action: 'INVOICE_SAVE_ERROR',
+        logTableName: 'SalesInvoice',
+        recordId: saleId,
+        newValues: {'error': e.toString(), 'stackTrace': stackTrace.toString()},
+      );
       if (!mounted) return;
       AppSnackBar.error(context, 'فشل الحفظ: ${e.toString()}');
     } finally {

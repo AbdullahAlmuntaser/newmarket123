@@ -626,6 +626,18 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
   late final GeneratedColumn<String> fullName = GeneratedColumn<String>(
       'full_name', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _passwordHashMeta =
+      const VerificationMeta('passwordHash');
+  @override
+  late final GeneratedColumn<String> passwordHash = GeneratedColumn<String>(
+      'password_hash', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _passwordSaltMeta =
+      const VerificationMeta('passwordSalt');
+  @override
+  late final GeneratedColumn<String> passwordSalt = GeneratedColumn<String>(
+      'password_salt', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -637,7 +649,9 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         username,
         password,
         role,
-        fullName
+        fullName,
+        passwordHash,
+        passwordSalt
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -698,6 +712,18 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     } else if (isInserting) {
       context.missing(_fullNameMeta);
     }
+    if (data.containsKey('password_hash')) {
+      context.handle(
+          _passwordHashMeta,
+          passwordHash.isAcceptableOrUnknown(
+              data['password_hash']!, _passwordHashMeta));
+    }
+    if (data.containsKey('password_salt')) {
+      context.handle(
+          _passwordSaltMeta,
+          passwordSalt.isAcceptableOrUnknown(
+              data['password_salt']!, _passwordSaltMeta));
+    }
     return context;
   }
 
@@ -727,6 +753,10 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
           .read(DriftSqlType.string, data['${effectivePrefix}role'])!,
       fullName: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}full_name'])!,
+      passwordHash: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}password_hash']),
+      passwordSalt: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}password_salt']),
     );
   }
 
@@ -747,6 +777,8 @@ class User extends DataClass implements Insertable<User> {
   final String password;
   final String role;
   final String fullName;
+  final String? passwordHash;
+  final String? passwordSalt;
   const User(
       {required this.id,
       required this.createdAt,
@@ -757,7 +789,9 @@ class User extends DataClass implements Insertable<User> {
       required this.username,
       required this.password,
       required this.role,
-      required this.fullName});
+      required this.fullName,
+      this.passwordHash,
+      this.passwordSalt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -775,6 +809,12 @@ class User extends DataClass implements Insertable<User> {
     map['password'] = Variable<String>(password);
     map['role'] = Variable<String>(role);
     map['full_name'] = Variable<String>(fullName);
+    if (!nullToAbsent || passwordHash != null) {
+      map['password_hash'] = Variable<String>(passwordHash);
+    }
+    if (!nullToAbsent || passwordSalt != null) {
+      map['password_salt'] = Variable<String>(passwordSalt);
+    }
     return map;
   }
 
@@ -794,6 +834,12 @@ class User extends DataClass implements Insertable<User> {
       password: Value(password),
       role: Value(role),
       fullName: Value(fullName),
+      passwordHash: passwordHash == null && nullToAbsent
+          ? const Value.absent()
+          : Value(passwordHash),
+      passwordSalt: passwordSalt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(passwordSalt),
     );
   }
 
@@ -811,6 +857,8 @@ class User extends DataClass implements Insertable<User> {
       password: serializer.fromJson<String>(json['password']),
       role: serializer.fromJson<String>(json['role']),
       fullName: serializer.fromJson<String>(json['fullName']),
+      passwordHash: serializer.fromJson<String?>(json['passwordHash']),
+      passwordSalt: serializer.fromJson<String?>(json['passwordSalt']),
     );
   }
   @override
@@ -827,6 +875,8 @@ class User extends DataClass implements Insertable<User> {
       'password': serializer.toJson<String>(password),
       'role': serializer.toJson<String>(role),
       'fullName': serializer.toJson<String>(fullName),
+      'passwordHash': serializer.toJson<String?>(passwordHash),
+      'passwordSalt': serializer.toJson<String?>(passwordSalt),
     };
   }
 
@@ -840,7 +890,9 @@ class User extends DataClass implements Insertable<User> {
           String? username,
           String? password,
           String? role,
-          String? fullName}) =>
+          String? fullName,
+          Value<String?> passwordHash = const Value.absent(),
+          Value<String?> passwordSalt = const Value.absent()}) =>
       User(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -852,6 +904,10 @@ class User extends DataClass implements Insertable<User> {
         password: password ?? this.password,
         role: role ?? this.role,
         fullName: fullName ?? this.fullName,
+        passwordHash:
+            passwordHash.present ? passwordHash.value : this.passwordHash,
+        passwordSalt:
+            passwordSalt.present ? passwordSalt.value : this.passwordSalt,
       );
   User copyWithCompanion(UsersCompanion data) {
     return User(
@@ -866,6 +922,12 @@ class User extends DataClass implements Insertable<User> {
       password: data.password.present ? data.password.value : this.password,
       role: data.role.present ? data.role.value : this.role,
       fullName: data.fullName.present ? data.fullName.value : this.fullName,
+      passwordHash: data.passwordHash.present
+          ? data.passwordHash.value
+          : this.passwordHash,
+      passwordSalt: data.passwordSalt.present
+          ? data.passwordSalt.value
+          : this.passwordSalt,
     );
   }
 
@@ -881,14 +943,27 @@ class User extends DataClass implements Insertable<User> {
           ..write('username: $username, ')
           ..write('password: $password, ')
           ..write('role: $role, ')
-          ..write('fullName: $fullName')
+          ..write('fullName: $fullName, ')
+          ..write('passwordHash: $passwordHash, ')
+          ..write('passwordSalt: $passwordSalt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, createdAt, updatedAt, deviceId,
-      syncStatus, branchId, username, password, role, fullName);
+  int get hashCode => Object.hash(
+      id,
+      createdAt,
+      updatedAt,
+      deviceId,
+      syncStatus,
+      branchId,
+      username,
+      password,
+      role,
+      fullName,
+      passwordHash,
+      passwordSalt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -902,7 +977,9 @@ class User extends DataClass implements Insertable<User> {
           other.username == this.username &&
           other.password == this.password &&
           other.role == this.role &&
-          other.fullName == this.fullName);
+          other.fullName == this.fullName &&
+          other.passwordHash == this.passwordHash &&
+          other.passwordSalt == this.passwordSalt);
 }
 
 class UsersCompanion extends UpdateCompanion<User> {
@@ -916,6 +993,8 @@ class UsersCompanion extends UpdateCompanion<User> {
   final Value<String> password;
   final Value<String> role;
   final Value<String> fullName;
+  final Value<String?> passwordHash;
+  final Value<String?> passwordSalt;
   final Value<int> rowid;
   const UsersCompanion({
     this.id = const Value.absent(),
@@ -928,6 +1007,8 @@ class UsersCompanion extends UpdateCompanion<User> {
     this.password = const Value.absent(),
     this.role = const Value.absent(),
     this.fullName = const Value.absent(),
+    this.passwordHash = const Value.absent(),
+    this.passwordSalt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   UsersCompanion.insert({
@@ -941,6 +1022,8 @@ class UsersCompanion extends UpdateCompanion<User> {
     required String password,
     required String role,
     required String fullName,
+    this.passwordHash = const Value.absent(),
+    this.passwordSalt = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : username = Value(username),
         password = Value(password),
@@ -957,6 +1040,8 @@ class UsersCompanion extends UpdateCompanion<User> {
     Expression<String>? password,
     Expression<String>? role,
     Expression<String>? fullName,
+    Expression<String>? passwordHash,
+    Expression<String>? passwordSalt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -970,6 +1055,8 @@ class UsersCompanion extends UpdateCompanion<User> {
       if (password != null) 'password': password,
       if (role != null) 'role': role,
       if (fullName != null) 'full_name': fullName,
+      if (passwordHash != null) 'password_hash': passwordHash,
+      if (passwordSalt != null) 'password_salt': passwordSalt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -985,6 +1072,8 @@ class UsersCompanion extends UpdateCompanion<User> {
       Value<String>? password,
       Value<String>? role,
       Value<String>? fullName,
+      Value<String?>? passwordHash,
+      Value<String?>? passwordSalt,
       Value<int>? rowid}) {
     return UsersCompanion(
       id: id ?? this.id,
@@ -997,6 +1086,8 @@ class UsersCompanion extends UpdateCompanion<User> {
       password: password ?? this.password,
       role: role ?? this.role,
       fullName: fullName ?? this.fullName,
+      passwordHash: passwordHash ?? this.passwordHash,
+      passwordSalt: passwordSalt ?? this.passwordSalt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1034,6 +1125,12 @@ class UsersCompanion extends UpdateCompanion<User> {
     if (fullName.present) {
       map['full_name'] = Variable<String>(fullName.value);
     }
+    if (passwordHash.present) {
+      map['password_hash'] = Variable<String>(passwordHash.value);
+    }
+    if (passwordSalt.present) {
+      map['password_salt'] = Variable<String>(passwordSalt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1053,6 +1150,8 @@ class UsersCompanion extends UpdateCompanion<User> {
           ..write('password: $password, ')
           ..write('role: $role, ')
           ..write('fullName: $fullName, ')
+          ..write('passwordHash: $passwordHash, ')
+          ..write('passwordSalt: $passwordSalt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2135,6 +2234,618 @@ class GLAccountsCompanion extends UpdateCompanion<GLAccount> {
   }
 }
 
+class $CurrenciesTable extends Currencies
+    with TableInfo<$CurrenciesTable, Currency> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CurrenciesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      clientDefault: () => const Uuid().v4());
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _deviceIdMeta =
+      const VerificationMeta('deviceId');
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+      'device_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _syncStatusMeta =
+      const VerificationMeta('syncStatus');
+  @override
+  late final GeneratedColumn<int> syncStatus = GeneratedColumn<int>(
+      'sync_status', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _branchIdMeta =
+      const VerificationMeta('branchId');
+  @override
+  late final GeneratedColumn<String> branchId = GeneratedColumn<String>(
+      'branch_id', aliasedName, true,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES branches (id)'));
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  @override
+  late final GeneratedColumn<String> code = GeneratedColumn<String>(
+      'code', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'));
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _fractionalUnitMeta =
+      const VerificationMeta('fractionalUnit');
+  @override
+  late final GeneratedColumn<String> fractionalUnit = GeneratedColumn<String>(
+      'fractional_unit', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _decimalPlacesMeta =
+      const VerificationMeta('decimalPlaces');
+  @override
+  late final GeneratedColumn<int> decimalPlaces = GeneratedColumn<int>(
+      'decimal_places', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(2));
+  static const VerificationMeta _exchangeRateMeta =
+      const VerificationMeta('exchangeRate');
+  @override
+  late final GeneratedColumnWithTypeConverter<Decimal, String> exchangeRate =
+      GeneratedColumn<String>('exchange_rate', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.one.toString()))
+          .withConverter<Decimal>($CurrenciesTable.$converterexchangeRate);
+  static const VerificationMeta _isBaseMeta = const VerificationMeta('isBase');
+  @override
+  late final GeneratedColumn<bool> isBase = GeneratedColumn<bool>(
+      'is_base', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_base" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        createdAt,
+        updatedAt,
+        deviceId,
+        syncStatus,
+        branchId,
+        code,
+        name,
+        fractionalUnit,
+        decimalPlaces,
+        exchangeRate,
+        isBase
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'currencies';
+  @override
+  VerificationContext validateIntegrity(Insertable<Currency> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(_deviceIdMeta,
+          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+          _syncStatusMeta,
+          syncStatus.isAcceptableOrUnknown(
+              data['sync_status']!, _syncStatusMeta));
+    }
+    if (data.containsKey('branch_id')) {
+      context.handle(_branchIdMeta,
+          branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta));
+    }
+    if (data.containsKey('code')) {
+      context.handle(
+          _codeMeta, code.isAcceptableOrUnknown(data['code']!, _codeMeta));
+    } else if (isInserting) {
+      context.missing(_codeMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('fractional_unit')) {
+      context.handle(
+          _fractionalUnitMeta,
+          fractionalUnit.isAcceptableOrUnknown(
+              data['fractional_unit']!, _fractionalUnitMeta));
+    }
+    if (data.containsKey('decimal_places')) {
+      context.handle(
+          _decimalPlacesMeta,
+          decimalPlaces.isAcceptableOrUnknown(
+              data['decimal_places']!, _decimalPlacesMeta));
+    }
+    context.handle(_exchangeRateMeta, const VerificationResult.success());
+    if (data.containsKey('is_base')) {
+      context.handle(_isBaseMeta,
+          isBase.isAcceptableOrUnknown(data['is_base']!, _isBaseMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Currency map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Currency(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deviceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}device_id']),
+      syncStatus: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}sync_status'])!,
+      branchId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}branch_id']),
+      code: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}code'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      fractionalUnit: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}fractional_unit']),
+      decimalPlaces: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}decimal_places'])!,
+      exchangeRate: $CurrenciesTable.$converterexchangeRate.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}exchange_rate'])!),
+      isBase: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_base'])!,
+    );
+  }
+
+  @override
+  $CurrenciesTable createAlias(String alias) {
+    return $CurrenciesTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<Decimal, String> $converterexchangeRate =
+      const DecimalConverter();
+}
+
+class Currency extends DataClass implements Insertable<Currency> {
+  final String id;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? deviceId;
+  final int syncStatus;
+  final String? branchId;
+  final String code;
+  final String name;
+  final String? fractionalUnit;
+  final int decimalPlaces;
+  final Decimal exchangeRate;
+  final bool isBase;
+  const Currency(
+      {required this.id,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deviceId,
+      required this.syncStatus,
+      this.branchId,
+      required this.code,
+      required this.name,
+      this.fractionalUnit,
+      required this.decimalPlaces,
+      required this.exchangeRate,
+      required this.isBase});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
+    map['sync_status'] = Variable<int>(syncStatus);
+    if (!nullToAbsent || branchId != null) {
+      map['branch_id'] = Variable<String>(branchId);
+    }
+    map['code'] = Variable<String>(code);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || fractionalUnit != null) {
+      map['fractional_unit'] = Variable<String>(fractionalUnit);
+    }
+    map['decimal_places'] = Variable<int>(decimalPlaces);
+    {
+      map['exchange_rate'] = Variable<String>(
+          $CurrenciesTable.$converterexchangeRate.toSql(exchangeRate));
+    }
+    map['is_base'] = Variable<bool>(isBase);
+    return map;
+  }
+
+  CurrenciesCompanion toCompanion(bool nullToAbsent) {
+    return CurrenciesCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
+      syncStatus: Value(syncStatus),
+      branchId: branchId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(branchId),
+      code: Value(code),
+      name: Value(name),
+      fractionalUnit: fractionalUnit == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fractionalUnit),
+      decimalPlaces: Value(decimalPlaces),
+      exchangeRate: Value(exchangeRate),
+      isBase: Value(isBase),
+    );
+  }
+
+  factory Currency.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Currency(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
+      syncStatus: serializer.fromJson<int>(json['syncStatus']),
+      branchId: serializer.fromJson<String?>(json['branchId']),
+      code: serializer.fromJson<String>(json['code']),
+      name: serializer.fromJson<String>(json['name']),
+      fractionalUnit: serializer.fromJson<String?>(json['fractionalUnit']),
+      decimalPlaces: serializer.fromJson<int>(json['decimalPlaces']),
+      exchangeRate: serializer.fromJson<Decimal>(json['exchangeRate']),
+      isBase: serializer.fromJson<bool>(json['isBase']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deviceId': serializer.toJson<String?>(deviceId),
+      'syncStatus': serializer.toJson<int>(syncStatus),
+      'branchId': serializer.toJson<String?>(branchId),
+      'code': serializer.toJson<String>(code),
+      'name': serializer.toJson<String>(name),
+      'fractionalUnit': serializer.toJson<String?>(fractionalUnit),
+      'decimalPlaces': serializer.toJson<int>(decimalPlaces),
+      'exchangeRate': serializer.toJson<Decimal>(exchangeRate),
+      'isBase': serializer.toJson<bool>(isBase),
+    };
+  }
+
+  Currency copyWith(
+          {String? id,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<String?> deviceId = const Value.absent(),
+          int? syncStatus,
+          Value<String?> branchId = const Value.absent(),
+          String? code,
+          String? name,
+          Value<String?> fractionalUnit = const Value.absent(),
+          int? decimalPlaces,
+          Decimal? exchangeRate,
+          bool? isBase}) =>
+      Currency(
+        id: id ?? this.id,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deviceId: deviceId.present ? deviceId.value : this.deviceId,
+        syncStatus: syncStatus ?? this.syncStatus,
+        branchId: branchId.present ? branchId.value : this.branchId,
+        code: code ?? this.code,
+        name: name ?? this.name,
+        fractionalUnit:
+            fractionalUnit.present ? fractionalUnit.value : this.fractionalUnit,
+        decimalPlaces: decimalPlaces ?? this.decimalPlaces,
+        exchangeRate: exchangeRate ?? this.exchangeRate,
+        isBase: isBase ?? this.isBase,
+      );
+  Currency copyWithCompanion(CurrenciesCompanion data) {
+    return Currency(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      syncStatus:
+          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
+      branchId: data.branchId.present ? data.branchId.value : this.branchId,
+      code: data.code.present ? data.code.value : this.code,
+      name: data.name.present ? data.name.value : this.name,
+      fractionalUnit: data.fractionalUnit.present
+          ? data.fractionalUnit.value
+          : this.fractionalUnit,
+      decimalPlaces: data.decimalPlaces.present
+          ? data.decimalPlaces.value
+          : this.decimalPlaces,
+      exchangeRate: data.exchangeRate.present
+          ? data.exchangeRate.value
+          : this.exchangeRate,
+      isBase: data.isBase.present ? data.isBase.value : this.isBase,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Currency(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('branchId: $branchId, ')
+          ..write('code: $code, ')
+          ..write('name: $name, ')
+          ..write('fractionalUnit: $fractionalUnit, ')
+          ..write('decimalPlaces: $decimalPlaces, ')
+          ..write('exchangeRate: $exchangeRate, ')
+          ..write('isBase: $isBase')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      createdAt,
+      updatedAt,
+      deviceId,
+      syncStatus,
+      branchId,
+      code,
+      name,
+      fractionalUnit,
+      decimalPlaces,
+      exchangeRate,
+      isBase);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Currency &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deviceId == this.deviceId &&
+          other.syncStatus == this.syncStatus &&
+          other.branchId == this.branchId &&
+          other.code == this.code &&
+          other.name == this.name &&
+          other.fractionalUnit == this.fractionalUnit &&
+          other.decimalPlaces == this.decimalPlaces &&
+          other.exchangeRate == this.exchangeRate &&
+          other.isBase == this.isBase);
+}
+
+class CurrenciesCompanion extends UpdateCompanion<Currency> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String?> deviceId;
+  final Value<int> syncStatus;
+  final Value<String?> branchId;
+  final Value<String> code;
+  final Value<String> name;
+  final Value<String?> fractionalUnit;
+  final Value<int> decimalPlaces;
+  final Value<Decimal> exchangeRate;
+  final Value<bool> isBase;
+  final Value<int> rowid;
+  const CurrenciesCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.branchId = const Value.absent(),
+    this.code = const Value.absent(),
+    this.name = const Value.absent(),
+    this.fractionalUnit = const Value.absent(),
+    this.decimalPlaces = const Value.absent(),
+    this.exchangeRate = const Value.absent(),
+    this.isBase = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CurrenciesCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.branchId = const Value.absent(),
+    required String code,
+    required String name,
+    this.fractionalUnit = const Value.absent(),
+    this.decimalPlaces = const Value.absent(),
+    this.exchangeRate = const Value.absent(),
+    this.isBase = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : code = Value(code),
+        name = Value(name);
+  static Insertable<Currency> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? deviceId,
+    Expression<int>? syncStatus,
+    Expression<String>? branchId,
+    Expression<String>? code,
+    Expression<String>? name,
+    Expression<String>? fractionalUnit,
+    Expression<int>? decimalPlaces,
+    Expression<String>? exchangeRate,
+    Expression<bool>? isBase,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deviceId != null) 'device_id': deviceId,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (branchId != null) 'branch_id': branchId,
+      if (code != null) 'code': code,
+      if (name != null) 'name': name,
+      if (fractionalUnit != null) 'fractional_unit': fractionalUnit,
+      if (decimalPlaces != null) 'decimal_places': decimalPlaces,
+      if (exchangeRate != null) 'exchange_rate': exchangeRate,
+      if (isBase != null) 'is_base': isBase,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CurrenciesCompanion copyWith(
+      {Value<String>? id,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<String?>? deviceId,
+      Value<int>? syncStatus,
+      Value<String?>? branchId,
+      Value<String>? code,
+      Value<String>? name,
+      Value<String?>? fractionalUnit,
+      Value<int>? decimalPlaces,
+      Value<Decimal>? exchangeRate,
+      Value<bool>? isBase,
+      Value<int>? rowid}) {
+    return CurrenciesCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deviceId: deviceId ?? this.deviceId,
+      syncStatus: syncStatus ?? this.syncStatus,
+      branchId: branchId ?? this.branchId,
+      code: code ?? this.code,
+      name: name ?? this.name,
+      fractionalUnit: fractionalUnit ?? this.fractionalUnit,
+      decimalPlaces: decimalPlaces ?? this.decimalPlaces,
+      exchangeRate: exchangeRate ?? this.exchangeRate,
+      isBase: isBase ?? this.isBase,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<int>(syncStatus.value);
+    }
+    if (branchId.present) {
+      map['branch_id'] = Variable<String>(branchId.value);
+    }
+    if (code.present) {
+      map['code'] = Variable<String>(code.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (fractionalUnit.present) {
+      map['fractional_unit'] = Variable<String>(fractionalUnit.value);
+    }
+    if (decimalPlaces.present) {
+      map['decimal_places'] = Variable<int>(decimalPlaces.value);
+    }
+    if (exchangeRate.present) {
+      map['exchange_rate'] = Variable<String>(
+          $CurrenciesTable.$converterexchangeRate.toSql(exchangeRate.value));
+    }
+    if (isBase.present) {
+      map['is_base'] = Variable<bool>(isBase.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CurrenciesCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('branchId: $branchId, ')
+          ..write('code: $code, ')
+          ..write('name: $name, ')
+          ..write('fractionalUnit: $fractionalUnit, ')
+          ..write('decimalPlaces: $decimalPlaces, ')
+          ..write('exchangeRate: $exchangeRate, ')
+          ..write('isBase: $isBase, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $SuppliersTable extends Suppliers
     with TableInfo<$SuppliersTable, Supplier> {
   @override
@@ -2256,6 +2967,33 @@ class $SuppliersTable extends Suppliers
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('REFERENCES gl_accounts (id)'));
+  static const VerificationMeta _creditLimitMeta =
+      const VerificationMeta('creditLimit');
+  @override
+  late final GeneratedColumnWithTypeConverter<Decimal, String> creditLimit =
+      GeneratedColumn<String>('credit_limit', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($SuppliersTable.$convertercreditLimit);
+  static const VerificationMeta _currencyIdMeta =
+      const VerificationMeta('currencyId');
+  @override
+  late final GeneratedColumn<String> currencyId = GeneratedColumn<String>(
+      'currency_id', aliasedName, true,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES currencies (id)'));
+  static const VerificationMeta _exchangeRateMeta =
+      const VerificationMeta('exchangeRate');
+  @override
+  late final GeneratedColumnWithTypeConverter<Decimal, String> exchangeRate =
+      GeneratedColumn<String>('exchange_rate', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.one.toString()))
+          .withConverter<Decimal>($SuppliersTable.$converterexchangeRate);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -2273,7 +3011,10 @@ class $SuppliersTable extends Suppliers
         supplierType,
         isActive,
         balance,
-        accountId
+        accountId,
+        creditLimit,
+        currencyId,
+        exchangeRate
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2353,6 +3094,14 @@ class $SuppliersTable extends Suppliers
       context.handle(_accountIdMeta,
           accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta));
     }
+    context.handle(_creditLimitMeta, const VerificationResult.success());
+    if (data.containsKey('currency_id')) {
+      context.handle(
+          _currencyIdMeta,
+          currencyId.isAcceptableOrUnknown(
+              data['currency_id']!, _currencyIdMeta));
+    }
+    context.handle(_exchangeRateMeta, const VerificationResult.success());
     return context;
   }
 
@@ -2395,6 +3144,14 @@ class $SuppliersTable extends Suppliers
           .read(DriftSqlType.string, data['${effectivePrefix}balance'])!),
       accountId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}account_id']),
+      creditLimit: $SuppliersTable.$convertercreditLimit.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}credit_limit'])!),
+      currencyId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}currency_id']),
+      exchangeRate: $SuppliersTable.$converterexchangeRate.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}exchange_rate'])!),
     );
   }
 
@@ -2404,6 +3161,10 @@ class $SuppliersTable extends Suppliers
   }
 
   static TypeConverter<Decimal, String> $converterbalance =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $convertercreditLimit =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterexchangeRate =
       const DecimalConverter();
 }
 
@@ -2424,6 +3185,9 @@ class Supplier extends DataClass implements Insertable<Supplier> {
   final bool isActive;
   final Decimal balance;
   final String? accountId;
+  final Decimal creditLimit;
+  final String? currencyId;
+  final Decimal exchangeRate;
   const Supplier(
       {required this.id,
       required this.createdAt,
@@ -2440,7 +3204,10 @@ class Supplier extends DataClass implements Insertable<Supplier> {
       required this.supplierType,
       required this.isActive,
       required this.balance,
-      this.accountId});
+      this.accountId,
+      required this.creditLimit,
+      this.currencyId,
+      required this.exchangeRate});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -2479,6 +3246,17 @@ class Supplier extends DataClass implements Insertable<Supplier> {
     if (!nullToAbsent || accountId != null) {
       map['account_id'] = Variable<String>(accountId);
     }
+    {
+      map['credit_limit'] = Variable<String>(
+          $SuppliersTable.$convertercreditLimit.toSql(creditLimit));
+    }
+    if (!nullToAbsent || currencyId != null) {
+      map['currency_id'] = Variable<String>(currencyId);
+    }
+    {
+      map['exchange_rate'] = Variable<String>(
+          $SuppliersTable.$converterexchangeRate.toSql(exchangeRate));
+    }
     return map;
   }
 
@@ -2514,6 +3292,11 @@ class Supplier extends DataClass implements Insertable<Supplier> {
       accountId: accountId == null && nullToAbsent
           ? const Value.absent()
           : Value(accountId),
+      creditLimit: Value(creditLimit),
+      currencyId: currencyId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(currencyId),
+      exchangeRate: Value(exchangeRate),
     );
   }
 
@@ -2537,6 +3320,9 @@ class Supplier extends DataClass implements Insertable<Supplier> {
       isActive: serializer.fromJson<bool>(json['isActive']),
       balance: serializer.fromJson<Decimal>(json['balance']),
       accountId: serializer.fromJson<String?>(json['accountId']),
+      creditLimit: serializer.fromJson<Decimal>(json['creditLimit']),
+      currencyId: serializer.fromJson<String?>(json['currencyId']),
+      exchangeRate: serializer.fromJson<Decimal>(json['exchangeRate']),
     );
   }
   @override
@@ -2559,6 +3345,9 @@ class Supplier extends DataClass implements Insertable<Supplier> {
       'isActive': serializer.toJson<bool>(isActive),
       'balance': serializer.toJson<Decimal>(balance),
       'accountId': serializer.toJson<String?>(accountId),
+      'creditLimit': serializer.toJson<Decimal>(creditLimit),
+      'currencyId': serializer.toJson<String?>(currencyId),
+      'exchangeRate': serializer.toJson<Decimal>(exchangeRate),
     };
   }
 
@@ -2578,7 +3367,10 @@ class Supplier extends DataClass implements Insertable<Supplier> {
           String? supplierType,
           bool? isActive,
           Decimal? balance,
-          Value<String?> accountId = const Value.absent()}) =>
+          Value<String?> accountId = const Value.absent(),
+          Decimal? creditLimit,
+          Value<String?> currencyId = const Value.absent(),
+          Decimal? exchangeRate}) =>
       Supplier(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -2597,6 +3389,9 @@ class Supplier extends DataClass implements Insertable<Supplier> {
         isActive: isActive ?? this.isActive,
         balance: balance ?? this.balance,
         accountId: accountId.present ? accountId.value : this.accountId,
+        creditLimit: creditLimit ?? this.creditLimit,
+        currencyId: currencyId.present ? currencyId.value : this.currencyId,
+        exchangeRate: exchangeRate ?? this.exchangeRate,
       );
   Supplier copyWithCompanion(SuppliersCompanion data) {
     return Supplier(
@@ -2621,6 +3416,13 @@ class Supplier extends DataClass implements Insertable<Supplier> {
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       balance: data.balance.present ? data.balance.value : this.balance,
       accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      creditLimit:
+          data.creditLimit.present ? data.creditLimit.value : this.creditLimit,
+      currencyId:
+          data.currencyId.present ? data.currencyId.value : this.currencyId,
+      exchangeRate: data.exchangeRate.present
+          ? data.exchangeRate.value
+          : this.exchangeRate,
     );
   }
 
@@ -2642,7 +3444,10 @@ class Supplier extends DataClass implements Insertable<Supplier> {
           ..write('supplierType: $supplierType, ')
           ..write('isActive: $isActive, ')
           ..write('balance: $balance, ')
-          ..write('accountId: $accountId')
+          ..write('accountId: $accountId, ')
+          ..write('creditLimit: $creditLimit, ')
+          ..write('currencyId: $currencyId, ')
+          ..write('exchangeRate: $exchangeRate')
           ..write(')'))
         .toString();
   }
@@ -2664,7 +3469,10 @@ class Supplier extends DataClass implements Insertable<Supplier> {
       supplierType,
       isActive,
       balance,
-      accountId);
+      accountId,
+      creditLimit,
+      currencyId,
+      exchangeRate);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2684,7 +3492,10 @@ class Supplier extends DataClass implements Insertable<Supplier> {
           other.supplierType == this.supplierType &&
           other.isActive == this.isActive &&
           other.balance == this.balance &&
-          other.accountId == this.accountId);
+          other.accountId == this.accountId &&
+          other.creditLimit == this.creditLimit &&
+          other.currencyId == this.currencyId &&
+          other.exchangeRate == this.exchangeRate);
 }
 
 class SuppliersCompanion extends UpdateCompanion<Supplier> {
@@ -2704,6 +3515,9 @@ class SuppliersCompanion extends UpdateCompanion<Supplier> {
   final Value<bool> isActive;
   final Value<Decimal> balance;
   final Value<String?> accountId;
+  final Value<Decimal> creditLimit;
+  final Value<String?> currencyId;
+  final Value<Decimal> exchangeRate;
   final Value<int> rowid;
   const SuppliersCompanion({
     this.id = const Value.absent(),
@@ -2722,6 +3536,9 @@ class SuppliersCompanion extends UpdateCompanion<Supplier> {
     this.isActive = const Value.absent(),
     this.balance = const Value.absent(),
     this.accountId = const Value.absent(),
+    this.creditLimit = const Value.absent(),
+    this.currencyId = const Value.absent(),
+    this.exchangeRate = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SuppliersCompanion.insert({
@@ -2741,6 +3558,9 @@ class SuppliersCompanion extends UpdateCompanion<Supplier> {
     this.isActive = const Value.absent(),
     this.balance = const Value.absent(),
     this.accountId = const Value.absent(),
+    this.creditLimit = const Value.absent(),
+    this.currencyId = const Value.absent(),
+    this.exchangeRate = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : name = Value(name);
   static Insertable<Supplier> custom({
@@ -2760,6 +3580,9 @@ class SuppliersCompanion extends UpdateCompanion<Supplier> {
     Expression<bool>? isActive,
     Expression<String>? balance,
     Expression<String>? accountId,
+    Expression<String>? creditLimit,
+    Expression<String>? currencyId,
+    Expression<String>? exchangeRate,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2779,6 +3602,9 @@ class SuppliersCompanion extends UpdateCompanion<Supplier> {
       if (isActive != null) 'is_active': isActive,
       if (balance != null) 'balance': balance,
       if (accountId != null) 'account_id': accountId,
+      if (creditLimit != null) 'credit_limit': creditLimit,
+      if (currencyId != null) 'currency_id': currencyId,
+      if (exchangeRate != null) 'exchange_rate': exchangeRate,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2800,6 +3626,9 @@ class SuppliersCompanion extends UpdateCompanion<Supplier> {
       Value<bool>? isActive,
       Value<Decimal>? balance,
       Value<String?>? accountId,
+      Value<Decimal>? creditLimit,
+      Value<String?>? currencyId,
+      Value<Decimal>? exchangeRate,
       Value<int>? rowid}) {
     return SuppliersCompanion(
       id: id ?? this.id,
@@ -2818,6 +3647,9 @@ class SuppliersCompanion extends UpdateCompanion<Supplier> {
       isActive: isActive ?? this.isActive,
       balance: balance ?? this.balance,
       accountId: accountId ?? this.accountId,
+      creditLimit: creditLimit ?? this.creditLimit,
+      currencyId: currencyId ?? this.currencyId,
+      exchangeRate: exchangeRate ?? this.exchangeRate,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2874,6 +3706,17 @@ class SuppliersCompanion extends UpdateCompanion<Supplier> {
     if (accountId.present) {
       map['account_id'] = Variable<String>(accountId.value);
     }
+    if (creditLimit.present) {
+      map['credit_limit'] = Variable<String>(
+          $SuppliersTable.$convertercreditLimit.toSql(creditLimit.value));
+    }
+    if (currencyId.present) {
+      map['currency_id'] = Variable<String>(currencyId.value);
+    }
+    if (exchangeRate.present) {
+      map['exchange_rate'] = Variable<String>(
+          $SuppliersTable.$converterexchangeRate.toSql(exchangeRate.value));
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2899,6 +3742,9 @@ class SuppliersCompanion extends UpdateCompanion<Supplier> {
           ..write('isActive: $isActive, ')
           ..write('balance: $balance, ')
           ..write('accountId: $accountId, ')
+          ..write('creditLimit: $creditLimit, ')
+          ..write('currencyId: $currencyId, ')
+          ..write('exchangeRate: $exchangeRate, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4323,618 +5169,6 @@ class ProductsCompanion extends UpdateCompanion<Product> {
           ..write('parentProductId: $parentProductId, ')
           ..write('attributes: $attributes, ')
           ..write('additionalCost: $additionalCost, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
-class $CurrenciesTable extends Currencies
-    with TableInfo<$CurrenciesTable, Currency> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $CurrenciesTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-      'id', aliasedName, false,
-      type: DriftSqlType.string,
-      requiredDuringInsert: false,
-      clientDefault: () => const Uuid().v4());
-  static const VerificationMeta _createdAtMeta =
-      const VerificationMeta('createdAt');
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-      'created_at', aliasedName, false,
-      type: DriftSqlType.dateTime,
-      requiredDuringInsert: false,
-      defaultValue: currentDateAndTime);
-  static const VerificationMeta _updatedAtMeta =
-      const VerificationMeta('updatedAt');
-  @override
-  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
-      'updated_at', aliasedName, false,
-      type: DriftSqlType.dateTime,
-      requiredDuringInsert: false,
-      defaultValue: currentDateAndTime);
-  static const VerificationMeta _deviceIdMeta =
-      const VerificationMeta('deviceId');
-  @override
-  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
-      'device_id', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _syncStatusMeta =
-      const VerificationMeta('syncStatus');
-  @override
-  late final GeneratedColumn<int> syncStatus = GeneratedColumn<int>(
-      'sync_status', aliasedName, false,
-      type: DriftSqlType.int,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(1));
-  static const VerificationMeta _branchIdMeta =
-      const VerificationMeta('branchId');
-  @override
-  late final GeneratedColumn<String> branchId = GeneratedColumn<String>(
-      'branch_id', aliasedName, true,
-      type: DriftSqlType.string,
-      requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES branches (id)'));
-  static const VerificationMeta _codeMeta = const VerificationMeta('code');
-  @override
-  late final GeneratedColumn<String> code = GeneratedColumn<String>(
-      'code', aliasedName, false,
-      type: DriftSqlType.string,
-      requiredDuringInsert: true,
-      defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'));
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
-  @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-      'name', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _fractionalUnitMeta =
-      const VerificationMeta('fractionalUnit');
-  @override
-  late final GeneratedColumn<String> fractionalUnit = GeneratedColumn<String>(
-      'fractional_unit', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _decimalPlacesMeta =
-      const VerificationMeta('decimalPlaces');
-  @override
-  late final GeneratedColumn<int> decimalPlaces = GeneratedColumn<int>(
-      'decimal_places', aliasedName, false,
-      type: DriftSqlType.int,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(2));
-  static const VerificationMeta _exchangeRateMeta =
-      const VerificationMeta('exchangeRate');
-  @override
-  late final GeneratedColumnWithTypeConverter<Decimal, String> exchangeRate =
-      GeneratedColumn<String>('exchange_rate', aliasedName, false,
-              type: DriftSqlType.string,
-              requiredDuringInsert: false,
-              defaultValue: Constant(Decimal.one.toString()))
-          .withConverter<Decimal>($CurrenciesTable.$converterexchangeRate);
-  static const VerificationMeta _isBaseMeta = const VerificationMeta('isBase');
-  @override
-  late final GeneratedColumn<bool> isBase = GeneratedColumn<bool>(
-      'is_base', aliasedName, false,
-      type: DriftSqlType.bool,
-      requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('CHECK ("is_base" IN (0, 1))'),
-      defaultValue: const Constant(false));
-  @override
-  List<GeneratedColumn> get $columns => [
-        id,
-        createdAt,
-        updatedAt,
-        deviceId,
-        syncStatus,
-        branchId,
-        code,
-        name,
-        fractionalUnit,
-        decimalPlaces,
-        exchangeRate,
-        isBase
-      ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'currencies';
-  @override
-  VerificationContext validateIntegrity(Insertable<Currency> instance,
-      {bool isInserting = false}) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta,
-          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(_updatedAtMeta,
-          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
-    }
-    if (data.containsKey('device_id')) {
-      context.handle(_deviceIdMeta,
-          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
-    }
-    if (data.containsKey('sync_status')) {
-      context.handle(
-          _syncStatusMeta,
-          syncStatus.isAcceptableOrUnknown(
-              data['sync_status']!, _syncStatusMeta));
-    }
-    if (data.containsKey('branch_id')) {
-      context.handle(_branchIdMeta,
-          branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta));
-    }
-    if (data.containsKey('code')) {
-      context.handle(
-          _codeMeta, code.isAcceptableOrUnknown(data['code']!, _codeMeta));
-    } else if (isInserting) {
-      context.missing(_codeMeta);
-    }
-    if (data.containsKey('name')) {
-      context.handle(
-          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
-    } else if (isInserting) {
-      context.missing(_nameMeta);
-    }
-    if (data.containsKey('fractional_unit')) {
-      context.handle(
-          _fractionalUnitMeta,
-          fractionalUnit.isAcceptableOrUnknown(
-              data['fractional_unit']!, _fractionalUnitMeta));
-    }
-    if (data.containsKey('decimal_places')) {
-      context.handle(
-          _decimalPlacesMeta,
-          decimalPlaces.isAcceptableOrUnknown(
-              data['decimal_places']!, _decimalPlacesMeta));
-    }
-    context.handle(_exchangeRateMeta, const VerificationResult.success());
-    if (data.containsKey('is_base')) {
-      context.handle(_isBaseMeta,
-          isBase.isAcceptableOrUnknown(data['is_base']!, _isBaseMeta));
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  Currency map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Currency(
-      id: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      createdAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
-      updatedAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
-      deviceId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}device_id']),
-      syncStatus: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}sync_status'])!,
-      branchId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}branch_id']),
-      code: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}code'])!,
-      name: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
-      fractionalUnit: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}fractional_unit']),
-      decimalPlaces: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}decimal_places'])!,
-      exchangeRate: $CurrenciesTable.$converterexchangeRate.fromSql(
-          attachedDatabase.typeMapping.read(
-              DriftSqlType.string, data['${effectivePrefix}exchange_rate'])!),
-      isBase: attachedDatabase.typeMapping
-          .read(DriftSqlType.bool, data['${effectivePrefix}is_base'])!,
-    );
-  }
-
-  @override
-  $CurrenciesTable createAlias(String alias) {
-    return $CurrenciesTable(attachedDatabase, alias);
-  }
-
-  static TypeConverter<Decimal, String> $converterexchangeRate =
-      const DecimalConverter();
-}
-
-class Currency extends DataClass implements Insertable<Currency> {
-  final String id;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final String? deviceId;
-  final int syncStatus;
-  final String? branchId;
-  final String code;
-  final String name;
-  final String? fractionalUnit;
-  final int decimalPlaces;
-  final Decimal exchangeRate;
-  final bool isBase;
-  const Currency(
-      {required this.id,
-      required this.createdAt,
-      required this.updatedAt,
-      this.deviceId,
-      required this.syncStatus,
-      this.branchId,
-      required this.code,
-      required this.name,
-      this.fractionalUnit,
-      required this.decimalPlaces,
-      required this.exchangeRate,
-      required this.isBase});
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    map['created_at'] = Variable<DateTime>(createdAt);
-    map['updated_at'] = Variable<DateTime>(updatedAt);
-    if (!nullToAbsent || deviceId != null) {
-      map['device_id'] = Variable<String>(deviceId);
-    }
-    map['sync_status'] = Variable<int>(syncStatus);
-    if (!nullToAbsent || branchId != null) {
-      map['branch_id'] = Variable<String>(branchId);
-    }
-    map['code'] = Variable<String>(code);
-    map['name'] = Variable<String>(name);
-    if (!nullToAbsent || fractionalUnit != null) {
-      map['fractional_unit'] = Variable<String>(fractionalUnit);
-    }
-    map['decimal_places'] = Variable<int>(decimalPlaces);
-    {
-      map['exchange_rate'] = Variable<String>(
-          $CurrenciesTable.$converterexchangeRate.toSql(exchangeRate));
-    }
-    map['is_base'] = Variable<bool>(isBase);
-    return map;
-  }
-
-  CurrenciesCompanion toCompanion(bool nullToAbsent) {
-    return CurrenciesCompanion(
-      id: Value(id),
-      createdAt: Value(createdAt),
-      updatedAt: Value(updatedAt),
-      deviceId: deviceId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(deviceId),
-      syncStatus: Value(syncStatus),
-      branchId: branchId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(branchId),
-      code: Value(code),
-      name: Value(name),
-      fractionalUnit: fractionalUnit == null && nullToAbsent
-          ? const Value.absent()
-          : Value(fractionalUnit),
-      decimalPlaces: Value(decimalPlaces),
-      exchangeRate: Value(exchangeRate),
-      isBase: Value(isBase),
-    );
-  }
-
-  factory Currency.fromJson(Map<String, dynamic> json,
-      {ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Currency(
-      id: serializer.fromJson<String>(json['id']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-      deviceId: serializer.fromJson<String?>(json['deviceId']),
-      syncStatus: serializer.fromJson<int>(json['syncStatus']),
-      branchId: serializer.fromJson<String?>(json['branchId']),
-      code: serializer.fromJson<String>(json['code']),
-      name: serializer.fromJson<String>(json['name']),
-      fractionalUnit: serializer.fromJson<String?>(json['fractionalUnit']),
-      decimalPlaces: serializer.fromJson<int>(json['decimalPlaces']),
-      exchangeRate: serializer.fromJson<Decimal>(json['exchangeRate']),
-      isBase: serializer.fromJson<bool>(json['isBase']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-      'updatedAt': serializer.toJson<DateTime>(updatedAt),
-      'deviceId': serializer.toJson<String?>(deviceId),
-      'syncStatus': serializer.toJson<int>(syncStatus),
-      'branchId': serializer.toJson<String?>(branchId),
-      'code': serializer.toJson<String>(code),
-      'name': serializer.toJson<String>(name),
-      'fractionalUnit': serializer.toJson<String?>(fractionalUnit),
-      'decimalPlaces': serializer.toJson<int>(decimalPlaces),
-      'exchangeRate': serializer.toJson<Decimal>(exchangeRate),
-      'isBase': serializer.toJson<bool>(isBase),
-    };
-  }
-
-  Currency copyWith(
-          {String? id,
-          DateTime? createdAt,
-          DateTime? updatedAt,
-          Value<String?> deviceId = const Value.absent(),
-          int? syncStatus,
-          Value<String?> branchId = const Value.absent(),
-          String? code,
-          String? name,
-          Value<String?> fractionalUnit = const Value.absent(),
-          int? decimalPlaces,
-          Decimal? exchangeRate,
-          bool? isBase}) =>
-      Currency(
-        id: id ?? this.id,
-        createdAt: createdAt ?? this.createdAt,
-        updatedAt: updatedAt ?? this.updatedAt,
-        deviceId: deviceId.present ? deviceId.value : this.deviceId,
-        syncStatus: syncStatus ?? this.syncStatus,
-        branchId: branchId.present ? branchId.value : this.branchId,
-        code: code ?? this.code,
-        name: name ?? this.name,
-        fractionalUnit:
-            fractionalUnit.present ? fractionalUnit.value : this.fractionalUnit,
-        decimalPlaces: decimalPlaces ?? this.decimalPlaces,
-        exchangeRate: exchangeRate ?? this.exchangeRate,
-        isBase: isBase ?? this.isBase,
-      );
-  Currency copyWithCompanion(CurrenciesCompanion data) {
-    return Currency(
-      id: data.id.present ? data.id.value : this.id,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
-      syncStatus:
-          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
-      branchId: data.branchId.present ? data.branchId.value : this.branchId,
-      code: data.code.present ? data.code.value : this.code,
-      name: data.name.present ? data.name.value : this.name,
-      fractionalUnit: data.fractionalUnit.present
-          ? data.fractionalUnit.value
-          : this.fractionalUnit,
-      decimalPlaces: data.decimalPlaces.present
-          ? data.decimalPlaces.value
-          : this.decimalPlaces,
-      exchangeRate: data.exchangeRate.present
-          ? data.exchangeRate.value
-          : this.exchangeRate,
-      isBase: data.isBase.present ? data.isBase.value : this.isBase,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('Currency(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('deviceId: $deviceId, ')
-          ..write('syncStatus: $syncStatus, ')
-          ..write('branchId: $branchId, ')
-          ..write('code: $code, ')
-          ..write('name: $name, ')
-          ..write('fractionalUnit: $fractionalUnit, ')
-          ..write('decimalPlaces: $decimalPlaces, ')
-          ..write('exchangeRate: $exchangeRate, ')
-          ..write('isBase: $isBase')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-      id,
-      createdAt,
-      updatedAt,
-      deviceId,
-      syncStatus,
-      branchId,
-      code,
-      name,
-      fractionalUnit,
-      decimalPlaces,
-      exchangeRate,
-      isBase);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is Currency &&
-          other.id == this.id &&
-          other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt &&
-          other.deviceId == this.deviceId &&
-          other.syncStatus == this.syncStatus &&
-          other.branchId == this.branchId &&
-          other.code == this.code &&
-          other.name == this.name &&
-          other.fractionalUnit == this.fractionalUnit &&
-          other.decimalPlaces == this.decimalPlaces &&
-          other.exchangeRate == this.exchangeRate &&
-          other.isBase == this.isBase);
-}
-
-class CurrenciesCompanion extends UpdateCompanion<Currency> {
-  final Value<String> id;
-  final Value<DateTime> createdAt;
-  final Value<DateTime> updatedAt;
-  final Value<String?> deviceId;
-  final Value<int> syncStatus;
-  final Value<String?> branchId;
-  final Value<String> code;
-  final Value<String> name;
-  final Value<String?> fractionalUnit;
-  final Value<int> decimalPlaces;
-  final Value<Decimal> exchangeRate;
-  final Value<bool> isBase;
-  final Value<int> rowid;
-  const CurrenciesCompanion({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.deviceId = const Value.absent(),
-    this.syncStatus = const Value.absent(),
-    this.branchId = const Value.absent(),
-    this.code = const Value.absent(),
-    this.name = const Value.absent(),
-    this.fractionalUnit = const Value.absent(),
-    this.decimalPlaces = const Value.absent(),
-    this.exchangeRate = const Value.absent(),
-    this.isBase = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  CurrenciesCompanion.insert({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.deviceId = const Value.absent(),
-    this.syncStatus = const Value.absent(),
-    this.branchId = const Value.absent(),
-    required String code,
-    required String name,
-    this.fractionalUnit = const Value.absent(),
-    this.decimalPlaces = const Value.absent(),
-    this.exchangeRate = const Value.absent(),
-    this.isBase = const Value.absent(),
-    this.rowid = const Value.absent(),
-  })  : code = Value(code),
-        name = Value(name);
-  static Insertable<Currency> custom({
-    Expression<String>? id,
-    Expression<DateTime>? createdAt,
-    Expression<DateTime>? updatedAt,
-    Expression<String>? deviceId,
-    Expression<int>? syncStatus,
-    Expression<String>? branchId,
-    Expression<String>? code,
-    Expression<String>? name,
-    Expression<String>? fractionalUnit,
-    Expression<int>? decimalPlaces,
-    Expression<String>? exchangeRate,
-    Expression<bool>? isBase,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-      if (deviceId != null) 'device_id': deviceId,
-      if (syncStatus != null) 'sync_status': syncStatus,
-      if (branchId != null) 'branch_id': branchId,
-      if (code != null) 'code': code,
-      if (name != null) 'name': name,
-      if (fractionalUnit != null) 'fractional_unit': fractionalUnit,
-      if (decimalPlaces != null) 'decimal_places': decimalPlaces,
-      if (exchangeRate != null) 'exchange_rate': exchangeRate,
-      if (isBase != null) 'is_base': isBase,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  CurrenciesCompanion copyWith(
-      {Value<String>? id,
-      Value<DateTime>? createdAt,
-      Value<DateTime>? updatedAt,
-      Value<String?>? deviceId,
-      Value<int>? syncStatus,
-      Value<String?>? branchId,
-      Value<String>? code,
-      Value<String>? name,
-      Value<String?>? fractionalUnit,
-      Value<int>? decimalPlaces,
-      Value<Decimal>? exchangeRate,
-      Value<bool>? isBase,
-      Value<int>? rowid}) {
-    return CurrenciesCompanion(
-      id: id ?? this.id,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      deviceId: deviceId ?? this.deviceId,
-      syncStatus: syncStatus ?? this.syncStatus,
-      branchId: branchId ?? this.branchId,
-      code: code ?? this.code,
-      name: name ?? this.name,
-      fractionalUnit: fractionalUnit ?? this.fractionalUnit,
-      decimalPlaces: decimalPlaces ?? this.decimalPlaces,
-      exchangeRate: exchangeRate ?? this.exchangeRate,
-      isBase: isBase ?? this.isBase,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<DateTime>(updatedAt.value);
-    }
-    if (deviceId.present) {
-      map['device_id'] = Variable<String>(deviceId.value);
-    }
-    if (syncStatus.present) {
-      map['sync_status'] = Variable<int>(syncStatus.value);
-    }
-    if (branchId.present) {
-      map['branch_id'] = Variable<String>(branchId.value);
-    }
-    if (code.present) {
-      map['code'] = Variable<String>(code.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
-    }
-    if (fractionalUnit.present) {
-      map['fractional_unit'] = Variable<String>(fractionalUnit.value);
-    }
-    if (decimalPlaces.present) {
-      map['decimal_places'] = Variable<int>(decimalPlaces.value);
-    }
-    if (exchangeRate.present) {
-      map['exchange_rate'] = Variable<String>(
-          $CurrenciesTable.$converterexchangeRate.toSql(exchangeRate.value));
-    }
-    if (isBase.present) {
-      map['is_base'] = Variable<bool>(isBase.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('CurrenciesCompanion(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('deviceId: $deviceId, ')
-          ..write('syncStatus: $syncStatus, ')
-          ..write('branchId: $branchId, ')
-          ..write('code: $code, ')
-          ..write('name: $name, ')
-          ..write('fractionalUnit: $fractionalUnit, ')
-          ..write('decimalPlaces: $decimalPlaces, ')
-          ..write('exchangeRate: $exchangeRate, ')
-          ..write('isBase: $isBase, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -6658,6 +6892,12 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
   late final GeneratedColumn<String> representativeId = GeneratedColumn<String>(
       'representative_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _exchangeDateMeta =
+      const VerificationMeta('exchangeDate');
+  @override
+  late final GeneratedColumn<DateTime> exchangeDate = GeneratedColumn<DateTime>(
+      'exchange_date', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
   static const VerificationMeta _qrCodeMeta = const VerificationMeta('qrCode');
   @override
   late final GeneratedColumn<String> qrCode = GeneratedColumn<String>(
@@ -6696,6 +6936,7 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
         otherExpenses,
         warehouseId,
         representativeId,
+        exchangeDate,
         qrCode,
         hash,
         signature
@@ -6775,6 +7016,12 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
           representativeId.isAcceptableOrUnknown(
               data['representative_id']!, _representativeIdMeta));
     }
+    if (data.containsKey('exchange_date')) {
+      context.handle(
+          _exchangeDateMeta,
+          exchangeDate.isAcceptableOrUnknown(
+              data['exchange_date']!, _exchangeDateMeta));
+    }
     if (data.containsKey('qr_code')) {
       context.handle(_qrCodeMeta,
           qrCode.isAcceptableOrUnknown(data['qr_code']!, _qrCodeMeta));
@@ -6841,6 +7088,8 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
           .read(DriftSqlType.string, data['${effectivePrefix}warehouse_id']),
       representativeId: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}representative_id']),
+      exchangeDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}exchange_date']),
       qrCode: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}qr_code']),
       hash: attachedDatabase.typeMapping
@@ -6894,6 +7143,7 @@ class Sale extends DataClass implements Insertable<Sale> {
   final Decimal otherExpenses;
   final String? warehouseId;
   final String? representativeId;
+  final DateTime? exchangeDate;
   final String? qrCode;
   final String? hash;
   final String? signature;
@@ -6918,6 +7168,7 @@ class Sale extends DataClass implements Insertable<Sale> {
       required this.otherExpenses,
       this.warehouseId,
       this.representativeId,
+      this.exchangeDate,
       this.qrCode,
       this.hash,
       this.signature});
@@ -6977,6 +7228,9 @@ class Sale extends DataClass implements Insertable<Sale> {
     if (!nullToAbsent || representativeId != null) {
       map['representative_id'] = Variable<String>(representativeId);
     }
+    if (!nullToAbsent || exchangeDate != null) {
+      map['exchange_date'] = Variable<DateTime>(exchangeDate);
+    }
     if (!nullToAbsent || qrCode != null) {
       map['qr_code'] = Variable<String>(qrCode);
     }
@@ -7023,6 +7277,9 @@ class Sale extends DataClass implements Insertable<Sale> {
       representativeId: representativeId == null && nullToAbsent
           ? const Value.absent()
           : Value(representativeId),
+      exchangeDate: exchangeDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(exchangeDate),
       qrCode:
           qrCode == null && nullToAbsent ? const Value.absent() : Value(qrCode),
       hash: hash == null && nullToAbsent ? const Value.absent() : Value(hash),
@@ -7056,6 +7313,7 @@ class Sale extends DataClass implements Insertable<Sale> {
       otherExpenses: serializer.fromJson<Decimal>(json['otherExpenses']),
       warehouseId: serializer.fromJson<String?>(json['warehouseId']),
       representativeId: serializer.fromJson<String?>(json['representativeId']),
+      exchangeDate: serializer.fromJson<DateTime?>(json['exchangeDate']),
       qrCode: serializer.fromJson<String?>(json['qrCode']),
       hash: serializer.fromJson<String?>(json['hash']),
       signature: serializer.fromJson<String?>(json['signature']),
@@ -7085,6 +7343,7 @@ class Sale extends DataClass implements Insertable<Sale> {
       'otherExpenses': serializer.toJson<Decimal>(otherExpenses),
       'warehouseId': serializer.toJson<String?>(warehouseId),
       'representativeId': serializer.toJson<String?>(representativeId),
+      'exchangeDate': serializer.toJson<DateTime?>(exchangeDate),
       'qrCode': serializer.toJson<String?>(qrCode),
       'hash': serializer.toJson<String?>(hash),
       'signature': serializer.toJson<String?>(signature),
@@ -7112,6 +7371,7 @@ class Sale extends DataClass implements Insertable<Sale> {
           Decimal? otherExpenses,
           Value<String?> warehouseId = const Value.absent(),
           Value<String?> representativeId = const Value.absent(),
+          Value<DateTime?> exchangeDate = const Value.absent(),
           Value<String?> qrCode = const Value.absent(),
           Value<String?> hash = const Value.absent(),
           Value<String?> signature = const Value.absent()}) =>
@@ -7138,6 +7398,8 @@ class Sale extends DataClass implements Insertable<Sale> {
         representativeId: representativeId.present
             ? representativeId.value
             : this.representativeId,
+        exchangeDate:
+            exchangeDate.present ? exchangeDate.value : this.exchangeDate,
         qrCode: qrCode.present ? qrCode.value : this.qrCode,
         hash: hash.present ? hash.value : this.hash,
         signature: signature.present ? signature.value : this.signature,
@@ -7178,6 +7440,9 @@ class Sale extends DataClass implements Insertable<Sale> {
       representativeId: data.representativeId.present
           ? data.representativeId.value
           : this.representativeId,
+      exchangeDate: data.exchangeDate.present
+          ? data.exchangeDate.value
+          : this.exchangeDate,
       qrCode: data.qrCode.present ? data.qrCode.value : this.qrCode,
       hash: data.hash.present ? data.hash.value : this.hash,
       signature: data.signature.present ? data.signature.value : this.signature,
@@ -7207,6 +7472,7 @@ class Sale extends DataClass implements Insertable<Sale> {
           ..write('otherExpenses: $otherExpenses, ')
           ..write('warehouseId: $warehouseId, ')
           ..write('representativeId: $representativeId, ')
+          ..write('exchangeDate: $exchangeDate, ')
           ..write('qrCode: $qrCode, ')
           ..write('hash: $hash, ')
           ..write('signature: $signature')
@@ -7236,6 +7502,7 @@ class Sale extends DataClass implements Insertable<Sale> {
         otherExpenses,
         warehouseId,
         representativeId,
+        exchangeDate,
         qrCode,
         hash,
         signature
@@ -7264,6 +7531,7 @@ class Sale extends DataClass implements Insertable<Sale> {
           other.otherExpenses == this.otherExpenses &&
           other.warehouseId == this.warehouseId &&
           other.representativeId == this.representativeId &&
+          other.exchangeDate == this.exchangeDate &&
           other.qrCode == this.qrCode &&
           other.hash == this.hash &&
           other.signature == this.signature);
@@ -7290,6 +7558,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
   final Value<Decimal> otherExpenses;
   final Value<String?> warehouseId;
   final Value<String?> representativeId;
+  final Value<DateTime?> exchangeDate;
   final Value<String?> qrCode;
   final Value<String?> hash;
   final Value<String?> signature;
@@ -7315,6 +7584,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     this.otherExpenses = const Value.absent(),
     this.warehouseId = const Value.absent(),
     this.representativeId = const Value.absent(),
+    this.exchangeDate = const Value.absent(),
     this.qrCode = const Value.absent(),
     this.hash = const Value.absent(),
     this.signature = const Value.absent(),
@@ -7341,6 +7611,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     this.otherExpenses = const Value.absent(),
     this.warehouseId = const Value.absent(),
     this.representativeId = const Value.absent(),
+    this.exchangeDate = const Value.absent(),
     this.qrCode = const Value.absent(),
     this.hash = const Value.absent(),
     this.signature = const Value.absent(),
@@ -7368,6 +7639,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     Expression<String>? otherExpenses,
     Expression<String>? warehouseId,
     Expression<String>? representativeId,
+    Expression<DateTime>? exchangeDate,
     Expression<String>? qrCode,
     Expression<String>? hash,
     Expression<String>? signature,
@@ -7394,6 +7666,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       if (otherExpenses != null) 'other_expenses': otherExpenses,
       if (warehouseId != null) 'warehouse_id': warehouseId,
       if (representativeId != null) 'representative_id': representativeId,
+      if (exchangeDate != null) 'exchange_date': exchangeDate,
       if (qrCode != null) 'qr_code': qrCode,
       if (hash != null) 'hash': hash,
       if (signature != null) 'signature': signature,
@@ -7422,6 +7695,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       Value<Decimal>? otherExpenses,
       Value<String?>? warehouseId,
       Value<String?>? representativeId,
+      Value<DateTime?>? exchangeDate,
       Value<String?>? qrCode,
       Value<String?>? hash,
       Value<String?>? signature,
@@ -7447,6 +7721,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       otherExpenses: otherExpenses ?? this.otherExpenses,
       warehouseId: warehouseId ?? this.warehouseId,
       representativeId: representativeId ?? this.representativeId,
+      exchangeDate: exchangeDate ?? this.exchangeDate,
       qrCode: qrCode ?? this.qrCode,
       hash: hash ?? this.hash,
       signature: signature ?? this.signature,
@@ -7524,6 +7799,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     if (representativeId.present) {
       map['representative_id'] = Variable<String>(representativeId.value);
     }
+    if (exchangeDate.present) {
+      map['exchange_date'] = Variable<DateTime>(exchangeDate.value);
+    }
     if (qrCode.present) {
       map['qr_code'] = Variable<String>(qrCode.value);
     }
@@ -7562,6 +7840,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
           ..write('otherExpenses: $otherExpenses, ')
           ..write('warehouseId: $warehouseId, ')
           ..write('representativeId: $representativeId, ')
+          ..write('exchangeDate: $exchangeDate, ')
           ..write('qrCode: $qrCode, ')
           ..write('hash: $hash, ')
           ..write('signature: $signature, ')
@@ -16043,9 +16322,12 @@ class $SalesReturnsTable extends SalesReturns
   static const VerificationMeta _amountReturnedMeta =
       const VerificationMeta('amountReturned');
   @override
-  late final GeneratedColumn<double> amountReturned = GeneratedColumn<double>(
-      'amount_returned', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> amountReturned =
+      GeneratedColumn<String>('amount_returned', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($SalesReturnsTable.$converteramountReturned);
   static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
   @override
   late final GeneratedColumn<String> reason = GeneratedColumn<String>(
@@ -16104,14 +16386,7 @@ class $SalesReturnsTable extends SalesReturns
     } else if (isInserting) {
       context.missing(_saleIdMeta);
     }
-    if (data.containsKey('amount_returned')) {
-      context.handle(
-          _amountReturnedMeta,
-          amountReturned.isAcceptableOrUnknown(
-              data['amount_returned']!, _amountReturnedMeta));
-    } else if (isInserting) {
-      context.missing(_amountReturnedMeta);
-    }
+    context.handle(_amountReturnedMeta, const VerificationResult.success());
     if (data.containsKey('reason')) {
       context.handle(_reasonMeta,
           reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta));
@@ -16139,8 +16414,9 @@ class $SalesReturnsTable extends SalesReturns
           .read(DriftSqlType.string, data['${effectivePrefix}branch_id']),
       saleId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}sale_id'])!,
-      amountReturned: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}amount_returned'])!,
+      amountReturned: $SalesReturnsTable.$converteramountReturned.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}amount_returned'])!),
       reason: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}reason']),
     );
@@ -16150,6 +16426,9 @@ class $SalesReturnsTable extends SalesReturns
   $SalesReturnsTable createAlias(String alias) {
     return $SalesReturnsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converteramountReturned =
+      const DecimalConverter();
 }
 
 class SalesReturn extends DataClass implements Insertable<SalesReturn> {
@@ -16160,7 +16439,7 @@ class SalesReturn extends DataClass implements Insertable<SalesReturn> {
   final int syncStatus;
   final String? branchId;
   final String saleId;
-  final double amountReturned;
+  final Decimal amountReturned;
   final String? reason;
   const SalesReturn(
       {required this.id,
@@ -16186,7 +16465,10 @@ class SalesReturn extends DataClass implements Insertable<SalesReturn> {
       map['branch_id'] = Variable<String>(branchId);
     }
     map['sale_id'] = Variable<String>(saleId);
-    map['amount_returned'] = Variable<double>(amountReturned);
+    {
+      map['amount_returned'] = Variable<String>(
+          $SalesReturnsTable.$converteramountReturned.toSql(amountReturned));
+    }
     if (!nullToAbsent || reason != null) {
       map['reason'] = Variable<String>(reason);
     }
@@ -16223,7 +16505,7 @@ class SalesReturn extends DataClass implements Insertable<SalesReturn> {
       syncStatus: serializer.fromJson<int>(json['syncStatus']),
       branchId: serializer.fromJson<String?>(json['branchId']),
       saleId: serializer.fromJson<String>(json['saleId']),
-      amountReturned: serializer.fromJson<double>(json['amountReturned']),
+      amountReturned: serializer.fromJson<Decimal>(json['amountReturned']),
       reason: serializer.fromJson<String?>(json['reason']),
     );
   }
@@ -16238,7 +16520,7 @@ class SalesReturn extends DataClass implements Insertable<SalesReturn> {
       'syncStatus': serializer.toJson<int>(syncStatus),
       'branchId': serializer.toJson<String?>(branchId),
       'saleId': serializer.toJson<String>(saleId),
-      'amountReturned': serializer.toJson<double>(amountReturned),
+      'amountReturned': serializer.toJson<Decimal>(amountReturned),
       'reason': serializer.toJson<String?>(reason),
     };
   }
@@ -16251,7 +16533,7 @@ class SalesReturn extends DataClass implements Insertable<SalesReturn> {
           int? syncStatus,
           Value<String?> branchId = const Value.absent(),
           String? saleId,
-          double? amountReturned,
+          Decimal? amountReturned,
           Value<String?> reason = const Value.absent()}) =>
       SalesReturn(
         id: id ?? this.id,
@@ -16323,7 +16605,7 @@ class SalesReturnsCompanion extends UpdateCompanion<SalesReturn> {
   final Value<int> syncStatus;
   final Value<String?> branchId;
   final Value<String> saleId;
-  final Value<double> amountReturned;
+  final Value<Decimal> amountReturned;
   final Value<String?> reason;
   final Value<int> rowid;
   const SalesReturnsCompanion({
@@ -16346,11 +16628,10 @@ class SalesReturnsCompanion extends UpdateCompanion<SalesReturn> {
     this.syncStatus = const Value.absent(),
     this.branchId = const Value.absent(),
     required String saleId,
-    required double amountReturned,
+    this.amountReturned = const Value.absent(),
     this.reason = const Value.absent(),
     this.rowid = const Value.absent(),
-  })  : saleId = Value(saleId),
-        amountReturned = Value(amountReturned);
+  }) : saleId = Value(saleId);
   static Insertable<SalesReturn> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
@@ -16359,7 +16640,7 @@ class SalesReturnsCompanion extends UpdateCompanion<SalesReturn> {
     Expression<int>? syncStatus,
     Expression<String>? branchId,
     Expression<String>? saleId,
-    Expression<double>? amountReturned,
+    Expression<String>? amountReturned,
     Expression<String>? reason,
     Expression<int>? rowid,
   }) {
@@ -16385,7 +16666,7 @@ class SalesReturnsCompanion extends UpdateCompanion<SalesReturn> {
       Value<int>? syncStatus,
       Value<String?>? branchId,
       Value<String>? saleId,
-      Value<double>? amountReturned,
+      Value<Decimal>? amountReturned,
       Value<String?>? reason,
       Value<int>? rowid}) {
     return SalesReturnsCompanion(
@@ -16427,7 +16708,9 @@ class SalesReturnsCompanion extends UpdateCompanion<SalesReturn> {
       map['sale_id'] = Variable<String>(saleId.value);
     }
     if (amountReturned.present) {
-      map['amount_returned'] = Variable<double>(amountReturned.value);
+      map['amount_returned'] = Variable<String>($SalesReturnsTable
+          .$converteramountReturned
+          .toSql(amountReturned.value));
     }
     if (reason.present) {
       map['reason'] = Variable<String>(reason.value);
@@ -16529,14 +16812,16 @@ class $SalesReturnItemsTable extends SalesReturnItems
   static const VerificationMeta _quantityMeta =
       const VerificationMeta('quantity');
   @override
-  late final GeneratedColumn<double> quantity = GeneratedColumn<double>(
-      'quantity', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> quantity =
+      GeneratedColumn<String>('quantity', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($SalesReturnItemsTable.$converterquantity);
   static const VerificationMeta _priceMeta = const VerificationMeta('price');
   @override
-  late final GeneratedColumn<double> price = GeneratedColumn<double>(
-      'price', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> price =
+      GeneratedColumn<String>('price', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($SalesReturnItemsTable.$converterprice);
   static const VerificationMeta _unitFactorMeta =
       const VerificationMeta('unitFactor');
   @override
@@ -16619,18 +16904,8 @@ class $SalesReturnItemsTable extends SalesReturnItems
     } else if (isInserting) {
       context.missing(_productIdMeta);
     }
-    if (data.containsKey('quantity')) {
-      context.handle(_quantityMeta,
-          quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta));
-    } else if (isInserting) {
-      context.missing(_quantityMeta);
-    }
-    if (data.containsKey('price')) {
-      context.handle(
-          _priceMeta, price.isAcceptableOrUnknown(data['price']!, _priceMeta));
-    } else if (isInserting) {
-      context.missing(_priceMeta);
-    }
+    context.handle(_quantityMeta, const VerificationResult.success());
+    context.handle(_priceMeta, const VerificationResult.success());
     context.handle(_unitFactorMeta, const VerificationResult.success());
     if (data.containsKey('batch_id')) {
       context.handle(_batchIdMeta,
@@ -16661,10 +16936,12 @@ class $SalesReturnItemsTable extends SalesReturnItems
           DriftSqlType.string, data['${effectivePrefix}sales_return_id'])!,
       productId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}product_id'])!,
-      quantity: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}quantity'])!,
-      price: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}price'])!,
+      quantity: $SalesReturnItemsTable.$converterquantity.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.string, data['${effectivePrefix}quantity'])!),
+      price: $SalesReturnItemsTable.$converterprice.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}price'])!),
       unitFactor: $SalesReturnItemsTable.$converterunitFactor.fromSql(
           attachedDatabase.typeMapping.read(
               DriftSqlType.string, data['${effectivePrefix}unit_factor'])!),
@@ -16678,6 +16955,10 @@ class $SalesReturnItemsTable extends SalesReturnItems
     return $SalesReturnItemsTable(attachedDatabase, alias);
   }
 
+  static TypeConverter<Decimal, String> $converterquantity =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterprice =
+      const DecimalConverter();
   static TypeConverter<Decimal, String> $converterunitFactor =
       const DecimalConverter();
 }
@@ -16691,8 +16972,8 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
   final String? branchId;
   final String salesReturnId;
   final String productId;
-  final double quantity;
-  final double price;
+  final Decimal quantity;
+  final Decimal price;
   final Decimal unitFactor;
   final String? batchId;
   const SalesReturnItem(
@@ -16723,8 +17004,14 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
     }
     map['sales_return_id'] = Variable<String>(salesReturnId);
     map['product_id'] = Variable<String>(productId);
-    map['quantity'] = Variable<double>(quantity);
-    map['price'] = Variable<double>(price);
+    {
+      map['quantity'] = Variable<String>(
+          $SalesReturnItemsTable.$converterquantity.toSql(quantity));
+    }
+    {
+      map['price'] =
+          Variable<String>($SalesReturnItemsTable.$converterprice.toSql(price));
+    }
     {
       map['unit_factor'] = Variable<String>(
           $SalesReturnItemsTable.$converterunitFactor.toSql(unitFactor));
@@ -16770,8 +17057,8 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
       branchId: serializer.fromJson<String?>(json['branchId']),
       salesReturnId: serializer.fromJson<String>(json['salesReturnId']),
       productId: serializer.fromJson<String>(json['productId']),
-      quantity: serializer.fromJson<double>(json['quantity']),
-      price: serializer.fromJson<double>(json['price']),
+      quantity: serializer.fromJson<Decimal>(json['quantity']),
+      price: serializer.fromJson<Decimal>(json['price']),
       unitFactor: serializer.fromJson<Decimal>(json['unitFactor']),
       batchId: serializer.fromJson<String?>(json['batchId']),
     );
@@ -16788,8 +17075,8 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
       'branchId': serializer.toJson<String?>(branchId),
       'salesReturnId': serializer.toJson<String>(salesReturnId),
       'productId': serializer.toJson<String>(productId),
-      'quantity': serializer.toJson<double>(quantity),
-      'price': serializer.toJson<double>(price),
+      'quantity': serializer.toJson<Decimal>(quantity),
+      'price': serializer.toJson<Decimal>(price),
       'unitFactor': serializer.toJson<Decimal>(unitFactor),
       'batchId': serializer.toJson<String?>(batchId),
     };
@@ -16804,8 +17091,8 @@ class SalesReturnItem extends DataClass implements Insertable<SalesReturnItem> {
           Value<String?> branchId = const Value.absent(),
           String? salesReturnId,
           String? productId,
-          double? quantity,
-          double? price,
+          Decimal? quantity,
+          Decimal? price,
           Decimal? unitFactor,
           Value<String?> batchId = const Value.absent()}) =>
       SalesReturnItem(
@@ -16903,8 +17190,8 @@ class SalesReturnItemsCompanion extends UpdateCompanion<SalesReturnItem> {
   final Value<String?> branchId;
   final Value<String> salesReturnId;
   final Value<String> productId;
-  final Value<double> quantity;
-  final Value<double> price;
+  final Value<Decimal> quantity;
+  final Value<Decimal> price;
   final Value<Decimal> unitFactor;
   final Value<String?> batchId;
   final Value<int> rowid;
@@ -16932,8 +17219,8 @@ class SalesReturnItemsCompanion extends UpdateCompanion<SalesReturnItem> {
     this.branchId = const Value.absent(),
     required String salesReturnId,
     required String productId,
-    required double quantity,
-    required double price,
+    required Decimal quantity,
+    required Decimal price,
     this.unitFactor = const Value.absent(),
     this.batchId = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -16950,8 +17237,8 @@ class SalesReturnItemsCompanion extends UpdateCompanion<SalesReturnItem> {
     Expression<String>? branchId,
     Expression<String>? salesReturnId,
     Expression<String>? productId,
-    Expression<double>? quantity,
-    Expression<double>? price,
+    Expression<String>? quantity,
+    Expression<String>? price,
     Expression<String>? unitFactor,
     Expression<String>? batchId,
     Expression<int>? rowid,
@@ -16982,8 +17269,8 @@ class SalesReturnItemsCompanion extends UpdateCompanion<SalesReturnItem> {
       Value<String?>? branchId,
       Value<String>? salesReturnId,
       Value<String>? productId,
-      Value<double>? quantity,
-      Value<double>? price,
+      Value<Decimal>? quantity,
+      Value<Decimal>? price,
       Value<Decimal>? unitFactor,
       Value<String?>? batchId,
       Value<int>? rowid}) {
@@ -17032,10 +17319,12 @@ class SalesReturnItemsCompanion extends UpdateCompanion<SalesReturnItem> {
       map['product_id'] = Variable<String>(productId.value);
     }
     if (quantity.present) {
-      map['quantity'] = Variable<double>(quantity.value);
+      map['quantity'] = Variable<String>(
+          $SalesReturnItemsTable.$converterquantity.toSql(quantity.value));
     }
     if (price.present) {
-      map['price'] = Variable<double>(price.value);
+      map['price'] = Variable<String>(
+          $SalesReturnItemsTable.$converterprice.toSql(price.value));
     }
     if (unitFactor.present) {
       map['unit_factor'] = Variable<String>(
@@ -17135,9 +17424,13 @@ class $PurchaseReturnsTable extends PurchaseReturns
   static const VerificationMeta _amountReturnedMeta =
       const VerificationMeta('amountReturned');
   @override
-  late final GeneratedColumn<double> amountReturned = GeneratedColumn<double>(
-      'amount_returned', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> amountReturned =
+      GeneratedColumn<String>('amount_returned', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>(
+              $PurchaseReturnsTable.$converteramountReturned);
   static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
   @override
   late final GeneratedColumn<String> reason = GeneratedColumn<String>(
@@ -17198,14 +17491,7 @@ class $PurchaseReturnsTable extends PurchaseReturns
     } else if (isInserting) {
       context.missing(_purchaseIdMeta);
     }
-    if (data.containsKey('amount_returned')) {
-      context.handle(
-          _amountReturnedMeta,
-          amountReturned.isAcceptableOrUnknown(
-              data['amount_returned']!, _amountReturnedMeta));
-    } else if (isInserting) {
-      context.missing(_amountReturnedMeta);
-    }
+    context.handle(_amountReturnedMeta, const VerificationResult.success());
     if (data.containsKey('reason')) {
       context.handle(_reasonMeta,
           reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta));
@@ -17233,8 +17519,9 @@ class $PurchaseReturnsTable extends PurchaseReturns
           .read(DriftSqlType.string, data['${effectivePrefix}branch_id']),
       purchaseId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}purchase_id'])!,
-      amountReturned: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}amount_returned'])!,
+      amountReturned: $PurchaseReturnsTable.$converteramountReturned.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}amount_returned'])!),
       reason: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}reason']),
     );
@@ -17244,6 +17531,9 @@ class $PurchaseReturnsTable extends PurchaseReturns
   $PurchaseReturnsTable createAlias(String alias) {
     return $PurchaseReturnsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converteramountReturned =
+      const DecimalConverter();
 }
 
 class PurchaseReturn extends DataClass implements Insertable<PurchaseReturn> {
@@ -17254,7 +17544,7 @@ class PurchaseReturn extends DataClass implements Insertable<PurchaseReturn> {
   final int syncStatus;
   final String? branchId;
   final String purchaseId;
-  final double amountReturned;
+  final Decimal amountReturned;
   final String? reason;
   const PurchaseReturn(
       {required this.id,
@@ -17280,7 +17570,10 @@ class PurchaseReturn extends DataClass implements Insertable<PurchaseReturn> {
       map['branch_id'] = Variable<String>(branchId);
     }
     map['purchase_id'] = Variable<String>(purchaseId);
-    map['amount_returned'] = Variable<double>(amountReturned);
+    {
+      map['amount_returned'] = Variable<String>(
+          $PurchaseReturnsTable.$converteramountReturned.toSql(amountReturned));
+    }
     if (!nullToAbsent || reason != null) {
       map['reason'] = Variable<String>(reason);
     }
@@ -17317,7 +17610,7 @@ class PurchaseReturn extends DataClass implements Insertable<PurchaseReturn> {
       syncStatus: serializer.fromJson<int>(json['syncStatus']),
       branchId: serializer.fromJson<String?>(json['branchId']),
       purchaseId: serializer.fromJson<String>(json['purchaseId']),
-      amountReturned: serializer.fromJson<double>(json['amountReturned']),
+      amountReturned: serializer.fromJson<Decimal>(json['amountReturned']),
       reason: serializer.fromJson<String?>(json['reason']),
     );
   }
@@ -17332,7 +17625,7 @@ class PurchaseReturn extends DataClass implements Insertable<PurchaseReturn> {
       'syncStatus': serializer.toJson<int>(syncStatus),
       'branchId': serializer.toJson<String?>(branchId),
       'purchaseId': serializer.toJson<String>(purchaseId),
-      'amountReturned': serializer.toJson<double>(amountReturned),
+      'amountReturned': serializer.toJson<Decimal>(amountReturned),
       'reason': serializer.toJson<String?>(reason),
     };
   }
@@ -17345,7 +17638,7 @@ class PurchaseReturn extends DataClass implements Insertable<PurchaseReturn> {
           int? syncStatus,
           Value<String?> branchId = const Value.absent(),
           String? purchaseId,
-          double? amountReturned,
+          Decimal? amountReturned,
           Value<String?> reason = const Value.absent()}) =>
       PurchaseReturn(
         id: id ?? this.id,
@@ -17418,7 +17711,7 @@ class PurchaseReturnsCompanion extends UpdateCompanion<PurchaseReturn> {
   final Value<int> syncStatus;
   final Value<String?> branchId;
   final Value<String> purchaseId;
-  final Value<double> amountReturned;
+  final Value<Decimal> amountReturned;
   final Value<String?> reason;
   final Value<int> rowid;
   const PurchaseReturnsCompanion({
@@ -17441,11 +17734,10 @@ class PurchaseReturnsCompanion extends UpdateCompanion<PurchaseReturn> {
     this.syncStatus = const Value.absent(),
     this.branchId = const Value.absent(),
     required String purchaseId,
-    required double amountReturned,
+    this.amountReturned = const Value.absent(),
     this.reason = const Value.absent(),
     this.rowid = const Value.absent(),
-  })  : purchaseId = Value(purchaseId),
-        amountReturned = Value(amountReturned);
+  }) : purchaseId = Value(purchaseId);
   static Insertable<PurchaseReturn> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
@@ -17454,7 +17746,7 @@ class PurchaseReturnsCompanion extends UpdateCompanion<PurchaseReturn> {
     Expression<int>? syncStatus,
     Expression<String>? branchId,
     Expression<String>? purchaseId,
-    Expression<double>? amountReturned,
+    Expression<String>? amountReturned,
     Expression<String>? reason,
     Expression<int>? rowid,
   }) {
@@ -17480,7 +17772,7 @@ class PurchaseReturnsCompanion extends UpdateCompanion<PurchaseReturn> {
       Value<int>? syncStatus,
       Value<String?>? branchId,
       Value<String>? purchaseId,
-      Value<double>? amountReturned,
+      Value<Decimal>? amountReturned,
       Value<String?>? reason,
       Value<int>? rowid}) {
     return PurchaseReturnsCompanion(
@@ -17522,7 +17814,9 @@ class PurchaseReturnsCompanion extends UpdateCompanion<PurchaseReturn> {
       map['purchase_id'] = Variable<String>(purchaseId.value);
     }
     if (amountReturned.present) {
-      map['amount_returned'] = Variable<double>(amountReturned.value);
+      map['amount_returned'] = Variable<String>($PurchaseReturnsTable
+          .$converteramountReturned
+          .toSql(amountReturned.value));
     }
     if (reason.present) {
       map['reason'] = Variable<String>(reason.value);
@@ -17624,14 +17918,16 @@ class $PurchaseReturnItemsTable extends PurchaseReturnItems
   static const VerificationMeta _quantityMeta =
       const VerificationMeta('quantity');
   @override
-  late final GeneratedColumn<double> quantity = GeneratedColumn<double>(
-      'quantity', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> quantity =
+      GeneratedColumn<String>('quantity', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($PurchaseReturnItemsTable.$converterquantity);
   static const VerificationMeta _priceMeta = const VerificationMeta('price');
   @override
-  late final GeneratedColumn<double> price = GeneratedColumn<double>(
-      'price', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> price =
+      GeneratedColumn<String>('price', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($PurchaseReturnItemsTable.$converterprice);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -17694,18 +17990,8 @@ class $PurchaseReturnItemsTable extends PurchaseReturnItems
     } else if (isInserting) {
       context.missing(_productIdMeta);
     }
-    if (data.containsKey('quantity')) {
-      context.handle(_quantityMeta,
-          quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta));
-    } else if (isInserting) {
-      context.missing(_quantityMeta);
-    }
-    if (data.containsKey('price')) {
-      context.handle(
-          _priceMeta, price.isAcceptableOrUnknown(data['price']!, _priceMeta));
-    } else if (isInserting) {
-      context.missing(_priceMeta);
-    }
+    context.handle(_quantityMeta, const VerificationResult.success());
+    context.handle(_priceMeta, const VerificationResult.success());
     return context;
   }
 
@@ -17731,10 +18017,12 @@ class $PurchaseReturnItemsTable extends PurchaseReturnItems
           DriftSqlType.string, data['${effectivePrefix}purchase_return_id'])!,
       productId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}product_id'])!,
-      quantity: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}quantity'])!,
-      price: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}price'])!,
+      quantity: $PurchaseReturnItemsTable.$converterquantity.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.string, data['${effectivePrefix}quantity'])!),
+      price: $PurchaseReturnItemsTable.$converterprice.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}price'])!),
     );
   }
 
@@ -17742,6 +18030,11 @@ class $PurchaseReturnItemsTable extends PurchaseReturnItems
   $PurchaseReturnItemsTable createAlias(String alias) {
     return $PurchaseReturnItemsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterquantity =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterprice =
+      const DecimalConverter();
 }
 
 class PurchaseReturnItem extends DataClass
@@ -17754,8 +18047,8 @@ class PurchaseReturnItem extends DataClass
   final String? branchId;
   final String purchaseReturnId;
   final String productId;
-  final double quantity;
-  final double price;
+  final Decimal quantity;
+  final Decimal price;
   const PurchaseReturnItem(
       {required this.id,
       required this.createdAt,
@@ -17782,8 +18075,14 @@ class PurchaseReturnItem extends DataClass
     }
     map['purchase_return_id'] = Variable<String>(purchaseReturnId);
     map['product_id'] = Variable<String>(productId);
-    map['quantity'] = Variable<double>(quantity);
-    map['price'] = Variable<double>(price);
+    {
+      map['quantity'] = Variable<String>(
+          $PurchaseReturnItemsTable.$converterquantity.toSql(quantity));
+    }
+    {
+      map['price'] = Variable<String>(
+          $PurchaseReturnItemsTable.$converterprice.toSql(price));
+    }
     return map;
   }
 
@@ -17818,8 +18117,8 @@ class PurchaseReturnItem extends DataClass
       branchId: serializer.fromJson<String?>(json['branchId']),
       purchaseReturnId: serializer.fromJson<String>(json['purchaseReturnId']),
       productId: serializer.fromJson<String>(json['productId']),
-      quantity: serializer.fromJson<double>(json['quantity']),
-      price: serializer.fromJson<double>(json['price']),
+      quantity: serializer.fromJson<Decimal>(json['quantity']),
+      price: serializer.fromJson<Decimal>(json['price']),
     );
   }
   @override
@@ -17834,8 +18133,8 @@ class PurchaseReturnItem extends DataClass
       'branchId': serializer.toJson<String?>(branchId),
       'purchaseReturnId': serializer.toJson<String>(purchaseReturnId),
       'productId': serializer.toJson<String>(productId),
-      'quantity': serializer.toJson<double>(quantity),
-      'price': serializer.toJson<double>(price),
+      'quantity': serializer.toJson<Decimal>(quantity),
+      'price': serializer.toJson<Decimal>(price),
     };
   }
 
@@ -17848,8 +18147,8 @@ class PurchaseReturnItem extends DataClass
           Value<String?> branchId = const Value.absent(),
           String? purchaseReturnId,
           String? productId,
-          double? quantity,
-          double? price}) =>
+          Decimal? quantity,
+          Decimal? price}) =>
       PurchaseReturnItem(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -17925,8 +18224,8 @@ class PurchaseReturnItemsCompanion extends UpdateCompanion<PurchaseReturnItem> {
   final Value<String?> branchId;
   final Value<String> purchaseReturnId;
   final Value<String> productId;
-  final Value<double> quantity;
-  final Value<double> price;
+  final Value<Decimal> quantity;
+  final Value<Decimal> price;
   final Value<int> rowid;
   const PurchaseReturnItemsCompanion({
     this.id = const Value.absent(),
@@ -17950,8 +18249,8 @@ class PurchaseReturnItemsCompanion extends UpdateCompanion<PurchaseReturnItem> {
     this.branchId = const Value.absent(),
     required String purchaseReturnId,
     required String productId,
-    required double quantity,
-    required double price,
+    required Decimal quantity,
+    required Decimal price,
     this.rowid = const Value.absent(),
   })  : purchaseReturnId = Value(purchaseReturnId),
         productId = Value(productId),
@@ -17966,8 +18265,8 @@ class PurchaseReturnItemsCompanion extends UpdateCompanion<PurchaseReturnItem> {
     Expression<String>? branchId,
     Expression<String>? purchaseReturnId,
     Expression<String>? productId,
-    Expression<double>? quantity,
-    Expression<double>? price,
+    Expression<String>? quantity,
+    Expression<String>? price,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -17994,8 +18293,8 @@ class PurchaseReturnItemsCompanion extends UpdateCompanion<PurchaseReturnItem> {
       Value<String?>? branchId,
       Value<String>? purchaseReturnId,
       Value<String>? productId,
-      Value<double>? quantity,
-      Value<double>? price,
+      Value<Decimal>? quantity,
+      Value<Decimal>? price,
       Value<int>? rowid}) {
     return PurchaseReturnItemsCompanion(
       id: id ?? this.id,
@@ -18040,10 +18339,12 @@ class PurchaseReturnItemsCompanion extends UpdateCompanion<PurchaseReturnItem> {
       map['product_id'] = Variable<String>(productId.value);
     }
     if (quantity.present) {
-      map['quantity'] = Variable<double>(quantity.value);
+      map['quantity'] = Variable<String>(
+          $PurchaseReturnItemsTable.$converterquantity.toSql(quantity.value));
     }
     if (price.present) {
-      map['price'] = Variable<double>(price.value);
+      map['price'] = Variable<String>(
+          $PurchaseReturnItemsTable.$converterprice.toSql(price.value));
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -18133,9 +18434,10 @@ class $CustomerPaymentsTable extends CustomerPayments
           GeneratedColumn.constraintIsAlways('REFERENCES customers (id)'));
   static const VerificationMeta _amountMeta = const VerificationMeta('amount');
   @override
-  late final GeneratedColumn<double> amount = GeneratedColumn<double>(
-      'amount', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> amount =
+      GeneratedColumn<String>('amount', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($CustomerPaymentsTable.$converteramount);
   static const VerificationMeta _paymentDateMeta =
       const VerificationMeta('paymentDate');
   @override
@@ -18205,12 +18507,7 @@ class $CustomerPaymentsTable extends CustomerPayments
     } else if (isInserting) {
       context.missing(_customerIdMeta);
     }
-    if (data.containsKey('amount')) {
-      context.handle(_amountMeta,
-          amount.isAcceptableOrUnknown(data['amount']!, _amountMeta));
-    } else if (isInserting) {
-      context.missing(_amountMeta);
-    }
+    context.handle(_amountMeta, const VerificationResult.success());
     if (data.containsKey('payment_date')) {
       context.handle(
           _paymentDateMeta,
@@ -18244,8 +18541,9 @@ class $CustomerPaymentsTable extends CustomerPayments
           .read(DriftSqlType.string, data['${effectivePrefix}branch_id']),
       customerId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}customer_id'])!,
-      amount: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}amount'])!,
+      amount: $CustomerPaymentsTable.$converteramount.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}amount'])!),
       paymentDate: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}payment_date'])!,
       note: attachedDatabase.typeMapping
@@ -18257,6 +18555,9 @@ class $CustomerPaymentsTable extends CustomerPayments
   $CustomerPaymentsTable createAlias(String alias) {
     return $CustomerPaymentsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converteramount =
+      const DecimalConverter();
 }
 
 class CustomerPayment extends DataClass implements Insertable<CustomerPayment> {
@@ -18267,7 +18568,7 @@ class CustomerPayment extends DataClass implements Insertable<CustomerPayment> {
   final int syncStatus;
   final String? branchId;
   final String customerId;
-  final double amount;
+  final Decimal amount;
   final DateTime paymentDate;
   final String? note;
   const CustomerPayment(
@@ -18295,7 +18596,10 @@ class CustomerPayment extends DataClass implements Insertable<CustomerPayment> {
       map['branch_id'] = Variable<String>(branchId);
     }
     map['customer_id'] = Variable<String>(customerId);
-    map['amount'] = Variable<double>(amount);
+    {
+      map['amount'] = Variable<String>(
+          $CustomerPaymentsTable.$converteramount.toSql(amount));
+    }
     map['payment_date'] = Variable<DateTime>(paymentDate);
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
@@ -18333,7 +18637,7 @@ class CustomerPayment extends DataClass implements Insertable<CustomerPayment> {
       syncStatus: serializer.fromJson<int>(json['syncStatus']),
       branchId: serializer.fromJson<String?>(json['branchId']),
       customerId: serializer.fromJson<String>(json['customerId']),
-      amount: serializer.fromJson<double>(json['amount']),
+      amount: serializer.fromJson<Decimal>(json['amount']),
       paymentDate: serializer.fromJson<DateTime>(json['paymentDate']),
       note: serializer.fromJson<String?>(json['note']),
     );
@@ -18349,7 +18653,7 @@ class CustomerPayment extends DataClass implements Insertable<CustomerPayment> {
       'syncStatus': serializer.toJson<int>(syncStatus),
       'branchId': serializer.toJson<String?>(branchId),
       'customerId': serializer.toJson<String>(customerId),
-      'amount': serializer.toJson<double>(amount),
+      'amount': serializer.toJson<Decimal>(amount),
       'paymentDate': serializer.toJson<DateTime>(paymentDate),
       'note': serializer.toJson<String?>(note),
     };
@@ -18363,7 +18667,7 @@ class CustomerPayment extends DataClass implements Insertable<CustomerPayment> {
           int? syncStatus,
           Value<String?> branchId = const Value.absent(),
           String? customerId,
-          double? amount,
+          Decimal? amount,
           DateTime? paymentDate,
           Value<String?> note = const Value.absent()}) =>
       CustomerPayment(
@@ -18440,7 +18744,7 @@ class CustomerPaymentsCompanion extends UpdateCompanion<CustomerPayment> {
   final Value<int> syncStatus;
   final Value<String?> branchId;
   final Value<String> customerId;
-  final Value<double> amount;
+  final Value<Decimal> amount;
   final Value<DateTime> paymentDate;
   final Value<String?> note;
   final Value<int> rowid;
@@ -18465,7 +18769,7 @@ class CustomerPaymentsCompanion extends UpdateCompanion<CustomerPayment> {
     this.syncStatus = const Value.absent(),
     this.branchId = const Value.absent(),
     required String customerId,
-    required double amount,
+    required Decimal amount,
     this.paymentDate = const Value.absent(),
     this.note = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -18479,7 +18783,7 @@ class CustomerPaymentsCompanion extends UpdateCompanion<CustomerPayment> {
     Expression<int>? syncStatus,
     Expression<String>? branchId,
     Expression<String>? customerId,
-    Expression<double>? amount,
+    Expression<String>? amount,
     Expression<DateTime>? paymentDate,
     Expression<String>? note,
     Expression<int>? rowid,
@@ -18507,7 +18811,7 @@ class CustomerPaymentsCompanion extends UpdateCompanion<CustomerPayment> {
       Value<int>? syncStatus,
       Value<String?>? branchId,
       Value<String>? customerId,
-      Value<double>? amount,
+      Value<Decimal>? amount,
       Value<DateTime>? paymentDate,
       Value<String?>? note,
       Value<int>? rowid}) {
@@ -18551,7 +18855,8 @@ class CustomerPaymentsCompanion extends UpdateCompanion<CustomerPayment> {
       map['customer_id'] = Variable<String>(customerId.value);
     }
     if (amount.present) {
-      map['amount'] = Variable<double>(amount.value);
+      map['amount'] = Variable<String>(
+          $CustomerPaymentsTable.$converteramount.toSql(amount.value));
     }
     if (paymentDate.present) {
       map['payment_date'] = Variable<DateTime>(paymentDate.value);
@@ -18647,17 +18952,20 @@ class $SupplierPaymentsTable extends SupplierPayments
           GeneratedColumn.constraintIsAlways('REFERENCES suppliers (id)'));
   static const VerificationMeta _amountMeta = const VerificationMeta('amount');
   @override
-  late final GeneratedColumn<double> amount = GeneratedColumn<double>(
-      'amount', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> amount =
+      GeneratedColumn<String>('amount', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($SupplierPaymentsTable.$converteramount);
   static const VerificationMeta _remainingAmountMeta =
       const VerificationMeta('remainingAmount');
   @override
-  late final GeneratedColumn<double> remainingAmount = GeneratedColumn<double>(
-      'remaining_amount', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> remainingAmount =
+      GeneratedColumn<String>('remaining_amount', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>(
+              $SupplierPaymentsTable.$converterremainingAmount);
   static const VerificationMeta _paymentDateMeta =
       const VerificationMeta('paymentDate');
   @override
@@ -18736,18 +19044,8 @@ class $SupplierPaymentsTable extends SupplierPayments
     } else if (isInserting) {
       context.missing(_supplierIdMeta);
     }
-    if (data.containsKey('amount')) {
-      context.handle(_amountMeta,
-          amount.isAcceptableOrUnknown(data['amount']!, _amountMeta));
-    } else if (isInserting) {
-      context.missing(_amountMeta);
-    }
-    if (data.containsKey('remaining_amount')) {
-      context.handle(
-          _remainingAmountMeta,
-          remainingAmount.isAcceptableOrUnknown(
-              data['remaining_amount']!, _remainingAmountMeta));
-    }
+    context.handle(_amountMeta, const VerificationResult.success());
+    context.handle(_remainingAmountMeta, const VerificationResult.success());
     if (data.containsKey('payment_date')) {
       context.handle(
           _paymentDateMeta,
@@ -18785,10 +19083,12 @@ class $SupplierPaymentsTable extends SupplierPayments
           .read(DriftSqlType.string, data['${effectivePrefix}branch_id']),
       supplierId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}supplier_id'])!,
-      amount: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}amount'])!,
-      remainingAmount: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}remaining_amount'])!,
+      amount: $SupplierPaymentsTable.$converteramount.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}amount'])!),
+      remainingAmount: $SupplierPaymentsTable.$converterremainingAmount.fromSql(
+          attachedDatabase.typeMapping.read(DriftSqlType.string,
+              data['${effectivePrefix}remaining_amount'])!),
       paymentDate: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}payment_date'])!,
       note: attachedDatabase.typeMapping
@@ -18802,6 +19102,11 @@ class $SupplierPaymentsTable extends SupplierPayments
   $SupplierPaymentsTable createAlias(String alias) {
     return $SupplierPaymentsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converteramount =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterremainingAmount =
+      const DecimalConverter();
 }
 
 class SupplierPayment extends DataClass implements Insertable<SupplierPayment> {
@@ -18812,8 +19117,8 @@ class SupplierPayment extends DataClass implements Insertable<SupplierPayment> {
   final int syncStatus;
   final String? branchId;
   final String supplierId;
-  final double amount;
-  final double remainingAmount;
+  final Decimal amount;
+  final Decimal remainingAmount;
   final DateTime paymentDate;
   final String? note;
   final String status;
@@ -18844,8 +19149,15 @@ class SupplierPayment extends DataClass implements Insertable<SupplierPayment> {
       map['branch_id'] = Variable<String>(branchId);
     }
     map['supplier_id'] = Variable<String>(supplierId);
-    map['amount'] = Variable<double>(amount);
-    map['remaining_amount'] = Variable<double>(remainingAmount);
+    {
+      map['amount'] = Variable<String>(
+          $SupplierPaymentsTable.$converteramount.toSql(amount));
+    }
+    {
+      map['remaining_amount'] = Variable<String>($SupplierPaymentsTable
+          .$converterremainingAmount
+          .toSql(remainingAmount));
+    }
     map['payment_date'] = Variable<DateTime>(paymentDate);
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
@@ -18886,8 +19198,8 @@ class SupplierPayment extends DataClass implements Insertable<SupplierPayment> {
       syncStatus: serializer.fromJson<int>(json['syncStatus']),
       branchId: serializer.fromJson<String?>(json['branchId']),
       supplierId: serializer.fromJson<String>(json['supplierId']),
-      amount: serializer.fromJson<double>(json['amount']),
-      remainingAmount: serializer.fromJson<double>(json['remainingAmount']),
+      amount: serializer.fromJson<Decimal>(json['amount']),
+      remainingAmount: serializer.fromJson<Decimal>(json['remainingAmount']),
       paymentDate: serializer.fromJson<DateTime>(json['paymentDate']),
       note: serializer.fromJson<String?>(json['note']),
       status: serializer.fromJson<String>(json['status']),
@@ -18904,8 +19216,8 @@ class SupplierPayment extends DataClass implements Insertable<SupplierPayment> {
       'syncStatus': serializer.toJson<int>(syncStatus),
       'branchId': serializer.toJson<String?>(branchId),
       'supplierId': serializer.toJson<String>(supplierId),
-      'amount': serializer.toJson<double>(amount),
-      'remainingAmount': serializer.toJson<double>(remainingAmount),
+      'amount': serializer.toJson<Decimal>(amount),
+      'remainingAmount': serializer.toJson<Decimal>(remainingAmount),
       'paymentDate': serializer.toJson<DateTime>(paymentDate),
       'note': serializer.toJson<String?>(note),
       'status': serializer.toJson<String>(status),
@@ -18920,8 +19232,8 @@ class SupplierPayment extends DataClass implements Insertable<SupplierPayment> {
           int? syncStatus,
           Value<String?> branchId = const Value.absent(),
           String? supplierId,
-          double? amount,
-          double? remainingAmount,
+          Decimal? amount,
+          Decimal? remainingAmount,
           DateTime? paymentDate,
           Value<String?> note = const Value.absent(),
           String? status}) =>
@@ -19020,8 +19332,8 @@ class SupplierPaymentsCompanion extends UpdateCompanion<SupplierPayment> {
   final Value<int> syncStatus;
   final Value<String?> branchId;
   final Value<String> supplierId;
-  final Value<double> amount;
-  final Value<double> remainingAmount;
+  final Value<Decimal> amount;
+  final Value<Decimal> remainingAmount;
   final Value<DateTime> paymentDate;
   final Value<String?> note;
   final Value<String> status;
@@ -19049,7 +19361,7 @@ class SupplierPaymentsCompanion extends UpdateCompanion<SupplierPayment> {
     this.syncStatus = const Value.absent(),
     this.branchId = const Value.absent(),
     required String supplierId,
-    required double amount,
+    required Decimal amount,
     this.remainingAmount = const Value.absent(),
     this.paymentDate = const Value.absent(),
     this.note = const Value.absent(),
@@ -19065,8 +19377,8 @@ class SupplierPaymentsCompanion extends UpdateCompanion<SupplierPayment> {
     Expression<int>? syncStatus,
     Expression<String>? branchId,
     Expression<String>? supplierId,
-    Expression<double>? amount,
-    Expression<double>? remainingAmount,
+    Expression<String>? amount,
+    Expression<String>? remainingAmount,
     Expression<DateTime>? paymentDate,
     Expression<String>? note,
     Expression<String>? status,
@@ -19097,8 +19409,8 @@ class SupplierPaymentsCompanion extends UpdateCompanion<SupplierPayment> {
       Value<int>? syncStatus,
       Value<String?>? branchId,
       Value<String>? supplierId,
-      Value<double>? amount,
-      Value<double>? remainingAmount,
+      Value<Decimal>? amount,
+      Value<Decimal>? remainingAmount,
       Value<DateTime>? paymentDate,
       Value<String?>? note,
       Value<String>? status,
@@ -19145,10 +19457,13 @@ class SupplierPaymentsCompanion extends UpdateCompanion<SupplierPayment> {
       map['supplier_id'] = Variable<String>(supplierId.value);
     }
     if (amount.present) {
-      map['amount'] = Variable<double>(amount.value);
+      map['amount'] = Variable<String>(
+          $SupplierPaymentsTable.$converteramount.toSql(amount.value));
     }
     if (remainingAmount.present) {
-      map['remaining_amount'] = Variable<double>(remainingAmount.value);
+      map['remaining_amount'] = Variable<String>($SupplierPaymentsTable
+          .$converterremainingAmount
+          .toSql(remainingAmount.value));
     }
     if (paymentDate.present) {
       map['payment_date'] = Variable<DateTime>(paymentDate.value);
@@ -19258,9 +19573,10 @@ class $PurchasePaymentLinksTable extends PurchasePaymentLinks
           GeneratedColumn.constraintIsAlways('REFERENCES purchases (id)'));
   static const VerificationMeta _amountMeta = const VerificationMeta('amount');
   @override
-  late final GeneratedColumn<double> amount = GeneratedColumn<double>(
-      'amount', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> amount =
+      GeneratedColumn<String>('amount', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($PurchasePaymentLinksTable.$converteramount);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -19323,12 +19639,7 @@ class $PurchasePaymentLinksTable extends PurchasePaymentLinks
     } else if (isInserting) {
       context.missing(_purchaseIdMeta);
     }
-    if (data.containsKey('amount')) {
-      context.handle(_amountMeta,
-          amount.isAcceptableOrUnknown(data['amount']!, _amountMeta));
-    } else if (isInserting) {
-      context.missing(_amountMeta);
-    }
+    context.handle(_amountMeta, const VerificationResult.success());
     return context;
   }
 
@@ -19354,8 +19665,9 @@ class $PurchasePaymentLinksTable extends PurchasePaymentLinks
           .read(DriftSqlType.string, data['${effectivePrefix}payment_id'])!,
       purchaseId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}purchase_id'])!,
-      amount: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}amount'])!,
+      amount: $PurchasePaymentLinksTable.$converteramount.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.string, data['${effectivePrefix}amount'])!),
     );
   }
 
@@ -19363,6 +19675,9 @@ class $PurchasePaymentLinksTable extends PurchasePaymentLinks
   $PurchasePaymentLinksTable createAlias(String alias) {
     return $PurchasePaymentLinksTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converteramount =
+      const DecimalConverter();
 }
 
 class PurchasePaymentLink extends DataClass
@@ -19375,7 +19690,7 @@ class PurchasePaymentLink extends DataClass
   final String? branchId;
   final String paymentId;
   final String purchaseId;
-  final double amount;
+  final Decimal amount;
   const PurchasePaymentLink(
       {required this.id,
       required this.createdAt,
@@ -19401,7 +19716,10 @@ class PurchasePaymentLink extends DataClass
     }
     map['payment_id'] = Variable<String>(paymentId);
     map['purchase_id'] = Variable<String>(purchaseId);
-    map['amount'] = Variable<double>(amount);
+    {
+      map['amount'] = Variable<String>(
+          $PurchasePaymentLinksTable.$converteramount.toSql(amount));
+    }
     return map;
   }
 
@@ -19435,7 +19753,7 @@ class PurchasePaymentLink extends DataClass
       branchId: serializer.fromJson<String?>(json['branchId']),
       paymentId: serializer.fromJson<String>(json['paymentId']),
       purchaseId: serializer.fromJson<String>(json['purchaseId']),
-      amount: serializer.fromJson<double>(json['amount']),
+      amount: serializer.fromJson<Decimal>(json['amount']),
     );
   }
   @override
@@ -19450,7 +19768,7 @@ class PurchasePaymentLink extends DataClass
       'branchId': serializer.toJson<String?>(branchId),
       'paymentId': serializer.toJson<String>(paymentId),
       'purchaseId': serializer.toJson<String>(purchaseId),
-      'amount': serializer.toJson<double>(amount),
+      'amount': serializer.toJson<Decimal>(amount),
     };
   }
 
@@ -19463,7 +19781,7 @@ class PurchasePaymentLink extends DataClass
           Value<String?> branchId = const Value.absent(),
           String? paymentId,
           String? purchaseId,
-          double? amount}) =>
+          Decimal? amount}) =>
       PurchasePaymentLink(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -19535,7 +19853,7 @@ class PurchasePaymentLinksCompanion
   final Value<String?> branchId;
   final Value<String> paymentId;
   final Value<String> purchaseId;
-  final Value<double> amount;
+  final Value<Decimal> amount;
   final Value<int> rowid;
   const PurchasePaymentLinksCompanion({
     this.id = const Value.absent(),
@@ -19558,7 +19876,7 @@ class PurchasePaymentLinksCompanion
     this.branchId = const Value.absent(),
     required String paymentId,
     required String purchaseId,
-    required double amount,
+    required Decimal amount,
     this.rowid = const Value.absent(),
   })  : paymentId = Value(paymentId),
         purchaseId = Value(purchaseId),
@@ -19572,7 +19890,7 @@ class PurchasePaymentLinksCompanion
     Expression<String>? branchId,
     Expression<String>? paymentId,
     Expression<String>? purchaseId,
-    Expression<double>? amount,
+    Expression<String>? amount,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -19598,7 +19916,7 @@ class PurchasePaymentLinksCompanion
       Value<String?>? branchId,
       Value<String>? paymentId,
       Value<String>? purchaseId,
-      Value<double>? amount,
+      Value<Decimal>? amount,
       Value<int>? rowid}) {
     return PurchasePaymentLinksCompanion(
       id: id ?? this.id,
@@ -19642,7 +19960,8 @@ class PurchasePaymentLinksCompanion
       map['purchase_id'] = Variable<String>(purchaseId.value);
     }
     if (amount.present) {
-      map['amount'] = Variable<double>(amount.value);
+      map['amount'] = Variable<String>(
+          $PurchasePaymentLinksTable.$converteramount.toSql(amount.value));
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -23395,21 +23714,33 @@ class $InventoryAuditItemsTable extends InventoryAuditItems
   static const VerificationMeta _systemStockMeta =
       const VerificationMeta('systemStock');
   @override
-  late final GeneratedColumn<double> systemStock = GeneratedColumn<double>(
-      'system_stock', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> systemStock =
+      GeneratedColumn<String>('system_stock', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>(
+              $InventoryAuditItemsTable.$convertersystemStock);
   static const VerificationMeta _actualStockMeta =
       const VerificationMeta('actualStock');
   @override
-  late final GeneratedColumn<double> actualStock = GeneratedColumn<double>(
-      'actual_stock', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> actualStock =
+      GeneratedColumn<String>('actual_stock', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>(
+              $InventoryAuditItemsTable.$converteractualStock);
   static const VerificationMeta _differenceMeta =
       const VerificationMeta('difference');
   @override
-  late final GeneratedColumn<double> difference = GeneratedColumn<double>(
-      'difference', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> difference =
+      GeneratedColumn<String>('difference', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>(
+              $InventoryAuditItemsTable.$converterdifference);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -23471,30 +23802,9 @@ class $InventoryAuditItemsTable extends InventoryAuditItems
     } else if (isInserting) {
       context.missing(_productIdMeta);
     }
-    if (data.containsKey('system_stock')) {
-      context.handle(
-          _systemStockMeta,
-          systemStock.isAcceptableOrUnknown(
-              data['system_stock']!, _systemStockMeta));
-    } else if (isInserting) {
-      context.missing(_systemStockMeta);
-    }
-    if (data.containsKey('actual_stock')) {
-      context.handle(
-          _actualStockMeta,
-          actualStock.isAcceptableOrUnknown(
-              data['actual_stock']!, _actualStockMeta));
-    } else if (isInserting) {
-      context.missing(_actualStockMeta);
-    }
-    if (data.containsKey('difference')) {
-      context.handle(
-          _differenceMeta,
-          difference.isAcceptableOrUnknown(
-              data['difference']!, _differenceMeta));
-    } else if (isInserting) {
-      context.missing(_differenceMeta);
-    }
+    context.handle(_systemStockMeta, const VerificationResult.success());
+    context.handle(_actualStockMeta, const VerificationResult.success());
+    context.handle(_differenceMeta, const VerificationResult.success());
     return context;
   }
 
@@ -23520,12 +23830,15 @@ class $InventoryAuditItemsTable extends InventoryAuditItems
           .read(DriftSqlType.string, data['${effectivePrefix}audit_id'])!,
       productId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}product_id'])!,
-      systemStock: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}system_stock'])!,
-      actualStock: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}actual_stock'])!,
-      difference: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}difference'])!,
+      systemStock: $InventoryAuditItemsTable.$convertersystemStock.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}system_stock'])!),
+      actualStock: $InventoryAuditItemsTable.$converteractualStock.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}actual_stock'])!),
+      difference: $InventoryAuditItemsTable.$converterdifference.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}difference'])!),
     );
   }
 
@@ -23533,6 +23846,13 @@ class $InventoryAuditItemsTable extends InventoryAuditItems
   $InventoryAuditItemsTable createAlias(String alias) {
     return $InventoryAuditItemsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $convertersystemStock =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converteractualStock =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterdifference =
+      const DecimalConverter();
 }
 
 class InventoryAuditItem extends DataClass
@@ -23545,9 +23865,9 @@ class InventoryAuditItem extends DataClass
   final String? branchId;
   final String auditId;
   final String productId;
-  final double systemStock;
-  final double actualStock;
-  final double difference;
+  final Decimal systemStock;
+  final Decimal actualStock;
+  final Decimal difference;
   const InventoryAuditItem(
       {required this.id,
       required this.createdAt,
@@ -23575,9 +23895,18 @@ class InventoryAuditItem extends DataClass
     }
     map['audit_id'] = Variable<String>(auditId);
     map['product_id'] = Variable<String>(productId);
-    map['system_stock'] = Variable<double>(systemStock);
-    map['actual_stock'] = Variable<double>(actualStock);
-    map['difference'] = Variable<double>(difference);
+    {
+      map['system_stock'] = Variable<String>(
+          $InventoryAuditItemsTable.$convertersystemStock.toSql(systemStock));
+    }
+    {
+      map['actual_stock'] = Variable<String>(
+          $InventoryAuditItemsTable.$converteractualStock.toSql(actualStock));
+    }
+    {
+      map['difference'] = Variable<String>(
+          $InventoryAuditItemsTable.$converterdifference.toSql(difference));
+    }
     return map;
   }
 
@@ -23613,9 +23942,9 @@ class InventoryAuditItem extends DataClass
       branchId: serializer.fromJson<String?>(json['branchId']),
       auditId: serializer.fromJson<String>(json['auditId']),
       productId: serializer.fromJson<String>(json['productId']),
-      systemStock: serializer.fromJson<double>(json['systemStock']),
-      actualStock: serializer.fromJson<double>(json['actualStock']),
-      difference: serializer.fromJson<double>(json['difference']),
+      systemStock: serializer.fromJson<Decimal>(json['systemStock']),
+      actualStock: serializer.fromJson<Decimal>(json['actualStock']),
+      difference: serializer.fromJson<Decimal>(json['difference']),
     );
   }
   @override
@@ -23630,9 +23959,9 @@ class InventoryAuditItem extends DataClass
       'branchId': serializer.toJson<String?>(branchId),
       'auditId': serializer.toJson<String>(auditId),
       'productId': serializer.toJson<String>(productId),
-      'systemStock': serializer.toJson<double>(systemStock),
-      'actualStock': serializer.toJson<double>(actualStock),
-      'difference': serializer.toJson<double>(difference),
+      'systemStock': serializer.toJson<Decimal>(systemStock),
+      'actualStock': serializer.toJson<Decimal>(actualStock),
+      'difference': serializer.toJson<Decimal>(difference),
     };
   }
 
@@ -23645,9 +23974,9 @@ class InventoryAuditItem extends DataClass
           Value<String?> branchId = const Value.absent(),
           String? auditId,
           String? productId,
-          double? systemStock,
-          double? actualStock,
-          double? difference}) =>
+          Decimal? systemStock,
+          Decimal? actualStock,
+          Decimal? difference}) =>
       InventoryAuditItem(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -23738,9 +24067,9 @@ class InventoryAuditItemsCompanion extends UpdateCompanion<InventoryAuditItem> {
   final Value<String?> branchId;
   final Value<String> auditId;
   final Value<String> productId;
-  final Value<double> systemStock;
-  final Value<double> actualStock;
-  final Value<double> difference;
+  final Value<Decimal> systemStock;
+  final Value<Decimal> actualStock;
+  final Value<Decimal> difference;
   final Value<int> rowid;
   const InventoryAuditItemsCompanion({
     this.id = const Value.absent(),
@@ -23765,15 +24094,12 @@ class InventoryAuditItemsCompanion extends UpdateCompanion<InventoryAuditItem> {
     this.branchId = const Value.absent(),
     required String auditId,
     required String productId,
-    required double systemStock,
-    required double actualStock,
-    required double difference,
+    this.systemStock = const Value.absent(),
+    this.actualStock = const Value.absent(),
+    this.difference = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : auditId = Value(auditId),
-        productId = Value(productId),
-        systemStock = Value(systemStock),
-        actualStock = Value(actualStock),
-        difference = Value(difference);
+        productId = Value(productId);
   static Insertable<InventoryAuditItem> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
@@ -23783,9 +24109,9 @@ class InventoryAuditItemsCompanion extends UpdateCompanion<InventoryAuditItem> {
     Expression<String>? branchId,
     Expression<String>? auditId,
     Expression<String>? productId,
-    Expression<double>? systemStock,
-    Expression<double>? actualStock,
-    Expression<double>? difference,
+    Expression<String>? systemStock,
+    Expression<String>? actualStock,
+    Expression<String>? difference,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -23813,9 +24139,9 @@ class InventoryAuditItemsCompanion extends UpdateCompanion<InventoryAuditItem> {
       Value<String?>? branchId,
       Value<String>? auditId,
       Value<String>? productId,
-      Value<double>? systemStock,
-      Value<double>? actualStock,
-      Value<double>? difference,
+      Value<Decimal>? systemStock,
+      Value<Decimal>? actualStock,
+      Value<Decimal>? difference,
       Value<int>? rowid}) {
     return InventoryAuditItemsCompanion(
       id: id ?? this.id,
@@ -23861,13 +24187,19 @@ class InventoryAuditItemsCompanion extends UpdateCompanion<InventoryAuditItem> {
       map['product_id'] = Variable<String>(productId.value);
     }
     if (systemStock.present) {
-      map['system_stock'] = Variable<double>(systemStock.value);
+      map['system_stock'] = Variable<String>($InventoryAuditItemsTable
+          .$convertersystemStock
+          .toSql(systemStock.value));
     }
     if (actualStock.present) {
-      map['actual_stock'] = Variable<double>(actualStock.value);
+      map['actual_stock'] = Variable<String>($InventoryAuditItemsTable
+          .$converteractualStock
+          .toSql(actualStock.value));
     }
     if (difference.present) {
-      map['difference'] = Variable<double>(difference.value);
+      map['difference'] = Variable<String>($InventoryAuditItemsTable
+          .$converterdifference
+          .toSql(difference.value));
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -24661,21 +24993,31 @@ class $ReconciliationsTable extends Reconciliations
   static const VerificationMeta _bookBalanceMeta =
       const VerificationMeta('bookBalance');
   @override
-  late final GeneratedColumn<double> bookBalance = GeneratedColumn<double>(
-      'book_balance', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> bookBalance =
+      GeneratedColumn<String>('book_balance', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($ReconciliationsTable.$converterbookBalance);
   static const VerificationMeta _actualBalanceMeta =
       const VerificationMeta('actualBalance');
   @override
-  late final GeneratedColumn<double> actualBalance = GeneratedColumn<double>(
-      'actual_balance', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> actualBalance =
+      GeneratedColumn<String>('actual_balance', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>(
+              $ReconciliationsTable.$converteractualBalance);
   static const VerificationMeta _differenceMeta =
       const VerificationMeta('difference');
   @override
-  late final GeneratedColumn<double> difference = GeneratedColumn<double>(
-      'difference', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> difference =
+      GeneratedColumn<String>('difference', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($ReconciliationsTable.$converterdifference);
   static const VerificationMeta _noteMeta = const VerificationMeta('note');
   @override
   late final GeneratedColumn<String> note = GeneratedColumn<String>(
@@ -24741,30 +25083,9 @@ class $ReconciliationsTable extends Reconciliations
       context.handle(
           _dateMeta, date.isAcceptableOrUnknown(data['date']!, _dateMeta));
     }
-    if (data.containsKey('book_balance')) {
-      context.handle(
-          _bookBalanceMeta,
-          bookBalance.isAcceptableOrUnknown(
-              data['book_balance']!, _bookBalanceMeta));
-    } else if (isInserting) {
-      context.missing(_bookBalanceMeta);
-    }
-    if (data.containsKey('actual_balance')) {
-      context.handle(
-          _actualBalanceMeta,
-          actualBalance.isAcceptableOrUnknown(
-              data['actual_balance']!, _actualBalanceMeta));
-    } else if (isInserting) {
-      context.missing(_actualBalanceMeta);
-    }
-    if (data.containsKey('difference')) {
-      context.handle(
-          _differenceMeta,
-          difference.isAcceptableOrUnknown(
-              data['difference']!, _differenceMeta));
-    } else if (isInserting) {
-      context.missing(_differenceMeta);
-    }
+    context.handle(_bookBalanceMeta, const VerificationResult.success());
+    context.handle(_actualBalanceMeta, const VerificationResult.success());
+    context.handle(_differenceMeta, const VerificationResult.success());
     if (data.containsKey('note')) {
       context.handle(
           _noteMeta, note.isAcceptableOrUnknown(data['note']!, _noteMeta));
@@ -24794,12 +25115,15 @@ class $ReconciliationsTable extends Reconciliations
           .read(DriftSqlType.string, data['${effectivePrefix}account_id'])!,
       date: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}date'])!,
-      bookBalance: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}book_balance'])!,
-      actualBalance: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}actual_balance'])!,
-      difference: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}difference'])!,
+      bookBalance: $ReconciliationsTable.$converterbookBalance.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}book_balance'])!),
+      actualBalance: $ReconciliationsTable.$converteractualBalance.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}actual_balance'])!),
+      difference: $ReconciliationsTable.$converterdifference.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}difference'])!),
       note: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}note']),
     );
@@ -24809,6 +25133,13 @@ class $ReconciliationsTable extends Reconciliations
   $ReconciliationsTable createAlias(String alias) {
     return $ReconciliationsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterbookBalance =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converteractualBalance =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterdifference =
+      const DecimalConverter();
 }
 
 class Reconciliation extends DataClass implements Insertable<Reconciliation> {
@@ -24820,9 +25151,9 @@ class Reconciliation extends DataClass implements Insertable<Reconciliation> {
   final String? branchId;
   final String accountId;
   final DateTime date;
-  final double bookBalance;
-  final double actualBalance;
-  final double difference;
+  final Decimal bookBalance;
+  final Decimal actualBalance;
+  final Decimal difference;
   final String? note;
   const Reconciliation(
       {required this.id,
@@ -24852,9 +25183,18 @@ class Reconciliation extends DataClass implements Insertable<Reconciliation> {
     }
     map['account_id'] = Variable<String>(accountId);
     map['date'] = Variable<DateTime>(date);
-    map['book_balance'] = Variable<double>(bookBalance);
-    map['actual_balance'] = Variable<double>(actualBalance);
-    map['difference'] = Variable<double>(difference);
+    {
+      map['book_balance'] = Variable<String>(
+          $ReconciliationsTable.$converterbookBalance.toSql(bookBalance));
+    }
+    {
+      map['actual_balance'] = Variable<String>(
+          $ReconciliationsTable.$converteractualBalance.toSql(actualBalance));
+    }
+    {
+      map['difference'] = Variable<String>(
+          $ReconciliationsTable.$converterdifference.toSql(difference));
+    }
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
     }
@@ -24894,9 +25234,9 @@ class Reconciliation extends DataClass implements Insertable<Reconciliation> {
       branchId: serializer.fromJson<String?>(json['branchId']),
       accountId: serializer.fromJson<String>(json['accountId']),
       date: serializer.fromJson<DateTime>(json['date']),
-      bookBalance: serializer.fromJson<double>(json['bookBalance']),
-      actualBalance: serializer.fromJson<double>(json['actualBalance']),
-      difference: serializer.fromJson<double>(json['difference']),
+      bookBalance: serializer.fromJson<Decimal>(json['bookBalance']),
+      actualBalance: serializer.fromJson<Decimal>(json['actualBalance']),
+      difference: serializer.fromJson<Decimal>(json['difference']),
       note: serializer.fromJson<String?>(json['note']),
     );
   }
@@ -24912,9 +25252,9 @@ class Reconciliation extends DataClass implements Insertable<Reconciliation> {
       'branchId': serializer.toJson<String?>(branchId),
       'accountId': serializer.toJson<String>(accountId),
       'date': serializer.toJson<DateTime>(date),
-      'bookBalance': serializer.toJson<double>(bookBalance),
-      'actualBalance': serializer.toJson<double>(actualBalance),
-      'difference': serializer.toJson<double>(difference),
+      'bookBalance': serializer.toJson<Decimal>(bookBalance),
+      'actualBalance': serializer.toJson<Decimal>(actualBalance),
+      'difference': serializer.toJson<Decimal>(difference),
       'note': serializer.toJson<String?>(note),
     };
   }
@@ -24928,9 +25268,9 @@ class Reconciliation extends DataClass implements Insertable<Reconciliation> {
           Value<String?> branchId = const Value.absent(),
           String? accountId,
           DateTime? date,
-          double? bookBalance,
-          double? actualBalance,
-          double? difference,
+          Decimal? bookBalance,
+          Decimal? actualBalance,
+          Decimal? difference,
           Value<String?> note = const Value.absent()}) =>
       Reconciliation(
         id: id ?? this.id,
@@ -25028,9 +25368,9 @@ class ReconciliationsCompanion extends UpdateCompanion<Reconciliation> {
   final Value<String?> branchId;
   final Value<String> accountId;
   final Value<DateTime> date;
-  final Value<double> bookBalance;
-  final Value<double> actualBalance;
-  final Value<double> difference;
+  final Value<Decimal> bookBalance;
+  final Value<Decimal> actualBalance;
+  final Value<Decimal> difference;
   final Value<String?> note;
   final Value<int> rowid;
   const ReconciliationsCompanion({
@@ -25057,15 +25397,12 @@ class ReconciliationsCompanion extends UpdateCompanion<Reconciliation> {
     this.branchId = const Value.absent(),
     required String accountId,
     this.date = const Value.absent(),
-    required double bookBalance,
-    required double actualBalance,
-    required double difference,
+    this.bookBalance = const Value.absent(),
+    this.actualBalance = const Value.absent(),
+    this.difference = const Value.absent(),
     this.note = const Value.absent(),
     this.rowid = const Value.absent(),
-  })  : accountId = Value(accountId),
-        bookBalance = Value(bookBalance),
-        actualBalance = Value(actualBalance),
-        difference = Value(difference);
+  }) : accountId = Value(accountId);
   static Insertable<Reconciliation> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
@@ -25075,9 +25412,9 @@ class ReconciliationsCompanion extends UpdateCompanion<Reconciliation> {
     Expression<String>? branchId,
     Expression<String>? accountId,
     Expression<DateTime>? date,
-    Expression<double>? bookBalance,
-    Expression<double>? actualBalance,
-    Expression<double>? difference,
+    Expression<String>? bookBalance,
+    Expression<String>? actualBalance,
+    Expression<String>? difference,
     Expression<String>? note,
     Expression<int>? rowid,
   }) {
@@ -25107,9 +25444,9 @@ class ReconciliationsCompanion extends UpdateCompanion<Reconciliation> {
       Value<String?>? branchId,
       Value<String>? accountId,
       Value<DateTime>? date,
-      Value<double>? bookBalance,
-      Value<double>? actualBalance,
-      Value<double>? difference,
+      Value<Decimal>? bookBalance,
+      Value<Decimal>? actualBalance,
+      Value<Decimal>? difference,
       Value<String?>? note,
       Value<int>? rowid}) {
     return ReconciliationsCompanion(
@@ -25157,13 +25494,17 @@ class ReconciliationsCompanion extends UpdateCompanion<Reconciliation> {
       map['date'] = Variable<DateTime>(date.value);
     }
     if (bookBalance.present) {
-      map['book_balance'] = Variable<double>(bookBalance.value);
+      map['book_balance'] = Variable<String>(
+          $ReconciliationsTable.$converterbookBalance.toSql(bookBalance.value));
     }
     if (actualBalance.present) {
-      map['actual_balance'] = Variable<double>(actualBalance.value);
+      map['actual_balance'] = Variable<String>($ReconciliationsTable
+          .$converteractualBalance
+          .toSql(actualBalance.value));
     }
     if (difference.present) {
-      map['difference'] = Variable<double>(difference.value);
+      map['difference'] = Variable<String>(
+          $ReconciliationsTable.$converterdifference.toSql(difference.value));
     }
     if (note.present) {
       map['note'] = Variable<String>(note.value);
@@ -26797,9 +27138,12 @@ class $StockTransferItemsTable extends StockTransferItems
   static const VerificationMeta _quantityMeta =
       const VerificationMeta('quantity');
   @override
-  late final GeneratedColumn<double> quantity = GeneratedColumn<double>(
-      'quantity', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> quantity =
+      GeneratedColumn<String>('quantity', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($StockTransferItemsTable.$converterquantity);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -26868,12 +27212,7 @@ class $StockTransferItemsTable extends StockTransferItems
     } else if (isInserting) {
       context.missing(_batchIdMeta);
     }
-    if (data.containsKey('quantity')) {
-      context.handle(_quantityMeta,
-          quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta));
-    } else if (isInserting) {
-      context.missing(_quantityMeta);
-    }
+    context.handle(_quantityMeta, const VerificationResult.success());
     return context;
   }
 
@@ -26901,8 +27240,9 @@ class $StockTransferItemsTable extends StockTransferItems
           .read(DriftSqlType.string, data['${effectivePrefix}product_id'])!,
       batchId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}batch_id'])!,
-      quantity: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}quantity'])!,
+      quantity: $StockTransferItemsTable.$converterquantity.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.string, data['${effectivePrefix}quantity'])!),
     );
   }
 
@@ -26910,6 +27250,9 @@ class $StockTransferItemsTable extends StockTransferItems
   $StockTransferItemsTable createAlias(String alias) {
     return $StockTransferItemsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterquantity =
+      const DecimalConverter();
 }
 
 class StockTransferItem extends DataClass
@@ -26923,7 +27266,7 @@ class StockTransferItem extends DataClass
   final String transferId;
   final String productId;
   final String batchId;
-  final double quantity;
+  final Decimal quantity;
   const StockTransferItem(
       {required this.id,
       required this.createdAt,
@@ -26951,7 +27294,10 @@ class StockTransferItem extends DataClass
     map['transfer_id'] = Variable<String>(transferId);
     map['product_id'] = Variable<String>(productId);
     map['batch_id'] = Variable<String>(batchId);
-    map['quantity'] = Variable<double>(quantity);
+    {
+      map['quantity'] = Variable<String>(
+          $StockTransferItemsTable.$converterquantity.toSql(quantity));
+    }
     return map;
   }
 
@@ -26987,7 +27333,7 @@ class StockTransferItem extends DataClass
       transferId: serializer.fromJson<String>(json['transferId']),
       productId: serializer.fromJson<String>(json['productId']),
       batchId: serializer.fromJson<String>(json['batchId']),
-      quantity: serializer.fromJson<double>(json['quantity']),
+      quantity: serializer.fromJson<Decimal>(json['quantity']),
     );
   }
   @override
@@ -27003,7 +27349,7 @@ class StockTransferItem extends DataClass
       'transferId': serializer.toJson<String>(transferId),
       'productId': serializer.toJson<String>(productId),
       'batchId': serializer.toJson<String>(batchId),
-      'quantity': serializer.toJson<double>(quantity),
+      'quantity': serializer.toJson<Decimal>(quantity),
     };
   }
 
@@ -27017,7 +27363,7 @@ class StockTransferItem extends DataClass
           String? transferId,
           String? productId,
           String? batchId,
-          double? quantity}) =>
+          Decimal? quantity}) =>
       StockTransferItem(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -27093,7 +27439,7 @@ class StockTransferItemsCompanion extends UpdateCompanion<StockTransferItem> {
   final Value<String> transferId;
   final Value<String> productId;
   final Value<String> batchId;
-  final Value<double> quantity;
+  final Value<Decimal> quantity;
   final Value<int> rowid;
   const StockTransferItemsCompanion({
     this.id = const Value.absent(),
@@ -27118,12 +27464,11 @@ class StockTransferItemsCompanion extends UpdateCompanion<StockTransferItem> {
     required String transferId,
     required String productId,
     required String batchId,
-    required double quantity,
+    this.quantity = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : transferId = Value(transferId),
         productId = Value(productId),
-        batchId = Value(batchId),
-        quantity = Value(quantity);
+        batchId = Value(batchId);
   static Insertable<StockTransferItem> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
@@ -27134,7 +27479,7 @@ class StockTransferItemsCompanion extends UpdateCompanion<StockTransferItem> {
     Expression<String>? transferId,
     Expression<String>? productId,
     Expression<String>? batchId,
-    Expression<double>? quantity,
+    Expression<String>? quantity,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -27162,7 +27507,7 @@ class StockTransferItemsCompanion extends UpdateCompanion<StockTransferItem> {
       Value<String>? transferId,
       Value<String>? productId,
       Value<String>? batchId,
-      Value<double>? quantity,
+      Value<Decimal>? quantity,
       Value<int>? rowid}) {
     return StockTransferItemsCompanion(
       id: id ?? this.id,
@@ -27210,7 +27555,8 @@ class StockTransferItemsCompanion extends UpdateCompanion<StockTransferItem> {
       map['batch_id'] = Variable<String>(batchId.value);
     }
     if (quantity.present) {
-      map['quantity'] = Variable<double>(quantity.value);
+      map['quantity'] = Variable<String>(
+          $StockTransferItemsTable.$converterquantity.toSql(quantity.value));
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -28547,9 +28893,12 @@ class $PayrollLinesTable extends PayrollLines
   static const VerificationMeta _basicSalaryMeta =
       const VerificationMeta('basicSalary');
   @override
-  late final GeneratedColumn<double> basicSalary = GeneratedColumn<double>(
-      'basic_salary', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> basicSalary =
+      GeneratedColumn<String>('basic_salary', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($PayrollLinesTable.$converterbasicSalary);
   static const VerificationMeta _allowancesMeta =
       const VerificationMeta('allowances');
   @override
@@ -28571,9 +28920,12 @@ class $PayrollLinesTable extends PayrollLines
   static const VerificationMeta _netSalaryMeta =
       const VerificationMeta('netSalary');
   @override
-  late final GeneratedColumn<double> netSalary = GeneratedColumn<double>(
-      'net_salary', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> netSalary =
+      GeneratedColumn<String>('net_salary', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($PayrollLinesTable.$converternetSalary);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -28640,22 +28992,10 @@ class $PayrollLinesTable extends PayrollLines
     } else if (isInserting) {
       context.missing(_employeeIdMeta);
     }
-    if (data.containsKey('basic_salary')) {
-      context.handle(
-          _basicSalaryMeta,
-          basicSalary.isAcceptableOrUnknown(
-              data['basic_salary']!, _basicSalaryMeta));
-    } else if (isInserting) {
-      context.missing(_basicSalaryMeta);
-    }
+    context.handle(_basicSalaryMeta, const VerificationResult.success());
     context.handle(_allowancesMeta, const VerificationResult.success());
     context.handle(_deductionsMeta, const VerificationResult.success());
-    if (data.containsKey('net_salary')) {
-      context.handle(_netSalaryMeta,
-          netSalary.isAcceptableOrUnknown(data['net_salary']!, _netSalaryMeta));
-    } else if (isInserting) {
-      context.missing(_netSalaryMeta);
-    }
+    context.handle(_netSalaryMeta, const VerificationResult.success());
     return context;
   }
 
@@ -28681,16 +29021,18 @@ class $PayrollLinesTable extends PayrollLines
           DriftSqlType.string, data['${effectivePrefix}payroll_entry_id'])!,
       employeeId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}employee_id'])!,
-      basicSalary: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}basic_salary'])!,
+      basicSalary: $PayrollLinesTable.$converterbasicSalary.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}basic_salary'])!),
       allowances: $PayrollLinesTable.$converterallowances.fromSql(
           attachedDatabase.typeMapping.read(
               DriftSqlType.string, data['${effectivePrefix}allowances'])!),
       deductions: $PayrollLinesTable.$converterdeductions.fromSql(
           attachedDatabase.typeMapping.read(
               DriftSqlType.string, data['${effectivePrefix}deductions'])!),
-      netSalary: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}net_salary'])!,
+      netSalary: $PayrollLinesTable.$converternetSalary.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}net_salary'])!),
     );
   }
 
@@ -28699,9 +29041,13 @@ class $PayrollLinesTable extends PayrollLines
     return $PayrollLinesTable(attachedDatabase, alias);
   }
 
+  static TypeConverter<Decimal, String> $converterbasicSalary =
+      const DecimalConverter();
   static TypeConverter<Decimal, String> $converterallowances =
       const DecimalConverter();
   static TypeConverter<Decimal, String> $converterdeductions =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converternetSalary =
       const DecimalConverter();
 }
 
@@ -28714,10 +29060,10 @@ class PayrollLine extends DataClass implements Insertable<PayrollLine> {
   final String? branchId;
   final String payrollEntryId;
   final String employeeId;
-  final double basicSalary;
+  final Decimal basicSalary;
   final Decimal allowances;
   final Decimal deductions;
-  final double netSalary;
+  final Decimal netSalary;
   const PayrollLine(
       {required this.id,
       required this.createdAt,
@@ -28746,7 +29092,10 @@ class PayrollLine extends DataClass implements Insertable<PayrollLine> {
     }
     map['payroll_entry_id'] = Variable<String>(payrollEntryId);
     map['employee_id'] = Variable<String>(employeeId);
-    map['basic_salary'] = Variable<double>(basicSalary);
+    {
+      map['basic_salary'] = Variable<String>(
+          $PayrollLinesTable.$converterbasicSalary.toSql(basicSalary));
+    }
     {
       map['allowances'] = Variable<String>(
           $PayrollLinesTable.$converterallowances.toSql(allowances));
@@ -28755,7 +29104,10 @@ class PayrollLine extends DataClass implements Insertable<PayrollLine> {
       map['deductions'] = Variable<String>(
           $PayrollLinesTable.$converterdeductions.toSql(deductions));
     }
-    map['net_salary'] = Variable<double>(netSalary);
+    {
+      map['net_salary'] = Variable<String>(
+          $PayrollLinesTable.$converternetSalary.toSql(netSalary));
+    }
     return map;
   }
 
@@ -28792,10 +29144,10 @@ class PayrollLine extends DataClass implements Insertable<PayrollLine> {
       branchId: serializer.fromJson<String?>(json['branchId']),
       payrollEntryId: serializer.fromJson<String>(json['payrollEntryId']),
       employeeId: serializer.fromJson<String>(json['employeeId']),
-      basicSalary: serializer.fromJson<double>(json['basicSalary']),
+      basicSalary: serializer.fromJson<Decimal>(json['basicSalary']),
       allowances: serializer.fromJson<Decimal>(json['allowances']),
       deductions: serializer.fromJson<Decimal>(json['deductions']),
-      netSalary: serializer.fromJson<double>(json['netSalary']),
+      netSalary: serializer.fromJson<Decimal>(json['netSalary']),
     );
   }
   @override
@@ -28810,10 +29162,10 @@ class PayrollLine extends DataClass implements Insertable<PayrollLine> {
       'branchId': serializer.toJson<String?>(branchId),
       'payrollEntryId': serializer.toJson<String>(payrollEntryId),
       'employeeId': serializer.toJson<String>(employeeId),
-      'basicSalary': serializer.toJson<double>(basicSalary),
+      'basicSalary': serializer.toJson<Decimal>(basicSalary),
       'allowances': serializer.toJson<Decimal>(allowances),
       'deductions': serializer.toJson<Decimal>(deductions),
-      'netSalary': serializer.toJson<double>(netSalary),
+      'netSalary': serializer.toJson<Decimal>(netSalary),
     };
   }
 
@@ -28826,10 +29178,10 @@ class PayrollLine extends DataClass implements Insertable<PayrollLine> {
           Value<String?> branchId = const Value.absent(),
           String? payrollEntryId,
           String? employeeId,
-          double? basicSalary,
+          Decimal? basicSalary,
           Decimal? allowances,
           Decimal? deductions,
-          double? netSalary}) =>
+          Decimal? netSalary}) =>
       PayrollLine(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -28928,10 +29280,10 @@ class PayrollLinesCompanion extends UpdateCompanion<PayrollLine> {
   final Value<String?> branchId;
   final Value<String> payrollEntryId;
   final Value<String> employeeId;
-  final Value<double> basicSalary;
+  final Value<Decimal> basicSalary;
   final Value<Decimal> allowances;
   final Value<Decimal> deductions;
-  final Value<double> netSalary;
+  final Value<Decimal> netSalary;
   final Value<int> rowid;
   const PayrollLinesCompanion({
     this.id = const Value.absent(),
@@ -28957,15 +29309,13 @@ class PayrollLinesCompanion extends UpdateCompanion<PayrollLine> {
     this.branchId = const Value.absent(),
     required String payrollEntryId,
     required String employeeId,
-    required double basicSalary,
+    this.basicSalary = const Value.absent(),
     this.allowances = const Value.absent(),
     this.deductions = const Value.absent(),
-    required double netSalary,
+    this.netSalary = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : payrollEntryId = Value(payrollEntryId),
-        employeeId = Value(employeeId),
-        basicSalary = Value(basicSalary),
-        netSalary = Value(netSalary);
+        employeeId = Value(employeeId);
   static Insertable<PayrollLine> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
@@ -28975,10 +29325,10 @@ class PayrollLinesCompanion extends UpdateCompanion<PayrollLine> {
     Expression<String>? branchId,
     Expression<String>? payrollEntryId,
     Expression<String>? employeeId,
-    Expression<double>? basicSalary,
+    Expression<String>? basicSalary,
     Expression<String>? allowances,
     Expression<String>? deductions,
-    Expression<double>? netSalary,
+    Expression<String>? netSalary,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -29007,10 +29357,10 @@ class PayrollLinesCompanion extends UpdateCompanion<PayrollLine> {
       Value<String?>? branchId,
       Value<String>? payrollEntryId,
       Value<String>? employeeId,
-      Value<double>? basicSalary,
+      Value<Decimal>? basicSalary,
       Value<Decimal>? allowances,
       Value<Decimal>? deductions,
-      Value<double>? netSalary,
+      Value<Decimal>? netSalary,
       Value<int>? rowid}) {
     return PayrollLinesCompanion(
       id: id ?? this.id,
@@ -29057,7 +29407,8 @@ class PayrollLinesCompanion extends UpdateCompanion<PayrollLine> {
       map['employee_id'] = Variable<String>(employeeId.value);
     }
     if (basicSalary.present) {
-      map['basic_salary'] = Variable<double>(basicSalary.value);
+      map['basic_salary'] = Variable<String>(
+          $PayrollLinesTable.$converterbasicSalary.toSql(basicSalary.value));
     }
     if (allowances.present) {
       map['allowances'] = Variable<String>(
@@ -29068,7 +29419,8 @@ class PayrollLinesCompanion extends UpdateCompanion<PayrollLine> {
           $PayrollLinesTable.$converterdeductions.toSql(deductions.value));
     }
     if (netSalary.present) {
-      map['net_salary'] = Variable<double>(netSalary.value);
+      map['net_salary'] = Variable<String>(
+          $PayrollLinesTable.$converternetSalary.toSql(netSalary.value));
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -30028,9 +30380,12 @@ class $CashboxTransactionsTable extends CashboxTransactions
           GeneratedColumn.constraintIsAlways('REFERENCES branches (id)'));
   static const VerificationMeta _amountMeta = const VerificationMeta('amount');
   @override
-  late final GeneratedColumn<double> amount = GeneratedColumn<double>(
-      'amount', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> amount =
+      GeneratedColumn<String>('amount', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($CashboxTransactionsTable.$converteramount);
   static const VerificationMeta _typeMeta = const VerificationMeta('type');
   @override
   late final GeneratedColumn<String> type = GeneratedColumn<String>(
@@ -30111,12 +30466,7 @@ class $CashboxTransactionsTable extends CashboxTransactions
       context.handle(_branchIdMeta,
           branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta));
     }
-    if (data.containsKey('amount')) {
-      context.handle(_amountMeta,
-          amount.isAcceptableOrUnknown(data['amount']!, _amountMeta));
-    } else if (isInserting) {
-      context.missing(_amountMeta);
-    }
+    context.handle(_amountMeta, const VerificationResult.success());
     if (data.containsKey('type')) {
       context.handle(
           _typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
@@ -30166,8 +30516,9 @@ class $CashboxTransactionsTable extends CashboxTransactions
           .read(DriftSqlType.int, data['${effectivePrefix}sync_status'])!,
       branchId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}branch_id']),
-      amount: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}amount'])!,
+      amount: $CashboxTransactionsTable.$converteramount.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.string, data['${effectivePrefix}amount'])!),
       type: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}type'])!,
       category: attachedDatabase.typeMapping
@@ -30185,6 +30536,9 @@ class $CashboxTransactionsTable extends CashboxTransactions
   $CashboxTransactionsTable createAlias(String alias) {
     return $CashboxTransactionsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converteramount =
+      const DecimalConverter();
 }
 
 class CashboxTransaction extends DataClass
@@ -30195,7 +30549,7 @@ class CashboxTransaction extends DataClass
   final String? deviceId;
   final int syncStatus;
   final String? branchId;
-  final double amount;
+  final Decimal amount;
   final String type;
   final String category;
   final String? referenceId;
@@ -30227,7 +30581,10 @@ class CashboxTransaction extends DataClass
     if (!nullToAbsent || branchId != null) {
       map['branch_id'] = Variable<String>(branchId);
     }
-    map['amount'] = Variable<double>(amount);
+    {
+      map['amount'] = Variable<String>(
+          $CashboxTransactionsTable.$converteramount.toSql(amount));
+    }
     map['type'] = Variable<String>(type);
     map['category'] = Variable<String>(category);
     if (!nullToAbsent || referenceId != null) {
@@ -30273,7 +30630,7 @@ class CashboxTransaction extends DataClass
       deviceId: serializer.fromJson<String?>(json['deviceId']),
       syncStatus: serializer.fromJson<int>(json['syncStatus']),
       branchId: serializer.fromJson<String?>(json['branchId']),
-      amount: serializer.fromJson<double>(json['amount']),
+      amount: serializer.fromJson<Decimal>(json['amount']),
       type: serializer.fromJson<String>(json['type']),
       category: serializer.fromJson<String>(json['category']),
       referenceId: serializer.fromJson<String?>(json['referenceId']),
@@ -30291,7 +30648,7 @@ class CashboxTransaction extends DataClass
       'deviceId': serializer.toJson<String?>(deviceId),
       'syncStatus': serializer.toJson<int>(syncStatus),
       'branchId': serializer.toJson<String?>(branchId),
-      'amount': serializer.toJson<double>(amount),
+      'amount': serializer.toJson<Decimal>(amount),
       'type': serializer.toJson<String>(type),
       'category': serializer.toJson<String>(category),
       'referenceId': serializer.toJson<String?>(referenceId),
@@ -30307,7 +30664,7 @@ class CashboxTransaction extends DataClass
           Value<String?> deviceId = const Value.absent(),
           int? syncStatus,
           Value<String?> branchId = const Value.absent(),
-          double? amount,
+          Decimal? amount,
           String? type,
           String? category,
           Value<String?> referenceId = const Value.absent(),
@@ -30393,7 +30750,7 @@ class CashboxTransactionsCompanion extends UpdateCompanion<CashboxTransaction> {
   final Value<String?> deviceId;
   final Value<int> syncStatus;
   final Value<String?> branchId;
-  final Value<double> amount;
+  final Value<Decimal> amount;
   final Value<String> type;
   final Value<String> category;
   final Value<String?> referenceId;
@@ -30422,15 +30779,14 @@ class CashboxTransactionsCompanion extends UpdateCompanion<CashboxTransaction> {
     this.deviceId = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.branchId = const Value.absent(),
-    required double amount,
+    this.amount = const Value.absent(),
     required String type,
     required String category,
     this.referenceId = const Value.absent(),
     this.note = const Value.absent(),
     required String userId,
     this.rowid = const Value.absent(),
-  })  : amount = Value(amount),
-        type = Value(type),
+  })  : type = Value(type),
         category = Value(category),
         userId = Value(userId);
   static Insertable<CashboxTransaction> custom({
@@ -30440,7 +30796,7 @@ class CashboxTransactionsCompanion extends UpdateCompanion<CashboxTransaction> {
     Expression<String>? deviceId,
     Expression<int>? syncStatus,
     Expression<String>? branchId,
-    Expression<double>? amount,
+    Expression<String>? amount,
     Expression<String>? type,
     Expression<String>? category,
     Expression<String>? referenceId,
@@ -30472,7 +30828,7 @@ class CashboxTransactionsCompanion extends UpdateCompanion<CashboxTransaction> {
       Value<String?>? deviceId,
       Value<int>? syncStatus,
       Value<String?>? branchId,
-      Value<double>? amount,
+      Value<Decimal>? amount,
       Value<String>? type,
       Value<String>? category,
       Value<String?>? referenceId,
@@ -30518,7 +30874,8 @@ class CashboxTransactionsCompanion extends UpdateCompanion<CashboxTransaction> {
       map['branch_id'] = Variable<String>(branchId.value);
     }
     if (amount.present) {
-      map['amount'] = Variable<double>(amount.value);
+      map['amount'] = Variable<String>(
+          $CashboxTransactionsTable.$converteramount.toSql(amount.value));
     }
     if (type.present) {
       map['type'] = Variable<String>(type.value);
@@ -31446,9 +31803,12 @@ class $FinancialTransfersTable extends FinancialTransfers
               'REFERENCES gl_accounts (id)'));
   static const VerificationMeta _amountMeta = const VerificationMeta('amount');
   @override
-  late final GeneratedColumn<double> amount = GeneratedColumn<double>(
-      'amount', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> amount =
+      GeneratedColumn<String>('amount', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($FinancialTransfersTable.$converteramount);
   static const VerificationMeta _commissionMeta =
       const VerificationMeta('commission');
   @override
@@ -31569,12 +31929,7 @@ class $FinancialTransfersTable extends FinancialTransfers
     } else if (isInserting) {
       context.missing(_receiverAccountIdMeta);
     }
-    if (data.containsKey('amount')) {
-      context.handle(_amountMeta,
-          amount.isAcceptableOrUnknown(data['amount']!, _amountMeta));
-    } else if (isInserting) {
-      context.missing(_amountMeta);
-    }
+    context.handle(_amountMeta, const VerificationResult.success());
     context.handle(_commissionMeta, const VerificationResult.success());
     if (data.containsKey('company')) {
       context.handle(_companyMeta,
@@ -31629,8 +31984,9 @@ class $FinancialTransfersTable extends FinancialTransfers
           DriftSqlType.string, data['${effectivePrefix}sender_account_id'])!,
       receiverAccountId: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}receiver_account_id'])!,
-      amount: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}amount'])!,
+      amount: $FinancialTransfersTable.$converteramount.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}amount'])!),
       commission: $FinancialTransfersTable.$convertercommission.fromSql(
           attachedDatabase.typeMapping.read(
               DriftSqlType.string, data['${effectivePrefix}commission'])!),
@@ -31654,6 +32010,8 @@ class $FinancialTransfersTable extends FinancialTransfers
     return $FinancialTransfersTable(attachedDatabase, alias);
   }
 
+  static TypeConverter<Decimal, String> $converteramount =
+      const DecimalConverter();
   static TypeConverter<Decimal, String> $convertercommission =
       const DecimalConverter();
 }
@@ -31668,7 +32026,7 @@ class FinancialTransfer extends DataClass
   final String? branchId;
   final String senderAccountId;
   final String receiverAccountId;
-  final double amount;
+  final Decimal amount;
   final Decimal commission;
   final String? company;
   final String transferType;
@@ -31708,7 +32066,10 @@ class FinancialTransfer extends DataClass
     }
     map['sender_account_id'] = Variable<String>(senderAccountId);
     map['receiver_account_id'] = Variable<String>(receiverAccountId);
-    map['amount'] = Variable<double>(amount);
+    {
+      map['amount'] = Variable<String>(
+          $FinancialTransfersTable.$converteramount.toSql(amount));
+    }
     {
       map['commission'] = Variable<String>(
           $FinancialTransfersTable.$convertercommission.toSql(commission));
@@ -31769,7 +32130,7 @@ class FinancialTransfer extends DataClass
       branchId: serializer.fromJson<String?>(json['branchId']),
       senderAccountId: serializer.fromJson<String>(json['senderAccountId']),
       receiverAccountId: serializer.fromJson<String>(json['receiverAccountId']),
-      amount: serializer.fromJson<double>(json['amount']),
+      amount: serializer.fromJson<Decimal>(json['amount']),
       commission: serializer.fromJson<Decimal>(json['commission']),
       company: serializer.fromJson<String?>(json['company']),
       transferType: serializer.fromJson<String>(json['transferType']),
@@ -31791,7 +32152,7 @@ class FinancialTransfer extends DataClass
       'branchId': serializer.toJson<String?>(branchId),
       'senderAccountId': serializer.toJson<String>(senderAccountId),
       'receiverAccountId': serializer.toJson<String>(receiverAccountId),
-      'amount': serializer.toJson<double>(amount),
+      'amount': serializer.toJson<Decimal>(amount),
       'commission': serializer.toJson<Decimal>(commission),
       'company': serializer.toJson<String?>(company),
       'transferType': serializer.toJson<String>(transferType),
@@ -31811,7 +32172,7 @@ class FinancialTransfer extends DataClass
           Value<String?> branchId = const Value.absent(),
           String? senderAccountId,
           String? receiverAccountId,
-          double? amount,
+          Decimal? amount,
           Decimal? commission,
           Value<String?> company = const Value.absent(),
           String? transferType,
@@ -31938,7 +32299,7 @@ class FinancialTransfersCompanion extends UpdateCompanion<FinancialTransfer> {
   final Value<String?> branchId;
   final Value<String> senderAccountId;
   final Value<String> receiverAccountId;
-  final Value<double> amount;
+  final Value<Decimal> amount;
   final Value<Decimal> commission;
   final Value<String?> company;
   final Value<String> transferType;
@@ -31975,7 +32336,7 @@ class FinancialTransfersCompanion extends UpdateCompanion<FinancialTransfer> {
     this.branchId = const Value.absent(),
     required String senderAccountId,
     required String receiverAccountId,
-    required double amount,
+    this.amount = const Value.absent(),
     this.commission = const Value.absent(),
     this.company = const Value.absent(),
     required String transferType,
@@ -31986,7 +32347,6 @@ class FinancialTransfersCompanion extends UpdateCompanion<FinancialTransfer> {
     this.rowid = const Value.absent(),
   })  : senderAccountId = Value(senderAccountId),
         receiverAccountId = Value(receiverAccountId),
-        amount = Value(amount),
         transferType = Value(transferType);
   static Insertable<FinancialTransfer> custom({
     Expression<String>? id,
@@ -31997,7 +32357,7 @@ class FinancialTransfersCompanion extends UpdateCompanion<FinancialTransfer> {
     Expression<String>? branchId,
     Expression<String>? senderAccountId,
     Expression<String>? receiverAccountId,
-    Expression<double>? amount,
+    Expression<String>? amount,
     Expression<String>? commission,
     Expression<String>? company,
     Expression<String>? transferType,
@@ -32037,7 +32397,7 @@ class FinancialTransfersCompanion extends UpdateCompanion<FinancialTransfer> {
       Value<String?>? branchId,
       Value<String>? senderAccountId,
       Value<String>? receiverAccountId,
-      Value<double>? amount,
+      Value<Decimal>? amount,
       Value<Decimal>? commission,
       Value<String?>? company,
       Value<String>? transferType,
@@ -32095,7 +32455,8 @@ class FinancialTransfersCompanion extends UpdateCompanion<FinancialTransfer> {
       map['receiver_account_id'] = Variable<String>(receiverAccountId.value);
     }
     if (amount.present) {
-      map['amount'] = Variable<double>(amount.value);
+      map['amount'] = Variable<String>(
+          $FinancialTransfersTable.$converteramount.toSql(amount.value));
     }
     if (commission.present) {
       map['commission'] = Variable<String>($FinancialTransfersTable
@@ -32735,9 +33096,12 @@ class $PriceListItemsTable extends PriceListItems
           GeneratedColumn.constraintIsAlways('REFERENCES products (id)'));
   static const VerificationMeta _priceMeta = const VerificationMeta('price');
   @override
-  late final GeneratedColumn<double> price = GeneratedColumn<double>(
-      'price', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> price =
+      GeneratedColumn<String>('price', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($PriceListItemsTable.$converterprice);
   static const VerificationMeta _minQuantityMeta =
       const VerificationMeta('minQuantity');
   @override
@@ -32809,12 +33173,7 @@ class $PriceListItemsTable extends PriceListItems
     } else if (isInserting) {
       context.missing(_productIdMeta);
     }
-    if (data.containsKey('price')) {
-      context.handle(
-          _priceMeta, price.isAcceptableOrUnknown(data['price']!, _priceMeta));
-    } else if (isInserting) {
-      context.missing(_priceMeta);
-    }
+    context.handle(_priceMeta, const VerificationResult.success());
     context.handle(_minQuantityMeta, const VerificationResult.success());
     return context;
   }
@@ -32841,8 +33200,9 @@ class $PriceListItemsTable extends PriceListItems
           .read(DriftSqlType.string, data['${effectivePrefix}price_list_id'])!,
       productId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}product_id'])!,
-      price: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}price'])!,
+      price: $PriceListItemsTable.$converterprice.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}price'])!),
       minQuantity: $PriceListItemsTable.$converterminQuantity.fromSql(
           attachedDatabase.typeMapping.read(
               DriftSqlType.string, data['${effectivePrefix}min_quantity'])!),
@@ -32854,6 +33214,8 @@ class $PriceListItemsTable extends PriceListItems
     return $PriceListItemsTable(attachedDatabase, alias);
   }
 
+  static TypeConverter<Decimal, String> $converterprice =
+      const DecimalConverter();
   static TypeConverter<Decimal, String> $converterminQuantity =
       const DecimalConverter();
 }
@@ -32867,7 +33229,7 @@ class PriceListItem extends DataClass implements Insertable<PriceListItem> {
   final String? branchId;
   final String priceListId;
   final String productId;
-  final double price;
+  final Decimal price;
   final Decimal minQuantity;
   const PriceListItem(
       {required this.id,
@@ -32895,7 +33257,10 @@ class PriceListItem extends DataClass implements Insertable<PriceListItem> {
     }
     map['price_list_id'] = Variable<String>(priceListId);
     map['product_id'] = Variable<String>(productId);
-    map['price'] = Variable<double>(price);
+    {
+      map['price'] =
+          Variable<String>($PriceListItemsTable.$converterprice.toSql(price));
+    }
     {
       map['min_quantity'] = Variable<String>(
           $PriceListItemsTable.$converterminQuantity.toSql(minQuantity));
@@ -32934,7 +33299,7 @@ class PriceListItem extends DataClass implements Insertable<PriceListItem> {
       branchId: serializer.fromJson<String?>(json['branchId']),
       priceListId: serializer.fromJson<String>(json['priceListId']),
       productId: serializer.fromJson<String>(json['productId']),
-      price: serializer.fromJson<double>(json['price']),
+      price: serializer.fromJson<Decimal>(json['price']),
       minQuantity: serializer.fromJson<Decimal>(json['minQuantity']),
     );
   }
@@ -32950,7 +33315,7 @@ class PriceListItem extends DataClass implements Insertable<PriceListItem> {
       'branchId': serializer.toJson<String?>(branchId),
       'priceListId': serializer.toJson<String>(priceListId),
       'productId': serializer.toJson<String>(productId),
-      'price': serializer.toJson<double>(price),
+      'price': serializer.toJson<Decimal>(price),
       'minQuantity': serializer.toJson<Decimal>(minQuantity),
     };
   }
@@ -32964,7 +33329,7 @@ class PriceListItem extends DataClass implements Insertable<PriceListItem> {
           Value<String?> branchId = const Value.absent(),
           String? priceListId,
           String? productId,
-          double? price,
+          Decimal? price,
           Decimal? minQuantity}) =>
       PriceListItem(
         id: id ?? this.id,
@@ -33041,7 +33406,7 @@ class PriceListItemsCompanion extends UpdateCompanion<PriceListItem> {
   final Value<String?> branchId;
   final Value<String> priceListId;
   final Value<String> productId;
-  final Value<double> price;
+  final Value<Decimal> price;
   final Value<Decimal> minQuantity;
   final Value<int> rowid;
   const PriceListItemsCompanion({
@@ -33066,12 +33431,11 @@ class PriceListItemsCompanion extends UpdateCompanion<PriceListItem> {
     this.branchId = const Value.absent(),
     required String priceListId,
     required String productId,
-    required double price,
+    this.price = const Value.absent(),
     this.minQuantity = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : priceListId = Value(priceListId),
-        productId = Value(productId),
-        price = Value(price);
+        productId = Value(productId);
   static Insertable<PriceListItem> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
@@ -33081,7 +33445,7 @@ class PriceListItemsCompanion extends UpdateCompanion<PriceListItem> {
     Expression<String>? branchId,
     Expression<String>? priceListId,
     Expression<String>? productId,
-    Expression<double>? price,
+    Expression<String>? price,
     Expression<String>? minQuantity,
     Expression<int>? rowid,
   }) {
@@ -33109,7 +33473,7 @@ class PriceListItemsCompanion extends UpdateCompanion<PriceListItem> {
       Value<String?>? branchId,
       Value<String>? priceListId,
       Value<String>? productId,
-      Value<double>? price,
+      Value<Decimal>? price,
       Value<Decimal>? minQuantity,
       Value<int>? rowid}) {
     return PriceListItemsCompanion(
@@ -33155,7 +33519,8 @@ class PriceListItemsCompanion extends UpdateCompanion<PriceListItem> {
       map['product_id'] = Variable<String>(productId.value);
     }
     if (price.present) {
-      map['price'] = Variable<double>(price.value);
+      map['price'] = Variable<String>(
+          $PriceListItemsTable.$converterprice.toSql(price.value));
     }
     if (minQuantity.present) {
       map['min_quantity'] = Variable<String>(
@@ -33250,9 +33615,12 @@ class $PromotionsTable extends Promotions
       type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _valueMeta = const VerificationMeta('value');
   @override
-  late final GeneratedColumn<double> value = GeneratedColumn<double>(
-      'value', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> value =
+      GeneratedColumn<String>('value', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($PromotionsTable.$convertervalue);
   static const VerificationMeta _startDateMeta =
       const VerificationMeta('startDate');
   @override
@@ -33368,12 +33736,7 @@ class $PromotionsTable extends Promotions
     } else if (isInserting) {
       context.missing(_typeMeta);
     }
-    if (data.containsKey('value')) {
-      context.handle(
-          _valueMeta, value.isAcceptableOrUnknown(data['value']!, _valueMeta));
-    } else if (isInserting) {
-      context.missing(_valueMeta);
-    }
+    context.handle(_valueMeta, const VerificationResult.success());
     if (data.containsKey('start_date')) {
       context.handle(_startDateMeta,
           startDate.isAcceptableOrUnknown(data['start_date']!, _startDateMeta));
@@ -33426,8 +33789,9 @@ class $PromotionsTable extends Promotions
           .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
       type: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}type'])!,
-      value: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}value'])!,
+      value: $PromotionsTable.$convertervalue.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}value'])!),
       startDate: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}start_date'])!,
       endDate: attachedDatabase.typeMapping
@@ -33449,6 +33813,8 @@ class $PromotionsTable extends Promotions
     return $PromotionsTable(attachedDatabase, alias);
   }
 
+  static TypeConverter<Decimal, String> $convertervalue =
+      const DecimalConverter();
   static TypeConverter<Decimal, String> $converterminPurchaseAmount =
       const DecimalConverter();
 }
@@ -33462,7 +33828,7 @@ class Promotion extends DataClass implements Insertable<Promotion> {
   final String? branchId;
   final String name;
   final String type;
-  final double value;
+  final Decimal value;
   final DateTime startDate;
   final DateTime endDate;
   final bool isActive;
@@ -33500,7 +33866,10 @@ class Promotion extends DataClass implements Insertable<Promotion> {
     }
     map['name'] = Variable<String>(name);
     map['type'] = Variable<String>(type);
-    map['value'] = Variable<double>(value);
+    {
+      map['value'] =
+          Variable<String>($PromotionsTable.$convertervalue.toSql(value));
+    }
     map['start_date'] = Variable<DateTime>(startDate);
     map['end_date'] = Variable<DateTime>(endDate);
     map['is_active'] = Variable<bool>(isActive);
@@ -33558,7 +33927,7 @@ class Promotion extends DataClass implements Insertable<Promotion> {
       branchId: serializer.fromJson<String?>(json['branchId']),
       name: serializer.fromJson<String>(json['name']),
       type: serializer.fromJson<String>(json['type']),
-      value: serializer.fromJson<double>(json['value']),
+      value: serializer.fromJson<Decimal>(json['value']),
       startDate: serializer.fromJson<DateTime>(json['startDate']),
       endDate: serializer.fromJson<DateTime>(json['endDate']),
       isActive: serializer.fromJson<bool>(json['isActive']),
@@ -33580,7 +33949,7 @@ class Promotion extends DataClass implements Insertable<Promotion> {
       'branchId': serializer.toJson<String?>(branchId),
       'name': serializer.toJson<String>(name),
       'type': serializer.toJson<String>(type),
-      'value': serializer.toJson<double>(value),
+      'value': serializer.toJson<Decimal>(value),
       'startDate': serializer.toJson<DateTime>(startDate),
       'endDate': serializer.toJson<DateTime>(endDate),
       'isActive': serializer.toJson<bool>(isActive),
@@ -33599,7 +33968,7 @@ class Promotion extends DataClass implements Insertable<Promotion> {
           Value<String?> branchId = const Value.absent(),
           String? name,
           String? type,
-          double? value,
+          Decimal? value,
           DateTime? startDate,
           DateTime? endDate,
           bool? isActive,
@@ -33716,7 +34085,7 @@ class PromotionsCompanion extends UpdateCompanion<Promotion> {
   final Value<String?> branchId;
   final Value<String> name;
   final Value<String> type;
-  final Value<double> value;
+  final Value<Decimal> value;
   final Value<DateTime> startDate;
   final Value<DateTime> endDate;
   final Value<bool> isActive;
@@ -33751,7 +34120,7 @@ class PromotionsCompanion extends UpdateCompanion<Promotion> {
     this.branchId = const Value.absent(),
     required String name,
     required String type,
-    required double value,
+    this.value = const Value.absent(),
     required DateTime startDate,
     required DateTime endDate,
     this.isActive = const Value.absent(),
@@ -33761,7 +34130,6 @@ class PromotionsCompanion extends UpdateCompanion<Promotion> {
     this.rowid = const Value.absent(),
   })  : name = Value(name),
         type = Value(type),
-        value = Value(value),
         startDate = Value(startDate),
         endDate = Value(endDate);
   static Insertable<Promotion> custom({
@@ -33773,7 +34141,7 @@ class PromotionsCompanion extends UpdateCompanion<Promotion> {
     Expression<String>? branchId,
     Expression<String>? name,
     Expression<String>? type,
-    Expression<double>? value,
+    Expression<String>? value,
     Expression<DateTime>? startDate,
     Expression<DateTime>? endDate,
     Expression<bool>? isActive,
@@ -33811,7 +34179,7 @@ class PromotionsCompanion extends UpdateCompanion<Promotion> {
       Value<String?>? branchId,
       Value<String>? name,
       Value<String>? type,
-      Value<double>? value,
+      Value<Decimal>? value,
       Value<DateTime>? startDate,
       Value<DateTime>? endDate,
       Value<bool>? isActive,
@@ -33867,7 +34235,8 @@ class PromotionsCompanion extends UpdateCompanion<Promotion> {
       map['type'] = Variable<String>(type.value);
     }
     if (value.present) {
-      map['value'] = Variable<double>(value.value);
+      map['value'] =
+          Variable<String>($PromotionsTable.$convertervalue.toSql(value.value));
     }
     if (startDate.present) {
       map['start_date'] = Variable<DateTime>(startDate.value);
@@ -33983,15 +34352,21 @@ class $PriceHistoryTable extends PriceHistory
   static const VerificationMeta _oldPriceMeta =
       const VerificationMeta('oldPrice');
   @override
-  late final GeneratedColumn<double> oldPrice = GeneratedColumn<double>(
-      'old_price', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> oldPrice =
+      GeneratedColumn<String>('old_price', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($PriceHistoryTable.$converteroldPrice);
   static const VerificationMeta _newPriceMeta =
       const VerificationMeta('newPrice');
   @override
-  late final GeneratedColumn<double> newPrice = GeneratedColumn<double>(
-      'new_price', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> newPrice =
+      GeneratedColumn<String>('new_price', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($PriceHistoryTable.$converternewPrice);
   static const VerificationMeta _typeMeta = const VerificationMeta('type');
   @override
   late final GeneratedColumn<String> type = GeneratedColumn<String>(
@@ -34051,18 +34426,8 @@ class $PriceHistoryTable extends PriceHistory
     } else if (isInserting) {
       context.missing(_productIdMeta);
     }
-    if (data.containsKey('old_price')) {
-      context.handle(_oldPriceMeta,
-          oldPrice.isAcceptableOrUnknown(data['old_price']!, _oldPriceMeta));
-    } else if (isInserting) {
-      context.missing(_oldPriceMeta);
-    }
-    if (data.containsKey('new_price')) {
-      context.handle(_newPriceMeta,
-          newPrice.isAcceptableOrUnknown(data['new_price']!, _newPriceMeta));
-    } else if (isInserting) {
-      context.missing(_newPriceMeta);
-    }
+    context.handle(_oldPriceMeta, const VerificationResult.success());
+    context.handle(_newPriceMeta, const VerificationResult.success());
     if (data.containsKey('type')) {
       context.handle(
           _typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
@@ -34092,10 +34457,12 @@ class $PriceHistoryTable extends PriceHistory
           .read(DriftSqlType.string, data['${effectivePrefix}branch_id']),
       productId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}product_id'])!,
-      oldPrice: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}old_price'])!,
-      newPrice: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}new_price'])!,
+      oldPrice: $PriceHistoryTable.$converteroldPrice.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}old_price'])!),
+      newPrice: $PriceHistoryTable.$converternewPrice.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}new_price'])!),
       type: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}type'])!,
     );
@@ -34105,6 +34472,11 @@ class $PriceHistoryTable extends PriceHistory
   $PriceHistoryTable createAlias(String alias) {
     return $PriceHistoryTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converteroldPrice =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converternewPrice =
+      const DecimalConverter();
 }
 
 class PriceHistoryData extends DataClass
@@ -34116,8 +34488,8 @@ class PriceHistoryData extends DataClass
   final int syncStatus;
   final String? branchId;
   final String productId;
-  final double oldPrice;
-  final double newPrice;
+  final Decimal oldPrice;
+  final Decimal newPrice;
   final String type;
   const PriceHistoryData(
       {required this.id,
@@ -34144,8 +34516,14 @@ class PriceHistoryData extends DataClass
       map['branch_id'] = Variable<String>(branchId);
     }
     map['product_id'] = Variable<String>(productId);
-    map['old_price'] = Variable<double>(oldPrice);
-    map['new_price'] = Variable<double>(newPrice);
+    {
+      map['old_price'] = Variable<String>(
+          $PriceHistoryTable.$converteroldPrice.toSql(oldPrice));
+    }
+    {
+      map['new_price'] = Variable<String>(
+          $PriceHistoryTable.$converternewPrice.toSql(newPrice));
+    }
     map['type'] = Variable<String>(type);
     return map;
   }
@@ -34180,8 +34558,8 @@ class PriceHistoryData extends DataClass
       syncStatus: serializer.fromJson<int>(json['syncStatus']),
       branchId: serializer.fromJson<String?>(json['branchId']),
       productId: serializer.fromJson<String>(json['productId']),
-      oldPrice: serializer.fromJson<double>(json['oldPrice']),
-      newPrice: serializer.fromJson<double>(json['newPrice']),
+      oldPrice: serializer.fromJson<Decimal>(json['oldPrice']),
+      newPrice: serializer.fromJson<Decimal>(json['newPrice']),
       type: serializer.fromJson<String>(json['type']),
     );
   }
@@ -34196,8 +34574,8 @@ class PriceHistoryData extends DataClass
       'syncStatus': serializer.toJson<int>(syncStatus),
       'branchId': serializer.toJson<String?>(branchId),
       'productId': serializer.toJson<String>(productId),
-      'oldPrice': serializer.toJson<double>(oldPrice),
-      'newPrice': serializer.toJson<double>(newPrice),
+      'oldPrice': serializer.toJson<Decimal>(oldPrice),
+      'newPrice': serializer.toJson<Decimal>(newPrice),
       'type': serializer.toJson<String>(type),
     };
   }
@@ -34210,8 +34588,8 @@ class PriceHistoryData extends DataClass
           int? syncStatus,
           Value<String?> branchId = const Value.absent(),
           String? productId,
-          double? oldPrice,
-          double? newPrice,
+          Decimal? oldPrice,
+          Decimal? newPrice,
           String? type}) =>
       PriceHistoryData(
         id: id ?? this.id,
@@ -34285,8 +34663,8 @@ class PriceHistoryCompanion extends UpdateCompanion<PriceHistoryData> {
   final Value<int> syncStatus;
   final Value<String?> branchId;
   final Value<String> productId;
-  final Value<double> oldPrice;
-  final Value<double> newPrice;
+  final Value<Decimal> oldPrice;
+  final Value<Decimal> newPrice;
   final Value<String> type;
   final Value<int> rowid;
   const PriceHistoryCompanion({
@@ -34310,13 +34688,11 @@ class PriceHistoryCompanion extends UpdateCompanion<PriceHistoryData> {
     this.syncStatus = const Value.absent(),
     this.branchId = const Value.absent(),
     required String productId,
-    required double oldPrice,
-    required double newPrice,
+    this.oldPrice = const Value.absent(),
+    this.newPrice = const Value.absent(),
     required String type,
     this.rowid = const Value.absent(),
   })  : productId = Value(productId),
-        oldPrice = Value(oldPrice),
-        newPrice = Value(newPrice),
         type = Value(type);
   static Insertable<PriceHistoryData> custom({
     Expression<String>? id,
@@ -34326,8 +34702,8 @@ class PriceHistoryCompanion extends UpdateCompanion<PriceHistoryData> {
     Expression<int>? syncStatus,
     Expression<String>? branchId,
     Expression<String>? productId,
-    Expression<double>? oldPrice,
-    Expression<double>? newPrice,
+    Expression<String>? oldPrice,
+    Expression<String>? newPrice,
     Expression<String>? type,
     Expression<int>? rowid,
   }) {
@@ -34354,8 +34730,8 @@ class PriceHistoryCompanion extends UpdateCompanion<PriceHistoryData> {
       Value<int>? syncStatus,
       Value<String?>? branchId,
       Value<String>? productId,
-      Value<double>? oldPrice,
-      Value<double>? newPrice,
+      Value<Decimal>? oldPrice,
+      Value<Decimal>? newPrice,
       Value<String>? type,
       Value<int>? rowid}) {
     return PriceHistoryCompanion(
@@ -34398,10 +34774,12 @@ class PriceHistoryCompanion extends UpdateCompanion<PriceHistoryData> {
       map['product_id'] = Variable<String>(productId.value);
     }
     if (oldPrice.present) {
-      map['old_price'] = Variable<double>(oldPrice.value);
+      map['old_price'] = Variable<String>(
+          $PriceHistoryTable.$converteroldPrice.toSql(oldPrice.value));
     }
     if (newPrice.present) {
-      map['new_price'] = Variable<double>(newPrice.value);
+      map['new_price'] = Variable<String>(
+          $PriceHistoryTable.$converternewPrice.toSql(newPrice.value));
     }
     if (type.present) {
       map['type'] = Variable<String>(type.value);
@@ -34500,9 +34878,12 @@ class $UnitConversionsTable extends UnitConversions
       type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _factorMeta = const VerificationMeta('factor');
   @override
-  late final GeneratedColumn<double> factor = GeneratedColumn<double>(
-      'factor', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> factor =
+      GeneratedColumn<String>('factor', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.one.toString()))
+          .withConverter<Decimal>($UnitConversionsTable.$converterfactor);
   static const VerificationMeta _isBaseUnitMeta =
       const VerificationMeta('isBaseUnit');
   @override
@@ -34598,12 +34979,7 @@ class $UnitConversionsTable extends UnitConversions
     } else if (isInserting) {
       context.missing(_unitNameMeta);
     }
-    if (data.containsKey('factor')) {
-      context.handle(_factorMeta,
-          factor.isAcceptableOrUnknown(data['factor']!, _factorMeta));
-    } else if (isInserting) {
-      context.missing(_factorMeta);
-    }
+    context.handle(_factorMeta, const VerificationResult.success());
     if (data.containsKey('is_base_unit')) {
       context.handle(
           _isBaseUnitMeta,
@@ -34641,8 +35017,9 @@ class $UnitConversionsTable extends UnitConversions
           .read(DriftSqlType.string, data['${effectivePrefix}product_id'])!,
       unitName: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}unit_name'])!,
-      factor: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}factor'])!,
+      factor: $UnitConversionsTable.$converterfactor.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}factor'])!),
       isBaseUnit: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_base_unit'])!,
       buyPrice: $UnitConversionsTable.$converterbuyPricen.fromSql(
@@ -34661,6 +35038,8 @@ class $UnitConversionsTable extends UnitConversions
     return $UnitConversionsTable(attachedDatabase, alias);
   }
 
+  static TypeConverter<Decimal, String> $converterfactor =
+      const DecimalConverter();
   static TypeConverter<Decimal, String> $converterbuyPrice =
       const DecimalConverter();
   static TypeConverter<Decimal?, String?> $converterbuyPricen =
@@ -34680,7 +35059,7 @@ class UnitConversion extends DataClass implements Insertable<UnitConversion> {
   final String? branchId;
   final String productId;
   final String unitName;
-  final double factor;
+  final Decimal factor;
   final bool isBaseUnit;
   final Decimal? buyPrice;
   final Decimal? sellPrice;
@@ -34714,7 +35093,10 @@ class UnitConversion extends DataClass implements Insertable<UnitConversion> {
     }
     map['product_id'] = Variable<String>(productId);
     map['unit_name'] = Variable<String>(unitName);
-    map['factor'] = Variable<double>(factor);
+    {
+      map['factor'] = Variable<String>(
+          $UnitConversionsTable.$converterfactor.toSql(factor));
+    }
     map['is_base_unit'] = Variable<bool>(isBaseUnit);
     if (!nullToAbsent || buyPrice != null) {
       map['buy_price'] = Variable<String>(
@@ -34770,7 +35152,7 @@ class UnitConversion extends DataClass implements Insertable<UnitConversion> {
       branchId: serializer.fromJson<String?>(json['branchId']),
       productId: serializer.fromJson<String>(json['productId']),
       unitName: serializer.fromJson<String>(json['unitName']),
-      factor: serializer.fromJson<double>(json['factor']),
+      factor: serializer.fromJson<Decimal>(json['factor']),
       isBaseUnit: serializer.fromJson<bool>(json['isBaseUnit']),
       buyPrice: serializer.fromJson<Decimal?>(json['buyPrice']),
       sellPrice: serializer.fromJson<Decimal?>(json['sellPrice']),
@@ -34789,7 +35171,7 @@ class UnitConversion extends DataClass implements Insertable<UnitConversion> {
       'branchId': serializer.toJson<String?>(branchId),
       'productId': serializer.toJson<String>(productId),
       'unitName': serializer.toJson<String>(unitName),
-      'factor': serializer.toJson<double>(factor),
+      'factor': serializer.toJson<Decimal>(factor),
       'isBaseUnit': serializer.toJson<bool>(isBaseUnit),
       'buyPrice': serializer.toJson<Decimal?>(buyPrice),
       'sellPrice': serializer.toJson<Decimal?>(sellPrice),
@@ -34806,7 +35188,7 @@ class UnitConversion extends DataClass implements Insertable<UnitConversion> {
           Value<String?> branchId = const Value.absent(),
           String? productId,
           String? unitName,
-          double? factor,
+          Decimal? factor,
           bool? isBaseUnit,
           Value<Decimal?> buyPrice = const Value.absent(),
           Value<Decimal?> sellPrice = const Value.absent(),
@@ -34909,7 +35291,7 @@ class UnitConversionsCompanion extends UpdateCompanion<UnitConversion> {
   final Value<String?> branchId;
   final Value<String> productId;
   final Value<String> unitName;
-  final Value<double> factor;
+  final Value<Decimal> factor;
   final Value<bool> isBaseUnit;
   final Value<Decimal?> buyPrice;
   final Value<Decimal?> sellPrice;
@@ -34940,15 +35322,14 @@ class UnitConversionsCompanion extends UpdateCompanion<UnitConversion> {
     this.branchId = const Value.absent(),
     required String productId,
     required String unitName,
-    required double factor,
+    this.factor = const Value.absent(),
     this.isBaseUnit = const Value.absent(),
     this.buyPrice = const Value.absent(),
     this.sellPrice = const Value.absent(),
     this.barcode = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : productId = Value(productId),
-        unitName = Value(unitName),
-        factor = Value(factor);
+        unitName = Value(unitName);
   static Insertable<UnitConversion> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
@@ -34958,7 +35339,7 @@ class UnitConversionsCompanion extends UpdateCompanion<UnitConversion> {
     Expression<String>? branchId,
     Expression<String>? productId,
     Expression<String>? unitName,
-    Expression<double>? factor,
+    Expression<String>? factor,
     Expression<bool>? isBaseUnit,
     Expression<String>? buyPrice,
     Expression<String>? sellPrice,
@@ -34992,7 +35373,7 @@ class UnitConversionsCompanion extends UpdateCompanion<UnitConversion> {
       Value<String?>? branchId,
       Value<String>? productId,
       Value<String>? unitName,
-      Value<double>? factor,
+      Value<Decimal>? factor,
       Value<bool>? isBaseUnit,
       Value<Decimal?>? buyPrice,
       Value<Decimal?>? sellPrice,
@@ -35044,7 +35425,8 @@ class UnitConversionsCompanion extends UpdateCompanion<UnitConversion> {
       map['unit_name'] = Variable<String>(unitName.value);
     }
     if (factor.present) {
-      map['factor'] = Variable<double>(factor.value);
+      map['factor'] = Variable<String>(
+          $UnitConversionsTable.$converterfactor.toSql(factor.value));
     }
     if (isBaseUnit.present) {
       map['is_base_unit'] = Variable<bool>(isBaseUnit.value);
@@ -36735,9 +37117,13 @@ class $InventoryTransactionsTable extends InventoryTransactions
   static const VerificationMeta _quantityMeta =
       const VerificationMeta('quantity');
   @override
-  late final GeneratedColumn<double> quantity = GeneratedColumn<double>(
-      'quantity', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> quantity =
+      GeneratedColumn<String>('quantity', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>(
+              $InventoryTransactionsTable.$converterquantity);
   static const VerificationMeta _typeMeta = const VerificationMeta('type');
   @override
   late final GeneratedColumn<String> type = GeneratedColumn<String>(
@@ -36826,12 +37212,7 @@ class $InventoryTransactionsTable extends InventoryTransactions
       context.handle(_batchIdMeta,
           batchId.isAcceptableOrUnknown(data['batch_id']!, _batchIdMeta));
     }
-    if (data.containsKey('quantity')) {
-      context.handle(_quantityMeta,
-          quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta));
-    } else if (isInserting) {
-      context.missing(_quantityMeta);
-    }
+    context.handle(_quantityMeta, const VerificationResult.success());
     if (data.containsKey('type')) {
       context.handle(
           _typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
@@ -36877,8 +37258,9 @@ class $InventoryTransactionsTable extends InventoryTransactions
           .read(DriftSqlType.string, data['${effectivePrefix}warehouse_id'])!,
       batchId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}batch_id']),
-      quantity: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}quantity'])!,
+      quantity: $InventoryTransactionsTable.$converterquantity.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.string, data['${effectivePrefix}quantity'])!),
       type: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}type'])!,
       referenceId: attachedDatabase.typeMapping
@@ -36892,6 +37274,9 @@ class $InventoryTransactionsTable extends InventoryTransactions
   $InventoryTransactionsTable createAlias(String alias) {
     return $InventoryTransactionsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterquantity =
+      const DecimalConverter();
 }
 
 class InventoryTransaction extends DataClass
@@ -36905,7 +37290,7 @@ class InventoryTransaction extends DataClass
   final String productId;
   final String warehouseId;
   final String? batchId;
-  final double quantity;
+  final Decimal quantity;
   final String type;
   final String referenceId;
   final DateTime date;
@@ -36941,7 +37326,10 @@ class InventoryTransaction extends DataClass
     if (!nullToAbsent || batchId != null) {
       map['batch_id'] = Variable<String>(batchId);
     }
-    map['quantity'] = Variable<double>(quantity);
+    {
+      map['quantity'] = Variable<String>(
+          $InventoryTransactionsTable.$converterquantity.toSql(quantity));
+    }
     map['type'] = Variable<String>(type);
     map['reference_id'] = Variable<String>(referenceId);
     map['date'] = Variable<DateTime>(date);
@@ -36985,7 +37373,7 @@ class InventoryTransaction extends DataClass
       productId: serializer.fromJson<String>(json['productId']),
       warehouseId: serializer.fromJson<String>(json['warehouseId']),
       batchId: serializer.fromJson<String?>(json['batchId']),
-      quantity: serializer.fromJson<double>(json['quantity']),
+      quantity: serializer.fromJson<Decimal>(json['quantity']),
       type: serializer.fromJson<String>(json['type']),
       referenceId: serializer.fromJson<String>(json['referenceId']),
       date: serializer.fromJson<DateTime>(json['date']),
@@ -37004,7 +37392,7 @@ class InventoryTransaction extends DataClass
       'productId': serializer.toJson<String>(productId),
       'warehouseId': serializer.toJson<String>(warehouseId),
       'batchId': serializer.toJson<String?>(batchId),
-      'quantity': serializer.toJson<double>(quantity),
+      'quantity': serializer.toJson<Decimal>(quantity),
       'type': serializer.toJson<String>(type),
       'referenceId': serializer.toJson<String>(referenceId),
       'date': serializer.toJson<DateTime>(date),
@@ -37021,7 +37409,7 @@ class InventoryTransaction extends DataClass
           String? productId,
           String? warehouseId,
           Value<String?> batchId = const Value.absent(),
-          double? quantity,
+          Decimal? quantity,
           String? type,
           String? referenceId,
           DateTime? date}) =>
@@ -37126,7 +37514,7 @@ class InventoryTransactionsCompanion
   final Value<String> productId;
   final Value<String> warehouseId;
   final Value<String?> batchId;
-  final Value<double> quantity;
+  final Value<Decimal> quantity;
   final Value<String> type;
   final Value<String> referenceId;
   final Value<DateTime> date;
@@ -37157,14 +37545,13 @@ class InventoryTransactionsCompanion
     required String productId,
     required String warehouseId,
     this.batchId = const Value.absent(),
-    required double quantity,
+    this.quantity = const Value.absent(),
     required String type,
     required String referenceId,
     this.date = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : productId = Value(productId),
         warehouseId = Value(warehouseId),
-        quantity = Value(quantity),
         type = Value(type),
         referenceId = Value(referenceId);
   static Insertable<InventoryTransaction> custom({
@@ -37177,7 +37564,7 @@ class InventoryTransactionsCompanion
     Expression<String>? productId,
     Expression<String>? warehouseId,
     Expression<String>? batchId,
-    Expression<double>? quantity,
+    Expression<String>? quantity,
     Expression<String>? type,
     Expression<String>? referenceId,
     Expression<DateTime>? date,
@@ -37211,7 +37598,7 @@ class InventoryTransactionsCompanion
       Value<String>? productId,
       Value<String>? warehouseId,
       Value<String?>? batchId,
-      Value<double>? quantity,
+      Value<Decimal>? quantity,
       Value<String>? type,
       Value<String>? referenceId,
       Value<DateTime>? date,
@@ -37265,7 +37652,8 @@ class InventoryTransactionsCompanion
       map['batch_id'] = Variable<String>(batchId.value);
     }
     if (quantity.present) {
-      map['quantity'] = Variable<double>(quantity.value);
+      map['quantity'] = Variable<String>(
+          $InventoryTransactionsTable.$converterquantity.toSql(quantity.value));
     }
     if (type.present) {
       map['type'] = Variable<String>(type.value);
@@ -37399,6 +37787,16 @@ class $AccountTransactionsTable extends AccountTransactions
               requiredDuringInsert: false,
               defaultValue: Constant(Decimal.zero.toString()))
           .withConverter<Decimal>($AccountTransactionsTable.$convertercredit);
+  static const VerificationMeta _reconciledMeta =
+      const VerificationMeta('reconciled');
+  @override
+  late final GeneratedColumn<bool> reconciled = GeneratedColumn<bool>(
+      'reconciled', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("reconciled" IN (0, 1))'),
+      defaultValue: const Constant(false));
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -37412,7 +37810,8 @@ class $AccountTransactionsTable extends AccountTransactions
         type,
         referenceId,
         debit,
-        credit
+        credit,
+        reconciled
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -37473,6 +37872,12 @@ class $AccountTransactionsTable extends AccountTransactions
     }
     context.handle(_debitMeta, const VerificationResult.success());
     context.handle(_creditMeta, const VerificationResult.success());
+    if (data.containsKey('reconciled')) {
+      context.handle(
+          _reconciledMeta,
+          reconciled.isAcceptableOrUnknown(
+              data['reconciled']!, _reconciledMeta));
+    }
     return context;
   }
 
@@ -37508,6 +37913,8 @@ class $AccountTransactionsTable extends AccountTransactions
       credit: $AccountTransactionsTable.$convertercredit.fromSql(
           attachedDatabase.typeMapping
               .read(DriftSqlType.string, data['${effectivePrefix}credit'])!),
+      reconciled: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}reconciled'])!,
     );
   }
 
@@ -37536,6 +37943,7 @@ class AccountTransaction extends DataClass
   final String? referenceId;
   final Decimal debit;
   final Decimal credit;
+  final bool reconciled;
   const AccountTransaction(
       {required this.id,
       required this.createdAt,
@@ -37548,7 +37956,8 @@ class AccountTransaction extends DataClass
       required this.type,
       this.referenceId,
       required this.debit,
-      required this.credit});
+      required this.credit,
+      required this.reconciled});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -37576,6 +37985,7 @@ class AccountTransaction extends DataClass
       map['credit'] = Variable<String>(
           $AccountTransactionsTable.$convertercredit.toSql(credit));
     }
+    map['reconciled'] = Variable<bool>(reconciled);
     return map;
   }
 
@@ -37599,6 +38009,7 @@ class AccountTransaction extends DataClass
           : Value(referenceId),
       debit: Value(debit),
       credit: Value(credit),
+      reconciled: Value(reconciled),
     );
   }
 
@@ -37618,6 +38029,7 @@ class AccountTransaction extends DataClass
       referenceId: serializer.fromJson<String?>(json['referenceId']),
       debit: serializer.fromJson<Decimal>(json['debit']),
       credit: serializer.fromJson<Decimal>(json['credit']),
+      reconciled: serializer.fromJson<bool>(json['reconciled']),
     );
   }
   @override
@@ -37636,6 +38048,7 @@ class AccountTransaction extends DataClass
       'referenceId': serializer.toJson<String?>(referenceId),
       'debit': serializer.toJson<Decimal>(debit),
       'credit': serializer.toJson<Decimal>(credit),
+      'reconciled': serializer.toJson<bool>(reconciled),
     };
   }
 
@@ -37651,7 +38064,8 @@ class AccountTransaction extends DataClass
           String? type,
           Value<String?> referenceId = const Value.absent(),
           Decimal? debit,
-          Decimal? credit}) =>
+          Decimal? credit,
+          bool? reconciled}) =>
       AccountTransaction(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -37665,6 +38079,7 @@ class AccountTransaction extends DataClass
         referenceId: referenceId.present ? referenceId.value : this.referenceId,
         debit: debit ?? this.debit,
         credit: credit ?? this.credit,
+        reconciled: reconciled ?? this.reconciled,
       );
   AccountTransaction copyWithCompanion(AccountTransactionsCompanion data) {
     return AccountTransaction(
@@ -37682,6 +38097,8 @@ class AccountTransaction extends DataClass
           data.referenceId.present ? data.referenceId.value : this.referenceId,
       debit: data.debit.present ? data.debit.value : this.debit,
       credit: data.credit.present ? data.credit.value : this.credit,
+      reconciled:
+          data.reconciled.present ? data.reconciled.value : this.reconciled,
     );
   }
 
@@ -37699,14 +38116,27 @@ class AccountTransaction extends DataClass
           ..write('type: $type, ')
           ..write('referenceId: $referenceId, ')
           ..write('debit: $debit, ')
-          ..write('credit: $credit')
+          ..write('credit: $credit, ')
+          ..write('reconciled: $reconciled')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, createdAt, updatedAt, deviceId,
-      syncStatus, branchId, accountId, date, type, referenceId, debit, credit);
+  int get hashCode => Object.hash(
+      id,
+      createdAt,
+      updatedAt,
+      deviceId,
+      syncStatus,
+      branchId,
+      accountId,
+      date,
+      type,
+      referenceId,
+      debit,
+      credit,
+      reconciled);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -37722,7 +38152,8 @@ class AccountTransaction extends DataClass
           other.type == this.type &&
           other.referenceId == this.referenceId &&
           other.debit == this.debit &&
-          other.credit == this.credit);
+          other.credit == this.credit &&
+          other.reconciled == this.reconciled);
 }
 
 class AccountTransactionsCompanion extends UpdateCompanion<AccountTransaction> {
@@ -37738,6 +38169,7 @@ class AccountTransactionsCompanion extends UpdateCompanion<AccountTransaction> {
   final Value<String?> referenceId;
   final Value<Decimal> debit;
   final Value<Decimal> credit;
+  final Value<bool> reconciled;
   final Value<int> rowid;
   const AccountTransactionsCompanion({
     this.id = const Value.absent(),
@@ -37752,6 +38184,7 @@ class AccountTransactionsCompanion extends UpdateCompanion<AccountTransaction> {
     this.referenceId = const Value.absent(),
     this.debit = const Value.absent(),
     this.credit = const Value.absent(),
+    this.reconciled = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   AccountTransactionsCompanion.insert({
@@ -37767,6 +38200,7 @@ class AccountTransactionsCompanion extends UpdateCompanion<AccountTransaction> {
     this.referenceId = const Value.absent(),
     this.debit = const Value.absent(),
     this.credit = const Value.absent(),
+    this.reconciled = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : accountId = Value(accountId),
         type = Value(type);
@@ -37783,6 +38217,7 @@ class AccountTransactionsCompanion extends UpdateCompanion<AccountTransaction> {
     Expression<String>? referenceId,
     Expression<String>? debit,
     Expression<String>? credit,
+    Expression<bool>? reconciled,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -37798,6 +38233,7 @@ class AccountTransactionsCompanion extends UpdateCompanion<AccountTransaction> {
       if (referenceId != null) 'reference_id': referenceId,
       if (debit != null) 'debit': debit,
       if (credit != null) 'credit': credit,
+      if (reconciled != null) 'reconciled': reconciled,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -37815,6 +38251,7 @@ class AccountTransactionsCompanion extends UpdateCompanion<AccountTransaction> {
       Value<String?>? referenceId,
       Value<Decimal>? debit,
       Value<Decimal>? credit,
+      Value<bool>? reconciled,
       Value<int>? rowid}) {
     return AccountTransactionsCompanion(
       id: id ?? this.id,
@@ -37829,6 +38266,7 @@ class AccountTransactionsCompanion extends UpdateCompanion<AccountTransaction> {
       referenceId: referenceId ?? this.referenceId,
       debit: debit ?? this.debit,
       credit: credit ?? this.credit,
+      reconciled: reconciled ?? this.reconciled,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -37874,6 +38312,9 @@ class AccountTransactionsCompanion extends UpdateCompanion<AccountTransaction> {
       map['credit'] = Variable<String>(
           $AccountTransactionsTable.$convertercredit.toSql(credit.value));
     }
+    if (reconciled.present) {
+      map['reconciled'] = Variable<bool>(reconciled.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -37895,6 +38336,7 @@ class AccountTransactionsCompanion extends UpdateCompanion<AccountTransaction> {
           ..write('referenceId: $referenceId, ')
           ..write('debit: $debit, ')
           ..write('credit: $credit, ')
+          ..write('reconciled: $reconciled, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -44437,11 +44879,14 @@ class $AccAssetCategoriesTable extends AccAssetCategories
   static const VerificationMeta _defaultDepreciationRateMeta =
       const VerificationMeta('defaultDepreciationRate');
   @override
-  late final GeneratedColumn<double> defaultDepreciationRate =
-      GeneratedColumn<double>('default_depreciation_rate', aliasedName, false,
-          type: DriftSqlType.double,
-          requiredDuringInsert: false,
-          defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String>
+      defaultDepreciationRate = GeneratedColumn<String>(
+              'default_depreciation_rate', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>(
+              $AccAssetCategoriesTable.$converterdefaultDepreciationRate);
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -44478,13 +44923,8 @@ class $AccAssetCategoriesTable extends AccAssetCategories
     } else if (isInserting) {
       context.missing(_codeMeta);
     }
-    if (data.containsKey('default_depreciation_rate')) {
-      context.handle(
-          _defaultDepreciationRateMeta,
-          defaultDepreciationRate.isAcceptableOrUnknown(
-              data['default_depreciation_rate']!,
-              _defaultDepreciationRateMeta));
-    }
+    context.handle(
+        _defaultDepreciationRateMeta, const VerificationResult.success());
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -44504,9 +44944,10 @@ class $AccAssetCategoriesTable extends AccAssetCategories
           .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
       code: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}code'])!,
-      defaultDepreciationRate: attachedDatabase.typeMapping.read(
-          DriftSqlType.double,
-          data['${effectivePrefix}default_depreciation_rate'])!,
+      defaultDepreciationRate: $AccAssetCategoriesTable
+          .$converterdefaultDepreciationRate
+          .fromSql(attachedDatabase.typeMapping.read(DriftSqlType.string,
+              data['${effectivePrefix}default_depreciation_rate'])!),
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
     );
@@ -44516,6 +44957,9 @@ class $AccAssetCategoriesTable extends AccAssetCategories
   $AccAssetCategoriesTable createAlias(String alias) {
     return $AccAssetCategoriesTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterdefaultDepreciationRate =
+      const DecimalConverter();
 }
 
 class AccAssetCategory extends DataClass
@@ -44523,7 +44967,7 @@ class AccAssetCategory extends DataClass
   final int id;
   final String name;
   final String code;
-  final double defaultDepreciationRate;
+  final Decimal defaultDepreciationRate;
   final DateTime createdAt;
   const AccAssetCategory(
       {required this.id,
@@ -44537,8 +44981,11 @@ class AccAssetCategory extends DataClass
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
     map['code'] = Variable<String>(code);
-    map['default_depreciation_rate'] =
-        Variable<double>(defaultDepreciationRate);
+    {
+      map['default_depreciation_rate'] = Variable<String>(
+          $AccAssetCategoriesTable.$converterdefaultDepreciationRate
+              .toSql(defaultDepreciationRate));
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -44561,7 +45008,7 @@ class AccAssetCategory extends DataClass
       name: serializer.fromJson<String>(json['name']),
       code: serializer.fromJson<String>(json['code']),
       defaultDepreciationRate:
-          serializer.fromJson<double>(json['defaultDepreciationRate']),
+          serializer.fromJson<Decimal>(json['defaultDepreciationRate']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -44573,7 +45020,7 @@ class AccAssetCategory extends DataClass
       'name': serializer.toJson<String>(name),
       'code': serializer.toJson<String>(code),
       'defaultDepreciationRate':
-          serializer.toJson<double>(defaultDepreciationRate),
+          serializer.toJson<Decimal>(defaultDepreciationRate),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -44582,7 +45029,7 @@ class AccAssetCategory extends DataClass
           {int? id,
           String? name,
           String? code,
-          double? defaultDepreciationRate,
+          Decimal? defaultDepreciationRate,
           DateTime? createdAt}) =>
       AccAssetCategory(
         id: id ?? this.id,
@@ -44634,7 +45081,7 @@ class AccAssetCategoriesCompanion extends UpdateCompanion<AccAssetCategory> {
   final Value<int> id;
   final Value<String> name;
   final Value<String> code;
-  final Value<double> defaultDepreciationRate;
+  final Value<Decimal> defaultDepreciationRate;
   final Value<DateTime> createdAt;
   const AccAssetCategoriesCompanion({
     this.id = const Value.absent(),
@@ -44655,7 +45102,7 @@ class AccAssetCategoriesCompanion extends UpdateCompanion<AccAssetCategory> {
     Expression<int>? id,
     Expression<String>? name,
     Expression<String>? code,
-    Expression<double>? defaultDepreciationRate,
+    Expression<String>? defaultDepreciationRate,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -44672,7 +45119,7 @@ class AccAssetCategoriesCompanion extends UpdateCompanion<AccAssetCategory> {
       {Value<int>? id,
       Value<String>? name,
       Value<String>? code,
-      Value<double>? defaultDepreciationRate,
+      Value<Decimal>? defaultDepreciationRate,
       Value<DateTime>? createdAt}) {
     return AccAssetCategoriesCompanion(
       id: id ?? this.id,
@@ -44697,8 +45144,9 @@ class AccAssetCategoriesCompanion extends UpdateCompanion<AccAssetCategory> {
       map['code'] = Variable<String>(code.value);
     }
     if (defaultDepreciationRate.present) {
-      map['default_depreciation_rate'] =
-          Variable<double>(defaultDepreciationRate.value);
+      map['default_depreciation_rate'] = Variable<String>(
+          $AccAssetCategoriesTable.$converterdefaultDepreciationRate
+              .toSql(defaultDepreciationRate.value));
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -44759,9 +45207,10 @@ class $FixedAssetsTable extends FixedAssets
           'REFERENCES acc_asset_categories (id)'));
   static const VerificationMeta _costMeta = const VerificationMeta('cost');
   @override
-  late final GeneratedColumn<double> cost = GeneratedColumn<double>(
-      'cost', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> cost =
+      GeneratedColumn<String>('cost', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($FixedAssetsTable.$convertercost);
   static const VerificationMeta _purchaseDateMeta =
       const VerificationMeta('purchaseDate');
   @override
@@ -44777,11 +45226,12 @@ class $FixedAssetsTable extends FixedAssets
   static const VerificationMeta _salvageValueMeta =
       const VerificationMeta('salvageValue');
   @override
-  late final GeneratedColumn<double> salvageValue = GeneratedColumn<double>(
-      'salvage_value', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> salvageValue =
+      GeneratedColumn<String>('salvage_value', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($FixedAssetsTable.$convertersalvageValue);
   static const VerificationMeta _usefulLifeYearsMeta =
       const VerificationMeta('usefulLifeYears');
   @override
@@ -44806,11 +45256,14 @@ class $FixedAssetsTable extends FixedAssets
   static const VerificationMeta _accumulatedDepreciationMeta =
       const VerificationMeta('accumulatedDepreciation');
   @override
-  late final GeneratedColumn<double> accumulatedDepreciation =
-      GeneratedColumn<double>('accumulated_depreciation', aliasedName, false,
-          type: DriftSqlType.double,
-          requiredDuringInsert: false,
-          defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String>
+      accumulatedDepreciation = GeneratedColumn<String>(
+              'accumulated_depreciation', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>(
+              $FixedAssetsTable.$converteraccumulatedDepreciation);
   static const VerificationMeta _lastDepreciationDateMeta =
       const VerificationMeta('lastDepreciationDate');
   @override
@@ -44875,12 +45328,7 @@ class $FixedAssetsTable extends FixedAssets
     } else if (isInserting) {
       context.missing(_categoryIdMeta);
     }
-    if (data.containsKey('cost')) {
-      context.handle(
-          _costMeta, cost.isAcceptableOrUnknown(data['cost']!, _costMeta));
-    } else if (isInserting) {
-      context.missing(_costMeta);
-    }
+    context.handle(_costMeta, const VerificationResult.success());
     if (data.containsKey('purchase_date')) {
       context.handle(
           _purchaseDateMeta,
@@ -44897,12 +45345,7 @@ class $FixedAssetsTable extends FixedAssets
     } else if (isInserting) {
       context.missing(_acquisitionDateMeta);
     }
-    if (data.containsKey('salvage_value')) {
-      context.handle(
-          _salvageValueMeta,
-          salvageValue.isAcceptableOrUnknown(
-              data['salvage_value']!, _salvageValueMeta));
-    }
+    context.handle(_salvageValueMeta, const VerificationResult.success());
     if (data.containsKey('useful_life_years')) {
       context.handle(
           _usefulLifeYearsMeta,
@@ -44921,12 +45364,8 @@ class $FixedAssetsTable extends FixedAssets
       context.handle(_statusMeta,
           status.isAcceptableOrUnknown(data['status']!, _statusMeta));
     }
-    if (data.containsKey('accumulated_depreciation')) {
-      context.handle(
-          _accumulatedDepreciationMeta,
-          accumulatedDepreciation.isAcceptableOrUnknown(
-              data['accumulated_depreciation']!, _accumulatedDepreciationMeta));
-    }
+    context.handle(
+        _accumulatedDepreciationMeta, const VerificationResult.success());
     if (data.containsKey('last_depreciation_date')) {
       context.handle(
           _lastDepreciationDateMeta,
@@ -44954,23 +45393,26 @@ class $FixedAssetsTable extends FixedAssets
           .read(DriftSqlType.string, data['${effectivePrefix}serial_number']),
       categoryId: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}category_id'])!,
-      cost: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}cost'])!,
+      cost: $FixedAssetsTable.$convertercost.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}cost'])!),
       purchaseDate: attachedDatabase.typeMapping.read(
           DriftSqlType.dateTime, data['${effectivePrefix}purchase_date'])!,
       acquisitionDate: attachedDatabase.typeMapping.read(
           DriftSqlType.dateTime, data['${effectivePrefix}acquisition_date'])!,
-      salvageValue: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}salvage_value'])!,
+      salvageValue: $FixedAssetsTable.$convertersalvageValue.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}salvage_value'])!),
       usefulLifeYears: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}useful_life_years'])!,
       depreciationMethod: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}depreciation_method'])!,
       status: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
-      accumulatedDepreciation: attachedDatabase.typeMapping.read(
-          DriftSqlType.double,
-          data['${effectivePrefix}accumulated_depreciation'])!,
+      accumulatedDepreciation: $FixedAssetsTable
+          .$converteraccumulatedDepreciation
+          .fromSql(attachedDatabase.typeMapping.read(DriftSqlType.string,
+              data['${effectivePrefix}accumulated_depreciation'])!),
       lastDepreciationDate: attachedDatabase.typeMapping.read(
           DriftSqlType.dateTime,
           data['${effectivePrefix}last_depreciation_date']),
@@ -44983,6 +45425,13 @@ class $FixedAssetsTable extends FixedAssets
   $FixedAssetsTable createAlias(String alias) {
     return $FixedAssetsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $convertercost =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $convertersalvageValue =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converteraccumulatedDepreciation =
+      const DecimalConverter();
 }
 
 class FixedAsset extends DataClass implements Insertable<FixedAsset> {
@@ -44990,14 +45439,14 @@ class FixedAsset extends DataClass implements Insertable<FixedAsset> {
   final String name;
   final String? serialNumber;
   final int categoryId;
-  final double cost;
+  final Decimal cost;
   final DateTime purchaseDate;
   final DateTime acquisitionDate;
-  final double salvageValue;
+  final Decimal salvageValue;
   final int usefulLifeYears;
   final String depreciationMethod;
   final String status;
-  final double accumulatedDepreciation;
+  final Decimal accumulatedDepreciation;
   final DateTime? lastDepreciationDate;
   final DateTime createdAt;
   const FixedAsset(
@@ -45024,14 +45473,24 @@ class FixedAsset extends DataClass implements Insertable<FixedAsset> {
       map['serial_number'] = Variable<String>(serialNumber);
     }
     map['category_id'] = Variable<int>(categoryId);
-    map['cost'] = Variable<double>(cost);
+    {
+      map['cost'] =
+          Variable<String>($FixedAssetsTable.$convertercost.toSql(cost));
+    }
     map['purchase_date'] = Variable<DateTime>(purchaseDate);
     map['acquisition_date'] = Variable<DateTime>(acquisitionDate);
-    map['salvage_value'] = Variable<double>(salvageValue);
+    {
+      map['salvage_value'] = Variable<String>(
+          $FixedAssetsTable.$convertersalvageValue.toSql(salvageValue));
+    }
     map['useful_life_years'] = Variable<int>(usefulLifeYears);
     map['depreciation_method'] = Variable<String>(depreciationMethod);
     map['status'] = Variable<String>(status);
-    map['accumulated_depreciation'] = Variable<double>(accumulatedDepreciation);
+    {
+      map['accumulated_depreciation'] = Variable<String>($FixedAssetsTable
+          .$converteraccumulatedDepreciation
+          .toSql(accumulatedDepreciation));
+    }
     if (!nullToAbsent || lastDepreciationDate != null) {
       map['last_depreciation_date'] = Variable<DateTime>(lastDepreciationDate);
     }
@@ -45070,16 +45529,16 @@ class FixedAsset extends DataClass implements Insertable<FixedAsset> {
       name: serializer.fromJson<String>(json['name']),
       serialNumber: serializer.fromJson<String?>(json['serialNumber']),
       categoryId: serializer.fromJson<int>(json['categoryId']),
-      cost: serializer.fromJson<double>(json['cost']),
+      cost: serializer.fromJson<Decimal>(json['cost']),
       purchaseDate: serializer.fromJson<DateTime>(json['purchaseDate']),
       acquisitionDate: serializer.fromJson<DateTime>(json['acquisitionDate']),
-      salvageValue: serializer.fromJson<double>(json['salvageValue']),
+      salvageValue: serializer.fromJson<Decimal>(json['salvageValue']),
       usefulLifeYears: serializer.fromJson<int>(json['usefulLifeYears']),
       depreciationMethod:
           serializer.fromJson<String>(json['depreciationMethod']),
       status: serializer.fromJson<String>(json['status']),
       accumulatedDepreciation:
-          serializer.fromJson<double>(json['accumulatedDepreciation']),
+          serializer.fromJson<Decimal>(json['accumulatedDepreciation']),
       lastDepreciationDate:
           serializer.fromJson<DateTime?>(json['lastDepreciationDate']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -45093,15 +45552,15 @@ class FixedAsset extends DataClass implements Insertable<FixedAsset> {
       'name': serializer.toJson<String>(name),
       'serialNumber': serializer.toJson<String?>(serialNumber),
       'categoryId': serializer.toJson<int>(categoryId),
-      'cost': serializer.toJson<double>(cost),
+      'cost': serializer.toJson<Decimal>(cost),
       'purchaseDate': serializer.toJson<DateTime>(purchaseDate),
       'acquisitionDate': serializer.toJson<DateTime>(acquisitionDate),
-      'salvageValue': serializer.toJson<double>(salvageValue),
+      'salvageValue': serializer.toJson<Decimal>(salvageValue),
       'usefulLifeYears': serializer.toJson<int>(usefulLifeYears),
       'depreciationMethod': serializer.toJson<String>(depreciationMethod),
       'status': serializer.toJson<String>(status),
       'accumulatedDepreciation':
-          serializer.toJson<double>(accumulatedDepreciation),
+          serializer.toJson<Decimal>(accumulatedDepreciation),
       'lastDepreciationDate':
           serializer.toJson<DateTime?>(lastDepreciationDate),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -45113,14 +45572,14 @@ class FixedAsset extends DataClass implements Insertable<FixedAsset> {
           String? name,
           Value<String?> serialNumber = const Value.absent(),
           int? categoryId,
-          double? cost,
+          Decimal? cost,
           DateTime? purchaseDate,
           DateTime? acquisitionDate,
-          double? salvageValue,
+          Decimal? salvageValue,
           int? usefulLifeYears,
           String? depreciationMethod,
           String? status,
-          double? accumulatedDepreciation,
+          Decimal? accumulatedDepreciation,
           Value<DateTime?> lastDepreciationDate = const Value.absent(),
           DateTime? createdAt}) =>
       FixedAsset(
@@ -45241,14 +45700,14 @@ class FixedAssetsCompanion extends UpdateCompanion<FixedAsset> {
   final Value<String> name;
   final Value<String?> serialNumber;
   final Value<int> categoryId;
-  final Value<double> cost;
+  final Value<Decimal> cost;
   final Value<DateTime> purchaseDate;
   final Value<DateTime> acquisitionDate;
-  final Value<double> salvageValue;
+  final Value<Decimal> salvageValue;
   final Value<int> usefulLifeYears;
   final Value<String> depreciationMethod;
   final Value<String> status;
-  final Value<double> accumulatedDepreciation;
+  final Value<Decimal> accumulatedDepreciation;
   final Value<DateTime?> lastDepreciationDate;
   final Value<DateTime> createdAt;
   const FixedAssetsCompanion({
@@ -45272,7 +45731,7 @@ class FixedAssetsCompanion extends UpdateCompanion<FixedAsset> {
     required String name,
     this.serialNumber = const Value.absent(),
     required int categoryId,
-    required double cost,
+    required Decimal cost,
     required DateTime purchaseDate,
     required DateTime acquisitionDate,
     this.salvageValue = const Value.absent(),
@@ -45293,14 +45752,14 @@ class FixedAssetsCompanion extends UpdateCompanion<FixedAsset> {
     Expression<String>? name,
     Expression<String>? serialNumber,
     Expression<int>? categoryId,
-    Expression<double>? cost,
+    Expression<String>? cost,
     Expression<DateTime>? purchaseDate,
     Expression<DateTime>? acquisitionDate,
-    Expression<double>? salvageValue,
+    Expression<String>? salvageValue,
     Expression<int>? usefulLifeYears,
     Expression<String>? depreciationMethod,
     Expression<String>? status,
-    Expression<double>? accumulatedDepreciation,
+    Expression<String>? accumulatedDepreciation,
     Expression<DateTime>? lastDepreciationDate,
     Expression<DateTime>? createdAt,
   }) {
@@ -45329,14 +45788,14 @@ class FixedAssetsCompanion extends UpdateCompanion<FixedAsset> {
       Value<String>? name,
       Value<String?>? serialNumber,
       Value<int>? categoryId,
-      Value<double>? cost,
+      Value<Decimal>? cost,
       Value<DateTime>? purchaseDate,
       Value<DateTime>? acquisitionDate,
-      Value<double>? salvageValue,
+      Value<Decimal>? salvageValue,
       Value<int>? usefulLifeYears,
       Value<String>? depreciationMethod,
       Value<String>? status,
-      Value<double>? accumulatedDepreciation,
+      Value<Decimal>? accumulatedDepreciation,
       Value<DateTime?>? lastDepreciationDate,
       Value<DateTime>? createdAt}) {
     return FixedAssetsCompanion(
@@ -45374,7 +45833,8 @@ class FixedAssetsCompanion extends UpdateCompanion<FixedAsset> {
       map['category_id'] = Variable<int>(categoryId.value);
     }
     if (cost.present) {
-      map['cost'] = Variable<double>(cost.value);
+      map['cost'] =
+          Variable<String>($FixedAssetsTable.$convertercost.toSql(cost.value));
     }
     if (purchaseDate.present) {
       map['purchase_date'] = Variable<DateTime>(purchaseDate.value);
@@ -45383,7 +45843,8 @@ class FixedAssetsCompanion extends UpdateCompanion<FixedAsset> {
       map['acquisition_date'] = Variable<DateTime>(acquisitionDate.value);
     }
     if (salvageValue.present) {
-      map['salvage_value'] = Variable<double>(salvageValue.value);
+      map['salvage_value'] = Variable<String>(
+          $FixedAssetsTable.$convertersalvageValue.toSql(salvageValue.value));
     }
     if (usefulLifeYears.present) {
       map['useful_life_years'] = Variable<int>(usefulLifeYears.value);
@@ -45395,8 +45856,9 @@ class FixedAssetsCompanion extends UpdateCompanion<FixedAsset> {
       map['status'] = Variable<String>(status.value);
     }
     if (accumulatedDepreciation.present) {
-      map['accumulated_depreciation'] =
-          Variable<double>(accumulatedDepreciation.value);
+      map['accumulated_depreciation'] = Variable<String>($FixedAssetsTable
+          .$converteraccumulatedDepreciation
+          .toSql(accumulatedDepreciation.value));
     }
     if (lastDepreciationDate.present) {
       map['last_depreciation_date'] =
@@ -45457,9 +45919,12 @@ class $AccAssetDepreciationLogsTable extends AccAssetDepreciationLogs
   static const VerificationMeta _depreciationAmountMeta =
       const VerificationMeta('depreciationAmount');
   @override
-  late final GeneratedColumn<double> depreciationAmount =
-      GeneratedColumn<double>('depreciation_amount', aliasedName, false,
-          type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String>
+      depreciationAmount = GeneratedColumn<String>(
+              'depreciation_amount', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>(
+              $AccAssetDepreciationLogsTable.$converterdepreciationAmount);
   static const VerificationMeta _depreciationDateMeta =
       const VerificationMeta('depreciationDate');
   @override
@@ -45515,14 +45980,7 @@ class $AccAssetDepreciationLogsTable extends AccAssetDepreciationLogs
     } else if (isInserting) {
       context.missing(_assetIdMeta);
     }
-    if (data.containsKey('depreciation_amount')) {
-      context.handle(
-          _depreciationAmountMeta,
-          depreciationAmount.isAcceptableOrUnknown(
-              data['depreciation_amount']!, _depreciationAmountMeta));
-    } else if (isInserting) {
-      context.missing(_depreciationAmountMeta);
-    }
+    context.handle(_depreciationAmountMeta, const VerificationResult.success());
     if (data.containsKey('depreciation_date')) {
       context.handle(
           _depreciationDateMeta,
@@ -45559,8 +46017,10 @@ class $AccAssetDepreciationLogsTable extends AccAssetDepreciationLogs
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
       assetId: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}asset_id'])!,
-      depreciationAmount: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}depreciation_amount'])!,
+      depreciationAmount: $AccAssetDepreciationLogsTable
+          .$converterdepreciationAmount
+          .fromSql(attachedDatabase.typeMapping.read(DriftSqlType.string,
+              data['${effectivePrefix}depreciation_amount'])!),
       depreciationDate: attachedDatabase.typeMapping.read(
           DriftSqlType.dateTime, data['${effectivePrefix}depreciation_date'])!,
       journalEntryId: attachedDatabase.typeMapping.read(
@@ -45576,13 +46036,16 @@ class $AccAssetDepreciationLogsTable extends AccAssetDepreciationLogs
   $AccAssetDepreciationLogsTable createAlias(String alias) {
     return $AccAssetDepreciationLogsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterdepreciationAmount =
+      const DecimalConverter();
 }
 
 class AccAssetDepreciationLog extends DataClass
     implements Insertable<AccAssetDepreciationLog> {
   final int id;
   final int assetId;
-  final double depreciationAmount;
+  final Decimal depreciationAmount;
   final DateTime depreciationDate;
   final String? journalEntryId;
   final String? notes;
@@ -45600,7 +46063,11 @@ class AccAssetDepreciationLog extends DataClass
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['asset_id'] = Variable<int>(assetId);
-    map['depreciation_amount'] = Variable<double>(depreciationAmount);
+    {
+      map['depreciation_amount'] = Variable<String>(
+          $AccAssetDepreciationLogsTable.$converterdepreciationAmount
+              .toSql(depreciationAmount));
+    }
     map['depreciation_date'] = Variable<DateTime>(depreciationDate);
     if (!nullToAbsent || journalEntryId != null) {
       map['journal_entry_id'] = Variable<String>(journalEntryId);
@@ -45634,7 +46101,7 @@ class AccAssetDepreciationLog extends DataClass
       id: serializer.fromJson<int>(json['id']),
       assetId: serializer.fromJson<int>(json['assetId']),
       depreciationAmount:
-          serializer.fromJson<double>(json['depreciationAmount']),
+          serializer.fromJson<Decimal>(json['depreciationAmount']),
       depreciationDate: serializer.fromJson<DateTime>(json['depreciationDate']),
       journalEntryId: serializer.fromJson<String?>(json['journalEntryId']),
       notes: serializer.fromJson<String?>(json['notes']),
@@ -45647,7 +46114,7 @@ class AccAssetDepreciationLog extends DataClass
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'assetId': serializer.toJson<int>(assetId),
-      'depreciationAmount': serializer.toJson<double>(depreciationAmount),
+      'depreciationAmount': serializer.toJson<Decimal>(depreciationAmount),
       'depreciationDate': serializer.toJson<DateTime>(depreciationDate),
       'journalEntryId': serializer.toJson<String?>(journalEntryId),
       'notes': serializer.toJson<String?>(notes),
@@ -45658,7 +46125,7 @@ class AccAssetDepreciationLog extends DataClass
   AccAssetDepreciationLog copyWith(
           {int? id,
           int? assetId,
-          double? depreciationAmount,
+          Decimal? depreciationAmount,
           DateTime? depreciationDate,
           Value<String?> journalEntryId = const Value.absent(),
           Value<String?> notes = const Value.absent(),
@@ -45726,7 +46193,7 @@ class AccAssetDepreciationLogsCompanion
     extends UpdateCompanion<AccAssetDepreciationLog> {
   final Value<int> id;
   final Value<int> assetId;
-  final Value<double> depreciationAmount;
+  final Value<Decimal> depreciationAmount;
   final Value<DateTime> depreciationDate;
   final Value<String?> journalEntryId;
   final Value<String?> notes;
@@ -45743,7 +46210,7 @@ class AccAssetDepreciationLogsCompanion
   AccAssetDepreciationLogsCompanion.insert({
     this.id = const Value.absent(),
     required int assetId,
-    required double depreciationAmount,
+    required Decimal depreciationAmount,
     required DateTime depreciationDate,
     this.journalEntryId = const Value.absent(),
     this.notes = const Value.absent(),
@@ -45754,7 +46221,7 @@ class AccAssetDepreciationLogsCompanion
   static Insertable<AccAssetDepreciationLog> custom({
     Expression<int>? id,
     Expression<int>? assetId,
-    Expression<double>? depreciationAmount,
+    Expression<String>? depreciationAmount,
     Expression<DateTime>? depreciationDate,
     Expression<String>? journalEntryId,
     Expression<String>? notes,
@@ -45774,7 +46241,7 @@ class AccAssetDepreciationLogsCompanion
   AccAssetDepreciationLogsCompanion copyWith(
       {Value<int>? id,
       Value<int>? assetId,
-      Value<double>? depreciationAmount,
+      Value<Decimal>? depreciationAmount,
       Value<DateTime>? depreciationDate,
       Value<String?>? journalEntryId,
       Value<String?>? notes,
@@ -45800,7 +46267,9 @@ class AccAssetDepreciationLogsCompanion
       map['asset_id'] = Variable<int>(assetId.value);
     }
     if (depreciationAmount.present) {
-      map['depreciation_amount'] = Variable<double>(depreciationAmount.value);
+      map['depreciation_amount'] = Variable<String>(
+          $AccAssetDepreciationLogsTable.$converterdepreciationAmount
+              .toSql(depreciationAmount.value));
     }
     if (depreciationDate.present) {
       map['depreciation_date'] = Variable<DateTime>(depreciationDate.value);
@@ -45865,9 +46334,11 @@ class $AccAssetDisposalsTable extends AccAssetDisposals
   static const VerificationMeta _salePriceMeta =
       const VerificationMeta('salePrice');
   @override
-  late final GeneratedColumn<double> salePrice = GeneratedColumn<double>(
-      'sale_price', aliasedName, true,
-      type: DriftSqlType.double, requiredDuringInsert: false);
+  late final GeneratedColumnWithTypeConverter<Decimal?, String> salePrice =
+      GeneratedColumn<String>('sale_price', aliasedName, true,
+              type: DriftSqlType.string, requiredDuringInsert: false)
+          .withConverter<Decimal?>(
+              $AccAssetDisposalsTable.$convertersalePricen);
   static const VerificationMeta _disposalTypeMeta =
       const VerificationMeta('disposalType');
   @override
@@ -45877,9 +46348,11 @@ class $AccAssetDisposalsTable extends AccAssetDisposals
   static const VerificationMeta _gainOrLossMeta =
       const VerificationMeta('gainOrLoss');
   @override
-  late final GeneratedColumn<double> gainOrLoss = GeneratedColumn<double>(
-      'gain_or_loss', aliasedName, true,
-      type: DriftSqlType.double, requiredDuringInsert: false);
+  late final GeneratedColumnWithTypeConverter<Decimal?, String> gainOrLoss =
+      GeneratedColumn<String>('gain_or_loss', aliasedName, true,
+              type: DriftSqlType.string, requiredDuringInsert: false)
+          .withConverter<Decimal?>(
+              $AccAssetDisposalsTable.$convertergainOrLossn);
   static const VerificationMeta _journalEntryIdMeta =
       const VerificationMeta('journalEntryId');
   @override
@@ -45938,10 +46411,7 @@ class $AccAssetDisposalsTable extends AccAssetDisposals
     } else if (isInserting) {
       context.missing(_disposalDateMeta);
     }
-    if (data.containsKey('sale_price')) {
-      context.handle(_salePriceMeta,
-          salePrice.isAcceptableOrUnknown(data['sale_price']!, _salePriceMeta));
-    }
+    context.handle(_salePriceMeta, const VerificationResult.success());
     if (data.containsKey('disposal_type')) {
       context.handle(
           _disposalTypeMeta,
@@ -45950,12 +46420,7 @@ class $AccAssetDisposalsTable extends AccAssetDisposals
     } else if (isInserting) {
       context.missing(_disposalTypeMeta);
     }
-    if (data.containsKey('gain_or_loss')) {
-      context.handle(
-          _gainOrLossMeta,
-          gainOrLoss.isAcceptableOrUnknown(
-              data['gain_or_loss']!, _gainOrLossMeta));
-    }
+    context.handle(_gainOrLossMeta, const VerificationResult.success());
     if (data.containsKey('journal_entry_id')) {
       context.handle(
           _journalEntryIdMeta,
@@ -45985,12 +46450,14 @@ class $AccAssetDisposalsTable extends AccAssetDisposals
           .read(DriftSqlType.int, data['${effectivePrefix}asset_id'])!,
       disposalDate: attachedDatabase.typeMapping.read(
           DriftSqlType.dateTime, data['${effectivePrefix}disposal_date'])!,
-      salePrice: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}sale_price']),
+      salePrice: $AccAssetDisposalsTable.$convertersalePricen.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.string, data['${effectivePrefix}sale_price'])),
       disposalType: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}disposal_type'])!,
-      gainOrLoss: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}gain_or_loss']),
+      gainOrLoss: $AccAssetDisposalsTable.$convertergainOrLossn.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}gain_or_loss'])),
       journalEntryId: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}journal_entry_id']),
       notes: attachedDatabase.typeMapping
@@ -46004,6 +46471,15 @@ class $AccAssetDisposalsTable extends AccAssetDisposals
   $AccAssetDisposalsTable createAlias(String alias) {
     return $AccAssetDisposalsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $convertersalePrice =
+      const DecimalConverter();
+  static TypeConverter<Decimal?, String?> $convertersalePricen =
+      NullAwareTypeConverter.wrap($convertersalePrice);
+  static TypeConverter<Decimal, String> $convertergainOrLoss =
+      const DecimalConverter();
+  static TypeConverter<Decimal?, String?> $convertergainOrLossn =
+      NullAwareTypeConverter.wrap($convertergainOrLoss);
 }
 
 class AccAssetDisposal extends DataClass
@@ -46011,9 +46487,9 @@ class AccAssetDisposal extends DataClass
   final int id;
   final int assetId;
   final DateTime disposalDate;
-  final double? salePrice;
+  final Decimal? salePrice;
   final String disposalType;
-  final double? gainOrLoss;
+  final Decimal? gainOrLoss;
   final String? journalEntryId;
   final String? notes;
   final DateTime createdAt;
@@ -46034,11 +46510,13 @@ class AccAssetDisposal extends DataClass
     map['asset_id'] = Variable<int>(assetId);
     map['disposal_date'] = Variable<DateTime>(disposalDate);
     if (!nullToAbsent || salePrice != null) {
-      map['sale_price'] = Variable<double>(salePrice);
+      map['sale_price'] = Variable<String>(
+          $AccAssetDisposalsTable.$convertersalePricen.toSql(salePrice));
     }
     map['disposal_type'] = Variable<String>(disposalType);
     if (!nullToAbsent || gainOrLoss != null) {
-      map['gain_or_loss'] = Variable<double>(gainOrLoss);
+      map['gain_or_loss'] = Variable<String>(
+          $AccAssetDisposalsTable.$convertergainOrLossn.toSql(gainOrLoss));
     }
     if (!nullToAbsent || journalEntryId != null) {
       map['journal_entry_id'] = Variable<String>(journalEntryId);
@@ -46078,9 +46556,9 @@ class AccAssetDisposal extends DataClass
       id: serializer.fromJson<int>(json['id']),
       assetId: serializer.fromJson<int>(json['assetId']),
       disposalDate: serializer.fromJson<DateTime>(json['disposalDate']),
-      salePrice: serializer.fromJson<double?>(json['salePrice']),
+      salePrice: serializer.fromJson<Decimal?>(json['salePrice']),
       disposalType: serializer.fromJson<String>(json['disposalType']),
-      gainOrLoss: serializer.fromJson<double?>(json['gainOrLoss']),
+      gainOrLoss: serializer.fromJson<Decimal?>(json['gainOrLoss']),
       journalEntryId: serializer.fromJson<String?>(json['journalEntryId']),
       notes: serializer.fromJson<String?>(json['notes']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -46093,9 +46571,9 @@ class AccAssetDisposal extends DataClass
       'id': serializer.toJson<int>(id),
       'assetId': serializer.toJson<int>(assetId),
       'disposalDate': serializer.toJson<DateTime>(disposalDate),
-      'salePrice': serializer.toJson<double?>(salePrice),
+      'salePrice': serializer.toJson<Decimal?>(salePrice),
       'disposalType': serializer.toJson<String>(disposalType),
-      'gainOrLoss': serializer.toJson<double?>(gainOrLoss),
+      'gainOrLoss': serializer.toJson<Decimal?>(gainOrLoss),
       'journalEntryId': serializer.toJson<String?>(journalEntryId),
       'notes': serializer.toJson<String?>(notes),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -46106,9 +46584,9 @@ class AccAssetDisposal extends DataClass
           {int? id,
           int? assetId,
           DateTime? disposalDate,
-          Value<double?> salePrice = const Value.absent(),
+          Value<Decimal?> salePrice = const Value.absent(),
           String? disposalType,
-          Value<double?> gainOrLoss = const Value.absent(),
+          Value<Decimal?> gainOrLoss = const Value.absent(),
           Value<String?> journalEntryId = const Value.absent(),
           Value<String?> notes = const Value.absent(),
           DateTime? createdAt}) =>
@@ -46183,9 +46661,9 @@ class AccAssetDisposalsCompanion extends UpdateCompanion<AccAssetDisposal> {
   final Value<int> id;
   final Value<int> assetId;
   final Value<DateTime> disposalDate;
-  final Value<double?> salePrice;
+  final Value<Decimal?> salePrice;
   final Value<String> disposalType;
-  final Value<double?> gainOrLoss;
+  final Value<Decimal?> gainOrLoss;
   final Value<String?> journalEntryId;
   final Value<String?> notes;
   final Value<DateTime> createdAt;
@@ -46217,9 +46695,9 @@ class AccAssetDisposalsCompanion extends UpdateCompanion<AccAssetDisposal> {
     Expression<int>? id,
     Expression<int>? assetId,
     Expression<DateTime>? disposalDate,
-    Expression<double>? salePrice,
+    Expression<String>? salePrice,
     Expression<String>? disposalType,
-    Expression<double>? gainOrLoss,
+    Expression<String>? gainOrLoss,
     Expression<String>? journalEntryId,
     Expression<String>? notes,
     Expression<DateTime>? createdAt,
@@ -46241,9 +46719,9 @@ class AccAssetDisposalsCompanion extends UpdateCompanion<AccAssetDisposal> {
       {Value<int>? id,
       Value<int>? assetId,
       Value<DateTime>? disposalDate,
-      Value<double?>? salePrice,
+      Value<Decimal?>? salePrice,
       Value<String>? disposalType,
-      Value<double?>? gainOrLoss,
+      Value<Decimal?>? gainOrLoss,
       Value<String?>? journalEntryId,
       Value<String?>? notes,
       Value<DateTime>? createdAt}) {
@@ -46273,13 +46751,16 @@ class AccAssetDisposalsCompanion extends UpdateCompanion<AccAssetDisposal> {
       map['disposal_date'] = Variable<DateTime>(disposalDate.value);
     }
     if (salePrice.present) {
-      map['sale_price'] = Variable<double>(salePrice.value);
+      map['sale_price'] = Variable<String>(
+          $AccAssetDisposalsTable.$convertersalePricen.toSql(salePrice.value));
     }
     if (disposalType.present) {
       map['disposal_type'] = Variable<String>(disposalType.value);
     }
     if (gainOrLoss.present) {
-      map['gain_or_loss'] = Variable<double>(gainOrLoss.value);
+      map['gain_or_loss'] = Variable<String>($AccAssetDisposalsTable
+          .$convertergainOrLossn
+          .toSql(gainOrLoss.value));
     }
     if (journalEntryId.present) {
       map['journal_entry_id'] = Variable<String>(journalEntryId.value);
@@ -48630,6 +49111,380 @@ class HRAdditionalDeductionsCompanion
   }
 }
 
+class $ExchangeRatesTable extends ExchangeRates
+    with TableInfo<$ExchangeRatesTable, ExchangeRate> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ExchangeRatesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _fromCurrencyCodeMeta =
+      const VerificationMeta('fromCurrencyCode');
+  @override
+  late final GeneratedColumn<String> fromCurrencyCode = GeneratedColumn<String>(
+      'from_currency_code', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES currencies (code)'));
+  static const VerificationMeta _toCurrencyCodeMeta =
+      const VerificationMeta('toCurrencyCode');
+  @override
+  late final GeneratedColumn<String> toCurrencyCode = GeneratedColumn<String>(
+      'to_currency_code', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES currencies (code)'));
+  static const VerificationMeta _rateMeta = const VerificationMeta('rate');
+  @override
+  late final GeneratedColumnWithTypeConverter<Decimal, String> rate =
+      GeneratedColumn<String>('rate', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($ExchangeRatesTable.$converterrate);
+  static const VerificationMeta _effectiveDateMeta =
+      const VerificationMeta('effectiveDate');
+  @override
+  late final GeneratedColumn<DateTime> effectiveDate =
+      GeneratedColumn<DateTime>('effective_date', aliasedName, false,
+          type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns => [
+        fromCurrencyCode,
+        toCurrencyCode,
+        rate,
+        effectiveDate,
+        createdAt,
+        updatedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'exchange_rates';
+  @override
+  VerificationContext validateIntegrity(Insertable<ExchangeRate> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('from_currency_code')) {
+      context.handle(
+          _fromCurrencyCodeMeta,
+          fromCurrencyCode.isAcceptableOrUnknown(
+              data['from_currency_code']!, _fromCurrencyCodeMeta));
+    } else if (isInserting) {
+      context.missing(_fromCurrencyCodeMeta);
+    }
+    if (data.containsKey('to_currency_code')) {
+      context.handle(
+          _toCurrencyCodeMeta,
+          toCurrencyCode.isAcceptableOrUnknown(
+              data['to_currency_code']!, _toCurrencyCodeMeta));
+    } else if (isInserting) {
+      context.missing(_toCurrencyCodeMeta);
+    }
+    context.handle(_rateMeta, const VerificationResult.success());
+    if (data.containsKey('effective_date')) {
+      context.handle(
+          _effectiveDateMeta,
+          effectiveDate.isAcceptableOrUnknown(
+              data['effective_date']!, _effectiveDateMeta));
+    } else if (isInserting) {
+      context.missing(_effectiveDateMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => const {};
+  @override
+  ExchangeRate map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ExchangeRate(
+      fromCurrencyCode: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}from_currency_code'])!,
+      toCurrencyCode: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}to_currency_code'])!,
+      rate: $ExchangeRatesTable.$converterrate.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}rate'])!),
+      effectiveDate: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}effective_date'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $ExchangeRatesTable createAlias(String alias) {
+    return $ExchangeRatesTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<Decimal, String> $converterrate =
+      const DecimalConverter();
+}
+
+class ExchangeRate extends DataClass implements Insertable<ExchangeRate> {
+  final String fromCurrencyCode;
+  final String toCurrencyCode;
+  final Decimal rate;
+  final DateTime effectiveDate;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const ExchangeRate(
+      {required this.fromCurrencyCode,
+      required this.toCurrencyCode,
+      required this.rate,
+      required this.effectiveDate,
+      required this.createdAt,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['from_currency_code'] = Variable<String>(fromCurrencyCode);
+    map['to_currency_code'] = Variable<String>(toCurrencyCode);
+    {
+      map['rate'] =
+          Variable<String>($ExchangeRatesTable.$converterrate.toSql(rate));
+    }
+    map['effective_date'] = Variable<DateTime>(effectiveDate);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  ExchangeRatesCompanion toCompanion(bool nullToAbsent) {
+    return ExchangeRatesCompanion(
+      fromCurrencyCode: Value(fromCurrencyCode),
+      toCurrencyCode: Value(toCurrencyCode),
+      rate: Value(rate),
+      effectiveDate: Value(effectiveDate),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory ExchangeRate.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ExchangeRate(
+      fromCurrencyCode: serializer.fromJson<String>(json['fromCurrencyCode']),
+      toCurrencyCode: serializer.fromJson<String>(json['toCurrencyCode']),
+      rate: serializer.fromJson<Decimal>(json['rate']),
+      effectiveDate: serializer.fromJson<DateTime>(json['effectiveDate']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'fromCurrencyCode': serializer.toJson<String>(fromCurrencyCode),
+      'toCurrencyCode': serializer.toJson<String>(toCurrencyCode),
+      'rate': serializer.toJson<Decimal>(rate),
+      'effectiveDate': serializer.toJson<DateTime>(effectiveDate),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  ExchangeRate copyWith(
+          {String? fromCurrencyCode,
+          String? toCurrencyCode,
+          Decimal? rate,
+          DateTime? effectiveDate,
+          DateTime? createdAt,
+          DateTime? updatedAt}) =>
+      ExchangeRate(
+        fromCurrencyCode: fromCurrencyCode ?? this.fromCurrencyCode,
+        toCurrencyCode: toCurrencyCode ?? this.toCurrencyCode,
+        rate: rate ?? this.rate,
+        effectiveDate: effectiveDate ?? this.effectiveDate,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  ExchangeRate copyWithCompanion(ExchangeRatesCompanion data) {
+    return ExchangeRate(
+      fromCurrencyCode: data.fromCurrencyCode.present
+          ? data.fromCurrencyCode.value
+          : this.fromCurrencyCode,
+      toCurrencyCode: data.toCurrencyCode.present
+          ? data.toCurrencyCode.value
+          : this.toCurrencyCode,
+      rate: data.rate.present ? data.rate.value : this.rate,
+      effectiveDate: data.effectiveDate.present
+          ? data.effectiveDate.value
+          : this.effectiveDate,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExchangeRate(')
+          ..write('fromCurrencyCode: $fromCurrencyCode, ')
+          ..write('toCurrencyCode: $toCurrencyCode, ')
+          ..write('rate: $rate, ')
+          ..write('effectiveDate: $effectiveDate, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(fromCurrencyCode, toCurrencyCode, rate,
+      effectiveDate, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ExchangeRate &&
+          other.fromCurrencyCode == this.fromCurrencyCode &&
+          other.toCurrencyCode == this.toCurrencyCode &&
+          other.rate == this.rate &&
+          other.effectiveDate == this.effectiveDate &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ExchangeRatesCompanion extends UpdateCompanion<ExchangeRate> {
+  final Value<String> fromCurrencyCode;
+  final Value<String> toCurrencyCode;
+  final Value<Decimal> rate;
+  final Value<DateTime> effectiveDate;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const ExchangeRatesCompanion({
+    this.fromCurrencyCode = const Value.absent(),
+    this.toCurrencyCode = const Value.absent(),
+    this.rate = const Value.absent(),
+    this.effectiveDate = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ExchangeRatesCompanion.insert({
+    required String fromCurrencyCode,
+    required String toCurrencyCode,
+    required Decimal rate,
+    required DateTime effectiveDate,
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : fromCurrencyCode = Value(fromCurrencyCode),
+        toCurrencyCode = Value(toCurrencyCode),
+        rate = Value(rate),
+        effectiveDate = Value(effectiveDate);
+  static Insertable<ExchangeRate> custom({
+    Expression<String>? fromCurrencyCode,
+    Expression<String>? toCurrencyCode,
+    Expression<String>? rate,
+    Expression<DateTime>? effectiveDate,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (fromCurrencyCode != null) 'from_currency_code': fromCurrencyCode,
+      if (toCurrencyCode != null) 'to_currency_code': toCurrencyCode,
+      if (rate != null) 'rate': rate,
+      if (effectiveDate != null) 'effective_date': effectiveDate,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ExchangeRatesCompanion copyWith(
+      {Value<String>? fromCurrencyCode,
+      Value<String>? toCurrencyCode,
+      Value<Decimal>? rate,
+      Value<DateTime>? effectiveDate,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<int>? rowid}) {
+    return ExchangeRatesCompanion(
+      fromCurrencyCode: fromCurrencyCode ?? this.fromCurrencyCode,
+      toCurrencyCode: toCurrencyCode ?? this.toCurrencyCode,
+      rate: rate ?? this.rate,
+      effectiveDate: effectiveDate ?? this.effectiveDate,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (fromCurrencyCode.present) {
+      map['from_currency_code'] = Variable<String>(fromCurrencyCode.value);
+    }
+    if (toCurrencyCode.present) {
+      map['to_currency_code'] = Variable<String>(toCurrencyCode.value);
+    }
+    if (rate.present) {
+      map['rate'] = Variable<String>(
+          $ExchangeRatesTable.$converterrate.toSql(rate.value));
+    }
+    if (effectiveDate.present) {
+      map['effective_date'] = Variable<DateTime>(effectiveDate.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExchangeRatesCompanion(')
+          ..write('fromCurrencyCode: $fromCurrencyCode, ')
+          ..write('toCurrencyCode: $toCurrencyCode, ')
+          ..write('rate: $rate, ')
+          ..write('effectiveDate: $effectiveDate, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $AccCurrenciesTable extends AccCurrencies
     with TableInfo<$AccCurrenciesTable, AccCurrency> {
   @override
@@ -48664,11 +49519,12 @@ class $AccCurrenciesTable extends AccCurrencies
   static const VerificationMeta _exchangeRateMeta =
       const VerificationMeta('exchangeRate');
   @override
-  late final GeneratedColumn<double> exchangeRate = GeneratedColumn<double>(
-      'exchange_rate', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(1.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> exchangeRate =
+      GeneratedColumn<String>('exchange_rate', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.one.toString()))
+          .withConverter<Decimal>($AccCurrenciesTable.$converterexchangeRate);
   static const VerificationMeta _isBaseMeta = const VerificationMeta('isBase');
   @override
   late final GeneratedColumn<bool> isBase = GeneratedColumn<bool>(
@@ -48714,12 +49570,7 @@ class $AccCurrenciesTable extends AccCurrencies
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
-    if (data.containsKey('exchange_rate')) {
-      context.handle(
-          _exchangeRateMeta,
-          exchangeRate.isAcceptableOrUnknown(
-              data['exchange_rate']!, _exchangeRateMeta));
-    }
+    context.handle(_exchangeRateMeta, const VerificationResult.success());
     if (data.containsKey('is_base')) {
       context.handle(_isBaseMeta,
           isBase.isAcceptableOrUnknown(data['is_base']!, _isBaseMeta));
@@ -48743,8 +49594,9 @@ class $AccCurrenciesTable extends AccCurrencies
           .read(DriftSqlType.string, data['${effectivePrefix}code'])!,
       name: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
-      exchangeRate: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}exchange_rate'])!,
+      exchangeRate: $AccCurrenciesTable.$converterexchangeRate.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}exchange_rate'])!),
       isBase: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_base'])!,
       createdAt: attachedDatabase.typeMapping
@@ -48756,13 +49608,16 @@ class $AccCurrenciesTable extends AccCurrencies
   $AccCurrenciesTable createAlias(String alias) {
     return $AccCurrenciesTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterexchangeRate =
+      const DecimalConverter();
 }
 
 class AccCurrency extends DataClass implements Insertable<AccCurrency> {
   final int id;
   final String code;
   final String name;
-  final double exchangeRate;
+  final Decimal exchangeRate;
   final bool isBase;
   final DateTime createdAt;
   const AccCurrency(
@@ -48778,7 +49633,10 @@ class AccCurrency extends DataClass implements Insertable<AccCurrency> {
     map['id'] = Variable<int>(id);
     map['code'] = Variable<String>(code);
     map['name'] = Variable<String>(name);
-    map['exchange_rate'] = Variable<double>(exchangeRate);
+    {
+      map['exchange_rate'] = Variable<String>(
+          $AccCurrenciesTable.$converterexchangeRate.toSql(exchangeRate));
+    }
     map['is_base'] = Variable<bool>(isBase);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -48802,7 +49660,7 @@ class AccCurrency extends DataClass implements Insertable<AccCurrency> {
       id: serializer.fromJson<int>(json['id']),
       code: serializer.fromJson<String>(json['code']),
       name: serializer.fromJson<String>(json['name']),
-      exchangeRate: serializer.fromJson<double>(json['exchangeRate']),
+      exchangeRate: serializer.fromJson<Decimal>(json['exchangeRate']),
       isBase: serializer.fromJson<bool>(json['isBase']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -48814,7 +49672,7 @@ class AccCurrency extends DataClass implements Insertable<AccCurrency> {
       'id': serializer.toJson<int>(id),
       'code': serializer.toJson<String>(code),
       'name': serializer.toJson<String>(name),
-      'exchangeRate': serializer.toJson<double>(exchangeRate),
+      'exchangeRate': serializer.toJson<Decimal>(exchangeRate),
       'isBase': serializer.toJson<bool>(isBase),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -48824,7 +49682,7 @@ class AccCurrency extends DataClass implements Insertable<AccCurrency> {
           {int? id,
           String? code,
           String? name,
-          double? exchangeRate,
+          Decimal? exchangeRate,
           bool? isBase,
           DateTime? createdAt}) =>
       AccCurrency(
@@ -48880,7 +49738,7 @@ class AccCurrenciesCompanion extends UpdateCompanion<AccCurrency> {
   final Value<int> id;
   final Value<String> code;
   final Value<String> name;
-  final Value<double> exchangeRate;
+  final Value<Decimal> exchangeRate;
   final Value<bool> isBase;
   final Value<DateTime> createdAt;
   const AccCurrenciesCompanion({
@@ -48904,7 +49762,7 @@ class AccCurrenciesCompanion extends UpdateCompanion<AccCurrency> {
     Expression<int>? id,
     Expression<String>? code,
     Expression<String>? name,
-    Expression<double>? exchangeRate,
+    Expression<String>? exchangeRate,
     Expression<bool>? isBase,
     Expression<DateTime>? createdAt,
   }) {
@@ -48922,7 +49780,7 @@ class AccCurrenciesCompanion extends UpdateCompanion<AccCurrency> {
       {Value<int>? id,
       Value<String>? code,
       Value<String>? name,
-      Value<double>? exchangeRate,
+      Value<Decimal>? exchangeRate,
       Value<bool>? isBase,
       Value<DateTime>? createdAt}) {
     return AccCurrenciesCompanion(
@@ -48948,7 +49806,8 @@ class AccCurrenciesCompanion extends UpdateCompanion<AccCurrency> {
       map['name'] = Variable<String>(name.value);
     }
     if (exchangeRate.present) {
-      map['exchange_rate'] = Variable<double>(exchangeRate.value);
+      map['exchange_rate'] = Variable<String>(
+          $AccCurrenciesTable.$converterexchangeRate.toSql(exchangeRate.value));
     }
     if (isBase.present) {
       map['is_base'] = Variable<bool>(isBase.value);
@@ -49008,9 +49867,10 @@ class $AccExchangeRatesTable extends AccExchangeRates
           GeneratedColumn.constraintIsAlways('REFERENCES acc_currencies (id)'));
   static const VerificationMeta _rateMeta = const VerificationMeta('rate');
   @override
-  late final GeneratedColumn<double> rate = GeneratedColumn<double>(
-      'rate', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> rate =
+      GeneratedColumn<String>('rate', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($AccExchangeRatesTable.$converterrate);
   static const VerificationMeta _effectiveDateMeta =
       const VerificationMeta('effectiveDate');
   @override
@@ -49057,12 +49917,7 @@ class $AccExchangeRatesTable extends AccExchangeRates
     } else if (isInserting) {
       context.missing(_toCurrencyIdMeta);
     }
-    if (data.containsKey('rate')) {
-      context.handle(
-          _rateMeta, rate.isAcceptableOrUnknown(data['rate']!, _rateMeta));
-    } else if (isInserting) {
-      context.missing(_rateMeta);
-    }
+    context.handle(_rateMeta, const VerificationResult.success());
     if (data.containsKey('effective_date')) {
       context.handle(
           _effectiveDateMeta,
@@ -49090,8 +49945,9 @@ class $AccExchangeRatesTable extends AccExchangeRates
           .read(DriftSqlType.int, data['${effectivePrefix}from_currency_id'])!,
       toCurrencyId: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}to_currency_id'])!,
-      rate: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}rate'])!,
+      rate: $AccExchangeRatesTable.$converterrate.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}rate'])!),
       effectiveDate: attachedDatabase.typeMapping.read(
           DriftSqlType.dateTime, data['${effectivePrefix}effective_date'])!,
       createdAt: attachedDatabase.typeMapping
@@ -49103,13 +49959,16 @@ class $AccExchangeRatesTable extends AccExchangeRates
   $AccExchangeRatesTable createAlias(String alias) {
     return $AccExchangeRatesTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterrate =
+      const DecimalConverter();
 }
 
 class AccExchangeRate extends DataClass implements Insertable<AccExchangeRate> {
   final int id;
   final int fromCurrencyId;
   final int toCurrencyId;
-  final double rate;
+  final Decimal rate;
   final DateTime effectiveDate;
   final DateTime createdAt;
   const AccExchangeRate(
@@ -49125,7 +49984,10 @@ class AccExchangeRate extends DataClass implements Insertable<AccExchangeRate> {
     map['id'] = Variable<int>(id);
     map['from_currency_id'] = Variable<int>(fromCurrencyId);
     map['to_currency_id'] = Variable<int>(toCurrencyId);
-    map['rate'] = Variable<double>(rate);
+    {
+      map['rate'] =
+          Variable<String>($AccExchangeRatesTable.$converterrate.toSql(rate));
+    }
     map['effective_date'] = Variable<DateTime>(effectiveDate);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -49149,7 +50011,7 @@ class AccExchangeRate extends DataClass implements Insertable<AccExchangeRate> {
       id: serializer.fromJson<int>(json['id']),
       fromCurrencyId: serializer.fromJson<int>(json['fromCurrencyId']),
       toCurrencyId: serializer.fromJson<int>(json['toCurrencyId']),
-      rate: serializer.fromJson<double>(json['rate']),
+      rate: serializer.fromJson<Decimal>(json['rate']),
       effectiveDate: serializer.fromJson<DateTime>(json['effectiveDate']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -49161,7 +50023,7 @@ class AccExchangeRate extends DataClass implements Insertable<AccExchangeRate> {
       'id': serializer.toJson<int>(id),
       'fromCurrencyId': serializer.toJson<int>(fromCurrencyId),
       'toCurrencyId': serializer.toJson<int>(toCurrencyId),
-      'rate': serializer.toJson<double>(rate),
+      'rate': serializer.toJson<Decimal>(rate),
       'effectiveDate': serializer.toJson<DateTime>(effectiveDate),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -49171,7 +50033,7 @@ class AccExchangeRate extends DataClass implements Insertable<AccExchangeRate> {
           {int? id,
           int? fromCurrencyId,
           int? toCurrencyId,
-          double? rate,
+          Decimal? rate,
           DateTime? effectiveDate,
           DateTime? createdAt}) =>
       AccExchangeRate(
@@ -49231,7 +50093,7 @@ class AccExchangeRatesCompanion extends UpdateCompanion<AccExchangeRate> {
   final Value<int> id;
   final Value<int> fromCurrencyId;
   final Value<int> toCurrencyId;
-  final Value<double> rate;
+  final Value<Decimal> rate;
   final Value<DateTime> effectiveDate;
   final Value<DateTime> createdAt;
   const AccExchangeRatesCompanion({
@@ -49246,7 +50108,7 @@ class AccExchangeRatesCompanion extends UpdateCompanion<AccExchangeRate> {
     this.id = const Value.absent(),
     required int fromCurrencyId,
     required int toCurrencyId,
-    required double rate,
+    required Decimal rate,
     required DateTime effectiveDate,
     this.createdAt = const Value.absent(),
   })  : fromCurrencyId = Value(fromCurrencyId),
@@ -49257,7 +50119,7 @@ class AccExchangeRatesCompanion extends UpdateCompanion<AccExchangeRate> {
     Expression<int>? id,
     Expression<int>? fromCurrencyId,
     Expression<int>? toCurrencyId,
-    Expression<double>? rate,
+    Expression<String>? rate,
     Expression<DateTime>? effectiveDate,
     Expression<DateTime>? createdAt,
   }) {
@@ -49275,7 +50137,7 @@ class AccExchangeRatesCompanion extends UpdateCompanion<AccExchangeRate> {
       {Value<int>? id,
       Value<int>? fromCurrencyId,
       Value<int>? toCurrencyId,
-      Value<double>? rate,
+      Value<Decimal>? rate,
       Value<DateTime>? effectiveDate,
       Value<DateTime>? createdAt}) {
     return AccExchangeRatesCompanion(
@@ -49301,7 +50163,8 @@ class AccExchangeRatesCompanion extends UpdateCompanion<AccExchangeRate> {
       map['to_currency_id'] = Variable<int>(toCurrencyId.value);
     }
     if (rate.present) {
-      map['rate'] = Variable<double>(rate.value);
+      map['rate'] = Variable<String>(
+          $AccExchangeRatesTable.$converterrate.toSql(rate.value));
     }
     if (effectiveDate.present) {
       map['effective_date'] = Variable<DateTime>(effectiveDate.value);
@@ -49375,23 +50238,26 @@ class $AccBudgetsTable extends AccBudgets
   static const VerificationMeta _budgetedAmountMeta =
       const VerificationMeta('budgetedAmount');
   @override
-  late final GeneratedColumn<double> budgetedAmount = GeneratedColumn<double>(
-      'budgeted_amount', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> budgetedAmount =
+      GeneratedColumn<String>('budgeted_amount', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($AccBudgetsTable.$converterbudgetedAmount);
   static const VerificationMeta _actualAmountMeta =
       const VerificationMeta('actualAmount');
   @override
-  late final GeneratedColumn<double> actualAmount = GeneratedColumn<double>(
-      'actual_amount', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> actualAmount =
+      GeneratedColumn<String>('actual_amount', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($AccBudgetsTable.$converteractualAmount);
   static const VerificationMeta _varianceMeta =
       const VerificationMeta('variance');
   @override
-  late final GeneratedColumn<double> variance = GeneratedColumn<double>(
-      'variance', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> variance =
+      GeneratedColumn<String>('variance', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($AccBudgetsTable.$convertervariance);
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -49455,26 +50321,9 @@ class $AccBudgetsTable extends AccBudgets
       context.handle(_accountIdMeta,
           accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta));
     }
-    if (data.containsKey('budgeted_amount')) {
-      context.handle(
-          _budgetedAmountMeta,
-          budgetedAmount.isAcceptableOrUnknown(
-              data['budgeted_amount']!, _budgetedAmountMeta));
-    } else if (isInserting) {
-      context.missing(_budgetedAmountMeta);
-    }
-    if (data.containsKey('actual_amount')) {
-      context.handle(
-          _actualAmountMeta,
-          actualAmount.isAcceptableOrUnknown(
-              data['actual_amount']!, _actualAmountMeta));
-    }
-    if (data.containsKey('variance')) {
-      context.handle(_varianceMeta,
-          variance.isAcceptableOrUnknown(data['variance']!, _varianceMeta));
-    } else if (isInserting) {
-      context.missing(_varianceMeta);
-    }
+    context.handle(_budgetedAmountMeta, const VerificationResult.success());
+    context.handle(_actualAmountMeta, const VerificationResult.success());
+    context.handle(_varianceMeta, const VerificationResult.success());
     if (data.containsKey('status')) {
       context.handle(_statusMeta,
           status.isAcceptableOrUnknown(data['status']!, _statusMeta));
@@ -49502,12 +50351,15 @@ class $AccBudgetsTable extends AccBudgets
           .read(DriftSqlType.string, data['${effectivePrefix}cost_center_id']),
       accountId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}account_id']),
-      budgetedAmount: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}budgeted_amount'])!,
-      actualAmount: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}actual_amount'])!,
-      variance: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}variance'])!,
+      budgetedAmount: $AccBudgetsTable.$converterbudgetedAmount.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}budgeted_amount'])!),
+      actualAmount: $AccBudgetsTable.$converteractualAmount.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}actual_amount'])!),
+      variance: $AccBudgetsTable.$convertervariance.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}variance'])!),
       status: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
       createdAt: attachedDatabase.typeMapping
@@ -49519,6 +50371,13 @@ class $AccBudgetsTable extends AccBudgets
   $AccBudgetsTable createAlias(String alias) {
     return $AccBudgetsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterbudgetedAmount =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converteractualAmount =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $convertervariance =
+      const DecimalConverter();
 }
 
 class AccBudget extends DataClass implements Insertable<AccBudget> {
@@ -49527,9 +50386,9 @@ class AccBudget extends DataClass implements Insertable<AccBudget> {
   final String period;
   final String? costCenterId;
   final String? accountId;
-  final double budgetedAmount;
-  final double actualAmount;
-  final double variance;
+  final Decimal budgetedAmount;
+  final Decimal actualAmount;
+  final Decimal variance;
   final String status;
   final DateTime createdAt;
   const AccBudget(
@@ -49555,9 +50414,18 @@ class AccBudget extends DataClass implements Insertable<AccBudget> {
     if (!nullToAbsent || accountId != null) {
       map['account_id'] = Variable<String>(accountId);
     }
-    map['budgeted_amount'] = Variable<double>(budgetedAmount);
-    map['actual_amount'] = Variable<double>(actualAmount);
-    map['variance'] = Variable<double>(variance);
+    {
+      map['budgeted_amount'] = Variable<String>(
+          $AccBudgetsTable.$converterbudgetedAmount.toSql(budgetedAmount));
+    }
+    {
+      map['actual_amount'] = Variable<String>(
+          $AccBudgetsTable.$converteractualAmount.toSql(actualAmount));
+    }
+    {
+      map['variance'] =
+          Variable<String>($AccBudgetsTable.$convertervariance.toSql(variance));
+    }
     map['status'] = Variable<String>(status);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -49591,9 +50459,9 @@ class AccBudget extends DataClass implements Insertable<AccBudget> {
       period: serializer.fromJson<String>(json['period']),
       costCenterId: serializer.fromJson<String?>(json['costCenterId']),
       accountId: serializer.fromJson<String?>(json['accountId']),
-      budgetedAmount: serializer.fromJson<double>(json['budgetedAmount']),
-      actualAmount: serializer.fromJson<double>(json['actualAmount']),
-      variance: serializer.fromJson<double>(json['variance']),
+      budgetedAmount: serializer.fromJson<Decimal>(json['budgetedAmount']),
+      actualAmount: serializer.fromJson<Decimal>(json['actualAmount']),
+      variance: serializer.fromJson<Decimal>(json['variance']),
       status: serializer.fromJson<String>(json['status']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -49607,9 +50475,9 @@ class AccBudget extends DataClass implements Insertable<AccBudget> {
       'period': serializer.toJson<String>(period),
       'costCenterId': serializer.toJson<String?>(costCenterId),
       'accountId': serializer.toJson<String?>(accountId),
-      'budgetedAmount': serializer.toJson<double>(budgetedAmount),
-      'actualAmount': serializer.toJson<double>(actualAmount),
-      'variance': serializer.toJson<double>(variance),
+      'budgetedAmount': serializer.toJson<Decimal>(budgetedAmount),
+      'actualAmount': serializer.toJson<Decimal>(actualAmount),
+      'variance': serializer.toJson<Decimal>(variance),
       'status': serializer.toJson<String>(status),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -49621,9 +50489,9 @@ class AccBudget extends DataClass implements Insertable<AccBudget> {
           String? period,
           Value<String?> costCenterId = const Value.absent(),
           Value<String?> accountId = const Value.absent(),
-          double? budgetedAmount,
-          double? actualAmount,
-          double? variance,
+          Decimal? budgetedAmount,
+          Decimal? actualAmount,
+          Decimal? variance,
           String? status,
           DateTime? createdAt}) =>
       AccBudget(
@@ -49702,9 +50570,9 @@ class AccBudgetsCompanion extends UpdateCompanion<AccBudget> {
   final Value<String> period;
   final Value<String?> costCenterId;
   final Value<String?> accountId;
-  final Value<double> budgetedAmount;
-  final Value<double> actualAmount;
-  final Value<double> variance;
+  final Value<Decimal> budgetedAmount;
+  final Value<Decimal> actualAmount;
+  final Value<Decimal> variance;
   final Value<String> status;
   final Value<DateTime> createdAt;
   const AccBudgetsCompanion({
@@ -49725,9 +50593,9 @@ class AccBudgetsCompanion extends UpdateCompanion<AccBudget> {
     required String period,
     this.costCenterId = const Value.absent(),
     this.accountId = const Value.absent(),
-    required double budgetedAmount,
+    required Decimal budgetedAmount,
     this.actualAmount = const Value.absent(),
-    required double variance,
+    required Decimal variance,
     this.status = const Value.absent(),
     this.createdAt = const Value.absent(),
   })  : name = Value(name),
@@ -49740,9 +50608,9 @@ class AccBudgetsCompanion extends UpdateCompanion<AccBudget> {
     Expression<String>? period,
     Expression<String>? costCenterId,
     Expression<String>? accountId,
-    Expression<double>? budgetedAmount,
-    Expression<double>? actualAmount,
-    Expression<double>? variance,
+    Expression<String>? budgetedAmount,
+    Expression<String>? actualAmount,
+    Expression<String>? variance,
     Expression<String>? status,
     Expression<DateTime>? createdAt,
   }) {
@@ -49766,9 +50634,9 @@ class AccBudgetsCompanion extends UpdateCompanion<AccBudget> {
       Value<String>? period,
       Value<String?>? costCenterId,
       Value<String?>? accountId,
-      Value<double>? budgetedAmount,
-      Value<double>? actualAmount,
-      Value<double>? variance,
+      Value<Decimal>? budgetedAmount,
+      Value<Decimal>? actualAmount,
+      Value<Decimal>? variance,
       Value<String>? status,
       Value<DateTime>? createdAt}) {
     return AccBudgetsCompanion(
@@ -49804,13 +50672,17 @@ class AccBudgetsCompanion extends UpdateCompanion<AccBudget> {
       map['account_id'] = Variable<String>(accountId.value);
     }
     if (budgetedAmount.present) {
-      map['budgeted_amount'] = Variable<double>(budgetedAmount.value);
+      map['budgeted_amount'] = Variable<String>($AccBudgetsTable
+          .$converterbudgetedAmount
+          .toSql(budgetedAmount.value));
     }
     if (actualAmount.present) {
-      map['actual_amount'] = Variable<double>(actualAmount.value);
+      map['actual_amount'] = Variable<String>(
+          $AccBudgetsTable.$converteractualAmount.toSql(actualAmount.value));
     }
     if (variance.present) {
-      map['variance'] = Variable<double>(variance.value);
+      map['variance'] = Variable<String>(
+          $AccBudgetsTable.$convertervariance.toSql(variance.value));
     }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
@@ -49878,15 +50750,19 @@ class $AccBankStatementsTable extends AccBankStatements
   static const VerificationMeta _openingBalanceMeta =
       const VerificationMeta('openingBalance');
   @override
-  late final GeneratedColumn<double> openingBalance = GeneratedColumn<double>(
-      'opening_balance', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> openingBalance =
+      GeneratedColumn<String>('opening_balance', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>(
+              $AccBankStatementsTable.$converteropeningBalance);
   static const VerificationMeta _closingBalanceMeta =
       const VerificationMeta('closingBalance');
   @override
-  late final GeneratedColumn<double> closingBalance = GeneratedColumn<double>(
-      'closing_balance', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, String> closingBalance =
+      GeneratedColumn<String>('closing_balance', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>(
+              $AccBankStatementsTable.$converterclosingBalance);
   static const VerificationMeta _currencyMeta =
       const VerificationMeta('currency');
   @override
@@ -49955,22 +50831,8 @@ class $AccBankStatementsTable extends AccBankStatements
     } else if (isInserting) {
       context.missing(_statementDateMeta);
     }
-    if (data.containsKey('opening_balance')) {
-      context.handle(
-          _openingBalanceMeta,
-          openingBalance.isAcceptableOrUnknown(
-              data['opening_balance']!, _openingBalanceMeta));
-    } else if (isInserting) {
-      context.missing(_openingBalanceMeta);
-    }
-    if (data.containsKey('closing_balance')) {
-      context.handle(
-          _closingBalanceMeta,
-          closingBalance.isAcceptableOrUnknown(
-              data['closing_balance']!, _closingBalanceMeta));
-    } else if (isInserting) {
-      context.missing(_closingBalanceMeta);
-    }
+    context.handle(_openingBalanceMeta, const VerificationResult.success());
+    context.handle(_closingBalanceMeta, const VerificationResult.success());
     if (data.containsKey('currency')) {
       context.handle(_currencyMeta,
           currency.isAcceptableOrUnknown(data['currency']!, _currencyMeta));
@@ -50000,10 +50862,12 @@ class $AccBankStatementsTable extends AccBankStatements
           DriftSqlType.string, data['${effectivePrefix}statement_reference']),
       statementDate: attachedDatabase.typeMapping.read(
           DriftSqlType.dateTime, data['${effectivePrefix}statement_date'])!,
-      openingBalance: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}opening_balance'])!,
-      closingBalance: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}closing_balance'])!,
+      openingBalance: $AccBankStatementsTable.$converteropeningBalance.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}opening_balance'])!),
+      closingBalance: $AccBankStatementsTable.$converterclosingBalance.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.string, data['${effectivePrefix}closing_balance'])!),
       currency: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}currency'])!,
       status: attachedDatabase.typeMapping
@@ -50017,6 +50881,11 @@ class $AccBankStatementsTable extends AccBankStatements
   $AccBankStatementsTable createAlias(String alias) {
     return $AccBankStatementsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converteropeningBalance =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterclosingBalance =
+      const DecimalConverter();
 }
 
 class AccBankStatement extends DataClass
@@ -50025,8 +50894,8 @@ class AccBankStatement extends DataClass
   final String accountId;
   final String? statementReference;
   final DateTime statementDate;
-  final double openingBalance;
-  final double closingBalance;
+  final Decimal openingBalance;
+  final Decimal closingBalance;
   final String currency;
   final String status;
   final DateTime createdAt;
@@ -50049,8 +50918,16 @@ class AccBankStatement extends DataClass
       map['statement_reference'] = Variable<String>(statementReference);
     }
     map['statement_date'] = Variable<DateTime>(statementDate);
-    map['opening_balance'] = Variable<double>(openingBalance);
-    map['closing_balance'] = Variable<double>(closingBalance);
+    {
+      map['opening_balance'] = Variable<String>($AccBankStatementsTable
+          .$converteropeningBalance
+          .toSql(openingBalance));
+    }
+    {
+      map['closing_balance'] = Variable<String>($AccBankStatementsTable
+          .$converterclosingBalance
+          .toSql(closingBalance));
+    }
     map['currency'] = Variable<String>(currency);
     map['status'] = Variable<String>(status);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -50082,8 +50959,8 @@ class AccBankStatement extends DataClass
       statementReference:
           serializer.fromJson<String?>(json['statementReference']),
       statementDate: serializer.fromJson<DateTime>(json['statementDate']),
-      openingBalance: serializer.fromJson<double>(json['openingBalance']),
-      closingBalance: serializer.fromJson<double>(json['closingBalance']),
+      openingBalance: serializer.fromJson<Decimal>(json['openingBalance']),
+      closingBalance: serializer.fromJson<Decimal>(json['closingBalance']),
       currency: serializer.fromJson<String>(json['currency']),
       status: serializer.fromJson<String>(json['status']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -50097,8 +50974,8 @@ class AccBankStatement extends DataClass
       'accountId': serializer.toJson<String>(accountId),
       'statementReference': serializer.toJson<String?>(statementReference),
       'statementDate': serializer.toJson<DateTime>(statementDate),
-      'openingBalance': serializer.toJson<double>(openingBalance),
-      'closingBalance': serializer.toJson<double>(closingBalance),
+      'openingBalance': serializer.toJson<Decimal>(openingBalance),
+      'closingBalance': serializer.toJson<Decimal>(closingBalance),
       'currency': serializer.toJson<String>(currency),
       'status': serializer.toJson<String>(status),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -50110,8 +50987,8 @@ class AccBankStatement extends DataClass
           String? accountId,
           Value<String?> statementReference = const Value.absent(),
           DateTime? statementDate,
-          double? openingBalance,
-          double? closingBalance,
+          Decimal? openingBalance,
+          Decimal? closingBalance,
           String? currency,
           String? status,
           DateTime? createdAt}) =>
@@ -50197,8 +51074,8 @@ class AccBankStatementsCompanion extends UpdateCompanion<AccBankStatement> {
   final Value<String> accountId;
   final Value<String?> statementReference;
   final Value<DateTime> statementDate;
-  final Value<double> openingBalance;
-  final Value<double> closingBalance;
+  final Value<Decimal> openingBalance;
+  final Value<Decimal> closingBalance;
   final Value<String> currency;
   final Value<String> status;
   final Value<DateTime> createdAt;
@@ -50218,8 +51095,8 @@ class AccBankStatementsCompanion extends UpdateCompanion<AccBankStatement> {
     required String accountId,
     this.statementReference = const Value.absent(),
     required DateTime statementDate,
-    required double openingBalance,
-    required double closingBalance,
+    required Decimal openingBalance,
+    required Decimal closingBalance,
     this.currency = const Value.absent(),
     this.status = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -50232,8 +51109,8 @@ class AccBankStatementsCompanion extends UpdateCompanion<AccBankStatement> {
     Expression<String>? accountId,
     Expression<String>? statementReference,
     Expression<DateTime>? statementDate,
-    Expression<double>? openingBalance,
-    Expression<double>? closingBalance,
+    Expression<String>? openingBalance,
+    Expression<String>? closingBalance,
     Expression<String>? currency,
     Expression<String>? status,
     Expression<DateTime>? createdAt,
@@ -50256,8 +51133,8 @@ class AccBankStatementsCompanion extends UpdateCompanion<AccBankStatement> {
       Value<String>? accountId,
       Value<String?>? statementReference,
       Value<DateTime>? statementDate,
-      Value<double>? openingBalance,
-      Value<double>? closingBalance,
+      Value<Decimal>? openingBalance,
+      Value<Decimal>? closingBalance,
       Value<String>? currency,
       Value<String>? status,
       Value<DateTime>? createdAt}) {
@@ -50290,10 +51167,14 @@ class AccBankStatementsCompanion extends UpdateCompanion<AccBankStatement> {
       map['statement_date'] = Variable<DateTime>(statementDate.value);
     }
     if (openingBalance.present) {
-      map['opening_balance'] = Variable<double>(openingBalance.value);
+      map['opening_balance'] = Variable<String>($AccBankStatementsTable
+          .$converteropeningBalance
+          .toSql(openingBalance.value));
     }
     if (closingBalance.present) {
-      map['closing_balance'] = Variable<double>(closingBalance.value);
+      map['closing_balance'] = Variable<String>($AccBankStatementsTable
+          .$converterclosingBalance
+          .toSql(closingBalance.value));
     }
     if (currency.present) {
       map['currency'] = Variable<String>(currency.value);
@@ -50362,24 +51243,28 @@ class $AccBankStatementLinesTable extends AccBankStatementLines
       type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _debitMeta = const VerificationMeta('debit');
   @override
-  late final GeneratedColumn<double> debit = GeneratedColumn<double>(
-      'debit', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> debit =
+      GeneratedColumn<String>('debit', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($AccBankStatementLinesTable.$converterdebit);
   static const VerificationMeta _creditMeta = const VerificationMeta('credit');
   @override
-  late final GeneratedColumn<double> credit = GeneratedColumn<double>(
-      'credit', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, String> credit =
+      GeneratedColumn<String>('credit', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(Decimal.zero.toString()))
+          .withConverter<Decimal>($AccBankStatementLinesTable.$convertercredit);
   static const VerificationMeta _balanceMeta =
       const VerificationMeta('balance');
   @override
-  late final GeneratedColumn<double> balance = GeneratedColumn<double>(
-      'balance', aliasedName, true,
-      type: DriftSqlType.double, requiredDuringInsert: false);
+  late final GeneratedColumnWithTypeConverter<Decimal?, String> balance =
+      GeneratedColumn<String>('balance', aliasedName, true,
+              type: DriftSqlType.string, requiredDuringInsert: false)
+          .withConverter<Decimal?>(
+              $AccBankStatementLinesTable.$converterbalancen);
   static const VerificationMeta _referenceMeta =
       const VerificationMeta('reference');
   @override
@@ -50463,18 +51348,9 @@ class $AccBankStatementLinesTable extends AccBankStatementLines
     } else if (isInserting) {
       context.missing(_descriptionMeta);
     }
-    if (data.containsKey('debit')) {
-      context.handle(
-          _debitMeta, debit.isAcceptableOrUnknown(data['debit']!, _debitMeta));
-    }
-    if (data.containsKey('credit')) {
-      context.handle(_creditMeta,
-          credit.isAcceptableOrUnknown(data['credit']!, _creditMeta));
-    }
-    if (data.containsKey('balance')) {
-      context.handle(_balanceMeta,
-          balance.isAcceptableOrUnknown(data['balance']!, _balanceMeta));
-    }
+    context.handle(_debitMeta, const VerificationResult.success());
+    context.handle(_creditMeta, const VerificationResult.success());
+    context.handle(_balanceMeta, const VerificationResult.success());
     if (data.containsKey('reference')) {
       context.handle(_referenceMeta,
           reference.isAcceptableOrUnknown(data['reference']!, _referenceMeta));
@@ -50512,12 +51388,15 @@ class $AccBankStatementLinesTable extends AccBankStatementLines
           DriftSqlType.dateTime, data['${effectivePrefix}transaction_date'])!,
       description: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}description'])!,
-      debit: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}debit'])!,
-      credit: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}credit'])!,
-      balance: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}balance']),
+      debit: $AccBankStatementLinesTable.$converterdebit.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.string, data['${effectivePrefix}debit'])!),
+      credit: $AccBankStatementLinesTable.$convertercredit.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.string, data['${effectivePrefix}credit'])!),
+      balance: $AccBankStatementLinesTable.$converterbalancen.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.string, data['${effectivePrefix}balance'])),
       reference: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}reference']),
       matchedJournalEntryId: attachedDatabase.typeMapping.read(
@@ -50535,6 +51414,15 @@ class $AccBankStatementLinesTable extends AccBankStatementLines
   $AccBankStatementLinesTable createAlias(String alias) {
     return $AccBankStatementLinesTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, String> $converterdebit =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $convertercredit =
+      const DecimalConverter();
+  static TypeConverter<Decimal, String> $converterbalance =
+      const DecimalConverter();
+  static TypeConverter<Decimal?, String?> $converterbalancen =
+      NullAwareTypeConverter.wrap($converterbalance);
 }
 
 class AccBankStatementLine extends DataClass
@@ -50543,9 +51431,9 @@ class AccBankStatementLine extends DataClass
   final int statementId;
   final DateTime transactionDate;
   final String description;
-  final double debit;
-  final double credit;
-  final double? balance;
+  final Decimal debit;
+  final Decimal credit;
+  final Decimal? balance;
   final String? reference;
   final String? matchedJournalEntryId;
   final String reconciliationStatus;
@@ -50569,10 +51457,17 @@ class AccBankStatementLine extends DataClass
     map['statement_id'] = Variable<int>(statementId);
     map['transaction_date'] = Variable<DateTime>(transactionDate);
     map['description'] = Variable<String>(description);
-    map['debit'] = Variable<double>(debit);
-    map['credit'] = Variable<double>(credit);
+    {
+      map['debit'] = Variable<String>(
+          $AccBankStatementLinesTable.$converterdebit.toSql(debit));
+    }
+    {
+      map['credit'] = Variable<String>(
+          $AccBankStatementLinesTable.$convertercredit.toSql(credit));
+    }
     if (!nullToAbsent || balance != null) {
-      map['balance'] = Variable<double>(balance);
+      map['balance'] = Variable<String>(
+          $AccBankStatementLinesTable.$converterbalancen.toSql(balance));
     }
     if (!nullToAbsent || reference != null) {
       map['reference'] = Variable<String>(reference);
@@ -50615,9 +51510,9 @@ class AccBankStatementLine extends DataClass
       statementId: serializer.fromJson<int>(json['statementId']),
       transactionDate: serializer.fromJson<DateTime>(json['transactionDate']),
       description: serializer.fromJson<String>(json['description']),
-      debit: serializer.fromJson<double>(json['debit']),
-      credit: serializer.fromJson<double>(json['credit']),
-      balance: serializer.fromJson<double?>(json['balance']),
+      debit: serializer.fromJson<Decimal>(json['debit']),
+      credit: serializer.fromJson<Decimal>(json['credit']),
+      balance: serializer.fromJson<Decimal?>(json['balance']),
       reference: serializer.fromJson<String?>(json['reference']),
       matchedJournalEntryId:
           serializer.fromJson<String?>(json['matchedJournalEntryId']),
@@ -50634,9 +51529,9 @@ class AccBankStatementLine extends DataClass
       'statementId': serializer.toJson<int>(statementId),
       'transactionDate': serializer.toJson<DateTime>(transactionDate),
       'description': serializer.toJson<String>(description),
-      'debit': serializer.toJson<double>(debit),
-      'credit': serializer.toJson<double>(credit),
-      'balance': serializer.toJson<double?>(balance),
+      'debit': serializer.toJson<Decimal>(debit),
+      'credit': serializer.toJson<Decimal>(credit),
+      'balance': serializer.toJson<Decimal?>(balance),
       'reference': serializer.toJson<String?>(reference),
       'matchedJournalEntryId':
           serializer.toJson<String?>(matchedJournalEntryId),
@@ -50650,9 +51545,9 @@ class AccBankStatementLine extends DataClass
           int? statementId,
           DateTime? transactionDate,
           String? description,
-          double? debit,
-          double? credit,
-          Value<double?> balance = const Value.absent(),
+          Decimal? debit,
+          Decimal? credit,
+          Value<Decimal?> balance = const Value.absent(),
           Value<String?> reference = const Value.absent(),
           Value<String?> matchedJournalEntryId = const Value.absent(),
           String? reconciliationStatus,
@@ -50750,9 +51645,9 @@ class AccBankStatementLinesCompanion
   final Value<int> statementId;
   final Value<DateTime> transactionDate;
   final Value<String> description;
-  final Value<double> debit;
-  final Value<double> credit;
-  final Value<double?> balance;
+  final Value<Decimal> debit;
+  final Value<Decimal> credit;
+  final Value<Decimal?> balance;
   final Value<String?> reference;
   final Value<String?> matchedJournalEntryId;
   final Value<String> reconciliationStatus;
@@ -50790,9 +51685,9 @@ class AccBankStatementLinesCompanion
     Expression<int>? statementId,
     Expression<DateTime>? transactionDate,
     Expression<String>? description,
-    Expression<double>? debit,
-    Expression<double>? credit,
-    Expression<double>? balance,
+    Expression<String>? debit,
+    Expression<String>? credit,
+    Expression<String>? balance,
     Expression<String>? reference,
     Expression<String>? matchedJournalEntryId,
     Expression<String>? reconciliationStatus,
@@ -50820,9 +51715,9 @@ class AccBankStatementLinesCompanion
       Value<int>? statementId,
       Value<DateTime>? transactionDate,
       Value<String>? description,
-      Value<double>? debit,
-      Value<double>? credit,
-      Value<double?>? balance,
+      Value<Decimal>? debit,
+      Value<Decimal>? credit,
+      Value<Decimal?>? balance,
       Value<String?>? reference,
       Value<String?>? matchedJournalEntryId,
       Value<String>? reconciliationStatus,
@@ -50859,13 +51754,16 @@ class AccBankStatementLinesCompanion
       map['description'] = Variable<String>(description.value);
     }
     if (debit.present) {
-      map['debit'] = Variable<double>(debit.value);
+      map['debit'] = Variable<String>(
+          $AccBankStatementLinesTable.$converterdebit.toSql(debit.value));
     }
     if (credit.present) {
-      map['credit'] = Variable<double>(credit.value);
+      map['credit'] = Variable<String>(
+          $AccBankStatementLinesTable.$convertercredit.toSql(credit.value));
     }
     if (balance.present) {
-      map['balance'] = Variable<double>(balance.value);
+      map['balance'] = Variable<String>(
+          $AccBankStatementLinesTable.$converterbalancen.toSql(balance.value));
     }
     if (reference.present) {
       map['reference'] = Variable<String>(reference.value);
@@ -51374,9 +52272,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $UsersTable users = $UsersTable(this);
   late final $CategoriesTable categories = $CategoriesTable(this);
   late final $GLAccountsTable gLAccounts = $GLAccountsTable(this);
+  late final $CurrenciesTable currencies = $CurrenciesTable(this);
   late final $SuppliersTable suppliers = $SuppliersTable(this);
   late final $ProductsTable products = $ProductsTable(this);
-  late final $CurrenciesTable currencies = $CurrenciesTable(this);
   late final $CustomersTable customers = $CustomersTable(this);
   late final $WarehousesTable warehouses = $WarehousesTable(this);
   late final $SalesTable sales = $SalesTable(this);
@@ -51480,6 +52378,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $HRPayrollDetailsTable(this);
   late final $HRAdditionalDeductionsTable hRAdditionalDeductions =
       $HRAdditionalDeductionsTable(this);
+  late final $ExchangeRatesTable exchangeRates = $ExchangeRatesTable(this);
   late final $AccCurrenciesTable accCurrencies = $AccCurrenciesTable(this);
   late final $AccExchangeRatesTable accExchangeRates =
       $AccExchangeRatesTable(this);
@@ -51516,9 +52415,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         users,
         categories,
         gLAccounts,
+        currencies,
         suppliers,
         products,
-        currencies,
         customers,
         warehouses,
         sales,
@@ -51590,6 +52489,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         hRPayrollRuns,
         hRPayrollDetails,
         hRAdditionalDeductions,
+        exchangeRates,
         accCurrencies,
         accExchangeRates,
         accBudgets,
@@ -51689,6 +52589,21 @@ final class $$BranchesTableReferences
         manager.$state.copyWith(prefetchedData: cache));
   }
 
+  static MultiTypedResultKey<$CurrenciesTable, List<Currency>>
+      _currenciesRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.currencies,
+              aliasName:
+                  $_aliasNameGenerator(db.branches.id, db.currencies.branchId));
+
+  $$CurrenciesTableProcessedTableManager get currenciesRefs {
+    final manager = $$CurrenciesTableTableManager($_db, $_db.currencies)
+        .filter((f) => f.branchId.id($_item.id));
+
+    final cache = $_typedResult.readTableOrNull(_currenciesRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
   static MultiTypedResultKey<$SuppliersTable, List<Supplier>>
       _suppliersRefsTable(_$AppDatabase db) =>
           MultiTypedResultKey.fromTable(db.suppliers,
@@ -51715,21 +52630,6 @@ final class $$BranchesTableReferences
         .filter((f) => f.branchId.id($_item.id));
 
     final cache = $_typedResult.readTableOrNull(_productsRefsTable($_db));
-    return ProcessedTableManager(
-        manager.$state.copyWith(prefetchedData: cache));
-  }
-
-  static MultiTypedResultKey<$CurrenciesTable, List<Currency>>
-      _currenciesRefsTable(_$AppDatabase db) =>
-          MultiTypedResultKey.fromTable(db.currencies,
-              aliasName:
-                  $_aliasNameGenerator(db.branches.id, db.currencies.branchId));
-
-  $$CurrenciesTableProcessedTableManager get currenciesRefs {
-    final manager = $$CurrenciesTableTableManager($_db, $_db.currencies)
-        .filter((f) => f.branchId.id($_item.id));
-
-    final cache = $_typedResult.readTableOrNull(_currenciesRefsTable($_db));
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
@@ -52819,6 +53719,27 @@ class $$BranchesTableFilterComposer
     return f(composer);
   }
 
+  Expression<bool> currenciesRefs(
+      Expression<bool> Function($$CurrenciesTableFilterComposer f) f) {
+    final $$CurrenciesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.currencies,
+        getReferencedColumn: (t) => t.branchId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CurrenciesTableFilterComposer(
+              $db: $db,
+              $table: $db.currencies,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
   Expression<bool> suppliersRefs(
       Expression<bool> Function($$SuppliersTableFilterComposer f) f) {
     final $$SuppliersTableFilterComposer composer = $composerBuilder(
@@ -52853,27 +53774,6 @@ class $$BranchesTableFilterComposer
             $$ProductsTableFilterComposer(
               $db: $db,
               $table: $db.products,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return f(composer);
-  }
-
-  Expression<bool> currenciesRefs(
-      Expression<bool> Function($$CurrenciesTableFilterComposer f) f) {
-    final $$CurrenciesTableFilterComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.id,
-        referencedTable: $db.currencies,
-        getReferencedColumn: (t) => t.branchId,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$CurrenciesTableFilterComposer(
-              $db: $db,
-              $table: $db.currencies,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -54332,6 +55232,27 @@ class $$BranchesTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> currenciesRefs<T extends Object>(
+      Expression<T> Function($$CurrenciesTableAnnotationComposer a) f) {
+    final $$CurrenciesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.currencies,
+        getReferencedColumn: (t) => t.branchId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CurrenciesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.currencies,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
   Expression<T> suppliersRefs<T extends Object>(
       Expression<T> Function($$SuppliersTableAnnotationComposer a) f) {
     final $$SuppliersTableAnnotationComposer composer = $composerBuilder(
@@ -54366,27 +55287,6 @@ class $$BranchesTableAnnotationComposer
             $$ProductsTableAnnotationComposer(
               $db: $db,
               $table: $db.products,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return f(composer);
-  }
-
-  Expression<T> currenciesRefs<T extends Object>(
-      Expression<T> Function($$CurrenciesTableAnnotationComposer a) f) {
-    final $$CurrenciesTableAnnotationComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.id,
-        referencedTable: $db.currencies,
-        getReferencedColumn: (t) => t.branchId,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$CurrenciesTableAnnotationComposer(
-              $db: $db,
-              $table: $db.currencies,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -55696,9 +56596,9 @@ class $$BranchesTableTableManager extends RootTableManager<
         bool usersRefs,
         bool categoriesRefs,
         bool gLAccountsRefs,
+        bool currenciesRefs,
         bool suppliersRefs,
         bool productsRefs,
-        bool currenciesRefs,
         bool customersRefs,
         bool warehousesRefs,
         bool salesRefs,
@@ -55834,9 +56734,9 @@ class $$BranchesTableTableManager extends RootTableManager<
               usersRefs = false,
               categoriesRefs = false,
               gLAccountsRefs = false,
+              currenciesRefs = false,
               suppliersRefs = false,
               productsRefs = false,
-              currenciesRefs = false,
               customersRefs = false,
               warehousesRefs = false,
               salesRefs = false,
@@ -55903,9 +56803,9 @@ class $$BranchesTableTableManager extends RootTableManager<
                 if (usersRefs) db.users,
                 if (categoriesRefs) db.categories,
                 if (gLAccountsRefs) db.gLAccounts,
+                if (currenciesRefs) db.currencies,
                 if (suppliersRefs) db.suppliers,
                 if (productsRefs) db.products,
-                if (currenciesRefs) db.currencies,
                 if (customersRefs) db.customers,
                 if (warehousesRefs) db.warehouses,
                 if (salesRefs) db.sales,
@@ -56030,6 +56930,18 @@ class $$BranchesTableTableManager extends RootTableManager<
                                 referencedItems) =>
                             referencedItems.where((e) => e.branchId == item.id),
                         typedResults: items),
+                  if (currenciesRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable:
+                            $$BranchesTableReferences._currenciesRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$BranchesTableReferences(db, table, p0)
+                                .currenciesRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.branchId == item.id),
+                        typedResults: items),
                   if (suppliersRefs)
                     await $_getPrefetchedData(
                         currentTable: table,
@@ -56050,18 +56962,6 @@ class $$BranchesTableTableManager extends RootTableManager<
                         managerFromTypedResult: (p0) =>
                             $$BranchesTableReferences(db, table, p0)
                                 .productsRefs,
-                        referencedItemsForCurrentItem: (item,
-                                referencedItems) =>
-                            referencedItems.where((e) => e.branchId == item.id),
-                        typedResults: items),
-                  if (currenciesRefs)
-                    await $_getPrefetchedData(
-                        currentTable: table,
-                        referencedTable:
-                            $$BranchesTableReferences._currenciesRefsTable(db),
-                        managerFromTypedResult: (p0) =>
-                            $$BranchesTableReferences(db, table, p0)
-                                .currenciesRefs,
                         referencedItemsForCurrentItem: (item,
                                 referencedItems) =>
                             referencedItems.where((e) => e.branchId == item.id),
@@ -56806,9 +57706,9 @@ typedef $$BranchesTableProcessedTableManager = ProcessedTableManager<
         bool usersRefs,
         bool categoriesRefs,
         bool gLAccountsRefs,
+        bool currenciesRefs,
         bool suppliersRefs,
         bool productsRefs,
-        bool currenciesRefs,
         bool customersRefs,
         bool warehousesRefs,
         bool salesRefs,
@@ -56880,6 +57780,8 @@ typedef $$UsersTableCreateCompanionBuilder = UsersCompanion Function({
   required String password,
   required String role,
   required String fullName,
+  Value<String?> passwordHash,
+  Value<String?> passwordSalt,
   Value<int> rowid,
 });
 typedef $$UsersTableUpdateCompanionBuilder = UsersCompanion Function({
@@ -56893,6 +57795,8 @@ typedef $$UsersTableUpdateCompanionBuilder = UsersCompanion Function({
   Value<String> password,
   Value<String> role,
   Value<String> fullName,
+  Value<String?> passwordHash,
+  Value<String?> passwordSalt,
   Value<int> rowid,
 });
 
@@ -56994,6 +57898,12 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
 
   ColumnFilters<String> get fullName => $composableBuilder(
       column: $table.fullName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get passwordHash => $composableBuilder(
+      column: $table.passwordHash, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get passwordSalt => $composableBuilder(
+      column: $table.passwordSalt, builder: (column) => ColumnFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -57115,6 +58025,14 @@ class $$UsersTableOrderingComposer
   ColumnOrderings<String> get fullName => $composableBuilder(
       column: $table.fullName, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get passwordHash => $composableBuilder(
+      column: $table.passwordHash,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get passwordSalt => $composableBuilder(
+      column: $table.passwordSalt,
+      builder: (column) => ColumnOrderings(column));
+
   $$BranchesTableOrderingComposer get branchId {
     final $$BranchesTableOrderingComposer composer = $composerBuilder(
         composer: this,
@@ -57171,6 +58089,12 @@ class $$UsersTableAnnotationComposer
 
   GeneratedColumn<String> get fullName =>
       $composableBuilder(column: $table.fullName, builder: (column) => column);
+
+  GeneratedColumn<String> get passwordHash => $composableBuilder(
+      column: $table.passwordHash, builder: (column) => column);
+
+  GeneratedColumn<String> get passwordSalt => $composableBuilder(
+      column: $table.passwordSalt, builder: (column) => column);
 
   $$BranchesTableAnnotationComposer get branchId {
     final $$BranchesTableAnnotationComposer composer = $composerBuilder(
@@ -57295,6 +58219,8 @@ class $$UsersTableTableManager extends RootTableManager<
             Value<String> password = const Value.absent(),
             Value<String> role = const Value.absent(),
             Value<String> fullName = const Value.absent(),
+            Value<String?> passwordHash = const Value.absent(),
+            Value<String?> passwordSalt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               UsersCompanion(
@@ -57308,6 +58234,8 @@ class $$UsersTableTableManager extends RootTableManager<
             password: password,
             role: role,
             fullName: fullName,
+            passwordHash: passwordHash,
+            passwordSalt: passwordSalt,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -57321,6 +58249,8 @@ class $$UsersTableTableManager extends RootTableManager<
             required String password,
             required String role,
             required String fullName,
+            Value<String?> passwordHash = const Value.absent(),
+            Value<String?> passwordSalt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               UsersCompanion.insert(
@@ -57334,6 +58264,8 @@ class $$UsersTableTableManager extends RootTableManager<
             password: password,
             role: role,
             fullName: fullName,
+            passwordHash: passwordHash,
+            passwordSalt: passwordSalt,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -59420,6 +60352,687 @@ typedef $$GLAccountsTableProcessedTableManager = ProcessedTableManager<
         bool aRInvoicesRefs,
         bool accBudgetsRefs,
         bool accBankStatementsRefs})>;
+typedef $$CurrenciesTableCreateCompanionBuilder = CurrenciesCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<String?> deviceId,
+  Value<int> syncStatus,
+  Value<String?> branchId,
+  required String code,
+  required String name,
+  Value<String?> fractionalUnit,
+  Value<int> decimalPlaces,
+  Value<Decimal> exchangeRate,
+  Value<bool> isBase,
+  Value<int> rowid,
+});
+typedef $$CurrenciesTableUpdateCompanionBuilder = CurrenciesCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<String?> deviceId,
+  Value<int> syncStatus,
+  Value<String?> branchId,
+  Value<String> code,
+  Value<String> name,
+  Value<String?> fractionalUnit,
+  Value<int> decimalPlaces,
+  Value<Decimal> exchangeRate,
+  Value<bool> isBase,
+  Value<int> rowid,
+});
+
+final class $$CurrenciesTableReferences
+    extends BaseReferences<_$AppDatabase, $CurrenciesTable, Currency> {
+  $$CurrenciesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $BranchesTable _branchIdTable(_$AppDatabase db) =>
+      db.branches.createAlias(
+          $_aliasNameGenerator(db.currencies.branchId, db.branches.id));
+
+  $$BranchesTableProcessedTableManager? get branchId {
+    if ($_item.branchId == null) return null;
+    final manager = $$BranchesTableTableManager($_db, $_db.branches)
+        .filter((f) => f.id($_item.branchId!));
+    final item = $_typedResult.readTableOrNull(_branchIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static MultiTypedResultKey<$SuppliersTable, List<Supplier>>
+      _suppliersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+          db.suppliers,
+          aliasName:
+              $_aliasNameGenerator(db.currencies.id, db.suppliers.currencyId));
+
+  $$SuppliersTableProcessedTableManager get suppliersRefs {
+    final manager = $$SuppliersTableTableManager($_db, $_db.suppliers)
+        .filter((f) => f.currencyId.id($_item.id));
+
+    final cache = $_typedResult.readTableOrNull(_suppliersRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$CustomersTable, List<Customer>>
+      _customersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+          db.customers,
+          aliasName:
+              $_aliasNameGenerator(db.currencies.id, db.customers.currencyId));
+
+  $$CustomersTableProcessedTableManager get customersRefs {
+    final manager = $$CustomersTableTableManager($_db, $_db.customers)
+        .filter((f) => f.currencyId.id($_item.id));
+
+    final cache = $_typedResult.readTableOrNull(_customersRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$GLLinesTable, List<GLLine>> _gLLinesRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.gLLines,
+          aliasName:
+              $_aliasNameGenerator(db.currencies.id, db.gLLines.currencyId));
+
+  $$GLLinesTableProcessedTableManager get gLLinesRefs {
+    final manager = $$GLLinesTableTableManager($_db, $_db.gLLines)
+        .filter((f) => f.currencyId.id($_item.id));
+
+    final cache = $_typedResult.readTableOrNull(_gLLinesRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$ChecksTable, List<Check>> _checksRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.checks,
+          aliasName:
+              $_aliasNameGenerator(db.currencies.id, db.checks.currencyId));
+
+  $$ChecksTableProcessedTableManager get checksRefs {
+    final manager = $$ChecksTableTableManager($_db, $_db.checks)
+        .filter((f) => f.currencyId.id($_item.id));
+
+    final cache = $_typedResult.readTableOrNull(_checksRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+}
+
+class $$CurrenciesTableFilterComposer
+    extends Composer<_$AppDatabase, $CurrenciesTable> {
+  $$CurrenciesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get syncStatus => $composableBuilder(
+      column: $table.syncStatus, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get code => $composableBuilder(
+      column: $table.code, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get fractionalUnit => $composableBuilder(
+      column: $table.fractionalUnit,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get decimalPlaces => $composableBuilder(
+      column: $table.decimalPlaces, builder: (column) => ColumnFilters(column));
+
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get exchangeRate =>
+      $composableBuilder(
+          column: $table.exchangeRate,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
+
+  ColumnFilters<bool> get isBase => $composableBuilder(
+      column: $table.isBase, builder: (column) => ColumnFilters(column));
+
+  $$BranchesTableFilterComposer get branchId {
+    final $$BranchesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.branchId,
+        referencedTable: $db.branches,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BranchesTableFilterComposer(
+              $db: $db,
+              $table: $db.branches,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  Expression<bool> suppliersRefs(
+      Expression<bool> Function($$SuppliersTableFilterComposer f) f) {
+    final $$SuppliersTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.suppliers,
+        getReferencedColumn: (t) => t.currencyId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SuppliersTableFilterComposer(
+              $db: $db,
+              $table: $db.suppliers,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> customersRefs(
+      Expression<bool> Function($$CustomersTableFilterComposer f) f) {
+    final $$CustomersTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.customers,
+        getReferencedColumn: (t) => t.currencyId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CustomersTableFilterComposer(
+              $db: $db,
+              $table: $db.customers,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> gLLinesRefs(
+      Expression<bool> Function($$GLLinesTableFilterComposer f) f) {
+    final $$GLLinesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.gLLines,
+        getReferencedColumn: (t) => t.currencyId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$GLLinesTableFilterComposer(
+              $db: $db,
+              $table: $db.gLLines,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> checksRefs(
+      Expression<bool> Function($$ChecksTableFilterComposer f) f) {
+    final $$ChecksTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.checks,
+        getReferencedColumn: (t) => t.currencyId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ChecksTableFilterComposer(
+              $db: $db,
+              $table: $db.checks,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+}
+
+class $$CurrenciesTableOrderingComposer
+    extends Composer<_$AppDatabase, $CurrenciesTable> {
+  $$CurrenciesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get syncStatus => $composableBuilder(
+      column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get code => $composableBuilder(
+      column: $table.code, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get fractionalUnit => $composableBuilder(
+      column: $table.fractionalUnit,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get decimalPlaces => $composableBuilder(
+      column: $table.decimalPlaces,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get exchangeRate => $composableBuilder(
+      column: $table.exchangeRate,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isBase => $composableBuilder(
+      column: $table.isBase, builder: (column) => ColumnOrderings(column));
+
+  $$BranchesTableOrderingComposer get branchId {
+    final $$BranchesTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.branchId,
+        referencedTable: $db.branches,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BranchesTableOrderingComposer(
+              $db: $db,
+              $table: $db.branches,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$CurrenciesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CurrenciesTable> {
+  $$CurrenciesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<int> get syncStatus => $composableBuilder(
+      column: $table.syncStatus, builder: (column) => column);
+
+  GeneratedColumn<String> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get fractionalUnit => $composableBuilder(
+      column: $table.fractionalUnit, builder: (column) => column);
+
+  GeneratedColumn<int> get decimalPlaces => $composableBuilder(
+      column: $table.decimalPlaces, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<Decimal, String> get exchangeRate =>
+      $composableBuilder(
+          column: $table.exchangeRate, builder: (column) => column);
+
+  GeneratedColumn<bool> get isBase =>
+      $composableBuilder(column: $table.isBase, builder: (column) => column);
+
+  $$BranchesTableAnnotationComposer get branchId {
+    final $$BranchesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.branchId,
+        referencedTable: $db.branches,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BranchesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.branches,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  Expression<T> suppliersRefs<T extends Object>(
+      Expression<T> Function($$SuppliersTableAnnotationComposer a) f) {
+    final $$SuppliersTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.suppliers,
+        getReferencedColumn: (t) => t.currencyId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SuppliersTableAnnotationComposer(
+              $db: $db,
+              $table: $db.suppliers,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<T> customersRefs<T extends Object>(
+      Expression<T> Function($$CustomersTableAnnotationComposer a) f) {
+    final $$CustomersTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.customers,
+        getReferencedColumn: (t) => t.currencyId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CustomersTableAnnotationComposer(
+              $db: $db,
+              $table: $db.customers,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<T> gLLinesRefs<T extends Object>(
+      Expression<T> Function($$GLLinesTableAnnotationComposer a) f) {
+    final $$GLLinesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.gLLines,
+        getReferencedColumn: (t) => t.currencyId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$GLLinesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.gLLines,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<T> checksRefs<T extends Object>(
+      Expression<T> Function($$ChecksTableAnnotationComposer a) f) {
+    final $$ChecksTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.checks,
+        getReferencedColumn: (t) => t.currencyId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ChecksTableAnnotationComposer(
+              $db: $db,
+              $table: $db.checks,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+}
+
+class $$CurrenciesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $CurrenciesTable,
+    Currency,
+    $$CurrenciesTableFilterComposer,
+    $$CurrenciesTableOrderingComposer,
+    $$CurrenciesTableAnnotationComposer,
+    $$CurrenciesTableCreateCompanionBuilder,
+    $$CurrenciesTableUpdateCompanionBuilder,
+    (Currency, $$CurrenciesTableReferences),
+    Currency,
+    PrefetchHooks Function(
+        {bool branchId,
+        bool suppliersRefs,
+        bool customersRefs,
+        bool gLLinesRefs,
+        bool checksRefs})> {
+  $$CurrenciesTableTableManager(_$AppDatabase db, $CurrenciesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CurrenciesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CurrenciesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CurrenciesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<String?> deviceId = const Value.absent(),
+            Value<int> syncStatus = const Value.absent(),
+            Value<String?> branchId = const Value.absent(),
+            Value<String> code = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String?> fractionalUnit = const Value.absent(),
+            Value<int> decimalPlaces = const Value.absent(),
+            Value<Decimal> exchangeRate = const Value.absent(),
+            Value<bool> isBase = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CurrenciesCompanion(
+            id: id,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deviceId: deviceId,
+            syncStatus: syncStatus,
+            branchId: branchId,
+            code: code,
+            name: name,
+            fractionalUnit: fractionalUnit,
+            decimalPlaces: decimalPlaces,
+            exchangeRate: exchangeRate,
+            isBase: isBase,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<String?> deviceId = const Value.absent(),
+            Value<int> syncStatus = const Value.absent(),
+            Value<String?> branchId = const Value.absent(),
+            required String code,
+            required String name,
+            Value<String?> fractionalUnit = const Value.absent(),
+            Value<int> decimalPlaces = const Value.absent(),
+            Value<Decimal> exchangeRate = const Value.absent(),
+            Value<bool> isBase = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CurrenciesCompanion.insert(
+            id: id,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deviceId: deviceId,
+            syncStatus: syncStatus,
+            branchId: branchId,
+            code: code,
+            name: name,
+            fractionalUnit: fractionalUnit,
+            decimalPlaces: decimalPlaces,
+            exchangeRate: exchangeRate,
+            isBase: isBase,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$CurrenciesTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: (
+              {branchId = false,
+              suppliersRefs = false,
+              customersRefs = false,
+              gLLinesRefs = false,
+              checksRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (suppliersRefs) db.suppliers,
+                if (customersRefs) db.customers,
+                if (gLLinesRefs) db.gLLines,
+                if (checksRefs) db.checks
+              ],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (branchId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.branchId,
+                    referencedTable:
+                        $$CurrenciesTableReferences._branchIdTable(db),
+                    referencedColumn:
+                        $$CurrenciesTableReferences._branchIdTable(db).id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (suppliersRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable:
+                            $$CurrenciesTableReferences._suppliersRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$CurrenciesTableReferences(db, table, p0)
+                                .suppliersRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.currencyId == item.id),
+                        typedResults: items),
+                  if (customersRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable:
+                            $$CurrenciesTableReferences._customersRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$CurrenciesTableReferences(db, table, p0)
+                                .customersRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.currencyId == item.id),
+                        typedResults: items),
+                  if (gLLinesRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable:
+                            $$CurrenciesTableReferences._gLLinesRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$CurrenciesTableReferences(db, table, p0)
+                                .gLLinesRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.currencyId == item.id),
+                        typedResults: items),
+                  if (checksRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable:
+                            $$CurrenciesTableReferences._checksRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$CurrenciesTableReferences(db, table, p0)
+                                .checksRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.currencyId == item.id),
+                        typedResults: items)
+                ];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$CurrenciesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $CurrenciesTable,
+    Currency,
+    $$CurrenciesTableFilterComposer,
+    $$CurrenciesTableOrderingComposer,
+    $$CurrenciesTableAnnotationComposer,
+    $$CurrenciesTableCreateCompanionBuilder,
+    $$CurrenciesTableUpdateCompanionBuilder,
+    (Currency, $$CurrenciesTableReferences),
+    Currency,
+    PrefetchHooks Function(
+        {bool branchId,
+        bool suppliersRefs,
+        bool customersRefs,
+        bool gLLinesRefs,
+        bool checksRefs})>;
 typedef $$SuppliersTableCreateCompanionBuilder = SuppliersCompanion Function({
   Value<String> id,
   Value<DateTime> createdAt,
@@ -59437,6 +61050,9 @@ typedef $$SuppliersTableCreateCompanionBuilder = SuppliersCompanion Function({
   Value<bool> isActive,
   Value<Decimal> balance,
   Value<String?> accountId,
+  Value<Decimal> creditLimit,
+  Value<String?> currencyId,
+  Value<Decimal> exchangeRate,
   Value<int> rowid,
 });
 typedef $$SuppliersTableUpdateCompanionBuilder = SuppliersCompanion Function({
@@ -59456,6 +61072,9 @@ typedef $$SuppliersTableUpdateCompanionBuilder = SuppliersCompanion Function({
   Value<bool> isActive,
   Value<Decimal> balance,
   Value<String?> accountId,
+  Value<Decimal> creditLimit,
+  Value<String?> currencyId,
+  Value<Decimal> exchangeRate,
   Value<int> rowid,
 });
 
@@ -59485,6 +61104,20 @@ final class $$SuppliersTableReferences
     final manager = $$GLAccountsTableTableManager($_db, $_db.gLAccounts)
         .filter((f) => f.id($_item.accountId!));
     final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $CurrenciesTable _currencyIdTable(_$AppDatabase db) =>
+      db.currencies.createAlias(
+          $_aliasNameGenerator(db.suppliers.currencyId, db.currencies.id));
+
+  $$CurrenciesTableProcessedTableManager? get currencyId {
+    if ($_item.currencyId == null) return null;
+    final manager = $$CurrenciesTableTableManager($_db, $_db.currencies)
+        .filter((f) => f.id($_item.currencyId!));
+    final item = $_typedResult.readTableOrNull(_currencyIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: [item]));
@@ -59638,6 +61271,16 @@ class $$SuppliersTableFilterComposer
           column: $table.balance,
           builder: (column) => ColumnWithTypeConverterFilters(column));
 
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get creditLimit =>
+      $composableBuilder(
+          column: $table.creditLimit,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
+
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get exchangeRate =>
+      $composableBuilder(
+          column: $table.exchangeRate,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
+
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
         composer: this,
@@ -59670,6 +61313,26 @@ class $$SuppliersTableFilterComposer
             $$GLAccountsTableFilterComposer(
               $db: $db,
               $table: $db.gLAccounts,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$CurrenciesTableFilterComposer get currencyId {
+    final $$CurrenciesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.currencyId,
+        referencedTable: $db.currencies,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CurrenciesTableFilterComposer(
+              $db: $db,
+              $table: $db.currencies,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -59858,6 +61521,13 @@ class $$SuppliersTableOrderingComposer
   ColumnOrderings<String> get balance => $composableBuilder(
       column: $table.balance, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get creditLimit => $composableBuilder(
+      column: $table.creditLimit, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get exchangeRate => $composableBuilder(
+      column: $table.exchangeRate,
+      builder: (column) => ColumnOrderings(column));
+
   $$BranchesTableOrderingComposer get branchId {
     final $$BranchesTableOrderingComposer composer = $composerBuilder(
         composer: this,
@@ -59890,6 +61560,26 @@ class $$SuppliersTableOrderingComposer
             $$GLAccountsTableOrderingComposer(
               $db: $db,
               $table: $db.gLAccounts,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$CurrenciesTableOrderingComposer get currencyId {
+    final $$CurrenciesTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.currencyId,
+        referencedTable: $db.currencies,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CurrenciesTableOrderingComposer(
+              $db: $db,
+              $table: $db.currencies,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -59950,6 +61640,14 @@ class $$SuppliersTableAnnotationComposer
   GeneratedColumnWithTypeConverter<Decimal, String> get balance =>
       $composableBuilder(column: $table.balance, builder: (column) => column);
 
+  GeneratedColumnWithTypeConverter<Decimal, String> get creditLimit =>
+      $composableBuilder(
+          column: $table.creditLimit, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<Decimal, String> get exchangeRate =>
+      $composableBuilder(
+          column: $table.exchangeRate, builder: (column) => column);
+
   $$BranchesTableAnnotationComposer get branchId {
     final $$BranchesTableAnnotationComposer composer = $composerBuilder(
         composer: this,
@@ -59982,6 +61680,26 @@ class $$SuppliersTableAnnotationComposer
             $$GLAccountsTableAnnotationComposer(
               $db: $db,
               $table: $db.gLAccounts,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$CurrenciesTableAnnotationComposer get currencyId {
+    final $$CurrenciesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.currencyId,
+        referencedTable: $db.currencies,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CurrenciesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.currencies,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -60132,6 +61850,7 @@ class $$SuppliersTableTableManager extends RootTableManager<
     PrefetchHooks Function(
         {bool branchId,
         bool accountId,
+        bool currencyId,
         bool productsRefs,
         bool purchasesRefs,
         bool purchaseOrdersRefs,
@@ -60165,6 +61884,9 @@ class $$SuppliersTableTableManager extends RootTableManager<
             Value<bool> isActive = const Value.absent(),
             Value<Decimal> balance = const Value.absent(),
             Value<String?> accountId = const Value.absent(),
+            Value<Decimal> creditLimit = const Value.absent(),
+            Value<String?> currencyId = const Value.absent(),
+            Value<Decimal> exchangeRate = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               SuppliersCompanion(
@@ -60184,6 +61906,9 @@ class $$SuppliersTableTableManager extends RootTableManager<
             isActive: isActive,
             balance: balance,
             accountId: accountId,
+            creditLimit: creditLimit,
+            currencyId: currencyId,
+            exchangeRate: exchangeRate,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -60203,6 +61928,9 @@ class $$SuppliersTableTableManager extends RootTableManager<
             Value<bool> isActive = const Value.absent(),
             Value<Decimal> balance = const Value.absent(),
             Value<String?> accountId = const Value.absent(),
+            Value<Decimal> creditLimit = const Value.absent(),
+            Value<String?> currencyId = const Value.absent(),
+            Value<Decimal> exchangeRate = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               SuppliersCompanion.insert(
@@ -60222,6 +61950,9 @@ class $$SuppliersTableTableManager extends RootTableManager<
             isActive: isActive,
             balance: balance,
             accountId: accountId,
+            creditLimit: creditLimit,
+            currencyId: currencyId,
+            exchangeRate: exchangeRate,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -60233,6 +61964,7 @@ class $$SuppliersTableTableManager extends RootTableManager<
           prefetchHooksCallback: (
               {branchId = false,
               accountId = false,
+              currencyId = false,
               productsRefs = false,
               purchasesRefs = false,
               purchaseOrdersRefs = false,
@@ -60280,6 +62012,16 @@ class $$SuppliersTableTableManager extends RootTableManager<
                         $$SuppliersTableReferences._accountIdTable(db),
                     referencedColumn:
                         $$SuppliersTableReferences._accountIdTable(db).id,
+                  ) as T;
+                }
+                if (currencyId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.currencyId,
+                    referencedTable:
+                        $$SuppliersTableReferences._currencyIdTable(db),
+                    referencedColumn:
+                        $$SuppliersTableReferences._currencyIdTable(db).id,
                   ) as T;
                 }
 
@@ -60380,6 +62122,7 @@ typedef $$SuppliersTableProcessedTableManager = ProcessedTableManager<
     PrefetchHooks Function(
         {bool branchId,
         bool accountId,
+        bool currencyId,
         bool productsRefs,
         bool purchasesRefs,
         bool purchaseOrdersRefs,
@@ -63042,614 +64785,6 @@ typedef $$ProductsTableProcessedTableManager = ProcessedTableManager<
         bool productUnitsRefs,
         bool goodReceivedNoteItemsRefs,
         bool deliveryNoteItemsRefs})>;
-typedef $$CurrenciesTableCreateCompanionBuilder = CurrenciesCompanion Function({
-  Value<String> id,
-  Value<DateTime> createdAt,
-  Value<DateTime> updatedAt,
-  Value<String?> deviceId,
-  Value<int> syncStatus,
-  Value<String?> branchId,
-  required String code,
-  required String name,
-  Value<String?> fractionalUnit,
-  Value<int> decimalPlaces,
-  Value<Decimal> exchangeRate,
-  Value<bool> isBase,
-  Value<int> rowid,
-});
-typedef $$CurrenciesTableUpdateCompanionBuilder = CurrenciesCompanion Function({
-  Value<String> id,
-  Value<DateTime> createdAt,
-  Value<DateTime> updatedAt,
-  Value<String?> deviceId,
-  Value<int> syncStatus,
-  Value<String?> branchId,
-  Value<String> code,
-  Value<String> name,
-  Value<String?> fractionalUnit,
-  Value<int> decimalPlaces,
-  Value<Decimal> exchangeRate,
-  Value<bool> isBase,
-  Value<int> rowid,
-});
-
-final class $$CurrenciesTableReferences
-    extends BaseReferences<_$AppDatabase, $CurrenciesTable, Currency> {
-  $$CurrenciesTableReferences(super.$_db, super.$_table, super.$_typedResult);
-
-  static $BranchesTable _branchIdTable(_$AppDatabase db) =>
-      db.branches.createAlias(
-          $_aliasNameGenerator(db.currencies.branchId, db.branches.id));
-
-  $$BranchesTableProcessedTableManager? get branchId {
-    if ($_item.branchId == null) return null;
-    final manager = $$BranchesTableTableManager($_db, $_db.branches)
-        .filter((f) => f.id($_item.branchId!));
-    final item = $_typedResult.readTableOrNull(_branchIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-        manager.$state.copyWith(prefetchedData: [item]));
-  }
-
-  static MultiTypedResultKey<$CustomersTable, List<Customer>>
-      _customersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-          db.customers,
-          aliasName:
-              $_aliasNameGenerator(db.currencies.id, db.customers.currencyId));
-
-  $$CustomersTableProcessedTableManager get customersRefs {
-    final manager = $$CustomersTableTableManager($_db, $_db.customers)
-        .filter((f) => f.currencyId.id($_item.id));
-
-    final cache = $_typedResult.readTableOrNull(_customersRefsTable($_db));
-    return ProcessedTableManager(
-        manager.$state.copyWith(prefetchedData: cache));
-  }
-
-  static MultiTypedResultKey<$GLLinesTable, List<GLLine>> _gLLinesRefsTable(
-          _$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(db.gLLines,
-          aliasName:
-              $_aliasNameGenerator(db.currencies.id, db.gLLines.currencyId));
-
-  $$GLLinesTableProcessedTableManager get gLLinesRefs {
-    final manager = $$GLLinesTableTableManager($_db, $_db.gLLines)
-        .filter((f) => f.currencyId.id($_item.id));
-
-    final cache = $_typedResult.readTableOrNull(_gLLinesRefsTable($_db));
-    return ProcessedTableManager(
-        manager.$state.copyWith(prefetchedData: cache));
-  }
-
-  static MultiTypedResultKey<$ChecksTable, List<Check>> _checksRefsTable(
-          _$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(db.checks,
-          aliasName:
-              $_aliasNameGenerator(db.currencies.id, db.checks.currencyId));
-
-  $$ChecksTableProcessedTableManager get checksRefs {
-    final manager = $$ChecksTableTableManager($_db, $_db.checks)
-        .filter((f) => f.currencyId.id($_item.id));
-
-    final cache = $_typedResult.readTableOrNull(_checksRefsTable($_db));
-    return ProcessedTableManager(
-        manager.$state.copyWith(prefetchedData: cache));
-  }
-}
-
-class $$CurrenciesTableFilterComposer
-    extends Composer<_$AppDatabase, $CurrenciesTable> {
-  $$CurrenciesTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<String> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-      column: $table.createdAt, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
-      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get deviceId => $composableBuilder(
-      column: $table.deviceId, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<int> get syncStatus => $composableBuilder(
-      column: $table.syncStatus, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get code => $composableBuilder(
-      column: $table.code, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get name => $composableBuilder(
-      column: $table.name, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get fractionalUnit => $composableBuilder(
-      column: $table.fractionalUnit,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<int> get decimalPlaces => $composableBuilder(
-      column: $table.decimalPlaces, builder: (column) => ColumnFilters(column));
-
-  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get exchangeRate =>
-      $composableBuilder(
-          column: $table.exchangeRate,
-          builder: (column) => ColumnWithTypeConverterFilters(column));
-
-  ColumnFilters<bool> get isBase => $composableBuilder(
-      column: $table.isBase, builder: (column) => ColumnFilters(column));
-
-  $$BranchesTableFilterComposer get branchId {
-    final $$BranchesTableFilterComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.branchId,
-        referencedTable: $db.branches,
-        getReferencedColumn: (t) => t.id,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$BranchesTableFilterComposer(
-              $db: $db,
-              $table: $db.branches,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return composer;
-  }
-
-  Expression<bool> customersRefs(
-      Expression<bool> Function($$CustomersTableFilterComposer f) f) {
-    final $$CustomersTableFilterComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.id,
-        referencedTable: $db.customers,
-        getReferencedColumn: (t) => t.currencyId,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$CustomersTableFilterComposer(
-              $db: $db,
-              $table: $db.customers,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return f(composer);
-  }
-
-  Expression<bool> gLLinesRefs(
-      Expression<bool> Function($$GLLinesTableFilterComposer f) f) {
-    final $$GLLinesTableFilterComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.id,
-        referencedTable: $db.gLLines,
-        getReferencedColumn: (t) => t.currencyId,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$GLLinesTableFilterComposer(
-              $db: $db,
-              $table: $db.gLLines,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return f(composer);
-  }
-
-  Expression<bool> checksRefs(
-      Expression<bool> Function($$ChecksTableFilterComposer f) f) {
-    final $$ChecksTableFilterComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.id,
-        referencedTable: $db.checks,
-        getReferencedColumn: (t) => t.currencyId,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$ChecksTableFilterComposer(
-              $db: $db,
-              $table: $db.checks,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return f(composer);
-  }
-}
-
-class $$CurrenciesTableOrderingComposer
-    extends Composer<_$AppDatabase, $CurrenciesTable> {
-  $$CurrenciesTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<String> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
-      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get deviceId => $composableBuilder(
-      column: $table.deviceId, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<int> get syncStatus => $composableBuilder(
-      column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get code => $composableBuilder(
-      column: $table.code, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get name => $composableBuilder(
-      column: $table.name, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get fractionalUnit => $composableBuilder(
-      column: $table.fractionalUnit,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<int> get decimalPlaces => $composableBuilder(
-      column: $table.decimalPlaces,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get exchangeRate => $composableBuilder(
-      column: $table.exchangeRate,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<bool> get isBase => $composableBuilder(
-      column: $table.isBase, builder: (column) => ColumnOrderings(column));
-
-  $$BranchesTableOrderingComposer get branchId {
-    final $$BranchesTableOrderingComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.branchId,
-        referencedTable: $db.branches,
-        getReferencedColumn: (t) => t.id,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$BranchesTableOrderingComposer(
-              $db: $db,
-              $table: $db.branches,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return composer;
-  }
-}
-
-class $$CurrenciesTableAnnotationComposer
-    extends Composer<_$AppDatabase, $CurrenciesTable> {
-  $$CurrenciesTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<String> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-
-  GeneratedColumn<String> get deviceId =>
-      $composableBuilder(column: $table.deviceId, builder: (column) => column);
-
-  GeneratedColumn<int> get syncStatus => $composableBuilder(
-      column: $table.syncStatus, builder: (column) => column);
-
-  GeneratedColumn<String> get code =>
-      $composableBuilder(column: $table.code, builder: (column) => column);
-
-  GeneratedColumn<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => column);
-
-  GeneratedColumn<String> get fractionalUnit => $composableBuilder(
-      column: $table.fractionalUnit, builder: (column) => column);
-
-  GeneratedColumn<int> get decimalPlaces => $composableBuilder(
-      column: $table.decimalPlaces, builder: (column) => column);
-
-  GeneratedColumnWithTypeConverter<Decimal, String> get exchangeRate =>
-      $composableBuilder(
-          column: $table.exchangeRate, builder: (column) => column);
-
-  GeneratedColumn<bool> get isBase =>
-      $composableBuilder(column: $table.isBase, builder: (column) => column);
-
-  $$BranchesTableAnnotationComposer get branchId {
-    final $$BranchesTableAnnotationComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.branchId,
-        referencedTable: $db.branches,
-        getReferencedColumn: (t) => t.id,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$BranchesTableAnnotationComposer(
-              $db: $db,
-              $table: $db.branches,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return composer;
-  }
-
-  Expression<T> customersRefs<T extends Object>(
-      Expression<T> Function($$CustomersTableAnnotationComposer a) f) {
-    final $$CustomersTableAnnotationComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.id,
-        referencedTable: $db.customers,
-        getReferencedColumn: (t) => t.currencyId,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$CustomersTableAnnotationComposer(
-              $db: $db,
-              $table: $db.customers,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return f(composer);
-  }
-
-  Expression<T> gLLinesRefs<T extends Object>(
-      Expression<T> Function($$GLLinesTableAnnotationComposer a) f) {
-    final $$GLLinesTableAnnotationComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.id,
-        referencedTable: $db.gLLines,
-        getReferencedColumn: (t) => t.currencyId,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$GLLinesTableAnnotationComposer(
-              $db: $db,
-              $table: $db.gLLines,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return f(composer);
-  }
-
-  Expression<T> checksRefs<T extends Object>(
-      Expression<T> Function($$ChecksTableAnnotationComposer a) f) {
-    final $$ChecksTableAnnotationComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.id,
-        referencedTable: $db.checks,
-        getReferencedColumn: (t) => t.currencyId,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$ChecksTableAnnotationComposer(
-              $db: $db,
-              $table: $db.checks,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return f(composer);
-  }
-}
-
-class $$CurrenciesTableTableManager extends RootTableManager<
-    _$AppDatabase,
-    $CurrenciesTable,
-    Currency,
-    $$CurrenciesTableFilterComposer,
-    $$CurrenciesTableOrderingComposer,
-    $$CurrenciesTableAnnotationComposer,
-    $$CurrenciesTableCreateCompanionBuilder,
-    $$CurrenciesTableUpdateCompanionBuilder,
-    (Currency, $$CurrenciesTableReferences),
-    Currency,
-    PrefetchHooks Function(
-        {bool branchId,
-        bool customersRefs,
-        bool gLLinesRefs,
-        bool checksRefs})> {
-  $$CurrenciesTableTableManager(_$AppDatabase db, $CurrenciesTable table)
-      : super(TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$CurrenciesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$CurrenciesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$CurrenciesTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback: ({
-            Value<String> id = const Value.absent(),
-            Value<DateTime> createdAt = const Value.absent(),
-            Value<DateTime> updatedAt = const Value.absent(),
-            Value<String?> deviceId = const Value.absent(),
-            Value<int> syncStatus = const Value.absent(),
-            Value<String?> branchId = const Value.absent(),
-            Value<String> code = const Value.absent(),
-            Value<String> name = const Value.absent(),
-            Value<String?> fractionalUnit = const Value.absent(),
-            Value<int> decimalPlaces = const Value.absent(),
-            Value<Decimal> exchangeRate = const Value.absent(),
-            Value<bool> isBase = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              CurrenciesCompanion(
-            id: id,
-            createdAt: createdAt,
-            updatedAt: updatedAt,
-            deviceId: deviceId,
-            syncStatus: syncStatus,
-            branchId: branchId,
-            code: code,
-            name: name,
-            fractionalUnit: fractionalUnit,
-            decimalPlaces: decimalPlaces,
-            exchangeRate: exchangeRate,
-            isBase: isBase,
-            rowid: rowid,
-          ),
-          createCompanionCallback: ({
-            Value<String> id = const Value.absent(),
-            Value<DateTime> createdAt = const Value.absent(),
-            Value<DateTime> updatedAt = const Value.absent(),
-            Value<String?> deviceId = const Value.absent(),
-            Value<int> syncStatus = const Value.absent(),
-            Value<String?> branchId = const Value.absent(),
-            required String code,
-            required String name,
-            Value<String?> fractionalUnit = const Value.absent(),
-            Value<int> decimalPlaces = const Value.absent(),
-            Value<Decimal> exchangeRate = const Value.absent(),
-            Value<bool> isBase = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              CurrenciesCompanion.insert(
-            id: id,
-            createdAt: createdAt,
-            updatedAt: updatedAt,
-            deviceId: deviceId,
-            syncStatus: syncStatus,
-            branchId: branchId,
-            code: code,
-            name: name,
-            fractionalUnit: fractionalUnit,
-            decimalPlaces: decimalPlaces,
-            exchangeRate: exchangeRate,
-            isBase: isBase,
-            rowid: rowid,
-          ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (
-                    e.readTable(table),
-                    $$CurrenciesTableReferences(db, table, e)
-                  ))
-              .toList(),
-          prefetchHooksCallback: (
-              {branchId = false,
-              customersRefs = false,
-              gLLinesRefs = false,
-              checksRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (customersRefs) db.customers,
-                if (gLLinesRefs) db.gLLines,
-                if (checksRefs) db.checks
-              ],
-              addJoins: <
-                  T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic>>(state) {
-                if (branchId) {
-                  state = state.withJoin(
-                    currentTable: table,
-                    currentColumn: table.branchId,
-                    referencedTable:
-                        $$CurrenciesTableReferences._branchIdTable(db),
-                    referencedColumn:
-                        $$CurrenciesTableReferences._branchIdTable(db).id,
-                  ) as T;
-                }
-
-                return state;
-              },
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (customersRefs)
-                    await $_getPrefetchedData(
-                        currentTable: table,
-                        referencedTable:
-                            $$CurrenciesTableReferences._customersRefsTable(db),
-                        managerFromTypedResult: (p0) =>
-                            $$CurrenciesTableReferences(db, table, p0)
-                                .customersRefs,
-                        referencedItemsForCurrentItem:
-                            (item, referencedItems) => referencedItems
-                                .where((e) => e.currencyId == item.id),
-                        typedResults: items),
-                  if (gLLinesRefs)
-                    await $_getPrefetchedData(
-                        currentTable: table,
-                        referencedTable:
-                            $$CurrenciesTableReferences._gLLinesRefsTable(db),
-                        managerFromTypedResult: (p0) =>
-                            $$CurrenciesTableReferences(db, table, p0)
-                                .gLLinesRefs,
-                        referencedItemsForCurrentItem:
-                            (item, referencedItems) => referencedItems
-                                .where((e) => e.currencyId == item.id),
-                        typedResults: items),
-                  if (checksRefs)
-                    await $_getPrefetchedData(
-                        currentTable: table,
-                        referencedTable:
-                            $$CurrenciesTableReferences._checksRefsTable(db),
-                        managerFromTypedResult: (p0) =>
-                            $$CurrenciesTableReferences(db, table, p0)
-                                .checksRefs,
-                        referencedItemsForCurrentItem:
-                            (item, referencedItems) => referencedItems
-                                .where((e) => e.currencyId == item.id),
-                        typedResults: items)
-                ];
-              },
-            );
-          },
-        ));
-}
-
-typedef $$CurrenciesTableProcessedTableManager = ProcessedTableManager<
-    _$AppDatabase,
-    $CurrenciesTable,
-    Currency,
-    $$CurrenciesTableFilterComposer,
-    $$CurrenciesTableOrderingComposer,
-    $$CurrenciesTableAnnotationComposer,
-    $$CurrenciesTableCreateCompanionBuilder,
-    $$CurrenciesTableUpdateCompanionBuilder,
-    (Currency, $$CurrenciesTableReferences),
-    Currency,
-    PrefetchHooks Function(
-        {bool branchId,
-        bool customersRefs,
-        bool gLLinesRefs,
-        bool checksRefs})>;
 typedef $$CustomersTableCreateCompanionBuilder = CustomersCompanion Function({
   Value<String> id,
   Value<DateTime> createdAt,
@@ -66286,6 +67421,7 @@ typedef $$SalesTableCreateCompanionBuilder = SalesCompanion Function({
   Value<Decimal> otherExpenses,
   Value<String?> warehouseId,
   Value<String?> representativeId,
+  Value<DateTime?> exchangeDate,
   Value<String?> qrCode,
   Value<String?> hash,
   Value<String?> signature,
@@ -66312,6 +67448,7 @@ typedef $$SalesTableUpdateCompanionBuilder = SalesCompanion Function({
   Value<Decimal> otherExpenses,
   Value<String?> warehouseId,
   Value<String?> representativeId,
+  Value<DateTime?> exchangeDate,
   Value<String?> qrCode,
   Value<String?> hash,
   Value<String?> signature,
@@ -66485,6 +67622,9 @@ class $$SalesTableFilterComposer extends Composer<_$AppDatabase, $SalesTable> {
   ColumnFilters<String> get representativeId => $composableBuilder(
       column: $table.representativeId,
       builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get exchangeDate => $composableBuilder(
+      column: $table.exchangeDate, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get qrCode => $composableBuilder(
       column: $table.qrCode, builder: (column) => ColumnFilters(column));
@@ -66685,6 +67825,10 @@ class $$SalesTableOrderingComposer
       column: $table.representativeId,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<DateTime> get exchangeDate => $composableBuilder(
+      column: $table.exchangeDate,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get qrCode => $composableBuilder(
       column: $table.qrCode, builder: (column) => ColumnOrderings(column));
 
@@ -66818,6 +67962,9 @@ class $$SalesTableAnnotationComposer
 
   GeneratedColumn<String> get representativeId => $composableBuilder(
       column: $table.representativeId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get exchangeDate => $composableBuilder(
+      column: $table.exchangeDate, builder: (column) => column);
 
   GeneratedColumn<String> get qrCode =>
       $composableBuilder(column: $table.qrCode, builder: (column) => column);
@@ -67003,6 +68150,7 @@ class $$SalesTableTableManager extends RootTableManager<
             Value<Decimal> otherExpenses = const Value.absent(),
             Value<String?> warehouseId = const Value.absent(),
             Value<String?> representativeId = const Value.absent(),
+            Value<DateTime?> exchangeDate = const Value.absent(),
             Value<String?> qrCode = const Value.absent(),
             Value<String?> hash = const Value.absent(),
             Value<String?> signature = const Value.absent(),
@@ -67029,6 +68177,7 @@ class $$SalesTableTableManager extends RootTableManager<
             otherExpenses: otherExpenses,
             warehouseId: warehouseId,
             representativeId: representativeId,
+            exchangeDate: exchangeDate,
             qrCode: qrCode,
             hash: hash,
             signature: signature,
@@ -67055,6 +68204,7 @@ class $$SalesTableTableManager extends RootTableManager<
             Value<Decimal> otherExpenses = const Value.absent(),
             Value<String?> warehouseId = const Value.absent(),
             Value<String?> representativeId = const Value.absent(),
+            Value<DateTime?> exchangeDate = const Value.absent(),
             Value<String?> qrCode = const Value.absent(),
             Value<String?> hash = const Value.absent(),
             Value<String?> signature = const Value.absent(),
@@ -67081,6 +68231,7 @@ class $$SalesTableTableManager extends RootTableManager<
             otherExpenses: otherExpenses,
             warehouseId: warehouseId,
             representativeId: representativeId,
+            exchangeDate: exchangeDate,
             qrCode: qrCode,
             hash: hash,
             signature: signature,
@@ -75727,7 +76878,7 @@ typedef $$SalesReturnsTableCreateCompanionBuilder = SalesReturnsCompanion
   Value<int> syncStatus,
   Value<String?> branchId,
   required String saleId,
-  required double amountReturned,
+  Value<Decimal> amountReturned,
   Value<String?> reason,
   Value<int> rowid,
 });
@@ -75740,7 +76891,7 @@ typedef $$SalesReturnsTableUpdateCompanionBuilder = SalesReturnsCompanion
   Value<int> syncStatus,
   Value<String?> branchId,
   Value<String> saleId,
-  Value<double> amountReturned,
+  Value<Decimal> amountReturned,
   Value<String?> reason,
   Value<int> rowid,
 });
@@ -75818,9 +76969,10 @@ class $$SalesReturnsTableFilterComposer
   ColumnFilters<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get amountReturned => $composableBuilder(
-      column: $table.amountReturned,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get amountReturned =>
+      $composableBuilder(
+          column: $table.amountReturned,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get reason => $composableBuilder(
       column: $table.reason, builder: (column) => ColumnFilters(column));
@@ -75911,7 +77063,7 @@ class $$SalesReturnsTableOrderingComposer
   ColumnOrderings<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get amountReturned => $composableBuilder(
+  ColumnOrderings<String> get amountReturned => $composableBuilder(
       column: $table.amountReturned,
       builder: (column) => ColumnOrderings(column));
 
@@ -75983,8 +77135,9 @@ class $$SalesReturnsTableAnnotationComposer
   GeneratedColumn<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => column);
 
-  GeneratedColumn<double> get amountReturned => $composableBuilder(
-      column: $table.amountReturned, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get amountReturned =>
+      $composableBuilder(
+          column: $table.amountReturned, builder: (column) => column);
 
   GeneratedColumn<String> get reason =>
       $composableBuilder(column: $table.reason, builder: (column) => column);
@@ -76082,7 +77235,7 @@ class $$SalesReturnsTableTableManager extends RootTableManager<
             Value<int> syncStatus = const Value.absent(),
             Value<String?> branchId = const Value.absent(),
             Value<String> saleId = const Value.absent(),
-            Value<double> amountReturned = const Value.absent(),
+            Value<Decimal> amountReturned = const Value.absent(),
             Value<String?> reason = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -76106,7 +77259,7 @@ class $$SalesReturnsTableTableManager extends RootTableManager<
             Value<int> syncStatus = const Value.absent(),
             Value<String?> branchId = const Value.absent(),
             required String saleId,
-            required double amountReturned,
+            Value<Decimal> amountReturned = const Value.absent(),
             Value<String?> reason = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -76217,8 +77370,8 @@ typedef $$SalesReturnItemsTableCreateCompanionBuilder
   Value<String?> branchId,
   required String salesReturnId,
   required String productId,
-  required double quantity,
-  required double price,
+  required Decimal quantity,
+  required Decimal price,
   Value<Decimal> unitFactor,
   Value<String?> batchId,
   Value<int> rowid,
@@ -76233,8 +77386,8 @@ typedef $$SalesReturnItemsTableUpdateCompanionBuilder
   Value<String?> branchId,
   Value<String> salesReturnId,
   Value<String> productId,
-  Value<double> quantity,
-  Value<double> price,
+  Value<Decimal> quantity,
+  Value<Decimal> price,
   Value<Decimal> unitFactor,
   Value<String?> batchId,
   Value<int> rowid,
@@ -76326,11 +77479,15 @@ class $$SalesReturnItemsTableFilterComposer
   ColumnFilters<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get quantity => $composableBuilder(
-      column: $table.quantity, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get quantity =>
+      $composableBuilder(
+          column: $table.quantity,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get price => $composableBuilder(
-      column: $table.price, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get price =>
+      $composableBuilder(
+          column: $table.price,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnWithTypeConverterFilters<Decimal, Decimal, String> get unitFactor =>
       $composableBuilder(
@@ -76442,10 +77599,10 @@ class $$SalesReturnItemsTableOrderingComposer
   ColumnOrderings<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get quantity => $composableBuilder(
+  ColumnOrderings<String> get quantity => $composableBuilder(
       column: $table.quantity, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get price => $composableBuilder(
+  ColumnOrderings<String> get price => $composableBuilder(
       column: $table.price, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get unitFactor => $composableBuilder(
@@ -76556,10 +77713,10 @@ class $$SalesReturnItemsTableAnnotationComposer
   GeneratedColumn<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => column);
 
-  GeneratedColumn<double> get quantity =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get quantity =>
       $composableBuilder(column: $table.quantity, builder: (column) => column);
 
-  GeneratedColumn<double> get price =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get price =>
       $composableBuilder(column: $table.price, builder: (column) => column);
 
   GeneratedColumnWithTypeConverter<Decimal, String> get unitFactor =>
@@ -76680,8 +77837,8 @@ class $$SalesReturnItemsTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             Value<String> salesReturnId = const Value.absent(),
             Value<String> productId = const Value.absent(),
-            Value<double> quantity = const Value.absent(),
-            Value<double> price = const Value.absent(),
+            Value<Decimal> quantity = const Value.absent(),
+            Value<Decimal> price = const Value.absent(),
             Value<Decimal> unitFactor = const Value.absent(),
             Value<String?> batchId = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -76710,8 +77867,8 @@ class $$SalesReturnItemsTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             required String salesReturnId,
             required String productId,
-            required double quantity,
-            required double price,
+            required Decimal quantity,
+            required Decimal price,
             Value<Decimal> unitFactor = const Value.absent(),
             Value<String?> batchId = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -76833,7 +77990,7 @@ typedef $$PurchaseReturnsTableCreateCompanionBuilder = PurchaseReturnsCompanion
   Value<int> syncStatus,
   Value<String?> branchId,
   required String purchaseId,
-  required double amountReturned,
+  Value<Decimal> amountReturned,
   Value<String?> reason,
   Value<int> rowid,
 });
@@ -76846,7 +78003,7 @@ typedef $$PurchaseReturnsTableUpdateCompanionBuilder = PurchaseReturnsCompanion
   Value<int> syncStatus,
   Value<String?> branchId,
   Value<String> purchaseId,
-  Value<double> amountReturned,
+  Value<Decimal> amountReturned,
   Value<String?> reason,
   Value<int> rowid,
 });
@@ -76927,9 +78084,10 @@ class $$PurchaseReturnsTableFilterComposer
   ColumnFilters<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get amountReturned => $composableBuilder(
-      column: $table.amountReturned,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get amountReturned =>
+      $composableBuilder(
+          column: $table.amountReturned,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get reason => $composableBuilder(
       column: $table.reason, builder: (column) => ColumnFilters(column));
@@ -77020,7 +78178,7 @@ class $$PurchaseReturnsTableOrderingComposer
   ColumnOrderings<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get amountReturned => $composableBuilder(
+  ColumnOrderings<String> get amountReturned => $composableBuilder(
       column: $table.amountReturned,
       builder: (column) => ColumnOrderings(column));
 
@@ -77092,8 +78250,9 @@ class $$PurchaseReturnsTableAnnotationComposer
   GeneratedColumn<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => column);
 
-  GeneratedColumn<double> get amountReturned => $composableBuilder(
-      column: $table.amountReturned, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get amountReturned =>
+      $composableBuilder(
+          column: $table.amountReturned, builder: (column) => column);
 
   GeneratedColumn<String> get reason =>
       $composableBuilder(column: $table.reason, builder: (column) => column);
@@ -77194,7 +78353,7 @@ class $$PurchaseReturnsTableTableManager extends RootTableManager<
             Value<int> syncStatus = const Value.absent(),
             Value<String?> branchId = const Value.absent(),
             Value<String> purchaseId = const Value.absent(),
-            Value<double> amountReturned = const Value.absent(),
+            Value<Decimal> amountReturned = const Value.absent(),
             Value<String?> reason = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -77218,7 +78377,7 @@ class $$PurchaseReturnsTableTableManager extends RootTableManager<
             Value<int> syncStatus = const Value.absent(),
             Value<String?> branchId = const Value.absent(),
             required String purchaseId,
-            required double amountReturned,
+            Value<Decimal> amountReturned = const Value.absent(),
             Value<String?> reason = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -77330,8 +78489,8 @@ typedef $$PurchaseReturnItemsTableCreateCompanionBuilder
   Value<String?> branchId,
   required String purchaseReturnId,
   required String productId,
-  required double quantity,
-  required double price,
+  required Decimal quantity,
+  required Decimal price,
   Value<int> rowid,
 });
 typedef $$PurchaseReturnItemsTableUpdateCompanionBuilder
@@ -77344,8 +78503,8 @@ typedef $$PurchaseReturnItemsTableUpdateCompanionBuilder
   Value<String?> branchId,
   Value<String> purchaseReturnId,
   Value<String> productId,
-  Value<double> quantity,
-  Value<double> price,
+  Value<Decimal> quantity,
+  Value<Decimal> price,
   Value<int> rowid,
 });
 
@@ -77422,11 +78581,15 @@ class $$PurchaseReturnItemsTableFilterComposer
   ColumnFilters<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get quantity => $composableBuilder(
-      column: $table.quantity, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get quantity =>
+      $composableBuilder(
+          column: $table.quantity,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get price => $composableBuilder(
-      column: $table.price, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get price =>
+      $composableBuilder(
+          column: $table.price,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -77513,10 +78676,10 @@ class $$PurchaseReturnItemsTableOrderingComposer
   ColumnOrderings<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get quantity => $composableBuilder(
+  ColumnOrderings<String> get quantity => $composableBuilder(
       column: $table.quantity, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get price => $composableBuilder(
+  ColumnOrderings<String> get price => $composableBuilder(
       column: $table.price, builder: (column) => ColumnOrderings(column));
 
   $$BranchesTableOrderingComposer get branchId {
@@ -77604,10 +78767,10 @@ class $$PurchaseReturnItemsTableAnnotationComposer
   GeneratedColumn<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => column);
 
-  GeneratedColumn<double> get quantity =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get quantity =>
       $composableBuilder(column: $table.quantity, builder: (column) => column);
 
-  GeneratedColumn<double> get price =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get price =>
       $composableBuilder(column: $table.price, builder: (column) => column);
 
   $$BranchesTableAnnotationComposer get branchId {
@@ -77706,8 +78869,8 @@ class $$PurchaseReturnItemsTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             Value<String> purchaseReturnId = const Value.absent(),
             Value<String> productId = const Value.absent(),
-            Value<double> quantity = const Value.absent(),
-            Value<double> price = const Value.absent(),
+            Value<Decimal> quantity = const Value.absent(),
+            Value<Decimal> price = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               PurchaseReturnItemsCompanion(
@@ -77732,8 +78895,8 @@ class $$PurchaseReturnItemsTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             required String purchaseReturnId,
             required String productId,
-            required double quantity,
-            required double price,
+            required Decimal quantity,
+            required Decimal price,
             Value<int> rowid = const Value.absent(),
           }) =>
               PurchaseReturnItemsCompanion.insert(
@@ -77839,7 +79002,7 @@ typedef $$CustomerPaymentsTableCreateCompanionBuilder
   Value<int> syncStatus,
   Value<String?> branchId,
   required String customerId,
-  required double amount,
+  required Decimal amount,
   Value<DateTime> paymentDate,
   Value<String?> note,
   Value<int> rowid,
@@ -77853,7 +79016,7 @@ typedef $$CustomerPaymentsTableUpdateCompanionBuilder
   Value<int> syncStatus,
   Value<String?> branchId,
   Value<String> customerId,
-  Value<double> amount,
+  Value<Decimal> amount,
   Value<DateTime> paymentDate,
   Value<String?> note,
   Value<int> rowid,
@@ -77936,8 +79099,10 @@ class $$CustomerPaymentsTableFilterComposer
   ColumnFilters<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get amount => $composableBuilder(
-      column: $table.amount, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get amount =>
+      $composableBuilder(
+          column: $table.amount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<DateTime> get paymentDate => $composableBuilder(
       column: $table.paymentDate, builder: (column) => ColumnFilters(column));
@@ -78032,7 +79197,7 @@ class $$CustomerPaymentsTableOrderingComposer
   ColumnOrderings<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get amount => $composableBuilder(
+  ColumnOrderings<String> get amount => $composableBuilder(
       column: $table.amount, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<DateTime> get paymentDate => $composableBuilder(
@@ -78106,7 +79271,7 @@ class $$CustomerPaymentsTableAnnotationComposer
   GeneratedColumn<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => column);
 
-  GeneratedColumn<double> get amount =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get amount =>
       $composableBuilder(column: $table.amount, builder: (column) => column);
 
   GeneratedColumn<DateTime> get paymentDate => $composableBuilder(
@@ -78211,7 +79376,7 @@ class $$CustomerPaymentsTableTableManager extends RootTableManager<
             Value<int> syncStatus = const Value.absent(),
             Value<String?> branchId = const Value.absent(),
             Value<String> customerId = const Value.absent(),
-            Value<double> amount = const Value.absent(),
+            Value<Decimal> amount = const Value.absent(),
             Value<DateTime> paymentDate = const Value.absent(),
             Value<String?> note = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -78237,7 +79402,7 @@ class $$CustomerPaymentsTableTableManager extends RootTableManager<
             Value<int> syncStatus = const Value.absent(),
             Value<String?> branchId = const Value.absent(),
             required String customerId,
-            required double amount,
+            required Decimal amount,
             Value<DateTime> paymentDate = const Value.absent(),
             Value<String?> note = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -78350,8 +79515,8 @@ typedef $$SupplierPaymentsTableCreateCompanionBuilder
   Value<int> syncStatus,
   Value<String?> branchId,
   required String supplierId,
-  required double amount,
-  Value<double> remainingAmount,
+  required Decimal amount,
+  Value<Decimal> remainingAmount,
   Value<DateTime> paymentDate,
   Value<String?> note,
   Value<String> status,
@@ -78366,8 +79531,8 @@ typedef $$SupplierPaymentsTableUpdateCompanionBuilder
   Value<int> syncStatus,
   Value<String?> branchId,
   Value<String> supplierId,
-  Value<double> amount,
-  Value<double> remainingAmount,
+  Value<Decimal> amount,
+  Value<Decimal> remainingAmount,
   Value<DateTime> paymentDate,
   Value<String?> note,
   Value<String> status,
@@ -78451,12 +79616,15 @@ class $$SupplierPaymentsTableFilterComposer
   ColumnFilters<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get amount => $composableBuilder(
-      column: $table.amount, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get amount =>
+      $composableBuilder(
+          column: $table.amount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get remainingAmount => $composableBuilder(
-      column: $table.remainingAmount,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String>
+      get remainingAmount => $composableBuilder(
+          column: $table.remainingAmount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<DateTime> get paymentDate => $composableBuilder(
       column: $table.paymentDate, builder: (column) => ColumnFilters(column));
@@ -78554,10 +79722,10 @@ class $$SupplierPaymentsTableOrderingComposer
   ColumnOrderings<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get amount => $composableBuilder(
+  ColumnOrderings<String> get amount => $composableBuilder(
       column: $table.amount, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get remainingAmount => $composableBuilder(
+  ColumnOrderings<String> get remainingAmount => $composableBuilder(
       column: $table.remainingAmount,
       builder: (column) => ColumnOrderings(column));
 
@@ -78635,11 +79803,12 @@ class $$SupplierPaymentsTableAnnotationComposer
   GeneratedColumn<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => column);
 
-  GeneratedColumn<double> get amount =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get amount =>
       $composableBuilder(column: $table.amount, builder: (column) => column);
 
-  GeneratedColumn<double> get remainingAmount => $composableBuilder(
-      column: $table.remainingAmount, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get remainingAmount =>
+      $composableBuilder(
+          column: $table.remainingAmount, builder: (column) => column);
 
   GeneratedColumn<DateTime> get paymentDate => $composableBuilder(
       column: $table.paymentDate, builder: (column) => column);
@@ -78746,8 +79915,8 @@ class $$SupplierPaymentsTableTableManager extends RootTableManager<
             Value<int> syncStatus = const Value.absent(),
             Value<String?> branchId = const Value.absent(),
             Value<String> supplierId = const Value.absent(),
-            Value<double> amount = const Value.absent(),
-            Value<double> remainingAmount = const Value.absent(),
+            Value<Decimal> amount = const Value.absent(),
+            Value<Decimal> remainingAmount = const Value.absent(),
             Value<DateTime> paymentDate = const Value.absent(),
             Value<String?> note = const Value.absent(),
             Value<String> status = const Value.absent(),
@@ -78776,8 +79945,8 @@ class $$SupplierPaymentsTableTableManager extends RootTableManager<
             Value<int> syncStatus = const Value.absent(),
             Value<String?> branchId = const Value.absent(),
             required String supplierId,
-            required double amount,
-            Value<double> remainingAmount = const Value.absent(),
+            required Decimal amount,
+            Value<Decimal> remainingAmount = const Value.absent(),
             Value<DateTime> paymentDate = const Value.absent(),
             Value<String?> note = const Value.absent(),
             Value<String> status = const Value.absent(),
@@ -78894,7 +80063,7 @@ typedef $$PurchasePaymentLinksTableCreateCompanionBuilder
   Value<String?> branchId,
   required String paymentId,
   required String purchaseId,
-  required double amount,
+  required Decimal amount,
   Value<int> rowid,
 });
 typedef $$PurchasePaymentLinksTableUpdateCompanionBuilder
@@ -78907,7 +80076,7 @@ typedef $$PurchasePaymentLinksTableUpdateCompanionBuilder
   Value<String?> branchId,
   Value<String> paymentId,
   Value<String> purchaseId,
-  Value<double> amount,
+  Value<Decimal> amount,
   Value<int> rowid,
 });
 
@@ -78984,8 +80153,10 @@ class $$PurchasePaymentLinksTableFilterComposer
   ColumnFilters<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get amount => $composableBuilder(
-      column: $table.amount, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get amount =>
+      $composableBuilder(
+          column: $table.amount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -79072,7 +80243,7 @@ class $$PurchasePaymentLinksTableOrderingComposer
   ColumnOrderings<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get amount => $composableBuilder(
+  ColumnOrderings<String> get amount => $composableBuilder(
       column: $table.amount, builder: (column) => ColumnOrderings(column));
 
   $$BranchesTableOrderingComposer get branchId {
@@ -79160,7 +80331,7 @@ class $$PurchasePaymentLinksTableAnnotationComposer
   GeneratedColumn<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => column);
 
-  GeneratedColumn<double> get amount =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get amount =>
       $composableBuilder(column: $table.amount, builder: (column) => column);
 
   $$BranchesTableAnnotationComposer get branchId {
@@ -79258,7 +80429,7 @@ class $$PurchasePaymentLinksTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             Value<String> paymentId = const Value.absent(),
             Value<String> purchaseId = const Value.absent(),
-            Value<double> amount = const Value.absent(),
+            Value<Decimal> amount = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               PurchasePaymentLinksCompanion(
@@ -79282,7 +80453,7 @@ class $$PurchasePaymentLinksTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             required String paymentId,
             required String purchaseId,
-            required double amount,
+            required Decimal amount,
             Value<int> rowid = const Value.absent(),
           }) =>
               PurchasePaymentLinksCompanion.insert(
@@ -82290,9 +83461,9 @@ typedef $$InventoryAuditItemsTableCreateCompanionBuilder
   Value<String?> branchId,
   required String auditId,
   required String productId,
-  required double systemStock,
-  required double actualStock,
-  required double difference,
+  Value<Decimal> systemStock,
+  Value<Decimal> actualStock,
+  Value<Decimal> difference,
   Value<int> rowid,
 });
 typedef $$InventoryAuditItemsTableUpdateCompanionBuilder
@@ -82305,9 +83476,9 @@ typedef $$InventoryAuditItemsTableUpdateCompanionBuilder
   Value<String?> branchId,
   Value<String> auditId,
   Value<String> productId,
-  Value<double> systemStock,
-  Value<double> actualStock,
-  Value<double> difference,
+  Value<Decimal> systemStock,
+  Value<Decimal> actualStock,
+  Value<Decimal> difference,
   Value<int> rowid,
 });
 
@@ -82384,14 +83555,20 @@ class $$InventoryAuditItemsTableFilterComposer
   ColumnFilters<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get systemStock => $composableBuilder(
-      column: $table.systemStock, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get systemStock =>
+      $composableBuilder(
+          column: $table.systemStock,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get actualStock => $composableBuilder(
-      column: $table.actualStock, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get actualStock =>
+      $composableBuilder(
+          column: $table.actualStock,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get difference => $composableBuilder(
-      column: $table.difference, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get difference =>
+      $composableBuilder(
+          column: $table.difference,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -82478,13 +83655,13 @@ class $$InventoryAuditItemsTableOrderingComposer
   ColumnOrderings<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get systemStock => $composableBuilder(
+  ColumnOrderings<String> get systemStock => $composableBuilder(
       column: $table.systemStock, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get actualStock => $composableBuilder(
+  ColumnOrderings<String> get actualStock => $composableBuilder(
       column: $table.actualStock, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get difference => $composableBuilder(
+  ColumnOrderings<String> get difference => $composableBuilder(
       column: $table.difference, builder: (column) => ColumnOrderings(column));
 
   $$BranchesTableOrderingComposer get branchId {
@@ -82572,14 +83749,17 @@ class $$InventoryAuditItemsTableAnnotationComposer
   GeneratedColumn<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => column);
 
-  GeneratedColumn<double> get systemStock => $composableBuilder(
-      column: $table.systemStock, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get systemStock =>
+      $composableBuilder(
+          column: $table.systemStock, builder: (column) => column);
 
-  GeneratedColumn<double> get actualStock => $composableBuilder(
-      column: $table.actualStock, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get actualStock =>
+      $composableBuilder(
+          column: $table.actualStock, builder: (column) => column);
 
-  GeneratedColumn<double> get difference => $composableBuilder(
-      column: $table.difference, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get difference =>
+      $composableBuilder(
+          column: $table.difference, builder: (column) => column);
 
   $$BranchesTableAnnotationComposer get branchId {
     final $$BranchesTableAnnotationComposer composer = $composerBuilder(
@@ -82676,9 +83856,9 @@ class $$InventoryAuditItemsTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             Value<String> auditId = const Value.absent(),
             Value<String> productId = const Value.absent(),
-            Value<double> systemStock = const Value.absent(),
-            Value<double> actualStock = const Value.absent(),
-            Value<double> difference = const Value.absent(),
+            Value<Decimal> systemStock = const Value.absent(),
+            Value<Decimal> actualStock = const Value.absent(),
+            Value<Decimal> difference = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               InventoryAuditItemsCompanion(
@@ -82704,9 +83884,9 @@ class $$InventoryAuditItemsTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             required String auditId,
             required String productId,
-            required double systemStock,
-            required double actualStock,
-            required double difference,
+            Value<Decimal> systemStock = const Value.absent(),
+            Value<Decimal> actualStock = const Value.absent(),
+            Value<Decimal> difference = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               InventoryAuditItemsCompanion.insert(
@@ -83299,9 +84479,9 @@ typedef $$ReconciliationsTableCreateCompanionBuilder = ReconciliationsCompanion
   Value<String?> branchId,
   required String accountId,
   Value<DateTime> date,
-  required double bookBalance,
-  required double actualBalance,
-  required double difference,
+  Value<Decimal> bookBalance,
+  Value<Decimal> actualBalance,
+  Value<Decimal> difference,
   Value<String?> note,
   Value<int> rowid,
 });
@@ -83315,9 +84495,9 @@ typedef $$ReconciliationsTableUpdateCompanionBuilder = ReconciliationsCompanion
   Value<String?> branchId,
   Value<String> accountId,
   Value<DateTime> date,
-  Value<double> bookBalance,
-  Value<double> actualBalance,
-  Value<double> difference,
+  Value<Decimal> bookBalance,
+  Value<Decimal> actualBalance,
+  Value<Decimal> difference,
   Value<String?> note,
   Value<int> rowid,
 });
@@ -83383,14 +84563,20 @@ class $$ReconciliationsTableFilterComposer
   ColumnFilters<DateTime> get date => $composableBuilder(
       column: $table.date, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get bookBalance => $composableBuilder(
-      column: $table.bookBalance, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get bookBalance =>
+      $composableBuilder(
+          column: $table.bookBalance,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get actualBalance => $composableBuilder(
-      column: $table.actualBalance, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get actualBalance =>
+      $composableBuilder(
+          column: $table.actualBalance,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get difference => $composableBuilder(
-      column: $table.difference, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get difference =>
+      $composableBuilder(
+          column: $table.difference,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get note => $composableBuilder(
       column: $table.note, builder: (column) => ColumnFilters(column));
@@ -83463,14 +84649,14 @@ class $$ReconciliationsTableOrderingComposer
   ColumnOrderings<DateTime> get date => $composableBuilder(
       column: $table.date, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get bookBalance => $composableBuilder(
+  ColumnOrderings<String> get bookBalance => $composableBuilder(
       column: $table.bookBalance, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get actualBalance => $composableBuilder(
+  ColumnOrderings<String> get actualBalance => $composableBuilder(
       column: $table.actualBalance,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get difference => $composableBuilder(
+  ColumnOrderings<String> get difference => $composableBuilder(
       column: $table.difference, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get note => $composableBuilder(
@@ -83544,14 +84730,17 @@ class $$ReconciliationsTableAnnotationComposer
   GeneratedColumn<DateTime> get date =>
       $composableBuilder(column: $table.date, builder: (column) => column);
 
-  GeneratedColumn<double> get bookBalance => $composableBuilder(
-      column: $table.bookBalance, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get bookBalance =>
+      $composableBuilder(
+          column: $table.bookBalance, builder: (column) => column);
 
-  GeneratedColumn<double> get actualBalance => $composableBuilder(
-      column: $table.actualBalance, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get actualBalance =>
+      $composableBuilder(
+          column: $table.actualBalance, builder: (column) => column);
 
-  GeneratedColumn<double> get difference => $composableBuilder(
-      column: $table.difference, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get difference =>
+      $composableBuilder(
+          column: $table.difference, builder: (column) => column);
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
@@ -83629,9 +84818,9 @@ class $$ReconciliationsTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             Value<String> accountId = const Value.absent(),
             Value<DateTime> date = const Value.absent(),
-            Value<double> bookBalance = const Value.absent(),
-            Value<double> actualBalance = const Value.absent(),
-            Value<double> difference = const Value.absent(),
+            Value<Decimal> bookBalance = const Value.absent(),
+            Value<Decimal> actualBalance = const Value.absent(),
+            Value<Decimal> difference = const Value.absent(),
             Value<String?> note = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -83659,9 +84848,9 @@ class $$ReconciliationsTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             required String accountId,
             Value<DateTime> date = const Value.absent(),
-            required double bookBalance,
-            required double actualBalance,
-            required double difference,
+            Value<Decimal> bookBalance = const Value.absent(),
+            Value<Decimal> actualBalance = const Value.absent(),
+            Value<Decimal> difference = const Value.absent(),
             Value<String?> note = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -85029,7 +86218,7 @@ typedef $$StockTransferItemsTableCreateCompanionBuilder
   required String transferId,
   required String productId,
   required String batchId,
-  required double quantity,
+  Value<Decimal> quantity,
   Value<int> rowid,
 });
 typedef $$StockTransferItemsTableUpdateCompanionBuilder
@@ -85043,7 +86232,7 @@ typedef $$StockTransferItemsTableUpdateCompanionBuilder
   Value<String> transferId,
   Value<String> productId,
   Value<String> batchId,
-  Value<double> quantity,
+  Value<Decimal> quantity,
   Value<int> rowid,
 });
 
@@ -85133,8 +86322,10 @@ class $$StockTransferItemsTableFilterComposer
   ColumnFilters<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get quantity => $composableBuilder(
-      column: $table.quantity, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get quantity =>
+      $composableBuilder(
+          column: $table.quantity,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -85241,7 +86432,7 @@ class $$StockTransferItemsTableOrderingComposer
   ColumnOrderings<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get quantity => $composableBuilder(
+  ColumnOrderings<String> get quantity => $composableBuilder(
       column: $table.quantity, builder: (column) => ColumnOrderings(column));
 
   $$BranchesTableOrderingComposer get branchId {
@@ -85349,7 +86540,7 @@ class $$StockTransferItemsTableAnnotationComposer
   GeneratedColumn<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => column);
 
-  GeneratedColumn<double> get quantity =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get quantity =>
       $composableBuilder(column: $table.quantity, builder: (column) => column);
 
   $$BranchesTableAnnotationComposer get branchId {
@@ -85468,7 +86659,7 @@ class $$StockTransferItemsTableTableManager extends RootTableManager<
             Value<String> transferId = const Value.absent(),
             Value<String> productId = const Value.absent(),
             Value<String> batchId = const Value.absent(),
-            Value<double> quantity = const Value.absent(),
+            Value<Decimal> quantity = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               StockTransferItemsCompanion(
@@ -85494,7 +86685,7 @@ class $$StockTransferItemsTableTableManager extends RootTableManager<
             required String transferId,
             required String productId,
             required String batchId,
-            required double quantity,
+            Value<Decimal> quantity = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               StockTransferItemsCompanion.insert(
@@ -86614,10 +87805,10 @@ typedef $$PayrollLinesTableCreateCompanionBuilder = PayrollLinesCompanion
   Value<String?> branchId,
   required String payrollEntryId,
   required String employeeId,
-  required double basicSalary,
+  Value<Decimal> basicSalary,
   Value<Decimal> allowances,
   Value<Decimal> deductions,
-  required double netSalary,
+  Value<Decimal> netSalary,
   Value<int> rowid,
 });
 typedef $$PayrollLinesTableUpdateCompanionBuilder = PayrollLinesCompanion
@@ -86630,10 +87821,10 @@ typedef $$PayrollLinesTableUpdateCompanionBuilder = PayrollLinesCompanion
   Value<String?> branchId,
   Value<String> payrollEntryId,
   Value<String> employeeId,
-  Value<double> basicSalary,
+  Value<Decimal> basicSalary,
   Value<Decimal> allowances,
   Value<Decimal> deductions,
-  Value<double> netSalary,
+  Value<Decimal> netSalary,
   Value<int> rowid,
 });
 
@@ -86708,8 +87899,10 @@ class $$PayrollLinesTableFilterComposer
   ColumnFilters<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get basicSalary => $composableBuilder(
-      column: $table.basicSalary, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get basicSalary =>
+      $composableBuilder(
+          column: $table.basicSalary,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnWithTypeConverterFilters<Decimal, Decimal, String> get allowances =>
       $composableBuilder(
@@ -86721,8 +87914,10 @@ class $$PayrollLinesTableFilterComposer
           column: $table.deductions,
           builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get netSalary => $composableBuilder(
-      column: $table.netSalary, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get netSalary =>
+      $composableBuilder(
+          column: $table.netSalary,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -86809,7 +88004,7 @@ class $$PayrollLinesTableOrderingComposer
   ColumnOrderings<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get basicSalary => $composableBuilder(
+  ColumnOrderings<String> get basicSalary => $composableBuilder(
       column: $table.basicSalary, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get allowances => $composableBuilder(
@@ -86818,7 +88013,7 @@ class $$PayrollLinesTableOrderingComposer
   ColumnOrderings<String> get deductions => $composableBuilder(
       column: $table.deductions, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get netSalary => $composableBuilder(
+  ColumnOrderings<String> get netSalary => $composableBuilder(
       column: $table.netSalary, builder: (column) => ColumnOrderings(column));
 
   $$BranchesTableOrderingComposer get branchId {
@@ -86906,8 +88101,9 @@ class $$PayrollLinesTableAnnotationComposer
   GeneratedColumn<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => column);
 
-  GeneratedColumn<double> get basicSalary => $composableBuilder(
-      column: $table.basicSalary, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get basicSalary =>
+      $composableBuilder(
+          column: $table.basicSalary, builder: (column) => column);
 
   GeneratedColumnWithTypeConverter<Decimal, String> get allowances =>
       $composableBuilder(
@@ -86917,7 +88113,7 @@ class $$PayrollLinesTableAnnotationComposer
       $composableBuilder(
           column: $table.deductions, builder: (column) => column);
 
-  GeneratedColumn<double> get netSalary =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get netSalary =>
       $composableBuilder(column: $table.netSalary, builder: (column) => column);
 
   $$BranchesTableAnnotationComposer get branchId {
@@ -87013,10 +88209,10 @@ class $$PayrollLinesTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             Value<String> payrollEntryId = const Value.absent(),
             Value<String> employeeId = const Value.absent(),
-            Value<double> basicSalary = const Value.absent(),
+            Value<Decimal> basicSalary = const Value.absent(),
             Value<Decimal> allowances = const Value.absent(),
             Value<Decimal> deductions = const Value.absent(),
-            Value<double> netSalary = const Value.absent(),
+            Value<Decimal> netSalary = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               PayrollLinesCompanion(
@@ -87043,10 +88239,10 @@ class $$PayrollLinesTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             required String payrollEntryId,
             required String employeeId,
-            required double basicSalary,
+            Value<Decimal> basicSalary = const Value.absent(),
             Value<Decimal> allowances = const Value.absent(),
             Value<Decimal> deductions = const Value.absent(),
-            required double netSalary,
+            Value<Decimal> netSalary = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               PayrollLinesCompanion.insert(
@@ -87942,7 +89138,7 @@ typedef $$CashboxTransactionsTableCreateCompanionBuilder
   Value<String?> deviceId,
   Value<int> syncStatus,
   Value<String?> branchId,
-  required double amount,
+  Value<Decimal> amount,
   required String type,
   required String category,
   Value<String?> referenceId,
@@ -87958,7 +89154,7 @@ typedef $$CashboxTransactionsTableUpdateCompanionBuilder
   Value<String?> deviceId,
   Value<int> syncStatus,
   Value<String?> branchId,
-  Value<double> amount,
+  Value<Decimal> amount,
   Value<String> type,
   Value<String> category,
   Value<String?> referenceId,
@@ -88024,8 +89220,10 @@ class $$CashboxTransactionsTableFilterComposer
   ColumnFilters<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get amount => $composableBuilder(
-      column: $table.amount, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get amount =>
+      $composableBuilder(
+          column: $table.amount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get type => $composableBuilder(
       column: $table.type, builder: (column) => ColumnFilters(column));
@@ -88104,7 +89302,7 @@ class $$CashboxTransactionsTableOrderingComposer
   ColumnOrderings<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get amount => $composableBuilder(
+  ColumnOrderings<String> get amount => $composableBuilder(
       column: $table.amount, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get type => $composableBuilder(
@@ -88184,7 +89382,7 @@ class $$CashboxTransactionsTableAnnotationComposer
   GeneratedColumn<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => column);
 
-  GeneratedColumn<double> get amount =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get amount =>
       $composableBuilder(column: $table.amount, builder: (column) => column);
 
   GeneratedColumn<String> get type =>
@@ -88272,7 +89470,7 @@ class $$CashboxTransactionsTableTableManager extends RootTableManager<
             Value<String?> deviceId = const Value.absent(),
             Value<int> syncStatus = const Value.absent(),
             Value<String?> branchId = const Value.absent(),
-            Value<double> amount = const Value.absent(),
+            Value<Decimal> amount = const Value.absent(),
             Value<String> type = const Value.absent(),
             Value<String> category = const Value.absent(),
             Value<String?> referenceId = const Value.absent(),
@@ -88302,7 +89500,7 @@ class $$CashboxTransactionsTableTableManager extends RootTableManager<
             Value<String?> deviceId = const Value.absent(),
             Value<int> syncStatus = const Value.absent(),
             Value<String?> branchId = const Value.absent(),
-            required double amount,
+            Value<Decimal> amount = const Value.absent(),
             required String type,
             required String category,
             Value<String?> referenceId = const Value.absent(),
@@ -89092,7 +90290,7 @@ typedef $$FinancialTransfersTableCreateCompanionBuilder
   Value<String?> branchId,
   required String senderAccountId,
   required String receiverAccountId,
-  required double amount,
+  Value<Decimal> amount,
   Value<Decimal> commission,
   Value<String?> company,
   required String transferType,
@@ -89112,7 +90310,7 @@ typedef $$FinancialTransfersTableUpdateCompanionBuilder
   Value<String?> branchId,
   Value<String> senderAccountId,
   Value<String> receiverAccountId,
-  Value<double> amount,
+  Value<Decimal> amount,
   Value<Decimal> commission,
   Value<String?> company,
   Value<String> transferType,
@@ -89208,8 +90406,10 @@ class $$FinancialTransfersTableFilterComposer
   ColumnFilters<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get amount => $composableBuilder(
-      column: $table.amount, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get amount =>
+      $composableBuilder(
+          column: $table.amount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnWithTypeConverterFilters<Decimal, Decimal, String> get commission =>
       $composableBuilder(
@@ -89336,7 +90536,7 @@ class $$FinancialTransfersTableOrderingComposer
   ColumnOrderings<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get amount => $composableBuilder(
+  ColumnOrderings<String> get amount => $composableBuilder(
       column: $table.amount, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get commission => $composableBuilder(
@@ -89463,7 +90663,7 @@ class $$FinancialTransfersTableAnnotationComposer
   GeneratedColumn<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => column);
 
-  GeneratedColumn<double> get amount =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get amount =>
       $composableBuilder(column: $table.amount, builder: (column) => column);
 
   GeneratedColumnWithTypeConverter<Decimal, String> get commission =>
@@ -89603,7 +90803,7 @@ class $$FinancialTransfersTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             Value<String> senderAccountId = const Value.absent(),
             Value<String> receiverAccountId = const Value.absent(),
-            Value<double> amount = const Value.absent(),
+            Value<Decimal> amount = const Value.absent(),
             Value<Decimal> commission = const Value.absent(),
             Value<String?> company = const Value.absent(),
             Value<String> transferType = const Value.absent(),
@@ -89641,7 +90841,7 @@ class $$FinancialTransfersTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             required String senderAccountId,
             required String receiverAccountId,
-            required double amount,
+            Value<Decimal> amount = const Value.absent(),
             Value<Decimal> commission = const Value.absent(),
             Value<String?> company = const Value.absent(),
             required String transferType,
@@ -90198,7 +91398,7 @@ typedef $$PriceListItemsTableCreateCompanionBuilder = PriceListItemsCompanion
   Value<String?> branchId,
   required String priceListId,
   required String productId,
-  required double price,
+  Value<Decimal> price,
   Value<Decimal> minQuantity,
   Value<int> rowid,
 });
@@ -90212,7 +91412,7 @@ typedef $$PriceListItemsTableUpdateCompanionBuilder = PriceListItemsCompanion
   Value<String?> branchId,
   Value<String> priceListId,
   Value<String> productId,
-  Value<double> price,
+  Value<Decimal> price,
   Value<Decimal> minQuantity,
   Value<int> rowid,
 });
@@ -90289,8 +91489,10 @@ class $$PriceListItemsTableFilterComposer
   ColumnFilters<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get price => $composableBuilder(
-      column: $table.price, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get price =>
+      $composableBuilder(
+          column: $table.price,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnWithTypeConverterFilters<Decimal, Decimal, String> get minQuantity =>
       $composableBuilder(
@@ -90382,7 +91584,7 @@ class $$PriceListItemsTableOrderingComposer
   ColumnOrderings<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get price => $composableBuilder(
+  ColumnOrderings<String> get price => $composableBuilder(
       column: $table.price, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get minQuantity => $composableBuilder(
@@ -90473,7 +91675,7 @@ class $$PriceListItemsTableAnnotationComposer
   GeneratedColumn<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => column);
 
-  GeneratedColumn<double> get price =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get price =>
       $composableBuilder(column: $table.price, builder: (column) => column);
 
   GeneratedColumnWithTypeConverter<Decimal, String> get minQuantity =>
@@ -90573,7 +91775,7 @@ class $$PriceListItemsTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             Value<String> priceListId = const Value.absent(),
             Value<String> productId = const Value.absent(),
-            Value<double> price = const Value.absent(),
+            Value<Decimal> price = const Value.absent(),
             Value<Decimal> minQuantity = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -90599,7 +91801,7 @@ class $$PriceListItemsTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             required String priceListId,
             required String productId,
-            required double price,
+            Value<Decimal> price = const Value.absent(),
             Value<Decimal> minQuantity = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -90703,7 +91905,7 @@ typedef $$PromotionsTableCreateCompanionBuilder = PromotionsCompanion Function({
   Value<String?> branchId,
   required String name,
   required String type,
-  required double value,
+  Value<Decimal> value,
   required DateTime startDate,
   required DateTime endDate,
   Value<bool> isActive,
@@ -90721,7 +91923,7 @@ typedef $$PromotionsTableUpdateCompanionBuilder = PromotionsCompanion Function({
   Value<String?> branchId,
   Value<String> name,
   Value<String> type,
-  Value<double> value,
+  Value<Decimal> value,
   Value<DateTime> startDate,
   Value<DateTime> endDate,
   Value<bool> isActive,
@@ -90808,8 +92010,10 @@ class $$PromotionsTableFilterComposer
   ColumnFilters<String> get type => $composableBuilder(
       column: $table.type, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get value => $composableBuilder(
-      column: $table.value, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get value =>
+      $composableBuilder(
+          column: $table.value,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<DateTime> get startDate => $composableBuilder(
       column: $table.startDate, builder: (column) => ColumnFilters(column));
@@ -90916,7 +92120,7 @@ class $$PromotionsTableOrderingComposer
   ColumnOrderings<String> get type => $composableBuilder(
       column: $table.type, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get value => $composableBuilder(
+  ColumnOrderings<String> get value => $composableBuilder(
       column: $table.value, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<DateTime> get startDate => $composableBuilder(
@@ -91023,7 +92227,7 @@ class $$PromotionsTableAnnotationComposer
   GeneratedColumn<String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => column);
 
-  GeneratedColumn<double> get value =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get value =>
       $composableBuilder(column: $table.value, builder: (column) => column);
 
   GeneratedColumn<DateTime> get startDate =>
@@ -91131,7 +92335,7 @@ class $$PromotionsTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             Value<String> name = const Value.absent(),
             Value<String> type = const Value.absent(),
-            Value<double> value = const Value.absent(),
+            Value<Decimal> value = const Value.absent(),
             Value<DateTime> startDate = const Value.absent(),
             Value<DateTime> endDate = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
@@ -91167,7 +92371,7 @@ class $$PromotionsTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             required String name,
             required String type,
-            required double value,
+            Value<Decimal> value = const Value.absent(),
             required DateTime startDate,
             required DateTime endDate,
             Value<bool> isActive = const Value.absent(),
@@ -91280,8 +92484,8 @@ typedef $$PriceHistoryTableCreateCompanionBuilder = PriceHistoryCompanion
   Value<int> syncStatus,
   Value<String?> branchId,
   required String productId,
-  required double oldPrice,
-  required double newPrice,
+  Value<Decimal> oldPrice,
+  Value<Decimal> newPrice,
   required String type,
   Value<int> rowid,
 });
@@ -91294,8 +92498,8 @@ typedef $$PriceHistoryTableUpdateCompanionBuilder = PriceHistoryCompanion
   Value<int> syncStatus,
   Value<String?> branchId,
   Value<String> productId,
-  Value<double> oldPrice,
-  Value<double> newPrice,
+  Value<Decimal> oldPrice,
+  Value<Decimal> newPrice,
   Value<String> type,
   Value<int> rowid,
 });
@@ -91357,11 +92561,15 @@ class $$PriceHistoryTableFilterComposer
   ColumnFilters<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get oldPrice => $composableBuilder(
-      column: $table.oldPrice, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get oldPrice =>
+      $composableBuilder(
+          column: $table.oldPrice,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get newPrice => $composableBuilder(
-      column: $table.newPrice, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get newPrice =>
+      $composableBuilder(
+          column: $table.newPrice,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get type => $composableBuilder(
       column: $table.type, builder: (column) => ColumnFilters(column));
@@ -91431,10 +92639,10 @@ class $$PriceHistoryTableOrderingComposer
   ColumnOrderings<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get oldPrice => $composableBuilder(
+  ColumnOrderings<String> get oldPrice => $composableBuilder(
       column: $table.oldPrice, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get newPrice => $composableBuilder(
+  ColumnOrderings<String> get newPrice => $composableBuilder(
       column: $table.newPrice, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get type => $composableBuilder(
@@ -91505,10 +92713,10 @@ class $$PriceHistoryTableAnnotationComposer
   GeneratedColumn<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => column);
 
-  GeneratedColumn<double> get oldPrice =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get oldPrice =>
       $composableBuilder(column: $table.oldPrice, builder: (column) => column);
 
-  GeneratedColumn<double> get newPrice =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get newPrice =>
       $composableBuilder(column: $table.newPrice, builder: (column) => column);
 
   GeneratedColumn<String> get type =>
@@ -91585,8 +92793,8 @@ class $$PriceHistoryTableTableManager extends RootTableManager<
             Value<int> syncStatus = const Value.absent(),
             Value<String?> branchId = const Value.absent(),
             Value<String> productId = const Value.absent(),
-            Value<double> oldPrice = const Value.absent(),
-            Value<double> newPrice = const Value.absent(),
+            Value<Decimal> oldPrice = const Value.absent(),
+            Value<Decimal> newPrice = const Value.absent(),
             Value<String> type = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -91611,8 +92819,8 @@ class $$PriceHistoryTableTableManager extends RootTableManager<
             Value<int> syncStatus = const Value.absent(),
             Value<String?> branchId = const Value.absent(),
             required String productId,
-            required double oldPrice,
-            required double newPrice,
+            Value<Decimal> oldPrice = const Value.absent(),
+            Value<Decimal> newPrice = const Value.absent(),
             required String type,
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -91705,7 +92913,7 @@ typedef $$UnitConversionsTableCreateCompanionBuilder = UnitConversionsCompanion
   Value<String?> branchId,
   required String productId,
   required String unitName,
-  required double factor,
+  Value<Decimal> factor,
   Value<bool> isBaseUnit,
   Value<Decimal?> buyPrice,
   Value<Decimal?> sellPrice,
@@ -91722,7 +92930,7 @@ typedef $$UnitConversionsTableUpdateCompanionBuilder = UnitConversionsCompanion
   Value<String?> branchId,
   Value<String> productId,
   Value<String> unitName,
-  Value<double> factor,
+  Value<Decimal> factor,
   Value<bool> isBaseUnit,
   Value<Decimal?> buyPrice,
   Value<Decimal?> sellPrice,
@@ -91791,8 +92999,10 @@ class $$UnitConversionsTableFilterComposer
   ColumnFilters<String> get unitName => $composableBuilder(
       column: $table.unitName, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get factor => $composableBuilder(
-      column: $table.factor, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get factor =>
+      $composableBuilder(
+          column: $table.factor,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<bool> get isBaseUnit => $composableBuilder(
       column: $table.isBaseUnit, builder: (column) => ColumnFilters(column));
@@ -91878,7 +93088,7 @@ class $$UnitConversionsTableOrderingComposer
   ColumnOrderings<String> get unitName => $composableBuilder(
       column: $table.unitName, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get factor => $composableBuilder(
+  ColumnOrderings<String> get factor => $composableBuilder(
       column: $table.factor, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<bool> get isBaseUnit => $composableBuilder(
@@ -91961,7 +93171,7 @@ class $$UnitConversionsTableAnnotationComposer
   GeneratedColumn<String> get unitName =>
       $composableBuilder(column: $table.unitName, builder: (column) => column);
 
-  GeneratedColumn<double> get factor =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get factor =>
       $composableBuilder(column: $table.factor, builder: (column) => column);
 
   GeneratedColumn<bool> get isBaseUnit => $composableBuilder(
@@ -92049,7 +93259,7 @@ class $$UnitConversionsTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             Value<String> productId = const Value.absent(),
             Value<String> unitName = const Value.absent(),
-            Value<double> factor = const Value.absent(),
+            Value<Decimal> factor = const Value.absent(),
             Value<bool> isBaseUnit = const Value.absent(),
             Value<Decimal?> buyPrice = const Value.absent(),
             Value<Decimal?> sellPrice = const Value.absent(),
@@ -92081,7 +93291,7 @@ class $$UnitConversionsTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             required String productId,
             required String unitName,
-            required double factor,
+            Value<Decimal> factor = const Value.absent(),
             Value<bool> isBaseUnit = const Value.absent(),
             Value<Decimal?> buyPrice = const Value.absent(),
             Value<Decimal?> sellPrice = const Value.absent(),
@@ -93691,7 +94901,7 @@ typedef $$InventoryTransactionsTableCreateCompanionBuilder
   required String productId,
   required String warehouseId,
   Value<String?> batchId,
-  required double quantity,
+  Value<Decimal> quantity,
   required String type,
   required String referenceId,
   Value<DateTime> date,
@@ -93708,7 +94918,7 @@ typedef $$InventoryTransactionsTableUpdateCompanionBuilder
   Value<String> productId,
   Value<String> warehouseId,
   Value<String?> batchId,
-  Value<double> quantity,
+  Value<Decimal> quantity,
   Value<String> type,
   Value<String> referenceId,
   Value<DateTime> date,
@@ -93801,8 +95011,10 @@ class $$InventoryTransactionsTableFilterComposer
   ColumnFilters<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get quantity => $composableBuilder(
-      column: $table.quantity, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get quantity =>
+      $composableBuilder(
+          column: $table.quantity,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get type => $composableBuilder(
       column: $table.type, builder: (column) => ColumnFilters(column));
@@ -93918,7 +95130,7 @@ class $$InventoryTransactionsTableOrderingComposer
   ColumnOrderings<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get quantity => $composableBuilder(
+  ColumnOrderings<String> get quantity => $composableBuilder(
       column: $table.quantity, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get type => $composableBuilder(
@@ -94035,7 +95247,7 @@ class $$InventoryTransactionsTableAnnotationComposer
   GeneratedColumn<int> get syncStatus => $composableBuilder(
       column: $table.syncStatus, builder: (column) => column);
 
-  GeneratedColumn<double> get quantity =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get quantity =>
       $composableBuilder(column: $table.quantity, builder: (column) => column);
 
   GeneratedColumn<String> get type =>
@@ -94165,7 +95377,7 @@ class $$InventoryTransactionsTableTableManager extends RootTableManager<
             Value<String> productId = const Value.absent(),
             Value<String> warehouseId = const Value.absent(),
             Value<String?> batchId = const Value.absent(),
-            Value<double> quantity = const Value.absent(),
+            Value<Decimal> quantity = const Value.absent(),
             Value<String> type = const Value.absent(),
             Value<String> referenceId = const Value.absent(),
             Value<DateTime> date = const Value.absent(),
@@ -94197,7 +95409,7 @@ class $$InventoryTransactionsTableTableManager extends RootTableManager<
             required String productId,
             required String warehouseId,
             Value<String?> batchId = const Value.absent(),
-            required double quantity,
+            Value<Decimal> quantity = const Value.absent(),
             required String type,
             required String referenceId,
             Value<DateTime> date = const Value.absent(),
@@ -94329,6 +95541,7 @@ typedef $$AccountTransactionsTableCreateCompanionBuilder
   Value<String?> referenceId,
   Value<Decimal> debit,
   Value<Decimal> credit,
+  Value<bool> reconciled,
   Value<int> rowid,
 });
 typedef $$AccountTransactionsTableUpdateCompanionBuilder
@@ -94345,6 +95558,7 @@ typedef $$AccountTransactionsTableUpdateCompanionBuilder
   Value<String?> referenceId,
   Value<Decimal> debit,
   Value<Decimal> credit,
+  Value<bool> reconciled,
   Value<int> rowid,
 });
 
@@ -94424,6 +95638,9 @@ class $$AccountTransactionsTableFilterComposer
       $composableBuilder(
           column: $table.credit,
           builder: (column) => ColumnWithTypeConverterFilters(column));
+
+  ColumnFilters<bool> get reconciled => $composableBuilder(
+      column: $table.reconciled, builder: (column) => ColumnFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -94505,6 +95722,9 @@ class $$AccountTransactionsTableOrderingComposer
   ColumnOrderings<String> get credit => $composableBuilder(
       column: $table.credit, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<bool> get reconciled => $composableBuilder(
+      column: $table.reconciled, builder: (column) => ColumnOrderings(column));
+
   $$BranchesTableOrderingComposer get branchId {
     final $$BranchesTableOrderingComposer composer = $composerBuilder(
         composer: this,
@@ -94585,6 +95805,9 @@ class $$AccountTransactionsTableAnnotationComposer
   GeneratedColumnWithTypeConverter<Decimal, String> get credit =>
       $composableBuilder(column: $table.credit, builder: (column) => column);
 
+  GeneratedColumn<bool> get reconciled => $composableBuilder(
+      column: $table.reconciled, builder: (column) => column);
+
   $$BranchesTableAnnotationComposer get branchId {
     final $$BranchesTableAnnotationComposer composer = $composerBuilder(
         composer: this,
@@ -94664,6 +95887,7 @@ class $$AccountTransactionsTableTableManager extends RootTableManager<
             Value<String?> referenceId = const Value.absent(),
             Value<Decimal> debit = const Value.absent(),
             Value<Decimal> credit = const Value.absent(),
+            Value<bool> reconciled = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               AccountTransactionsCompanion(
@@ -94679,6 +95903,7 @@ class $$AccountTransactionsTableTableManager extends RootTableManager<
             referenceId: referenceId,
             debit: debit,
             credit: credit,
+            reconciled: reconciled,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -94694,6 +95919,7 @@ class $$AccountTransactionsTableTableManager extends RootTableManager<
             Value<String?> referenceId = const Value.absent(),
             Value<Decimal> debit = const Value.absent(),
             Value<Decimal> credit = const Value.absent(),
+            Value<bool> reconciled = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               AccountTransactionsCompanion.insert(
@@ -94709,6 +95935,7 @@ class $$AccountTransactionsTableTableManager extends RootTableManager<
             referenceId: referenceId,
             debit: debit,
             credit: credit,
+            reconciled: reconciled,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -100284,7 +101511,7 @@ typedef $$AccAssetCategoriesTableCreateCompanionBuilder
   Value<int> id,
   required String name,
   required String code,
-  Value<double> defaultDepreciationRate,
+  Value<Decimal> defaultDepreciationRate,
   Value<DateTime> createdAt,
 });
 typedef $$AccAssetCategoriesTableUpdateCompanionBuilder
@@ -100292,7 +101519,7 @@ typedef $$AccAssetCategoriesTableUpdateCompanionBuilder
   Value<int> id,
   Value<String> name,
   Value<String> code,
-  Value<double> defaultDepreciationRate,
+  Value<Decimal> defaultDepreciationRate,
   Value<DateTime> createdAt,
 });
 
@@ -100335,9 +101562,10 @@ class $$AccAssetCategoriesTableFilterComposer
   ColumnFilters<String> get code => $composableBuilder(
       column: $table.code, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get defaultDepreciationRate => $composableBuilder(
-      column: $table.defaultDepreciationRate,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String>
+      get defaultDepreciationRate => $composableBuilder(
+          column: $table.defaultDepreciationRate,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -100382,7 +101610,7 @@ class $$AccAssetCategoriesTableOrderingComposer
   ColumnOrderings<String> get code => $composableBuilder(
       column: $table.code, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get defaultDepreciationRate => $composableBuilder(
+  ColumnOrderings<String> get defaultDepreciationRate => $composableBuilder(
       column: $table.defaultDepreciationRate,
       builder: (column) => ColumnOrderings(column));
 
@@ -100408,8 +101636,9 @@ class $$AccAssetCategoriesTableAnnotationComposer
   GeneratedColumn<String> get code =>
       $composableBuilder(column: $table.code, builder: (column) => column);
 
-  GeneratedColumn<double> get defaultDepreciationRate => $composableBuilder(
-      column: $table.defaultDepreciationRate, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String>
+      get defaultDepreciationRate => $composableBuilder(
+          column: $table.defaultDepreciationRate, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -100464,7 +101693,7 @@ class $$AccAssetCategoriesTableTableManager extends RootTableManager<
             Value<int> id = const Value.absent(),
             Value<String> name = const Value.absent(),
             Value<String> code = const Value.absent(),
-            Value<double> defaultDepreciationRate = const Value.absent(),
+            Value<Decimal> defaultDepreciationRate = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
               AccAssetCategoriesCompanion(
@@ -100478,7 +101707,7 @@ class $$AccAssetCategoriesTableTableManager extends RootTableManager<
             Value<int> id = const Value.absent(),
             required String name,
             required String code,
-            Value<double> defaultDepreciationRate = const Value.absent(),
+            Value<Decimal> defaultDepreciationRate = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
               AccAssetCategoriesCompanion.insert(
@@ -100538,14 +101767,14 @@ typedef $$FixedAssetsTableCreateCompanionBuilder = FixedAssetsCompanion
   required String name,
   Value<String?> serialNumber,
   required int categoryId,
-  required double cost,
+  required Decimal cost,
   required DateTime purchaseDate,
   required DateTime acquisitionDate,
-  Value<double> salvageValue,
+  Value<Decimal> salvageValue,
   required int usefulLifeYears,
   Value<String> depreciationMethod,
   Value<String> status,
-  Value<double> accumulatedDepreciation,
+  Value<Decimal> accumulatedDepreciation,
   Value<DateTime?> lastDepreciationDate,
   Value<DateTime> createdAt,
 });
@@ -100555,14 +101784,14 @@ typedef $$FixedAssetsTableUpdateCompanionBuilder = FixedAssetsCompanion
   Value<String> name,
   Value<String?> serialNumber,
   Value<int> categoryId,
-  Value<double> cost,
+  Value<Decimal> cost,
   Value<DateTime> purchaseDate,
   Value<DateTime> acquisitionDate,
-  Value<double> salvageValue,
+  Value<Decimal> salvageValue,
   Value<int> usefulLifeYears,
   Value<String> depreciationMethod,
   Value<String> status,
-  Value<double> accumulatedDepreciation,
+  Value<Decimal> accumulatedDepreciation,
   Value<DateTime?> lastDepreciationDate,
   Value<DateTime> createdAt,
 });
@@ -100641,8 +101870,10 @@ class $$FixedAssetsTableFilterComposer
   ColumnFilters<String> get serialNumber => $composableBuilder(
       column: $table.serialNumber, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get cost => $composableBuilder(
-      column: $table.cost, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get cost =>
+      $composableBuilder(
+          column: $table.cost,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<DateTime> get purchaseDate => $composableBuilder(
       column: $table.purchaseDate, builder: (column) => ColumnFilters(column));
@@ -100651,8 +101882,10 @@ class $$FixedAssetsTableFilterComposer
       column: $table.acquisitionDate,
       builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get salvageValue => $composableBuilder(
-      column: $table.salvageValue, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get salvageValue =>
+      $composableBuilder(
+          column: $table.salvageValue,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<int> get usefulLifeYears => $composableBuilder(
       column: $table.usefulLifeYears,
@@ -100665,9 +101898,10 @@ class $$FixedAssetsTableFilterComposer
   ColumnFilters<String> get status => $composableBuilder(
       column: $table.status, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get accumulatedDepreciation => $composableBuilder(
-      column: $table.accumulatedDepreciation,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String>
+      get accumulatedDepreciation => $composableBuilder(
+          column: $table.accumulatedDepreciation,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<DateTime> get lastDepreciationDate => $composableBuilder(
       column: $table.lastDepreciationDate,
@@ -100760,7 +101994,7 @@ class $$FixedAssetsTableOrderingComposer
       column: $table.serialNumber,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get cost => $composableBuilder(
+  ColumnOrderings<String> get cost => $composableBuilder(
       column: $table.cost, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<DateTime> get purchaseDate => $composableBuilder(
@@ -100771,7 +102005,7 @@ class $$FixedAssetsTableOrderingComposer
       column: $table.acquisitionDate,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get salvageValue => $composableBuilder(
+  ColumnOrderings<String> get salvageValue => $composableBuilder(
       column: $table.salvageValue,
       builder: (column) => ColumnOrderings(column));
 
@@ -100786,7 +102020,7 @@ class $$FixedAssetsTableOrderingComposer
   ColumnOrderings<String> get status => $composableBuilder(
       column: $table.status, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get accumulatedDepreciation => $composableBuilder(
+  ColumnOrderings<String> get accumulatedDepreciation => $composableBuilder(
       column: $table.accumulatedDepreciation,
       builder: (column) => ColumnOrderings(column));
 
@@ -100836,7 +102070,7 @@ class $$FixedAssetsTableAnnotationComposer
   GeneratedColumn<String> get serialNumber => $composableBuilder(
       column: $table.serialNumber, builder: (column) => column);
 
-  GeneratedColumn<double> get cost =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get cost =>
       $composableBuilder(column: $table.cost, builder: (column) => column);
 
   GeneratedColumn<DateTime> get purchaseDate => $composableBuilder(
@@ -100845,8 +102079,9 @@ class $$FixedAssetsTableAnnotationComposer
   GeneratedColumn<DateTime> get acquisitionDate => $composableBuilder(
       column: $table.acquisitionDate, builder: (column) => column);
 
-  GeneratedColumn<double> get salvageValue => $composableBuilder(
-      column: $table.salvageValue, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get salvageValue =>
+      $composableBuilder(
+          column: $table.salvageValue, builder: (column) => column);
 
   GeneratedColumn<int> get usefulLifeYears => $composableBuilder(
       column: $table.usefulLifeYears, builder: (column) => column);
@@ -100857,8 +102092,9 @@ class $$FixedAssetsTableAnnotationComposer
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
 
-  GeneratedColumn<double> get accumulatedDepreciation => $composableBuilder(
-      column: $table.accumulatedDepreciation, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String>
+      get accumulatedDepreciation => $composableBuilder(
+          column: $table.accumulatedDepreciation, builder: (column) => column);
 
   GeneratedColumn<DateTime> get lastDepreciationDate => $composableBuilder(
       column: $table.lastDepreciationDate, builder: (column) => column);
@@ -100964,14 +102200,14 @@ class $$FixedAssetsTableTableManager extends RootTableManager<
             Value<String> name = const Value.absent(),
             Value<String?> serialNumber = const Value.absent(),
             Value<int> categoryId = const Value.absent(),
-            Value<double> cost = const Value.absent(),
+            Value<Decimal> cost = const Value.absent(),
             Value<DateTime> purchaseDate = const Value.absent(),
             Value<DateTime> acquisitionDate = const Value.absent(),
-            Value<double> salvageValue = const Value.absent(),
+            Value<Decimal> salvageValue = const Value.absent(),
             Value<int> usefulLifeYears = const Value.absent(),
             Value<String> depreciationMethod = const Value.absent(),
             Value<String> status = const Value.absent(),
-            Value<double> accumulatedDepreciation = const Value.absent(),
+            Value<Decimal> accumulatedDepreciation = const Value.absent(),
             Value<DateTime?> lastDepreciationDate = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
@@ -100996,14 +102232,14 @@ class $$FixedAssetsTableTableManager extends RootTableManager<
             required String name,
             Value<String?> serialNumber = const Value.absent(),
             required int categoryId,
-            required double cost,
+            required Decimal cost,
             required DateTime purchaseDate,
             required DateTime acquisitionDate,
-            Value<double> salvageValue = const Value.absent(),
+            Value<Decimal> salvageValue = const Value.absent(),
             required int usefulLifeYears,
             Value<String> depreciationMethod = const Value.absent(),
             Value<String> status = const Value.absent(),
-            Value<double> accumulatedDepreciation = const Value.absent(),
+            Value<Decimal> accumulatedDepreciation = const Value.absent(),
             Value<DateTime?> lastDepreciationDate = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
@@ -101117,7 +102353,7 @@ typedef $$AccAssetDepreciationLogsTableCreateCompanionBuilder
     = AccAssetDepreciationLogsCompanion Function({
   Value<int> id,
   required int assetId,
-  required double depreciationAmount,
+  required Decimal depreciationAmount,
   required DateTime depreciationDate,
   Value<String?> journalEntryId,
   Value<String?> notes,
@@ -101127,7 +102363,7 @@ typedef $$AccAssetDepreciationLogsTableUpdateCompanionBuilder
     = AccAssetDepreciationLogsCompanion Function({
   Value<int> id,
   Value<int> assetId,
-  Value<double> depreciationAmount,
+  Value<Decimal> depreciationAmount,
   Value<DateTime> depreciationDate,
   Value<String?> journalEntryId,
   Value<String?> notes,
@@ -101166,9 +102402,10 @@ class $$AccAssetDepreciationLogsTableFilterComposer
   ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get depreciationAmount => $composableBuilder(
-      column: $table.depreciationAmount,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String>
+      get depreciationAmount => $composableBuilder(
+          column: $table.depreciationAmount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<DateTime> get depreciationDate => $composableBuilder(
       column: $table.depreciationDate,
@@ -101217,7 +102454,7 @@ class $$AccAssetDepreciationLogsTableOrderingComposer
   ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get depreciationAmount => $composableBuilder(
+  ColumnOrderings<String> get depreciationAmount => $composableBuilder(
       column: $table.depreciationAmount,
       builder: (column) => ColumnOrderings(column));
 
@@ -101268,8 +102505,9 @@ class $$AccAssetDepreciationLogsTableAnnotationComposer
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<double> get depreciationAmount => $composableBuilder(
-      column: $table.depreciationAmount, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get depreciationAmount =>
+      $composableBuilder(
+          column: $table.depreciationAmount, builder: (column) => column);
 
   GeneratedColumn<DateTime> get depreciationDate => $composableBuilder(
       column: $table.depreciationDate, builder: (column) => column);
@@ -101333,7 +102571,7 @@ class $$AccAssetDepreciationLogsTableTableManager extends RootTableManager<
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
             Value<int> assetId = const Value.absent(),
-            Value<double> depreciationAmount = const Value.absent(),
+            Value<Decimal> depreciationAmount = const Value.absent(),
             Value<DateTime> depreciationDate = const Value.absent(),
             Value<String?> journalEntryId = const Value.absent(),
             Value<String?> notes = const Value.absent(),
@@ -101351,7 +102589,7 @@ class $$AccAssetDepreciationLogsTableTableManager extends RootTableManager<
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
             required int assetId,
-            required double depreciationAmount,
+            required Decimal depreciationAmount,
             required DateTime depreciationDate,
             Value<String?> journalEntryId = const Value.absent(),
             Value<String?> notes = const Value.absent(),
@@ -101429,9 +102667,9 @@ typedef $$AccAssetDisposalsTableCreateCompanionBuilder
   Value<int> id,
   required int assetId,
   required DateTime disposalDate,
-  Value<double?> salePrice,
+  Value<Decimal?> salePrice,
   required String disposalType,
-  Value<double?> gainOrLoss,
+  Value<Decimal?> gainOrLoss,
   Value<String?> journalEntryId,
   Value<String?> notes,
   Value<DateTime> createdAt,
@@ -101441,9 +102679,9 @@ typedef $$AccAssetDisposalsTableUpdateCompanionBuilder
   Value<int> id,
   Value<int> assetId,
   Value<DateTime> disposalDate,
-  Value<double?> salePrice,
+  Value<Decimal?> salePrice,
   Value<String> disposalType,
-  Value<double?> gainOrLoss,
+  Value<Decimal?> gainOrLoss,
   Value<String?> journalEntryId,
   Value<String?> notes,
   Value<DateTime> createdAt,
@@ -101484,14 +102722,18 @@ class $$AccAssetDisposalsTableFilterComposer
   ColumnFilters<DateTime> get disposalDate => $composableBuilder(
       column: $table.disposalDate, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get salePrice => $composableBuilder(
-      column: $table.salePrice, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal?, Decimal, String> get salePrice =>
+      $composableBuilder(
+          column: $table.salePrice,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get disposalType => $composableBuilder(
       column: $table.disposalType, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get gainOrLoss => $composableBuilder(
-      column: $table.gainOrLoss, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal?, Decimal, String> get gainOrLoss =>
+      $composableBuilder(
+          column: $table.gainOrLoss,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get journalEntryId => $composableBuilder(
       column: $table.journalEntryId,
@@ -101540,14 +102782,14 @@ class $$AccAssetDisposalsTableOrderingComposer
       column: $table.disposalDate,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get salePrice => $composableBuilder(
+  ColumnOrderings<String> get salePrice => $composableBuilder(
       column: $table.salePrice, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get disposalType => $composableBuilder(
       column: $table.disposalType,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get gainOrLoss => $composableBuilder(
+  ColumnOrderings<String> get gainOrLoss => $composableBuilder(
       column: $table.gainOrLoss, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get journalEntryId => $composableBuilder(
@@ -101596,14 +102838,15 @@ class $$AccAssetDisposalsTableAnnotationComposer
   GeneratedColumn<DateTime> get disposalDate => $composableBuilder(
       column: $table.disposalDate, builder: (column) => column);
 
-  GeneratedColumn<double> get salePrice =>
+  GeneratedColumnWithTypeConverter<Decimal?, String> get salePrice =>
       $composableBuilder(column: $table.salePrice, builder: (column) => column);
 
   GeneratedColumn<String> get disposalType => $composableBuilder(
       column: $table.disposalType, builder: (column) => column);
 
-  GeneratedColumn<double> get gainOrLoss => $composableBuilder(
-      column: $table.gainOrLoss, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal?, String> get gainOrLoss =>
+      $composableBuilder(
+          column: $table.gainOrLoss, builder: (column) => column);
 
   GeneratedColumn<String> get journalEntryId => $composableBuilder(
       column: $table.journalEntryId, builder: (column) => column);
@@ -101663,9 +102906,9 @@ class $$AccAssetDisposalsTableTableManager extends RootTableManager<
             Value<int> id = const Value.absent(),
             Value<int> assetId = const Value.absent(),
             Value<DateTime> disposalDate = const Value.absent(),
-            Value<double?> salePrice = const Value.absent(),
+            Value<Decimal?> salePrice = const Value.absent(),
             Value<String> disposalType = const Value.absent(),
-            Value<double?> gainOrLoss = const Value.absent(),
+            Value<Decimal?> gainOrLoss = const Value.absent(),
             Value<String?> journalEntryId = const Value.absent(),
             Value<String?> notes = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
@@ -101685,9 +102928,9 @@ class $$AccAssetDisposalsTableTableManager extends RootTableManager<
             Value<int> id = const Value.absent(),
             required int assetId,
             required DateTime disposalDate,
-            Value<double?> salePrice = const Value.absent(),
+            Value<Decimal?> salePrice = const Value.absent(),
             required String disposalType,
-            Value<double?> gainOrLoss = const Value.absent(),
+            Value<Decimal?> gainOrLoss = const Value.absent(),
             Value<String?> journalEntryId = const Value.absent(),
             Value<String?> notes = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
@@ -103381,12 +104624,383 @@ typedef $$HRAdditionalDeductionsTableProcessedTableManager
         (HRAdditionalDeduction, $$HRAdditionalDeductionsTableReferences),
         HRAdditionalDeduction,
         PrefetchHooks Function({bool employeeId})>;
+typedef $$ExchangeRatesTableCreateCompanionBuilder = ExchangeRatesCompanion
+    Function({
+  required String fromCurrencyCode,
+  required String toCurrencyCode,
+  required Decimal rate,
+  required DateTime effectiveDate,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+typedef $$ExchangeRatesTableUpdateCompanionBuilder = ExchangeRatesCompanion
+    Function({
+  Value<String> fromCurrencyCode,
+  Value<String> toCurrencyCode,
+  Value<Decimal> rate,
+  Value<DateTime> effectiveDate,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+
+final class $$ExchangeRatesTableReferences
+    extends BaseReferences<_$AppDatabase, $ExchangeRatesTable, ExchangeRate> {
+  $$ExchangeRatesTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $CurrenciesTable _fromCurrencyCodeTable(_$AppDatabase db) =>
+      db.currencies.createAlias($_aliasNameGenerator(
+          db.exchangeRates.fromCurrencyCode, db.currencies.code));
+
+  $$CurrenciesTableProcessedTableManager? get fromCurrencyCode {
+    if ($_item.fromCurrencyCode == null) return null;
+    final manager = $$CurrenciesTableTableManager($_db, $_db.currencies)
+        .filter((f) => f.code($_item.fromCurrencyCode!));
+    final item = $_typedResult.readTableOrNull(_fromCurrencyCodeTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $CurrenciesTable _toCurrencyCodeTable(_$AppDatabase db) =>
+      db.currencies.createAlias($_aliasNameGenerator(
+          db.exchangeRates.toCurrencyCode, db.currencies.code));
+
+  $$CurrenciesTableProcessedTableManager? get toCurrencyCode {
+    if ($_item.toCurrencyCode == null) return null;
+    final manager = $$CurrenciesTableTableManager($_db, $_db.currencies)
+        .filter((f) => f.code($_item.toCurrencyCode!));
+    final item = $_typedResult.readTableOrNull(_toCurrencyCodeTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$ExchangeRatesTableFilterComposer
+    extends Composer<_$AppDatabase, $ExchangeRatesTable> {
+  $$ExchangeRatesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get rate =>
+      $composableBuilder(
+          column: $table.rate,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
+
+  ColumnFilters<DateTime> get effectiveDate => $composableBuilder(
+      column: $table.effectiveDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  $$CurrenciesTableFilterComposer get fromCurrencyCode {
+    final $$CurrenciesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.fromCurrencyCode,
+        referencedTable: $db.currencies,
+        getReferencedColumn: (t) => t.code,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CurrenciesTableFilterComposer(
+              $db: $db,
+              $table: $db.currencies,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$CurrenciesTableFilterComposer get toCurrencyCode {
+    final $$CurrenciesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.toCurrencyCode,
+        referencedTable: $db.currencies,
+        getReferencedColumn: (t) => t.code,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CurrenciesTableFilterComposer(
+              $db: $db,
+              $table: $db.currencies,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$ExchangeRatesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ExchangeRatesTable> {
+  $$ExchangeRatesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get rate => $composableBuilder(
+      column: $table.rate, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get effectiveDate => $composableBuilder(
+      column: $table.effectiveDate,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  $$CurrenciesTableOrderingComposer get fromCurrencyCode {
+    final $$CurrenciesTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.fromCurrencyCode,
+        referencedTable: $db.currencies,
+        getReferencedColumn: (t) => t.code,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CurrenciesTableOrderingComposer(
+              $db: $db,
+              $table: $db.currencies,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$CurrenciesTableOrderingComposer get toCurrencyCode {
+    final $$CurrenciesTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.toCurrencyCode,
+        referencedTable: $db.currencies,
+        getReferencedColumn: (t) => t.code,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CurrenciesTableOrderingComposer(
+              $db: $db,
+              $table: $db.currencies,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$ExchangeRatesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ExchangeRatesTable> {
+  $$ExchangeRatesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumnWithTypeConverter<Decimal, String> get rate =>
+      $composableBuilder(column: $table.rate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get effectiveDate => $composableBuilder(
+      column: $table.effectiveDate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$CurrenciesTableAnnotationComposer get fromCurrencyCode {
+    final $$CurrenciesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.fromCurrencyCode,
+        referencedTable: $db.currencies,
+        getReferencedColumn: (t) => t.code,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CurrenciesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.currencies,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$CurrenciesTableAnnotationComposer get toCurrencyCode {
+    final $$CurrenciesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.toCurrencyCode,
+        referencedTable: $db.currencies,
+        getReferencedColumn: (t) => t.code,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CurrenciesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.currencies,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$ExchangeRatesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $ExchangeRatesTable,
+    ExchangeRate,
+    $$ExchangeRatesTableFilterComposer,
+    $$ExchangeRatesTableOrderingComposer,
+    $$ExchangeRatesTableAnnotationComposer,
+    $$ExchangeRatesTableCreateCompanionBuilder,
+    $$ExchangeRatesTableUpdateCompanionBuilder,
+    (ExchangeRate, $$ExchangeRatesTableReferences),
+    ExchangeRate,
+    PrefetchHooks Function({bool fromCurrencyCode, bool toCurrencyCode})> {
+  $$ExchangeRatesTableTableManager(_$AppDatabase db, $ExchangeRatesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ExchangeRatesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ExchangeRatesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ExchangeRatesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> fromCurrencyCode = const Value.absent(),
+            Value<String> toCurrencyCode = const Value.absent(),
+            Value<Decimal> rate = const Value.absent(),
+            Value<DateTime> effectiveDate = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ExchangeRatesCompanion(
+            fromCurrencyCode: fromCurrencyCode,
+            toCurrencyCode: toCurrencyCode,
+            rate: rate,
+            effectiveDate: effectiveDate,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String fromCurrencyCode,
+            required String toCurrencyCode,
+            required Decimal rate,
+            required DateTime effectiveDate,
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ExchangeRatesCompanion.insert(
+            fromCurrencyCode: fromCurrencyCode,
+            toCurrencyCode: toCurrencyCode,
+            rate: rate,
+            effectiveDate: effectiveDate,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$ExchangeRatesTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: (
+              {fromCurrencyCode = false, toCurrencyCode = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (fromCurrencyCode) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.fromCurrencyCode,
+                    referencedTable: $$ExchangeRatesTableReferences
+                        ._fromCurrencyCodeTable(db),
+                    referencedColumn: $$ExchangeRatesTableReferences
+                        ._fromCurrencyCodeTable(db)
+                        .code,
+                  ) as T;
+                }
+                if (toCurrencyCode) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.toCurrencyCode,
+                    referencedTable:
+                        $$ExchangeRatesTableReferences._toCurrencyCodeTable(db),
+                    referencedColumn: $$ExchangeRatesTableReferences
+                        ._toCurrencyCodeTable(db)
+                        .code,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$ExchangeRatesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $ExchangeRatesTable,
+    ExchangeRate,
+    $$ExchangeRatesTableFilterComposer,
+    $$ExchangeRatesTableOrderingComposer,
+    $$ExchangeRatesTableAnnotationComposer,
+    $$ExchangeRatesTableCreateCompanionBuilder,
+    $$ExchangeRatesTableUpdateCompanionBuilder,
+    (ExchangeRate, $$ExchangeRatesTableReferences),
+    ExchangeRate,
+    PrefetchHooks Function({bool fromCurrencyCode, bool toCurrencyCode})>;
 typedef $$AccCurrenciesTableCreateCompanionBuilder = AccCurrenciesCompanion
     Function({
   Value<int> id,
   required String code,
   required String name,
-  Value<double> exchangeRate,
+  Value<Decimal> exchangeRate,
   Value<bool> isBase,
   Value<DateTime> createdAt,
 });
@@ -103395,7 +105009,7 @@ typedef $$AccCurrenciesTableUpdateCompanionBuilder = AccCurrenciesCompanion
   Value<int> id,
   Value<String> code,
   Value<String> name,
-  Value<double> exchangeRate,
+  Value<Decimal> exchangeRate,
   Value<bool> isBase,
   Value<DateTime> createdAt,
 });
@@ -103457,8 +105071,10 @@ class $$AccCurrenciesTableFilterComposer
   ColumnFilters<String> get name => $composableBuilder(
       column: $table.name, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get exchangeRate => $composableBuilder(
-      column: $table.exchangeRate, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get exchangeRate =>
+      $composableBuilder(
+          column: $table.exchangeRate,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<bool> get isBase => $composableBuilder(
       column: $table.isBase, builder: (column) => ColumnFilters(column));
@@ -103527,7 +105143,7 @@ class $$AccCurrenciesTableOrderingComposer
   ColumnOrderings<String> get name => $composableBuilder(
       column: $table.name, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get exchangeRate => $composableBuilder(
+  ColumnOrderings<String> get exchangeRate => $composableBuilder(
       column: $table.exchangeRate,
       builder: (column) => ColumnOrderings(column));
 
@@ -103556,8 +105172,9 @@ class $$AccCurrenciesTableAnnotationComposer
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumn<double> get exchangeRate => $composableBuilder(
-      column: $table.exchangeRate, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get exchangeRate =>
+      $composableBuilder(
+          column: $table.exchangeRate, builder: (column) => column);
 
   GeneratedColumn<bool> get isBase =>
       $composableBuilder(column: $table.isBase, builder: (column) => column);
@@ -103635,7 +105252,7 @@ class $$AccCurrenciesTableTableManager extends RootTableManager<
             Value<int> id = const Value.absent(),
             Value<String> code = const Value.absent(),
             Value<String> name = const Value.absent(),
-            Value<double> exchangeRate = const Value.absent(),
+            Value<Decimal> exchangeRate = const Value.absent(),
             Value<bool> isBase = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
@@ -103651,7 +105268,7 @@ class $$AccCurrenciesTableTableManager extends RootTableManager<
             Value<int> id = const Value.absent(),
             required String code,
             required String name,
-            Value<double> exchangeRate = const Value.absent(),
+            Value<Decimal> exchangeRate = const Value.absent(),
             Value<bool> isBase = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
@@ -103729,7 +105346,7 @@ typedef $$AccExchangeRatesTableCreateCompanionBuilder
   Value<int> id,
   required int fromCurrencyId,
   required int toCurrencyId,
-  required double rate,
+  required Decimal rate,
   required DateTime effectiveDate,
   Value<DateTime> createdAt,
 });
@@ -103738,7 +105355,7 @@ typedef $$AccExchangeRatesTableUpdateCompanionBuilder
   Value<int> id,
   Value<int> fromCurrencyId,
   Value<int> toCurrencyId,
-  Value<double> rate,
+  Value<Decimal> rate,
   Value<DateTime> effectiveDate,
   Value<DateTime> createdAt,
 });
@@ -103789,8 +105406,10 @@ class $$AccExchangeRatesTableFilterComposer
   ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get rate => $composableBuilder(
-      column: $table.rate, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get rate =>
+      $composableBuilder(
+          column: $table.rate,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<DateTime> get effectiveDate => $composableBuilder(
       column: $table.effectiveDate, builder: (column) => ColumnFilters(column));
@@ -103851,7 +105470,7 @@ class $$AccExchangeRatesTableOrderingComposer
   ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get rate => $composableBuilder(
+  ColumnOrderings<String> get rate => $composableBuilder(
       column: $table.rate, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<DateTime> get effectiveDate => $composableBuilder(
@@ -103914,7 +105533,7 @@ class $$AccExchangeRatesTableAnnotationComposer
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<double> get rate =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get rate =>
       $composableBuilder(column: $table.rate, builder: (column) => column);
 
   GeneratedColumn<DateTime> get effectiveDate => $composableBuilder(
@@ -103991,7 +105610,7 @@ class $$AccExchangeRatesTableTableManager extends RootTableManager<
             Value<int> id = const Value.absent(),
             Value<int> fromCurrencyId = const Value.absent(),
             Value<int> toCurrencyId = const Value.absent(),
-            Value<double> rate = const Value.absent(),
+            Value<Decimal> rate = const Value.absent(),
             Value<DateTime> effectiveDate = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
@@ -104007,7 +105626,7 @@ class $$AccExchangeRatesTableTableManager extends RootTableManager<
             Value<int> id = const Value.absent(),
             required int fromCurrencyId,
             required int toCurrencyId,
-            required double rate,
+            required Decimal rate,
             required DateTime effectiveDate,
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
@@ -104094,9 +105713,9 @@ typedef $$AccBudgetsTableCreateCompanionBuilder = AccBudgetsCompanion Function({
   required String period,
   Value<String?> costCenterId,
   Value<String?> accountId,
-  required double budgetedAmount,
-  Value<double> actualAmount,
-  required double variance,
+  required Decimal budgetedAmount,
+  Value<Decimal> actualAmount,
+  required Decimal variance,
   Value<String> status,
   Value<DateTime> createdAt,
 });
@@ -104106,9 +105725,9 @@ typedef $$AccBudgetsTableUpdateCompanionBuilder = AccBudgetsCompanion Function({
   Value<String> period,
   Value<String?> costCenterId,
   Value<String?> accountId,
-  Value<double> budgetedAmount,
-  Value<double> actualAmount,
-  Value<double> variance,
+  Value<Decimal> budgetedAmount,
+  Value<Decimal> actualAmount,
+  Value<Decimal> variance,
   Value<String> status,
   Value<DateTime> createdAt,
 });
@@ -104164,15 +105783,20 @@ class $$AccBudgetsTableFilterComposer
   ColumnFilters<String> get period => $composableBuilder(
       column: $table.period, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get budgetedAmount => $composableBuilder(
-      column: $table.budgetedAmount,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get budgetedAmount =>
+      $composableBuilder(
+          column: $table.budgetedAmount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get actualAmount => $composableBuilder(
-      column: $table.actualAmount, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get actualAmount =>
+      $composableBuilder(
+          column: $table.actualAmount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get variance => $composableBuilder(
-      column: $table.variance, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get variance =>
+      $composableBuilder(
+          column: $table.variance,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get status => $composableBuilder(
       column: $table.status, builder: (column) => ColumnFilters(column));
@@ -104239,15 +105863,15 @@ class $$AccBudgetsTableOrderingComposer
   ColumnOrderings<String> get period => $composableBuilder(
       column: $table.period, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get budgetedAmount => $composableBuilder(
+  ColumnOrderings<String> get budgetedAmount => $composableBuilder(
       column: $table.budgetedAmount,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get actualAmount => $composableBuilder(
+  ColumnOrderings<String> get actualAmount => $composableBuilder(
       column: $table.actualAmount,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get variance => $composableBuilder(
+  ColumnOrderings<String> get variance => $composableBuilder(
       column: $table.variance, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get status => $composableBuilder(
@@ -104315,13 +105939,15 @@ class $$AccBudgetsTableAnnotationComposer
   GeneratedColumn<String> get period =>
       $composableBuilder(column: $table.period, builder: (column) => column);
 
-  GeneratedColumn<double> get budgetedAmount => $composableBuilder(
-      column: $table.budgetedAmount, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get budgetedAmount =>
+      $composableBuilder(
+          column: $table.budgetedAmount, builder: (column) => column);
 
-  GeneratedColumn<double> get actualAmount => $composableBuilder(
-      column: $table.actualAmount, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get actualAmount =>
+      $composableBuilder(
+          column: $table.actualAmount, builder: (column) => column);
 
-  GeneratedColumn<double> get variance =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get variance =>
       $composableBuilder(column: $table.variance, builder: (column) => column);
 
   GeneratedColumn<String> get status =>
@@ -104399,9 +106025,9 @@ class $$AccBudgetsTableTableManager extends RootTableManager<
             Value<String> period = const Value.absent(),
             Value<String?> costCenterId = const Value.absent(),
             Value<String?> accountId = const Value.absent(),
-            Value<double> budgetedAmount = const Value.absent(),
-            Value<double> actualAmount = const Value.absent(),
-            Value<double> variance = const Value.absent(),
+            Value<Decimal> budgetedAmount = const Value.absent(),
+            Value<Decimal> actualAmount = const Value.absent(),
+            Value<Decimal> variance = const Value.absent(),
             Value<String> status = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
@@ -104423,9 +106049,9 @@ class $$AccBudgetsTableTableManager extends RootTableManager<
             required String period,
             Value<String?> costCenterId = const Value.absent(),
             Value<String?> accountId = const Value.absent(),
-            required double budgetedAmount,
-            Value<double> actualAmount = const Value.absent(),
-            required double variance,
+            required Decimal budgetedAmount,
+            Value<Decimal> actualAmount = const Value.absent(),
+            required Decimal variance,
             Value<String> status = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
@@ -104513,8 +106139,8 @@ typedef $$AccBankStatementsTableCreateCompanionBuilder
   required String accountId,
   Value<String?> statementReference,
   required DateTime statementDate,
-  required double openingBalance,
-  required double closingBalance,
+  required Decimal openingBalance,
+  required Decimal closingBalance,
   Value<String> currency,
   Value<String> status,
   Value<DateTime> createdAt,
@@ -104525,8 +106151,8 @@ typedef $$AccBankStatementsTableUpdateCompanionBuilder
   Value<String> accountId,
   Value<String?> statementReference,
   Value<DateTime> statementDate,
-  Value<double> openingBalance,
-  Value<double> closingBalance,
+  Value<Decimal> openingBalance,
+  Value<Decimal> closingBalance,
   Value<String> currency,
   Value<String> status,
   Value<DateTime> createdAt,
@@ -104590,13 +106216,15 @@ class $$AccBankStatementsTableFilterComposer
   ColumnFilters<DateTime> get statementDate => $composableBuilder(
       column: $table.statementDate, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get openingBalance => $composableBuilder(
-      column: $table.openingBalance,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get openingBalance =>
+      $composableBuilder(
+          column: $table.openingBalance,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get closingBalance => $composableBuilder(
-      column: $table.closingBalance,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get closingBalance =>
+      $composableBuilder(
+          column: $table.closingBalance,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get currency => $composableBuilder(
       column: $table.currency, builder: (column) => ColumnFilters(column));
@@ -104671,11 +106299,11 @@ class $$AccBankStatementsTableOrderingComposer
       column: $table.statementDate,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get openingBalance => $composableBuilder(
+  ColumnOrderings<String> get openingBalance => $composableBuilder(
       column: $table.openingBalance,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get closingBalance => $composableBuilder(
+  ColumnOrderings<String> get closingBalance => $composableBuilder(
       column: $table.closingBalance,
       builder: (column) => ColumnOrderings(column));
 
@@ -104727,11 +106355,13 @@ class $$AccBankStatementsTableAnnotationComposer
   GeneratedColumn<DateTime> get statementDate => $composableBuilder(
       column: $table.statementDate, builder: (column) => column);
 
-  GeneratedColumn<double> get openingBalance => $composableBuilder(
-      column: $table.openingBalance, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get openingBalance =>
+      $composableBuilder(
+          column: $table.openingBalance, builder: (column) => column);
 
-  GeneratedColumn<double> get closingBalance => $composableBuilder(
-      column: $table.closingBalance, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, String> get closingBalance =>
+      $composableBuilder(
+          column: $table.closingBalance, builder: (column) => column);
 
   GeneratedColumn<String> get currency =>
       $composableBuilder(column: $table.currency, builder: (column) => column);
@@ -104815,8 +106445,8 @@ class $$AccBankStatementsTableTableManager extends RootTableManager<
             Value<String> accountId = const Value.absent(),
             Value<String?> statementReference = const Value.absent(),
             Value<DateTime> statementDate = const Value.absent(),
-            Value<double> openingBalance = const Value.absent(),
-            Value<double> closingBalance = const Value.absent(),
+            Value<Decimal> openingBalance = const Value.absent(),
+            Value<Decimal> closingBalance = const Value.absent(),
             Value<String> currency = const Value.absent(),
             Value<String> status = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
@@ -104837,8 +106467,8 @@ class $$AccBankStatementsTableTableManager extends RootTableManager<
             required String accountId,
             Value<String?> statementReference = const Value.absent(),
             required DateTime statementDate,
-            required double openingBalance,
-            required double closingBalance,
+            required Decimal openingBalance,
+            required Decimal closingBalance,
             Value<String> currency = const Value.absent(),
             Value<String> status = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
@@ -104933,9 +106563,9 @@ typedef $$AccBankStatementLinesTableCreateCompanionBuilder
   required int statementId,
   required DateTime transactionDate,
   required String description,
-  Value<double> debit,
-  Value<double> credit,
-  Value<double?> balance,
+  Value<Decimal> debit,
+  Value<Decimal> credit,
+  Value<Decimal?> balance,
   Value<String?> reference,
   Value<String?> matchedJournalEntryId,
   Value<String> reconciliationStatus,
@@ -104947,9 +106577,9 @@ typedef $$AccBankStatementLinesTableUpdateCompanionBuilder
   Value<int> statementId,
   Value<DateTime> transactionDate,
   Value<String> description,
-  Value<double> debit,
-  Value<double> credit,
-  Value<double?> balance,
+  Value<Decimal> debit,
+  Value<Decimal> credit,
+  Value<Decimal?> balance,
   Value<String?> reference,
   Value<String?> matchedJournalEntryId,
   Value<String> reconciliationStatus,
@@ -105011,14 +106641,20 @@ class $$AccBankStatementLinesTableFilterComposer
   ColumnFilters<String> get description => $composableBuilder(
       column: $table.description, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get debit => $composableBuilder(
-      column: $table.debit, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get debit =>
+      $composableBuilder(
+          column: $table.debit,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get credit => $composableBuilder(
-      column: $table.credit, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get credit =>
+      $composableBuilder(
+          column: $table.credit,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get balance => $composableBuilder(
-      column: $table.balance, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal?, Decimal, String> get balance =>
+      $composableBuilder(
+          column: $table.balance,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get reference => $composableBuilder(
       column: $table.reference, builder: (column) => ColumnFilters(column));
@@ -105090,13 +106726,13 @@ class $$AccBankStatementLinesTableOrderingComposer
   ColumnOrderings<String> get description => $composableBuilder(
       column: $table.description, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get debit => $composableBuilder(
+  ColumnOrderings<String> get debit => $composableBuilder(
       column: $table.debit, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get credit => $composableBuilder(
+  ColumnOrderings<String> get credit => $composableBuilder(
       column: $table.credit, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get balance => $composableBuilder(
+  ColumnOrderings<String> get balance => $composableBuilder(
       column: $table.balance, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get reference => $composableBuilder(
@@ -105168,13 +106804,13 @@ class $$AccBankStatementLinesTableAnnotationComposer
   GeneratedColumn<String> get description => $composableBuilder(
       column: $table.description, builder: (column) => column);
 
-  GeneratedColumn<double> get debit =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get debit =>
       $composableBuilder(column: $table.debit, builder: (column) => column);
 
-  GeneratedColumn<double> get credit =>
+  GeneratedColumnWithTypeConverter<Decimal, String> get credit =>
       $composableBuilder(column: $table.credit, builder: (column) => column);
 
-  GeneratedColumn<double> get balance =>
+  GeneratedColumnWithTypeConverter<Decimal?, String> get balance =>
       $composableBuilder(column: $table.balance, builder: (column) => column);
 
   GeneratedColumn<String> get reference =>
@@ -105259,9 +106895,9 @@ class $$AccBankStatementLinesTableTableManager extends RootTableManager<
             Value<int> statementId = const Value.absent(),
             Value<DateTime> transactionDate = const Value.absent(),
             Value<String> description = const Value.absent(),
-            Value<double> debit = const Value.absent(),
-            Value<double> credit = const Value.absent(),
-            Value<double?> balance = const Value.absent(),
+            Value<Decimal> debit = const Value.absent(),
+            Value<Decimal> credit = const Value.absent(),
+            Value<Decimal?> balance = const Value.absent(),
             Value<String?> reference = const Value.absent(),
             Value<String?> matchedJournalEntryId = const Value.absent(),
             Value<String> reconciliationStatus = const Value.absent(),
@@ -105285,9 +106921,9 @@ class $$AccBankStatementLinesTableTableManager extends RootTableManager<
             required int statementId,
             required DateTime transactionDate,
             required String description,
-            Value<double> debit = const Value.absent(),
-            Value<double> credit = const Value.absent(),
-            Value<double?> balance = const Value.absent(),
+            Value<Decimal> debit = const Value.absent(),
+            Value<Decimal> credit = const Value.absent(),
+            Value<Decimal?> balance = const Value.absent(),
             Value<String?> reference = const Value.absent(),
             Value<String?> matchedJournalEntryId = const Value.absent(),
             Value<String> reconciliationStatus = const Value.absent(),
@@ -105716,12 +107352,12 @@ class $AppDatabaseManager {
       $$CategoriesTableTableManager(_db, _db.categories);
   $$GLAccountsTableTableManager get gLAccounts =>
       $$GLAccountsTableTableManager(_db, _db.gLAccounts);
+  $$CurrenciesTableTableManager get currencies =>
+      $$CurrenciesTableTableManager(_db, _db.currencies);
   $$SuppliersTableTableManager get suppliers =>
       $$SuppliersTableTableManager(_db, _db.suppliers);
   $$ProductsTableTableManager get products =>
       $$ProductsTableTableManager(_db, _db.products);
-  $$CurrenciesTableTableManager get currencies =>
-      $$CurrenciesTableTableManager(_db, _db.currencies);
   $$CustomersTableTableManager get customers =>
       $$CustomersTableTableManager(_db, _db.customers);
   $$WarehousesTableTableManager get warehouses =>
@@ -105866,6 +107502,8 @@ class $AppDatabaseManager {
   $$HRAdditionalDeductionsTableTableManager get hRAdditionalDeductions =>
       $$HRAdditionalDeductionsTableTableManager(
           _db, _db.hRAdditionalDeductions);
+  $$ExchangeRatesTableTableManager get exchangeRates =>
+      $$ExchangeRatesTableTableManager(_db, _db.exchangeRates);
   $$AccCurrenciesTableTableManager get accCurrencies =>
       $$AccCurrenciesTableTableManager(_db, _db.accCurrencies);
   $$AccExchangeRatesTableTableManager get accExchangeRates =>

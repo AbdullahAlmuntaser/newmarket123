@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
@@ -32,7 +31,7 @@ class ReturnService {
             SalesReturnsCompanion.insert(
               id: Value(returnId),
               saleId: saleId,
-              amountReturned: totalAmount,
+              amountReturned: Value(Decimal.parse(totalAmount.toString())),
               reason: Value(reason),
             ),
           );
@@ -46,8 +45,8 @@ class ReturnService {
                 id: Value(const Uuid().v4()),
                 salesReturnId: returnId,
                 productId: item.productId,
-                quantity: item.quantity,
-                price: item.price,
+                quantity: Decimal.parse(item.quantity.toString()),
+                price: Decimal.parse(item.price.toString()),
               ),
             );
 
@@ -192,7 +191,7 @@ class ReturnService {
             PurchaseReturnsCompanion.insert(
               id: Value(returnId),
               purchaseId: purchaseId,
-              amountReturned: totalAmount,
+              amountReturned: Value(Decimal.parse(totalAmount.toString())),
               reason: Value(reason),
             ),
           );
@@ -204,8 +203,8 @@ class ReturnService {
                 id: Value(const Uuid().v4()),
                 purchaseReturnId: returnId,
                 productId: item.productId,
-                quantity: item.quantity,
-                price: item.price,
+                quantity: Decimal.parse(item.quantity.toString()),
+                price: Decimal.parse(item.price.toString()),
               ),
             );
 

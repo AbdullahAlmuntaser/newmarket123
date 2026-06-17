@@ -171,7 +171,7 @@ class _PosViewState extends State<PosView> {
     final result = await showGeneralDialog<String>(
       context: context,
       pageBuilder: (context, animation, secondaryAnimation) =>
-          const BarcodeScannerDialog(),
+          BarcodeScannerDialog(),
     );
     if (result != null && mounted) {
       posBloc.add(AddProductBySku(result));
@@ -191,10 +191,8 @@ class _PosViewState extends State<PosView> {
       ),
     );
 
-    context.read<PosBloc>().add(ClearCart());
-
     if (!mounted) return;
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
 
     String customerName = 'عميل نقدي';
@@ -220,7 +218,7 @@ class _PosViewState extends State<PosView> {
 
     if (!context.mounted) return;
 
-    showDialog(
+    await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('🧾 الفاتورة #${state.sale.id.substring(0, 8)}'),
@@ -280,5 +278,9 @@ class _PosViewState extends State<PosView> {
         ],
       ),
     );
+
+    if (context.mounted) {
+      context.read<PosBloc>().add(ClearCart());
+    }
   }
 }

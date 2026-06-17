@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:decimal/decimal.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class CartItem extends Equatable {
@@ -73,7 +72,7 @@ class PosLoading extends PosState {}
 class PosLoaded extends PosState {
   final List<CartItem> cart;
   final Decimal discount;
-  final Decimal taxRate; // e.g. 0.15 for 15%
+  final Decimal taxRate;
   final bool isWholesaleMode;
   final List<Product> searchResults;
   final List<Category> categories;
@@ -81,6 +80,9 @@ class PosLoaded extends PosState {
   final List<Product> filteredProducts;
   final String? activePriceListId;
   final bool isProcessingCheckout;
+  final bool isReturnMode;
+  final Sale? originalSale;
+  final List<ReturnItem> returnItems;
 
   PosLoaded({
     this.cart = const [],
@@ -93,6 +95,9 @@ class PosLoaded extends PosState {
     this.filteredProducts = const [],
     this.activePriceListId,
     this.isProcessingCheckout = false,
+    this.isReturnMode = false,
+    this.originalSale,
+    this.returnItems = const [],
   })  : discount = discount ?? Decimal.zero,
         taxRate = taxRate ?? Decimal.zero;
 
@@ -100,6 +105,9 @@ class PosLoaded extends PosState {
       cart.fold(Decimal.zero, (sum, item) => sum + item.total);
   Decimal get taxAmount => (subtotal - discount) * taxRate;
   Decimal get total => (subtotal - discount) + taxAmount;
+
+  Decimal get returnTotal =>
+      returnItems.fold(Decimal.zero, (sum, item) => sum + item.total);
 
   PosLoaded copyWith({
     List<CartItem>? cart,
@@ -112,6 +120,10 @@ class PosLoaded extends PosState {
     List<Product>? filteredProducts,
     String? activePriceListId,
     bool? isProcessingCheckout,
+    bool? isReturnMode,
+    Sale? originalSale,
+    List<ReturnItem>? returnItems,
+    bool clearOriginalSale = false,
   }) {
     return PosLoaded(
       cart: cart ?? this.cart,
@@ -124,6 +136,9 @@ class PosLoaded extends PosState {
       filteredProducts: filteredProducts ?? this.filteredProducts,
       activePriceListId: activePriceListId ?? this.activePriceListId,
       isProcessingCheckout: isProcessingCheckout ?? this.isProcessingCheckout,
+      isReturnMode: isReturnMode ?? this.isReturnMode,
+      originalSale: clearOriginalSale ? null : (originalSale ?? this.originalSale),
+      returnItems: returnItems ?? this.returnItems,
     );
   }
 
@@ -139,7 +154,39 @@ class PosLoaded extends PosState {
         filteredProducts,
         activePriceListId,
         isProcessingCheckout,
+        isReturnMode,
+        originalSale,
+        returnItems,
       ];
+}
+
+class ReturnItem extends Equatable {
+  final String productId;
+  final String? batchId;
+  final Decimal quantity;
+  final Decimal unitPrice;
+  final String reason;
+
+  const ReturnItem({
+    required this.productId,
+    this.batchId,
+    required this.quantity,
+    required this.unitPrice,
+    this.reason = '',
+  });
+
+  Decimal get total => quantity * unitPrice;
+
+  ReturnItem copyWith({Decimal? quantity, String? reason}) => ReturnItem(
+        productId: productId,
+        batchId: batchId,
+        quantity: quantity ?? this.quantity,
+        unitPrice: unitPrice,
+        reason: reason ?? this.reason,
+      );
+
+  @override
+  List<Object?> get props => [productId, batchId, quantity, unitPrice, reason];
 }
 
 class PosError extends PosState {
@@ -150,9 +197,19 @@ class PosError extends PosState {
 class PosCheckoutSuccess extends PosState {
   final Sale sale;
   final List<SaleItem> items;
-  final List<Product> products; // Need products for names/etc.
+  final List<Product> products;
   const PosCheckoutSuccess(this.sale, this.items, this.products);
 
   @override
   List<Object?> get props => [sale, items, products];
+}
+
+class PosReturnSuccess extends PosState {
+  final String returnId;
+  final Sale originalSale;
+  final Decimal totalRefund;
+  const PosReturnSuccess(this.returnId, this.originalSale, this.totalRefund);
+
+  @override
+  List<Object?> get props => [returnId, originalSale, totalRefund];
 }

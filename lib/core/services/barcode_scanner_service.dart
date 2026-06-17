@@ -57,11 +57,14 @@ class BarcodeScannerService {
   static BarcodeFormat? detectFormat(String barcode) {
     if (barcode.isEmpty) return null;
     
-    if (RegExp(r'^\d{8}$|^\d{13}$').hasMatch(barcode)) {
-      return BarcodeFormat.ean13;
+    if (RegExp(r'^\d{8}$').hasMatch(barcode)) {
+      return BarcodeFormat.ean8;
     }
     if (RegExp(r'^\d{12}$').hasMatch(barcode)) {
-      return BarcodeFormat.ean8;
+      return BarcodeFormat.ean13;
+    }
+    if (RegExp(r'^\d{13}$').hasMatch(barcode)) {
+      return BarcodeFormat.ean13;
     }
     if (barcode.startsWith('01') && barcode.length >= 14) {
       return BarcodeFormat.code128;

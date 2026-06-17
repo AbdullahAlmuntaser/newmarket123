@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:drift/drift.dart' hide Column;
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:provider/provider.dart';
+import 'package:supermarket/presentation/features/sales/models/sales_line_item.dart';
 import 'package:supermarket/presentation/widgets/money_form_field.dart';
 
 class SalesItemRow extends StatefulWidget {
   final int index;
   final SalesLineItem item;
-  final List<Product> products;
+  final AppDatabase db;
   final VoidCallback onDelete;
   final VoidCallback onChanged;
   final String? customerId;
@@ -15,7 +16,7 @@ class SalesItemRow extends StatefulWidget {
     super.key,
     required this.index,
     required this.item,
-    required this.products,
+    required this.db,
     required this.onDelete,
     required this.onChanged,
     this.customerId,
@@ -26,9 +27,27 @@ class SalesItemRow extends StatefulWidget {
 }
 
 class _SalesItemRowState extends State<SalesItemRow> {
+  List<Product> _searchResults = [];
+
+  Future<void> _searchProducts(String query) async {
+    if (query.length < 2) {
+      setState(() => _searchResults = []);
+      return;
+    }
+    try {
+      final results = await (widget.db.select(widget.db.products)
+            ..where((p) =>
+                p.name.like('%$query%') | p.sku.like('%$query%') | p.barcode.like('%$query%'))
+            ..limit(20))
+          .get();
+      if (mounted) setState(() => _searchResults = results);
+    } catch (_) {
+      // Handle error if needed
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final db = context.watch<AppDatabase>();
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: Padding(
@@ -48,8 +67,11 @@ class _SalesItemRowState extends State<SalesItemRow> {
                       displayStringForOption: (p) => p.name,
                       initialValue: TextEditingValue(
                           text: widget.item.product?.name ?? ''),
-                      optionsBuilder: (v) => widget.products.where((p) =>
-                          p.name.toLowerCase().contains(v.text.toLowerCase())),
+                      optionsBuilder: (v) {
+                        if (v.text.isEmpty) return [];
+                        _searchProducts(v.text);
+                        return _searchResults;
+                      },
                       onSelected: (p) {
                         setState(() {
                           widget.item.product = p;
@@ -58,46 +80,77 @@ class _SalesItemRowState extends State<SalesItemRow> {
                         });
                         widget.onChanged();
                       },
-                    )),
-                const SizedBox(width: 8),
-                Expanded(
-                    flex: 1,
-                    child: QuantityFormField(
-                      initialValue: widget.item.quantity.toString(),
-                      label: 'الكمية',
-                      decoration: const InputDecoration(labelText: 'الكمية'),
-                      onValidChanged: (value) {
-                        widget.item.quantity = value;
-                        widget.onChanged();
-                      },
-                    )),
-                const SizedBox(width: 8),
-                Expanded(
-                    flex: 1,
-                    child: StreamBuilder<List<CostCenter>>(
-                      stream: db.select(db.costCenters).watch(),
-                      builder: (context, snapshot) {
-                        return DropdownButtonFormField<String?>(
-                          value: widget.item.costCenterId,
-                          decoration:
-                              const InputDecoration(labelText: 'مركز التكلفة'),
-                          items: [
-                            const DropdownMenuItem(
-                                value: null, child: Text('لا يوجد')),
-                            ...snapshot.data?.map((cc) => DropdownMenuItem(
-                                    value: cc.id, child: Text(cc.name))) ??
-                                []
-                          ],
-                          onChanged: (val) {
-                            setState(() => widget.item.costCenterId = val);
-                            widget.onChanged();
-                          },
+                      optionsViewBuilder: (context, onSelected, options) {
+                        return Align(
+                          alignment: Alignment.topLeft,
+                          child: Material(
+                            elevation: 8,
+                            child: SizedBox(
+                              height: 200,
+                              child: ListView.builder(
+                                itemCount: options.length,
+                                itemBuilder: (context, index) {
+                                  final product = options.elementAt(index);
+                                  return ListTile(
+                                    title: Text(product.name),
+                                    subtitle: Text('SKU: ${product.sku} | السعر: ${product.sellPrice}'),
+                                    onTap: () => onSelected(product),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
                         );
                       },
                     )),
                 IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: widget.onDelete),
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  onPressed: widget.onDelete,
+                  tooltip: 'حذف',
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    decoration: const InputDecoration(
+                      labelText: 'الكمية',
+                      isDense: true,
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    controller: TextEditingController(
+                        text: widget.item.quantity.toString()),
+                    onChanged: (v) {
+                      final qty = double.tryParse(v);
+                      if (qty != null && qty > 0) {
+                        setState(() => widget.item.quantity = qty);
+                        widget.onChanged();
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: MoneyFormField(
+                    label: 'السعر',
+                    decoration: const InputDecoration(
+                      labelText: 'السعر',
+                      isDense: true,
+                      border: OutlineInputBorder(),
+                    ),
+                    initialValue: widget.item.price.toString(),
+                    onChanged: (v) {
+                      final price = double.tryParse(v);
+                      if (price != null) {
+                        setState(() => widget.item.price = price);
+                        widget.onChanged();
+                      }
+                    },
+                  ),
+                ),
               ],
             ),
           ],
@@ -105,49 +158,4 @@ class _SalesItemRowState extends State<SalesItemRow> {
       ),
     );
   }
-}
-
-class SalesLineItem {
-  Product? product;
-  String selectedUnit;
-  double _quantity;
-  double _price;
-  double discount;
-  double taxRate;
-  double unitFactor;
-  String? costCenterId;
-
-  double get lineTotal {
-    final subtotal = quantity * price;
-    final afterDiscount = subtotal - discount;
-    return afterDiscount + (afterDiscount * (taxRate / 100));
-  }
-
-  double get quantity => _quantity;
-  set quantity(double value) {
-    if (value <= 0) {
-      throw Exception('الكمية يجب أن تكون أكبر من الصفر.');
-    }
-    _quantity = value;
-  }
-
-  double get price => _price;
-  set price(double value) {
-    if (value < 0) {
-      throw Exception('السعر يجب أن يكون أكبر من أو يساوي الصفر.');
-    }
-    _price = value;
-  }
-
-  SalesLineItem({
-    this.product,
-    this.selectedUnit = 'حبة',
-    double quantity = 1.0,
-    double price = 0.0,
-    this.discount = 0.0,
-    this.taxRate = 0.0,
-    this.unitFactor = 1.0,
-    this.costCenterId,
-  })  : _quantity = quantity,
-        _price = price;
 }

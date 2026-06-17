@@ -164,7 +164,7 @@ class PrinterHelper {
       bytes += generator.row([
         PosColumn(text: product.name, width: 6),
         PosColumn(text: item.quantity.toString(), width: 2),
-        PosColumn(text: item.price.toString(), width: 2),
+        PosColumn(text: item.price.toStringAsFixed(2), width: 2),
         PosColumn(
           text: (item.quantity * item.price).toStringAsFixed(2),
           width: 2,

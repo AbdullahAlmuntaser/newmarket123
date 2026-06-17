@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -225,6 +224,14 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
   void _saveEntry(AccountingProvider provider) async {
     if (_descriptionController.text.trim().isEmpty) {
       AppSnackBar.warning(context, 'يرجى إدخال وصف القيد');
+      return;
+    }
+
+    final db = context.read<AppDatabase>();
+    final inClosedPeriod = await db.accountingDao.isDateInClosedPeriod(_selectedDate);
+    if (!mounted) return;
+    if (inClosedPeriod) {
+      AppSnackBar.error(context, 'لا يمكن الترحيل لفترة محاسبية مغلقة');
       return;
     }
 

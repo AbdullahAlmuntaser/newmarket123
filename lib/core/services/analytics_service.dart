@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
@@ -67,6 +66,6 @@ class AnalyticsService {
       startDate: startDate,
       endDate: endDate,
     );
-    return incomeStatement.netIncome;
+    return incomeStatement.netIncome.toDouble();
   }
 }

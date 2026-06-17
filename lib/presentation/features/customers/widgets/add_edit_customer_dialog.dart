@@ -1,6 +1,5 @@
 import 'dart:developer' as developer;
 
-import 'package:decimal/decimal.dart';
 
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart' as drift;

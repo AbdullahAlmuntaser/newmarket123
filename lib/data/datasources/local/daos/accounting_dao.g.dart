@@ -26,13 +26,13 @@ TrialBalanceItem _$TrialBalanceItemFromJson(Map<String, dynamic> json) =>
     TrialBalanceItem(
       const GLAccountConverter()
           .fromJson(json['account'] as Map<String, dynamic>),
-      (json['totalDebit'] as num).toDouble(),
-      (json['totalCredit'] as num).toDouble(),
+      Decimal.fromJson(json['totalDebit'] as String),
+      Decimal.fromJson(json['totalCredit'] as String),
     );
 
 Map<String, dynamic> _$TrialBalanceItemToJson(TrialBalanceItem instance) =>
     <String, dynamic>{
       'account': const GLAccountConverter().toJson(instance.account),
-      'totalDebit': instance.totalDebit,
-      'totalCredit': instance.totalCredit,
+      'totalDebit': instance.totalDebit.toJson(),
+      'totalCredit': instance.totalCredit.toJson(),
     };

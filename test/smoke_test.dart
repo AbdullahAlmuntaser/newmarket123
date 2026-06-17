@@ -4,9 +4,14 @@ import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/core/services/fixed_assets_service.dart';
 import 'package:supermarket/core/services/payroll_service.dart';
+import 'package:supermarket/core/services/security_service.dart';
 import 'package:drift/native.dart';
 
 void main() {
+  setUpAll(() {
+    SecurityService.useFakeKeyForTesting = true;
+  });
+
   test('smoke: payroll and fixed assets flows', () async {
     final db = AppDatabase(NativeDatabase.memory());
 
@@ -52,7 +57,7 @@ void main() {
     final fixedService = FixedAssetsService(db);
 
     final catId = await db.into(db.accAssetCategories).insert(AccAssetCategoriesCompanion.insert(name: 'Machinery', code: 'M01'));
-    final assetId = await db.into(db.fixedAssets).insert(FixedAssetsCompanion.insert(name: 'Machine A', categoryId: catId, cost: 1200, purchaseDate: DateTime.now(), acquisitionDate: DateTime.now(), usefulLifeYears: 5));
+    final assetId = await db.into(db.fixedAssets).insert(FixedAssetsCompanion.insert(name: 'Machine A', categoryId: catId, cost: Decimal.fromInt(1200), purchaseDate: DateTime.now(), acquisitionDate: DateTime.now(), usefulLifeYears: 5));
 
     // run depreciation (should create journal entry and log)
     final results = await fixedService.runMonthlyDepreciation(DateTime.now());

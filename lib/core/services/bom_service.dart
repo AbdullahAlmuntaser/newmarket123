@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
@@ -136,7 +135,7 @@ class BomService {
               productId: finishedProductId,
               warehouseId: warehouseId,
               batchId: Value(finalBatchNumber),
-              quantity: producedQuantity,
+              quantity: Value(Decimal.parse(producedQuantity.toString())),
               type: 'ASSEMBLY_PRODUCE',
               referenceId:
                   'ASSEMBLY-${DateTime.now().millisecondsSinceEpoch.toString()}',
@@ -187,7 +186,7 @@ class BomService {
               productId: productId,
               warehouseId: warehouseId,
               batchId: Value(batch.id),
-              quantity: -consumeQty.toDouble(),
+              quantity: Value(Decimal.parse((-consumeQty).toString())),
               type: type,
               referenceId: referenceId,
             ),

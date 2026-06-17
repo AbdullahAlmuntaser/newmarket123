@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/core/utils/erp_logic.dart';
+import 'package:supermarket/core/utils/erp_logic.dart' as erp;
+import 'package:supermarket/core/utils/quantity.dart';
 
 class SmartStockWidget extends StatelessWidget {
   final Product product;
@@ -19,10 +20,13 @@ class SmartStockWidget extends StatelessWidget {
           .watch(),
       builder: (context, snapshot) {
         final conversions = snapshot.data ?? [];
-        final formattedStock = ErpLogic.formatInventory(
-          totalBaseQty: product.stock.toDouble(),
+        final erpConversions = conversions
+            .map((c) => erp.UnitConversion(unitName: c.unitName, factor: c.factor))
+            .toList();
+        final formattedStock = erp.ErpLogic.formatInventory(
+          totalBaseQty: Quantity(product.stock),
           baseUnitName: product.unit,
-          conversions: conversions,
+          conversions: erpConversions,
         );
 
         return Text(

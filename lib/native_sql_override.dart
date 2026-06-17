@@ -18,22 +18,27 @@ import 'dart:ffi' if (dart.library.js) 'package:supermarket/dummy_ffi.dart';
 /// succeeds with `open.overrideFor` for Android. If none are found it will
 /// fall back to `DynamicLibrary.process()` as a last resort.
 void applyNativeSqlOverride() {
-  if (kIsWeb || !Platform.isAndroid) return;
+  if (kIsWeb) return;
 
-  open.overrideFor(OperatingSystem.android, () {
+  final os = Platform.isAndroid ? OperatingSystem.android : (Platform.isLinux ? OperatingSystem.linux : null);
+  if (os == null) return;
+
+  open.overrideFor(os, () {
     DynamicLibrary? lib;
     final candidates = <String>[
-      'libsqlcipher.so', // preferred (SQLCipher)
-      'libsqlite3.so', // common name used by some builds
-      'libsqlite.so', // fallback variant
+      'libsqlcipher.so',
+      'libsqlcipher.so.0',
+      'libsqlite3.so',
+      'libsqlite3.so.0',
     ];
 
-    // Workaround for some Android versions where the library name alone
-    // might not be enough to locate it.
-    const packageId = 'com.example.systemmarket';
-    final fallbackPaths = candidates.map((name) => '/data/data/$packageId/lib/$name').toList();
-
-    final allAttempts = [...candidates, ...fallbackPaths];
+    List<String> allAttempts = [...candidates];
+    
+    if (Platform.isAndroid) {
+      const packageId = 'com.example.systemmarket';
+      final fallbackPaths = candidates.map((name) => '/data/data/$packageId/lib/$name').toList();
+      allAttempts.addAll(fallbackPaths);
+    }
 
     for (final name in allAttempts) {
       try {
@@ -48,10 +53,13 @@ void applyNativeSqlOverride() {
 
     if (lib != null) return lib;
 
-    // Last-resort: If no candidate library could be loaded, fail.
-    // We intentionally do NOT fall back to DynamicLibrary.process() here
-    // because that would risk opening an unencrypted database if SQLCipher
-    // is expected.
+    // Last-resort for non-Android: let sqlite3 package find it
+    if (!Platform.isAndroid) {
+       try {
+         return DynamicLibrary.process();
+       } catch (_) {}
+    }
+
     debugPrint('native_sql_override: critical failure - no sqlite3/sqlcipher library found.');
     throw Exception('Failed to load SQLCipher native library. Encryption cannot be guaranteed.');
   });

@@ -256,8 +256,8 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
             id: Value(const Uuid().v4()),
             purchaseReturnId: returnId,
             productId: productId,
-            quantity: qty,
-            price: item.price.toDouble(),
+            quantity: Decimal.parse(qty.toString()),
+            price: Decimal.parse(item.price.toString()),
             syncStatus: const Value(1),
           ),
         );
@@ -267,7 +267,7 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
     final returnCompanion = PurchaseReturnsCompanion.insert(
       id: Value(returnId),
       purchaseId: _selectedPurchase!.id,
-      amountReturned: totalReturnedAmount,
+      amountReturned: Value(Decimal.parse(totalReturnedAmount.toString())),
       createdAt: Value(DateTime.now()),
       updatedAt: Value(DateTime.now()),
       syncStatus: const Value(1),

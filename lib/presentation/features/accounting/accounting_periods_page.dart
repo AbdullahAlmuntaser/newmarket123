@@ -366,6 +366,24 @@ class _AccountingPeriodsPageState extends State<AccountingPeriodsPage> {
       return;
     }
 
+    // Check for GL entries in this period's date range
+    final entryCount = await (db.select(db.gLEntries)
+      ..where((e) => e.date.isBiggerOrEqual(drift.Variable(period.startDate)))
+      ..where((e) => e.date.isSmallerOrEqual(drift.Variable(period.endDate))))
+        .get();
+
+    if (!mounted) return;
+
+    if (entryCount.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('لا يمكن حذف الفترة: توجد قيود محاسبية مسجلة ضمن هذه الفترة'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     await (db.delete(
       db.accountingPeriods,
     )..where((p) => p.id.equals(period.id)))

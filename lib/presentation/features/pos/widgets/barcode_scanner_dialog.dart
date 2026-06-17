@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class BarcodeScannerDialog extends StatelessWidget {
-  const BarcodeScannerDialog({super.key});
+  final MobileScannerController controller = MobileScannerController();
+
+  BarcodeScannerDialog({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -12,11 +14,15 @@ class BarcodeScannerDialog extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.flash_on),
-            onPressed: () {}, // Handled by controller if needed
+            onPressed: () {
+              // Toggle flashlight
+              controller.toggleTorch();
+            },
           ),
         ],
       ),
       body: MobileScanner(
+        controller: controller,
         onDetect: (capture) {
           final List<Barcode> barcodes = capture.barcodes;
           if (barcodes.isNotEmpty) {

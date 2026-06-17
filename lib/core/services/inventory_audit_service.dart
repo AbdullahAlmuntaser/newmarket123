@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
@@ -14,12 +13,12 @@ class InventoryAuditService {
           .get();
 
       for (var item in auditItems) {
-        if (item.difference != 0) {
+        if (item.difference != Decimal.zero) {
           await db
               .into(db.stockMovements)
               .insert(StockMovementsCompanion.insert(
                 productId: item.productId,
-                quantity: Decimal.parse(item.difference.toString()),
+                quantity: item.difference,
                 type: 'ADJUSTMENT',
                 referenceId: Value(auditId),
               ));

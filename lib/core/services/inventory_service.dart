@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -191,8 +190,8 @@ class InventoryService {
         await db.into(db.inventoryAuditItems).insert(
               item.copyWith(
                 auditId: drift.Value(auditId),
-                systemStock: drift.Value(systemStockDecimal.toDouble()),
-                difference: drift.Value(differenceDecimal.toDouble()),
+                systemStock: drift.Value(systemStockDecimal),
+                difference: drift.Value(differenceDecimal),
               ),
             );
 
@@ -484,19 +483,19 @@ class InventoryService {
                 productId: productId,
                 warehouseId: fromWarehouseId,
                 batchId: drift.Value(batchId),
-                quantity: -qty,
+                quantity: Value(-qty),
                 type: 'TRANSFER_OUT',
                 referenceId: transferId,
               ),
             );
 
+        final targetBatchId = targetBatch?.id ?? const Uuid().v4();
         await db.into(db.inventoryTransactions).insert(
               InventoryTransactionsCompanion.insert(
                 productId: productId,
                 warehouseId: toWarehouseId,
-                batchId: drift.Value(
-                    batchId), // نستخدم نفس المعرف المرجعي أو نحدثه لاحقاً
-                quantity: qty,
+                batchId: drift.Value(targetBatchId),
+                quantity: Value(qty),
                 type: 'TRANSFER_IN',
                 referenceId: transferId,
               ),

@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
@@ -99,7 +98,7 @@ class DashboardService {
     final cashAccount = await db.accountingDao.getAccountByCode('1010');
     double cashBalance = 0;
     if (cashAccount != null) {
-      cashBalance = await db.accountingDao.getAccountBalance(cashAccount.id);
+      cashBalance = (await db.accountingDao.getAccountBalance(cashAccount.id)).toDouble();
     }
 
     final lowStock = await (db.select(db.products)

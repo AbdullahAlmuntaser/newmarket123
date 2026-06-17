@@ -2,10 +2,11 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:drift/drift.dart';
-import 'package:decimal/decimal.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/pricing_service.dart';
 import 'package:supermarket/core/services/packaging_engine.dart';
+import 'package:supermarket/core/services/app_config_service.dart';
+import 'package:supermarket/data/datasources/local/daos/products_dao.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_event.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_state.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
@@ -17,7 +18,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
   final PricingService pricingService;
   final TransactionEngine transactionEngine;
   final PackagingEngine packagingEngine;
-  late StreamSubscription _productSubscription;
+  late StreamSubscription<List<ProductWithCategory>> _productSubscription;
 
   PosBloc(this.db, this.pricingService, this.transactionEngine, this.packagingEngine,
       {bool skipInit = false})
@@ -27,8 +28,15 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     on<AddProductBySku>(_onAddProduct);
     on<UpdateCartItemQuantity>(_onUpdateQuantity);
     on<RemoveCartItem>(_onRemoveItem);
-    on<UpdateDiscount>((event, emit) {
+    on<UpdateDiscount>((event, emit) async {
       if (state is PosLoaded) {
+        final configService = AppConfigService(db);
+        final maxStr = await configService.getString('max_discount_percent');
+        final maxDiscount = Decimal.tryParse(maxStr ?? '') ?? Decimal.fromInt(20);
+        if (event.discount > maxDiscount) {
+          emit(PosError('الخصم يتجاوز الحد المسموح به (${maxDiscount.toStringAsFixed(0)}%)'));
+          return;
+        }
         emit((state as PosLoaded).copyWith(discount: event.discount));
       }
     });
@@ -62,18 +70,193 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       }
     });
 
+    // ==================== RETURN MODE HANDLERS ====================
+
+    void onToggleReturnMode(ToggleReturnMode event, Emitter<PosState> emit) {
+      if (state is! PosLoaded) return;
+      emit((state as PosLoaded).copyWith(
+        isReturnMode: event.isReturnMode,
+        returnItems: const [],
+        clearOriginalSale: true,
+      ));
+    }
+
+    Future<void> onLookupOriginalSale(
+      LookupOriginalSale event,
+      Emitter<PosState> emit,
+    ) async {
+      if (state is! PosLoaded) return;
+      emit(PosLoading());
+
+      try {
+        final sale = await (db.select(db.sales)
+              ..where((s) => s.id.like('${event.saleReference}%'))
+              ..where((s) => s.status.equals(DocumentStatus.posted.index)))
+            .getSingleOrNull();
+
+        if (sale == null) {
+          emit(const PosError('الفاتورة الأصلية غير موجودة'));
+          emit(state);
+          return;
+        }
+
+        final items = await (db.select(db.saleItems)
+              ..where((si) => si.saleId.equals(sale.id)))
+            .get();
+
+        final products = <Product>[];
+        for (final item in items) {
+          final product = await (db.select(db.products)
+                ..where((p) => p.id.equals(item.productId)))
+              .getSingleOrNull();
+          if (product != null) products.add(product);
+        }
+
+        final returnItems = items.map((item) => ReturnItem(
+              productId: item.productId,
+              quantity: Decimal.zero,
+              unitPrice: item.price,
+              reason: '',
+            )).toList();
+
+        emit((PosLoaded(
+          categories: const [],
+          taxRate: Decimal.zero,
+        )).copyWith(
+          isReturnMode: true,
+          originalSale: sale,
+          cart: const [],
+          returnItems: returnItems,
+        ));
+      } catch (e) {
+        emit(PosError('خطأ في البحث عن الفاتورة: $e'));
+      }
+    }
+
+    Future<void> onAddReturnItem(
+      AddReturnItem event,
+      Emitter<PosState> emit,
+    ) async {
+      if (state is! PosLoaded) return;
+      final currentState = state as PosLoaded;
+
+      final existingIndex =
+          currentState.returnItems.indexWhere((i) => i.productId == event.productId);
+      final updated = List<ReturnItem>.from(currentState.returnItems);
+
+      if (existingIndex >= 0) {
+        updated[existingIndex] = updated[existingIndex].copyWith(
+          quantity: event.quantity,
+          reason: event.reason,
+        );
+      } else {
+        updated.add(ReturnItem(
+          productId: event.productId,
+          batchId: event.batchId,
+          quantity: event.quantity,
+          unitPrice: event.unitPrice,
+          reason: event.reason,
+        ));
+      }
+
+      emit(currentState.copyWith(returnItems: updated));
+    }
+
+    Future<void> onProcessReturn(
+      ProcessReturn event,
+      Emitter<PosState> emit,
+    ) async {
+      if (state is! PosLoaded) return;
+      final currentState = state as PosLoaded;
+      if (currentState.returnItems.isEmpty) return;
+
+      final itemsToReturn =
+          currentState.returnItems.where((i) => i.quantity > Decimal.zero).toList();
+      if (itemsToReturn.isEmpty) {
+        emit(const PosError('لم يتم تحديد أي أصناف للمرتجع'));
+        return;
+      }
+
+      emit((state as PosLoaded).copyWith(isProcessingCheckout: true));
+
+      try {
+        final returnId = const Uuid().v4();
+        final totalRefund =
+            itemsToReturn.fold(Decimal.zero, (s, i) => s + i.total);
+
+        await db.into(db.salesReturns).insert(
+              SalesReturnsCompanion.insert(
+                id: Value(returnId),
+                saleId: event.originalSaleId,
+                amountReturned: Value(totalRefund),
+                createdAt: Value(DateTime.now()),
+              ),
+            );
+
+        for (final item in itemsToReturn) {
+          await db.into(db.salesReturnItems).insert(
+                SalesReturnItemsCompanion.insert(
+                  salesReturnId: returnId,
+                  productId: item.productId,
+                  batchId: Value(item.batchId),
+                  quantity: item.quantity,
+                  price: item.unitPrice,
+                ),
+              );
+        }
+
+        await transactionEngine.postSaleReturn(returnId);
+
+        final originalSale = await (db.select(db.sales)
+              ..where((s) => s.id.equals(event.originalSaleId)))
+            .getSingle();
+
+        emit(PosReturnSuccess(returnId, originalSale, totalRefund));
+      } catch (e) {
+        emit(PosError('خطأ في معالجة المرتجع: $e'));
+        emit(currentState.copyWith(isProcessingCheckout: false));
+      }
+    }
+
+    // Return mode events
+    on<ToggleReturnMode>(onToggleReturnMode);
+    on<LookupOriginalSale>(onLookupOriginalSale);
+    on<AddReturnItem>(onAddReturnItem);
+    on<RemoveReturnItem>((event, emit) {
+      if (state is! PosLoaded) return;
+      final currentState = state as PosLoaded;
+      emit(currentState.copyWith(
+        returnItems: currentState.returnItems
+            .where((i) => i.productId != event.productId)
+            .toList(),
+      ));
+    });
+    on<ProcessReturn>(onProcessReturn);
+    on<ClearReturn>((event, emit) {
+      if (state is! PosLoaded) return;
+      emit((state as PosLoaded).copyWith(
+        isReturnMode: false,
+        returnItems: const [],
+        clearOriginalSale: true,
+      ));
+    });
+
     if (!skipInit) {
       _productSubscription = db.productsDao
           .watchProducts()
           .handleError((e) => developer.log("PosBloc Error: $e"))
-          .listen((_) {
+          .listen((products) {
         if (state is PosLoaded && (state as PosLoaded).cart.isNotEmpty) {
-           add(RefreshPricesEvent());
+          final cartProductIds = (state as PosLoaded).cart.map((i) => i.product.id).toSet();
+          final changedProducts = products.where((p) => cartProductIds.contains(p.product.id)).toList();
+          if (changedProducts.isNotEmpty) {
+            add(RefreshPricesEvent());
+          }
         }
       });
       add(LoadCategories());
     } else {
-      _productSubscription = const Stream<List<Product>>.empty().listen((_) {});
+      _productSubscription = const Stream<List<ProductWithCategory>>.empty().listen((_) {});
     }
   }
 
@@ -403,6 +586,29 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     if (currentState.cart.isEmpty) return;
     if (currentState.isProcessingCheckout) return;
 
+    // Shift validation for cash sales
+    if (event.paymentMethod == 'cash' && event.userId != null) {
+      final activeShift = await (db.select(db.shifts)
+            ..where((s) => s.userId.equals(event.userId!) & s.isOpen.equals(true)))
+          .getSingleOrNull();
+      if (activeShift == null) {
+        emit(const PosError('يجب فتح وردية عمل قبل إجراء عملية بيع نقدي'));
+        return;
+      }
+    }
+
+    // Credit limit check for credit sales
+    if (event.paymentMethod == 'credit' && event.customerId != null) {
+      final customer = await db.customersDao.getCustomerById(event.customerId!);
+      if (customer != null && customer.creditLimit > Decimal.zero) {
+        final newBalance = customer.balance + currentState.total;
+        if (newBalance > customer.creditLimit) {
+          emit(const PosError('العميل تجاوز الحد الائتماني المسموح به'));
+          return;
+        }
+      }
+    }
+
     emit(currentState.copyWith(isProcessingCheckout: true));
 
     try {
@@ -466,7 +672,13 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       );
 
       developer.log('Posting POS sale draft: saleId=$saleId', name: 'pos.lifecycle');
-      await transactionEngine.postSale(saleId, userId: event.userId);
+      try {
+        await transactionEngine.postSale(saleId, userId: event.userId);
+      } catch (postError) {
+        // Clean up orphaned draft on posting failure
+        await (db.delete(db.sales)..where((s) => s.id.equals(saleId))).go();
+        rethrow;
+      }
       developer.log('Posted POS sale successfully: saleId=$saleId', name: 'pos.lifecycle');
 
       final saleObj = await (db.select(

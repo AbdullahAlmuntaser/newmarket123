@@ -5,7 +5,6 @@ import 'package:supermarket/presentation/features/pos/bloc/pos_bloc.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_event.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_state.dart';
 import 'package:supermarket/presentation/widgets/entity_picker.dart';
-import 'package:decimal/decimal.dart';
 
 class CheckoutDialog extends StatefulWidget {
   final PosLoaded state;

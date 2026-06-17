@@ -6,6 +6,7 @@ part of 'purchases_dao.dart';
 mixin _$PurchasesDaoMixin on DatabaseAccessor<AppDatabase> {
   $BranchesTable get branches => attachedDatabase.branches;
   $GLAccountsTable get gLAccounts => attachedDatabase.gLAccounts;
+  $CurrenciesTable get currencies => attachedDatabase.currencies;
   $SuppliersTable get suppliers => attachedDatabase.suppliers;
   $WarehousesTable get warehouses => attachedDatabase.warehouses;
   $PurchasesTable get purchases => attachedDatabase.purchases;

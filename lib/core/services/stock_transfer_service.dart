@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/audit_service.dart';
@@ -68,7 +67,7 @@ class StockTransferService {
                 productId: item.productId,
                 warehouseId: fromWarehouseId,
                 batchId: Value(item.batchId),
-                quantity: -item.quantity,
+                quantity: Value(Decimal.parse((-item.quantity).toString())),
                 type: 'TRANSFER_OUT',
                 referenceId: transferId,
               ),
@@ -118,7 +117,7 @@ class StockTransferService {
                 productId: item.productId,
                 warehouseId: toWarehouseId,
                 batchId: Value(destBatchId),
-                quantity: item.quantity,
+                quantity: Value(Decimal.parse(item.quantity.toString())),
                 type: 'TRANSFER_IN',
                 referenceId: transferId,
               ),
@@ -131,7 +130,7 @@ class StockTransferService {
                 transferId: transferId,
                 productId: item.productId,
                 batchId: item.batchId,
-                quantity: item.quantity,
+                quantity: Value(Decimal.parse(item.quantity.toString())),
               ),
             );
       }

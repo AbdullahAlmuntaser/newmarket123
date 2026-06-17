@@ -6,8 +6,8 @@ class AccCurrencies extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get code => text().withLength(min: 3, max: 3)(); // USD, SAR, EUR
   TextColumn get name => text().withLength(min: 2, max: 50)();
-  RealColumn get exchangeRate =>
-      real().withDefault(const Constant(1.0))(); // مقابل العملة الأساسية
+  TextColumn get exchangeRate =>
+      text().map(const DecimalConverter()).withDefault(Constant(Decimal.one.toString()))(); // مقابل العملة الأساسية
   BoolColumn get isBase => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
@@ -19,7 +19,7 @@ class AccExchangeRates extends Table {
   IntColumn get fromCurrencyId => integer().references(AccCurrencies, #id)();
   @ReferenceName('accExchangeRatesTo')
   IntColumn get toCurrencyId => integer().references(AccCurrencies, #id)();
-  RealColumn get rate => real()();
+  TextColumn get rate => text().map(const DecimalConverter())();
   DateTimeColumn get effectiveDate => dateTime()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
@@ -33,10 +33,10 @@ class AccBudgets extends Table {
       text().nullable().references(CostCenters, #id)();
   TextColumn get accountId =>
       text().nullable().references(GLAccounts, #id)(); // ربط بحساب محدد
-  RealColumn get budgetedAmount => real()();
-  RealColumn get actualAmount =>
-      real().withDefault(const Constant(0.0))(); // يُحدث تلقائياً من القيود
-  RealColumn get variance => real()(); // يمكن حسابها برمجياً
+  TextColumn get budgetedAmount => text().map(const DecimalConverter())();
+  TextColumn get actualAmount =>
+      text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))(); // يُحدث تلقائياً من القيود
+  TextColumn get variance => text().map(const DecimalConverter())(); // يمكن حسابها برمجياً
   TextColumn get status =>
       text().withDefault(const Constant('active'))(); // active, closed
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -49,8 +49,8 @@ class AccBankStatements extends Table {
       text().references(GLAccounts, #id)(); // ربط بحساب البنك
   TextColumn get statementReference => text().nullable()();
   DateTimeColumn get statementDate => dateTime()();
-  RealColumn get openingBalance => real()();
-  RealColumn get closingBalance => real()();
+  TextColumn get openingBalance => text().map(const DecimalConverter())();
+  TextColumn get closingBalance => text().map(const DecimalConverter())();
   TextColumn get currency => text().withDefault(const Constant('SAR'))();
   TextColumn get status =>
       text().withDefault(const Constant('imported'))(); // imported, reconciled
@@ -63,9 +63,9 @@ class AccBankStatementLines extends Table {
   IntColumn get statementId => integer().references(AccBankStatements, #id)();
   DateTimeColumn get transactionDate => dateTime()();
   TextColumn get description => text()();
-  RealColumn get debit => real().withDefault(const Constant(0.0))();
-  RealColumn get credit => real().withDefault(const Constant(0.0))();
-  RealColumn get balance => real().nullable()();
+  TextColumn get debit => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get credit => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get balance => text().map(const DecimalConverter()).nullable()();
   TextColumn get reference => text().nullable()();
   TextColumn get matchedJournalEntryId =>
       text().nullable().references(GLEntries, #id)(); // ربط بالقيد المطابق

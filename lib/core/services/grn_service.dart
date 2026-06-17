@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/audit_service.dart';
@@ -100,7 +99,7 @@ class GrnService {
                 productId: productId,
                 warehouseId: warehouseId,
                 batchId: Value(batchId),
-                quantity: qtyInBaseUnit.toDouble(),
+                quantity: Value(qtyInBaseUnit),
                 type: 'PURCHASE',
                 referenceId: grnId,
               ),

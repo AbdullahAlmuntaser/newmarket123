@@ -1,8 +1,7 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/packaging_engine.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:provider/provider.dart';
 
 class PosProductCard extends StatelessWidget {

@@ -1,65 +1,58 @@
 import 'dart:convert';
-import 'package:decimal/decimal.dart';
 import 'package:intl/intl.dart';
+import 'money.dart';
+import 'quantity.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class ErpLogic {
-  /// يحسب القيم المالية لفاتورة بناءً على العناصر المضافة.
-  /// تعتمد الحسابات على: (الكمية × السعر) - الخصم + الضريبة.
-  static Map<String, double> calculateInvoiceTotals({
+  /// Calculates financial totals for an invoice based on items.
+  static ({Money subtotal, Money taxableAmount, Money tax, Money total}) calculateInvoiceTotals({
     required List<dynamic> items,
-    double globalDiscount = 0.0,
-    double taxRate = 0.15, // 15% Standard VAT
+    Money? globalDiscount,
+    Decimal? taxRate, // 15% in basis points
   }) {
-    double subtotal = 0.0;
+    Money discount = globalDiscount ?? Money.zero;
+    Decimal rate = taxRate ?? Decimal.parse('15');
+    Money subtotal = Money.zero;
 
     for (var item in items) {
-      double quantity = 0.0;
-      double price = 0.0;
+      Quantity quantity;
+      Money price;
 
       if (item is SaleItemsCompanion) {
-        quantity = item.quantity.value.toDouble();
-        price = item.price.value.toDouble();
-      } else if (item is PurchaseItemsCompanion) {
-        quantity = item.quantity.value.toDouble();
-        price = item.price.value.toDouble();
+        quantity = Quantity(item.quantity.value);
+        price = Money(item.price.value);
       } else if (item is SaleItem) {
-        quantity = item.quantity.toDouble();
-        price = item.price.toDouble();
+        quantity = Quantity(item.quantity);
+        price = Money(item.price);
+      } else if (item is PurchaseItemsCompanion) {
+        quantity = Quantity(item.quantity.value);
+        price = Money(item.price.value);
       } else if (item is PurchaseItem) {
-        quantity = item.quantity.toDouble();
-        price = item.price.toDouble();
+        quantity = Quantity(item.quantity);
+        price = Money(item.price);
+      } else {
+        continue;
       }
 
-      subtotal += quantity * price;
+      subtotal += price * quantity.value;
     }
 
-    double taxableAmount = subtotal - globalDiscount;
-    double tax = taxableAmount * taxRate;
-    double total = taxableAmount + tax;
+    final taxableAmount = subtotal - discount;
+    final tax = taxableAmount * (rate / Decimal.fromInt(100));
+    final total = taxableAmount + tax;
 
-    return {
-      'subtotal': subtotal,
-      'taxableAmount': taxableAmount,
-      'tax': tax,
-      'total': total,
-    };
+    return (subtotal: subtotal, taxableAmount: taxableAmount, tax: tax, total: total);
   }
 
-  /// توليد كود QR متوافق مع هيئة الزكاة والضريبة (ZATCA) - المرحلة الأولى والثانية
+  /// Generates ZATCA-compliant QR code.
   static String generateZatcaQRCode({
     required String sellerName,
     required String vatNumber,
     required DateTime timestamp,
-    required double invoiceTotal,
-    required double vatTotal,
+    required Money invoiceTotal,
+    required Money vatTotal,
   }) {
-    // 1. Tag 1: Seller Name
-    // 2. Tag 2: VAT Registration Number
-    // 3. Tag 3: Timestamp
-    // 4. Tag 4: Invoice Total (with VAT)
-    // 5. Tag 5: VAT Total
-
     List<int> bytes = [];
 
     void addTag(int tag, String value) {
@@ -78,46 +71,43 @@ class ErpLogic {
     return base64.encode(bytes);
   }
 
-  /// التحقق من توفر المخزون قبل البيع
+  /// Checks stock availability before sale.
   static bool hasEnoughStock(
     Product product,
-    double requestedQty,
+    Quantity requestedQty,
     bool isCarton,
   ) {
-    double actualQty =
-        isCarton ? requestedQty * product.piecesPerCarton : requestedQty;
-    return product.stock >= Decimal.parse(actualQty.toString());
+    final actualQty = isCarton ? requestedQty * product.piecesPerCarton : requestedQty;
+    return product.stock >= actualQty.value;
   }
 
-  /// عرض المخزون بشكل نصي ذكي (مثلاً: 2 كرتون و 5 حبات)
+  /// Formats inventory balance intelligently (e.g., 2 cartons and 5 pieces).
   static String formatInventory({
-    required double totalBaseQty,
+    required Quantity totalBaseQty,
     required String baseUnitName,
     required List<UnitConversion> conversions,
   }) {
-    if (totalBaseQty == 0) return '0 $baseUnitName';
+    if (totalBaseQty.isZero()) return '0 $baseUnitName';
 
-    // ترتيب الوحدات من الأكبر للأصغر (معامل التحويل الأكبر أولاً)
     final sortedConversions = List<UnitConversion>.from(conversions)
       ..sort((a, b) => b.factor.compareTo(a.factor));
 
     List<String> parts = [];
-    double remaining = totalBaseQty;
+    Decimal remaining = totalBaseQty.value;
 
     for (var unit in sortedConversions) {
-      if (unit.factor <= 1) continue; // تخطي الوحدات الأساسية أو الأصغر
+      if (unit.factor <= Decimal.one) continue;
 
-      int count = (remaining / unit.factor).floor();
-      if (count > 0) {
-        parts.add('$count ${unit.unitName}');
-        remaining %= unit.factor;
+      final count = (remaining / unit.factor).toDecimal(scaleOnInfinitePrecision: 0);
+      if (count > Decimal.zero) {
+        parts.add('${count.toStringAsFixed(0)} ${unit.unitName}');
+        remaining -= count * unit.factor;
       }
     }
 
-    if (remaining > 0 || parts.isEmpty) {
-      // إزالة الكسور إذا كانت قريبة جداً من الصفر
-      String formattedRemaining = remaining == remaining.toInt()
-          ? remaining.toInt().toString()
+    if (remaining > Decimal.zero || parts.isEmpty) {
+      final formattedRemaining = remaining == remaining.truncate()
+          ? remaining.truncate().toString()
           : remaining.toStringAsFixed(2);
       parts.add('$formattedRemaining $baseUnitName');
     }
@@ -126,3 +116,8 @@ class ErpLogic {
   }
 }
 
+class UnitConversion {
+  final String unitName;
+  final Decimal factor;
+  UnitConversion({required this.unitName, required this.factor});
+}

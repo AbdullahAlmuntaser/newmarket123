@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -10,6 +9,7 @@ import 'package:supermarket/presentation/features/pos/bloc/pos_state.dart';
 import 'package:supermarket/core/services/pricing_service.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
 import 'package:supermarket/core/services/packaging_engine.dart';
+import 'package:supermarket/core/services/security_service.dart';
 
 class MockPricingService extends Mock implements PricingService {}
 class MockTransactionEngine extends Mock implements TransactionEngine {}
@@ -22,6 +22,7 @@ void main() {
   late MockPackagingEngine mockPkg;
 
   setUpAll(() {
+    SecurityService.useFakeKeyForTesting = true;
     registerFallbackValue(Decimal.zero);
   });
 

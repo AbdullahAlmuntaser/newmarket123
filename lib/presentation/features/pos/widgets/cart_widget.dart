@@ -8,7 +8,6 @@ import 'package:supermarket/presentation/features/pos/widgets/add_unit_dialog.da
 import 'package:supermarket/presentation/features/pos/widgets/checkout_dialog.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:drift/drift.dart' as drift;
-import 'package:decimal/decimal.dart';
 
 class CartWidget extends StatelessWidget {
   const CartWidget({super.key});
@@ -467,12 +466,18 @@ class CartWidget extends StatelessWidget {
     final state = posBloc.state;
     if (state is! PosLoaded) return;
 
-    showDialog(
-      context: context,
-      builder: (context) => BlocProvider.value(
-        value: posBloc,
-        child: CheckoutDialog(state: state),
-      ),
-    );
+    try {
+      showDialog(
+        context: context,
+        builder: (context) => BlocProvider.value(
+          value: posBloc,
+          child: CheckoutDialog(state: state),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('خطأ في فتح نافذة الدفع: $e')),
+      );
+    }
   }
 }

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:supermarket/core/utils/backup_service.dart';
+import 'package:supermarket/core/services/backup/backup_service.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 class BackupPage extends StatefulWidget {
   const BackupPage({super.key});
@@ -14,7 +15,7 @@ class BackupPage extends StatefulWidget {
 class _BackupPageState extends State<BackupPage> {
   bool _isLoading = false;
   String? _lastBackupPath;
-  List<LocalBackupInfo> _backups = const [];
+  List<BackupMetadata> _backups = const [];
 
   @override
   void initState() {
@@ -28,7 +29,7 @@ class _BackupPageState extends State<BackupPage> {
 
   Future<void> _loadBackups() async {
     try {
-      final backups = await _backupService().listLocalBackups();
+      final backups = await _backupService().listBackups();
       if (mounted) {
         setState(() => _backups = backups);
       }
@@ -44,12 +45,13 @@ class _BackupPageState extends State<BackupPage> {
   Future<void> _createBackup() async {
     setState(() => _isLoading = true);
     try {
-      final path = await _backupService().createLocalBackup();
+      final result = await _backupService().createBackup();
+      if (!result.success) throw Exception(result.message);
       await _loadBackups();
       if (mounted) {
-        setState(() => _lastBackupPath = path);
+        setState(() => _lastBackupPath = result.backupPath);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تم إنشاء النسخة الاحتياطية بنجاح في: $path')),
+          SnackBar(content: Text('تم إنشاء النسخة الاحتياطية بنجاح في: ${result.backupPath}')),
         );
       }
     } catch (e) {
@@ -76,7 +78,7 @@ class _BackupPageState extends State<BackupPage> {
       return;
     }
     try {
-      await _backupService().shareBackup(backupPath);
+      await Share.shareXFiles([XFile(backupPath)], text: 'ERP Database Backup');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -86,12 +88,12 @@ class _BackupPageState extends State<BackupPage> {
     }
   }
 
-  Future<void> _deleteBackup(LocalBackupInfo backup) async {
+  Future<void> _deleteBackup(BackupMetadata backup) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('حذف نسخة احتياطية'),
-        content: Text('هل تريد حذف النسخة ${backup.name}؟'),
+        content: Text('هل تريد حذف النسخة ${backup.backupName}؟'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -109,8 +111,9 @@ class _BackupPageState extends State<BackupPage> {
 
     setState(() => _isLoading = true);
     try {
-      await _backupService().deleteLocalBackup(backup.path);
-      if (_lastBackupPath == backup.path) {
+      final ok = await _backupService().deleteBackup(backup.databasePath);
+      if (!ok) throw Exception('فشل حذف النسخة');
+      if (_lastBackupPath == backup.databasePath) {
         _lastBackupPath = null;
       }
       await _loadBackups();
@@ -136,7 +139,7 @@ class _BackupPageState extends State<BackupPage> {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['sqlite'],
+        allowedExtensions: ['sqlite', 'db'],
       );
 
       if (!mounted) return;
@@ -168,15 +171,14 @@ class _BackupPageState extends State<BackupPage> {
 
       setState(() => _isLoading = true);
       if (!mounted) return;
-      final safetyBackupPath = await _backupService().restoreFromLocal(
-        filePath,
-      );
+      final res = await _backupService().restoreBackup(filePath);
+      if (!res.success) throw Exception(res.message);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'تم استعادة البيانات بنجاح. نسخة الأمان: $safetyBackupPath. أعد تشغيل التطبيق.',
+              '${res.message} أعد تشغيل التطبيق.',
             ),
           ),
         );
@@ -219,14 +221,14 @@ class _BackupPageState extends State<BackupPage> {
             (backup) => Card(
               child: ListTile(
                 leading: const Icon(Icons.backup, color: Colors.indigo),
-                title: Text(backup.name),
+                title: Text(backup.backupName),
                 subtitle: Text(
-                  '${_formatDate(backup.createdAt)} • ${backup.formattedSize}',
+                  '${_formatDate(backup.backupDate)} • ${backup.formattedFileSize}',
                 ),
                 trailing: PopupMenuButton<String>(
                   onSelected: (value) {
                     if (value == 'share') {
-                      _shareBackup(backup.path);
+                      _shareBackup(backup.databasePath);
                     } else if (value == 'delete') {
                       _deleteBackup(backup);
                     }

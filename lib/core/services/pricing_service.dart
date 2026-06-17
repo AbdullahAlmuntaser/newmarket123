@@ -1,6 +1,5 @@
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:drift/drift.dart';
-import 'package:decimal/decimal.dart';
 
 class PricingService {
   final AppDatabase db;
@@ -109,10 +108,10 @@ class PricingService {
       }
 
       if (promo.type == 'PERCENTAGE_DISCOUNT') {
-        final discountFactor = Decimal.parse((promo.value / 100).toString());
+        final discountFactor = (promo.value / Decimal.fromInt(100)).toDecimal();
         finalPrice -= (basePrice * discountFactor);
       } else if (promo.type == 'FIXED_DISCOUNT') {
-        finalPrice -= Decimal.parse(promo.value.toString());
+        finalPrice -= promo.value;
       }
     }
 

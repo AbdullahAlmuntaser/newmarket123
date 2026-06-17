@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart';
@@ -229,7 +228,7 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
           date: payment.paymentDate,
           description: 'سند قبض - ${payment.note ?? ""}',
           debit: 0,
-          credit: payment.amount,
+          credit: payment.amount.toDouble(),
           referenceId: payment.id,
           type: 'PAYMENT',
         ),
@@ -250,7 +249,7 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
           date: ret.createdAt,
           description: 'مرتجع مبيعات فاتورة ${ret.saleId.substring(0, 8)}',
           debit: 0,
-          credit: ret.amountReturned,
+          credit: ret.amountReturned.toDouble(),
           referenceId: ret.id,
           type: 'RETURN',
         ),

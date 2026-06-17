@@ -1,10 +1,12 @@
+import 'package:decimal/decimal.dart';
+
 class Partner {
   final String id;
   final String name;
   final bool isCustomer;
-  final double creditLimit;
+  final Decimal creditLimit;
   final int paymentTermsDays;
-  final double openingBalance;
+  final Decimal openingBalance;
 
   const Partner({
     required this.id,
@@ -12,6 +14,6 @@ class Partner {
     required this.isCustomer,
     required this.creditLimit,
     required this.paymentTermsDays,
-    this.openingBalance = 0.0,
+    required this.openingBalance,
   });
 }

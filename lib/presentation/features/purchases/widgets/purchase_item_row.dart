@@ -182,11 +182,11 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
               ],
             ),
             if (widget.item.selectedUnit != null &&
-                widget.item.selectedUnit!.factor > 1)
+                widget.item.selectedUnit!.factor > Decimal.one)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
-                  'إجمالي الكمية بالوحدة الأساسية: ${(widget.item.quantity * widget.item.selectedUnit!.factor).toStringAsFixed(2)} ${widget.item.product.unit}',
+                  'إجمالي الكمية بالوحدة الأساسية: ${(widget.item.quantity * widget.item.selectedUnit!.factor.toDouble()).toStringAsFixed(2)} ${widget.item.product.unit}',
                   style: const TextStyle(
                     color: Colors.blue,
                     fontWeight: FontWeight.bold,
@@ -222,7 +222,7 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
           ],
           onChanged: (value) {
             setState(() {
-              final newFactor = value?.factor ?? 1.0;
+              final newFactor = value?.factor.toDouble() ?? 1.0;
 
               // تحديث السعر بناءً على الوحدة الجديدة (السعر = السعر الأساسي * عامل التحويل)
               // يفترض أن السعر الأساسي (buyPrice) هو للوحدة الأساسية

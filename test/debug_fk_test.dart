@@ -1,11 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:decimal/decimal.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/services/security_service.dart';
 import 'package:uuid/uuid.dart';
 
 void main() {
+  setUpAll(() {
+    SecurityService.useFakeKeyForTesting = true;
+  });
+
   test('Debug FK should throw SqliteException', () async {
     final db = AppDatabase(NativeDatabase.memory());
     final bId = const Uuid().v4();

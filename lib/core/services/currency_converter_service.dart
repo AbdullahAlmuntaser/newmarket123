@@ -25,7 +25,7 @@ class CurrencyConverterService {
   Future<void> setDefaultCurrency(String currencyCode) async {
     await db.into(db.appConfigTable).insertOnConflictUpdate(
       AppConfigTableCompanion.insert(
-        key: currencyCode,
+        key: 'default_currency',
         value: Value(currencyCode),
       ),
     );

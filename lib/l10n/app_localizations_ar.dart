@@ -1204,6 +1204,34 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noItemsSelected => 'لم يتم اختيار أي أصناف';
 
   @override
+  String get deleteCustomer => 'حذف العميل';
+
+  @override
+  String get deleteSupplier => 'حذف المورد';
+
+  @override
+  String confirmDeleteCustomer(Object customerName) {
+    return 'هل أنت متأكد من حذف العميل $customerName؟';
+  }
+
+  @override
+  String confirmDeleteSupplier(Object supplierName) {
+    return 'هل أنت متأكد من حذف المورد $supplierName؟';
+  }
+
+  @override
+  String get customerDeleted => 'تم حذف العميل';
+
+  @override
+  String get supplierDeleted => 'تم حذف المورد';
+
+  @override
+  String get failedToDeleteCustomer => 'فشل حذف العميل';
+
+  @override
+  String get failedToDeleteSupplier => 'فشل حذف المورد';
+
+  @override
   String get manufacturing => 'التصنيع';
 
   @override

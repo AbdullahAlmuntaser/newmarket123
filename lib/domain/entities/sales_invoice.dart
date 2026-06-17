@@ -1,13 +1,14 @@
+import 'package:decimal/decimal.dart';
 import 'package:equatable/equatable.dart';
 
 class SalesInvoice extends Equatable {
   final String id;
   final String customerId;
   final List<InvoiceItem> items;
-  final double subtotal;
-  final double taxAmount;
-  final double totalAmount;
-  final double discount;
+  final Decimal subtotal;
+  final Decimal taxAmount;
+  final Decimal totalAmount;
+  final Decimal discount;
   final String paymentMethod;
   final DateTime timestamp;
   final String qrCodeData;
@@ -43,16 +44,16 @@ class SalesInvoice extends Equatable {
 class InvoiceItem extends Equatable {
   final String itemId;
   final double quantity;
-  final double price;
+  final Decimal price;
   final double unitFactor;
-  final double discount;
+  final Decimal discount;
 
   const InvoiceItem({
     required this.itemId,
     required this.quantity,
     required this.price,
     this.unitFactor = 1.0,
-    this.discount = 0.0,
+    required this.discount,
   });
 
   @override

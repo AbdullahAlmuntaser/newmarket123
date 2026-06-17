@@ -13,6 +13,6 @@ class ReportService {
       to,
     );
     final cost = await postingEngine.getTotalByAccount('COGS', from, to);
-    return ProfitReport(sales: sales.toDouble(), cost: cost.toDouble(), netProfit: (sales - cost).toDouble());
+    return ProfitReport(sales: sales, cost: cost, netProfit: sales - cost);
   }
 }

@@ -438,9 +438,9 @@ class _StockTakePageState extends State<StockTakePage> {
           .map((i) => InventoryAuditItemsCompanion.insert(
                 auditId: i.stockTakeId,
                 productId: i.productId,
-                actualStock: i.actualQty,
-                systemStock: i.expectedQty,
-                difference: i.variance,
+                actualStock: drift.Value(Decimal.parse(i.actualQty.toString())),
+                systemStock: drift.Value(Decimal.parse(i.expectedQty.toString())),
+                difference: drift.Value(Decimal.parse(i.variance.toString())),
               ))
           .toList();
 

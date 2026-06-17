@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'dart:typed_data';
 import 'package:pdf/pdf.dart';

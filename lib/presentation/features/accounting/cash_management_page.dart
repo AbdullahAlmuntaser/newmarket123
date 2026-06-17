@@ -97,14 +97,14 @@ class _CashManagementPageState extends State<CashManagementPage> {
                         try {
                           if (_isReceipt) {
                             await cashService.createCashReceipt(
-                              amount: MoneyFormField.valueOf(_amountController),
+                              amount: Decimal.parse(MoneyFormField.valueOf(_amountController).toString()),
                               category: _categoryController.text,
                               accountId: _accountId!,
                               note: _noteController.text,
                             );
                           } else {
                             await cashService.createCashPayment(
-                              amount: MoneyFormField.valueOf(_amountController),
+                              amount: Decimal.parse(MoneyFormField.valueOf(_amountController).toString()),
                               category: _categoryController.text,
                               accountId: _accountId!,
                               note: _noteController.text,

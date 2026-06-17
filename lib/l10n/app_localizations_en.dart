@@ -1204,6 +1204,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noItemsSelected => 'No items selected';
 
   @override
+  String get deleteCustomer => 'Delete Customer';
+
+  @override
+  String get deleteSupplier => 'Delete Supplier';
+
+  @override
+  String confirmDeleteCustomer(Object customerName) {
+    return 'Are you sure you want to delete $customerName?';
+  }
+
+  @override
+  String confirmDeleteSupplier(Object supplierName) {
+    return 'Are you sure you want to delete $supplierName?';
+  }
+
+  @override
+  String get customerDeleted => 'Customer deleted';
+
+  @override
+  String get supplierDeleted => 'Supplier deleted';
+
+  @override
+  String get failedToDeleteCustomer => 'Failed to delete customer';
+
+  @override
+  String get failedToDeleteSupplier => 'Failed to delete supplier';
+
+  @override
   String get manufacturing => 'Manufacturing';
 
   @override

@@ -9,25 +9,33 @@ class CashboxDao extends DatabaseAccessor<AppDatabase> with _$CashboxDaoMixin {
 
   Stream<List<CashboxTransaction>> watchAllTransactions() =>
       (select(cashboxTransactions)
-            ..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)]))
+            ..orderBy([
+              (t) =>
+                  OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)
+            ]))
           .watch();
 
   Future<int> insertTransaction(CashboxTransactionsCompanion companion) =>
       into(cashboxTransactions).insert(companion);
 
-  Future<List<CashboxTransaction>> getTransactionsByReference(String referenceId) =>
-      (select(cashboxTransactions)..where((t) => t.referenceId.equals(referenceId))).get();
+  Future<List<CashboxTransaction>> getTransactionsByReference(
+          String referenceId) =>
+      (select(cashboxTransactions)
+            ..where((t) => t.referenceId.equals(referenceId)))
+          .get();
 
-  Future<double> getCashboxBalance({String? userId}) async {
-    final query = selectOnly(cashboxTransactions)..addColumns([cashboxTransactions.amount, cashboxTransactions.type]);
+  Future<Decimal> getCashboxBalance({String? userId}) async {
+    final query = selectOnly(cashboxTransactions)
+      ..addColumns([cashboxTransactions.amount, cashboxTransactions.type]);
     if (userId != null) {
       query.where(cashboxTransactions.userId.equals(userId));
     }
-    
+
     final rows = await query.get();
-    double balance = 0;
+    Decimal balance = Decimal.zero;
     for (final row in rows) {
-      final amount = row.read(cashboxTransactions.amount) ?? 0.0;
+      final amount =
+          (row.read(cashboxTransactions.amount) as Decimal?) ?? Decimal.zero;
       final type = row.read(cashboxTransactions.type);
       if (type == 'IN') {
         balance += amount;

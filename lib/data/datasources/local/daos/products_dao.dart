@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
@@ -144,7 +143,7 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
             transferId: transferId,
             productId: item.productId,
             batchId: item.batchId,
-            quantity: item.quantity,
+            quantity: Value(Decimal.parse(item.quantity.toString())),
           ),
         );
       }

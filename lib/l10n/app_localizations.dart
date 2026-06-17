@@ -2427,6 +2427,54 @@ abstract class AppLocalizations {
   /// **'No items selected'**
   String get noItemsSelected;
 
+  /// No description provided for @deleteCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Customer'**
+  String get deleteCustomer;
+
+  /// No description provided for @deleteSupplier.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Supplier'**
+  String get deleteSupplier;
+
+  /// No description provided for @confirmDeleteCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete {customerName}?'**
+  String confirmDeleteCustomer(Object customerName);
+
+  /// No description provided for @confirmDeleteSupplier.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete {supplierName}?'**
+  String confirmDeleteSupplier(Object supplierName);
+
+  /// No description provided for @customerDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer deleted'**
+  String get customerDeleted;
+
+  /// No description provided for @supplierDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier deleted'**
+  String get supplierDeleted;
+
+  /// No description provided for @failedToDeleteCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete customer'**
+  String get failedToDeleteCustomer;
+
+  /// No description provided for @failedToDeleteSupplier.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete supplier'**
+  String get failedToDeleteSupplier;
+
   /// No description provided for @manufacturing.
   ///
   /// In en, this message translates to:

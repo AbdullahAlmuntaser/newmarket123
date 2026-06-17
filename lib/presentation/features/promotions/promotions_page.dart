@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -48,7 +47,7 @@ class _PromotionsPageState extends State<PromotionsPage> {
           PromotionsCompanion.insert(
             name: 'خصم تجريبي 10%',
             type: 'PERCENTAGE_DISCOUNT',
-            value: 10,
+            value: drift.Value(Decimal.fromInt(10)),
             startDate: now,
             endDate: now.add(const Duration(days: 30)),
             minPurchaseAmount: drift.Value(Decimal.zero),

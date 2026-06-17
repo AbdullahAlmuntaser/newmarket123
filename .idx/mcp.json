@@ -23,12 +23,12 @@
       "firebase_get_environment",
       "firebase_update_environment",
       "firebase_init",
-      "firebase_read_resources",
       "firebase_deploy",
       "firebase_deploy_status",
       "developerknowledge_search_documents",
       "developerknowledge_answer_query",
-      "developerknowledge_get_documents"
+      "developerknowledge_get_documents",
+      "firebase_read_resources"
     ]
   }
 }

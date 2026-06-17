@@ -283,8 +283,8 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
             id: Value(const Uuid().v4()),
             salesReturnId: returnId,
             productId: productId,
-            quantity: qty,
-            price: item.price.toDouble(),
+            quantity: Decimal.parse(qty.toString()),
+            price: Decimal.parse(item.price.toString()),
             syncStatus: const Value(1),
           ),
         );
@@ -294,7 +294,7 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
     final returnCompanion = SalesReturnsCompanion.insert(
       id: Value(returnId),
       saleId: _selectedSale!.id,
-      amountReturned: totalReturnedAmount,
+      amountReturned: Value(Decimal.parse(totalReturnedAmount.toString())),
       createdAt: Value(DateTime.now()),
       updatedAt: Value(DateTime.now()),
       syncStatus: const Value(1),

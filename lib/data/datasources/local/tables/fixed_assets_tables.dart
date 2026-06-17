@@ -1,12 +1,14 @@
 import 'package:drift/drift.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 
 // جدول فئات الأصول الثابتة
 class AccAssetCategories extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text().withLength(min: 2, max: 100)();
   TextColumn get code => text().withLength(min: 2, max: 50)();
-  RealColumn get defaultDepreciationRate => real()
-      .withDefault(const Constant(0.0))(); // نسبة الإهلاك السنوية الافتراضية
+  TextColumn get defaultDepreciationRate => text()
+      .map(const DecimalConverter())
+      .withDefault(Constant(Decimal.zero.toString()))(); // نسبة الإهلاك السنوية الافتراضية
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -16,18 +18,18 @@ class FixedAssets extends Table {
   TextColumn get name => text().withLength(min: 2, max: 150)();
   TextColumn get serialNumber => text().nullable()();
   IntColumn get categoryId => integer().references(AccAssetCategories, #id)();
-  RealColumn get cost => real()(); // تكلفة الشراء
+  TextColumn get cost => text().map(const DecimalConverter())(); // تكلفة الشراء
   DateTimeColumn get purchaseDate => dateTime()();
   DateTimeColumn get acquisitionDate => dateTime()(); // تاريخ البدء في الإهلاك
-  RealColumn get salvageValue =>
-      real().withDefault(const Constant(0.0))(); // قيمة الخردة
+  TextColumn get salvageValue =>
+      text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))(); // قيمة الخردة
   IntColumn get usefulLifeYears => integer()(); // العمر الإنتاجي بالسنوات
   TextColumn get depreciationMethod => text().withDefault(
       const Constant('straight_line'))(); // straight_line, declining
   TextColumn get status =>
       text().withDefault(const Constant('active'))(); // active, sold, scrapped
-  RealColumn get accumulatedDepreciation =>
-      real().withDefault(const Constant(0.0))();
+  TextColumn get accumulatedDepreciation =>
+      text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
   // ملاحظة: currentBookValue يُحسب برمجياً
   DateTimeColumn get lastDepreciationDate => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -37,7 +39,7 @@ class FixedAssets extends Table {
 class AccAssetDepreciationLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get assetId => integer().references(FixedAssets, #id)();
-  RealColumn get depreciationAmount => real()();
+  TextColumn get depreciationAmount => text().map(const DecimalConverter())();
   DateTimeColumn get depreciationDate => dateTime()();
   TextColumn get journalEntryId =>
       text().nullable()(); // ربط بالقيد المحاسبي (UUID) - ارتباط منطقي وليس FK لسهولة الترحيل
@@ -50,9 +52,9 @@ class AccAssetDisposals extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get assetId => integer().references(FixedAssets, #id)();
   DateTimeColumn get disposalDate => dateTime()();
-  RealColumn get salePrice => real().nullable()();
+  TextColumn get salePrice => text().map(const DecimalConverter()).nullable()();
   TextColumn get disposalType => text()(); // sold, scrapped
-  RealColumn get gainOrLoss => real().nullable()(); // الربح أو الخسارة
+  TextColumn get gainOrLoss => text().map(const DecimalConverter()).nullable()(); // الربح أو الخسارة
   TextColumn get journalEntryId => text().nullable()();
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();

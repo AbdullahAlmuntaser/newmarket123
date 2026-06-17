@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart';
@@ -24,8 +25,8 @@ class TrialBalancePage extends StatelessWidget {
           double totalDebit = 0;
           double totalCredit = 0;
           for (var item in items) {
-            totalDebit += item.totalDebit;
-            totalCredit += item.totalCredit;
+            totalDebit += item.totalDebit.toDouble();
+            totalCredit += item.totalCredit.toDouble();
           }
 
           return SingleChildScrollView(
@@ -45,14 +46,14 @@ class TrialBalancePage extends StatelessWidget {
                           DataCell(Text(item.account.name)),
                           DataCell(
                             Text(
-                              item.totalDebit > 0
+                              item.totalDebit > Decimal.zero
                                   ? item.totalDebit.toStringAsFixed(2)
                                   : '-',
                             ),
                           ),
                           DataCell(
                             Text(
-                              item.totalCredit > 0
+                              item.totalCredit > Decimal.zero
                                   ? item.totalCredit.toStringAsFixed(2)
                                   : '-',
                             ),

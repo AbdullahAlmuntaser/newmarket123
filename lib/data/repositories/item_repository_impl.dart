@@ -1,12 +1,13 @@
 // Fixed Repository
 import 'package:dartz/dartz.dart';
-import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/core/utils/failures.dart';
 import 'package:supermarket/domain/entities/item.dart' as entity;
 import 'package:supermarket/domain/repositories/item_repository.dart';
 import 'package:supermarket/data/datasources/local/daos/products_dao.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+
+Decimal _toDecimal(double? value) => value != null ? Decimal.parse(value.toStringAsFixed(4)) : Decimal.zero;
 
 class ItemRepositoryImpl implements ItemRepository {
   final ProductsDao _productsDao;
@@ -23,9 +24,9 @@ class ItemRepositoryImpl implements ItemRepository {
           sku: item.sku,
           barcode: Value(item.primaryBarcode),
           categoryId: Value(item.categoryId),
-          buyPrice: Value(Decimal.parse((item.defaultUnit?.buyPrice ?? 0.0).toString())),
-          sellPrice: Value(Decimal.parse((item.defaultUnit?.sellPrice ?? 0.0).toString())),
-          wholesalePrice: Value(Decimal.parse((item.defaultUnit?.wholesalePrice ?? 0.0).toString())),
+          buyPrice: Value(_toDecimal(item.defaultUnit?.buyPrice?.toDouble())),
+          sellPrice: Value(_toDecimal(item.defaultUnit?.sellPrice?.toDouble())),
+          wholesalePrice: Value(_toDecimal(item.defaultUnit?.wholesalePrice?.toDouble())),
           alertLimit: Value(Decimal.parse(item.alertLimit.toString())),
           isActive: Value(item.isActive),
           createdAt: Value(item.createdAt),

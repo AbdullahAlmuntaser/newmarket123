@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -318,18 +317,116 @@ class _ChecksPageState extends State<ChecksPage> {
     Check check,
     String newStatus,
   ) async {
-    final accountingService = context.read<AccountingService>();
-
     await (db.update(db.checks)..where((c) => c.id.equals(check.id))).write(
       ChecksCompanion(status: drift.Value(newStatus)),
     );
 
-    final updatedCheck = check.copyWith(status: newStatus);
-
     if (newStatus == 'COLLECTED') {
-      await accountingService.recordCheckCollected(updatedCheck);
+      // Record check collection
+      final entryId = const Uuid().v4();
+      final cashAccount =
+          await db.accountingDao.getAccountByCode(AccountingService.codeCash);
+      final partnerAccount = check.type == 'RECEIVED'
+          ? await db.accountingDao
+              .getAccountByCode(AccountingService.codeAccountsReceivable)
+          : await db.accountingDao
+              .getAccountByCode(AccountingService.codeAccountsPayable);
+      if (cashAccount != null && partnerAccount != null) {
+        final lines = check.type == 'RECEIVED'
+            ? [
+                GLLinesCompanion.insert(
+                  entryId: entryId,
+                  accountId: cashAccount.id,
+                  debit: drift.Value(Decimal.parse(check.amount.toString())),
+                  credit: drift.Value(Decimal.zero),
+                ),
+                GLLinesCompanion.insert(
+                  entryId: entryId,
+                  accountId: partnerAccount.id,
+                  debit: drift.Value(Decimal.zero),
+                  credit: drift.Value(Decimal.parse(check.amount.toString())),
+                ),
+              ]
+            : [
+                GLLinesCompanion.insert(
+                  entryId: entryId,
+                  accountId: partnerAccount.id,
+                  debit: drift.Value(Decimal.parse(check.amount.toString())),
+                  credit: drift.Value(Decimal.zero),
+                ),
+                GLLinesCompanion.insert(
+                  entryId: entryId,
+                  accountId: cashAccount.id,
+                  debit: drift.Value(Decimal.zero),
+                  credit: drift.Value(Decimal.parse(check.amount.toString())),
+                ),
+              ];
+        await db.accountingDao.createEntry(
+          GLEntriesCompanion.insert(
+            id: drift.Value(entryId),
+            description: 'تحصيل شيك: ${check.checkNumber}',
+            date: drift.Value(DateTime.now()),
+            referenceType: const drift.Value('CHECK'),
+            referenceId: drift.Value(check.id),
+            status: const drift.Value('POSTED'),
+            postedAt: drift.Value(DateTime.now()),
+          ),
+          lines,
+        );
+      }
     } else if (newStatus == 'BOUNCED') {
-      await accountingService.recordCheckBounced(updatedCheck);
+      // Record check bounce reversal
+      final entryId = const Uuid().v4();
+      final cashAccount =
+          await db.accountingDao.getAccountByCode(AccountingService.codeCash);
+      final partnerAccount = check.type == 'RECEIVED'
+          ? await db.accountingDao
+              .getAccountByCode(AccountingService.codeAccountsReceivable)
+          : await db.accountingDao
+              .getAccountByCode(AccountingService.codeAccountsPayable);
+      if (cashAccount != null && partnerAccount != null) {
+        final lines = check.type == 'RECEIVED'
+            ? [
+                GLLinesCompanion.insert(
+                  entryId: entryId,
+                  accountId: partnerAccount.id,
+                  debit: drift.Value(Decimal.parse(check.amount.toString())),
+                  credit: drift.Value(Decimal.zero),
+                ),
+                GLLinesCompanion.insert(
+                  entryId: entryId,
+                  accountId: cashAccount.id,
+                  debit: drift.Value(Decimal.zero),
+                  credit: drift.Value(Decimal.parse(check.amount.toString())),
+                ),
+              ]
+            : [
+                GLLinesCompanion.insert(
+                  entryId: entryId,
+                  accountId: cashAccount.id,
+                  debit: drift.Value(Decimal.parse(check.amount.toString())),
+                  credit: drift.Value(Decimal.zero),
+                ),
+                GLLinesCompanion.insert(
+                  entryId: entryId,
+                  accountId: partnerAccount.id,
+                  debit: drift.Value(Decimal.zero),
+                  credit: drift.Value(Decimal.parse(check.amount.toString())),
+                ),
+              ];
+        await db.accountingDao.createEntry(
+          GLEntriesCompanion.insert(
+            id: drift.Value(entryId),
+            description: 'ارتداد شيك: ${check.checkNumber}',
+            date: drift.Value(DateTime.now()),
+            referenceType: const drift.Value('CHECK'),
+            referenceId: drift.Value(check.id),
+            status: const drift.Value('POSTED'),
+            postedAt: drift.Value(DateTime.now()),
+          ),
+          lines,
+        );
+      }
       // تحديث رصيد العميل/المورد عند الارتداد
       if (check.type == 'RECEIVED' && check.partnerId != null) {
         final customer = await (db.select(
@@ -342,7 +439,8 @@ class _ChecksPageState extends State<ChecksPage> {
           )..where((c) => c.id.equals(customer.id)))
               .write(
             CustomersCompanion(
-              balance: drift.Value(customer.balance + Decimal.parse(check.amount.toString())),
+              balance: drift.Value(
+                  customer.balance + Decimal.parse(check.amount.toString())),
             ),
           );
         }
@@ -357,7 +455,8 @@ class _ChecksPageState extends State<ChecksPage> {
           )..where((s) => s.id.equals(supplier.id)))
               .write(
             SuppliersCompanion(
-              balance: drift.Value(supplier.balance + Decimal.parse(check.amount.toString())),
+              balance: drift.Value(
+                  supplier.balance + Decimal.parse(check.amount.toString())),
             ),
           );
         }
