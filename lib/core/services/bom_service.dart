@@ -27,19 +27,19 @@ class BomService {
   Future<void> addComponent(
     String finishedProductId,
     String componentProductId,
-    double quantity,
+    Decimal quantity,
   ) async {
     await db.into(db.billOfMaterials).insert(
           BillOfMaterialsCompanion.insert(
             finishedProductId: finishedProductId,
             componentProductId: componentProductId,
-            quantity: quantity,
+            quantity: Value(quantity),
           ),
         );
   }
 
   /// تحديث كمية مكون في وصفة
-  Future<void> updateComponentQuantity(String id, double quantity) async {
+  Future<void> updateComponentQuantity(String id, Decimal quantity) async {
     await (db.update(db.billOfMaterials)..where((tbl) => tbl.id.equals(id)))
         .write(BillOfMaterialsCompanion(quantity: Value(quantity)));
   }
@@ -65,7 +65,7 @@ class BomService {
   /// returns: رسالة النجاح أو رمي استثناء عند الفشل
   Future<String> assemble({
     required String finishedProductId,
-    required double producedQuantity,
+    required Decimal producedQuantity,
     required String warehouseId,
     String? batchNumber,
     DateTime? expiryDate,
@@ -88,15 +88,15 @@ class BomService {
             ))
           .get();
 
-      double totalAvailable = 0;
+      Decimal totalAvailable = Decimal.zero;
       for (final batch in available) {
-        totalAvailable += batch.quantity.toDouble();
+        totalAvailable += batch.quantity;
       }
 
       if (totalAvailable < requiredQty) {
         final productName = await _getProductName(component.componentProductId);
         throw Exception(
-          'المخزون غير كافٍ: $productName — المطلوب: ${requiredQty.toStringAsFixed(2)}، المتاح: ${totalAvailable.toStringAsFixed(2)}',
+          'المخزون غير كافٍ: $productName — المطلوب: ${requiredQty.toString()}، المتاح: ${totalAvailable.toString()}',
         );
       }
     }
@@ -118,14 +118,15 @@ class BomService {
       final finalBatchNumber =
           batchNumber ?? 'ASM-${DateTime.now().millisecondsSinceEpoch}';
       final cost = await _calculateAssemblyCost(components);
+
       await db.into(db.productBatches).insert(
             ProductBatchesCompanion.insert(
               productId: finishedProductId,
               warehouseId: warehouseId,
               batchNumber: finalBatchNumber,
-              quantity: Value(Decimal.parse(producedQuantity.toString())),
-              initialQuantity: Value(Decimal.parse(producedQuantity.toString())),
-              costPrice: Value(Decimal.parse(cost.toString())),
+              quantity: Value(producedQuantity),
+              initialQuantity: Value(producedQuantity),
+              costPrice: Value(cost),
               expiryDate: Value(expiryDate),
             ),
           );
@@ -135,7 +136,7 @@ class BomService {
               productId: finishedProductId,
               warehouseId: warehouseId,
               batchId: Value(finalBatchNumber),
-              quantity: Value(Decimal.parse(producedQuantity.toString())),
+              quantity: Value(producedQuantity),
               type: 'ASSEMBLY_PRODUCE',
               referenceId:
                   'ASSEMBLY-${DateTime.now().millisecondsSinceEpoch.toString()}',
@@ -150,11 +151,11 @@ class BomService {
   Future<void> _consumeFromBatches(
     String productId,
     String warehouseId,
-    double quantity,
+    Decimal quantity,
     String type,
     String referenceId,
   ) async {
-    double remaining = quantity;
+    Decimal remaining = quantity;
 
     final batches = await (db.select(db.productBatches)
           ..where(
@@ -170,12 +171,12 @@ class BomService {
         .get();
 
     for (final batch in batches) {
-      if (remaining <= 0) break;
+      if (remaining <= Decimal.zero) break;
 
       final consumeQty =
-          batch.quantity < Decimal.parse(remaining.toString()) ? batch.quantity : Decimal.parse(remaining.toString());
+          batch.quantity < remaining ? batch.quantity : remaining;
       final newQty = batch.quantity - consumeQty;
-      remaining -= consumeQty.toDouble();
+      remaining -= consumeQty;
 
       await (db.update(db.productBatches)..where((b) => b.id.equals(batch.id)))
           .write(ProductBatchesCompanion(quantity: Value(newQty)));
@@ -186,7 +187,7 @@ class BomService {
               productId: productId,
               warehouseId: warehouseId,
               batchId: Value(batch.id),
-              quantity: Value(Decimal.parse((-consumeQty).toString())),
+              quantity: Value(-consumeQty),
               type: type,
               referenceId: referenceId,
             ),
@@ -195,18 +196,19 @@ class BomService {
   }
 
   /// حساب تكلفة التجميع
-  Future<double> _calculateAssemblyCost(List<BillOfMaterial> components) async {
-    double totalCost = 0;
+  Future<Decimal> _calculateAssemblyCost(List<BillOfMaterial> components) async {
+    Decimal totalCost = Decimal.zero;
     for (final component in components) {
       final product = await (db.select(db.products)
             ..where((p) => p.id.equals(component.componentProductId)))
           .getSingleOrNull();
       if (product != null) {
-        totalCost += (product.buyPrice * Decimal.parse(component.quantity.toString())).toDouble();
+        totalCost += (product.buyPrice * component.quantity);
       }
     }
     return totalCost;
   }
+
 
   Future<String> _getProductName(String productId) async {
     final product = await (db.select(

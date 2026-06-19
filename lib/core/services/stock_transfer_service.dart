@@ -44,8 +44,7 @@ class StockTransferService {
         )..where((t) => t.id.equals(item.batchId)))
             .getSingle();
 
-        final itemQtyDecimal = Decimal.parse(item.quantity.toString());
-        if (sourceBatch.quantity < itemQtyDecimal) {
+        if (sourceBatch.quantity < item.quantity) {
           throw Exception(
             'Insufficient stock in batch ${sourceBatch.batchNumber} for product ${item.productId}',
           );
@@ -57,7 +56,7 @@ class StockTransferService {
         )..where((t) => t.id.equals(sourceBatch.id)))
             .write(
           ProductBatchesCompanion(
-            quantity: Value(sourceBatch.quantity - itemQtyDecimal),
+            quantity: Value(sourceBatch.quantity - item.quantity),
           ),
         );
 
@@ -67,7 +66,7 @@ class StockTransferService {
                 productId: item.productId,
                 warehouseId: fromWarehouseId,
                 batchId: Value(item.batchId),
-                quantity: Value(Decimal.parse((-item.quantity).toString())),
+                quantity: Value(-item.quantity),
                 type: 'TRANSFER_OUT',
                 referenceId: transferId,
               ),
@@ -92,7 +91,7 @@ class StockTransferService {
           )..where((t) => t.id.equals(destBatchId)))
               .write(
             ProductBatchesCompanion(
-              quantity: Value(existingDestBatch.quantity + Decimal.parse(item.quantity.toString())),
+              quantity: Value(existingDestBatch.quantity + item.quantity),
             ),
           );
         } else {
@@ -104,8 +103,8 @@ class StockTransferService {
                   warehouseId: toWarehouseId,
                   batchNumber: sourceBatch.batchNumber,
                   expiryDate: Value(sourceBatch.expiryDate),
-                  quantity: Value(Decimal.parse(item.quantity.toString())),
-                  initialQuantity: Value(Decimal.parse(item.quantity.toString())),
+                  quantity: Value(item.quantity),
+                  initialQuantity: Value(item.quantity),
                   costPrice: Value(sourceBatch.costPrice),
                 ),
               );
@@ -117,7 +116,7 @@ class StockTransferService {
                 productId: item.productId,
                 warehouseId: toWarehouseId,
                 batchId: Value(destBatchId),
-                quantity: Value(Decimal.parse(item.quantity.toString())),
+                quantity: Value(item.quantity),
                 type: 'TRANSFER_IN',
                 referenceId: transferId,
               ),
@@ -130,7 +129,7 @@ class StockTransferService {
                 transferId: transferId,
                 productId: item.productId,
                 batchId: item.batchId,
-                quantity: Value(Decimal.parse(item.quantity.toString())),
+                quantity: Value(item.quantity),
               ),
             );
       }
@@ -165,7 +164,7 @@ class StockTransferService {
 class TransferItemData {
   final String productId;
   final String batchId;
-  final double quantity;
+  final Decimal quantity;
 
   TransferItemData({
     required this.productId,

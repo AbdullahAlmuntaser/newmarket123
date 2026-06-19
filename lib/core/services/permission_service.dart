@@ -1,4 +1,5 @@
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:drift/drift.dart';
 
 class PermissionCode {
   static const String postSale = 'POST_SALE';
@@ -19,6 +20,32 @@ class PermissionService {
   final AppDatabase db;
 
   PermissionService(this.db);
+
+  static const Map<String, String> allPermissions = {
+    PermissionCode.postSale: 'تسجيل المبيعات',
+    PermissionCode.postPurchase: 'تسجيل المشتريات',
+    PermissionCode.postSaleReturn: 'تسجيل مردودات المبيعات',
+    PermissionCode.postPurchaseReturn: 'تسجيل مردودات المشتريات',
+    PermissionCode.deleteInvoice: 'حذف الفواتير',
+    PermissionCode.voidTransaction: 'إلغاء الحركات',
+    PermissionCode.manageUsers: 'إدارة المستخدمين',
+    PermissionCode.viewReports: 'عرض التقارير',
+    PermissionCode.manageSettings: 'إدارة الإعدادات',
+    PermissionCode.manageInventory: 'إدارة المخزون',
+    PermissionCode.approveDiscount: 'الموافقة على الخصومات',
+    PermissionCode.editTax: 'تعديل الضريبة',
+  };
+
+  Future<void> seedPermissions() async {
+    for (final entry in allPermissions.entries) {
+      await db.into(db.permissions).insertOnConflictUpdate(
+            PermissionsCompanion.insert(
+              code: entry.key,
+              description: Value(entry.value),
+            ),
+          );
+    }
+  }
 
   /// التحقق من أن المستخدم لديه الصلاحية المطلوبة
   Future<bool> hasPermission(String userId, String permissionCode) async {

@@ -1,5 +1,4 @@
-import 'package:drift/drift.dart';
-import 'package:uuid/uuid.dart';
+part of '../app_database.dart';
 
 // جدول الموظفين
 class HREmployees extends Table {

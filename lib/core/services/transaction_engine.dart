@@ -748,7 +748,7 @@ class TransactionEngine {
               CustomerPaymentLinksCompanion.insert(
                 paymentId: paymentId,
                 saleId: alloc.saleId,
-                amount: alloc.amount.toDouble(),
+                amount: Value(alloc.amount),
               ),
             );
       }

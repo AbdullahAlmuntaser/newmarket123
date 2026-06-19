@@ -1,28 +1,4 @@
-import 'package:drift/drift.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
-
-// جدول العملات
-class AccCurrencies extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get code => text().withLength(min: 3, max: 3)(); // USD, SAR, EUR
-  TextColumn get name => text().withLength(min: 2, max: 50)();
-  TextColumn get exchangeRate =>
-      text().map(const DecimalConverter()).withDefault(Constant(Decimal.one.toString()))(); // مقابل العملة الأساسية
-  BoolColumn get isBase => boolean().withDefault(const Constant(false))();
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
-}
-
-// جدول أسعار الصرف
-class AccExchangeRates extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  @ReferenceName('accExchangeRatesFrom')
-  IntColumn get fromCurrencyId => integer().references(AccCurrencies, #id)();
-  @ReferenceName('accExchangeRatesTo')
-  IntColumn get toCurrencyId => integer().references(AccCurrencies, #id)();
-  TextColumn get rate => text().map(const DecimalConverter())();
-  DateTimeColumn get effectiveDate => dateTime()();
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
-}
+part of '../app_database.dart';
 
 // جدول الميزانيات التقديرية
 class AccBudgets extends Table {
@@ -86,3 +62,7 @@ class AccAuditLogs extends Table {
   DateTimeColumn get timestamp => dateTime().withDefault(currentDateAndTime)();
   TextColumn get ipAddress => text().nullable()();
 }
+
+// Fixed assets are defined in tables/fixed_assets_tables.dart
+
+// HR/Payroll tables are defined in tables/payroll_tables.dart

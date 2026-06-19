@@ -1,5 +1,6 @@
 
 
+
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
 extension GLEntryExt on GLEntry {

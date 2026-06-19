@@ -45,8 +45,8 @@ class ReorderService {
               PurchaseOrdersCompanion(
                 id: Value(orderId),
                 supplierId: Value(supplierId),
-                total: Value((product.buyPrice *
-                    (((product.alertLimit - product.stock) + Decimal.fromInt(10)))).toDouble()),
+                total: Value(product.buyPrice *
+                    (((product.alertLimit - product.stock) + Decimal.fromInt(10)))),
                 warehouseId: Value(warehouseId),
                 status: const Value('DRAFT'),
                 date: Value(DateTime.now()),
@@ -60,8 +60,8 @@ class ReorderService {
                 orderId: Value(orderId),
                 productId: Value(product.id),
                 quantity: Value(
-                    ((product.alertLimit - product.stock) + Decimal.parse('10')).toDouble()),
-                price: Value(product.buyPrice.toDouble()),
+                    ((product.alertLimit - product.stock) + Decimal.parse('10'))),
+                price: Value(product.buyPrice),
               ),
             );
       });

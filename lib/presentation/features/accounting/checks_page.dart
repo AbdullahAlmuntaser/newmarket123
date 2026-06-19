@@ -79,7 +79,7 @@ class _ChecksPageState extends State<ChecksPage> {
       checkNumber: _checkNumberController.text,
       bankName: _bankNameController.text,
       dueDate: _selectedDueDate!,
-      amount: amount,
+      amount: drift.Value(Decimal.parse(amount.toString())),
       type: _selectedType,
       status: drift.Value(_selectedStatus),
       partnerId: drift.Value(_selectedPartnerId),

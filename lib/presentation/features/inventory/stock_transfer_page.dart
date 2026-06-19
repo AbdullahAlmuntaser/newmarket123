@@ -159,7 +159,7 @@ class _StockTransferPageState extends State<StockTransferPage> {
 
                         await PrinterHelper.printStockMovement(
                             itemName: product.name,
-                            quantity: firstItem.quantity,
+                            quantity: firstItem.quantity.toDouble(),
                             reference:
                                 'TRN-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}');
 
@@ -229,8 +229,8 @@ class _StockTransferPageState extends State<StockTransferPage> {
             ),
             ElevatedButton(
               onPressed: () {
-                final qty = double.tryParse(quantityController.text);
-                if (selectedBatch != null && qty != null && qty > 0) {
+                final qty = Decimal.tryParse(quantityController.text);
+                if (selectedBatch != null && qty != null && qty > Decimal.zero) {
                   provider.addTransferItem(selectedBatch!, qty);
                   Navigator.pop(context);
                 }

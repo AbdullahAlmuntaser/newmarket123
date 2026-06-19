@@ -1,5 +1,4 @@
-import 'package:drift/drift.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
+part of '../app_database.dart';
 
 // جدول فئات الأصول الثابتة
 class AccAssetCategories extends Table {

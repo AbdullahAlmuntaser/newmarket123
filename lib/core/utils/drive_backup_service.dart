@@ -4,7 +4,9 @@ import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:sqlite3/sqlite3.dart' as sqlite;
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/services/security_service.dart';
 import 'package:supermarket/core/utils/logger.dart';
 
 class AuthenticatedClient extends http.BaseClient {
@@ -231,11 +233,55 @@ class DriveBackupService {
       final success = await downloadCloudBackup(fileId, tempPath);
       if (!success) return false;
 
+      // Validate the downloaded file before overwriting the live DB to
+      // avoid corrupting the existing database with an incompatible file.
+      final tempFile = File(tempPath);
+      if (!await tempFile.exists()) return false;
+
+      try {
+        // Attempt to open temp DB read-only and apply PRAGMA key if available
+        // Use the same key logic as the app does.
+        final utilsDb = sqlite.sqlite3.open(tempPath, mode: sqlite.OpenMode.readOnly);
+        try {
+          if (!SecurityService.useFakeKeyForTesting) {
+            final key = await SecurityService.getDatabaseKey();
+            final escapedKey = key.replaceAll("'", "''");
+            utilsDb.execute("PRAGMA key = '$escapedKey'");
+          }
+          final result = utilsDb.select('PRAGMA integrity_check;');
+          final status = result.first.values.first as String;
+          if (status != 'ok') {
+            AppLogger.error('Downloaded backup failed integrity: $status');
+            await tempFile.delete();
+            return false;
+          }
+        } finally {
+          utilsDb.dispose();
+        }
+      } catch (e) {
+        final s = e.toString();
+        if (s.contains('NO_SQLCIPHER')) {
+          AppLogger.error('Downloaded backup requires SQLCipher runtime which is missing');
+        } else {
+          AppLogger.error('Downloaded backup validation failed', error: e);
+        }
+        await tempFile.delete();
+        return false;
+      }
+
       await db.close();
 
       final dbFile = File(p.join(dbFolder.path, 'app_db.sqlite'));
-      final tempFile = File(tempPath);
 
+      // Create a safety pre-restore backup of existing DB
+      try {
+        if (await dbFile.exists()) {
+          final preRestore = File('${dbFile.path}.pre_restore_${DateTime.now().millisecondsSinceEpoch}.db');
+          await dbFile.copy(preRestore.path);
+        }
+      } catch (_) {}
+
+      // Safe to copy now
       await tempFile.copy(dbFile.path);
       await tempFile.delete();
 

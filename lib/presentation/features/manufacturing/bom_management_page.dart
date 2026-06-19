@@ -195,7 +195,7 @@ class _BomManagementPageState extends State<BomManagementPage> {
                 await bomService.addComponent(
                   finishedProduct!,
                   component!,
-                  double.parse(qtyCtrl.text),
+                  Decimal.parse(qtyCtrl.text),
                 );
                 if (context.mounted) Navigator.pop(ctx);
                 await _loadData();
@@ -233,7 +233,7 @@ class _BomManagementPageState extends State<BomManagementPage> {
               final bomService = di.sl<BomService>();
               await bomService.updateComponentQuantity(
                 bom.id,
-                double.parse(ctrl.text),
+                Decimal.parse(ctrl.text),
               );
               if (context.mounted) Navigator.pop(ctx);
               await _loadData();
@@ -414,11 +414,11 @@ class _BomAssemblyPageState extends State<BomAssemblyPage> {
               ..._currentBom.map((bom) {
                 final productName = _getProductName(bom.componentProductId);
                 final qty =
-                    bom.quantity * (double.tryParse(_quantityCtrl.text) ?? 1.0);
+                    bom.quantity * (Decimal.tryParse(_quantityCtrl.text) ?? Decimal.one);
                 return ListTile(
                   leading: const Icon(Icons.arrow_right),
                   title: Text(productName),
-                  trailing: Text(qty.toStringAsFixed(2)),
+                  trailing: Text(qty.toString()),
                 );
               }),
             ],
@@ -470,7 +470,7 @@ class _BomAssemblyPageState extends State<BomAssemblyPage> {
     try {
       final result = await bomService.assemble(
         finishedProductId: _selectedProductId!,
-        producedQuantity: double.parse(_quantityCtrl.text),
+        producedQuantity: Decimal.parse(_quantityCtrl.text),
         warehouseId: _selectedWarehouseId!,
         batchNumber: _batchCtrl.text.isEmpty ? null : _batchCtrl.text,
         expiryDate: _expiryDate,

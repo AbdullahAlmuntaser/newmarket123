@@ -109,7 +109,7 @@ class GrnService {
               GoodReceivedNoteItemsCompanion.insert(
                 grnId: grnId,
                 productId: productId,
-                quantity: qty.toDouble(),
+                quantity: Value(qty),
                 batchNumber: Value(item.batchNumber),
                 expiryDate: Value(item.expiryDate),
               ),
@@ -174,7 +174,7 @@ class GrnService {
             ..where((i) => i.grnId.equals(grn.id)))
           .get();
 
-      double totalQty = 0;
+      Decimal totalQty = Decimal.zero;
       for (var item in items) {
         totalQty += item.quantity;
       }
@@ -184,7 +184,7 @@ class GrnService {
         grnNumber: grn.grnNumber,
         warehouseName: warehouse?.name ?? 'Unknown',
         receivedDate: grn.receivedDate,
-        totalQuantity: totalQty,
+        totalQuantity: totalQty.toDouble(),
         status: grn.status,
         notes: grn.notes,
       ));

@@ -172,10 +172,21 @@ class BackupService {
             db.dispose();
           }
         } catch (e) {
+          final s = e.toString();
+          if (s.contains('NO_SQLCIPHER')) {
+            // Runtime does not support SQLCipher — do not proceed with restore.
+            return BackupResult(
+              success: false,
+              message: 'لايوجد دعم SQLCipher في بيئة التشغيل. تأكد من تضمين مكتبة SQLCipher أو استعادة نسخة متوافقة.',
+              errorCode: 'NO_SQLCIPHER_RUNTIME',
+              error: e,
+            );
+          }
           return BackupResult(
             success: false,
             message: 'فشل التحقق من سلامة النسخة الاحتياطية: ${e.toString()}',
             errorCode: 'BACKUP_VALIDATION_FAILED',
+            error: e,
           );
         }
       } catch (_) {

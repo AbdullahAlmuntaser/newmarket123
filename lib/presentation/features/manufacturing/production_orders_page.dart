@@ -58,7 +58,7 @@ class _ProductionOrdersPageState extends State<ProductionOrdersPage> {
                     try {
                       await productionService.createProductionOrder(
                         finishedProductId: _selectedProduct!.id,
-                        quantity: double.parse(_quantityController.text),
+                        quantity: Decimal.parse(_quantityController.text),
                       );
                       if (!mounted) return;
                       messenger.showSnackBar(

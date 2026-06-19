@@ -109,9 +109,14 @@ Future<void> initDatabase() async {
     debugPrintStack(stackTrace: stack);
 
     // Attempt recovery: back up corrupted file, delete it, and retry once
-    if (e.toString().contains('code 26') ||
-        e.toString().contains('file is not a database') ||
-        e.toString().contains('SqliteException')) {
+    // Do NOT attempt destructive recovery when the failure indicates
+    // the native sqlite3 lacks SQLCipher support (NO_SQLCIPHER). That
+    // situation should be handled by providing a SQLCipher-enabled
+    // runtime or by migrating the DB differently; deleting the file
+    // would irreversibly destroy encrypted data.
+    final err = e.toString();
+    if ((err.contains('code 26') || err.contains('file is not a database') || err.contains('SqliteException'))
+        && !err.contains('NO_SQLCIPHER')) {
       debugPrint("DI: Attempting recovery — backing up and recreating database...");
       try {
         final dbFolder = await getApplicationDocumentsDirectory();

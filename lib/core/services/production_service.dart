@@ -9,7 +9,7 @@ class ProductionService {
 
   Future<void> createProductionOrder({
     required String finishedProductId,
-    required double quantity,
+    required Decimal quantity,
     String? warehouseId,
     String? note,
   }) async {
@@ -28,7 +28,7 @@ class ProductionService {
         ProductionOrdersCompanion.insert(
           id: Value(orderId),
           finishedProductId: finishedProductId,
-          plannedQuantity: quantity,
+          plannedQuantity: Value(quantity),
           warehouseId: Value(warehouseId),
           note: Value(note),
         ),
@@ -40,7 +40,7 @@ class ProductionService {
           ProductionOrderItemsCompanion.insert(
             productionOrderId: orderId,
             componentProductId: item.componentProductId,
-            plannedQuantity: (Decimal.parse(item.quantity.toString()) * Decimal.parse(quantity.toString())).toDouble(),
+            plannedQuantity: Value(item.quantity * quantity),
           ),
         );
       }
@@ -57,7 +57,7 @@ class ProductionService {
         await db.stockMovementDao.insertStockMovement(
           StockMovementsCompanion.insert(
             productId: item.componentProductId,
-            quantity: Decimal.parse((-item.plannedQuantity).toString()),
+            quantity: -item.plannedQuantity,
             type: 'PRODUCTION_CONSUME',
             referenceId: Value(orderId),
             movementDate: Value(DateTime.now()),
@@ -69,7 +69,7 @@ class ProductionService {
       await db.stockMovementDao.insertStockMovement(
         StockMovementsCompanion.insert(
           productId: order.finishedProductId,
-          quantity: Decimal.parse(order.plannedQuantity.toString()),
+          quantity: order.plannedQuantity,
           type: 'PRODUCTION_OUTPUT',
           referenceId: Value(orderId),
           movementDate: Value(DateTime.now()),
@@ -80,7 +80,7 @@ class ProductionService {
       await (db.update(db.productionOrders)..where((t) => t.id.equals(orderId))).write(
         ProductionOrdersCompanion(
           status: const Value('COMPLETED'),
-          actualQuantity: Value(Decimal.parse(order.plannedQuantity.toString())),
+          actualQuantity: Value(order.plannedQuantity),
         ),
       );
     });
