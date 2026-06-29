@@ -1266,4 +1266,73 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rawMaterials => 'Raw Materials';
+
+  @override
+  String get bankReconciliation => 'Bank Reconciliation';
+
+  @override
+  String get autoBreakService => 'Auto-Break Service';
+
+  @override
+  String get unitHierarchy => 'Unit Hierarchy';
+
+  @override
+  String get addUnit => 'Add Unit';
+
+  @override
+  String get removeUnit => 'Remove Unit';
+
+  @override
+  String get unitName => 'Unit Name';
+
+  @override
+  String get unitFactor => 'Unit Factor';
+
+  @override
+  String get returnMode => 'Return Mode';
+
+  @override
+  String get returnFromSale => 'Return from Sale';
+
+  @override
+  String get originalSaleReference => 'Original Sale Reference';
+
+  @override
+  String get searchSale => 'Search Sale';
+
+  @override
+  String get returnItem => 'Return Item';
+
+  @override
+  String get returnQuantity => 'Return Quantity';
+
+  @override
+  String get returnReason => 'Return Reason';
+
+  @override
+  String get returnSuccess => 'Return processed successfully';
+
+  @override
+  String get totalRefund => 'Total Refund';
+
+  @override
+  String get cancelReturn => 'Cancel Return';
+
+  @override
+  String get unmatchedTransactions => 'Unmatched Transactions';
+
+  @override
+  String get reconcileSelected => 'Reconcile Selected';
+
+  @override
+  String get autoReconcile => 'Auto Reconcile';
+
+  @override
+  String get reconcileAll => 'Reconcile All';
+
+  @override
+  String get tolerance => 'Tolerance';
+
+  @override
+  String get noUnmatchedTransactions => 'No unmatched transactions';
 }

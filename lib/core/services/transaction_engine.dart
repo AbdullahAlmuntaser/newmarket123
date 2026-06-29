@@ -42,7 +42,8 @@ class TransactionEngine {
           ..where((p) => p.endDate.isBiggerOrEqual(Variable(now))))
         .getSingleOrNull();
     if (openPeriod == null) {
-      throw Exception('لا توجد فترة محاسبية مفتوحة حالياً. يرجى فتح فترة محاسبية جديدة.');
+      throw Exception(
+          'لا توجد فترة محاسبية مفتوحة حالياً. يرجى فتح فترة محاسبية جديدة.');
     }
   }
 
@@ -88,10 +89,13 @@ class TransactionEngine {
       // Process each item: update stock, create batches, allocate landed costs
       for (var item in items) {
         Decimal itemValue = item.quantity * item.price;
-        Decimal proportion = subtotal > Decimal.zero ? (itemValue / subtotal).toDecimal() : Decimal.zero;
+        Decimal proportion = subtotal > Decimal.zero
+            ? (itemValue / subtotal).toDecimal()
+            : Decimal.zero;
         Decimal allocatedLandedCost = purchase.landedCosts * proportion;
-        Decimal landedCostPerUnit =
-            item.quantity > Decimal.zero ? (allocatedLandedCost / item.quantity).toDecimal() : Decimal.zero;
+        Decimal landedCostPerUnit = item.quantity > Decimal.zero
+            ? (allocatedLandedCost / item.quantity).toDecimal()
+            : Decimal.zero;
         Decimal finalUnitCost = item.price + landedCostPerUnit;
 
         final product = await (db.select(
@@ -149,8 +153,8 @@ class TransactionEngine {
 
       // Update purchase status
       await (db.update(db.purchases)..where((p) => p.id.equals(purchaseId)))
-          .write(const PurchasesCompanion(
-              status: Value(DocumentStatus.received)));
+          .write(
+              const PurchasesCompanion(status: Value(DocumentStatus.received)));
 
       // Update supplier balance for credit purchases
       if (purchase.isCredit && purchase.supplierId != null) {
@@ -277,7 +281,8 @@ class TransactionEngine {
             )..where((b) => b.id.equals(batchData.batch.id)))
                 .write(
               ProductBatchesCompanion(
-                quantity: Value(batchData.batch.quantity - batchData.remainingQuantity),
+                quantity: Value(
+                    batchData.batch.quantity - batchData.remainingQuantity),
               ),
             );
             await db.into(db.inventoryTransactions).insert(
@@ -303,11 +308,16 @@ class TransactionEngine {
           // FIFO fallback
           final batches = await (db.select(db.productBatches)
                 ..where((b) => b.productId.equals(item.productId))
-                ..where((b) => b.quantity.isBiggerThan(Variable(Decimal.zero.toString())))
+                ..where((b) =>
+                    b.quantity.isBiggerThan(Variable(Decimal.zero.toString())))
                 ..orderBy([
-                  (b) => OrderingTerm(expression: b.expiryDate.isNull(), mode: OrderingMode.asc),
-                  (b) => OrderingTerm(expression: b.expiryDate, mode: OrderingMode.asc),
-                  (b) => OrderingTerm(expression: b.createdAt, mode: OrderingMode.asc),
+                  (b) => OrderingTerm(
+                      expression: b.expiryDate.isNull(),
+                      mode: OrderingMode.asc),
+                  (b) => OrderingTerm(
+                      expression: b.expiryDate, mode: OrderingMode.asc),
+                  (b) => OrderingTerm(
+                      expression: b.createdAt, mode: OrderingMode.asc),
                 ]))
               .get();
           Decimal totalDeducted = Decimal.zero;
@@ -320,7 +330,8 @@ class TransactionEngine {
               db.productBatches,
             )..where((b) => b.id.equals(batch.id)))
                 .write(
-              ProductBatchesCompanion(quantity: Value(batch.quantity - deductFromThisBatch)),
+              ProductBatchesCompanion(
+                  quantity: Value(batch.quantity - deductFromThisBatch)),
             );
             await db.into(db.inventoryTransactions).insert(
                   InventoryTransactionsCompanion.insert(
@@ -390,7 +401,8 @@ class TransactionEngine {
         details: 'Posted sale invoice $saleId',
       );
 
-      eventBus.fire(SaleCreatedEvent(sale, items, cogs: saleCogs, userId: userId));
+      eventBus
+          .fire(SaleCreatedEvent(sale, items, cogs: saleCogs, userId: userId));
     });
   }
 
@@ -438,15 +450,20 @@ class TransactionEngine {
           await (db.update(db.productBatches)
                 ..where((b) => b.id.equals(batch.id)))
               .write(
-            ProductBatchesCompanion(quantity: Value(batch.quantity + returnQty)),
+            ProductBatchesCompanion(
+                quantity: Value(batch.quantity + returnQty)),
           );
         } else {
           final existingBatches = await (db.select(db.productBatches)
                 ..where((b) => b.productId.equals(item.productId))
-                ..where((b) => b.quantity.isBiggerThan(Constant(Decimal.zero.toString())))
+                ..where((b) =>
+                    b.quantity.isBiggerThan(Constant(Decimal.zero.toString())))
                 ..orderBy([
-                  (b) => OrderingTerm(expression: b.expiryDate.isNull(), mode: OrderingMode.asc),
-                  (b) => OrderingTerm(expression: b.expiryDate, mode: OrderingMode.asc),
+                  (b) => OrderingTerm(
+                      expression: b.expiryDate.isNull(),
+                      mode: OrderingMode.asc),
+                  (b) => OrderingTerm(
+                      expression: b.expiryDate, mode: OrderingMode.asc),
                 ]))
               .get();
           if (existingBatches.isNotEmpty) {
@@ -454,7 +471,8 @@ class TransactionEngine {
             await (db.update(db.productBatches)
                   ..where((b) => b.id.equals(targetBatch.id)))
                 .write(
-              ProductBatchesCompanion(quantity: Value(targetBatch.quantity + returnQty)),
+              ProductBatchesCompanion(
+                  quantity: Value(targetBatch.quantity + returnQty)),
             );
           } else {
             final newBatchId = const Uuid().v4();
@@ -493,7 +511,8 @@ class TransactionEngine {
                 .reduce((a, b) => a.quantity > b.quantity ? a : b);
             await (db.update(db.productBatches)
                   ..where((b) => b.id.equals(targetBatch.id)))
-                .write(ProductBatchesCompanion(quantity: Value(targetBatch.quantity + mismatch)));
+                .write(ProductBatchesCompanion(
+                    quantity: Value(targetBatch.quantity + mismatch)));
           }
         }
 
@@ -568,10 +587,13 @@ class TransactionEngine {
         Decimal remainingToDeduct = item.quantity;
         final batches = await (db.select(db.productBatches)
               ..where((b) => b.productId.equals(item.productId))
-              ..where((b) => b.quantity.isBiggerThan(Constant(Decimal.zero.toString())))
+              ..where((b) =>
+                  b.quantity.isBiggerThan(Constant(Decimal.zero.toString())))
               ..orderBy([
-                (b) => OrderingTerm(expression: b.expiryDate.isNull(), mode: OrderingMode.asc),
-                (b) => OrderingTerm(expression: b.expiryDate, mode: OrderingMode.asc),
+                (b) => OrderingTerm(
+                    expression: b.expiryDate.isNull(), mode: OrderingMode.asc),
+                (b) => OrderingTerm(
+                    expression: b.expiryDate, mode: OrderingMode.asc),
               ]))
             .get();
 
@@ -582,7 +604,8 @@ class TransactionEngine {
               : batch.quantity;
           await (db.update(db.productBatches)
                 ..where((b) => b.id.equals(batch.id)))
-              .write(ProductBatchesCompanion(quantity: Value(batch.quantity - deduct)));
+              .write(ProductBatchesCompanion(
+                  quantity: Value(batch.quantity - deduct)));
           await db.into(db.inventoryTransactions).insert(
                 InventoryTransactionsCompanion.insert(
                   productId: item.productId,
@@ -601,7 +624,8 @@ class TransactionEngine {
             .getSingle();
         await (db.update(db.products)
               ..where((p) => p.id.equals(item.productId)))
-            .write(ProductsCompanion(stock: Value(product.stock - item.quantity)));
+            .write(
+                ProductsCompanion(stock: Value(product.stock - item.quantity)));
       }
 
       // Reverse supplier balance
@@ -629,7 +653,8 @@ class TransactionEngine {
         },
       );
 
-      eventBus.fire(PurchaseReturnCreatedEvent(purchaseReturn, items, userId: userId));
+      eventBus.fire(
+          PurchaseReturnCreatedEvent(purchaseReturn, items, userId: userId));
     });
   }
 
@@ -888,7 +913,8 @@ class TransactionEngine {
     return result;
   }
 
-  Future<List<PurchaseWithBalance>> getOutstandingPurchases(String supplierId) async {
+  Future<List<PurchaseWithBalance>> getOutstandingPurchases(
+      String supplierId) async {
     final purchases = await (db.select(db.purchases)
           ..where((p) => p.supplierId.equals(supplierId))
           ..where((p) => p.status.equals(DocumentStatus.posted.index))

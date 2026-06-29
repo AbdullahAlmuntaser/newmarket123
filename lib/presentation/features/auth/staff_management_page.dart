@@ -133,13 +133,14 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
                         ));
                         if (oldRole != selectedRole) {
                           await db.into(db.auditLogs).insert(
-                            AuditLogsCompanion.insert(
-                              action: 'UPDATE',
-                              targetEntity: 'User',
-                              entityId: user.id,
-                              details: drift.Value('Role changed from $oldRole to $selectedRole'),
-                            ),
-                          );
+                                AuditLogsCompanion.insert(
+                                  action: 'UPDATE',
+                                  targetEntity: 'User',
+                                  entityId: user.id,
+                                  details: drift.Value(
+                                      'Role changed from $oldRole to $selectedRole'),
+                                ),
+                              );
                         }
                       } else {
                         if (password.isEmpty) return;
@@ -152,13 +153,14 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
                           role: selectedRole,
                         ));
                         await db.into(db.auditLogs).insert(
-                          AuditLogsCompanion.insert(
-                            action: 'CREATE',
-                            targetEntity: 'User',
-                            entityId: newUserId,
-                            details: drift.Value('Created user: $fullName with role: $selectedRole'),
-                          ),
-                        );
+                              AuditLogsCompanion.insert(
+                                action: 'CREATE',
+                                targetEntity: 'User',
+                                entityId: newUserId,
+                                details: drift.Value(
+                                    'Created user: $fullName with role: $selectedRole'),
+                              ),
+                            );
                       }
                       if (context.mounted) Navigator.pop(context);
                     }

@@ -118,7 +118,8 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
                     label: const Text('آجل'),
                     avatar: const Icon(Icons.timer, size: 18),
                     selected: _paymentMethod == 'credit',
-                    onSelected: (_) => setState(() => _paymentMethod = 'credit'),
+                    onSelected: (_) =>
+                        setState(() => _paymentMethod = 'credit'),
                   ),
                 ],
               ),

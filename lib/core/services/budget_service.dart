@@ -30,8 +30,7 @@ class BudgetService {
         );
       }
 
-      final consumption =
-          (actualDecimal + expenseAmount) / budgetedDecimal;
+      final consumption = (actualDecimal + expenseAmount) / budgetedDecimal;
       if (consumption >= Decimal.fromInt(9) / Decimal.fromInt(10)) {
         await notificationService.showNotification(
           costCenterId.hashCode,
@@ -54,12 +53,13 @@ class BudgetService {
         .get();
 
     for (var budget in budgets) {
-      final newActual = Decimal.parse(budget.actualAmount.toString()) + expenseAmount;
+      final newActual =
+          Decimal.parse(budget.actualAmount.toString()) + expenseAmount;
       await (db.update(db.accBudgets)..where((b) => b.id.equals(budget.id)))
           .write(AccBudgetsCompanion(
         actualAmount: Value(newActual),
-        variance: Value(
-            Decimal.parse(budget.budgetedAmount.toString()) - newActual),
+        variance:
+            Value(Decimal.parse(budget.budgetedAmount.toString()) - newActual),
       ));
     }
   }

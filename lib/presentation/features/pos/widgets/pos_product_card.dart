@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/core/services/packaging_engine.dart';
@@ -26,15 +27,7 @@ class PosProductCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Center(
-                  child: Icon(
-                    Icons.inventory_2,
-                    size: 40,
-                    color: Theme.of(
-                      context,
-                    ).primaryColor.withOpacity(0.5),
-                  ),
-                ),
+                child: _buildProductImage(context),
               ),
               Text(
                 product.name,
@@ -59,32 +52,63 @@ class PosProductCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   FutureBuilder<String>(
-                    future: packagingEngine.formatInventoryBalance(product.id, product.stock),
-                    builder: (context, snapshot) {
-                      final balanceText = snapshot.data ?? product.stock.toString();
-                      return Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: product.stock > Decimal.zero ? Colors.green : Colors.red,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          balanceText,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 8,
-                            fontWeight: FontWeight.bold,
+                      future: packagingEngine.formatInventoryBalance(
+                          product.id, product.stock),
+                      builder: (context, snapshot) {
+                        final balanceText =
+                            snapshot.data ?? product.stock.toString();
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: product.stock > Decimal.zero
+                                ? Colors.green
+                                : Colors.red,
+                            borderRadius: BorderRadius.circular(4),
                           ),
-                        ),
-                      );
-                    }
-                  ),
+                          child: Text(
+                            balanceText,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        );
+                      }),
                 ],
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildProductImage(BuildContext context) {
+    if (product.imagePath != null && product.imagePath!.isNotEmpty) {
+      final file = File(product.imagePath!);
+      if (file.existsSync()) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.file(
+            file,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _defaultIcon(context),
+          ),
+        );
+      }
+    }
+    return _defaultIcon(context);
+  }
+
+  Widget _defaultIcon(BuildContext context) {
+    return Center(
+      child: Icon(
+        Icons.inventory_2,
+        size: 40,
+        color: Theme.of(context).primaryColor.withOpacity(0.5),
       ),
     );
   }

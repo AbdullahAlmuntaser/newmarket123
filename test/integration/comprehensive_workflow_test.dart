@@ -11,7 +11,9 @@ void main() {
 
       double subtotal = 0;
       for (var item in items) {
-        subtotal += (item['price'] as num).toDouble() * (item['qty'] as num).toDouble() * (item['factor'] as num).toDouble();
+        subtotal += (item['price'] as num).toDouble() *
+            (item['qty'] as num).toDouble() *
+            (item['factor'] as num).toDouble();
       }
       expect(subtotal, 850.0);
 
@@ -55,7 +57,8 @@ void main() {
       };
 
       const newSale = 4000.0;
-      final newBalance = (customer['currentBalance'] as num).toDouble() + newSale;
+      final newBalance =
+          (customer['currentBalance'] as num).toDouble() + newSale;
 
       final canSell = newBalance <= (customer['creditLimit'] as num).toDouble();
 
@@ -95,8 +98,10 @@ void main() {
       double totalCost = 0;
 
       for (var sale in sales) {
-        totalRevenue += (sale['qty'] as num).toDouble() * (sale['price'] as num).toDouble();
-        totalCost += (sale['qty'] as num).toDouble() * (sale['cost'] as num).toDouble();
+        totalRevenue +=
+            (sale['qty'] as num).toDouble() * (sale['price'] as num).toDouble();
+        totalCost +=
+            (sale['qty'] as num).toDouble() * (sale['cost'] as num).toDouble();
       }
 
       final grossProfit = totalRevenue - totalCost;
@@ -118,9 +123,15 @@ void main() {
         {'price': 50.0, 'qty': 2.0},
       ];
 
-      final subtotal = items
-          .where((i) => (i['qty'] as num).toDouble() > 0)
-          .fold(0.0, (sum, i) => sum + (i['price'] as num).toDouble() * (i['qty'] as num).toDouble());
+      final subtotal =
+          items
+              .where((i) => (i['qty'] as num).toDouble() > 0)
+              .fold(
+                  0.0,
+                  (sum, i) =>
+                      sum +
+                      (i['price'] as num).toDouble() *
+                          (i['qty'] as num).toDouble());
 
       expect(subtotal, 100.0);
     });
@@ -154,7 +165,8 @@ void main() {
     test('Unique ID generation', () {
       final generatedIds = <String>{};
       for (var i = 0; i < 1000; i++) {
-        final id = DateTime.now().microsecondsSinceEpoch.toString() + i.toString();
+        final id =
+            DateTime.now().microsecondsSinceEpoch.toString() + i.toString();
         generatedIds.add(id);
       }
 

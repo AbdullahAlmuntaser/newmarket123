@@ -20,7 +20,7 @@ class _TransfersPageState extends State<TransfersPage> {
   final _commissionController = TextEditingController();
   final _companyController = TextEditingController();
   final _noteController = TextEditingController();
-  
+
   String? _senderAccountId;
   String? _receiverAccountId;
   String _transferType = 'CASH';
@@ -46,7 +46,8 @@ class _TransfersPageState extends State<TransfersPage> {
                         child: AccountSelectorWidget(
                           label: 'من حساب',
                           selectedAccountId: _senderAccountId,
-                          onSelected: (acc) => setState(() => _senderAccountId = acc?.id),
+                          onSelected: (acc) =>
+                              setState(() => _senderAccountId = acc?.id),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -54,7 +55,8 @@ class _TransfersPageState extends State<TransfersPage> {
                         child: AccountSelectorWidget(
                           label: 'إلى حساب',
                           selectedAccountId: _receiverAccountId,
-                          onSelected: (acc) => setState(() => _receiverAccountId = acc?.id),
+                          onSelected: (acc) =>
+                              setState(() => _receiverAccountId = acc?.id),
                         ),
                       ),
                     ],
@@ -85,11 +87,16 @@ class _TransfersPageState extends State<TransfersPage> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           value: _transferType,
-                          decoration: const InputDecoration(labelText: 'نوع التحويل', border: OutlineInputBorder()),
+                          decoration: const InputDecoration(
+                              labelText: 'نوع التحويل',
+                              border: OutlineInputBorder()),
                           items: const [
-                            DropdownMenuItem(value: 'CASH', child: Text('نقدي')),
-                            DropdownMenuItem(value: 'BANK', child: Text('بنكي')),
-                            DropdownMenuItem(value: 'CHECK', child: Text('شيك')),
+                            DropdownMenuItem(
+                                value: 'CASH', child: Text('نقدي')),
+                            DropdownMenuItem(
+                                value: 'BANK', child: Text('بنكي')),
+                            DropdownMenuItem(
+                                value: 'CHECK', child: Text('شيك')),
                           ],
                           onChanged: (v) => setState(() => _transferType = v!),
                         ),
@@ -98,7 +105,9 @@ class _TransfersPageState extends State<TransfersPage> {
                       Expanded(
                         child: TextFormField(
                           controller: _companyController,
-                          decoration: const InputDecoration(labelText: 'شركة التحويل', border: OutlineInputBorder()),
+                          decoration: const InputDecoration(
+                              labelText: 'شركة التحويل',
+                              border: OutlineInputBorder()),
                         ),
                       ),
                     ],
@@ -106,13 +115,15 @@ class _TransfersPageState extends State<TransfersPage> {
                   const SizedBox(height: 10),
                   TextFormField(
                     controller: _noteController,
-                    decoration: const InputDecoration(labelText: 'ملاحظات', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(
+                        labelText: 'ملاحظات', border: OutlineInputBorder()),
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
-                        if (_senderAccountId == null || _receiverAccountId == null) {
+                        if (_senderAccountId == null ||
+                            _receiverAccountId == null) {
                           AppSnackBar.warning(context, 'يرجى اختيار الحسابات');
                           return;
                         }
@@ -121,7 +132,8 @@ class _TransfersPageState extends State<TransfersPage> {
                             senderAccountId: _senderAccountId!,
                             receiverAccountId: _receiverAccountId!,
                             amount: MoneyFormField.valueOf(_amountController),
-                            commission: MoneyFormField.valueOf(_commissionController),
+                            commission:
+                                MoneyFormField.valueOf(_commissionController),
                             company: _companyController.text,
                             transferType: _transferType,
                             note: _noteController.text,
@@ -150,7 +162,9 @@ class _TransfersPageState extends State<TransfersPage> {
             child: StreamBuilder<List<FinancialTransfer>>(
               stream: db.transfersDao.watchAllTransfers(),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
                 final transfers = snapshot.data!;
                 return ListView.builder(
                   itemCount: transfers.length,
@@ -158,7 +172,8 @@ class _TransfersPageState extends State<TransfersPage> {
                     final t = transfers[index];
                     return ListTile(
                       title: Text('تحويل: ${t.amount}'),
-                      subtitle: Text('${intl.DateFormat('yyyy-MM-dd').format(t.date)} - ${t.note ?? ""}'),
+                      subtitle: Text(
+                          '${intl.DateFormat('yyyy-MM-dd').format(t.date)} - ${t.note ?? ""}'),
                       trailing: Text(t.status),
                     );
                   },
@@ -173,7 +188,8 @@ class _TransfersPageState extends State<TransfersPage> {
 }
 
 class ApiResponseSnackBar extends SnackBar {
-  ApiResponseSnackBar({super.key, required String message, bool isError = false})
+  ApiResponseSnackBar(
+      {super.key, required String message, bool isError = false})
       : super(
           content: Text(message),
           backgroundColor: isError ? Colors.red : Colors.green,

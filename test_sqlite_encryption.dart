@@ -1,4 +1,3 @@
-
 // ignore_for_file: avoid_print
 import 'package:sqlite3/sqlite3.dart';
 import 'dart:io';

@@ -22,7 +22,8 @@ class _UnifiedStatementPageState extends State<UnifiedStatementPage> {
   Future<void> _loadStatement() async {
     if (_accountId == null) return;
     setState(() => _isLoading = true);
-    final service = Provider.of<UnifiedStatementService>(context, listen: false);
+    final service =
+        Provider.of<UnifiedStatementService>(context, listen: false);
     final result = await service.getUnifiedStatement(
       accountId: _accountId!,
       startDate: _startDate,
@@ -80,11 +81,14 @@ class _UnifiedStatementPageState extends State<UnifiedStatementPage> {
                     ],
                     rows: _entries!.map((e) {
                       return DataRow(cells: [
-                        DataCell(Text(intl.DateFormat('yyyy-MM-dd').format(e.date))),
+                        DataCell(
+                            Text(intl.DateFormat('yyyy-MM-dd').format(e.date))),
                         DataCell(Text(e.description)),
                         DataCell(Text(e.debit.toStringAsFixed(2))),
                         DataCell(Text(e.credit.toStringAsFixed(2))),
-                        DataCell(Text(e.balance.toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.bold))),
+                        DataCell(Text(e.balance.toStringAsFixed(2),
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold))),
                       ]);
                     }).toList(),
                   ),

@@ -51,8 +51,7 @@ class _SuppliersPageState extends State<SuppliersPage> {
     }
   }
 
-  bool get _hasMoreItems =>
-      (_currentPage + 1) * _pageSize < _totalSuppliers;
+  bool get _hasMoreItems => (_currentPage + 1) * _pageSize < _totalSuppliers;
 
   Future<void> _loadTotalCount() async {
     final db = context.read<AppDatabase>();
@@ -300,7 +299,8 @@ class _SuppliersPageState extends State<SuppliersPage> {
     final engine = sl<TransactionEngine>();
 
     try {
-      final outstandingPurchases = await engine.getOutstandingPurchases(supplier.id);
+      final outstandingPurchases =
+          await engine.getOutstandingPurchases(supplier.id);
       if (!mounted) return;
 
       if (outstandingPurchases.isEmpty) {

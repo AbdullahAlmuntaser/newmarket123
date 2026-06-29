@@ -19,6 +19,7 @@ import 'package:supermarket/presentation/features/products/unit_conversion_page.
 import 'package:supermarket/presentation/features/inventory/stock_transfer_page.dart';
 import 'package:supermarket/presentation/features/inventory/warehouse_management_page.dart';
 import 'package:supermarket/presentation/features/inventory/stock_take_page.dart';
+import 'package:supermarket/presentation/features/inventory/beginning_of_period_page.dart';
 import 'package:supermarket/presentation/features/inventory/low_stock_alert_page.dart';
 import 'package:supermarket/presentation/features/inventory/warehouse_manager_page.dart';
 import 'package:supermarket/presentation/features/manufacturing/bom_management_page.dart';
@@ -49,6 +50,7 @@ import 'package:supermarket/presentation/features/accounting/fixed_assets_page.d
 import 'package:supermarket/presentation/features/accounting/manual_journal_entry_page.dart';
 import 'package:supermarket/presentation/features/accounting/manual_voucher_page.dart';
 import 'package:supermarket/presentation/features/accounting/reconciliation_page.dart';
+import 'package:supermarket/presentation/features/accounting/bank_reconciliation_page.dart';
 import 'package:supermarket/presentation/features/accounting/cost_centers_page.dart';
 import 'package:supermarket/presentation/features/accounting/budgets_page.dart';
 import 'package:supermarket/presentation/features/accounting/ap_invoices_page.dart';
@@ -74,6 +76,7 @@ import 'package:supermarket/presentation/features/reports/audit_log_page.dart';
 import 'package:supermarket/presentation/features/reports/aging_report_page.dart';
 import 'package:supermarket/presentation/features/reports/cash_flow_forecast_page.dart';
 import 'package:supermarket/presentation/features/auth/staff_management_page.dart';
+import 'package:supermarket/presentation/features/home/widgets/unified_transaction_page.dart';
 import 'package:supermarket/presentation/features/settings/backup_page.dart';
 import 'package:supermarket/presentation/features/settings/permissions_management_page.dart';
 import 'package:supermarket/presentation/features/settings/currency_rates_page.dart';
@@ -97,6 +100,21 @@ import 'package:supermarket/presentation/features/workspaces/inventory_workspace
 import 'package:supermarket/presentation/features/workspaces/parties_workspace.dart';
 import 'package:supermarket/presentation/features/workspaces/reports_workspace.dart';
 import 'package:supermarket/presentation/features/workspaces/admin_workspace.dart';
+import 'package:supermarket/presentation/features/sales_orders/sales_orders_page.dart';
+import 'package:supermarket/presentation/features/sales_orders/add_sales_order_page.dart';
+import 'package:supermarket/presentation/features/sales_orders/sales_order_detail_page.dart';
+import 'package:supermarket/presentation/features/products/barcode_printing_page.dart';
+import 'package:supermarket/presentation/features/reports/customer_report_page.dart';
+import 'package:supermarket/presentation/features/reports/supplier_report_page.dart';
+import 'package:supermarket/presentation/features/reports/purchase_report_page.dart';
+import 'package:supermarket/presentation/features/reports/cashbox_report_page.dart';
+import 'package:supermarket/presentation/features/reports/stock_movement_report_page.dart';
+import 'package:supermarket/presentation/features/reports/income_expense_report_page.dart';
+import 'package:supermarket/presentation/features/reports/slow_moving_products_page.dart';
+import 'package:supermarket/presentation/features/reports/top_selling_products_page.dart';
+import 'package:supermarket/presentation/features/reports/advanced_profit_report_page.dart';
+import 'package:supermarket/presentation/features/inventory/item_movement_detail_page.dart';
+import 'package:supermarket/presentation/features/inventory/product_edit_log_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -128,6 +146,9 @@ final GoRouter appRouter = GoRouter(
   },
   routes: [
     GoRoute(path: '/', builder: (context, state) => const HomePage()),
+    GoRoute(
+        path: '/transaction',
+        builder: (context, state) => const UnifiedTransactionPage()),
     GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
     GoRoute(
         path: '/access-denied',
@@ -143,7 +164,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
         path: '/admin-dashboard',
         builder: (context, state) => const AdminDashboardPage()),
-    
+
     // Workspaces
     GoRoute(
         path: '/workspace/operations',
@@ -181,6 +202,20 @@ final GoRouter appRouter = GoRouter(
         path: '/sales/returns/new',
         builder: (context, state) =>
             AddSalesReturnPage(saleId: state.extra as String?)),
+    GoRoute(
+        path: '/sales/orders',
+        builder: (context, state) => const SalesOrdersPage()),
+    GoRoute(
+        path: '/sales/orders/new',
+        builder: (context, state) => const AddSalesOrderPage()),
+    GoRoute(
+        path: '/sales/orders/:id',
+        builder: (context, state) =>
+            SalesOrderDetailPage(orderId: state.pathParameters['id']!)),
+    GoRoute(
+        path: '/sales/orders/:id/edit',
+        builder: (context, state) =>
+            AddSalesOrderPage(orderId: state.pathParameters['id'])),
     GoRoute(path: '/returns', builder: (context, state) => const ReturnsPage()),
     GoRoute(
         path: '/returns/new',
@@ -197,6 +232,9 @@ final GoRouter appRouter = GoRouter(
         path: '/categories',
         builder: (context, state) => const CategoriesPage()),
     GoRoute(
+        path: '/barcode-printing',
+        builder: (context, state) => const BarcodePrintingPage()),
+    GoRoute(
         path: '/low-stock',
         builder: (context, state) => const LowStockProductsPage()),
     GoRoute(
@@ -209,6 +247,9 @@ final GoRouter appRouter = GoRouter(
         path: '/inventory/stock-take',
         builder: (context, state) => const StockTakePage()),
     GoRoute(
+        path: '/inventory/beginning-of-period',
+        builder: (context, state) => const BeginningOfPeriodPage()),
+    GoRoute(
         path: '/inventory/low-stock-alert',
         builder: (context, state) => const LowStockAlertPage()),
     GoRoute(
@@ -217,6 +258,15 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
         path: '/inventory/shifts',
         builder: (context, state) => const ShiftsPage()),
+    GoRoute(
+        path: '/inventory/item-movement/:id',
+        builder: (context, state) => ItemMovementDetailPage(
+              productId: state.pathParameters['id']!,
+              productName: state.extra as String? ?? '',
+            )),
+    GoRoute(
+        path: '/inventory/edit-log',
+        builder: (context, state) => const ProductEditLogPage()),
     GoRoute(
         path: '/manufacturing/bom',
         builder: (context, state) => const BomManagementPage()),
@@ -309,6 +359,9 @@ final GoRouter appRouter = GoRouter(
         path: '/accounting/reconciliation',
         builder: (context, state) => const ReconciliationPage()),
     GoRoute(
+        path: '/accounting/bank-reconciliation',
+        builder: (context, state) => const BankReconciliationPage()),
+    GoRoute(
         path: '/accounting/periods',
         builder: (context, state) => const AccountingPeriodsPage()),
     GoRoute(
@@ -345,8 +398,7 @@ final GoRouter appRouter = GoRouter(
         path: '/accounting/customer-ledger',
         builder: (context, state) => const CustomerLedgerPage()),
     GoRoute(
-        path: '/reports',
-        builder: (context, state) => const ReportsHubPage()),
+        path: '/reports', builder: (context, state) => const ReportsHubPage()),
     GoRoute(
         path: '/reports/sales',
         builder: (context, state) => const SalesReportsPage()),
@@ -381,6 +433,33 @@ final GoRouter appRouter = GoRouter(
         path: '/reports/audit',
         builder: (context, state) => const AuditLogPage()),
     GoRoute(
+        path: '/reports/customers',
+        builder: (context, state) => const CustomerReportPage()),
+    GoRoute(
+        path: '/reports/suppliers',
+        builder: (context, state) => const SupplierReportPage()),
+    GoRoute(
+        path: '/reports/purchases',
+        builder: (context, state) => const PurchaseReportPage()),
+    GoRoute(
+        path: '/reports/cashbox',
+        builder: (context, state) => const CashboxReportPage()),
+    GoRoute(
+        path: '/reports/stock-movement',
+        builder: (context, state) => const StockMovementReportPage()),
+    GoRoute(
+        path: '/reports/income-expense',
+        builder: (context, state) => const IncomeExpenseReportPage()),
+    GoRoute(
+        path: '/reports/slow-moving',
+        builder: (context, state) => const SlowMovingProductsPage()),
+    GoRoute(
+        path: '/reports/top-selling',
+        builder: (context, state) => const TopSellingProductsPage()),
+    GoRoute(
+        path: '/reports/advanced-profit',
+        builder: (context, state) => const AdvancedProfitReportPage()),
+    GoRoute(
         path: '/users',
         builder: (context, state) => const StaffManagementPage()),
     GoRoute(
@@ -388,11 +467,8 @@ final GoRouter appRouter = GoRouter(
         builder: (context, state) => const UserRolesPage()),
     GoRoute(path: '/sync', builder: (context, state) => const SyncPage()),
     GoRoute(
-        path: '/approvals',
-        builder: (context, state) => const ApprovalsPage()),
-    GoRoute(
-        path: '/loyalty',
-        builder: (context, state) => const LoyaltyPage()),
+        path: '/approvals', builder: (context, state) => const ApprovalsPage()),
+    GoRoute(path: '/loyalty', builder: (context, state) => const LoyaltyPage()),
     GoRoute(
         path: '/promotions',
         builder: (context, state) => const PromotionsPage()),

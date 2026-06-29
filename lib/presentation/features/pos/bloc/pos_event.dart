@@ -137,3 +137,12 @@ class ProcessReturn extends PosEvent {
 }
 
 class ClearReturn extends PosEvent {}
+
+class HoldSale extends PosEvent {}
+
+class RecallSale extends PosEvent {
+  final int holdIndex;
+  const RecallSale(this.holdIndex);
+  @override
+  List<Object?> get props => [holdIndex];
+}

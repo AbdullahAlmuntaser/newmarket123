@@ -12,18 +12,6 @@ class CurrencyRatesPage extends StatefulWidget {
 
 class _CurrencyRatesPageState extends State<CurrencyRatesPage> {
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Use context inside postFrameCallback to avoid async gap issues
-      context
-          .read<AppDatabase>()
-          .select(context.read<AppDatabase>().currencies)
-          .get();
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     final db = context.watch<AppDatabase>();
 
@@ -66,10 +54,21 @@ class _CurrencyRatesPageState extends State<CurrencyRatesPage> {
                                 fontWeight: FontWeight.bold)),
                     ],
                   ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () =>
-                        _showEditCurrencyDialog(context, db, currency),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () =>
+                            _showEditCurrencyDialog(context, db, currency),
+                      ),
+                      if (!currency.isBase)
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () =>
+                              _deleteCurrency(context, db, currency),
+                        ),
+                    ],
                   ),
                 ),
               );
@@ -198,7 +197,8 @@ class _CurrencyRatesPageState extends State<CurrencyRatesPage> {
                           fractionalUnit:
                               drift.Value(fractionalUnitController.text.trim()),
                           decimalPlaces: drift.Value(decimals),
-                          exchangeRate: drift.Value(Decimal.parse(rate.toString())),
+                          exchangeRate:
+                              drift.Value(Decimal.parse(rate.toString())),
                           isBase: drift.Value(isBase),
                         ),
                       );
@@ -311,7 +311,7 @@ class _CurrencyRatesPageState extends State<CurrencyRatesPage> {
                             isBase: drift.Value(false)));
                   }
 
-                      await db.update(db.currencies).replace(
+                  await db.update(db.currencies).replace(
                         currency.copyWith(
                           name: nameController.text.trim(),
                           fractionalUnit:
@@ -334,6 +334,46 @@ class _CurrencyRatesPageState extends State<CurrencyRatesPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _deleteCurrency(
+      BuildContext context, AppDatabase db, Currency currency) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('حذف العملة'),
+        content: Text('هل تريد حذف عملة ${currency.name} (${currency.code})؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await (db.delete(db.currencies)
+                      ..where((c) => c.id.equals(currency.id)))
+                    .go();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('تم حذف العملة')),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('خطأ: $e')),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('حذف'),
+          ),
+        ],
       ),
     );
   }

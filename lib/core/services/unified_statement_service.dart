@@ -21,10 +21,11 @@ class UnifiedStatementService {
     double runningBalance = (await db.accountingDao.getAccountBalanceAsOfDate(
       accountId,
       startDate.subtract(const Duration(milliseconds: 1)),
-    )).toDouble();
+    ))
+        .toDouble();
 
     List<UnifiedStatementEntry> entries = [];
-    
+
     // Add opening balance entry
     entries.add(UnifiedStatementEntry(
       date: startDate,

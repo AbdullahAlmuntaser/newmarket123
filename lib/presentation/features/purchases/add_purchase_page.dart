@@ -108,9 +108,11 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
       UnitConversion? selectedUnit;
       for (final conversion in conversions) {
         final matchesUnitId = item.unitId != null &&
-            (conversion.id == item.unitId || conversion.unitName == item.unitId);
+            (conversion.id == item.unitId ||
+                conversion.unitName == item.unitId);
         final matchesFactor = item.unitId == null &&
-            (conversion.factor - item.unitFactor).abs() < Decimal.parse('0.0001');
+            (conversion.factor - item.unitFactor).abs() <
+                Decimal.parse('0.0001');
         if (matchesUnitId || matchesFactor) {
           selectedUnit = conversion;
           break;
@@ -144,12 +146,15 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         ..addAll(loadedItems);
       _discountController.text =
           purchase.discount == Decimal.zero ? '' : purchase.discount.toString();
-      _shippingCostController.text =
-          purchase.shippingCost == Decimal.zero ? '' : purchase.shippingCost.toString();
-      _otherExpensesController.text =
-          purchase.otherExpenses == Decimal.zero ? '' : purchase.otherExpenses.toString();
+      _shippingCostController.text = purchase.shippingCost == Decimal.zero
+          ? ''
+          : purchase.shippingCost.toString();
+      _otherExpensesController.text = purchase.otherExpenses == Decimal.zero
+          ? ''
+          : purchase.otherExpenses.toString();
       _originalTax = purchase.tax.toDouble();
-      _taxController.text = purchase.tax == Decimal.zero ? '' : purchase.tax.toString();
+      _taxController.text =
+          purchase.tax == Decimal.zero ? '' : purchase.tax.toString();
     });
   }
 
@@ -235,7 +240,6 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
     );
   }
 
-
   Widget _buildLockedBanner() => Container(
         width: double.infinity,
         margin: const EdgeInsets.all(8),
@@ -292,23 +296,24 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
                 ),
                 Expanded(
                     child: StreamBuilder<List<Currency>>(
-                      stream: db.select(db.currencies).watch(),
-                      builder: (context, snapshot) {
-                        final currencies = snapshot.data ?? [];
-                        return DropdownButtonFormField<String>(
-                          value:
-                              currencies.any((c) => c.code == _selectedCurrency)
-                                  ? _selectedCurrency
-                                  : null,
-                          decoration: const InputDecoration(labelText: 'العملة'),
-                          items: currencies.map((c) => DropdownMenuItem(
-                            value: c.code,
-                            child: Text('${c.code} - ${c.name}'),
-                          )).toList(),
-                          onChanged: (v) => setState(() => _selectedCurrency = v),
-                        );
-                      },
-                    )),
+                  stream: db.select(db.currencies).watch(),
+                  builder: (context, snapshot) {
+                    final currencies = snapshot.data ?? [];
+                    return DropdownButtonFormField<String>(
+                      value: currencies.any((c) => c.code == _selectedCurrency)
+                          ? _selectedCurrency
+                          : null,
+                      decoration: const InputDecoration(labelText: 'العملة'),
+                      items: currencies
+                          .map((c) => DropdownMenuItem(
+                                value: c.code,
+                                child: Text('${c.code} - ${c.name}'),
+                              ))
+                          .toList(),
+                      onChanged: (v) => setState(() => _selectedCurrency = v),
+                    );
+                  },
+                )),
               ],
             ),
             Row(
@@ -534,15 +539,20 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
                   quantity: Decimal.parse(item.quantity.toString()),
                   unitPrice: Decimal.parse(item.unitPrice.toString()),
                   unitId: drift.Value(item.selectedUnit?.unitName),
-                  unitFactor: drift.Value(Decimal.parse((item.selectedUnit?.factor ?? 1.0).toString())),
-                  quantityInBaseUnit: drift.Value(
-                      Decimal.parse((item.quantity * (item.selectedUnit?.factor.toDouble() ?? 1.0)).toString())),
+                  unitFactor: drift.Value(Decimal.parse(
+                      (item.selectedUnit?.factor ?? 1.0).toString())),
+                  quantityInBaseUnit: drift.Value(Decimal.parse((item.quantity *
+                          (item.selectedUnit?.factor.toDouble() ?? 1.0))
+                      .toString())),
                   price: Decimal.parse(item.subtotal.toString()),
-                  discount: drift.Value(Decimal.parse(item.discountAmount.toString())),
+                  discount: drift.Value(
+                      Decimal.parse(item.discountAmount.toString())),
                   tax: drift.Value(Decimal.parse(
-                    ((item.subtotal - item.discountAmount) * (item.taxPercent / 100)).toString()
-                  )),
-                  taxPercent: drift.Value(Decimal.parse(item.taxPercent.toString())),
+                      ((item.subtotal - item.discountAmount) *
+                              (item.taxPercent / 100))
+                          .toString())),
+                  taxPercent:
+                      drift.Value(Decimal.parse(item.taxPercent.toString())),
                   batchNumber: drift.Value(item.batchNumber),
                   expiryDate: drift.Value(item.expiryDate),
                 ))
@@ -552,12 +562,14 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         for (var item in _items) {
           final factor = item.selectedUnit?.factor.toDouble() ?? 1.0;
           final baseBuyPrice = item.unitPrice / factor;
-          
-          await (db.update(db.products)..where((p) => p.id.equals(item.product.id)))
+
+          await (db.update(db.products)
+                ..where((p) => p.id.equals(item.product.id)))
               .write(ProductsCompanion(
             buyPrice: drift.Value(Decimal.parse(baseBuyPrice.toString())),
             sellPrice: drift.Value(Decimal.parse(item.retailPrice.toString())),
-            wholesalePrice: drift.Value(Decimal.parse(item.wholesalePrice.toString())),
+            wholesalePrice:
+                drift.Value(Decimal.parse(item.wholesalePrice.toString())),
           ));
         }
 
@@ -573,8 +585,10 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
               total: Decimal.parse(_total.toString()),
               discount: drift.Value(Decimal.parse(_discount.toString())),
               tax: drift.Value(Decimal.parse(_tax.toString())),
-              shippingCost: drift.Value(Decimal.parse(_shippingCost.toString())),
-              otherExpenses: drift.Value(Decimal.parse(_otherExpenses.toString())),
+              shippingCost:
+                  drift.Value(Decimal.parse(_shippingCost.toString())),
+              otherExpenses:
+                  drift.Value(Decimal.parse(_otherExpenses.toString())),
               date: drift.Value(_selectedDate),
               status: const drift.Value(DocumentStatus.draft),
             ),
@@ -600,8 +614,10 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
               total: drift.Value(Decimal.parse(_total.toString())),
               discount: drift.Value(Decimal.parse(_discount.toString())),
               tax: drift.Value(Decimal.parse(_tax.toString())),
-              shippingCost: drift.Value(Decimal.parse(_shippingCost.toString())),
-              otherExpenses: drift.Value(Decimal.parse(_otherExpenses.toString())),
+              shippingCost:
+                  drift.Value(Decimal.parse(_shippingCost.toString())),
+              otherExpenses:
+                  drift.Value(Decimal.parse(_otherExpenses.toString())),
               date: drift.Value(_selectedDate),
             ),
             itemsCompanions: itemsCompanions,

@@ -27,8 +27,10 @@ class PackagingEngine {
   Future<List<ProductUnit>> getPackagingHierarchy(String productId) async {
     return (db.select(db.productUnits)
           ..where((u) => u.productId.equals(productId))
-          ..orderBy(
-              [(u) => OrderingTerm(expression: u.unitFactor, mode: OrderingMode.asc)]))
+          ..orderBy([
+            (u) =>
+                OrderingTerm(expression: u.unitFactor, mode: OrderingMode.asc)
+          ]))
         .get();
   }
 
@@ -43,7 +45,8 @@ class PackagingEngine {
     final hierarchy = await getPackagingHierarchy(productId);
     if (hierarchy.isEmpty) return results;
 
-    final availableBaseQty = await _getAvailableQuantity(productId, warehouseId);
+    final availableBaseQty =
+        await _getAvailableQuantity(productId, warehouseId);
     if (availableBaseQty >= requiredQtyInBase) return results;
 
     Decimal shortfall = requiredQtyInBase - availableBaseQty;
@@ -58,14 +61,16 @@ class PackagingEngine {
     for (final unit in sortedDesc) {
       if (shortfall <= Decimal.zero) break;
 
-      final batches = await _getBatchesHavingAtLeast(productId, warehouseId, unit.unitFactor);
+      final batches = await _getBatchesHavingAtLeast(
+          productId, warehouseId, unit.unitFactor);
 
       for (final batch in batches) {
         if (shortfall <= Decimal.zero || breakCount >= maxBreaks) break;
 
         while (batch.quantity >= unit.unitFactor && shortfall > Decimal.zero) {
           if (breakCount >= maxBreaks) break;
-          final toBreak = shortfall >= unit.unitFactor ? unit.unitFactor : shortfall;
+          final toBreak =
+              shortfall >= unit.unitFactor ? unit.unitFactor : shortfall;
           final result = await _breakOnePackage(
             batch: batch,
             packageSize: toBreak,
@@ -92,13 +97,15 @@ class PackagingEngine {
     required String productId,
     required String warehouseId,
   }) async {
-    final actualDeduction = packageSize < batch.quantity ? packageSize : batch.quantity;
-    final costPerUnit = (batch.costPrice * packageSize / packageSize).toDecimal(scaleOnInfinitePrecision: 4);
+    final actualDeduction =
+        packageSize < batch.quantity ? packageSize : batch.quantity;
+    final costPerUnit = (batch.costPrice * packageSize / packageSize)
+        .toDecimal(scaleOnInfinitePrecision: 4);
 
     await (db.update(db.productBatches)..where((b) => b.id.equals(batch.id)))
         .write(ProductBatchesCompanion(
-          quantity: Value(batch.quantity - actualDeduction),
-        ));
+      quantity: Value(batch.quantity - actualDeduction),
+    ));
 
     final newBatchId = const Uuid().v4();
     await db.into(db.productBatches).insert(ProductBatchesCompanion.insert(
@@ -109,7 +116,9 @@ class PackagingEngine {
               'BROKEN-${batch.batchNumber}-${DateTime.now().millisecondsSinceEpoch}',
           quantity: Value(actualDeduction),
           initialQuantity: Value(actualDeduction),
-          costPrice: Value((batch.costPrice / packageSize).toDecimal(scaleOnInfinitePrecision: 4) * actualDeduction),
+          costPrice: Value((batch.costPrice / packageSize)
+                  .toDecimal(scaleOnInfinitePrecision: 4) *
+              actualDeduction),
           expiryDate: Value(batch.expiryDate),
         ));
 
@@ -137,7 +146,8 @@ class PackagingEngine {
     );
   }
 
-  Future<Decimal> _getAvailableQuantity(String productId, String warehouseId) async {
+  Future<Decimal> _getAvailableQuantity(
+      String productId, String warehouseId) async {
     final batches = await (db.select(db.productBatches)
           ..where((b) => b.productId.equals(productId))
           ..where((b) => b.warehouseId.equals(warehouseId)))
@@ -150,16 +160,18 @@ class PackagingEngine {
   }
 
   Future<List<ProductBatch>> _getBatchesHavingAtLeast(
-    String productId, String warehouseId, Decimal minQty) async {
+      String productId, String warehouseId, Decimal minQty) async {
     return (db.select(db.productBatches)
           ..where((b) => b.productId.equals(productId))
           ..where((b) => b.warehouseId.equals(warehouseId))
-          ..where((b) => b.quantity.isBiggerOrEqual(Variable(minQty.toString())))
+          ..where(
+              (b) => b.quantity.isBiggerOrEqual(Variable(minQty.toString())))
           ..orderBy([(b) => OrderingTerm(expression: b.expiryDate)]))
         .get();
   }
 
-  Future<void> _postPackagingBreakGL(List<BreakResult> results, String productId) async {
+  Future<void> _postPackagingBreakGL(
+      List<BreakResult> results, String productId) async {
     if (costingService != null) {
       final method = await costingService!.getProductValuationMethod(productId);
       if (method == InventoryValuationMethod.avco) {
@@ -168,7 +180,8 @@ class PackagingEngine {
     }
   }
 
-  Future<String> formatInventoryBalance(String productId, Decimal totalQtyInBase) async {
+  Future<String> formatInventoryBalance(
+      String productId, Decimal totalQtyInBase) async {
     try {
       final hierarchy = await getPackagingHierarchy(productId);
       if (hierarchy.isEmpty) return '${totalQtyInBase.toStringAsFixed(0)} حبة';
@@ -180,7 +193,8 @@ class PackagingEngine {
       for (var unit in sortedHierarchy) {
         final factor = unit.unitFactor;
         if (factor <= Decimal.one) continue;
-        final count = (remaining / factor).toDecimal(scaleOnInfinitePrecision: 0);
+        final count =
+            (remaining / factor).toDecimal(scaleOnInfinitePrecision: 0);
         if (count > Decimal.zero) {
           parts.add('${count.toStringAsFixed(0)} ${unit.unitName}');
           remaining -= count * factor;
@@ -197,7 +211,8 @@ class PackagingEngine {
     }
   }
 
-  Future<ProductUnit?> getBestPackagingSuggestion(String productId, Decimal quantityInBase) async {
+  Future<ProductUnit?> getBestPackagingSuggestion(
+      String productId, Decimal quantityInBase) async {
     final hierarchy = await getPackagingHierarchy(productId);
     ProductUnit? bestMatch;
     for (var unit in hierarchy) {
@@ -210,9 +225,11 @@ class PackagingEngine {
     return bestMatch;
   }
 
-  Future<String?> checkRepackPossibility(String productId, Decimal quantityInBase) async {
+  Future<String?> checkRepackPossibility(
+      String productId, Decimal quantityInBase) async {
     final hierarchy = await getPackagingHierarchy(productId);
-    final largeUnits = hierarchy.where((u) => u.unitFactor > Decimal.one).toList();
+    final largeUnits =
+        hierarchy.where((u) => u.unitFactor > Decimal.one).toList();
     if (largeUnits.isEmpty) return null;
 
     for (var unit in largeUnits.reversed) {

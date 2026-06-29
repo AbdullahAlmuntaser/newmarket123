@@ -104,7 +104,13 @@ class SecurityService {
     );
     await db.customStatement(
       'INSERT INTO user_sessions (id, user_id, token, login_at, expires_at, is_active) VALUES (?, ?, ?, ?, ?, 1)',
-      [const Uuid().v4(), user.id, token, loginAt.toIso8601String(), expiresAt.toIso8601String()],
+      [
+        const Uuid().v4(),
+        user.id,
+        token,
+        loginAt.toIso8601String(),
+        expiresAt.toIso8601String()
+      ],
     );
 
     await _storage.write(key: 'auth_token_${user.id}', value: token);
@@ -127,7 +133,10 @@ class SecurityService {
         'u.username, u.role, u.full_name '
         'FROM user_sessions us JOIN users u ON us.user_id = u.id '
         'WHERE us.token = ? AND us.expires_at >= ? AND us.is_active = 1',
-        variables: [Variable(token), Variable(DateTime.now().toIso8601String())],
+        variables: [
+          Variable(token),
+          Variable(DateTime.now().toIso8601String())
+        ],
       ).get();
 
       if (rows.isEmpty) return null;

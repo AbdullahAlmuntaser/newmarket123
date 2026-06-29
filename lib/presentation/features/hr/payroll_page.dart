@@ -69,22 +69,22 @@ class _PayrollPageState extends State<PayrollPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-            QuantityFormField(
-              controller: monthController,
-              label: 'الشهر',
-              allowZero: false,
-              decoration: const InputDecoration(labelText: 'الشهر'),
-            ),
-            QuantityFormField(
-              controller: yearController,
-              label: 'السنة',
-              allowZero: false,
-              decoration: const InputDecoration(labelText: 'السنة'),
-            ),
-            TextField(
-              controller: noteController,
-              decoration: const InputDecoration(labelText: 'ملاحظات'),
-            ),
+              QuantityFormField(
+                controller: monthController,
+                label: 'الشهر',
+                allowZero: false,
+                decoration: const InputDecoration(labelText: 'الشهر'),
+              ),
+              QuantityFormField(
+                controller: yearController,
+                label: 'السنة',
+                allowZero: false,
+                decoration: const InputDecoration(labelText: 'السنة'),
+              ),
+              TextField(
+                controller: noteController,
+                decoration: const InputDecoration(labelText: 'ملاحظات'),
+              ),
             ],
           ),
         ),
@@ -99,8 +99,10 @@ class _PayrollPageState extends State<PayrollPage> {
                 AppSnackBar.warning(context, 'يرجى إدخال شهر وسنة صحيحين');
                 return;
               }
-              final month = MoneyFormField.tryParse(monthController.text)?.toInt();
-              final year = MoneyFormField.tryParse(yearController.text)?.toInt();
+              final month =
+                  MoneyFormField.tryParse(monthController.text)?.toInt();
+              final year =
+                  MoneyFormField.tryParse(yearController.text)?.toInt();
               if (month == null || month < 1 || month > 12) {
                 AppSnackBar.warning(context, 'الشهر يجب أن يكون بين 1 و12');
                 return;
@@ -109,7 +111,8 @@ class _PayrollPageState extends State<PayrollPage> {
                 AppSnackBar.warning(context, 'السنة غير صحيحة');
                 return;
               }
-              final period = '${year.toString().padLeft(4, '0')}-${month.toString().padLeft(2, '0')}';
+              final period =
+                  '${year.toString().padLeft(4, '0')}-${month.toString().padLeft(2, '0')}';
               provider.generatePayroll(period);
               Navigator.pop(context);
             },

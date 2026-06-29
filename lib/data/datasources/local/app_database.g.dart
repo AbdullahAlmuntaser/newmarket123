@@ -4001,6 +4001,12 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
       GeneratedColumn<String>('additional_cost', aliasedName, true,
               type: DriftSqlType.string, requiredDuringInsert: false)
           .withConverter<Decimal?>($ProductsTable.$converteradditionalCostn);
+  static const VerificationMeta _imagePathMeta =
+      const VerificationMeta('imagePath');
+  @override
+  late final GeneratedColumn<String> imagePath = GeneratedColumn<String>(
+      'image_path', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -4033,7 +4039,8 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         isActive,
         parentProductId,
         attributes,
-        additionalCost
+        additionalCost,
+        imagePath
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4168,6 +4175,10 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
               data['attributes']!, _attributesMeta));
     }
     context.handle(_additionalCostMeta, const VerificationResult.success());
+    if (data.containsKey('image_path')) {
+      context.handle(_imagePathMeta,
+          imagePath.isAcceptableOrUnknown(data['image_path']!, _imagePathMeta));
+    }
     return context;
   }
 
@@ -4246,6 +4257,8 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
       additionalCost: $ProductsTable.$converteradditionalCostn.fromSql(
           attachedDatabase.typeMapping.read(
               DriftSqlType.string, data['${effectivePrefix}additional_cost'])),
+      imagePath: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}image_path']),
     );
   }
 
@@ -4306,6 +4319,7 @@ class Product extends DataClass implements Insertable<Product> {
   final String? parentProductId;
   final String? attributes;
   final Decimal? additionalCost;
+  final String? imagePath;
   const Product(
       {required this.id,
       required this.createdAt,
@@ -4337,7 +4351,8 @@ class Product extends DataClass implements Insertable<Product> {
       required this.isActive,
       this.parentProductId,
       this.attributes,
-      this.additionalCost});
+      this.additionalCost,
+      this.imagePath});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -4416,6 +4431,9 @@ class Product extends DataClass implements Insertable<Product> {
       map['additional_cost'] = Variable<String>(
           $ProductsTable.$converteradditionalCostn.toSql(additionalCost));
     }
+    if (!nullToAbsent || imagePath != null) {
+      map['image_path'] = Variable<String>(imagePath);
+    }
     return map;
   }
 
@@ -4474,6 +4492,9 @@ class Product extends DataClass implements Insertable<Product> {
       additionalCost: additionalCost == null && nullToAbsent
           ? const Value.absent()
           : Value(additionalCost),
+      imagePath: imagePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imagePath),
     );
   }
 
@@ -4512,6 +4533,7 @@ class Product extends DataClass implements Insertable<Product> {
       parentProductId: serializer.fromJson<String?>(json['parentProductId']),
       attributes: serializer.fromJson<String?>(json['attributes']),
       additionalCost: serializer.fromJson<Decimal?>(json['additionalCost']),
+      imagePath: serializer.fromJson<String?>(json['imagePath']),
     );
   }
   @override
@@ -4549,6 +4571,7 @@ class Product extends DataClass implements Insertable<Product> {
       'parentProductId': serializer.toJson<String?>(parentProductId),
       'attributes': serializer.toJson<String?>(attributes),
       'additionalCost': serializer.toJson<Decimal?>(additionalCost),
+      'imagePath': serializer.toJson<String?>(imagePath),
     };
   }
 
@@ -4583,7 +4606,8 @@ class Product extends DataClass implements Insertable<Product> {
           bool? isActive,
           Value<String?> parentProductId = const Value.absent(),
           Value<String?> attributes = const Value.absent(),
-          Value<Decimal?> additionalCost = const Value.absent()}) =>
+          Value<Decimal?> additionalCost = const Value.absent(),
+          Value<String?> imagePath = const Value.absent()}) =>
       Product(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -4619,6 +4643,7 @@ class Product extends DataClass implements Insertable<Product> {
         attributes: attributes.present ? attributes.value : this.attributes,
         additionalCost:
             additionalCost.present ? additionalCost.value : this.additionalCost,
+        imagePath: imagePath.present ? imagePath.value : this.imagePath,
       );
   Product copyWithCompanion(ProductsCompanion data) {
     return Product(
@@ -4672,6 +4697,7 @@ class Product extends DataClass implements Insertable<Product> {
       additionalCost: data.additionalCost.present
           ? data.additionalCost.value
           : this.additionalCost,
+      imagePath: data.imagePath.present ? data.imagePath.value : this.imagePath,
     );
   }
 
@@ -4708,7 +4734,8 @@ class Product extends DataClass implements Insertable<Product> {
           ..write('isActive: $isActive, ')
           ..write('parentProductId: $parentProductId, ')
           ..write('attributes: $attributes, ')
-          ..write('additionalCost: $additionalCost')
+          ..write('additionalCost: $additionalCost, ')
+          ..write('imagePath: $imagePath')
           ..write(')'))
         .toString();
   }
@@ -4745,7 +4772,8 @@ class Product extends DataClass implements Insertable<Product> {
         isActive,
         parentProductId,
         attributes,
-        additionalCost
+        additionalCost,
+        imagePath
       ]);
   @override
   bool operator ==(Object other) =>
@@ -4781,7 +4809,8 @@ class Product extends DataClass implements Insertable<Product> {
           other.isActive == this.isActive &&
           other.parentProductId == this.parentProductId &&
           other.attributes == this.attributes &&
-          other.additionalCost == this.additionalCost);
+          other.additionalCost == this.additionalCost &&
+          other.imagePath == this.imagePath);
 }
 
 class ProductsCompanion extends UpdateCompanion<Product> {
@@ -4816,6 +4845,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   final Value<String?> parentProductId;
   final Value<String?> attributes;
   final Value<Decimal?> additionalCost;
+  final Value<String?> imagePath;
   final Value<int> rowid;
   const ProductsCompanion({
     this.id = const Value.absent(),
@@ -4849,6 +4879,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.parentProductId = const Value.absent(),
     this.attributes = const Value.absent(),
     this.additionalCost = const Value.absent(),
+    this.imagePath = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ProductsCompanion.insert({
@@ -4883,6 +4914,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.parentProductId = const Value.absent(),
     this.attributes = const Value.absent(),
     this.additionalCost = const Value.absent(),
+    this.imagePath = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : name = Value(name),
         sku = Value(sku);
@@ -4918,6 +4950,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Expression<String>? parentProductId,
     Expression<String>? attributes,
     Expression<String>? additionalCost,
+    Expression<String>? imagePath,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -4952,6 +4985,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       if (parentProductId != null) 'parent_product_id': parentProductId,
       if (attributes != null) 'attributes': attributes,
       if (additionalCost != null) 'additional_cost': additionalCost,
+      if (imagePath != null) 'image_path': imagePath,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -4988,6 +5022,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       Value<String?>? parentProductId,
       Value<String?>? attributes,
       Value<Decimal?>? additionalCost,
+      Value<String?>? imagePath,
       Value<int>? rowid}) {
     return ProductsCompanion(
       id: id ?? this.id,
@@ -5021,6 +5056,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       parentProductId: parentProductId ?? this.parentProductId,
       attributes: attributes ?? this.attributes,
       additionalCost: additionalCost ?? this.additionalCost,
+      imagePath: imagePath ?? this.imagePath,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -5129,6 +5165,9 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       map['additional_cost'] = Variable<String>(
           $ProductsTable.$converteradditionalCostn.toSql(additionalCost.value));
     }
+    if (imagePath.present) {
+      map['image_path'] = Variable<String>(imagePath.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -5169,6 +5208,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
           ..write('parentProductId: $parentProductId, ')
           ..write('attributes: $attributes, ')
           ..write('additionalCost: $additionalCost, ')
+          ..write('imagePath: $imagePath, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -60517,6 +60557,38 @@ final class $$CurrenciesTableReferences
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
+
+  static MultiTypedResultKey<$ExchangeRatesTable, List<ExchangeRate>>
+      _fromCurrencyExchangeRatesTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.exchangeRates,
+              aliasName: $_aliasNameGenerator(
+                  db.currencies.code, db.exchangeRates.fromCurrencyCode));
+
+  $$ExchangeRatesTableProcessedTableManager get fromCurrencyExchangeRates {
+    final manager = $$ExchangeRatesTableTableManager($_db, $_db.exchangeRates)
+        .filter((f) => f.fromCurrencyCode.code($_item.code));
+
+    final cache =
+        $_typedResult.readTableOrNull(_fromCurrencyExchangeRatesTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$ExchangeRatesTable, List<ExchangeRate>>
+      _toCurrencyExchangeRatesTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.exchangeRates,
+              aliasName: $_aliasNameGenerator(
+                  db.currencies.code, db.exchangeRates.toCurrencyCode));
+
+  $$ExchangeRatesTableProcessedTableManager get toCurrencyExchangeRates {
+    final manager = $$ExchangeRatesTableTableManager($_db, $_db.exchangeRates)
+        .filter((f) => f.toCurrencyCode.code($_item.code));
+
+    final cache =
+        $_typedResult.readTableOrNull(_toCurrencyExchangeRatesTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
 }
 
 class $$CurrenciesTableFilterComposer
@@ -60660,6 +60732,48 @@ class $$CurrenciesTableFilterComposer
             $$ChecksTableFilterComposer(
               $db: $db,
               $table: $db.checks,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> fromCurrencyExchangeRates(
+      Expression<bool> Function($$ExchangeRatesTableFilterComposer f) f) {
+    final $$ExchangeRatesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.code,
+        referencedTable: $db.exchangeRates,
+        getReferencedColumn: (t) => t.fromCurrencyCode,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ExchangeRatesTableFilterComposer(
+              $db: $db,
+              $table: $db.exchangeRates,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> toCurrencyExchangeRates(
+      Expression<bool> Function($$ExchangeRatesTableFilterComposer f) f) {
+    final $$ExchangeRatesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.code,
+        referencedTable: $db.exchangeRates,
+        getReferencedColumn: (t) => t.toCurrencyCode,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ExchangeRatesTableFilterComposer(
+              $db: $db,
+              $table: $db.exchangeRates,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -60881,6 +60995,48 @@ class $$CurrenciesTableAnnotationComposer
             ));
     return f(composer);
   }
+
+  Expression<T> fromCurrencyExchangeRates<T extends Object>(
+      Expression<T> Function($$ExchangeRatesTableAnnotationComposer a) f) {
+    final $$ExchangeRatesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.code,
+        referencedTable: $db.exchangeRates,
+        getReferencedColumn: (t) => t.fromCurrencyCode,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ExchangeRatesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.exchangeRates,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<T> toCurrencyExchangeRates<T extends Object>(
+      Expression<T> Function($$ExchangeRatesTableAnnotationComposer a) f) {
+    final $$ExchangeRatesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.code,
+        referencedTable: $db.exchangeRates,
+        getReferencedColumn: (t) => t.toCurrencyCode,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ExchangeRatesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.exchangeRates,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
 }
 
 class $$CurrenciesTableTableManager extends RootTableManager<
@@ -60899,7 +61055,9 @@ class $$CurrenciesTableTableManager extends RootTableManager<
         bool suppliersRefs,
         bool customersRefs,
         bool gLLinesRefs,
-        bool checksRefs})> {
+        bool checksRefs,
+        bool fromCurrencyExchangeRates,
+        bool toCurrencyExchangeRates})> {
   $$CurrenciesTableTableManager(_$AppDatabase db, $CurrenciesTable table)
       : super(TableManagerState(
           db: db,
@@ -60981,14 +61139,18 @@ class $$CurrenciesTableTableManager extends RootTableManager<
               suppliersRefs = false,
               customersRefs = false,
               gLLinesRefs = false,
-              checksRefs = false}) {
+              checksRefs = false,
+              fromCurrencyExchangeRates = false,
+              toCurrencyExchangeRates = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
                 if (suppliersRefs) db.suppliers,
                 if (customersRefs) db.customers,
                 if (gLLinesRefs) db.gLLines,
-                if (checksRefs) db.checks
+                if (checksRefs) db.checks,
+                if (fromCurrencyExchangeRates) db.exchangeRates,
+                if (toCurrencyExchangeRates) db.exchangeRates
               ],
               addJoins: <
                   T extends TableManagerState<
@@ -61065,6 +61227,30 @@ class $$CurrenciesTableTableManager extends RootTableManager<
                         referencedItemsForCurrentItem:
                             (item, referencedItems) => referencedItems
                                 .where((e) => e.currencyId == item.id),
+                        typedResults: items),
+                  if (fromCurrencyExchangeRates)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$CurrenciesTableReferences
+                            ._fromCurrencyExchangeRatesTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$CurrenciesTableReferences(db, table, p0)
+                                .fromCurrencyExchangeRates,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.fromCurrencyCode == item.code),
+                        typedResults: items),
+                  if (toCurrencyExchangeRates)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$CurrenciesTableReferences
+                            ._toCurrencyExchangeRatesTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$CurrenciesTableReferences(db, table, p0)
+                                .toCurrencyExchangeRates,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.toCurrencyCode == item.code),
                         typedResults: items)
                 ];
               },
@@ -61089,7 +61275,9 @@ typedef $$CurrenciesTableProcessedTableManager = ProcessedTableManager<
         bool suppliersRefs,
         bool customersRefs,
         bool gLLinesRefs,
-        bool checksRefs})>;
+        bool checksRefs,
+        bool fromCurrencyExchangeRates,
+        bool toCurrencyExchangeRates})>;
 typedef $$SuppliersTableCreateCompanionBuilder = SuppliersCompanion Function({
   Value<String> id,
   Value<DateTime> createdAt,
@@ -62218,6 +62406,7 @@ typedef $$ProductsTableCreateCompanionBuilder = ProductsCompanion Function({
   Value<String?> parentProductId,
   Value<String?> attributes,
   Value<Decimal?> additionalCost,
+  Value<String?> imagePath,
   Value<int> rowid,
 });
 typedef $$ProductsTableUpdateCompanionBuilder = ProductsCompanion Function({
@@ -62252,6 +62441,7 @@ typedef $$ProductsTableUpdateCompanionBuilder = ProductsCompanion Function({
   Value<String?> parentProductId,
   Value<String?> attributes,
   Value<Decimal?> additionalCost,
+  Value<String?> imagePath,
   Value<int> rowid,
 });
 
@@ -62802,6 +62992,9 @@ class $$ProductsTableFilterComposer
       get additionalCost => $composableBuilder(
           column: $table.additionalCost,
           builder: (column) => ColumnWithTypeConverterFilters(column));
+
+  ColumnFilters<String> get imagePath => $composableBuilder(
+      column: $table.imagePath, builder: (column) => ColumnFilters(column));
 
   $$BranchesTableFilterComposer get branchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
@@ -63467,6 +63660,9 @@ class $$ProductsTableOrderingComposer
       column: $table.additionalCost,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get imagePath => $composableBuilder(
+      column: $table.imagePath, builder: (column) => ColumnOrderings(column));
+
   $$BranchesTableOrderingComposer get branchId {
     final $$BranchesTableOrderingComposer composer = $composerBuilder(
         composer: this,
@@ -63640,6 +63836,9 @@ class $$ProductsTableAnnotationComposer
   GeneratedColumnWithTypeConverter<Decimal?, String> get additionalCost =>
       $composableBuilder(
           column: $table.additionalCost, builder: (column) => column);
+
+  GeneratedColumn<String> get imagePath =>
+      $composableBuilder(column: $table.imagePath, builder: (column) => column);
 
   $$BranchesTableAnnotationComposer get branchId {
     final $$BranchesTableAnnotationComposer composer = $composerBuilder(
@@ -64299,6 +64498,7 @@ class $$ProductsTableTableManager extends RootTableManager<
             Value<String?> parentProductId = const Value.absent(),
             Value<String?> attributes = const Value.absent(),
             Value<Decimal?> additionalCost = const Value.absent(),
+            Value<String?> imagePath = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ProductsCompanion(
@@ -64333,6 +64533,7 @@ class $$ProductsTableTableManager extends RootTableManager<
             parentProductId: parentProductId,
             attributes: attributes,
             additionalCost: additionalCost,
+            imagePath: imagePath,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -64367,6 +64568,7 @@ class $$ProductsTableTableManager extends RootTableManager<
             Value<String?> parentProductId = const Value.absent(),
             Value<String?> attributes = const Value.absent(),
             Value<Decimal?> additionalCost = const Value.absent(),
+            Value<String?> imagePath = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ProductsCompanion.insert(
@@ -64401,6 +64603,7 @@ class $$ProductsTableTableManager extends RootTableManager<
             parentProductId: parentProductId,
             attributes: attributes,
             additionalCost: additionalCost,
+            imagePath: imagePath,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0

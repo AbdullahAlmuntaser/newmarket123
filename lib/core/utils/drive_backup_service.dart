@@ -170,7 +170,8 @@ class DriveBackupService {
       );
 
       return fileList.files!.map((file) {
-        final fileSize = file.size != null ? int.tryParse(file.size.toString()) ?? 0 : 0;
+        final fileSize =
+            file.size != null ? int.tryParse(file.size.toString()) ?? 0 : 0;
         return CloudBackupInfo(
           id: file.id ?? '',
           name: file.name ?? 'Unknown',
@@ -219,7 +220,9 @@ class DriveBackupService {
   String _formatFileSize(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    if (bytes < 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 
@@ -241,7 +244,8 @@ class DriveBackupService {
       try {
         // Attempt to open temp DB read-only and apply PRAGMA key if available
         // Use the same key logic as the app does.
-        final utilsDb = sqlite.sqlite3.open(tempPath, mode: sqlite.OpenMode.readOnly);
+        final utilsDb =
+            sqlite.sqlite3.open(tempPath, mode: sqlite.OpenMode.readOnly);
         try {
           if (!SecurityService.useFakeKeyForTesting) {
             final key = await SecurityService.getDatabaseKey();
@@ -261,7 +265,8 @@ class DriveBackupService {
       } catch (e) {
         final s = e.toString();
         if (s.contains('NO_SQLCIPHER')) {
-          AppLogger.error('Downloaded backup requires SQLCipher runtime which is missing');
+          AppLogger.error(
+              'Downloaded backup requires SQLCipher runtime which is missing');
         } else {
           AppLogger.error('Downloaded backup validation failed', error: e);
         }
@@ -276,7 +281,8 @@ class DriveBackupService {
       // Create a safety pre-restore backup of existing DB
       try {
         if (await dbFile.exists()) {
-          final preRestore = File('${dbFile.path}.pre_restore_${DateTime.now().millisecondsSinceEpoch}.db');
+          final preRestore = File(
+              '${dbFile.path}.pre_restore_${DateTime.now().millisecondsSinceEpoch}.db');
           await dbFile.copy(preRestore.path);
         }
       } catch (_) {}

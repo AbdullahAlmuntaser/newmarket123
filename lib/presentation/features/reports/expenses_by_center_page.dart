@@ -62,7 +62,9 @@ class _ExpensesByCenterPageState extends State<ExpensesByCenterPage> {
                   final item = _data![index];
                   return ListTile(
                     title: Text(item.name),
-                    trailing: Text(item.total.toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    trailing: Text(item.total.toStringAsFixed(2),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 18)),
                   );
                 },
               ),

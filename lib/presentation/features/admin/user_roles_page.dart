@@ -13,22 +13,39 @@ class UserRolesPage extends StatefulWidget {
 
 class _UserRolesPageState extends State<UserRolesPage> {
   final List<String> _roles = ['Admin', 'Manager', 'Cashier', 'Accountant'];
-  
+
   final Map<String, List<String>> _rolePermissions = {
     'Admin': [
-      'POST_SALE', 'POST_PURCHASE', 'POST_SALE_RETURN', 'POST_PURCHASE_RETURN',
-      'DELETE_INVOICE', 'VOID_TRANSACTION', 'MANAGE_USERS', 'VIEW_REPORTS',
-      'MANAGE_SETTINGS', 'MANAGE_INVENTORY', 'APPROVE_DISCOUNT', 'EDIT_TAX',
+      'POST_SALE',
+      'POST_PURCHASE',
+      'POST_SALE_RETURN',
+      'POST_PURCHASE_RETURN',
+      'DELETE_INVOICE',
+      'VOID_TRANSACTION',
+      'MANAGE_USERS',
+      'VIEW_REPORTS',
+      'MANAGE_SETTINGS',
+      'MANAGE_INVENTORY',
+      'APPROVE_DISCOUNT',
+      'EDIT_TAX',
     ],
     'Manager': [
-      'POST_SALE', 'POST_PURCHASE', 'POST_SALE_RETURN', 'POST_PURCHASE_RETURN',
-      'VIEW_REPORTS', 'MANAGE_INVENTORY', 'APPROVE_DISCOUNT',
+      'POST_SALE',
+      'POST_PURCHASE',
+      'POST_SALE_RETURN',
+      'POST_PURCHASE_RETURN',
+      'VIEW_REPORTS',
+      'MANAGE_INVENTORY',
+      'APPROVE_DISCOUNT',
     ],
     'Cashier': [
-      'POST_SALE', 'POST_SALE_RETURN',
+      'POST_SALE',
+      'POST_SALE_RETURN',
     ],
     'Accountant': [
-      'POST_PURCHASE', 'VIEW_REPORTS', 'MANAGE_INVENTORY',
+      'POST_PURCHASE',
+      'VIEW_REPORTS',
+      'MANAGE_INVENTORY',
     ],
   };
 
@@ -43,11 +60,12 @@ class _UserRolesPageState extends State<UserRolesPage> {
   Future<void> _loadPermissionsForRole(String role) async {
     final db = Provider.of<AppDatabase>(context, listen: false);
     final existingPermissions = await (db.select(db.rolePermissions)
-      ..where((rp) => rp.role.equals(role)))
-      .get();
+          ..where((rp) => rp.role.equals(role)))
+        .get();
 
-    final currentCodes = existingPermissions.map((p) => p.permissionCode).toSet();
-    
+    final currentCodes =
+        existingPermissions.map((p) => p.permissionCode).toSet();
+
     setState(() {
       _rolePermissions[role] = currentCodes.toList();
     });
@@ -55,25 +73,23 @@ class _UserRolesPageState extends State<UserRolesPage> {
 
   Future<void> _togglePermission(String permissionCode, bool enabled) async {
     final db = Provider.of<AppDatabase>(context, listen: false);
-    
+
     if (enabled) {
       await db.into(db.rolePermissions).insert(
-        RolePermissionsCompanion.insert(
-          role: _selectedRole,
-          permissionCode: permissionCode,
-        ),
-      );
+            RolePermissionsCompanion.insert(
+              role: _selectedRole,
+              permissionCode: permissionCode,
+            ),
+          );
     } else {
       await (db.delete(db.rolePermissions)
-        ..where((rp) =>
-            Expression.and([
-              rp.role.equals(_selectedRole),
-              rp.permissionCode.equals(permissionCode),
-            ])))
-        .go();
-
+            ..where((rp) => Expression.and([
+                  rp.role.equals(_selectedRole),
+                  rp.permissionCode.equals(permissionCode),
+                ])))
+          .go();
     }
-    
+
     setState(() {
       if (enabled) {
         _rolePermissions[_selectedRole] = [
@@ -81,8 +97,10 @@ class _UserRolesPageState extends State<UserRolesPage> {
           permissionCode,
         ];
       } else {
-        _rolePermissions[_selectedRole] = 
-            (_rolePermissions[_selectedRole] ?? []).where((p) => p != permissionCode).toList();
+        _rolePermissions[_selectedRole] =
+            (_rolePermissions[_selectedRole] ?? [])
+                .where((p) => p != permissionCode)
+                .toList();
       }
     });
   }
@@ -90,7 +108,7 @@ class _UserRolesPageState extends State<UserRolesPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.userRoles),
@@ -105,10 +123,12 @@ class _UserRolesPageState extends State<UserRolesPage> {
                 labelText: l10n.role,
                 border: const OutlineInputBorder(),
               ),
-              items: _roles.map((role) => DropdownMenuItem(
-                value: role,
-                child: Text(role),
-              )).toList(),
+              items: _roles
+                  .map((role) => DropdownMenuItem(
+                        value: role,
+                        child: Text(role),
+                      ))
+                  .toList(),
               onChanged: (value) {
                 if (value != null) {
                   setState(() => _selectedRole = value);
@@ -163,25 +183,28 @@ class _UserRolesPageState extends State<UserRolesPage> {
     ];
 
     final currentPermissions = _rolePermissions[_selectedRole] ?? [];
-    
-    return allPermissions.map((perm) => CheckboxListTile(
-      title: Text(perm['label']!),
-      subtitle: Text(perm['code']!),
-      value: currentPermissions.contains(perm['code']),
-      onChanged: (value) => _togglePermission(perm['code']!, value ?? false),
-    )).toList();
+
+    return allPermissions
+        .map((perm) => CheckboxListTile(
+              title: Text(perm['label']!),
+              subtitle: Text(perm['code']!),
+              value: currentPermissions.contains(perm['code']),
+              onChanged: (value) =>
+                  _togglePermission(perm['code']!, value ?? false),
+            ))
+        .toList();
   }
 
   Widget _buildUserManagement() {
     final db = Provider.of<AppDatabase>(context, listen: false);
-    
+
     return StreamBuilder<List<User>>(
       stream: db.select(db.users).watch(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
-        
+
         final users = snapshot.data!;
         return Column(
           children: [
@@ -200,29 +223,29 @@ class _UserRolesPageState extends State<UserRolesPage> {
               ),
             ),
             ...users.map((user) => ListTile(
-              leading: CircleAvatar(
-                child: Text(user.role[0]),
-              ),
-              title: Text(user.fullName),
-              subtitle: Text('${user.role} - ${user.username}'),
-              trailing: PopupMenuButton(
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Text('تعديل'),
+                  leading: CircleAvatar(
+                    child: Text(user.role[0]),
                   ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Text('حذف'),
+                  title: Text(user.fullName),
+                  subtitle: Text('${user.role} - ${user.username}'),
+                  trailing: PopupMenuButton(
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Text('تعديل'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Text('حذف'),
+                      ),
+                    ],
+                    onSelected: (value) {
+                      if (value == 'delete') {
+                        _deleteUser(user);
+                      }
+                    },
                   ),
-                ],
-                onSelected: (value) {
-                  if (value == 'delete') {
-                    _deleteUser(user);
-                  }
-                },
-              ),
-            )),
+                )),
           ],
         );
       },
@@ -261,10 +284,12 @@ class _UserRolesPageState extends State<UserRolesPage> {
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: selectedRole,
-                items: _roles.map((r) => DropdownMenuItem(
-                  value: r,
-                  child: Text(r),
-                )).toList(),
+                items: _roles
+                    .map((r) => DropdownMenuItem(
+                          value: r,
+                          child: Text(r),
+                        ))
+                    .toList(),
                 onChanged: (value) => selectedRole = value ?? 'Cashier',
                 decoration: const InputDecoration(labelText: 'الدور'),
               ),
@@ -278,23 +303,24 @@ class _UserRolesPageState extends State<UserRolesPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (usernameController.text.isEmpty || passwordController.text.isEmpty) {
+              if (usernameController.text.isEmpty ||
+                  passwordController.text.isEmpty) {
                 return;
               }
-              
+
               final db = Provider.of<AppDatabase>(context, listen: false);
               final navigator = Navigator.of(context);
               await db.into(db.users).insert(
-                UsersCompanion.insert(
-                  username: usernameController.text,
-                  password: passwordController.text,
-                  role: selectedRole,
-                  fullName: fullNameController.text.isEmpty 
-                      ? usernameController.text 
-                      : fullNameController.text,
-                ),
-              );
-              
+                    UsersCompanion.insert(
+                      username: usernameController.text,
+                      password: passwordController.text,
+                      role: selectedRole,
+                      fullName: fullNameController.text.isEmpty
+                          ? usernameController.text
+                          : fullNameController.text,
+                    ),
+                  );
+
               if (!mounted) return;
               navigator.pop();
             },

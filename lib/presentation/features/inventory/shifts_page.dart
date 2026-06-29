@@ -46,7 +46,6 @@ class ShiftsPage extends StatelessWidget {
           isOpen: const drift.Value(true),
         ));
   }
-
 }
 
 class _ShiftCard extends StatelessWidget {
@@ -74,9 +73,14 @@ class _ShiftCard extends StatelessWidget {
           ..where((s) => s.status.equals(DocumentStatus.posted.index)))
         .get();
 
-    final totalSales = sales.fold<Decimal>(Decimal.zero, (sum, s) => sum + s.total);
-    final cashSales = sales.where((s) => s.paymentMethod == PaymentMethod.cash).fold<Decimal>(Decimal.zero, (sum, s) => sum + s.total);
-    final bankSales = sales.where((s) => s.paymentMethod == PaymentMethod.bank).fold<Decimal>(Decimal.zero, (sum, s) => sum + s.total);
+    final totalSales =
+        sales.fold<Decimal>(Decimal.zero, (sum, s) => sum + s.total);
+    final cashSales = sales
+        .where((s) => s.paymentMethod == PaymentMethod.cash)
+        .fold<Decimal>(Decimal.zero, (sum, s) => sum + s.total);
+    final bankSales = sales
+        .where((s) => s.paymentMethod == PaymentMethod.bank)
+        .fold<Decimal>(Decimal.zero, (sum, s) => sum + s.total);
 
     return {
       'salesCount': sales.length,
@@ -98,46 +102,48 @@ class _ShiftCard extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-          title: const Text('تقرير الوردية'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _infoRow('بداية الوردية', _formatTime(shift.startTime)),
-                if (shift.endTime != null)
-                  _infoRow('نهاية الوردية', _formatTime(shift.endTime!)),
-                _infoRow('المدة', _formatDuration(shift.startTime, shift.endTime)),
-                _infoRow('رقم المستخدم', shift.userId),
-                const Divider(),
-                _infoRow('رصيد البداية', '${shift.openingCash} ر.س'),
-                if (shift.expectedCash != null)
-                  _infoRow('الرصيد المتوقع', '${shift.expectedCash} ر.س'),
-                if (shift.closingCash != null)
-                  _infoRow('رصيد النهاية', '${shift.closingCash} ر.س'),
-                if (shift.expectedCash != null && shift.closingCash != null) ...[
-                  _infoRow('الفرق', '${shift.closingCash! - shift.expectedCash!} ر.س'),
-                ],
-                const Divider(),
-                _infoRow('عدد الفواتير', '$salesCount'),
-                _infoRow('إجمالي المبيعات', '$totalSales ر.س'),
-                _infoRow('نقداً', '$cashTotal ر.س'),
-                _infoRow('بطاقة', '$bankTotal ر.س'),
-                if (shift.note != null && shift.note!.isNotEmpty) ...[
-                  const Divider(),
-                  Text('ملاحظات: ${shift.note}',
-                      style: const TextStyle(fontStyle: FontStyle.italic)),
-                ],
+        title: const Text('تقرير الوردية'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _infoRow('بداية الوردية', _formatTime(shift.startTime)),
+              if (shift.endTime != null)
+                _infoRow('نهاية الوردية', _formatTime(shift.endTime!)),
+              _infoRow(
+                  'المدة', _formatDuration(shift.startTime, shift.endTime)),
+              _infoRow('رقم المستخدم', shift.userId),
+              const Divider(),
+              _infoRow('رصيد البداية', '${shift.openingCash} ر.س'),
+              if (shift.expectedCash != null)
+                _infoRow('الرصيد المتوقع', '${shift.expectedCash} ر.س'),
+              if (shift.closingCash != null)
+                _infoRow('رصيد النهاية', '${shift.closingCash} ر.س'),
+              if (shift.expectedCash != null && shift.closingCash != null) ...[
+                _infoRow(
+                    'الفرق', '${shift.closingCash! - shift.expectedCash!} ر.س'),
               ],
-            ),
+              const Divider(),
+              _infoRow('عدد الفواتير', '$salesCount'),
+              _infoRow('إجمالي المبيعات', '$totalSales ر.س'),
+              _infoRow('نقداً', '$cashTotal ر.س'),
+              _infoRow('بطاقة', '$bankTotal ر.س'),
+              if (shift.note != null && shift.note!.isNotEmpty) ...[
+                const Divider(),
+                Text('ملاحظات: ${shift.note}',
+                    style: const TextStyle(fontStyle: FontStyle.italic)),
+              ],
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('إغلاق'),
-            ),
-          ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('إغلاق'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -181,9 +187,11 @@ class _ShiftCard extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: isOpen ? Colors.green.shade50 : Colors.blueGrey.shade50,
+                    color:
+                        isOpen ? Colors.green.shade50 : Colors.blueGrey.shade50,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -213,9 +221,9 @@ class _ShiftCard extends StatelessWidget {
                 child: Text(
                   'ملاحظة: ${shift.note}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontStyle: FontStyle.italic,
-                    color: Colors.grey[600],
-                  ),
+                        fontStyle: FontStyle.italic,
+                        color: Colors.grey[600],
+                      ),
                 ),
               ),
             if (!isOpen)
@@ -237,7 +245,9 @@ class _ShiftCard extends StatelessWidget {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      await (db.update(db.shifts)..where((s) => s.id.equals(shift.id))).write(
+                      await (db.update(db.shifts)
+                            ..where((s) => s.id.equals(shift.id)))
+                          .write(
                         ShiftsCompanion(
                           endTime: drift.Value(DateTime.now()),
                           isOpen: const drift.Value(false),
@@ -246,7 +256,8 @@ class _ShiftCard extends StatelessWidget {
                     },
                     icon: const Icon(Icons.lock, size: 18),
                     label: const Text('إغلاق الوردية'),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                    style:
+                        ElevatedButton.styleFrom(backgroundColor: Colors.red),
                   ),
                 ),
               ),

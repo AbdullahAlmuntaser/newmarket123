@@ -204,8 +204,7 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
             if (widget.isReceipt && _selectedCustomer != null) ...[
               BillAllocationWidget(
                 customerId: _selectedCustomer!.id,
-                totalPaymentAmount:
-                    MoneyFormField.valueOf(_amountController),
+                totalPaymentAmount: MoneyFormField.valueOf(_amountController),
                 onAllocationChanged: (allocs) {},
               ),
               const SizedBox(height: 16),
@@ -403,19 +402,21 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
           paymentMethod: _paymentMethod,
           note: _noteController.text.isEmpty ? null : _noteController.text,
         );
-        } else if (_selectedSupplier != null) {
+      } else if (_selectedSupplier != null) {
         await engine.postSupplierPayment(
           supplierId: _selectedSupplier!.id,
           amount: Decimal.parse(amount.toString()),
           paymentMethod: _paymentMethod,
           note: _noteController.text.isEmpty ? null : _noteController.text,
         );
-        }
+      }
       if (mounted) {
         context.pop();
         AppSnackBar.success(
           context,
-          widget.isReceipt ? 'تم حفظ سند القبض بنجاح' : 'تم حفظ سند الصرف بنجاح',
+          widget.isReceipt
+              ? 'تم حفظ سند القبض بنجاح'
+              : 'تم حفظ سند الصرف بنجاح',
         );
       }
     } catch (e) {

@@ -48,7 +48,9 @@ class ProductBatchesReportWidget extends StatelessWidget {
                       DataColumn(label: Text('سعر التكلفة'), numeric: true),
                       DataColumn(label: Text('المستودع')),
                     ],
-                    rows: batches.where((b) => b.batch.quantity > Decimal.zero).map((b) {
+                    rows: batches
+                        .where((b) => b.batch.quantity > Decimal.zero)
+                        .map((b) {
                       return DataRow(
                         cells: [
                           DataCell(Text(b.batch.id.substring(0, 8))),

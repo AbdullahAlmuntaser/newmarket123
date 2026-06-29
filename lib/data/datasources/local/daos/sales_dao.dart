@@ -20,7 +20,8 @@ part 'sales_dao.g.dart';
     SalesOrderItems,
   ],
 )
-class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin, SyncLogMixin {
+class SalesDao extends DatabaseAccessor<AppDatabase>
+    with _$SalesDaoMixin, SyncLogMixin {
   SalesDao(super.db);
 
   Stream<List<Sale>> watchAllSales() => select(sales).watch();
@@ -78,7 +79,8 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin, SyncL
     return (select(sales)..where((s) => s.customerId.equals(customerId))).get();
   }
 
-  Future<List<Sale>> getInvoicesByDateRange(DateTime startDate, DateTime endDate) {
+  Future<List<Sale>> getInvoicesByDateRange(
+      DateTime startDate, DateTime endDate) {
     return (select(sales)
           ..where((s) =>
               s.createdAt.isBiggerOrEqualValue(startDate) &
@@ -168,8 +170,8 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin, SyncL
   }
 
   Future<List<Product>> getMostSoldProducts({int limit = 10}) async {
-    final quantitySum = CustomExpression<double>(
-        'SUM(${saleItems.quantity.name})');
+    final quantitySum =
+        CustomExpression<double>('SUM(${saleItems.quantity.name})');
     final query = selectOnly(saleItems)
       ..addColumns([saleItems.productId, quantitySum])
       ..groupBy([saleItems.productId])
@@ -186,8 +188,8 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin, SyncL
   }
 
   Future<List<TopProduct>> getTopSellingProducts({int limit = 5}) async {
-    final quantitySum = CustomExpression<double>(
-        'SUM(${saleItems.quantity.name})');
+    final quantitySum =
+        CustomExpression<double>('SUM(${saleItems.quantity.name})');
     final query = select(saleItems).join([
       innerJoin(products, products.id.equalsExp(saleItems.productId)),
     ])
@@ -216,8 +218,8 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin, SyncL
         'SUM(${saleItems.quantity.name} * ${saleItems.price.name})');
     final costSum = CustomExpression<double>(
         'SUM(${saleItems.quantity.name} * ${products.buyPrice.name})');
-    final quantitySum = CustomExpression<double>(
-        'SUM(${saleItems.quantity.name})');
+    final quantitySum =
+        CustomExpression<double>('SUM(${saleItems.quantity.name})');
 
     final query = select(saleItems).join([
       innerJoin(sales, sales.id.equalsExp(saleItems.saleId)),

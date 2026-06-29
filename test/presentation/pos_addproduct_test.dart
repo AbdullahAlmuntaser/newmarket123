@@ -12,7 +12,9 @@ import 'package:supermarket/core/services/packaging_engine.dart';
 import 'package:supermarket/core/services/security_service.dart';
 
 class MockPricingService extends Mock implements PricingService {}
+
 class MockTransactionEngine extends Mock implements TransactionEngine {}
+
 class MockPackagingEngine extends Mock implements PackagingEngine {}
 
 void main() {
@@ -37,24 +39,26 @@ void main() {
     await db.close();
   });
 
-  test('AddProductBySku passes isWholesale to pricing and adds item with correct price',
+  test(
+      'AddProductBySku passes isWholesale to pricing and adds item with correct price',
       () async {
     // insert a product into the in-memory DB
     const productId = 'p-test-1';
     await db.into(db.products).insert(ProductsCompanion.insert(
-      id: const drift.Value(productId),
-      name: 'Test Product',
-      sku: 'SKU-TEST',
-      buyPrice: drift.Value(Decimal.parse('10')),
-      sellPrice: drift.Value(Decimal.parse('20')),
-      wholesalePrice: drift.Value(Decimal.parse('15')),
-      stock: drift.Value(Decimal.parse('100')),
-      maxStock: drift.Value(Decimal.parse('100')),
-      unit: const drift.Value('حبة'),
-    ));
+          id: const drift.Value(productId),
+          name: 'Test Product',
+          sku: 'SKU-TEST',
+          buyPrice: drift.Value(Decimal.parse('10')),
+          sellPrice: drift.Value(Decimal.parse('20')),
+          wholesalePrice: drift.Value(Decimal.parse('15')),
+          stock: drift.Value(Decimal.parse('100')),
+          maxStock: drift.Value(Decimal.parse('100')),
+          unit: const drift.Value('حبة'),
+        ));
 
     // Stub packagingEngine to return empty list for hierarchy
-    when(() => mockPkg.getPackagingHierarchy(any())).thenAnswer((_) async => []);
+    when(() => mockPkg.getPackagingHierarchy(any()))
+        .thenAnswer((_) async => []);
 
     // Stub pricingService to return a price (e.g., wholesale price fallback)
     when(() => mockPricing.calculatePrice(

@@ -76,8 +76,8 @@ class AppConfigService {
       return defaultWarehouse.id;
     }
 
-    final firstWarehouse = await (_db.select(_db.warehouses)..limit(1))
-        .getSingleOrNull();
+    final firstWarehouse =
+        await (_db.select(_db.warehouses)..limit(1)).getSingleOrNull();
     if (firstWarehouse != null) {
       await setString(keyDefaultWarehouse, firstWarehouse.id);
       return firstWarehouse.id;

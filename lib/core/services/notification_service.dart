@@ -188,7 +188,8 @@ class NotificationService extends ChangeNotifier {
     final thresholdDate = referenceDate.add(Duration(days: expiringWithinDays));
     final batches = await (db.select(db.productBatches)
           ..where(
-            (b) => b.quantity.isBiggerThan(Constant(Decimal.zero.toString())) &
+            (b) =>
+                b.quantity.isBiggerThan(Constant(Decimal.zero.toString())) &
                 b.expiryDate.isSmallerOrEqual(Variable(thresholdDate)),
           ))
         .get();

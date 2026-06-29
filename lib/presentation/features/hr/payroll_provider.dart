@@ -8,12 +8,12 @@ class PayrollProvider with ChangeNotifier {
   final PayrollService _payrollService;
   List<HRPayrollRun> _entries = [];
   bool _isLoading = false;
-  
+
   PayrollProvider(this._hrService, this._payrollService);
-  
+
   List<HRPayrollRun> get entries => _entries;
   bool get isLoading => _isLoading;
-  
+
   Future<void> loadPayrollEntries() async {
     _isLoading = true;
     notifyListeners();
@@ -21,7 +21,7 @@ class PayrollProvider with ChangeNotifier {
     _isLoading = false;
     notifyListeners();
   }
-  
+
   Future<void> generatePayroll(String period) async {
     _isLoading = true;
     notifyListeners();
@@ -30,11 +30,11 @@ class PayrollProvider with ChangeNotifier {
     _isLoading = false;
     notifyListeners();
   }
-  
+
   Future<List<HRPayrollDetail>> getPayrollLines(String runId) async {
     return await _hrService.getPayrollLines(runId);
   }
-  
+
   /// ترحيل قيد الرواتب للحسابات
   Future<void> postPayrollJournalEntry(String payrollRunId) async {
     _isLoading = true;
@@ -47,7 +47,7 @@ class PayrollProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   /// سداد الرواتب
   Future<void> paySalaries(String payrollRunId) async {
     _isLoading = true;

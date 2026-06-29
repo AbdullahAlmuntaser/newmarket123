@@ -1,6 +1,5 @@
 import 'dart:developer' as developer;
 
-
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:provider/provider.dart';
@@ -93,13 +92,16 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
         final requestedCurrency = _selectedCurrencyId;
         final selectedCurrency = requestedCurrency != null
             ? _currencies.cast<Currency?>().firstWhere(
-                  (c) => c?.code == requestedCurrency || c?.id == requestedCurrency,
+                  (c) =>
+                      c?.code == requestedCurrency ||
+                      c?.id == requestedCurrency,
                   orElse: () => null,
                 )
             : null;
         final effectiveCurrency = selectedCurrency ?? baseCurrency;
         _selectedCurrencyId = effectiveCurrency.id;
-        _exchangeRateController.text = effectiveCurrency.exchangeRate.toString();
+        _exchangeRateController.text =
+            effectiveCurrency.exchangeRate.toString();
       });
     } catch (e, st) {
       developer.log(
@@ -114,7 +116,8 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
         _baseCurrency = null;
         _selectedCurrencyId = null;
         _isLoadingCurrencies = false;
-        _currencyLoadError = 'تعذر تحميل العملات. يرجى إعادة المحاولة أو تهيئة بيانات النظام.';
+        _currencyLoadError =
+            'تعذر تحميل العملات. يرجى إعادة المحاولة أو تهيئة بيانات النظام.';
       });
     }
   }
@@ -141,13 +144,15 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
         final maxHeight = size.height * 0.82;
 
         return AlertDialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           title: Text(
             widget.customer == null ? l10n.addCustomer : l10n.editCustomer,
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           content: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: dialogWidth, maxHeight: maxHeight),
+            constraints:
+                BoxConstraints(maxWidth: dialogWidth, maxHeight: maxHeight),
             child: SingleChildScrollView(
               child: Form(
                 key: _formKey,
@@ -158,8 +163,9 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
                       controller: _nameController,
                       label: l10n.customerName,
                       icon: Icons.person,
-                      validator: (value) =>
-                          value == null || value.isEmpty ? l10n.enterNameError : null,
+                      validator: (value) => value == null || value.isEmpty
+                          ? l10n.enterNameError
+                          : null,
                     ),
                     const SizedBox(height: 12),
                     _buildTextField(
@@ -202,10 +208,15 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
                       controller: _exchangeRateController,
                       label: "سعر الصرف",
                       icon: Icons.swap_horiz,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                       validator: (value) {
-                        if (value == null || value.isEmpty) return "الرجاء إدخال سعر الصرف";
-                        if (double.tryParse(value) == null) return "سعر الصرف غير صالح";
+                        if (value == null || value.isEmpty) {
+                          return "الرجاء إدخال سعر الصرف";
+                        }
+                        if (double.tryParse(value) == null) {
+                          return "سعر الصرف غير صالح";
+                        }
                         return null;
                       },
                     ),
@@ -216,14 +227,17 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
                       decoration: InputDecoration(
                         labelText: "نوع العميل",
                         prefixIcon: const Icon(Icons.category),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       items: const [
                         DropdownMenuItem(value: 'RETAIL', child: Text("تجزئة")),
-                        DropdownMenuItem(value: 'WHOLESALE', child: Text("جملة")),
+                        DropdownMenuItem(
+                            value: 'WHOLESALE', child: Text("جملة")),
                         DropdownMenuItem(value: 'VIP', child: Text("VIP")),
                       ],
-                      onChanged: (value) => setState(() => _customerType = value!),
+                      onChanged: (value) =>
+                          setState(() => _customerType = value!),
                     ),
                   ],
                 ),
@@ -237,10 +251,14 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
-              onPressed: _isLoadingCurrencies || _currencyLoadError != null ? null : _saveCustomer,
+              onPressed: _isLoadingCurrencies || _currencyLoadError != null
+                  ? null
+                  : _saveCustomer,
               child: Text(l10n.save.toUpperCase()),
             ),
           ],
@@ -248,7 +266,6 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
       },
     );
   }
-
 
   Widget _buildCurrencyField() {
     if (_isLoadingCurrencies) {
@@ -288,7 +305,8 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
       items: _currencies.map((Currency currency) {
         return DropdownMenuItem<String>(
           value: currency.id,
-          child: Text('${currency.name} (${currency.code})', overflow: TextOverflow.ellipsis),
+          child: Text('${currency.name} (${currency.code})',
+              overflow: TextOverflow.ellipsis),
         );
       }).toList(),
       onChanged: _currencies.isEmpty
@@ -300,11 +318,14 @@ class _AddEditCustomerDialogState extends State<AddEditCustomerDialog> {
                   (c) => c.id == value,
                   orElse: () => _baseCurrency ?? _currencies.first,
                 );
-                _exchangeRateController.text = selectedCurrency.exchangeRate.toString();
+                _exchangeRateController.text =
+                    selectedCurrency.exchangeRate.toString();
               });
             },
       validator: (value) {
-        if (_currencies.isEmpty) return 'لا توجد عملات متاحة. يرجى تهيئة بيانات النظام.';
+        if (_currencies.isEmpty) {
+          return 'لا توجد عملات متاحة. يرجى تهيئة بيانات النظام.';
+        }
         return value == null ? "الرجاء اختيار عملة" : null;
       },
     );

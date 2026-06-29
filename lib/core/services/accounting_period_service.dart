@@ -28,7 +28,12 @@ class AccountingPeriodService {
       ));
     } else if (type == 'quarterly') {
       // 4 فترات ربع سنوية
-      const quarters = ['الربع الأول', 'الربع الثاني', 'الربع الثالث', 'الربع الرابع'];
+      const quarters = [
+        'الربع الأول',
+        'الربع الثاني',
+        'الربع الثالث',
+        'الربع الرابع'
+      ];
       for (int i = 0; i < 4; i++) {
         final startMonth = (i * 3) + 1;
         final endMonth = startMonth + 2;
@@ -37,7 +42,8 @@ class AccountingPeriodService {
           name: '${quarters[i]} $year',
           fiscalYear: year, // Added missing fiscalYear
           startDate: DateTime(year, startMonth, 1),
-          endDate: DateTime(year, endMonth, DateTime(year, endMonth + 1, 0).day),
+          endDate:
+              DateTime(year, endMonth, DateTime(year, endMonth + 1, 0).day),
           status: const Value('OPEN'),
           syncStatus: const Value(1),
         ));
@@ -45,8 +51,19 @@ class AccountingPeriodService {
     } else if (type == 'monthly') {
       // 12 فترة شهرية
       const months = [
-        '', 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-        'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+        '',
+        'يناير',
+        'فبراير',
+        'مارس',
+        'أبريل',
+        'مايو',
+        'يونيو',
+        'يوليو',
+        'أغسطس',
+        'سبتمبر',
+        'أكتوبر',
+        'نوفمبر',
+        'ديسمبر'
       ];
       for (int i = 1; i <= 12; i++) {
         final daysInMonth = DateTime(year, i + 1, 0).day;

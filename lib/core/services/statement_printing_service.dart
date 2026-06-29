@@ -41,7 +41,8 @@ class StatementPrintingService {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.center,
       children: [
-        pw.Text('كشف حساب', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+        pw.Text('كشف حساب',
+            style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
         pw.Text('Account Statement', style: const pw.TextStyle(fontSize: 18)),
         pw.SizedBox(height: 10),
         pw.Row(
@@ -51,12 +52,14 @@ class StatementPrintingService {
             pw.Text('كود الحساب: ${account.code}'),
           ],
         ),
-        pw.Text('الفترة: ${intl.DateFormat('yyyy-MM-dd').format(start)} - ${intl.DateFormat('yyyy-MM-dd').format(end)}'),
+        pw.Text(
+            'الفترة: ${intl.DateFormat('yyyy-MM-dd').format(start)} - ${intl.DateFormat('yyyy-MM-dd').format(end)}'),
       ],
     );
   }
 
-  pw.Widget _buildTransactionTable(List<AccountTransaction> transactions, GLAccount account) {
+  pw.Widget _buildTransactionTable(
+      List<AccountTransaction> transactions, GLAccount account) {
     final headers = ['التاريخ', 'البيان', 'مدين', 'دائن', 'الرصيد'];
     double runningBalance = 0.0;
 
@@ -82,9 +85,14 @@ class StatementPrintingService {
     );
   }
 
-  pw.Widget _buildFooter(List<AccountTransaction> transactions, GLAccount account) {
-    double totalDebit = transactions.fold<Decimal>(Decimal.zero, (sum, t) => sum + t.debit).toDouble();
-    double totalCredit = transactions.fold<Decimal>(Decimal.zero, (sum, t) => sum + t.credit).toDouble();
+  pw.Widget _buildFooter(
+      List<AccountTransaction> transactions, GLAccount account) {
+    double totalDebit = transactions
+        .fold<Decimal>(Decimal.zero, (sum, t) => sum + t.debit)
+        .toDouble();
+    double totalCredit = transactions
+        .fold<Decimal>(Decimal.zero, (sum, t) => sum + t.credit)
+        .toDouble();
     double finalBalance = 0.0;
     if (account.type == 'ASSET' || account.type == 'EXPENSE') {
       finalBalance = totalDebit - totalCredit;
@@ -97,7 +105,7 @@ class StatementPrintingService {
       children: [
         pw.Text('إجمالي المدين: ${totalDebit.toStringAsFixed(2)}'),
         pw.Text('إجمالي الدائن: ${totalCredit.toStringAsFixed(2)}'),
-        pw.Text('الرصيد النهائي: ${finalBalance.toStringAsFixed(2)}', 
+        pw.Text('الرصيد النهائي: ${finalBalance.toStringAsFixed(2)}',
             style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
       ],
     );

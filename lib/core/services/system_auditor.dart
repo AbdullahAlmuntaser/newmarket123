@@ -18,7 +18,8 @@ class SystemAuditor {
         db.productBatches,
       )..where((b) => b.productId.equals(product.id)))
           .get();
-      final Decimal batchSum = batches.fold<Decimal>(Decimal.zero, (sum, b) => sum + b.quantity);
+      final Decimal batchSum =
+          batches.fold<Decimal>(Decimal.zero, (sum, b) => sum + b.quantity);
       if ((product.stock - batchSum).abs() > Decimal.parse('0.001')) {
         inventoryOk = false;
         break;

@@ -43,8 +43,18 @@ class TrialBalanceItem {
   TrialBalanceItem(this.account, this.totalDebit, this.totalCredit);
 
   factory TrialBalanceItem.fromJson(Map<String, dynamic> json) =>
-      _$TrialBalanceItemFromJson(json);
-  Map<String, dynamic> toJson() => _$TrialBalanceItemToJson(this);
+      TrialBalanceItem(
+        const GLAccountConverter()
+            .fromJson(json['account'] as Map<String, dynamic>),
+        Decimal.parse(json['totalDebit'].toString()),
+        Decimal.parse(json['totalCredit'].toString()),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'account': const GLAccountConverter().toJson(account),
+        'totalDebit': totalDebit.toString(),
+        'totalCredit': totalCredit.toString(),
+      };
 }
 
 class GLLineWithAccount {
@@ -174,6 +184,7 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     final row = await into(costCenters).insertReturning(cc);
     return row.id;
   }
+
   Future<bool> updateCostCenter(CostCenter cc) =>
       update(costCenters).replace(cc);
 
@@ -209,7 +220,7 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
       }
 
       final entryRow = await into(gLEntries).insertReturning(entry);
-      
+
       await logSyncOperation(
         table: 'gl_entries',
         entityId: entryRow.id,
@@ -244,7 +255,8 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
   }
 
   // --- Decimal-based Account Balance Calculation ---
-  Future<Decimal> getAccountBalance(String accountId, {String? branchId}) async {
+  Future<Decimal> getAccountBalance(String accountId,
+      {String? branchId}) async {
     final account = await getAccountById(accountId);
     if (account == null) return Decimal.zero;
 
@@ -327,7 +339,8 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     final Map<String, ({Decimal debit, Decimal credit})> totals = {};
     for (final line in allLines) {
       if (branchId != null && line.branchId != branchId) continue;
-      final entry = totals[line.accountId] ?? (debit: Decimal.zero, credit: Decimal.zero);
+      final entry =
+          totals[line.accountId] ?? (debit: Decimal.zero, credit: Decimal.zero);
       totals[line.accountId] = (
         debit: entry.debit + line.debit,
         credit: entry.credit + line.credit,
@@ -336,7 +349,8 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
 
     for (final account in accounts) {
       if (account.isHeader) continue;
-      final t = totals[account.id] ?? (debit: Decimal.zero, credit: Decimal.zero);
+      final t =
+          totals[account.id] ?? (debit: Decimal.zero, credit: Decimal.zero);
       items.add(TrialBalanceItem(account, t.debit, t.credit));
     }
     return items;
@@ -442,7 +456,8 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     final Map<String, ({Decimal debit, Decimal credit})> balanceMap = {};
     for (final row in rows) {
       final line = row.readTable(gLLines);
-      final entry = balanceMap[line.accountId] ?? (debit: Decimal.zero, credit: Decimal.zero);
+      final entry = balanceMap[line.accountId] ??
+          (debit: Decimal.zero, credit: Decimal.zero);
       balanceMap[line.accountId] = (
         debit: entry.debit + line.debit,
         credit: entry.credit + line.credit,
@@ -450,7 +465,8 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     }
 
     return allAccounts.map((account) {
-      final balance = balanceMap[account.id] ?? (debit: Decimal.zero, credit: Decimal.zero);
+      final balance =
+          balanceMap[account.id] ?? (debit: Decimal.zero, credit: Decimal.zero);
       return TrialBalanceItem(account, balance.debit, balance.credit);
     }).toList();
   }
@@ -487,8 +503,8 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     }
 
     return allAccounts.map((account) {
-      final balance = balanceMap[account.id] ??
-          (debit: Decimal.zero, credit: Decimal.zero);
+      final balance =
+          balanceMap[account.id] ?? (debit: Decimal.zero, credit: Decimal.zero);
       return TrialBalanceItem(account, balance.debit, balance.credit);
     }).toList();
   }
@@ -550,7 +566,8 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     String? branchId,
   }) async {
     final allBalances = await getAllAccountBalancesInRange(
-      startDate, endDate,
+      startDate,
+      endDate,
       branchId: branchId,
     );
 
@@ -597,10 +614,12 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
         .where((item) => item.account.type == AccountType.equity)
         .toList();
 
-    Decimal totalAssets = assets.fold(Decimal.zero, (sum, item) => sum + item.netBalance);
+    Decimal totalAssets =
+        assets.fold(Decimal.zero, (sum, item) => sum + item.netBalance);
     Decimal totalLiabilities =
         liabilities.fold(Decimal.zero, (sum, item) => sum + item.netBalance);
-    Decimal totalEquity = equity.fold(Decimal.zero, (sum, item) => sum + item.netBalance);
+    Decimal totalEquity =
+        equity.fold(Decimal.zero, (sum, item) => sum + item.netBalance);
 
     return BalanceSheet(
       assets: assets,
@@ -628,7 +647,8 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     final rows = await (select(gLLines).join([
       innerJoin(gLEntries, gLEntries.id.equalsExp(gLLines.entryId)),
       innerJoin(gLAccounts, gLAccounts.id.equalsExp(gLLines.accountId)),
-      leftOuterJoin(costCenters, costCenters.id.equalsExp(gLLines.costCenterId)),
+      leftOuterJoin(
+          costCenters, costCenters.id.equalsExp(gLLines.costCenterId)),
     ])
           ..where(predicate)
           ..where(gLAccounts.type.equals(AccountType.expense)))
@@ -637,8 +657,10 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     final Map<String, Decimal> ccTotals = {};
     for (final row in rows) {
       final line = row.readTable(gLLines);
-      final ccName = row.readTableOrNull(costCenters)?.name ?? 'بدون مركز تكلفة';
-      ccTotals[ccName] = (ccTotals[ccName] ?? Decimal.zero) + line.debit - line.credit;
+      final ccName =
+          row.readTableOrNull(costCenters)?.name ?? 'بدون مركز تكلفة';
+      ccTotals[ccName] =
+          (ccTotals[ccName] ?? Decimal.zero) + line.debit - line.credit;
     }
 
     return ccTotals.entries

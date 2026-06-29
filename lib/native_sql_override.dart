@@ -20,7 +20,9 @@ import 'dart:ffi' if (dart.library.js) 'package:supermarket/dummy_ffi.dart';
 void applyNativeSqlOverride() {
   if (kIsWeb) return;
 
-  final os = Platform.isAndroid ? OperatingSystem.android : (Platform.isLinux ? OperatingSystem.linux : null);
+  final os = Platform.isAndroid
+      ? OperatingSystem.android
+      : (Platform.isLinux ? OperatingSystem.linux : null);
   if (os == null) return;
 
   open.overrideFor(os, () {
@@ -33,10 +35,11 @@ void applyNativeSqlOverride() {
     ];
 
     List<String> allAttempts = [...candidates];
-    
+
     if (Platform.isAndroid) {
       const packageId = 'com.example.systemmarket';
-      final fallbackPaths = candidates.map((name) => '/data/data/$packageId/lib/$name').toList();
+      final fallbackPaths =
+          candidates.map((name) => '/data/data/$packageId/lib/$name').toList();
       allAttempts.addAll(fallbackPaths);
     }
 
@@ -55,12 +58,14 @@ void applyNativeSqlOverride() {
 
     // Last-resort for non-Android: let sqlite3 package find it
     if (!Platform.isAndroid) {
-       try {
-         return DynamicLibrary.process();
-       } catch (_) {}
+      try {
+        return DynamicLibrary.process();
+      } catch (_) {}
     }
 
-    debugPrint('native_sql_override: critical failure - no sqlite3/sqlcipher library found.');
-    throw Exception('Failed to load SQLCipher native library. Encryption cannot be guaranteed.');
+    debugPrint(
+        'native_sql_override: critical failure - no sqlite3/sqlcipher library found.');
+    throw Exception(
+        'Failed to load SQLCipher native library. Encryption cannot be guaranteed.');
   });
 }

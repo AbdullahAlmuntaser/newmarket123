@@ -11,8 +11,10 @@ class AccBudgets extends Table {
       text().nullable().references(GLAccounts, #id)(); // ربط بحساب محدد
   TextColumn get budgetedAmount => text().map(const DecimalConverter())();
   TextColumn get actualAmount =>
-      text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))(); // يُحدث تلقائياً من القيود
-  TextColumn get variance => text().map(const DecimalConverter())(); // يمكن حسابها برمجياً
+      text().map(const DecimalConverter()).withDefault(
+          Constant(Decimal.zero.toString()))(); // يُحدث تلقائياً من القيود
+  TextColumn get variance =>
+      text().map(const DecimalConverter())(); // يمكن حسابها برمجياً
   TextColumn get status =>
       text().withDefault(const Constant('active'))(); // active, closed
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -39,8 +41,12 @@ class AccBankStatementLines extends Table {
   IntColumn get statementId => integer().references(AccBankStatements, #id)();
   DateTimeColumn get transactionDate => dateTime()();
   TextColumn get description => text()();
-  TextColumn get debit => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
-  TextColumn get credit => text().map(const DecimalConverter()).withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get debit => text()
+      .map(const DecimalConverter())
+      .withDefault(Constant(Decimal.zero.toString()))();
+  TextColumn get credit => text()
+      .map(const DecimalConverter())
+      .withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get balance => text().map(const DecimalConverter()).nullable()();
   TextColumn get reference => text().nullable()();
   TextColumn get matchedJournalEntryId =>
@@ -54,7 +60,8 @@ class AccBankStatementLines extends Table {
 class AccAuditLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get logTableName => text()();
-  TextColumn get recordId => text()(); // Changed to Text to match SyncableTable IDs
+  TextColumn get recordId =>
+      text()(); // Changed to Text to match SyncableTable IDs
   TextColumn get action => text()(); // INSERT, UPDATE, DELETE
   TextColumn get oldValues => text().nullable()(); // JSON
   TextColumn get newValues => text().nullable()(); // JSON

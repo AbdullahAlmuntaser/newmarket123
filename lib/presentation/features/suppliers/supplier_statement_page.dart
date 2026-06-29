@@ -129,7 +129,9 @@ class _SupplierStatementPageState extends State<SupplierStatementPage> {
             '${_supplier!.balance.toStringAsFixed(2)} SAR',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: _supplier!.balance > Decimal.zero ? Colors.red : Colors.green,
+                  color: _supplier!.balance > Decimal.zero
+                      ? Colors.red
+                      : Colors.green,
                 ),
           ),
         ],

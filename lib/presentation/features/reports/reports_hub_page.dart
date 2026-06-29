@@ -8,13 +8,28 @@ class ReportsHubPage extends StatelessWidget {
     _ReportLink('تقارير المبيعات', Icons.receipt_long, '/reports/sales'),
     _ReportLink('ربحية المنتجات', Icons.trending_up, '/reports/profitability'),
     _ReportLink('إجمالي الربح', Icons.analytics, '/reports/gross-profit'),
+    _ReportLink(
+        'الأرباح المتقدم', Icons.stacked_bar_chart, '/reports/advanced-profit'),
+    _ReportLink(
+        'المنتجات الأكثر مبيعاً', Icons.leaderboard, '/reports/top-selling'),
+    _ReportLink(
+        'المنتجات الراكدة', Icons.hourglass_bottom, '/reports/slow-moving'),
+    _ReportLink('تقرير الإيرادات والمصروفات', Icons.account_balance_wallet,
+        '/reports/income-expense'),
+    _ReportLink('تقارير المشتريات', Icons.shopping_cart, '/reports/purchases'),
+    _ReportLink('تقرير الصناديق', Icons.payments, '/reports/cashbox'),
+    _ReportLink('تقرير العملاء', Icons.people, '/reports/customers'),
+    _ReportLink('تقرير الموردين', Icons.business, '/reports/suppliers'),
+    _ReportLink('تقرير حركة المخزون', Icons.move_up, '/reports/stock-movement'),
     _ReportLink('تقارير المخزون', Icons.inventory_2, '/reports/inventory'),
     _ReportLink('تدقيق المخزون', Icons.fact_check, '/reports/inventory-audit'),
     _ReportLink('حركة صنف', Icons.swap_horiz, '/reports/item-movement'),
-    _ReportLink('المصروفات حسب المركز', Icons.account_tree, '/reports/expenses-by-center'),
+    _ReportLink('المصروفات حسب المركز', Icons.account_tree,
+        '/reports/expenses-by-center'),
     _ReportLink('ضريبة القيمة المضافة', Icons.percent, '/reports/vat'),
     _ReportLink('أعمار الديون', Icons.schedule, '/reports/aging'),
-    _ReportLink('توقع التدفق النقدي', Icons.waterfall_chart, '/reports/cash-flow'),
+    _ReportLink(
+        'توقع التدفق النقدي', Icons.waterfall_chart, '/reports/cash-flow'),
     _ReportLink('سجل التدقيق', Icons.history, '/reports/audit'),
   ];
 
@@ -42,7 +57,8 @@ class ReportsHubPage extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(report.icon, size: 42, color: Theme.of(context).colorScheme.primary),
+                    Icon(report.icon,
+                        size: 42, color: Theme.of(context).colorScheme.primary),
                     const SizedBox(height: 12),
                     Text(
                       report.title,

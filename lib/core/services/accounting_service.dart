@@ -422,13 +422,13 @@ class AccountingService {
 
     final Decimal totalCurrentAssets =
         (balanceByCode[codeCash] ?? Decimal.zero) +
-        (balanceByCode[codeBank] ?? Decimal.zero) +
-        (balanceByCode[codeAccountsReceivable] ?? Decimal.zero) +
-        (balanceByCode[codeInventory] ?? Decimal.zero);
+            (balanceByCode[codeBank] ?? Decimal.zero) +
+            (balanceByCode[codeAccountsReceivable] ?? Decimal.zero) +
+            (balanceByCode[codeInventory] ?? Decimal.zero);
 
     final Decimal totalCurrentLiabilities =
         (balanceByCode[codeAccountsPayable] ?? Decimal.zero) +
-        (balanceByCode[codeOutputVAT] ?? Decimal.zero);
+            (balanceByCode[codeOutputVAT] ?? Decimal.zero);
 
     final Decimal currentRatio = totalCurrentLiabilities > Decimal.zero
         ? (totalCurrentAssets / totalCurrentLiabilities).toDecimal()
@@ -480,9 +480,11 @@ class AccountingService {
       final account = row.readTable(db.gLAccounts);
       final day = DateTime(entry.date.year, entry.date.month, entry.date.day);
       if (account.type == 'REVENUE') {
-        dailyRevMap[day] = (dailyRevMap[day] ?? Decimal.zero) + line.credit - line.debit;
+        dailyRevMap[day] =
+            (dailyRevMap[day] ?? Decimal.zero) + line.credit - line.debit;
       } else {
-        dailyExpMap[day] = (dailyExpMap[day] ?? Decimal.zero) + line.debit - line.credit;
+        dailyExpMap[day] =
+            (dailyExpMap[day] ?? Decimal.zero) + line.debit - line.credit;
       }
     }
 
@@ -621,15 +623,16 @@ class AccountingService {
       final salvageDecimal = Decimal.parse(asset.salvageValue.toString());
       final usefulLifeMonths = asset.usefulLifeYears * 12;
       final monthlyDepreciation =
-          ((costDecimal - salvageDecimal) / Decimal.fromInt(usefulLifeMonths)).toDecimal(scaleOnInfinitePrecision: 3);
+          ((costDecimal - salvageDecimal) / Decimal.fromInt(usefulLifeMonths))
+              .toDecimal(scaleOnInfinitePrecision: 3);
 
       final totalMonths = usefulLifeMonths;
-      final accDepDecimal = Decimal.parse(asset.accumulatedDepreciation.toString());
-      final alreadyDepreciatedMonths =
-          accDepDecimal > Decimal.zero
-              ? (accDepDecimal / monthlyDepreciation)
-                  .toDecimal(scaleOnInfinitePrecision: 0)
-              : Decimal.zero;
+      final accDepDecimal =
+          Decimal.parse(asset.accumulatedDepreciation.toString());
+      final alreadyDepreciatedMonths = accDepDecimal > Decimal.zero
+          ? (accDepDecimal / monthlyDepreciation)
+              .toDecimal(scaleOnInfinitePrecision: 0)
+          : Decimal.zero;
 
       final elapsedDuration = asOfDate.difference(asset.purchaseDate);
       final elapsedMonths =
@@ -900,8 +903,10 @@ class AccountingService {
       }).toList();
     }
 
-    final revenues = allItems.where((i) => i.account.type == 'REVENUE').toList();
-    final expenses = allItems.where((i) => i.account.type == 'EXPENSE').toList();
+    final revenues =
+        allItems.where((i) => i.account.type == 'REVENUE').toList();
+    final expenses =
+        allItems.where((i) => i.account.type == 'EXPENSE').toList();
 
     final Decimal totalRevenue =
         revenues.fold(Decimal.zero, (sum, item) => sum + item.totalCredit);
@@ -1005,7 +1010,8 @@ class AccountingService {
       actualCreditAccountId = creditAccountId;
     } else {
       // Automatic revaluation: compute difference from invoice fields
-      final previousValue = Decimal.tryParse('${invoice.previousValue}') ?? Decimal.zero;
+      final previousValue =
+          Decimal.tryParse('${invoice.previousValue}') ?? Decimal.zero;
       final newValue = Decimal.tryParse('${invoice.newValue}') ?? Decimal.zero;
       revalAmount = (newValue - previousValue).abs();
 
@@ -1016,7 +1022,8 @@ class AccountingService {
       if (newValue > previousValue) {
         // Increase: Debit asset, Credit revaluation surplus (retained earnings)
         actualDebitAccountId =
-            (await dao.getAccountByCode(codeFixedAssets))?.id ?? invoice.assetId;
+            (await dao.getAccountByCode(codeFixedAssets))?.id ??
+                invoice.assetId;
         actualCreditAccountId =
             (await dao.getAccountByCode(codeRetainedEarnings))?.id ??
                 'retained_earnings';
@@ -1026,7 +1033,8 @@ class AccountingService {
             (await dao.getAccountByCode(codeRetainedEarnings))?.id ??
                 'retained_earnings';
         actualCreditAccountId =
-            (await dao.getAccountByCode(codeFixedAssets))?.id ?? invoice.assetId;
+            (await dao.getAccountByCode(codeFixedAssets))?.id ??
+                invoice.assetId;
       }
     }
 

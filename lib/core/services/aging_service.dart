@@ -35,8 +35,7 @@ class AgingBucket {
 
   AgingBucket(this.label, this.minDays, this.maxDays, this.items);
 
-  Decimal get total =>
-      items.fold(Decimal.zero, (s, i) => s + i.balance);
+  Decimal get total => items.fold(Decimal.zero, (s, i) => s + i.balance);
   int get count => items.length;
 }
 
@@ -104,7 +103,8 @@ class AgingService {
       grandTotal += balance;
     }
 
-    return AgingReport(buckets: buckets, asOfDate: date, grandTotal: grandTotal);
+    return AgingReport(
+        buckets: buckets, asOfDate: date, grandTotal: grandTotal);
   }
 
   Future<AgingReport> getSupplierAging({
@@ -153,7 +153,8 @@ class AgingService {
       grandTotal += balance;
     }
 
-    return AgingReport(buckets: buckets, asOfDate: date, grandTotal: grandTotal);
+    return AgingReport(
+        buckets: buckets, asOfDate: date, grandTotal: grandTotal);
   }
 
   List<AgingBucket> _createBuckets() => [

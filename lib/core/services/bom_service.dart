@@ -196,7 +196,8 @@ class BomService {
   }
 
   /// حساب تكلفة التجميع
-  Future<Decimal> _calculateAssemblyCost(List<BillOfMaterial> components) async {
+  Future<Decimal> _calculateAssemblyCost(
+      List<BillOfMaterial> components) async {
     Decimal totalCost = Decimal.zero;
     for (final component in components) {
       final product = await (db.select(db.products)
@@ -208,7 +209,6 @@ class BomService {
     }
     return totalCost;
   }
-
 
   Future<String> _getProductName(String productId) async {
     final product = await (db.select(

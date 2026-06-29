@@ -78,10 +78,10 @@ class _CashFlowForecastPageState extends State<CashFlowForecastPage> {
       final ar = await db.customersDao.getDueARInvoices(p.$2);
       final ap = await db.suppliersDao.getDueAPInvoices(p.$2);
 
-      double inflow =
-          ar.fold(0.0, (sum, i) => sum + (i.totalAmount - i.paidAmount.toDouble()));
-      double outflow =
-          ap.fold(0.0, (sum, i) => sum + (i.totalAmount - i.paidAmount.toDouble()));
+      double inflow = ar.fold(
+          0.0, (sum, i) => sum + (i.totalAmount - i.paidAmount.toDouble()));
+      double outflow = ap.fold(
+          0.0, (sum, i) => sum + (i.totalAmount - i.paidAmount.toDouble()));
 
       data.add(ForecastData(p.$3, inflow, outflow));
     }

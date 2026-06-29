@@ -82,8 +82,12 @@ class CartWidget extends StatelessWidget {
                               const SizedBox(height: 12),
                               Text(
                                 'السلة فارغة',
-                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                      color: Theme.of(context).colorScheme.outline,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyLarge
+                                    ?.copyWith(
+                                      color:
+                                          Theme.of(context).colorScheme.outline,
                                     ),
                               ),
                             ],
@@ -156,7 +160,8 @@ class CartWidget extends StatelessWidget {
                                 ),
                                 decoration: BoxDecoration(
                                   border: Border.all(
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
                                   ),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
@@ -166,14 +171,17 @@ class CartWidget extends StatelessWidget {
                                     Text(
                                       item.unitName,
                                       style: TextStyle(
-                                        color: Theme.of(context).colorScheme.primary,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
                                         fontSize: 12,
                                       ),
                                     ),
                                     Icon(
                                       Icons.arrow_drop_down,
                                       size: 16,
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                     ),
                                   ],
                                 ),
@@ -187,7 +195,8 @@ class CartWidget extends StatelessWidget {
                                     '${item.unitFactor} ${item.product.unit}',
                                     style: TextStyle(
                                       fontSize: 10,
-                                      color: Theme.of(context).colorScheme.outline,
+                                      color:
+                                          Theme.of(context).colorScheme.outline,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -353,7 +362,9 @@ class CartWidget extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: FilledButton.icon(
-        onPressed: state.cart.isEmpty || isProcessing ? null : () => _handleCheckout(context),
+        onPressed: state.cart.isEmpty || isProcessing
+            ? null
+            : () => _handleCheckout(context),
         icon: isProcessing
             ? const SizedBox(
                 width: 20,
@@ -370,7 +381,8 @@ class CartWidget extends StatelessWidget {
         ),
         style: FilledButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
     );
@@ -444,7 +456,8 @@ class CartWidget extends StatelessWidget {
             ProductUnitsCompanion.insert(
               productId: item.product.id,
               unitName: result['unitName'] as String,
-              unitFactor: drift.Value(Decimal.parse(result['factor'].toString())),
+              unitFactor:
+                  drift.Value(Decimal.parse(result['factor'].toString())),
               barcode: drift.Value(result['barcode'] as String?),
               sellPrice: drift.Value(
                 result['sellPrice'] != null
@@ -457,7 +470,8 @@ class CartWidget extends StatelessWidget {
           );
 
       // Reload units in Bloc
-      posBloc.add(UpdateCartItemUnit(item.product.id, result['unitName'] as String));
+      posBloc.add(
+          UpdateCartItemUnit(item.product.id, result['unitName'] as String));
     }
   }
 

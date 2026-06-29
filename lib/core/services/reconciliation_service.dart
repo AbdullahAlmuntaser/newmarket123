@@ -56,8 +56,12 @@ class ReconciliationService {
     final query = db.select(db.accountTransactions)
       ..where((t) => t.accountId.equals(accountId))
       ..where((t) => t.reconciled.equals(false));
-    if (from != null) query.where((t) => t.date.isBiggerOrEqual(Variable(from)));
-    if (to != null) query.where((t) => t.date.isSmallerOrEqual(Variable(to)));
+    if (from != null) {
+      query.where((t) => t.date.isBiggerOrEqual(Variable(from)));
+    }
+    if (to != null) {
+      query.where((t) => t.date.isSmallerOrEqual(Variable(to)));
+    }
     query.orderBy([(t) => OrderingTerm(expression: t.date)]);
     return query.get();
   }
@@ -125,10 +129,13 @@ class ReconciliationService {
     );
   }
 
-  Future<List<Reconciliation>> getReconciliationHistory(String accountId) async {
+  Future<List<Reconciliation>> getReconciliationHistory(
+      String accountId) async {
     return (db.select(db.reconciliations)
           ..where((r) => r.accountId.equals(accountId))
-          ..orderBy([(r) => OrderingTerm(expression: r.date, mode: OrderingMode.desc)]))
+          ..orderBy([
+            (r) => OrderingTerm(expression: r.date, mode: OrderingMode.desc)
+          ]))
         .get();
   }
 }

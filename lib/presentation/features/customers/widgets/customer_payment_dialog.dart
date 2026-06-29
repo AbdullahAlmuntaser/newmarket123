@@ -59,7 +59,8 @@ class _CustomerPaymentDialogState extends State<CustomerPaymentDialog> {
     Decimal total = Decimal.zero;
     for (final inv in widget.outstandingInvoices) {
       if (_selected[inv.sale.id] == true) {
-        final val = Decimal.tryParse(_amountControllers[inv.sale.id]?.text ?? '');
+        final val =
+            Decimal.tryParse(_amountControllers[inv.sale.id]?.text ?? '');
         if (val != null && val > Decimal.zero) {
           total += val;
         }
@@ -72,7 +73,8 @@ class _CustomerPaymentDialogState extends State<CustomerPaymentDialog> {
     final allocations = <({String saleId, Decimal amount})>[];
     for (final inv in widget.outstandingInvoices) {
       if (_selected[inv.sale.id] == true) {
-        final val = Decimal.tryParse(_amountControllers[inv.sale.id]?.text ?? '');
+        final val =
+            Decimal.tryParse(_amountControllers[inv.sale.id]?.text ?? '');
         if (val != null && val > Decimal.zero) {
           allocations.add((saleId: inv.sale.id, amount: val));
         }
@@ -108,7 +110,8 @@ class _CustomerPaymentDialogState extends State<CustomerPaymentDialog> {
               Expanded(
                 child: ListView(
                   children: [
-                    ...widget.outstandingInvoices.map((inv) => _buildInvoiceTile(inv)),
+                    ...widget.outstandingInvoices
+                        .map((inv) => _buildInvoiceTile(inv)),
                     const Divider(),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),

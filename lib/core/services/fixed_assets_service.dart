@@ -15,10 +15,15 @@ class FixedAssetsService {
     Decimal depreciableAmount = asset.cost - asset.salvageValue;
 
     if (asset.depreciationMethod == 'straight_line') {
-      return (depreciableAmount / (Decimal.fromInt(asset.usefulLifeYears) * Decimal.fromInt(12))).toDecimal();
+      return (depreciableAmount /
+              (Decimal.fromInt(asset.usefulLifeYears) * Decimal.fromInt(12)))
+          .toDecimal();
     } else if (asset.depreciationMethod == 'declining') {
-      final Decimal annualRate = (Decimal.fromInt(2) / Decimal.fromInt(asset.usefulLifeYears)).toDecimal();
-      final Decimal monthlyRate = (annualRate / Decimal.fromInt(12)).toDecimal();
+      final Decimal annualRate =
+          (Decimal.fromInt(2) / Decimal.fromInt(asset.usefulLifeYears))
+              .toDecimal();
+      final Decimal monthlyRate =
+          (annualRate / Decimal.fromInt(12)).toDecimal();
       final Decimal bookValue = asset.cost - asset.accumulatedDepreciation;
       return bookValue * monthlyRate;
     }
@@ -52,22 +57,21 @@ class FixedAssetsService {
               ),
             );
 
-        await (db.update(db.fixedAssets)
-              ..where((t) => t.id.equals(asset.id)))
+        await (db.update(db.fixedAssets)..where((t) => t.id.equals(asset.id)))
             .write(
           FixedAssetsCompanion(
-            accumulatedDepreciation: Value(
-                asset.accumulatedDepreciation + depreciationAmount),
+            accumulatedDepreciation:
+                Value(asset.accumulatedDepreciation + depreciationAmount),
             lastDepreciationDate: Value(runDate),
           ),
         );
 
-    final journalEntryId = await _createDepreciationJournalEntry(
-      asset.id,
-      depreciationAmount,
-      runDate,
-      asset.categoryId,
-    );
+        final journalEntryId = await _createDepreciationJournalEntry(
+          asset.id,
+          depreciationAmount,
+          runDate,
+          asset.categoryId,
+        );
 
         final log = await (db.select(db.accAssetDepreciationLogs)
               ..orderBy([(t) => OrderingTerm.desc(t.id)])
@@ -146,8 +150,9 @@ class FixedAssetsService {
     var account = await db.accountingDao.getAccountByCode('6001');
     if (account != null) return account.id;
     // Fall back to broader pattern
-    final accounts =
-        await (db.select(db.gLAccounts)..where((t) => t.code.like('600%'))).get();
+    final accounts = await (db.select(db.gLAccounts)
+          ..where((t) => t.code.like('600%')))
+        .get();
     if (accounts.isNotEmpty) return accounts.first.id;
     throw Exception('لم يتم العثور على حساب مصروف الإهلاك');
   }
@@ -176,14 +181,17 @@ class FixedAssetsService {
         .getSingle();
 
     Decimal bookValue = asset.cost - asset.accumulatedDepreciation;
-    Decimal gainOrLoss = salePrice != null ? Decimal.parse(salePrice.toString()) - bookValue : -bookValue;
+    Decimal gainOrLoss = salePrice != null
+        ? Decimal.parse(salePrice.toString()) - bookValue
+        : -bookValue;
 
     final disposalId = await db.into(db.accAssetDisposals).insert(
           AccAssetDisposalsCompanion.insert(
             assetId: assetId,
             disposalDate: disposalDate,
             disposalType: disposalType,
-            salePrice: Value(salePrice != null ? Decimal.parse(salePrice.toString()) : null),
+            salePrice: Value(
+                salePrice != null ? Decimal.parse(salePrice.toString()) : null),
             gainOrLoss: Value(gainOrLoss),
             notes: Value(notes),
           ),
@@ -204,8 +212,7 @@ class FixedAssetsService {
       AccAssetDisposalsCompanion(journalEntryId: Value(journalEntryId)),
     );
 
-    await (db.update(db.fixedAssets)..where((t) => t.id.equals(assetId)))
-        .write(
+    await (db.update(db.fixedAssets)..where((t) => t.id.equals(assetId))).write(
       FixedAssetsCompanion(
           status: Value(disposalType == 'sold' ? 'sold' : 'scrapped')),
     );
@@ -294,9 +301,12 @@ class FixedAssetsService {
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: gainLossId,
-            debit: Value(gainOrLoss > Decimal.zero ? Decimal.zero : -gainOrLoss),
-            credit: Value(gainOrLoss > Decimal.zero ? gainOrLoss : Decimal.zero),
-            memo: Value(gainOrLoss > Decimal.zero ? 'ربح بيع أصل' : 'خسارة بيع أصل'),
+            debit:
+                Value(gainOrLoss > Decimal.zero ? Decimal.zero : -gainOrLoss),
+            credit:
+                Value(gainOrLoss > Decimal.zero ? gainOrLoss : Decimal.zero),
+            memo: Value(
+                gainOrLoss > Decimal.zero ? 'ربح بيع أصل' : 'خسارة بيع أصل'),
           ),
         );
       }
@@ -332,8 +342,9 @@ class FixedAssetsService {
   Future<String> _getGainOnDisposalAccount() async {
     var account = await db.accountingDao.getAccountByCode('4010');
     if (account != null) return account.id;
-    final accounts =
-        await (db.select(db.gLAccounts)..where((t) => t.code.like('401%'))).get();
+    final accounts = await (db.select(db.gLAccounts)
+          ..where((t) => t.code.like('401%')))
+        .get();
     if (accounts.isEmpty) throw Exception('لم يتم العثور على حساب الإيرادات');
     return accounts.first.id;
   }
@@ -341,8 +352,9 @@ class FixedAssetsService {
   Future<String> _getLossOnDisposalAccount() async {
     var account = await db.accountingDao.getAccountByCode('6001');
     if (account != null) return account.id;
-    final accounts =
-        await (db.select(db.gLAccounts)..where((t) => t.code.like('600%'))).get();
+    final accounts = await (db.select(db.gLAccounts)
+          ..where((t) => t.code.like('600%')))
+        .get();
     if (accounts.isEmpty) throw Exception('لم يتم العثور على حساب المصروفات');
     return accounts.first.id;
   }

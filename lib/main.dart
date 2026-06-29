@@ -56,7 +56,7 @@ class _AppRootState extends State<AppRoot> {
 
       debugPrint("INIT: Verifying Database Connection...");
       final db = di.sl<AppDatabase>();
-      
+
       // Increased timeout to 15s to allow for background migrations/seeding
       // If it fails, we log and proceed as the DB might still be warming up
       try {
@@ -85,7 +85,6 @@ class _AppRootState extends State<AppRoot> {
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -191,14 +190,16 @@ class MyApp extends StatelessWidget {
           final localeProvider = Provider.of<LocaleProvider>(context);
           return Shortcuts(
             shortcuts: <ShortcutActivator, Intent>{
-              LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyK):
+              LogicalKeySet(
+                      LogicalKeyboardKey.control, LogicalKeyboardKey.keyK):
                   const OpenCommandPaletteIntent(),
               LogicalKeySet(LogicalKeyboardKey.meta, LogicalKeyboardKey.keyK):
                   const OpenCommandPaletteIntent(),
             },
             child: Actions(
               actions: <Type, Action<Intent>>{
-                OpenCommandPaletteIntent: CallbackAction<OpenCommandPaletteIntent>(
+                OpenCommandPaletteIntent:
+                    CallbackAction<OpenCommandPaletteIntent>(
                   onInvoke: (intent) => _showCommandPalette(context),
                 ),
               },

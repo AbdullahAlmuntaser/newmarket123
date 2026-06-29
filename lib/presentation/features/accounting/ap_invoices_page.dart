@@ -238,7 +238,8 @@ class _AddAPInvoiceDialogState extends State<AddAPInvoiceDialog> {
                   dueDate: drift.Value(_dueDate),
                   totalAmount: totalAmount,
                   taxAmount: drift.Value(
-                    Decimal.parse(MoneyFormField.valueOf(_taxAmountController).toString()),
+                    Decimal.parse(MoneyFormField.valueOf(_taxAmountController)
+                        .toString()),
                   ),
                   status: const drift.Value('POSTED'),
                 ),

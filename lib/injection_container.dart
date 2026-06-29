@@ -24,6 +24,7 @@ import 'core/theme/theme_provider.dart';
 import 'core/theme/locale_provider.dart';
 import 'core/services/unit_conversion_service.dart';
 import 'core/services/packaging_engine.dart';
+import 'core/services/auto_break_service.dart';
 import 'data/datasources/local/app_database.dart';
 import 'data/datasources/local/daos/products_dao.dart';
 import 'data/datasources/local/daos/product_units_dao.dart';
@@ -40,6 +41,7 @@ import 'domain/usecases/create_item.dart';
 import 'domain/usecases/add_stock.dart';
 import 'core/services/bom_service.dart';
 import 'core/services/sales_service.dart';
+import 'core/services/sales_order_service.dart';
 import 'core/services/purchase_service.dart';
 import 'core/services/reorder_service.dart';
 import 'core/services/supplier_analytics_service.dart';
@@ -76,6 +78,7 @@ import 'core/services/reporting_service.dart';
 import 'core/services/pdf_service.dart';
 import 'core/services/budget_service.dart';
 import 'core/services/payroll_service.dart';
+import 'core/services/currency_conversion_service.dart';
 import 'presentation/features/accounting/accounting_provider.dart';
 import 'presentation/features/purchases/purchase_provider.dart';
 import 'presentation/features/accounting/shifts_provider.dart';
@@ -85,8 +88,11 @@ import 'presentation/features/inventory/stock_transfer_provider.dart';
 import 'presentation/features/accounting/asset_provider.dart';
 import 'presentation/features/customers/customer_statement_provider.dart';
 import 'presentation/features/dashboard/dashboard_provider.dart';
+import 'presentation/features/home/providers/command_center_provider.dart';
 import 'presentation/features/pos/bloc/pos_bloc.dart';
 import 'core/services/fast_access_service.dart';
+import 'core/utils/cache_service.dart';
+import 'core/utils/paginated_query.dart';
 import 'presentation/features/products/products_provider.dart';
 
 final sl = GetIt.instance;
@@ -115,9 +121,12 @@ Future<void> initDatabase() async {
     // runtime or by migrating the DB differently; deleting the file
     // would irreversibly destroy encrypted data.
     final err = e.toString();
-    if ((err.contains('code 26') || err.contains('file is not a database') || err.contains('SqliteException'))
-        && !err.contains('NO_SQLCIPHER')) {
-      debugPrint("DI: Attempting recovery — backing up and recreating database...");
+    if ((err.contains('code 26') ||
+            err.contains('file is not a database') ||
+            err.contains('SqliteException')) &&
+        !err.contains('NO_SQLCIPHER')) {
+      debugPrint(
+          "DI: Attempting recovery — backing up and recreating database...");
       try {
         final dbFolder = await getApplicationDocumentsDirectory();
         final file = File(p.join(dbFolder.path, 'app_db.sqlite'));
@@ -127,7 +136,8 @@ Future<void> initDatabase() async {
           await file.copy(backupPath);
           debugPrint("DI: Corrupted file backed up to $backupPath");
           await file.delete();
-          debugPrint("DI: Corrupted file deleted. Retrying database creation...");
+          debugPrint(
+              "DI: Corrupted file deleted. Retrying database creation...");
         }
       } catch (recoveryError) {
         debugPrint("DI: Recovery backup failed: $recoveryError");
@@ -168,6 +178,9 @@ Future<void> initServices() async {
       ),
     );
     sl.registerLazySingleton<PackagingEngine>(() => PackagingEngine(db));
+    sl.registerLazySingleton<AutoBreakService>(
+      () => AutoBreakService(db, sl<PackagingEngine>()),
+    );
     debugPrint("DI: DAOs registered");
 
     debugPrint("DI: Registering core services...");
@@ -182,7 +195,8 @@ Future<void> initServices() async {
       () => AccountingService(db, sl<EventBusService>()),
     );
     sl.registerLazySingleton<SecurityService>(() => SecurityService(db));
-    sl.registerLazySingleton<ReconciliationService>(() => ReconciliationService(db));
+    sl.registerLazySingleton<ReconciliationService>(
+        () => ReconciliationService(db));
     sl.registerLazySingleton<AgingService>(() => AgingService(db));
     sl.registerLazySingleton<PermissionService>(() => PermissionService(db));
     sl.registerLazySingleton<AuditService>(() => AuditService(db));
@@ -216,6 +230,9 @@ Future<void> initServices() async {
           sl<AppSettingsService>(),
           sl<PermissionService>(),
           sl<TransactionEngine>()),
+    );
+    sl.registerLazySingleton<SalesOrderService>(
+      () => SalesOrderService(sl<AppDatabase>()),
     );
     sl.registerLazySingleton<StatementService>(
       () => StatementService(sl<PostingEngine>()),
@@ -301,7 +318,7 @@ Future<void> initServices() async {
     sl.registerLazySingleton<ReportEngineService>(
       () => ReportEngineService(db),
     );
-    
+
     // Register additional services that were not previously registered
     debugPrint("DI: Registering additional unregistered services...");
     sl.registerLazySingleton<AccountingPeriodService>(
@@ -334,7 +351,7 @@ Future<void> initServices() async {
     sl.registerLazySingleton<PdfInvoiceService>(
       () => PdfInvoiceService(),
     );
-    
+
     // Register BudgetService and PayrollService
     debugPrint("DI: Registering BudgetService and PayrollService...");
     sl.registerLazySingleton<BudgetService>(
@@ -343,12 +360,23 @@ Future<void> initServices() async {
     sl.registerLazySingleton<PayrollService>(
       () => PayrollService(db),
     );
+    sl.registerLazySingleton<CurrencyConversionService>(
+      () => CurrencyConversionService(db),
+    );
     sl.registerLazySingleton<FastAccessService>(() => FastAccessService());
+    sl.registerLazySingleton<CommandCenterProvider>(() => CommandCenterProvider(
+          sl<AppDatabase>(),
+          sl<FastAccessService>(),
+        ));
+    sl.registerLazySingleton<CacheService>(() => CacheService());
+    sl.registerLazySingleton<PaginatedQuery>(
+        () => PaginatedQuery(sl<AppDatabase>()));
     debugPrint("DI: BudgetService and PayrollService registered");
-    
+
     debugPrint("DI: Registering providers...");
     sl.registerFactory<ProductsProvider>(() => ProductsProvider(db));
-    sl.registerFactory<AccountingProvider>(() => AccountingProvider(db, sl<AccountingService>()));
+    sl.registerFactory<AccountingProvider>(
+        () => AccountingProvider(db, sl<AccountingService>()));
     sl.registerFactory<PurchaseProvider>(
       () => PurchaseProvider(db, sl<PurchaseService>()),
     );
@@ -370,7 +398,8 @@ Future<void> initServices() async {
     );
     sl.registerFactory<DashboardProvider>(() => DashboardProvider(db));
     sl.registerFactory<PosBloc>(
-      () => PosBloc(db, sl<PricingService>(), sl<TransactionEngine>(), sl<PackagingEngine>()),
+      () => PosBloc(db, sl<PricingService>(), sl<TransactionEngine>(),
+          sl<PackagingEngine>()),
     );
     debugPrint("DI: Providers registered");
 
@@ -397,7 +426,8 @@ List<SingleChildWidget> buildAppProviders() {
     ChangeNotifierProvider<ThemeProvider>.value(value: sl<ThemeProvider>()),
     ChangeNotifierProvider<LocaleProvider>.value(value: sl<LocaleProvider>()),
     ChangeNotifierProvider<AuthProvider>.value(value: sl<AuthProvider>()),
-    ChangeNotifierProvider<FastAccessService>.value(value: sl<FastAccessService>()),
+    ChangeNotifierProvider<FastAccessService>.value(
+        value: sl<FastAccessService>()),
     ChangeNotifierProvider<AccountingProvider>(
       create: (_) => sl<AccountingProvider>(),
     ),
@@ -429,6 +459,9 @@ List<SingleChildWidget> buildAppProviders() {
     ChangeNotifierProvider<DashboardProvider>(
       create: (_) => sl<DashboardProvider>(),
     ),
+    ChangeNotifierProvider<CommandCenterProvider>(
+      create: (_) => sl<CommandCenterProvider>(),
+    ),
     Provider<ReturnService>.value(value: sl<ReturnService>()),
     Provider<QuickCustomerService>.value(value: sl<QuickCustomerService>()),
     Provider<FinancialClosingService>.value(
@@ -450,12 +483,15 @@ List<SingleChildWidget> buildAppProviders() {
     Provider<ReportingService>.value(value: sl<ReportingService>()),
     Provider<PdfInvoiceService>.value(value: sl<PdfInvoiceService>()),
     // Add missing providers for services that were registered but not provided
-    Provider<FinancialControlService>.value(value: sl<FinancialControlService>()),
+    Provider<FinancialControlService>.value(
+        value: sl<FinancialControlService>()),
     Provider<ReportService>.value(value: sl<ReportService>()),
     // Provide BudgetService and PayrollService
     Provider<BudgetService>.value(value: sl<BudgetService>()),
     Provider<PayrollService>.value(value: sl<PayrollService>()),
     Provider<PackagingEngine>.value(value: sl<PackagingEngine>()),
+    Provider<CurrencyConversionService>.value(
+        value: sl<CurrencyConversionService>()),
   ];
 }
 

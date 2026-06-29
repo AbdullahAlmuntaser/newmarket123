@@ -12,9 +12,13 @@ class ConflictResolver {
       case ConflictStrategy.clientWins:
         return localPayload;
       case ConflictStrategy.lastWriteWins:
-        final localTimestamp = DateTime.tryParse(localPayload['updatedAt'] ?? '') ?? DateTime(0);
-        final serverTimestamp = DateTime.tryParse(serverPayload['updatedAt'] ?? '') ?? DateTime(0);
-        return localTimestamp.isAfter(serverTimestamp) ? localPayload : serverPayload;
+        final localTimestamp =
+            DateTime.tryParse(localPayload['updatedAt'] ?? '') ?? DateTime(0);
+        final serverTimestamp =
+            DateTime.tryParse(serverPayload['updatedAt'] ?? '') ?? DateTime(0);
+        return localTimestamp.isAfter(serverTimestamp)
+            ? localPayload
+            : serverPayload;
     }
   }
 }

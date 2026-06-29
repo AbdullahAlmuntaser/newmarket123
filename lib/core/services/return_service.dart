@@ -59,7 +59,9 @@ class ReturnService {
           db.products,
         )..where((t) => t.id.equals(item.productId)))
             .write(
-          ProductsCompanion(stock: Value(product.stock + Decimal.parse(item.quantity.toString()))),
+          ProductsCompanion(
+              stock: Value(
+                  product.stock + Decimal.parse(item.quantity.toString()))),
         );
 
         // 4. Return to Batch (FIFO logic reverse)
@@ -76,10 +78,12 @@ class ReturnService {
           )..where((t) => t.id.equals(latestBatch.id)))
               .write(
             ProductBatchesCompanion(
-              quantity: Value(latestBatch.quantity + Decimal.parse(item.quantity.toString())),
+              quantity: Value(latestBatch.quantity +
+                  Decimal.parse(item.quantity.toString())),
             ),
           );
-          totalCogsToReverse += item.quantity * latestBatch.costPrice.toDouble();
+          totalCogsToReverse +=
+              item.quantity * latestBatch.costPrice.toDouble();
         }
       }
 
@@ -217,7 +221,9 @@ class ReturnService {
           db.products,
         )..where((t) => t.id.equals(item.productId)))
             .write(
-          ProductsCompanion(stock: Value(product.stock - Decimal.parse(item.quantity.toString()))),
+          ProductsCompanion(
+              stock: Value(
+                  product.stock - Decimal.parse(item.quantity.toString()))),
         );
 
         // 4. Update Batches (Decrease newest batches first)
@@ -240,7 +246,9 @@ class ReturnService {
             db.productBatches,
           )..where((t) => t.id.equals(batch.id)))
               .write(
-            ProductBatchesCompanion(quantity: Value(batch.quantity - Decimal.parse(deduct.toString()))),
+            ProductBatchesCompanion(
+                quantity:
+                    Value(batch.quantity - Decimal.parse(deduct.toString()))),
           );
           remainingToDeduct -= deduct;
         }
@@ -276,14 +284,16 @@ class ReturnService {
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: debtAcc.id,
-            debit: Value(Decimal.parse(totalAmount.toString())), // Debit payable/cash to decrease it
+            debit: Value(Decimal.parse(
+                totalAmount.toString())), // Debit payable/cash to decrease it
             credit: Value(Decimal.zero),
           ),
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: inventoryAcc.id,
             debit: Value(Decimal.zero),
-            credit: Value(Decimal.parse(totalAmount.toString())), // Credit inventory to decrease it
+            credit: Value(Decimal.parse(
+                totalAmount.toString())), // Credit inventory to decrease it
           ),
         ];
         await dao.createEntry(entry, lines);

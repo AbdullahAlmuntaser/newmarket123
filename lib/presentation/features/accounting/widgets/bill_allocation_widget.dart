@@ -162,8 +162,8 @@ class _BillAllocationWidgetState extends State<BillAllocationWidget> {
                       suffixIcon: isAllocated
                           ? IconButton(
                               icon: const Icon(Icons.clear, size: 16),
-                              onPressed: () => _updateAllocation(
-                                  sale.id, 0, saleWithBalance.balance.toDouble()),
+                              onPressed: () => _updateAllocation(sale.id, 0,
+                                  saleWithBalance.balance.toDouble()),
                             )
                           : null,
                     ),

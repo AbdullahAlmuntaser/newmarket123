@@ -231,7 +231,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => di.sl<ThemeProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<AuthProvider>()),
         ChangeNotifierProvider(
-            create: (_) => AccountingProvider(di.sl<AppDatabase>(), di.sl<AccountingService>())),
+            create: (_) => AccountingProvider(
+                di.sl<AppDatabase>(), di.sl<AccountingService>())),
         ChangeNotifierProvider(create: (_) => di.sl<ProductsProvider>()),
         ChangeNotifierProvider(
           create: (_) =>
@@ -240,11 +241,10 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
             create: (_) => ShiftProvider(ShiftService(di.sl<AppDatabase>()))),
         ChangeNotifierProvider(
-            create: (_) => HRProvider(
-                HRService(di.sl<AppDatabase>()))),
+            create: (_) => HRProvider(HRService(di.sl<AppDatabase>()))),
         ChangeNotifierProvider(
-            create: (_) => PayrollProvider(
-                di.sl<HRService>(), di.sl<PayrollService>())),
+            create: (_) =>
+                PayrollProvider(di.sl<HRService>(), di.sl<PayrollService>())),
         ChangeNotifierProvider(
           create: (_) =>
               StockTransferProvider(StockTransferService(di.sl<AppDatabase>())),

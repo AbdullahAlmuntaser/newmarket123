@@ -240,8 +240,8 @@ class PurchaseProvider with ChangeNotifier {
                   .toString(),
             )),
             unitId: Value(item.selectedUnit?.unitName),
-            unitFactor:
-                Value(Decimal.parse((item.selectedUnit?.factor ?? 1.0).toString())),
+            unitFactor: Value(
+                Decimal.parse((item.selectedUnit?.factor ?? 1.0).toString())),
             batchNumber: Value(item.batchNumber),
             expiryDate: Value(item.expiryDate),
           ),
@@ -543,7 +543,8 @@ class PurchaseProvider with ChangeNotifier {
         }
 
         // Check for high stock
-        if (productInfo.currentStock > (item.product.alertLimit * Decimal.fromInt(10)).toDouble()) {
+        if (productInfo.currentStock >
+            (item.product.alertLimit * Decimal.fromInt(10)).toDouble()) {
           _alerts.add(
             PurchaseAlert(
               type: PurchaseAlertType.highStock,

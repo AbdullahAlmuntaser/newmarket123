@@ -69,12 +69,14 @@ class OperationsWorkspace extends StatelessWidget {
               title: 'التحصيلات',
               icon: Icons.payments_rounded,
               color: Colors.orange,
-              onTap: () => context.push('/accounting/manual-voucher?receipt=true'),
+              onTap: () =>
+                  context.push('/accounting/manual-voucher?receipt=true'),
             ),
             WorkspaceTile(
               title: 'المدفوعات',
               icon: Icons.payment_rounded,
-              onTap: () => context.push('/accounting/manual-voucher?receipt=false'),
+              onTap: () =>
+                  context.push('/accounting/manual-voucher?receipt=false'),
             ),
           ],
         ),

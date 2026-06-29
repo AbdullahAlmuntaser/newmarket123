@@ -52,8 +52,7 @@ class _CustomersPageState extends State<CustomersPage> {
     }
   }
 
-  bool get _hasMoreItems =>
-      (_currentPage + 1) * _pageSize < _totalCustomers;
+  bool get _hasMoreItems => (_currentPage + 1) * _pageSize < _totalCustomers;
 
   Future<void> _loadTotalCount() async {
     final db = context.read<AppDatabase>();
@@ -288,9 +287,9 @@ class _CustomersPageState extends State<CustomersPage> {
       ),
       selected: isSelected,
       onSelected: (v) => setState(() {
-              _selectedType = value;
-              _resetPagination();
-            }),
+        _selectedType = value;
+        _resetPagination();
+      }),
       selectedColor: Theme.of(context).colorScheme.primary,
       checkmarkColor: Colors.white,
     );
@@ -425,7 +424,7 @@ class _CustomersPageState extends State<CustomersPage> {
 
   Stream<String> _getTotalBalance(AppDatabase db) {
     return db.select(db.customers).watch().map(
-            (customers) => customers
+          (customers) => customers
               .fold<Decimal>(Decimal.zero, (sum, item) => sum + item.balance)
               .toDouble()
               .toStringAsFixed(2),

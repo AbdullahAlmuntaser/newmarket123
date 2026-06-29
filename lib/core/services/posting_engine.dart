@@ -64,13 +64,15 @@ class PostingEngine {
     }
   }
 
-  Future<void> _postSale(String referenceId, Map<String, dynamic> context) async {
+  Future<void> _postSale(
+      String referenceId, Map<String, dynamic> context) async {
     final dao = db.accountingDao;
     final amount = _readAmount(context['amount']);
     final tax = _readAmount(context['tax']);
     final cogs = _readAmount(context['cogs']);
     final paymentMethod = context['paymentMethod'] as String? ?? 'cash';
-    final branchId = context['branchId'] as String? ?? await _configService.getDefaultBranchId();
+    final branchId = context['branchId'] as String? ??
+        await _configService.getDefaultBranchId();
     final date = context['date'] as DateTime? ?? DateTime.now();
     final entryId = const Uuid().v4();
 
@@ -79,16 +81,21 @@ class PostingEngine {
 
     String debitAccountId;
     if (paymentMethod == 'credit') {
-      debitAccountId = await _getAccountByProfileOrCode(profiles, 'RECEIVABLE', '1030');
+      debitAccountId =
+          await _getAccountByProfileOrCode(profiles, 'RECEIVABLE', '1030');
     } else {
-      debitAccountId = await _getAccountByProfileOrCode(profiles, 'CASH', '1010');
+      debitAccountId =
+          await _getAccountByProfileOrCode(profiles, 'CASH', '1010');
     }
-    final revenueAccount = await _getAccountByProfileOrCode(profiles, 'REVENUE', '4010');
-    final taxAccount = await _getAccountByProfileOrCode(profiles, 'OUTPUT_VAT', '2020');
+    final revenueAccount =
+        await _getAccountByProfileOrCode(profiles, 'REVENUE', '4010');
+    final taxAccount =
+        await _getAccountByProfileOrCode(profiles, 'OUTPUT_VAT', '2020');
 
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
-      description: context['description'] ?? 'Sale #${referenceId.substring(0, 8)}',
+      description:
+          context['description'] ?? 'Sale #${referenceId.substring(0, 8)}',
       date: Value(date),
       referenceType: const Value('SALE'),
       referenceId: Value(referenceId),
@@ -127,8 +134,10 @@ class PostingEngine {
     // COGS entry
     if (cogs > Decimal.zero) {
       final cogsEntryId = const Uuid().v4();
-      final cogsAccount = await _getAccountByProfileOrCode(profiles, 'COGS', '5010');
-      final inventoryAccount = await _getAccountByProfileOrCode(profiles, 'INVENTORY', '1040');
+      final cogsAccount =
+          await _getAccountByProfileOrCode(profiles, 'COGS', '5010');
+      final inventoryAccount =
+          await _getAccountByProfileOrCode(profiles, 'INVENTORY', '1040');
 
       final cogsEntry = GLEntriesCompanion.insert(
         id: Value(cogsEntryId),
@@ -161,30 +170,37 @@ class PostingEngine {
     }
   }
 
-  Future<void> _postPurchase(String referenceId, Map<String, dynamic> context) async {
+  Future<void> _postPurchase(
+      String referenceId, Map<String, dynamic> context) async {
     final dao = db.accountingDao;
     final amount = _readAmount(context['amount']);
     final tax = _readAmount(context['tax']);
     final paymentMethod = context['paymentMethod'] as String? ?? 'cash';
-    final branchId = context['branchId'] as String? ?? await _configService.getDefaultBranchId();
+    final branchId = context['branchId'] as String? ??
+        await _configService.getDefaultBranchId();
     final date = context['date'] as DateTime? ?? DateTime.now();
     final entryId = const Uuid().v4();
 
     final profiles = await _getPostingProfiles('PURCHASE');
 
-    final inventoryAccount = await _getAccountByProfileOrCode(profiles, 'INVENTORY', '1040');
-    final taxAccount = await _getAccountByProfileOrCode(profiles, 'INPUT_VAT', '1050');
+    final inventoryAccount =
+        await _getAccountByProfileOrCode(profiles, 'INVENTORY', '1040');
+    final taxAccount =
+        await _getAccountByProfileOrCode(profiles, 'INPUT_VAT', '1050');
 
     String creditAccountId;
     if (paymentMethod == 'credit') {
-      creditAccountId = await _getAccountByProfileOrCode(profiles, 'PAYABLE', '2010');
+      creditAccountId =
+          await _getAccountByProfileOrCode(profiles, 'PAYABLE', '2010');
     } else {
-      creditAccountId = await _getAccountByProfileOrCode(profiles, 'CASH', '1010');
+      creditAccountId =
+          await _getAccountByProfileOrCode(profiles, 'CASH', '1010');
     }
 
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
-      description: context['description'] ?? 'Purchase #${referenceId.substring(0, 8)}',
+      description:
+          context['description'] ?? 'Purchase #${referenceId.substring(0, 8)}',
       date: Value(date),
       referenceType: const Value('PURCHASE'),
       referenceId: Value(referenceId),
@@ -222,27 +238,33 @@ class PostingEngine {
     await dao.createEntry(entry, lines);
   }
 
-  Future<void> _postSaleReturn(String referenceId, Map<String, dynamic> context) async {
+  Future<void> _postSaleReturn(
+      String referenceId, Map<String, dynamic> context) async {
     final dao = db.accountingDao;
     final amount = _readAmount(context['amount']);
     final paymentMethod = context['paymentMethod'] as String? ?? 'cash';
-    final branchId = context['branchId'] as String? ?? await _configService.getDefaultBranchId();
+    final branchId = context['branchId'] as String? ??
+        await _configService.getDefaultBranchId();
     final date = context['date'] as DateTime? ?? DateTime.now();
     final entryId = const Uuid().v4();
 
     final profiles = await _getPostingProfiles('SALE_RETURN');
-    final returnAccount = await _getAccountByProfileOrCode(profiles, 'RETURN', '4020');
+    final returnAccount =
+        await _getAccountByProfileOrCode(profiles, 'RETURN', '4020');
 
     String creditAccountId;
     if (paymentMethod == 'credit') {
-      creditAccountId = await _getAccountByProfileOrCode(profiles, 'RECEIVABLE', '1030');
+      creditAccountId =
+          await _getAccountByProfileOrCode(profiles, 'RECEIVABLE', '1030');
     } else {
-      creditAccountId = await _getAccountByProfileOrCode(profiles, 'CASH', '1010');
+      creditAccountId =
+          await _getAccountByProfileOrCode(profiles, 'CASH', '1010');
     }
 
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
-      description: context['description'] ?? 'Sale Return #${referenceId.substring(0, 8)}',
+      description: context['description'] ??
+          'Sale Return #${referenceId.substring(0, 8)}',
       date: Value(date),
       referenceType: const Value('SALE_RETURN'),
       referenceId: Value(referenceId),
@@ -271,27 +293,33 @@ class PostingEngine {
     await dao.createEntry(entry, lines);
   }
 
-  Future<void> _postPurchaseReturn(String referenceId, Map<String, dynamic> context) async {
+  Future<void> _postPurchaseReturn(
+      String referenceId, Map<String, dynamic> context) async {
     final dao = db.accountingDao;
     final amount = _readAmount(context['amount']);
     final paymentMethod = context['paymentMethod'] as String? ?? 'cash';
-    final branchId = context['branchId'] as String? ?? await _configService.getDefaultBranchId();
+    final branchId = context['branchId'] as String? ??
+        await _configService.getDefaultBranchId();
     final date = context['date'] as DateTime? ?? DateTime.now();
     final entryId = const Uuid().v4();
 
     final profiles = await _getPostingProfiles('PURCHASE_RETURN');
-    final returnAccount = await _getAccountByProfileOrCode(profiles, 'RETURN', '5011');
+    final returnAccount =
+        await _getAccountByProfileOrCode(profiles, 'RETURN', '5011');
 
     String debitAccountId;
     if (paymentMethod == 'credit') {
-      debitAccountId = await _getAccountByProfileOrCode(profiles, 'PAYABLE', '2010');
+      debitAccountId =
+          await _getAccountByProfileOrCode(profiles, 'PAYABLE', '2010');
     } else {
-      debitAccountId = await _getAccountByProfileOrCode(profiles, 'CASH', '1010');
+      debitAccountId =
+          await _getAccountByProfileOrCode(profiles, 'CASH', '1010');
     }
 
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
-      description: context['description'] ?? 'Purchase Return #${referenceId.substring(0, 8)}',
+      description: context['description'] ??
+          'Purchase Return #${referenceId.substring(0, 8)}',
       date: Value(date),
       referenceType: const Value('PURCHASE_RETURN'),
       referenceId: Value(referenceId),
@@ -320,17 +348,21 @@ class PostingEngine {
     await dao.createEntry(entry, lines);
   }
 
-  Future<void> _postCustomerPayment(String referenceId, Map<String, dynamic> context) async {
+  Future<void> _postCustomerPayment(
+      String referenceId, Map<String, dynamic> context) async {
     final dao = db.accountingDao;
     final amount = _readAmount(context['amount']);
     final customerId = context['customerId'] as String?;
-    final branchId = context['branchId'] as String? ?? await _configService.getDefaultBranchId();
+    final branchId = context['branchId'] as String? ??
+        await _configService.getDefaultBranchId();
     final date = context['date'] as DateTime? ?? DateTime.now();
     final entryId = const Uuid().v4();
 
     final profiles = await _getPostingProfiles('CUSTOMER_PAYMENT');
-    final cashAccount = await _getAccountByProfileOrCode(profiles, 'CASH', '1010');
-    final arAccount = await _getAccountByProfileOrCode(profiles, 'RECEIVABLE', '1030');
+    final cashAccount =
+        await _getAccountByProfileOrCode(profiles, 'CASH', '1010');
+    final arAccount =
+        await _getAccountByProfileOrCode(profiles, 'RECEIVABLE', '1030');
 
     String customerAccountId = arAccount;
     if (customerId != null) {
@@ -342,7 +374,8 @@ class PostingEngine {
 
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
-      description: context['description'] ?? 'Customer Payment #${referenceId.substring(0, 8)}',
+      description: context['description'] ??
+          'Customer Payment #${referenceId.substring(0, 8)}',
       date: Value(date),
       referenceType: const Value('RECEIPT'),
       referenceId: Value(referenceId),
@@ -371,17 +404,21 @@ class PostingEngine {
     await dao.createEntry(entry, lines);
   }
 
-  Future<void> _postSupplierPayment(String referenceId, Map<String, dynamic> context) async {
+  Future<void> _postSupplierPayment(
+      String referenceId, Map<String, dynamic> context) async {
     final dao = db.accountingDao;
     final amount = _readAmount(context['amount']);
     final supplierId = context['supplierId'] as String?;
-    final branchId = context['branchId'] as String? ?? await _configService.getDefaultBranchId();
+    final branchId = context['branchId'] as String? ??
+        await _configService.getDefaultBranchId();
     final date = context['date'] as DateTime? ?? DateTime.now();
     final entryId = const Uuid().v4();
 
     final profiles = await _getPostingProfiles('SUPPLIER_PAYMENT');
-    final apAccount = await _getAccountByProfileOrCode(profiles, 'PAYABLE', '2010');
-    final cashAccount = await _getAccountByProfileOrCode(profiles, 'CASH', '1010');
+    final apAccount =
+        await _getAccountByProfileOrCode(profiles, 'PAYABLE', '2010');
+    final cashAccount =
+        await _getAccountByProfileOrCode(profiles, 'CASH', '1010');
 
     String supplierAccountId = apAccount;
     if (supplierId != null) {
@@ -393,7 +430,8 @@ class PostingEngine {
 
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
-      description: context['description'] ?? 'Supplier Payment #${referenceId.substring(0, 8)}',
+      description: context['description'] ??
+          'Supplier Payment #${referenceId.substring(0, 8)}',
       date: Value(date),
       referenceType: const Value('PAYMENT'),
       referenceId: Value(referenceId),
@@ -422,21 +460,25 @@ class PostingEngine {
     await dao.createEntry(entry, lines);
   }
 
-  Future<void> _postCashTransaction(String referenceId, Map<String, dynamic> context) async {
+  Future<void> _postCashTransaction(
+      String referenceId, Map<String, dynamic> context) async {
     final dao = db.accountingDao;
     final amount = _readAmount(context['amount']);
     final accountId = context['accountId'] as String?;
     final direction = context['cashDirection'] as String? ?? 'IN';
-    final branchId = context['branchId'] as String? ?? await _configService.getDefaultBranchId();
+    final branchId = context['branchId'] as String? ??
+        await _configService.getDefaultBranchId();
     final date = context['date'] as DateTime? ?? DateTime.now();
     final entryId = const Uuid().v4();
 
     final profiles = await _getPostingProfiles('CASH_TRANSACTION');
-    final cashAccount = await _getAccountByProfileOrCode(profiles, 'CASH', '1010');
+    final cashAccount =
+        await _getAccountByProfileOrCode(profiles, 'CASH', '1010');
 
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
-      description: context['description'] ?? 'Cash Transaction #${referenceId.substring(0, 8)}',
+      description: context['description'] ??
+          'Cash Transaction #${referenceId.substring(0, 8)}',
       date: Value(date),
       referenceType: Value(direction == 'IN' ? 'RECEIPT' : 'PAYMENT'),
       referenceId: Value(referenceId),
@@ -482,16 +524,19 @@ class PostingEngine {
     await dao.createEntry(entry, lines);
   }
 
-  Future<void> _postGeneric(String referenceId, Map<String, dynamic> context) async {
+  Future<void> _postGeneric(
+      String referenceId, Map<String, dynamic> context) async {
     final dao = db.accountingDao;
     final amount = _readAmount(context['amount']);
-    final branchId = context['branchId'] as String? ?? await _configService.getDefaultBranchId();
+    final branchId = context['branchId'] as String? ??
+        await _configService.getDefaultBranchId();
     final date = context['date'] as DateTime? ?? DateTime.now();
     final entryId = const Uuid().v4();
 
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
-      description: context['description'] ?? 'Transaction #${referenceId.substring(0, 8)}',
+      description: context['description'] ??
+          'Transaction #${referenceId.substring(0, 8)}',
       date: Value(date),
       referenceType: Value(context['referenceType'] as String? ?? 'GENERIC'),
       referenceId: Value(referenceId),
@@ -514,8 +559,8 @@ class PostingEngine {
         debit: Value(Decimal.zero),
         credit: Value(amount),
         branchId: Value(branchId),
-        ),
-      ];
+      ),
+    ];
     validatePostingLinesRaw(lines);
     await dao.createEntry(entry, lines);
   }

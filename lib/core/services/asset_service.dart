@@ -32,15 +32,16 @@ class AssetService {
         // Asset uses Decimal internally in Drift if configured correctly via DecimalConverter
         final cost = Decimal.parse(asset.cost.toString());
         final salvageValue = Decimal.parse(asset.salvageValue.toString());
-        final accumulatedDepreciation = Decimal.parse(asset.accumulatedDepreciation.toString());
+        final accumulatedDepreciation =
+            Decimal.parse(asset.accumulatedDepreciation.toString());
 
-        Decimal monthlyDepreciation =
-            ((cost - salvageValue) / Decimal.fromInt(asset.usefulLifeYears * 12)).toDecimal();
+        Decimal monthlyDepreciation = ((cost - salvageValue) /
+                Decimal.fromInt(asset.usefulLifeYears * 12))
+            .toDecimal();
 
         if (accumulatedDepreciation + monthlyDepreciation >
             cost - salvageValue) {
-          monthlyDepreciation =
-              (cost - salvageValue) - accumulatedDepreciation;
+          monthlyDepreciation = (cost - salvageValue) - accumulatedDepreciation;
         }
 
         if (monthlyDepreciation > Decimal.zero) {

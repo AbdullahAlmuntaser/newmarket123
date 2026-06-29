@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -30,6 +31,7 @@ class _ProductsPageState extends State<ProductsPage> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateTotalCount());
   }
 
   @override
@@ -47,15 +49,16 @@ class _ProductsPageState extends State<ProductsPage> {
     }
   }
 
-  bool get _hasMoreItems =>
-      (_currentPage + 1) * _pageSize < _totalProducts;
+  bool get _hasMoreItems => (_currentPage + 1) * _pageSize < _totalProducts;
 
   Future<void> _loadMore() async {
     if (_isLoadingMore) return;
     setState(() {
       _currentPage++;
-      _isLoadingMore = false;
+      _isLoadingMore = true;
     });
+    await _updateTotalCount();
+    if (mounted) setState(() => _isLoadingMore = false);
   }
 
   void _resetPagination() {
@@ -81,11 +84,6 @@ class _ProductsPageState extends State<ProductsPage> {
   Widget build(BuildContext context) {
     final db = Provider.of<AppDatabase>(context);
     final l10n = AppLocalizations.of(context)!;
-
-    // Trigger count update on build if total is 0
-    if (_totalProducts == 0) {
-      _updateTotalCount();
-    }
 
     return Scaffold(
       appBar: AppBar(
@@ -153,7 +151,7 @@ class _ProductsPageState extends State<ProductsPage> {
         ),
         builder: (context, snapshot) {
           final displayedProducts = snapshot.data ?? [];
-          
+
           if (displayedProducts.isEmpty && _currentPage == 0) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -166,8 +164,7 @@ class _ProductsPageState extends State<ProductsPage> {
               Expanded(
                 child: ListView.builder(
                   controller: _scrollController,
-                  itemCount: displayedProducts.length + 
-                      (_hasMoreItems ? 1 : 0),
+                  itemCount: displayedProducts.length + (_hasMoreItems ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (index == displayedProducts.length) {
                       return const Center(
@@ -177,12 +174,14 @@ class _ProductsPageState extends State<ProductsPage> {
                         ),
                       );
                     }
-                    
+
                     final productWithCategory = displayedProducts[index];
                     final product = productWithCategory.product;
-                    final categoryName = productWithCategory.category?.name ?? '';
+                    final categoryName =
+                        productWithCategory.category?.name ?? '';
 
                     return ListTile(
+                      leading: _buildProductImage(product),
                       title: Text(product.name),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -287,6 +286,37 @@ class _ProductsPageState extends State<ProductsPage> {
         selectedColor: Theme.of(context).primaryColor,
         labelStyle: TextStyle(color: isSelected ? Colors.white : null),
       ),
+    );
+  }
+
+  Widget _buildProductImage(Product product) {
+    if (product.imagePath != null && product.imagePath!.isNotEmpty) {
+      final file = File(product.imagePath!);
+      if (file.existsSync()) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.file(
+            file,
+            width: 48,
+            height: 48,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _defaultImageIcon(),
+          ),
+        );
+      }
+    }
+    return _defaultImageIcon();
+  }
+
+  Widget _defaultImageIcon() {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(Icons.inventory_2, color: Colors.grey[500], size: 24),
     );
   }
 

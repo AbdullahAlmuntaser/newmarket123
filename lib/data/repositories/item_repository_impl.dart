@@ -7,7 +7,8 @@ import 'package:supermarket/domain/repositories/item_repository.dart';
 import 'package:supermarket/data/datasources/local/daos/products_dao.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
-Decimal _toDecimal(double? value) => value != null ? Decimal.parse(value.toStringAsFixed(4)) : Decimal.zero;
+Decimal _toDecimal(double? value) =>
+    value != null ? Decimal.parse(value.toStringAsFixed(4)) : Decimal.zero;
 
 class ItemRepositoryImpl implements ItemRepository {
   final ProductsDao _productsDao;
@@ -26,7 +27,8 @@ class ItemRepositoryImpl implements ItemRepository {
           categoryId: Value(item.categoryId),
           buyPrice: Value(_toDecimal(item.defaultUnit?.buyPrice?.toDouble())),
           sellPrice: Value(_toDecimal(item.defaultUnit?.sellPrice?.toDouble())),
-          wholesalePrice: Value(_toDecimal(item.defaultUnit?.wholesalePrice?.toDouble())),
+          wholesalePrice:
+              Value(_toDecimal(item.defaultUnit?.wholesalePrice?.toDouble())),
           alertLimit: Value(Decimal.parse(item.alertLimit.toString())),
           isActive: Value(item.isActive),
           createdAt: Value(item.createdAt),

@@ -112,9 +112,10 @@ class PostingProfilesSettingsPage extends StatelessWidget {
     )
         ? profile!.operationType
         : null;
-    String? selectedAccountType = _accountTypes.containsKey(profile?.accountType)
-        ? profile!.accountType
-        : null;
+    String? selectedAccountType =
+        _accountTypes.containsKey(profile?.accountType)
+            ? profile!.accountType
+            : null;
     String side = _sides.containsKey(profile?.side) ? profile!.side : 'DEBIT';
     final postingAccounts =
         accounts.where((account) => !account.isHeader).toList();
@@ -209,7 +210,8 @@ class PostingProfilesSettingsPage extends StatelessWidget {
               onPressed: () async {
                 if (selectedOperationType == null ||
                     selectedAccountType == null) {
-                  AppSnackBar.warning(context, 'نوع العملية ونوع الحساب مطلوبان');
+                  AppSnackBar.warning(
+                      context, 'نوع العملية ونوع الحساب مطلوبان');
                   return;
                 }
                 if (selectedAccountId == null) {

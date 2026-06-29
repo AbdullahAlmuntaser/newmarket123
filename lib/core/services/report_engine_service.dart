@@ -54,13 +54,17 @@ class ReportEngineService {
         };
       }
 
-      productStats[productId]!['totalQuantity'] = (productStats[productId]!['totalQuantity'] as double) + quantity.toDouble();
-      productStats[productId]!['totalRevenue'] = (productStats[productId]!['totalRevenue'] as double) + (quantity * price).toDouble();
+      productStats[productId]!['totalQuantity'] =
+          (productStats[productId]!['totalQuantity'] as double) +
+              quantity.toDouble();
+      productStats[productId]!['totalRevenue'] =
+          (productStats[productId]!['totalRevenue'] as double) +
+              (quantity * price).toDouble();
     }
 
     final report = productStats.values.toList()
-      ..sort((a, b) =>
-          (b['totalQuantity'] as double).compareTo(a['totalQuantity'] as double));
+      ..sort((a, b) => (b['totalQuantity'] as double)
+          .compareTo(a['totalQuantity'] as double));
 
     return report.take(limit).toList();
   }
@@ -227,13 +231,19 @@ class ReportEngineService {
         };
       }
 
-      dailySales[dateKey]!['totalSales'] = (dailySales[dateKey]!['totalSales'] as double) + sale.total.toDouble();
+      dailySales[dateKey]!['totalSales'] =
+          (dailySales[dateKey]!['totalSales'] as double) +
+              sale.total.toDouble();
       dailySales[dateKey]!['totalTransactions']++;
 
       if (sale.paymentMethod == PaymentMethod.cash) {
-        dailySales[dateKey]!['cashSales'] = (dailySales[dateKey]!['cashSales'] as double) + sale.total.toDouble();
+        dailySales[dateKey]!['cashSales'] =
+            (dailySales[dateKey]!['cashSales'] as double) +
+                sale.total.toDouble();
       } else {
-        dailySales[dateKey]!['cardSales'] = (dailySales[dateKey]!['cardSales'] as double) + sale.total.toDouble();
+        dailySales[dateKey]!['cardSales'] =
+            (dailySales[dateKey]!['cardSales'] as double) +
+                sale.total.toDouble();
       }
     }
 

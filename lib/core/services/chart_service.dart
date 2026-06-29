@@ -20,7 +20,9 @@ class ChartService {
 
       result.add(ChartDataPoint(
         label: '${dayStart.day}/${dayStart.month}',
-        value: sales.fold<Decimal>(Decimal.zero, (sum, s) => sum + s.total).toDouble(),
+        value: sales
+            .fold<Decimal>(Decimal.zero, (sum, s) => sum + s.total)
+            .toDouble(),
       ));
     }
 
@@ -35,11 +37,11 @@ class ChartService {
     for (var product in products) {
       final categoryId = product.categoryId ?? 'Other';
       final categories = await (db.select(db.categories)
-        ..where((t) => t.id.equals(categoryId))).get();
+            ..where((t) => t.id.equals(categoryId)))
+          .get();
 
-      final categoryName = categories.isNotEmpty
-          ? categories.first.name
-          : 'أخرى';
+      final categoryName =
+          categories.isNotEmpty ? categories.first.name : 'أخرى';
 
       categoryTotals[categoryName] =
           (categoryTotals[categoryName] ?? 0) + product.stock.toDouble();
@@ -50,7 +52,8 @@ class ChartService {
     }).toList();
   }
 
-  Future<List<ChartDataPoint>> getTopCategoriesByRevenue({int limit = 5}) async {
+  Future<List<ChartDataPoint>> getTopCategoriesByRevenue(
+      {int limit = 5}) async {
     final products = await db.select(db.products).get();
     final sales = await db.select(db.sales).get();
 
@@ -59,11 +62,11 @@ class ChartService {
     for (var product in products) {
       final categoryId = product.categoryId ?? 'Other';
       final categories = await (db.select(db.categories)
-        ..where((t) => t.id.equals(categoryId))).get();
+            ..where((t) => t.id.equals(categoryId)))
+          .get();
 
-      final categoryName = categories.isNotEmpty
-          ? categories.first.name
-          : 'أخرى';
+      final categoryName =
+          categories.isNotEmpty ? categories.first.name : 'أخرى';
 
       double revenue = 0;
       if (sales.isNotEmpty) {
@@ -124,11 +127,11 @@ class ChartService {
 
       final categoryId = product.categoryId ?? 'Other';
       final categories = await (db.select(db.categories)
-        ..where((t) => t.id.equals(categoryId))).get();
+            ..where((t) => t.id.equals(categoryId)))
+          .get();
 
-      final categoryName = categories.isNotEmpty
-          ? categories.first.name
-          : 'أخرى';
+      final categoryName =
+          categories.isNotEmpty ? categories.first.name : 'أخرى';
 
       categoryValues[categoryName] =
           (categoryValues[categoryName] ?? 0) + value;

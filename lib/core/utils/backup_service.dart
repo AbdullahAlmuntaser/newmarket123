@@ -1,6 +1,7 @@
 import 'package:share_plus/share_plus.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/core/services/backup/backup_service.dart' as unified_backup;
+import 'package:supermarket/core/services/backup/backup_service.dart'
+    as unified_backup;
 
 // Adapter: keep the old lightweight API but delegate to the unified
 // BackupService implementation in lib/core/services/backup/backup_service.dart.

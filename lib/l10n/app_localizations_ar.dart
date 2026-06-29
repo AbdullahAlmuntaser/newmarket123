@@ -724,7 +724,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get enterActualBalanceError => 'يرجى إدخال الرصيد الفعلي';
 
   @override
-  String get reconciliationDifference => 'فارق التسوية';
+  String get reconciliationDifference => 'فرق التسوية';
 
   @override
   String get vatOnSales => 'ضريبة المخرجات (المبيعات)';
@@ -1061,7 +1061,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get selectAPurchaseToContinue => 'اختر مشتريات للمتابعة';
 
   @override
-  String get processReturn => 'إتمام المرتجع';
+  String get processReturn => 'تنفيذ المرتجع';
 
   @override
   String get returnProcessedSuccessfully => 'تم إتمام المرتجع بنجاح';
@@ -1266,4 +1266,73 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get rawMaterials => 'المواد الخام';
+
+  @override
+  String get bankReconciliation => 'تسوية البنك';
+
+  @override
+  String get autoBreakService => 'خدمة التفكيك التلقائي';
+
+  @override
+  String get unitHierarchy => 'هرمية الوحدات';
+
+  @override
+  String get addUnit => 'إضافة وحدة';
+
+  @override
+  String get removeUnit => 'إزالة وحدة';
+
+  @override
+  String get unitName => 'اسم الوحدة';
+
+  @override
+  String get unitFactor => 'معامل الوحدة';
+
+  @override
+  String get returnMode => 'وضع المرتجعات';
+
+  @override
+  String get returnFromSale => 'إرجاع من فاتورة';
+
+  @override
+  String get originalSaleReference => 'رقم الفاتورة الأصلية';
+
+  @override
+  String get searchSale => 'بحث عن فاتورة';
+
+  @override
+  String get returnItem => 'صنف مرتجع';
+
+  @override
+  String get returnQuantity => 'كمية الإرجاع';
+
+  @override
+  String get returnReason => 'سبب الإرجاع';
+
+  @override
+  String get returnSuccess => 'تم تنفيذ المرتجع بنجاح';
+
+  @override
+  String get totalRefund => 'إجمالي المرتجع';
+
+  @override
+  String get cancelReturn => 'إلغاء المرتجع';
+
+  @override
+  String get unmatchedTransactions => 'المعاملات غير المسوّاة';
+
+  @override
+  String get reconcileSelected => 'تسوية المحدد';
+
+  @override
+  String get autoReconcile => 'تسوية تلقائية';
+
+  @override
+  String get reconcileAll => 'تسوية الكل';
+
+  @override
+  String get tolerance => 'التحمّل';
+
+  @override
+  String get noUnmatchedTransactions => 'لا توجد معاملات غير مسوّاة';
 }

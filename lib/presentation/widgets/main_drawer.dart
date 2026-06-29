@@ -31,7 +31,8 @@ class MainDrawer extends StatelessWidget {
       );
     }
 
-    final role = UserRole.fromString(authProvider.currentUser?.role ?? 'cashier');
+    final role =
+        UserRole.fromString(authProvider.currentUser?.role ?? 'cashier');
 
     return Drawer(
       width: 280,
@@ -54,7 +55,8 @@ class MainDrawer extends StatelessWidget {
               },
               borderRadius: BorderRadius.circular(8),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
                   color: const Color(0xFF2D2D38),
                   borderRadius: BorderRadius.circular(8),
@@ -84,7 +86,7 @@ class MainDrawer extends StatelessWidget {
                   onTap: () => context.go('/'),
                 ),
                 const _DrawerDivider(),
-                
+
                 // WORKSPACES
                 if (AccessGuard.canAccess('/workspace/operations', role))
                   _buildExpansionGroup(
@@ -92,12 +94,15 @@ class MainDrawer extends StatelessWidget {
                     icon: Icons.settings_input_component_rounded,
                     title: 'مساحة عمل العمليات',
                     children: [
-                      _buildSubItem(context, 'نظرة عامة', '/workspace/operations'),
+                      _buildSubItem(
+                          context, 'نظرة عامة', '/workspace/operations'),
                       _buildSubItem(context, 'نقطة البيع (POS)', '/pos'),
                       _buildSubItem(context, 'سجل المبيعات', '/sales'),
                       _buildSubItem(context, 'فواتير الشراء', '/purchases'),
-                      _buildSubItem(context, 'مرتجعات المبيعات', '/sales/returns'),
-                      _buildSubItem(context, 'مرتجعات المشتريات', '/purchases/returns'),
+                      _buildSubItem(
+                          context, 'مرتجعات المبيعات', '/sales/returns'),
+                      _buildSubItem(
+                          context, 'مرتجعات المشتريات', '/purchases/returns'),
                     ],
                   ),
 
@@ -107,13 +112,20 @@ class MainDrawer extends StatelessWidget {
                     icon: Icons.account_balance_rounded,
                     title: 'مساحة عمل الحسابات',
                     children: [
-                      _buildSubItem(context, 'نظرة عامة', '/workspace/accounting'),
-                      _buildSubItem(context, 'شجرة الحسابات', '/accounting/coa'),
-                      _buildSubItem(context, 'دفتر الأستاذ', '/accounting/general-ledger'),
-                      _buildSubItem(context, 'الميزانية العمومية', '/accounting/balance-sheet'),
-                      _buildSubItem(context, 'قائمة الدخل', '/accounting/income-statement'),
-                      _buildSubItem(context, 'سندات القبض والصرف', '/accounting/manual-voucher'),
-                      _buildSubItem(context, 'القيود اليدوية', '/accounting/manual-journal'),
+                      _buildSubItem(
+                          context, 'نظرة عامة', '/workspace/accounting'),
+                      _buildSubItem(
+                          context, 'شجرة الحسابات', '/accounting/coa'),
+                      _buildSubItem(context, 'دفتر الأستاذ',
+                          '/accounting/general-ledger'),
+                      _buildSubItem(context, 'الميزانية العمومية',
+                          '/accounting/balance-sheet'),
+                      _buildSubItem(context, 'قائمة الدخل',
+                          '/accounting/income-statement'),
+                      _buildSubItem(context, 'سندات القبض والصرف',
+                          '/accounting/manual-voucher'),
+                      _buildSubItem(context, 'القيود اليدوية',
+                          '/accounting/manual-journal'),
                     ],
                   ),
 
@@ -123,12 +135,17 @@ class MainDrawer extends StatelessWidget {
                     icon: Icons.inventory_2_rounded,
                     title: 'مساحة عمل المخزون',
                     children: [
-                      _buildSubItem(context, 'نظرة عامة', '/workspace/inventory'),
+                      _buildSubItem(
+                          context, 'نظرة عامة', '/workspace/inventory'),
                       _buildSubItem(context, 'قائمة المنتجات', '/products'),
-                      _buildSubItem(context, 'المستودعات', '/inventory/warehouses'),
-                      _buildSubItem(context, 'جرد المخزون', '/inventory/stock-take'),
-                      _buildSubItem(context, 'التحويل المخزني', '/inventory/transfer'),
-                      _buildSubItem(context, 'إدارة التصنيع', '/manufacturing/bom'),
+                      _buildSubItem(
+                          context, 'المستودعات', '/inventory/warehouses'),
+                      _buildSubItem(
+                          context, 'جرد المخزون', '/inventory/stock-take'),
+                      _buildSubItem(
+                          context, 'التحويل المخزني', '/inventory/transfer'),
+                      _buildSubItem(
+                          context, 'إدارة التصنيع', '/manufacturing/bom'),
                     ],
                   ),
 
@@ -153,9 +170,12 @@ class MainDrawer extends StatelessWidget {
                     title: 'مساحة عمل التقارير',
                     children: [
                       _buildSubItem(context, 'نظرة عامة', '/workspace/reports'),
-                      _buildSubItem(context, 'تقارير المبيعات', '/reports/sales'),
-                      _buildSubItem(context, 'تقارير المخزون', '/reports/inventory'),
-                      _buildSubItem(context, 'تقرير القيمة المضافة', '/reports/vat'),
+                      _buildSubItem(
+                          context, 'تقارير المبيعات', '/reports/sales'),
+                      _buildSubItem(
+                          context, 'تقارير المخزون', '/reports/inventory'),
+                      _buildSubItem(
+                          context, 'تقرير القيمة المضافة', '/reports/vat'),
                       _buildSubItem(context, 'سجل التدقيق', '/reports/audit'),
                     ],
                   ),
@@ -167,9 +187,12 @@ class MainDrawer extends StatelessWidget {
                     title: 'مساحة عمل الإدارة',
                     children: [
                       _buildSubItem(context, 'نظرة عامة', '/workspace/admin'),
-                      _buildSubItem(context, 'إعدادات النظام', '/settings/system'),
-                      _buildSubItem(context, 'الصلاحيات', '/settings/permissions'),
-                      _buildSubItem(context, 'النسخ الاحتياطي', '/settings/backup'),
+                      _buildSubItem(
+                          context, 'إعدادات النظام', '/settings/system'),
+                      _buildSubItem(
+                          context, 'الصلاحيات', '/settings/permissions'),
+                      _buildSubItem(
+                          context, 'النسخ الاحتياطي', '/settings/backup'),
                       _buildSubItem(context, 'سير الموافقات', '/approvals'),
                     ],
                   ),

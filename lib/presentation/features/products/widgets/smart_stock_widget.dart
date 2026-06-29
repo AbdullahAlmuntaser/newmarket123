@@ -21,7 +21,8 @@ class SmartStockWidget extends StatelessWidget {
       builder: (context, snapshot) {
         final conversions = snapshot.data ?? [];
         final erpConversions = conversions
-            .map((c) => erp.UnitConversion(unitName: c.unitName, factor: c.factor))
+            .map((c) =>
+                erp.UnitConversion(unitName: c.unitName, factor: c.factor))
             .toList();
         final formattedStock = erp.ErpLogic.formatInventory(
           totalBaseQty: Quantity(product.stock),

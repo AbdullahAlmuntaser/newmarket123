@@ -51,6 +51,7 @@ dependencies:
   timezone: ^0.10.1
   sqlcipher_flutter_libs: ^0.6.8
   flutter_secure_storage: ^10.2.0
+  image_picker: ^1.1.2
   # sqlite3_flutter_libs removed to avoid conflict with sqlcipher_flutter_libs
 
 

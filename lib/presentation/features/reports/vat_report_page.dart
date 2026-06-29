@@ -138,8 +138,9 @@ class _VatReportPageState extends State<VatReportPage> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color:
-                isHighlight ? (amount >= Decimal.zero ? Colors.red : Colors.green) : null,
+            color: isHighlight
+                ? (amount >= Decimal.zero ? Colors.red : Colors.green)
+                : null,
           ),
         ),
       ),

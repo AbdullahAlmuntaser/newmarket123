@@ -69,12 +69,14 @@ class AccountingWorkspace extends StatelessWidget {
               title: 'سند قبض',
               icon: Icons.add_card_rounded,
               color: Colors.teal,
-              onTap: () => context.push('/accounting/manual-voucher?receipt=true'),
+              onTap: () =>
+                  context.push('/accounting/manual-voucher?receipt=true'),
             ),
             WorkspaceTile(
               title: 'سند صرف',
               icon: Icons.remove_circle_outline_rounded,
-              onTap: () => context.push('/accounting/manual-voucher?receipt=false'),
+              onTap: () =>
+                  context.push('/accounting/manual-voucher?receipt=false'),
             ),
             WorkspaceTile(
               title: 'التحويلات',

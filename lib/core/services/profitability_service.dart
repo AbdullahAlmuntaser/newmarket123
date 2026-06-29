@@ -49,7 +49,8 @@ class ProfitabilityService {
           db.products,
         )..where((p) => p.id.equals(item.productId)))
             .getSingle();
-        totalCost += ((item.quantity * item.unitFactor) * (product.buyPrice)).toDouble();
+        totalCost +=
+            ((item.quantity * item.unitFactor) * (product.buyPrice)).toDouble();
       }
     }
 

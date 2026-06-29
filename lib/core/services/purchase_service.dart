@@ -67,16 +67,19 @@ class PurchaseService {
 
       double subtotal = 0;
       for (var item in items) {
-        subtotal += (item.quantity * item.unitFactor * item.unitPrice).toDouble();
+        subtotal +=
+            (item.quantity * item.unitFactor * item.unitPrice).toDouble();
       }
 
       // حساب إجمالي المصاريف الإضافية
-      double totalExpenses = (purchase.shippingCost + purchase.otherExpenses).toDouble();
+      double totalExpenses =
+          (purchase.shippingCost + purchase.otherExpenses).toDouble();
 
       double discount = purchase.discount.toDouble();
 
       // استخدام قيمة الضريبة الموجودة في الفاتورة مباشرة
-      double tax = (purchase.tax > Decimal.zero) ? purchase.tax.toDouble() : 0.0;
+      double tax =
+          (purchase.tax > Decimal.zero) ? purchase.tax.toDouble() : 0.0;
 
       await postingEngine.post(
         type: TransactionType.purchase,

@@ -23,7 +23,8 @@ class _StockTakePageState extends State<StockTakePage> {
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isLoadingProducts = false;
-  final TextEditingController _productSearchController = TextEditingController();
+  final TextEditingController _productSearchController =
+      TextEditingController();
   late TextEditingController _noteController;
 
   @override
@@ -328,9 +329,11 @@ class _StockTakePageState extends State<StockTakePage> {
                               ))
                             .write(
                           StockTakeItemsCompanion(
-                            actualQty: drift.Value(Decimal.parse(actual.toString())),
+                            actualQty:
+                                drift.Value(Decimal.parse(actual.toString())),
                             variance: drift.Value(
-                              Decimal.parse(actual.toString()) - item.expectedQty,
+                              Decimal.parse(actual.toString()) -
+                                  item.expectedQty,
                             ),
                           ),
                         );
@@ -439,7 +442,8 @@ class _StockTakePageState extends State<StockTakePage> {
                 auditId: i.stockTakeId,
                 productId: i.productId,
                 actualStock: drift.Value(Decimal.parse(i.actualQty.toString())),
-                systemStock: drift.Value(Decimal.parse(i.expectedQty.toString())),
+                systemStock:
+                    drift.Value(Decimal.parse(i.expectedQty.toString())),
                 difference: drift.Value(Decimal.parse(i.variance.toString())),
               ))
           .toList();
@@ -517,7 +521,8 @@ class _StockTakePageState extends State<StockTakePage> {
               onChanged: _searchProducts,
             ),
             const SizedBox(height: 8),
-            if (_filteredProducts.isEmpty && _productSearchController.text.isNotEmpty)
+            if (_filteredProducts.isEmpty &&
+                _productSearchController.text.isNotEmpty)
               const Padding(
                 padding: EdgeInsets.all(8),
                 child: Text('لا توجد نتائج'),

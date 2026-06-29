@@ -73,7 +73,8 @@ class _AddEditAssetDialogState extends State<AddEditAssetDialog> {
         name: Value(_nameController.text),
         cost: Value(Decimal.tryParse(_costController.text) ?? Decimal.zero),
         usefulLifeYears: Value(int.tryParse(_lifeController.text) ?? 5),
-        salvageValue: Value(Decimal.tryParse(_salvageController.text) ?? Decimal.zero),
+        salvageValue:
+            Value(Decimal.tryParse(_salvageController.text) ?? Decimal.zero),
         purchaseDate: Value(_purchaseDate),
         accumulatedDepreciation:
             _isEditing ? const Value.absent() : Value(Decimal.zero),

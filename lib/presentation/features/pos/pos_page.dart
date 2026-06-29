@@ -9,6 +9,7 @@ import 'package:supermarket/presentation/features/pos/widgets/product_grid.dart'
 import 'package:supermarket/presentation/features/pos/widgets/product_search_widget.dart';
 import 'package:supermarket/presentation/features/pos/widgets/barcode_scanner_dialog.dart';
 import 'package:supermarket/presentation/features/pos/widgets/category_selector.dart';
+import 'package:supermarket/presentation/features/pos/widgets/pos_return_widget.dart';
 import 'package:supermarket/injection_container.dart';
 import 'package:supermarket/core/services/communication_service.dart';
 import 'package:supermarket/core/services/quick_customer_service.dart';
@@ -52,7 +53,10 @@ class _PosViewState extends State<PosView> {
     return BlocListener<PosBloc, PosState>(
       listener: (context, state) {
         if (state is PosCheckoutSuccess) {
-          _showInvoiceOptions(context, state, commService, quickCustomerService);
+          _showInvoiceOptions(
+              context, state, commService, quickCustomerService);
+        } else if (state is PosReturnSuccess) {
+          _showReturnSuccess(context, state);
         } else if (state is PosError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -72,6 +76,26 @@ class _PosViewState extends State<PosView> {
               actions: [
                 IconButton(
                   icon: Icon(
+                    state is PosLoaded && state.isReturnMode
+                        ? Icons.keyboard_return
+                        : Icons.shopping_cart,
+                    color: state is PosLoaded && state.isReturnMode
+                        ? Colors.orange
+                        : null,
+                  ),
+                  tooltip: state is PosLoaded && state.isReturnMode
+                      ? 'وضع البيع'
+                      : 'وضع المرتجعات',
+                  onPressed: () {
+                    if (state is PosLoaded) {
+                      context.read<PosBloc>().add(
+                            ToggleReturnMode(!state.isReturnMode),
+                          );
+                    }
+                  },
+                ),
+                IconButton(
+                  icon: Icon(
                     isWholesale ? Icons.store : Icons.storefront,
                     color: isWholesale ? Colors.green : null,
                   ),
@@ -84,6 +108,28 @@ class _PosViewState extends State<PosView> {
                     }
                   },
                 ),
+                if (state is PosLoaded && state.cart.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.pause_circle_outline),
+                    tooltip: 'تعليق البيع',
+                    onPressed: () {
+                      context.read<PosBloc>().add(HoldSale());
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('تم تعليق البيع'),
+                            backgroundColor: Colors.orange),
+                      );
+                    },
+                  ),
+                if (state is PosLoaded && state.heldSales.isNotEmpty)
+                  IconButton(
+                    icon: Badge(
+                      label: Text('${state.heldSales.length}'),
+                      child: const Icon(Icons.play_circle_outline),
+                    ),
+                    tooltip: 'استدعاء البيع المعلق',
+                    onPressed: () => _showHeldSalesDialog(context, state),
+                  ),
                 IconButton(
                   icon: const Icon(Icons.history),
                   onPressed: () => context.push('/sales'),
@@ -100,12 +146,18 @@ class _PosViewState extends State<PosView> {
                     ? LayoutBuilder(
                         builder: (context, constraints) {
                           final isWide = constraints.maxWidth > 800;
-                          final isTablet = constraints.maxWidth > 500 && constraints.maxWidth <= 800;
-                          
+                          final isTablet = constraints.maxWidth > 500 &&
+                              constraints.maxWidth <= 800;
+
                           if (isWide) {
                             return Row(
                               children: [
-                                const Expanded(flex: 2, child: CartWidget()),
+                                Expanded(
+                                  flex: 2,
+                                  child: state.isReturnMode
+                                      ? const PosReturnWidget()
+                                      : const CartWidget(),
+                                ),
                                 Expanded(
                                   flex: 3,
                                   child: _buildProductSection(),
@@ -115,7 +167,12 @@ class _PosViewState extends State<PosView> {
                           } else if (isTablet) {
                             return Row(
                               children: [
-                                const Expanded(flex: 1, child: CartWidget()),
+                                Expanded(
+                                  flex: 1,
+                                  child: state.isReturnMode
+                                      ? const PosReturnWidget()
+                                      : const CartWidget(),
+                                ),
                                 Expanded(
                                   flex: 2,
                                   child: _buildProductSection(),
@@ -128,13 +185,18 @@ class _PosViewState extends State<PosView> {
                             child: Column(
                               children: [
                                 const TabBar(
-                                  tabs: [Tab(text: 'المنتجات'), Tab(text: 'السلة')],
+                                  tabs: [
+                                    Tab(text: 'المنتجات'),
+                                    Tab(text: 'السلة')
+                                  ],
                                 ),
                                 Expanded(
                                   child: TabBarView(
                                     children: [
                                       _buildProductSection(),
-                                      const CartWidget(),
+                                      state.isReturnMode
+                                          ? const PosReturnWidget()
+                                          : const CartWidget(),
                                     ],
                                   ),
                                 ),
@@ -178,6 +240,44 @@ class _PosViewState extends State<PosView> {
     }
   }
 
+  void _showHeldSalesDialog(BuildContext context, PosLoaded state) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('البيع المعلق'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: state.heldSales.length,
+            itemBuilder: (context, index) {
+              final heldCart = state.heldSales[index];
+              final itemCount = heldCart.length;
+              final total = heldCart.fold<Decimal>(
+                  Decimal.zero, (sum, item) => sum + item.total);
+              return ListTile(
+                leading: CircleAvatar(child: Text('${index + 1}')),
+                title: Text('$itemCount صنف'),
+                subtitle: Text('${total.toStringAsFixed(2)} ر.س'),
+                trailing: const Icon(Icons.play_arrow),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  context.read<PosBloc>().add(RecallSale(index));
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('إلغاء'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showInvoiceOptions(
     BuildContext context,
     PosCheckoutSuccess state,
@@ -207,7 +307,8 @@ class _PosViewState extends State<PosView> {
         customerPhone = customer.phone;
       }
     } else {
-      final quickCustomer = await quickCustomerService.getOrCreateCustomerForSale('عميل نقدي');
+      final quickCustomer =
+          await quickCustomerService.getOrCreateCustomerForSale('عميل نقدي');
       if (quickCustomer != null) {
         customerName = quickCustomer.name;
         customerPhone = quickCustomer.phone;
@@ -282,5 +383,51 @@ class _PosViewState extends State<PosView> {
     if (context.mounted) {
       context.read<PosBloc>().add(ClearCart());
     }
+  }
+
+  void _showReturnSuccess(BuildContext context, PosReturnSuccess state) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'تم تسجيل المرتجع بنجاح - المبلغ: ${state.totalRefund.toStringAsFixed(2)} ر.س',
+        ),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('تم المرتجع بنجاح'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('رقم المرتجع: ${state.returnId.substring(0, 8)}'),
+            const SizedBox(height: 8),
+            Text('الفاتورة الأصلية: ${state.originalSale.id.substring(0, 8)}'),
+            const SizedBox(height: 8),
+            Text(
+              'المبلغ المرتجع: ${state.totalRefund.toStringAsFixed(2)} ر.س',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.red,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<PosBloc>().add(ClearReturn());
+            },
+            child: const Text('تم'),
+          ),
+        ],
+      ),
+    );
   }
 }

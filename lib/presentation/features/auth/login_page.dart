@@ -76,10 +76,12 @@ class _LoginPageState extends State<LoginPage> {
                       Text(
                         l10n.accountingSystem,
                         textAlign: TextAlign.center,
-                        style:
-                            Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 32),
                       if (_needsInitialSetup)

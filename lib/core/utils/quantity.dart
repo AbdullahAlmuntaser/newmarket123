@@ -8,7 +8,8 @@ class Quantity {
 
   const Quantity(this.value);
 
-  factory Quantity.fromDouble(double val) => Quantity(Decimal.parse(val.toString()));
+  factory Quantity.fromDouble(double val) =>
+      Quantity(Decimal.parse(val.toString()));
   factory Quantity.fromInt(int val) => Quantity(Decimal.fromInt(val));
   factory Quantity.parse(String val) => Quantity(Decimal.parse(val));
   factory Quantity.fromDecimal(Decimal val) => Quantity(val);
@@ -24,6 +25,7 @@ class Quantity {
     if (factor is String) return Quantity(value * Decimal.parse(factor));
     throw ArgumentError('Unsupported factor type: ${factor.runtimeType}');
   }
+
   Quantity operator /(dynamic divisor) {
     Decimal div;
     if (divisor is Decimal) {
@@ -53,13 +55,16 @@ class Quantity {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Quantity && runtimeType == other.runtimeType && value == other.value;
+      other is Quantity &&
+          runtimeType == other.runtimeType &&
+          value == other.value;
 
   @override
   int get hashCode => value.hashCode;
 
   Decimal toDecimal() => value;
-  String toStringAsFixed(int fractionDigits) => value.toStringAsFixed(fractionDigits);
+  String toStringAsFixed(int fractionDigits) =>
+      value.toStringAsFixed(fractionDigits);
 
   @override
   String toString() => value.toString();

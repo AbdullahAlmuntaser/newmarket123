@@ -5,6 +5,7 @@ import 'package:supermarket/core/services/accounting_service.dart';
 import 'package:supermarket/core/services/event_bus_service.dart';
 
 class MockAppDatabase extends Mock implements AppDatabase {}
+
 class MockEventBusService extends Mock implements EventBusService {}
 
 void main() {

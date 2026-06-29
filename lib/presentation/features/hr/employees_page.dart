@@ -63,8 +63,8 @@ class _EmployeesPageState extends State<EmployeesPage> {
           child: Text(emp.name[0],
               style: TextStyle(color: colorScheme.onPrimaryContainer)),
         ),
-        title: Text(emp.name,
-            style: const TextStyle(fontWeight: FontWeight.bold)),
+        title:
+            Text(emp.name, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

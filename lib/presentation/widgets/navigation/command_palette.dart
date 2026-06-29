@@ -21,7 +21,8 @@ class _CommandPaletteState extends State<CommandPalette> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final role = UserRole.fromString(authProvider.currentUser?.role ?? 'cashier');
+      final role =
+          UserRole.fromString(authProvider.currentUser?.role ?? 'cashier');
       final fastAccess = Provider.of<FastAccessService>(context, listen: false);
       setState(() {
         _results = fastAccess.getSearchableItems(role);
@@ -31,7 +32,8 @@ class _CommandPaletteState extends State<CommandPalette> {
 
   void _onSearch(String query) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final role = UserRole.fromString(authProvider.currentUser?.role ?? 'cashier');
+    final role =
+        UserRole.fromString(authProvider.currentUser?.role ?? 'cashier');
     final fastAccess = Provider.of<FastAccessService>(context, listen: false);
     setState(() {
       _results = fastAccess.search(query, role);
@@ -82,9 +84,13 @@ class _CommandPaletteState extends State<CommandPalette> {
                 final item = _results[index];
                 return ListTile(
                   leading: Icon(item.icon, color: Colors.blueAccent),
-                  title: Text(item.title, style: const TextStyle(color: Colors.white)),
-                  subtitle: Text(item.category, style: const TextStyle(color: Colors.white38, fontSize: 12)),
-                  trailing: const Icon(Icons.keyboard_arrow_left, color: Colors.white24),
+                  title: Text(item.title,
+                      style: const TextStyle(color: Colors.white)),
+                  subtitle: Text(item.category,
+                      style:
+                          const TextStyle(color: Colors.white38, fontSize: 12)),
+                  trailing: const Icon(Icons.keyboard_arrow_left,
+                      color: Colors.white24),
                   onTap: () {
                     context.read<FastAccessService>().addToRecent(item.route);
                     Navigator.pop(context);
@@ -97,7 +103,8 @@ class _CommandPaletteState extends State<CommandPalette> {
           if (_results.isEmpty)
             const Padding(
               padding: EdgeInsets.all(20.0),
-              child: Text('لا توجد نتائج مطابقة', style: TextStyle(color: Colors.white38)),
+              child: Text('لا توجد نتائج مطابقة',
+                  style: TextStyle(color: Colors.white38)),
             ),
           const Divider(color: Color(0xFF3E3E4A), height: 1),
           Padding(
@@ -105,7 +112,8 @@ class _CommandPaletteState extends State<CommandPalette> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('اختصارات سريعة', style: TextStyle(color: Colors.white24, fontSize: 11)),
+                const Text('اختصارات سريعة',
+                    style: TextStyle(color: Colors.white24, fontSize: 11)),
                 Row(
                   children: [
                     _buildShortcutHint('ESC', 'إغلاق'),
@@ -130,10 +138,15 @@ class _CommandPaletteState extends State<CommandPalette> {
             color: const Color(0xFF3E3E4A),
             borderRadius: BorderRadius.circular(4),
           ),
-          child: Text(key, style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold)),
+          child: Text(key,
+              style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold)),
         ),
         const SizedBox(width: 4),
-        Text(label, style: const TextStyle(color: Colors.white38, fontSize: 10)),
+        Text(label,
+            style: const TextStyle(color: Colors.white38, fontSize: 10)),
       ],
     );
   }

@@ -112,7 +112,8 @@ class SimpleDashboardView extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
     return Card(
       elevation: 4,
       child: Padding(
@@ -169,7 +170,8 @@ void main() {
       expect(find.text('لا توجد بيانات'), findsOneWidget);
     });
 
-    testWidgets('displays dashboard statistics when data available', (tester) async {
+    testWidgets('displays dashboard statistics when data available',
+        (tester) async {
       mockProvider.setData(MockDashboardData());
 
       await tester.pumpWidget(MaterialApp(
@@ -202,7 +204,8 @@ void main() {
       expect(find.text('3'), findsOneWidget);
     });
 
-    testWidgets('displays stat cards with correct icons and colors', (tester) async {
+    testWidgets('displays stat cards with correct icons and colors',
+        (tester) async {
       mockProvider.setData(MockDashboardData());
 
       await tester.pumpWidget(MaterialApp(

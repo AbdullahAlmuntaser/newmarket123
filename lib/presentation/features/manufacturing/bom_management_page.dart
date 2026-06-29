@@ -413,8 +413,8 @@ class _BomAssemblyPageState extends State<BomAssemblyPage> {
               ),
               ..._currentBom.map((bom) {
                 final productName = _getProductName(bom.componentProductId);
-                final qty =
-                    bom.quantity * (Decimal.tryParse(_quantityCtrl.text) ?? Decimal.one);
+                final qty = bom.quantity *
+                    (Decimal.tryParse(_quantityCtrl.text) ?? Decimal.one);
                 return ListTile(
                   leading: const Icon(Icons.arrow_right),
                   title: Text(productName),

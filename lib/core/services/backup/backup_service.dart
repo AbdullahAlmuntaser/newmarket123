@@ -31,10 +31,13 @@ class BackupService {
 
       // Run integrity check before backup
       try {
-        final integrityCheck = await database.customSelect(
-          'PRAGMA integrity_check',
-        ).get();
-        final integrityResult = integrityCheck.first.data.values.first.toString();
+        final integrityCheck = await database
+            .customSelect(
+              'PRAGMA integrity_check',
+            )
+            .get();
+        final integrityResult =
+            integrityCheck.first.data.values.first.toString();
         if (integrityResult != 'ok') {
           return BackupResult(
             success: false,
@@ -77,9 +80,11 @@ class BackupService {
 
       // Verify backup integrity
       try {
-        final testDb = await database.customSelect(
-          'PRAGMA integrity_check',
-        ).get();
+        final testDb = await database
+            .customSelect(
+              'PRAGMA integrity_check',
+            )
+            .get();
         final testResult = testDb.first.data.values.first.toString();
         if (testResult != 'ok') {
           await backupFile.delete();
@@ -152,7 +157,8 @@ class BackupService {
         // To avoid circular imports, perform a minimal validation here.
         try {
           // Attempt to open with sqlite3 and apply current key
-          final db = sqlite.sqlite3.open(backupPath, mode: sqlite.OpenMode.readOnly);
+          final db =
+              sqlite.sqlite3.open(backupPath, mode: sqlite.OpenMode.readOnly);
           try {
             if (!SecurityService.useFakeKeyForTesting) {
               final key = await SecurityService.getDatabaseKey();
@@ -177,7 +183,8 @@ class BackupService {
             // Runtime does not support SQLCipher — do not proceed with restore.
             return BackupResult(
               success: false,
-              message: 'لايوجد دعم SQLCipher في بيئة التشغيل. تأكد من تضمين مكتبة SQLCipher أو استعادة نسخة متوافقة.',
+              message:
+                  'لايوجد دعم SQLCipher في بيئة التشغيل. تأكد من تضمين مكتبة SQLCipher أو استعادة نسخة متوافقة.',
               errorCode: 'NO_SQLCIPHER_RUNTIME',
               error: e,
             );
@@ -198,8 +205,8 @@ class BackupService {
         );
       }
 
-        // Get current database file
-        final dbFile = await _getDatabaseFile();
+      // Get current database file
+      final dbFile = await _getDatabaseFile();
 
       // Create a pre-restore safety backup
       final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -233,7 +240,8 @@ class BackupService {
 
         return BackupResult(
           success: true,
-          message: 'تم استعادة النسخة الاحتياطية بنجاح. تم حفظ نسخة أمان للبيانات الحالية.',
+          message:
+              'تم استعادة النسخة الاحتياطية بنجاح. تم حفظ نسخة أمان للبيانات الحالية.',
           backupPath: backupPath,
         );
       } catch (e) {

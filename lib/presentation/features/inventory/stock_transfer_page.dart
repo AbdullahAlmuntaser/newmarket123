@@ -230,7 +230,9 @@ class _StockTransferPageState extends State<StockTransferPage> {
             ElevatedButton(
               onPressed: () {
                 final qty = Decimal.tryParse(quantityController.text);
-                if (selectedBatch != null && qty != null && qty > Decimal.zero) {
+                if (selectedBatch != null &&
+                    qty != null &&
+                    qty > Decimal.zero) {
                   provider.addTransferItem(selectedBatch!, qty);
                   Navigator.pop(context);
                 }

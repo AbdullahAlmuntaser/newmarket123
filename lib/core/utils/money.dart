@@ -25,6 +25,7 @@ class Money {
     if (factor is String) return Money(value * Decimal.parse(factor));
     throw ArgumentError('Unsupported factor type: ${factor.runtimeType}');
   }
+
   Money operator /(dynamic divisor) {
     Decimal div;
     if (divisor is Decimal) {
@@ -55,13 +56,16 @@ class Money {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Money && runtimeType == other.runtimeType && value == other.value;
+      other is Money &&
+          runtimeType == other.runtimeType &&
+          value == other.value;
 
   @override
   int get hashCode => value.hashCode;
 
   Decimal toDecimal() => value;
-  String toStringAsFixed(int fractionDigits) => value.toStringAsFixed(fractionDigits);
+  String toStringAsFixed(int fractionDigits) =>
+      value.toStringAsFixed(fractionDigits);
 
   String format({String locale = 'en_US', String symbol = ''}) {
     final formatter = NumberFormat.currency(

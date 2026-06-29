@@ -50,7 +50,8 @@ class ShiftService {
                 t.paymentMethod.equals(PaymentMethod.cash.index),
           ))
         .get();
-    final Decimal totalCashSales = cashSales.fold<Decimal>(Decimal.zero, (sum, sale) => sum + sale.total);
+    final Decimal totalCashSales =
+        cashSales.fold<Decimal>(Decimal.zero, (sum, sale) => sum + sale.total);
 
     // Get all customer cash payments during the shift
     final customerPayments = await (db.select(db.customerPayments)
@@ -79,9 +80,10 @@ class ShiftService {
     );
 
     return (shift.openingCash +
-        totalCashSales +
-        totalCustomerPayments -
-        totalSupplierPayments).toDouble();
+            totalCashSales +
+            totalCustomerPayments -
+            totalSupplierPayments)
+        .toDouble();
   }
 
   Future<void> closeShift(

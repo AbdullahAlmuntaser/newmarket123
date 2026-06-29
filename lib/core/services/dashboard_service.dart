@@ -71,38 +71,49 @@ class DashboardService {
   Future<DashboardStats> getStats() async {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
-    final weekStart = todayStart.subtract(Duration(days: todayStart.weekday - 1));
+    final weekStart =
+        todayStart.subtract(Duration(days: todayStart.weekday - 1));
     final monthStart = DateTime(now.year, now.month, 1);
-    
+
     final salesQuery = db.select(db.sales)
       ..where((t) => t.createdAt.isBiggerOrEqual(Variable(todayStart)));
     final todaySalesList = await salesQuery.get();
-    double todaySales = todaySalesList.fold<Decimal>(Decimal.zero, (sum, item) => sum + item.total).toDouble();
+    double todaySales = todaySalesList
+        .fold<Decimal>(Decimal.zero, (sum, item) => sum + item.total)
+        .toDouble();
     int todayTransactions = todaySalesList.length;
 
     final weekSalesQuery = db.select(db.sales)
       ..where((t) => t.createdAt.isBiggerOrEqual(Variable(weekStart)));
     final weekSalesList = await weekSalesQuery.get();
-    double weeklySales = weekSalesList.fold<Decimal>(Decimal.zero, (sum, item) => sum + item.total).toDouble();
+    double weeklySales = weekSalesList
+        .fold<Decimal>(Decimal.zero, (sum, item) => sum + item.total)
+        .toDouble();
 
     final monthSalesQuery = db.select(db.sales)
       ..where((t) => t.createdAt.isBiggerOrEqual(Variable(monthStart)));
     final monthSalesList = await monthSalesQuery.get();
-    double monthlySales = monthSalesList.fold<Decimal>(Decimal.zero, (sum, item) => sum + item.total).toDouble();
+    double monthlySales = monthSalesList
+        .fold<Decimal>(Decimal.zero, (sum, item) => sum + item.total)
+        .toDouble();
 
     final purchasesQuery = db.select(db.purchases)
       ..where((t) => t.date.isBiggerOrEqual(Variable(todayStart)));
     final purchases = await purchasesQuery.get();
-    double totalPurchases = purchases.fold<Decimal>(Decimal.zero, (sum, item) => sum + item.total).toDouble();
+    double totalPurchases = purchases
+        .fold<Decimal>(Decimal.zero, (sum, item) => sum + item.total)
+        .toDouble();
 
     final cashAccount = await db.accountingDao.getAccountByCode('1010');
     double cashBalance = 0;
     if (cashAccount != null) {
-      cashBalance = (await db.accountingDao.getAccountBalance(cashAccount.id)).toDouble();
+      cashBalance =
+          (await db.accountingDao.getAccountBalance(cashAccount.id)).toDouble();
     }
 
     final lowStock = await (db.select(db.products)
-      ..where((t) => t.stock.isSmallerOrEqual(t.alertLimit))).get();
+          ..where((t) => t.stock.isSmallerOrEqual(t.alertLimit)))
+        .get();
 
     final pendingOrdersQuery = db.select(db.purchaseOrders)
       ..where((t) => t.status.equals('pending'));
@@ -131,12 +142,15 @@ class DashboardService {
     for (int i = 0; i < 7; i++) {
       final dayStart = weekStart.add(Duration(days: i));
       final dayEnd = dayStart.add(const Duration(days: 1));
-      
-      final daySales = await db.salesDao.getInvoicesByDateRange(dayStart, dayEnd);
+
+      final daySales =
+          await db.salesDao.getInvoicesByDateRange(dayStart, dayEnd);
 
       result.add(SalesDataPoint(
         date: dayStart,
-        amount: daySales.fold<Decimal>(Decimal.zero, (sum, s) => sum + s.total).toDouble(),
+        amount: daySales
+            .fold<Decimal>(Decimal.zero, (sum, s) => sum + s.total)
+            .toDouble(),
         count: daySales.length,
       ));
     }
@@ -153,11 +167,14 @@ class DashboardService {
       final dayStart = DateTime(now.year, now.month, i);
       final dayEnd = dayStart.add(const Duration(days: 5));
 
-      final daySales = await db.salesDao.getInvoicesByDateRange(dayStart, dayEnd);
+      final daySales =
+          await db.salesDao.getInvoicesByDateRange(dayStart, dayEnd);
 
       result.add(SalesDataPoint(
         date: dayStart,
-        amount: daySales.fold<Decimal>(Decimal.zero, (sum, s) => sum + s.total).toDouble(),
+        amount: daySales
+            .fold<Decimal>(Decimal.zero, (sum, s) => sum + s.total)
+            .toDouble(),
         count: daySales.length,
       ));
     }
@@ -168,92 +185,63 @@ class DashboardService {
   Future<List<TopProduct>> getTopProducts({int limit = 5}) async {
     final now = DateTime.now();
     final monthStart = DateTime(now.year, now.month, 1);
-    
-    final query = db.select(db.sales)
-      ..where((t) => t.createdAt.isBiggerOrEqual(Variable(monthStart)));
-    final sales = await query.get();
-    
-    final productTotals = <String, Map<String, dynamic>>{};
-    
-    for (var sale in sales) {
-      final items = await (db.select(db.saleItems)
-        ..where((t) => t.saleId.equals(sale.id))).get();
-      
-      for (var item in items) {
-        if (!productTotals.containsKey(item.productId)) {
-          productTotals[item.productId] = {'revenue': 0.0, 'quantity': 0.0};
-        }
-        productTotals[item.productId]!['revenue'] = (productTotals[item.productId]!['revenue'] as double) + (item.price * item.quantity).toDouble();
-        productTotals[item.productId]!['quantity'] = (productTotals[item.productId]!['quantity'] as double) + item.quantity.toDouble();
-      }
-    }
-    
-    final sortedProducts = productTotals.entries.toList()
-      ..sort((a, b) => (b.value['revenue'] as double).compareTo(a.value['revenue'] as double));
-    
-    final topProducts = <TopProduct>[];
-    
-    for (var i = 0; i < sortedProducts.length && i < limit; i++) {
-      final entry = sortedProducts[i];
-      final products = await (db.select(db.products)
-        ..where((t) => t.id.equals(entry.key))).get();
-      
-      if (products.isNotEmpty) {
-        final product = products.first;
-        topProducts.add(TopProduct(
-          id: entry.key,
-          name: product.name,
-          revenue: entry.value['revenue'] as double,
-          quantity: (entry.value['quantity'] as double).toInt(),
-        ));
-      }
-    }
-    
-    return topProducts;
+
+    final quantitySum =
+        CustomExpression<double>('SUM(${db.saleItems.quantity.name})');
+    final revenueSum = CustomExpression<double>(
+        'SUM(${db.saleItems.quantity.name} * ${db.saleItems.price.name})');
+
+    final query = db.select(db.saleItems).join([
+      innerJoin(db.products, db.products.id.equalsExp(db.saleItems.productId)),
+      innerJoin(db.sales, db.sales.id.equalsExp(db.saleItems.saleId)),
+    ])
+      ..where(db.sales.createdAt.isBiggerOrEqual(Variable(monthStart)))
+      ..addColumns([quantitySum, revenueSum])
+      ..groupBy([db.saleItems.productId])
+      ..orderBy([OrderingTerm.desc(revenueSum)])
+      ..limit(limit);
+
+    final rows = await query.get();
+
+    return rows.map((row) {
+      final product = row.readTable(db.products);
+      return TopProduct(
+        id: product.id,
+        name: product.name,
+        revenue: (row.read(revenueSum) ?? 0).toDouble(),
+        quantity: (row.read(quantitySum) ?? 0).toInt(),
+      );
+    }).toList();
   }
 
   Future<List<CategorySales>> getSalesByCategory() async {
     final now = DateTime.now();
     final monthStart = DateTime(now.year, now.month, 1);
 
-    final query = db.select(db.sales)
-      ..where((t) => t.createdAt.isBiggerOrEqual(Variable(monthStart)));
-    final sales = await query.get();
+    final revenueSum = CustomExpression<double>(
+        'SUM(${db.saleItems.quantity.name} * ${db.saleItems.price.name})');
 
-    final categoryTotals = <String, double>{};
+    final query = db.select(db.saleItems).join([
+      innerJoin(db.sales, db.sales.id.equalsExp(db.saleItems.saleId)),
+      innerJoin(db.products, db.products.id.equalsExp(db.saleItems.productId)),
+      leftOuterJoin(
+          db.categories, db.categories.id.equalsExp(db.products.categoryId)),
+    ])
+      ..where(db.sales.createdAt.isBiggerOrEqual(Variable(monthStart)))
+      ..addColumns([revenueSum])
+      ..groupBy([db.categories.name]);
 
-    for (var sale in sales) {
-      final items = await (db.select(db.saleItems)
-        ..where((t) => t.saleId.equals(sale.id))).get();
+    final rows = await query.get();
+    final total = rows.fold<double>(
+        0, (sum, row) => sum + (row.read(revenueSum) ?? 0).toDouble());
 
-      for (var item in items) {
-        final products = await (db.select(db.products)
-          ..where((t) => t.id.equals(item.productId))).get();
-
-        if (products.isNotEmpty) {
-          final product = products.first;
-          final categoryId = product.categoryId ?? 'Uncategorized';
-
-          final categories = await (db.select(db.categories)
-            ..where((t) => t.id.equals(categoryId))).get();
-
-          final categoryName = categories.isNotEmpty
-              ? categories.first.name
-              : 'غير مصنف';
-
-          categoryTotals[categoryName] =
-              (categoryTotals[categoryName] ?? 0.0) + (item.price * item.quantity).toDouble();
-        }
-      }
-    }
-
-    final total = categoryTotals.values.fold(0.0, (sum, v) => sum + v);
-
-    return categoryTotals.entries.map((e) {
+    return rows.map((row) {
+      final amount = (row.read(revenueSum) ?? 0).toDouble();
+      final categoryName = row.read(db.categories.name) ?? 'غير مصنف';
       return CategorySales(
-        categoryName: e.key,
-        amount: e.value,
-        percentage: total > 0 ? (e.value / total) * 100 : 0,
+        categoryName: categoryName,
+        amount: amount,
+        percentage: total > 0 ? (amount / total) * 100 : 0,
       );
     }).toList()
       ..sort((a, b) => b.amount.compareTo(a.amount));
@@ -262,22 +250,24 @@ class DashboardService {
   Future<Map<String, dynamic>> getProfitSummary() async {
     final now = DateTime.now();
     final monthStart = DateTime(now.year, now.month, 1);
-    
+
     final query = db.select(db.sales)
       ..where((t) => t.createdAt.isBiggerOrEqual(Variable(monthStart)));
     final sales = await query.get();
-    
+
     double totalRevenue = 0;
     double totalCost = 0;
-    
+
     for (var sale in sales) {
       final items = await (db.select(db.saleItems)
-        ..where((t) => t.saleId.equals(sale.id))).get();
-      
+            ..where((t) => t.saleId.equals(sale.id)))
+          .get();
+
       for (var item in items) {
         final products = await (db.select(db.products)
-          ..where((t) => t.id.equals(item.productId))).get();
-        
+              ..where((t) => t.id.equals(item.productId)))
+            .get();
+
         if (products.isNotEmpty) {
           final product = products.first;
           totalRevenue += (item.price * item.quantity).toDouble();
@@ -285,12 +275,14 @@ class DashboardService {
         }
       }
     }
-    
+
     return {
       'revenue': totalRevenue,
       'cost': totalCost,
       'profit': totalRevenue - totalCost,
-      'margin': totalRevenue > 0 ? ((totalRevenue - totalCost) / totalRevenue) * 100 : 0,
+      'margin': totalRevenue > 0
+          ? ((totalRevenue - totalCost) / totalRevenue) * 100
+          : 0,
     };
   }
 }

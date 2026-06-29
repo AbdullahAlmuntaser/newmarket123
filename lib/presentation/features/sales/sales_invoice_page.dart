@@ -63,7 +63,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
   double _creditPayment = 0.0;
   bool _isSplitPayment = false;
 
-  Decimal get _subtotal => _items.fold<Decimal>(Decimal.zero, (sum, item) => sum + Decimal.parse(item.lineTotal.toString()));
+  Decimal get _subtotal => _items.fold<Decimal>(Decimal.zero,
+      (sum, item) => sum + Decimal.parse(item.lineTotal.toString()));
   Decimal _moneyValue(TextEditingController controller) =>
       Decimal.parse(MoneyFormField.valueOf(controller).toString());
 
@@ -129,7 +130,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
         _shippingCostController.text = sale.shippingCost.toString();
         _otherExpensesController.text = sale.otherExpenses.toString();
         _originalTax = sale.tax.toDouble();
-        _taxController.text = sale.tax == Decimal.zero ? '' : sale.tax.toString();
+        _taxController.text =
+            sale.tax == Decimal.zero ? '' : sale.tax.toString();
         _selectedCustomer = customer;
         _selectedWarehouse = warehouse;
         _paymentType = sale.isCredit
@@ -204,8 +206,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       final row = unitQuery.first;
       final product = row.readTable(db.products);
       final unit = row.readTable(db.productUnits);
-      _addItemToInvoice(
-          product, 1, (unit.sellPrice ?? product.sellPrice).toDouble(), unit.unitName);
+      _addItemToInvoice(product, 1,
+          (unit.sellPrice ?? product.sellPrice).toDouble(), unit.unitName);
       _barcodeController.clear();
       return;
     }
@@ -289,7 +291,6 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       ),
     );
   }
-
 
   Widget _buildLockedBanner() => Container(
         width: double.infinity,
@@ -519,9 +520,11 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     if (_selectedCustomer == null || _customerSmartData == null) {
       return const SizedBox.shrink();
     }
-    final isExceeding = (Decimal.parse(_customerSmartData!.currentBalance.toString()) + _total) >
-            Decimal.parse(_customerSmartData!.creditLimit.toString()) &&
-        _customerSmartData!.creditLimit > 0;
+    final isExceeding =
+        (Decimal.parse(_customerSmartData!.currentBalance.toString()) +
+                    _total) >
+                Decimal.parse(_customerSmartData!.creditLimit.toString()) &&
+            _customerSmartData!.creditLimit > 0;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -760,7 +763,9 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
                   onValidChanged: (value) =>
                       setState(() => _creditPayment = value),
                   onChanged: (value) {
-                    if (value.trim().isEmpty) setState(() => _creditPayment = 0);
+                    if (value.trim().isEmpty) {
+                      setState(() => _creditPayment = 0);
+                    }
                   },
                 ),
               ),
@@ -850,7 +855,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       return;
     }
 
-    final taxChanged = (_tax - Decimal.parse(_originalTax.toString())).abs() > Decimal.parse('0.0001');
+    final taxChanged = (_tax - Decimal.parse(_originalTax.toString())).abs() >
+        Decimal.parse('0.0001');
     if (taxChanged &&
         (currentUser == null ||
             !await sl<PermissionService>()
@@ -900,8 +906,10 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     if (_paymentType == 'credit' &&
         _selectedCustomer != null &&
         _customerSmartData != null) {
-      final newBalance = Decimal.parse(_customerSmartData!.currentBalance.toString()) + _total;
-      if (newBalance > Decimal.parse(_customerSmartData!.creditLimit.toString()) &&
+      final newBalance =
+          Decimal.parse(_customerSmartData!.currentBalance.toString()) + _total;
+      if (newBalance >
+              Decimal.parse(_customerSmartData!.creditLimit.toString()) &&
           _customerSmartData!.creditLimit > 0) {
         if (!mounted) return;
         AppSnackBar.error(
@@ -948,7 +956,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
               quantity: Decimal.parse(baseQuantity.toString()),
               price: Decimal.parse(item.price.toString()),
               unitName: drift.Value(item.selectedUnit),
-              unitFactor: drift.Value(Decimal.parse(item.unitFactor.toString())),
+              unitFactor:
+                  drift.Value(Decimal.parse(item.unitFactor.toString())),
               costCenterId: drift.Value(item.costCenterId),
             ),
           );
@@ -960,7 +969,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
             customerId: drift.Value(_selectedCustomer?.id),
             total: _total,
             tax: drift.Value(_totalTax),
-            discount: drift.Value(_discount + Decimal.parse(totalItemDiscount.toString())),
+            discount: drift.Value(
+                _discount + Decimal.parse(totalItemDiscount.toString())),
             paymentMethod: method,
             isCredit: drift.Value(_paymentType == 'credit'),
             status: const drift.Value(DocumentStatus.draft),
@@ -987,7 +997,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
             customerId: drift.Value(_selectedCustomer?.id),
             total: drift.Value(_total),
             tax: drift.Value(_totalTax),
-            discount: drift.Value(_discount + Decimal.parse(totalItemDiscount.toString())),
+            discount: drift.Value(
+                _discount + Decimal.parse(totalItemDiscount.toString())),
             paymentMethod: drift.Value(method),
             isCredit: drift.Value(_paymentType == 'credit'),
             shippingCost: drift.Value(_shippingCost),
@@ -1030,7 +1041,8 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       Navigator.of(context).pop();
     } catch (e, stackTrace) {
       if (!mounted) return;
-      final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
+      final currentUser =
+          Provider.of<AuthProvider>(context, listen: false).currentUser;
       await sl<AuditLogService>().logAction(
         userId: currentUser?.id ?? 'system',
         action: 'INVOICE_SAVE_ERROR',

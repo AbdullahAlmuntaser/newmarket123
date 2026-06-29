@@ -81,7 +81,8 @@ void main() {
       expect(find.text('admin'), findsOneWidget);
     });
 
-    testWidgets('shows initial admin setup when no users exist', (tester) async {
+    testWidgets('shows initial admin setup when no users exist',
+        (tester) async {
       when(() => mockAuthProvider.hasUsers()).thenAnswer((_) async => false);
 
       await tester.pumpWidget(createTestWidget());

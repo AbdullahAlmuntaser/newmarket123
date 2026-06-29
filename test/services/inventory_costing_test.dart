@@ -78,8 +78,7 @@ class InventoryCostingCalculator {
       if (remaining <= 0) break;
       if (batch.quantity <= 0) continue;
 
-      final deduct =
-          remaining > batch.quantity ? batch.quantity : remaining;
+      final deduct = remaining > batch.quantity ? batch.quantity : remaining;
       totalCogs += deduct * batch.costPrice;
       remaining -= deduct;
     }
@@ -123,9 +122,12 @@ void main() {
   group('InventoryCostingCalculator - AVCO', () {
     test('calculates average cost correctly', () {
       final batches = [
-        BatchInfo(id: 'b1', quantity: 10, costPrice: 10.0, createdAt: DateTime.now()),
-        BatchInfo(id: 'b2', quantity: 20, costPrice: 15.0, createdAt: DateTime.now()),
-        BatchInfo(id: 'b3', quantity: 30, costPrice: 20.0, createdAt: DateTime.now()),
+        BatchInfo(
+            id: 'b1', quantity: 10, costPrice: 10.0, createdAt: DateTime.now()),
+        BatchInfo(
+            id: 'b2', quantity: 20, costPrice: 15.0, createdAt: DateTime.now()),
+        BatchInfo(
+            id: 'b3', quantity: 30, costPrice: 20.0, createdAt: DateTime.now()),
       ];
 
       final avgCost = InventoryCostingCalculator.calculateAverageCost(batches);
@@ -139,7 +141,11 @@ void main() {
 
     test('handles single batch', () {
       final batches = [
-        BatchInfo(id: 'b1', quantity: 100, costPrice: 25.0, createdAt: DateTime.now()),
+        BatchInfo(
+            id: 'b1',
+            quantity: 100,
+            costPrice: 25.0,
+            createdAt: DateTime.now()),
       ];
 
       final avgCost = InventoryCostingCalculator.calculateAverageCost(batches);
@@ -148,8 +154,10 @@ void main() {
 
     test('handles batch with zero quantity', () {
       final batches = [
-        BatchInfo(id: 'b1', quantity: 0, costPrice: 10.0, createdAt: DateTime.now()),
-        BatchInfo(id: 'b2', quantity: 50, costPrice: 20.0, createdAt: DateTime.now()),
+        BatchInfo(
+            id: 'b1', quantity: 0, costPrice: 10.0, createdAt: DateTime.now()),
+        BatchInfo(
+            id: 'b2', quantity: 50, costPrice: 20.0, createdAt: DateTime.now()),
       ];
 
       final avgCost = InventoryCostingCalculator.calculateAverageCost(batches);
@@ -161,9 +169,21 @@ void main() {
     test('oldest batch is first in sorted list', () {
       final now = DateTime.now();
       final batches = [
-        BatchInfo(id: 'b1', quantity: 10, costPrice: 10.0, createdAt: now.subtract(const Duration(days: 30))),
-        BatchInfo(id: 'b2', quantity: 10, costPrice: 12.0, createdAt: now.subtract(const Duration(days: 20))),
-        BatchInfo(id: 'b3', quantity: 10, costPrice: 15.0, createdAt: now.subtract(const Duration(days: 10))),
+        BatchInfo(
+            id: 'b1',
+            quantity: 10,
+            costPrice: 10.0,
+            createdAt: now.subtract(const Duration(days: 30))),
+        BatchInfo(
+            id: 'b2',
+            quantity: 10,
+            costPrice: 12.0,
+            createdAt: now.subtract(const Duration(days: 20))),
+        BatchInfo(
+            id: 'b3',
+            quantity: 10,
+            costPrice: 15.0,
+            createdAt: now.subtract(const Duration(days: 10))),
       ];
 
       final sorted = InventoryCostingCalculator.sortFifo(batches);
@@ -175,8 +195,16 @@ void main() {
     test('calculates COGS using FIFO correctly', () {
       final now = DateTime.now();
       final batches = [
-        BatchInfo(id: 'b1', quantity: 10, costPrice: 10.0, createdAt: now.subtract(const Duration(days: 30))),
-        BatchInfo(id: 'b2', quantity: 10, costPrice: 12.0, createdAt: now.subtract(const Duration(days: 20))),
+        BatchInfo(
+            id: 'b1',
+            quantity: 10,
+            costPrice: 10.0,
+            createdAt: now.subtract(const Duration(days: 30))),
+        BatchInfo(
+            id: 'b2',
+            quantity: 10,
+            costPrice: 12.0,
+            createdAt: now.subtract(const Duration(days: 20))),
       ];
 
       final cogs = InventoryCostingCalculator.calculateCogs(
@@ -191,9 +219,24 @@ void main() {
     test('FIFO with expiry date priority', () {
       final now = DateTime.now();
       final batches = [
-        BatchInfo(id: 'b1', quantity: 10, costPrice: 10.0, createdAt: now, expiryDate: now.add(const Duration(days: 60))),
-        BatchInfo(id: 'b2', quantity: 10, costPrice: 12.0, createdAt: now, expiryDate: now.add(const Duration(days: 30))),
-        BatchInfo(id: 'b3', quantity: 10, costPrice: 15.0, createdAt: now, expiryDate: now.add(const Duration(days: 90))),
+        BatchInfo(
+            id: 'b1',
+            quantity: 10,
+            costPrice: 10.0,
+            createdAt: now,
+            expiryDate: now.add(const Duration(days: 60))),
+        BatchInfo(
+            id: 'b2',
+            quantity: 10,
+            costPrice: 12.0,
+            createdAt: now,
+            expiryDate: now.add(const Duration(days: 30))),
+        BatchInfo(
+            id: 'b3',
+            quantity: 10,
+            costPrice: 15.0,
+            createdAt: now,
+            expiryDate: now.add(const Duration(days: 90))),
       ];
 
       final sorted = InventoryCostingCalculator.sortByExpiryWithFifo(batches);
@@ -207,9 +250,21 @@ void main() {
     test('newest batch is first in sorted list', () {
       final now = DateTime.now();
       final batches = [
-        BatchInfo(id: 'b1', quantity: 10, costPrice: 10.0, createdAt: now.subtract(const Duration(days: 30))),
-        BatchInfo(id: 'b2', quantity: 10, costPrice: 12.0, createdAt: now.subtract(const Duration(days: 20))),
-        BatchInfo(id: 'b3', quantity: 10, costPrice: 15.0, createdAt: now.subtract(const Duration(days: 10))),
+        BatchInfo(
+            id: 'b1',
+            quantity: 10,
+            costPrice: 10.0,
+            createdAt: now.subtract(const Duration(days: 30))),
+        BatchInfo(
+            id: 'b2',
+            quantity: 10,
+            costPrice: 12.0,
+            createdAt: now.subtract(const Duration(days: 20))),
+        BatchInfo(
+            id: 'b3',
+            quantity: 10,
+            costPrice: 15.0,
+            createdAt: now.subtract(const Duration(days: 10))),
       ];
 
       final sorted = InventoryCostingCalculator.sortLifo(batches);
@@ -221,8 +276,16 @@ void main() {
     test('calculates COGS using LIFO correctly', () {
       final now = DateTime.now();
       final batches = [
-        BatchInfo(id: 'b1', quantity: 10, costPrice: 10.0, createdAt: now.subtract(const Duration(days: 30))),
-        BatchInfo(id: 'b2', quantity: 10, costPrice: 12.0, createdAt: now.subtract(const Duration(days: 20))),
+        BatchInfo(
+            id: 'b1',
+            quantity: 10,
+            costPrice: 10.0,
+            createdAt: now.subtract(const Duration(days: 30))),
+        BatchInfo(
+            id: 'b2',
+            quantity: 10,
+            costPrice: 12.0,
+            createdAt: now.subtract(const Duration(days: 20))),
       ];
 
       final cogs = InventoryCostingCalculator.calculateCogs(

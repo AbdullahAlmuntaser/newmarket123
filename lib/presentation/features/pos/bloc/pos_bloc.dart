@@ -20,7 +20,8 @@ class PosBloc extends Bloc<PosEvent, PosState> {
   final PackagingEngine packagingEngine;
   late StreamSubscription<List<ProductWithCategory>> _productSubscription;
 
-  PosBloc(this.db, this.pricingService, this.transactionEngine, this.packagingEngine,
+  PosBloc(this.db, this.pricingService, this.transactionEngine,
+      this.packagingEngine,
       {bool skipInit = false})
       : super(PosLoading()) {
     on<LoadCategories>(_onLoadCategories);
@@ -32,9 +33,11 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       if (state is PosLoaded) {
         final configService = AppConfigService(db);
         final maxStr = await configService.getString('max_discount_percent');
-        final maxDiscount = Decimal.tryParse(maxStr ?? '') ?? Decimal.fromInt(20);
+        final maxDiscount =
+            Decimal.tryParse(maxStr ?? '') ?? Decimal.fromInt(20);
         if (event.discount > maxDiscount) {
-          emit(PosError('الخصم يتجاوز الحد المسموح به (${maxDiscount.toStringAsFixed(0)}%)'));
+          emit(PosError(
+              'الخصم يتجاوز الحد المسموح به (${maxDiscount.toStringAsFixed(0)}%)'));
           return;
         }
         emit((state as PosLoaded).copyWith(discount: event.discount));
@@ -112,12 +115,14 @@ class PosBloc extends Bloc<PosEvent, PosState> {
           if (product != null) products.add(product);
         }
 
-        final returnItems = items.map((item) => ReturnItem(
-              productId: item.productId,
-              quantity: Decimal.zero,
-              unitPrice: item.price,
-              reason: '',
-            )).toList();
+        final returnItems = items
+            .map((item) => ReturnItem(
+                  productId: item.productId,
+                  quantity: Decimal.zero,
+                  unitPrice: item.price,
+                  reason: '',
+                ))
+            .toList();
 
         emit((PosLoaded(
           categories: const [],
@@ -140,8 +145,8 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       if (state is! PosLoaded) return;
       final currentState = state as PosLoaded;
 
-      final existingIndex =
-          currentState.returnItems.indexWhere((i) => i.productId == event.productId);
+      final existingIndex = currentState.returnItems
+          .indexWhere((i) => i.productId == event.productId);
       final updated = List<ReturnItem>.from(currentState.returnItems);
 
       if (existingIndex >= 0) {
@@ -170,8 +175,9 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       final currentState = state as PosLoaded;
       if (currentState.returnItems.isEmpty) return;
 
-      final itemsToReturn =
-          currentState.returnItems.where((i) => i.quantity > Decimal.zero).toList();
+      final itemsToReturn = currentState.returnItems
+          .where((i) => i.quantity > Decimal.zero)
+          .toList();
       if (itemsToReturn.isEmpty) {
         emit(const PosError('لم يتم تحديد أي أصناف للمرتجع'));
         return;
@@ -241,14 +247,51 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       ));
     });
 
+    on<HoldSale>((event, emit) {
+      if (state is! PosLoaded) return;
+      final currentState = state as PosLoaded;
+      if (currentState.cart.isEmpty) return;
+
+      final heldSales = List<List<CartItem>>.from(currentState.heldSales);
+      heldSales.add(List<CartItem>.from(currentState.cart));
+
+      emit(PosLoaded(
+        categories: currentState.categories,
+        selectedCategoryId: currentState.selectedCategoryId,
+        filteredProducts: currentState.filteredProducts,
+        taxRate: currentState.taxRate,
+        isWholesaleMode: currentState.isWholesaleMode,
+        heldSales: heldSales,
+      ));
+    });
+
+    on<RecallSale>((event, emit) {
+      if (state is! PosLoaded) return;
+      final currentState = state as PosLoaded;
+      if (event.holdIndex < 0 ||
+          event.holdIndex >= currentState.heldSales.length) return;
+
+      final recalledCart = currentState.heldSales[event.holdIndex];
+      final heldSales = List<List<CartItem>>.from(currentState.heldSales);
+      heldSales.removeAt(event.holdIndex);
+
+      emit(currentState.copyWith(
+        cart: recalledCart,
+        heldSales: heldSales,
+      ));
+    });
+
     if (!skipInit) {
       _productSubscription = db.productsDao
           .watchProducts()
           .handleError((e) => developer.log("PosBloc Error: $e"))
           .listen((products) {
         if (state is PosLoaded && (state as PosLoaded).cart.isNotEmpty) {
-          final cartProductIds = (state as PosLoaded).cart.map((i) => i.product.id).toSet();
-          final changedProducts = products.where((p) => cartProductIds.contains(p.product.id)).toList();
+          final cartProductIds =
+              (state as PosLoaded).cart.map((i) => i.product.id).toSet();
+          final changedProducts = products
+              .where((p) => cartProductIds.contains(p.product.id))
+              .toList();
           if (changedProducts.isNotEmpty) {
             add(RefreshPricesEvent());
           }
@@ -256,7 +299,8 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       });
       add(LoadCategories());
     } else {
-      _productSubscription = const Stream<List<ProductWithCategory>>.empty().listen((_) {});
+      _productSubscription =
+          const Stream<List<ProductWithCategory>>.empty().listen((_) {});
     }
   }
 
@@ -428,14 +472,19 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         return;
       }
 
+      if (product.stock <= Decimal.zero && !product.isService) {
+        emit(PosError("المنتج ${product.name} نفد من المخزون"));
+        return;
+      }
+
       final allUnits = await packagingEngine.getPackagingHierarchy(product.id);
 
-       Decimal finalPrice = await pricingService.calculatePrice(
-         productId: product.id,
-         priceListId: currentState.activePriceListId,
-         quantity: factor,
-         isWholesale: currentState.isWholesaleMode,
-       );
+      Decimal finalPrice = await pricingService.calculatePrice(
+        productId: product.id,
+        priceListId: currentState.activePriceListId,
+        quantity: factor,
+        isWholesale: currentState.isWholesaleMode,
+      );
 
       if (specificPrice != null) {
         finalPrice = specificPrice;
@@ -453,10 +502,12 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         newCart[existingIndex] = newCart[existingIndex].copyWith(
           quantity: updatedQty,
         );
-        
-        final suggestion = await packagingEngine.getBestPackagingSuggestion(product.id, updatedQty * factor);
+
+        final suggestion = await packagingEngine.getBestPackagingSuggestion(
+            product.id, updatedQty * factor);
         if (suggestion != null && suggestion.unitName != unitName) {
-           developer.log('Suggestion: Consider selling in ${suggestion.unitName} for better pricing/handling');
+          developer.log(
+              'Suggestion: Consider selling in ${suggestion.unitName} for better pricing/handling');
         }
       } else {
         newCart.add(
@@ -485,6 +536,17 @@ class PosBloc extends Bloc<PosEvent, PosState> {
   ) async {
     if (state is! PosLoaded) return;
     final currentState = state as PosLoaded;
+
+    final item = currentState.cart.firstWhere(
+      (i) => i.product.id == event.productId,
+      orElse: () => currentState.cart.first,
+    );
+
+    if (!item.product.isService && event.quantity > item.product.stock) {
+      emit(PosError(
+          "الكمية المطلوبة (${event.quantity}) تتجاوز المخزون المتاح (${item.product.stock})"));
+      return;
+    }
 
     final updatedCart = currentState.cart.map((item) {
       if (item.product.id == event.productId) {
@@ -516,9 +578,8 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         }
 
         final unitName = event.unitName;
-        final factor = selectedUnit != null
-            ? selectedUnit.unitFactor
-            : Decimal.one;
+        final factor =
+            selectedUnit != null ? selectedUnit.unitFactor : Decimal.one;
 
         Decimal finalPrice;
         if (currentState.isWholesaleMode) {
@@ -589,7 +650,8 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     // Shift validation for cash sales
     if (event.paymentMethod == 'cash' && event.userId != null) {
       final activeShift = await (db.select(db.shifts)
-            ..where((s) => s.userId.equals(event.userId!) & s.isOpen.equals(true)))
+            ..where(
+                (s) => s.userId.equals(event.userId!) & s.isOpen.equals(true)))
           .getSingleOrNull();
       if (activeShift == null) {
         emit(const PosError('يجب فتح وردية عمل قبل إجراء عملية بيع نقدي'));
@@ -671,7 +733,8 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         userId: event.userId,
       );
 
-      developer.log('Posting POS sale draft: saleId=$saleId', name: 'pos.lifecycle');
+      developer.log('Posting POS sale draft: saleId=$saleId',
+          name: 'pos.lifecycle');
       try {
         await transactionEngine.postSale(saleId, userId: event.userId);
       } catch (postError) {
@@ -679,7 +742,8 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         await (db.delete(db.sales)..where((s) => s.id.equals(saleId))).go();
         rethrow;
       }
-      developer.log('Posted POS sale successfully: saleId=$saleId', name: 'pos.lifecycle');
+      developer.log('Posted POS sale successfully: saleId=$saleId',
+          name: 'pos.lifecycle');
 
       final saleObj = await (db.select(
         db.sales,

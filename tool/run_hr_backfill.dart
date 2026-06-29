@@ -26,7 +26,8 @@ Future<void> main(List<String> args) async {
 
   final file = File(path);
   if (!file.existsSync()) {
-    developer.log('Database file not found: $path', name: 'tool.run_hr_backfill');
+    developer.log('Database file not found: $path',
+        name: 'tool.run_hr_backfill');
     exit(2);
   }
 
@@ -38,13 +39,15 @@ Future<void> main(List<String> args) async {
         name: 'tool.run_hr_backfill',
       );
       await db.runHrBackfill(rollback: true, verbose: verbose);
-      developer.log('HR backfill rollback completed', name: 'tool.run_hr_backfill');
+      developer.log('HR backfill rollback completed',
+          name: 'tool.run_hr_backfill');
     } else {
       developer.log(
         'Running HR backfill on $path (dryRun=$dryRun, batchSize=$batchSize)',
         name: 'tool.run_hr_backfill',
       );
-      await db.runHrBackfill(dryRun: dryRun, verbose: verbose, batchSize: batchSize);
+      await db.runHrBackfill(
+          dryRun: dryRun, verbose: verbose, batchSize: batchSize);
       developer.log('HR backfill completed', name: 'tool.run_hr_backfill');
     }
   } catch (e, st) {

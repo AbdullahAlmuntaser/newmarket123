@@ -166,7 +166,8 @@ class ErpDataService {
       lastDate = lastPurchase?.date;
 
       // Best price from this supplier
-      final minExp = CustomExpression<double>('MIN(${db.purchaseItems.unitPrice.name})');
+      final minExp =
+          CustomExpression<double>('MIN(${db.purchaseItems.unitPrice.name})');
       final query = db.selectOnly(db.purchaseItems).join([
         innerJoin(
           db.purchases,

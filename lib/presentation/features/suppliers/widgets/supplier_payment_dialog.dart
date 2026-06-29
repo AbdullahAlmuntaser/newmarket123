@@ -59,7 +59,8 @@ class _SupplierPaymentDialogState extends State<SupplierPaymentDialog> {
     Decimal total = Decimal.zero;
     for (final inv in widget.outstandingPurchases) {
       if (_selected[inv.purchase.id] == true) {
-        final val = Decimal.tryParse(_amountControllers[inv.purchase.id]?.text ?? '');
+        final val =
+            Decimal.tryParse(_amountControllers[inv.purchase.id]?.text ?? '');
         if (val != null && val > Decimal.zero) {
           total += val;
         }
@@ -72,7 +73,8 @@ class _SupplierPaymentDialogState extends State<SupplierPaymentDialog> {
     final allocations = <({String purchaseId, Decimal amount})>[];
     for (final inv in widget.outstandingPurchases) {
       if (_selected[inv.purchase.id] == true) {
-        final val = Decimal.tryParse(_amountControllers[inv.purchase.id]?.text ?? '');
+        final val =
+            Decimal.tryParse(_amountControllers[inv.purchase.id]?.text ?? '');
         if (val != null && val > Decimal.zero) {
           allocations.add((purchaseId: inv.purchase.id, amount: val));
         }
@@ -108,7 +110,8 @@ class _SupplierPaymentDialogState extends State<SupplierPaymentDialog> {
               Expanded(
                 child: ListView(
                   children: [
-                    ...widget.outstandingPurchases.map((inv) => _buildPurchaseTile(inv)),
+                    ...widget.outstandingPurchases
+                        .map((inv) => _buildPurchaseTile(inv)),
                     const Divider(),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),

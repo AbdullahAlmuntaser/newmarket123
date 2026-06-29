@@ -79,6 +79,8 @@ enum CurrencyType {
   eur,
   gbp,
   aed,
+  yer,
+  omr,
   other;
 
   String get displayName => switch (this) {
@@ -87,6 +89,8 @@ enum CurrencyType {
         CurrencyType.eur => 'Euro (EUR)',
         CurrencyType.gbp => 'British Pound (GBP)',
         CurrencyType.aed => 'UAE Dirham (AED)',
+        CurrencyType.yer => 'Yemeni Riyal (YER)',
+        CurrencyType.omr => 'Omani Rial (OMR)',
         CurrencyType.other => 'Other',
       };
 
@@ -96,6 +100,8 @@ enum CurrencyType {
         CurrencyType.eur => '€',
         CurrencyType.gbp => '£',
         CurrencyType.aed => 'د.إ',
+        CurrencyType.yer => '﷼',
+        CurrencyType.omr => 'ر.ع',
         CurrencyType.other => '',
       };
 }

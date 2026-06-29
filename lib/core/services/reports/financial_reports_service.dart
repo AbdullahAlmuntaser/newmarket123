@@ -223,7 +223,8 @@ class FinancialReportsService {
             account.id,
             startDate,
             endDate,
-          )).toDouble();
+          ))
+              .toDouble();
         }
       }
 

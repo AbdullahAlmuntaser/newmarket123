@@ -166,14 +166,16 @@ class AccountingProvider with ChangeNotifier {
 
   Future<List<GLEntryDetail>> getEntryDetails(String entryId) async {
     final lines = await db.accountingDao.getLinesForEntry(entryId);
-    return lines.map((l) => GLEntryDetail(
-      id: l.line.id,
-      entryId: l.line.entryId,
-      accountId: l.line.accountId,
-      debit: l.line.debit.toDouble(),
-      credit: l.line.credit.toDouble(),
-      memo: l.line.memo,
-    )).toList();
+    return lines
+        .map((l) => GLEntryDetail(
+              id: l.line.id,
+              entryId: l.line.entryId,
+              accountId: l.line.accountId,
+              debit: l.line.debit.toDouble(),
+              credit: l.line.credit.toDouble(),
+              memo: l.line.memo,
+            ))
+        .toList();
   }
 
   Future<GLAccount?> getAccountById(String id) {

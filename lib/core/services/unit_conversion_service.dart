@@ -96,8 +96,10 @@ class UnitConversionService {
         unitName: unitName,
         barcode: Value(barcode),
         unitFactor: Value(Decimal.parse(conversionFactor.toString())),
-        buyPrice: Value(buyPrice != null ? Decimal.parse(buyPrice.toString()) : null),
-        sellPrice: Value(sellPrice != null ? Decimal.parse(sellPrice.toString()) : null),
+        buyPrice:
+            Value(buyPrice != null ? Decimal.parse(buyPrice.toString()) : null),
+        sellPrice: Value(
+            sellPrice != null ? Decimal.parse(sellPrice.toString()) : null),
         isDefault: const Value(false),
       ),
     );

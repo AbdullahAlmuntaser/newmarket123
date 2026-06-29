@@ -147,8 +147,10 @@ class _ReconciliationPageState extends State<ReconciliationPage> {
             await db.into(db.reconciliations).insert(
                   ReconciliationsCompanion.insert(
                     accountId: _selectedAccountId!,
-                    bookBalance: drift.Value(Decimal.parse(_bookBalance.toString())),
-                    actualBalance: drift.Value(Decimal.parse(actual.toString())),
+                    bookBalance:
+                        drift.Value(Decimal.parse(_bookBalance.toString())),
+                    actualBalance:
+                        drift.Value(Decimal.parse(actual.toString())),
                     difference: drift.Value(Decimal.parse(diff.toString())),
                     note: drift.Value(_noteController.text),
                   ),
@@ -220,15 +222,17 @@ class _ReconciliationPageState extends State<ReconciliationPage> {
                       credit: drift.Value(Decimal.parse(absDiff.toString())),
                     ),
                   ];
-    
+
             await db.accountingDao.createEntry(entry, lines);
 
             // Record reconciliation
             await db.into(db.reconciliations).insert(
                   ReconciliationsCompanion.insert(
                     accountId: _selectedAccountId!,
-                    bookBalance: drift.Value(Decimal.parse(_bookBalance.toString())),
-                    actualBalance: drift.Value(Decimal.parse(actual.toString())),
+                    bookBalance:
+                        drift.Value(Decimal.parse(_bookBalance.toString())),
+                    actualBalance:
+                        drift.Value(Decimal.parse(actual.toString())),
                     difference: drift.Value(Decimal.parse(diff.toString())),
                     note: drift.Value(_noteController.text),
                   ),

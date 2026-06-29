@@ -7,8 +7,14 @@ void main() {
     test('accepts balanced debit and credit lines', () {
       expect(
         () => PostingEngine.validatePostingLines([
-          PostingLine(account: 'cash', debit: Decimal.fromInt(100), credit: Decimal.zero),
-          PostingLine(account: 'sales', debit: Decimal.zero, credit: Decimal.fromInt(100)),
+          PostingLine(
+              account: 'cash',
+              debit: Decimal.fromInt(100),
+              credit: Decimal.zero),
+          PostingLine(
+              account: 'sales',
+              debit: Decimal.zero,
+              credit: Decimal.fromInt(100)),
         ]),
         returnsNormally,
       );
@@ -17,8 +23,14 @@ void main() {
     test('rejects unbalanced lines', () {
       expect(
         () => PostingEngine.validatePostingLines([
-          PostingLine(account: 'cash', debit: Decimal.fromInt(100), credit: Decimal.zero),
-          PostingLine(account: 'sales', debit: Decimal.zero, credit: Decimal.fromInt(90)),
+          PostingLine(
+              account: 'cash',
+              debit: Decimal.fromInt(100),
+              credit: Decimal.zero),
+          PostingLine(
+              account: 'sales',
+              debit: Decimal.zero,
+              credit: Decimal.fromInt(90)),
         ]),
         throwsException,
       );
@@ -27,7 +39,8 @@ void main() {
     test('rejects zero-value lines', () {
       expect(
         () => PostingEngine.validatePostingLines([
-          PostingLine(account: 'cash', debit: Decimal.zero, credit: Decimal.zero),
+          PostingLine(
+              account: 'cash', debit: Decimal.zero, credit: Decimal.zero),
         ]),
         throwsException,
       );
@@ -36,7 +49,10 @@ void main() {
     test('rejects lines with debit and credit on the same line', () {
       expect(
         () => PostingEngine.validatePostingLines([
-          PostingLine(account: 'cash', debit: Decimal.fromInt(100), credit: Decimal.fromInt(100)),
+          PostingLine(
+              account: 'cash',
+              debit: Decimal.fromInt(100),
+              credit: Decimal.fromInt(100)),
         ]),
         throwsException,
       );

@@ -63,7 +63,8 @@ class _PromotionsPageState extends State<PromotionsPage> {
   }
 
   Future<void> _deletePromotion(Promotion promotion) async {
-    await (_db.delete(_db.promotions)..where((p) => p.id.equals(promotion.id))).go();
+    await (_db.delete(_db.promotions)..where((p) => p.id.equals(promotion.id)))
+        .go();
     await _loadPromotions();
   }
 
@@ -118,7 +119,9 @@ class _PromotionsPageState extends State<PromotionsPage> {
                           child: ListTile(
                             leading: Icon(
                               Icons.local_offer,
-                              color: promotion.isActive ? Colors.green : Colors.grey,
+                              color: promotion.isActive
+                                  ? Colors.green
+                                  : Colors.grey,
                             ),
                             title: Text(promotion.name),
                             subtitle: Text(
@@ -128,13 +131,18 @@ class _PromotionsPageState extends State<PromotionsPage> {
                             isThreeLine: true,
                             trailing: PopupMenuButton<String>(
                               onSelected: (value) {
-                                if (value == 'toggle') _togglePromotion(promotion);
-                                if (value == 'delete') _deletePromotion(promotion);
+                                if (value == 'toggle') {
+                                  _togglePromotion(promotion);
+                                }
+                                if (value == 'delete') {
+                                  _deletePromotion(promotion);
+                                }
                               },
                               itemBuilder: (context) => [
                                 PopupMenuItem(
                                   value: 'toggle',
-                                  child: Text(promotion.isActive ? 'تعطيل' : 'تفعيل'),
+                                  child: Text(
+                                      promotion.isActive ? 'تعطيل' : 'تفعيل'),
                                 ),
                                 const PopupMenuItem(
                                   value: 'delete',

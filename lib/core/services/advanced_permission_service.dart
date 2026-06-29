@@ -104,12 +104,12 @@ class AdvancedPermissionService {
   }
 
   Future<List<RolePermission>> getPermissionsForRole(String role) async {
-    return (db.select(db.rolePermissions)
-          ..where((rp) => rp.role.equals(role)))
+    return (db.select(db.rolePermissions)..where((rp) => rp.role.equals(role)))
         .get();
   }
 
-  Future<bool> canApproveDiscount(String userId, Decimal discountPercent) async {
+  Future<bool> canApproveDiscount(
+      String userId, Decimal discountPercent) async {
     if (await hasPermission(userId, ExtendedPermissionCode.discountUnlimited)) {
       return true;
     }

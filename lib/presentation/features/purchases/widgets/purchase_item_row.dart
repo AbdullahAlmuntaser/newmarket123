@@ -226,7 +226,8 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
 
               // تحديث السعر بناءً على الوحدة الجديدة (السعر = السعر الأساسي * عامل التحويل)
               // يفترض أن السعر الأساسي (buyPrice) هو للوحدة الأساسية
-              widget.item.unitPrice = widget.item.product.buyPrice.toDouble() * newFactor;
+              widget.item.unitPrice =
+                  widget.item.product.buyPrice.toDouble() * newFactor;
               widget.item.selectedUnit = value;
             });
             widget.onChanged();

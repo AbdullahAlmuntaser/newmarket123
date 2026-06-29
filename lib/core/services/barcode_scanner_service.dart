@@ -8,7 +8,7 @@ class BarcodeScannerService {
 
   Future<void> initialize() async {
     if (_isInitialized) return;
-    
+
     _controller = MobileScannerController(
       detectionSpeed: DetectionSpeed.normal,
       facing: CameraFacing.back,
@@ -19,7 +19,8 @@ class BarcodeScannerService {
 
   MobileScannerController get controller {
     if (_controller == null) {
-      throw Exception('BarcodeScanner not initialized. Call initialize() first.');
+      throw Exception(
+          'BarcodeScanner not initialized. Call initialize() first.');
     }
     return _controller!;
   }
@@ -56,7 +57,7 @@ class BarcodeScannerService {
 
   static BarcodeFormat? detectFormat(String barcode) {
     if (barcode.isEmpty) return null;
-    
+
     if (RegExp(r'^\d{8}$').hasMatch(barcode)) {
       return BarcodeFormat.ean8;
     }
@@ -69,14 +70,14 @@ class BarcodeScannerService {
     if (barcode.startsWith('01') && barcode.length >= 14) {
       return BarcodeFormat.code128;
     }
-    
+
     return BarcodeFormat.qrCode;
   }
 
   static bool isValidBarcode(String barcode) {
     if (barcode.isEmpty) return false;
     if (barcode.length < 4 || barcode.length > 50) return false;
-    
+
     final validChars = RegExp(r'^[a-zA-Z0-9\-_\.]+$');
     return validChars.hasMatch(barcode);
   }

@@ -16,7 +16,7 @@ class PayrollService {
     final salaryExpenseAccountId = await _getSalaryExpenseAccount();
     final deductionsLiabilityAccountId = await _getDeductionsLiabilityAccount();
     final salariesPayableAccountId = await _getSalariesPayableAccount();
-    
+
     final entryId = const Uuid().v4();
 
     await db.into(db.gLEntries).insert(
@@ -36,7 +36,9 @@ class PayrollService {
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: salaryExpenseAccountId,
-            debit: Value(Decimal.parse((payrollRun.totalSalaries + payrollRun.totalAllowances).toString())),
+            debit: Value(Decimal.parse(
+                (payrollRun.totalSalaries + payrollRun.totalAllowances)
+                    .toString())),
             credit: Value(Decimal.zero),
             memo: const Value('مصروف الرواتب والبدلات'),
           ));

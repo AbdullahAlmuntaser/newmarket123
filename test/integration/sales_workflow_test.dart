@@ -9,9 +9,22 @@ void main() {
         id: 'inv-1',
         customerId: '',
         items: [
-          InvoiceItem(itemId: 'p1', quantity: 2, price: Decimal.fromInt(50), discount: Decimal.zero),
-          InvoiceItem(itemId: 'p2', quantity: 1, price: Decimal.fromInt(100), discount: Decimal.zero),
-          InvoiceItem(itemId: 'p3', quantity: 0.5, price: Decimal.fromInt(200), unitFactor: 1, discount: Decimal.zero),
+          InvoiceItem(
+              itemId: 'p1',
+              quantity: 2,
+              price: Decimal.fromInt(50),
+              discount: Decimal.zero),
+          InvoiceItem(
+              itemId: 'p2',
+              quantity: 1,
+              price: Decimal.fromInt(100),
+              discount: Decimal.zero),
+          InvoiceItem(
+              itemId: 'p3',
+              quantity: 0.5,
+              price: Decimal.fromInt(200),
+              unitFactor: 1,
+              discount: Decimal.zero),
         ],
         subtotal: Decimal.fromInt(250),
         discount: Decimal.fromInt(25),
@@ -24,9 +37,9 @@ void main() {
 
       Decimal calculatedSubtotal = Decimal.zero;
       for (var item in invoice.items) {
-        calculatedSubtotal += Decimal.parse(item.quantity.toString()) * 
-                             Decimal.parse(item.unitFactor.toString()) * 
-                             item.price;
+        calculatedSubtotal += Decimal.parse(item.quantity.toString()) *
+            Decimal.parse(item.unitFactor.toString()) *
+            item.price;
       }
 
       expect(calculatedSubtotal.toDouble(), closeTo(300.0, 0.01));
@@ -39,7 +52,11 @@ void main() {
         id: 'inv-1',
         customerId: 'CUST-001',
         items: [
-          InvoiceItem(itemId: 'p1', quantity: 1, price: Decimal.fromInt(100), discount: Decimal.zero),
+          InvoiceItem(
+              itemId: 'p1',
+              quantity: 1,
+              price: Decimal.fromInt(100),
+              discount: Decimal.zero),
         ],
         subtotal: Decimal.fromInt(100),
         discount: Decimal.zero,
@@ -59,7 +76,11 @@ void main() {
         id: 'inv-1',
         customerId: '',
         items: [
-          InvoiceItem(itemId: 'p1', quantity: 1, price: Decimal.fromInt(100), discount: Decimal.zero),
+          InvoiceItem(
+              itemId: 'p1',
+              quantity: 1,
+              price: Decimal.fromInt(100),
+              discount: Decimal.zero),
         ],
         subtotal: Decimal.fromInt(100),
         discount: Decimal.zero,

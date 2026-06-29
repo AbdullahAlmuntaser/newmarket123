@@ -5,7 +5,8 @@ import 'dart:developer' as developer;
 import 'package:sqlite3/sqlite3.dart';
 
 void logInfo(String message) => developer.log(message, name: 'tool.encrypt');
-void logError(String message) => developer.log(message, name: 'tool.encrypt', level: 1000);
+void logError(String message) =>
+    developer.log(message, name: 'tool.encrypt', level: 1000);
 
 void usage() {
   logInfo('''

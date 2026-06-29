@@ -20,7 +20,7 @@ class _AccountingPeriodsPageState extends State<AccountingPeriodsPage> {
   final TextEditingController _nameController = TextEditingController();
   DateTime? _startDate;
   DateTime? _endDate;
-  
+
   // متغيرات لإنشاء فترات تلقائية
   int _selectedYear = DateTime.now().year;
   String _periodType = 'monthly'; // monthly, quarterly, yearly
@@ -63,7 +63,8 @@ class _AccountingPeriodsPageState extends State<AccountingPeriodsPage> {
                     children: [
                       const Text(
                         'إضافة فترة يدوية',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       TextButton.icon(
                         onPressed: () {
@@ -71,8 +72,11 @@ class _AccountingPeriodsPageState extends State<AccountingPeriodsPage> {
                             _isBulkCreate = !_isBulkCreate;
                           });
                         },
-                        icon: Icon(_isBulkCreate ? Icons.close : Icons.auto_awesome),
-                        label: Text(_isBulkCreate ? 'إلغاء التوليد التلقائي' : 'توليد تلقائي'),
+                        icon: Icon(
+                            _isBulkCreate ? Icons.close : Icons.auto_awesome),
+                        label: Text(_isBulkCreate
+                            ? 'إلغاء التوليد التلقائي'
+                            : 'توليد تلقائي'),
                       ),
                     ],
                   ),
@@ -253,7 +257,6 @@ class _AccountingPeriodsPageState extends State<AccountingPeriodsPage> {
           ),
         );
 
-
     _nameController.clear();
     setState(() {
       _startDate = null;
@@ -301,27 +304,32 @@ class _AccountingPeriodsPageState extends State<AccountingPeriodsPage> {
     try {
       final authProvider = context.read<AuthProvider>();
       final closingService = context.read<FinancialClosingService>();
-      
+
       final result = await closingService.closeMonthlyPeriod(
         periodId: period.id,
         userId: authProvider.currentUser?.id ?? '',
       );
-      
+
       if (mounted) {
         if (result.success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result.message), backgroundColor: Colors.green),
+            SnackBar(
+                content: Text(result.message), backgroundColor: Colors.green),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result.error ?? 'فشل في إغلاق الفترة'), backgroundColor: Colors.red),
+            SnackBar(
+                content: Text(result.error ?? 'فشل في إغلاق الفترة'),
+                backgroundColor: Colors.red),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('فشل في إغلاق الفترة: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('فشل في إغلاق الفترة: $e'),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -331,28 +339,33 @@ class _AccountingPeriodsPageState extends State<AccountingPeriodsPage> {
     try {
       final authProvider = context.read<AuthProvider>();
       final closingService = context.read<FinancialClosingService>();
-      
+
       final result = await closingService.reopenPeriod(
         period.id,
         authProvider.currentUser?.id ?? '',
         authProvider.currentUser?.id ?? '',
       );
-      
+
       if (mounted) {
         if (result.success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result.message), backgroundColor: Colors.green),
+            SnackBar(
+                content: Text(result.message), backgroundColor: Colors.green),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result.error ?? 'فشل في إعادة فتح الفترة'), backgroundColor: Colors.red),
+            SnackBar(
+                content: Text(result.error ?? 'فشل في إعادة فتح الفترة'),
+                backgroundColor: Colors.red),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('فشل في إعادة فتح الفترة: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('فشل في إعادة فتح الفترة: $e'),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -368,8 +381,10 @@ class _AccountingPeriodsPageState extends State<AccountingPeriodsPage> {
 
     // Check for GL entries in this period's date range
     final entryCount = await (db.select(db.gLEntries)
-      ..where((e) => e.date.isBiggerOrEqual(drift.Variable(period.startDate)))
-      ..where((e) => e.date.isSmallerOrEqual(drift.Variable(period.endDate))))
+          ..where(
+              (e) => e.date.isBiggerOrEqual(drift.Variable(period.startDate)))
+          ..where(
+              (e) => e.date.isSmallerOrEqual(drift.Variable(period.endDate))))
         .get();
 
     if (!mounted) return;
@@ -377,7 +392,8 @@ class _AccountingPeriodsPageState extends State<AccountingPeriodsPage> {
     if (entryCount.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('لا يمكن حذف الفترة: توجد قيود محاسبية مسجلة ضمن هذه الفترة'),
+          content: Text(
+              'لا يمكن حذف الفترة: توجد قيود محاسبية مسجلة ضمن هذه الفترة'),
           backgroundColor: Colors.red,
         ),
       );
@@ -436,9 +452,12 @@ class _AccountingPeriodsPageState extends State<AccountingPeriodsPage> {
                   border: OutlineInputBorder(),
                 ),
                 items: const [
-                  DropdownMenuItem(value: 'monthly', child: Text('شهرية (12 فترة)')),
-                  DropdownMenuItem(value: 'quarterly', child: Text('ربع سنوية (4 فترات)')),
-                  DropdownMenuItem(value: 'yearly', child: Text('سنوية (فترة واحدة)')),
+                  DropdownMenuItem(
+                      value: 'monthly', child: Text('شهرية (12 فترة)')),
+                  DropdownMenuItem(
+                      value: 'quarterly', child: Text('ربع سنوية (4 فترات)')),
+                  DropdownMenuItem(
+                      value: 'yearly', child: Text('سنوية (فترة واحدة)')),
                 ],
                 onChanged: (v) => setDialogState(() => type = v!),
               ),
@@ -476,7 +495,8 @@ class _AccountingPeriodsPageState extends State<AccountingPeriodsPage> {
     String type,
   ) async {
     try {
-      final count = await periodService.bulkCreatePeriods(year: year, type: type);
+      final count =
+          await periodService.bulkCreatePeriods(year: year, type: type);
 
       if (mounted) {
         setState(() {

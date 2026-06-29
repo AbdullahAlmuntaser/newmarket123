@@ -9,8 +9,11 @@ import 'package:supermarket/core/services/packaging_engine.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class MockAppDatabase extends Mock implements AppDatabase {}
+
 class MockPricingService extends Mock implements PricingService {}
+
 class MockTransactionEngine extends Mock implements TransactionEngine {}
+
 class MockPackagingEngine extends Mock implements PackagingEngine {}
 
 void main() {

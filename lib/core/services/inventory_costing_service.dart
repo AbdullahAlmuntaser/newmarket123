@@ -74,7 +74,8 @@ class InventoryCostingService {
   Future<Decimal> calculateAverageCost(String productId) async {
     final batches = await (_db.select(_db.productBatches)
           ..where((b) => b.productId.equals(productId))
-          ..where((b) => b.quantity.isBiggerThan(Constant(Decimal.zero.toString()))))
+          ..where((b) =>
+              b.quantity.isBiggerThan(Constant(Decimal.zero.toString()))))
         .get();
 
     if (batches.isEmpty) return Decimal.zero;
@@ -87,7 +88,9 @@ class InventoryCostingService {
       totalQty += batch.quantity;
     }
 
-    return totalQty > Decimal.zero ? (totalValue / totalQty).toDecimal() : Decimal.zero;
+    return totalQty > Decimal.zero
+        ? (totalValue / totalQty).toDecimal()
+        : Decimal.zero;
   }
 
   Future<InventoryValuation> getInventoryValuation(String productId) async {
@@ -128,7 +131,9 @@ class InventoryCostingService {
       totalQty += batch.quantity;
     }
 
-    final avgCost = totalQty > Decimal.zero ? (totalValue / totalQty).toDecimal() : Decimal.zero;
+    final avgCost = totalQty > Decimal.zero
+        ? (totalValue / totalQty).toDecimal()
+        : Decimal.zero;
 
     return InventoryValuation(
       productId: productId,
@@ -151,7 +156,9 @@ class InventoryCostingService {
       totalQty += batch.quantity;
     }
 
-    final avgCost = totalQty > Decimal.zero ? (totalValue / totalQty).toDecimal() : Decimal.zero;
+    final avgCost = totalQty > Decimal.zero
+        ? (totalValue / totalQty).toDecimal()
+        : Decimal.zero;
 
     return InventoryValuation(
       productId: productId,
@@ -174,7 +181,9 @@ class InventoryCostingService {
       totalQty += batch.quantity;
     }
 
-    final avgCost = totalQty > Decimal.zero ? (totalValue / totalQty).toDecimal() : Decimal.zero;
+    final avgCost = totalQty > Decimal.zero
+        ? (totalValue / totalQty).toDecimal()
+        : Decimal.zero;
 
     return InventoryValuation(
       productId: productId,
@@ -243,7 +252,8 @@ class InventoryCostingService {
     return result;
   }
 
-  Future<Decimal> calculateCogsForSale(String productId, Decimal quantity) async {
+  Future<Decimal> calculateCogsForSale(
+      String productId, Decimal quantity) async {
     final batches = await getBatchesForSale(productId, quantity);
 
     Decimal totalCogs = Decimal.zero;

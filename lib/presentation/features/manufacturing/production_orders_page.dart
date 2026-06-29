@@ -65,7 +65,8 @@ class _ProductionOrdersPageState extends State<ProductionOrdersPage> {
                           SnackBar(content: Text(l10n.productionOrderCreated)));
                     } catch (e) {
                       if (!mounted) return;
-                      messenger.showSnackBar(SnackBar(content: Text('Error: $e')));
+                      messenger
+                          .showSnackBar(SnackBar(content: Text('Error: $e')));
                     }
                   },
                   child: Text(l10n.createOrder),
@@ -77,7 +78,10 @@ class _ProductionOrdersPageState extends State<ProductionOrdersPage> {
           Expanded(
             child: StreamBuilder<List<ProductionOrder>>(
               stream: (db.select(db.productionOrders)
-                    ..orderBy([(t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc)]))
+                    ..orderBy([
+                      (t) => OrderingTerm(
+                          expression: t.date, mode: OrderingMode.desc)
+                    ]))
                   .watch(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
@@ -89,13 +93,14 @@ class _ProductionOrdersPageState extends State<ProductionOrdersPage> {
                   itemBuilder: (context, index) {
                     final o = orders[index];
                     return ListTile(
-                      title: Text('${l10n.productLabel}: ${o.finishedProductId}'),
+                      title:
+                          Text('${l10n.productLabel}: ${o.finishedProductId}'),
                       subtitle: Text(
                           '${l10n.plannedQuantity}: ${o.plannedQuantity} - ${l10n.status}: ${o.status}'),
                       trailing: o.status == 'PLANNED'
                           ? ElevatedButton(
-                              onPressed: () =>
-                                  productionService.completeProductionOrder(o.id),
+                              onPressed: () => productionService
+                                  .completeProductionOrder(o.id),
                               child: Text(l10n.complete),
                             )
                           : const Icon(Icons.check_circle, color: Colors.green),

@@ -121,8 +121,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
       );
 
       // Save new settings
-      await configService.setBool(
-          'allow_negative_stock', _allowNegativeStock);
+      await configService.setBool('allow_negative_stock', _allowNegativeStock);
       await configService.setBool(
           AppConfigService.keyAllowSellBelowCost, _allowSellBelowCost);
       await configService.setBool(
@@ -246,8 +245,8 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                           ),
                           SwitchListTile(
                             title: const Text('إخفاء أسعار البيع'),
-                            subtitle: const Text(
-                                'إخفاء أسعار البيع في شاشات معينة'),
+                            subtitle:
+                                const Text('إخفاء أسعار البيع في شاشات معينة'),
                             value: _hideSalePrices,
                             onChanged: (v) =>
                                 setState(() => _hideSalePrices = v),

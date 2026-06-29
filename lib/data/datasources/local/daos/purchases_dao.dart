@@ -175,8 +175,8 @@ class PurchasesDao extends DatabaseAccessor<AppDatabase>
   }
 
   Future<double?> getBestPurchasePrice(String productId) async {
-    final minPriceExpr = CustomExpression<double>(
-        'MIN(${purchaseItems.unitPrice.name})');
+    final minPriceExpr =
+        CustomExpression<double>('MIN(${purchaseItems.unitPrice.name})');
     final query = selectOnly(purchaseItems)
       ..addColumns([minPriceExpr])
       ..where(purchaseItems.productId.equals(productId));

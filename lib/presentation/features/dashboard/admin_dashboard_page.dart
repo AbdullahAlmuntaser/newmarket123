@@ -165,8 +165,9 @@ class AdminDashboardPage extends StatelessWidget {
     final displayValue = isPercentage
         ? '${(doubleVal * 100).toStringAsFixed(1)}%'
         : value.toStringAsFixed(2);
-    final progress =
-        isPercentage ? doubleVal.clamp(0.0, 1.0) : (doubleVal / 3.0).clamp(0.0, 1.0);
+    final progress = isPercentage
+        ? doubleVal.clamp(0.0, 1.0)
+        : (doubleVal / 3.0).clamp(0.0, 1.0);
 
     return Column(
       children: [
@@ -350,7 +351,8 @@ class AdminDashboardPage extends StatelessWidget {
     Color color,
   ) {
     final currency = NumberFormat.currency(symbol: '');
-    final numValue = value is Decimal ? value.toDouble() : (value as num).toDouble();
+    final numValue =
+        value is Decimal ? value.toDouble() : (value as num).toDouble();
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -927,7 +929,7 @@ class AdminDashboardPage extends StatelessWidget {
                   ),
                 ),
                 subtitle: Text(
-                   DateFormat.yMMMd().format(entry.date),
+                  DateFormat.yMMMd().format(entry.date),
                   style: const TextStyle(fontSize: 12),
                 ),
                 trailing: const Icon(Icons.chevron_right, size: 20),

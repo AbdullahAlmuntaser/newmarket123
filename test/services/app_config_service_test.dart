@@ -72,11 +72,13 @@ void main() {
 
     test('getWithDefault returns value if present', () {
       expect(ConfigValueParser.getWithDefault(100, 0), equals(100));
-      expect(ConfigValueParser.getWithDefault('test', 'default'), equals('test'));
+      expect(
+          ConfigValueParser.getWithDefault('test', 'default'), equals('test'));
     });
 
     test('getWithDefault returns default if null', () {
-      expect(ConfigValueParser.getWithDefault<String>(null, 'default'), equals('default'));
+      expect(ConfigValueParser.getWithDefault<String>(null, 'default'),
+          equals('default'));
       expect(ConfigValueParser.getWithDefault<int>(null, 0), equals(0));
     });
   });
@@ -92,7 +94,8 @@ void main() {
     test('missing config uses default', () {
       String? storedValue;
       final value = ConfigValueParser.parseDouble(storedValue);
-      final result = ConfigValueParser.getWithDefault(value, AppConfigDefaults.defaultTaxRate);
+      final result = ConfigValueParser.getWithDefault(
+          value, AppConfigDefaults.defaultTaxRate);
       expect(result, equals(AppConfigDefaults.defaultTaxRate));
     });
 

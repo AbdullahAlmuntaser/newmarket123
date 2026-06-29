@@ -19,10 +19,13 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
   DateTime _selectedDate = DateTime.now();
   final List<ManualLine> _lines = [ManualLine(), ManualLine()];
 
-  Decimal get _totalDebit => _lines.fold(Decimal.zero, (sum, l) => sum + l.debit);
-  Decimal get _totalCredit => _lines.fold(Decimal.zero, (sum, l) => sum + l.credit);
+  Decimal get _totalDebit =>
+      _lines.fold(Decimal.zero, (sum, l) => sum + l.debit);
+  Decimal get _totalCredit =>
+      _lines.fold(Decimal.zero, (sum, l) => sum + l.credit);
   bool get _isBalanced =>
-      (_totalDebit - _totalCredit).abs() < Decimal.parse('0.001') && _totalDebit > Decimal.zero;
+      (_totalDebit - _totalCredit).abs() < Decimal.parse('0.001') &&
+      _totalDebit > Decimal.zero;
 
   @override
   Widget build(BuildContext context) {
@@ -175,8 +178,8 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
                   child: TextField(
                     decoration: const InputDecoration(labelText: 'مدين'),
                     keyboardType: TextInputType.number,
-                    onChanged: (val) =>
-                        setState(() => line.debit = Decimal.tryParse(val) ?? Decimal.zero),
+                    onChanged: (val) => setState(() =>
+                        line.debit = Decimal.tryParse(val) ?? Decimal.zero),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -184,8 +187,8 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
                   child: TextField(
                     decoration: const InputDecoration(labelText: 'دائن'),
                     keyboardType: TextInputType.number,
-                    onChanged: (val) =>
-                        setState(() => line.credit = Decimal.tryParse(val) ?? Decimal.zero),
+                    onChanged: (val) => setState(() =>
+                        line.credit = Decimal.tryParse(val) ?? Decimal.zero),
                   ),
                 ),
               ],
@@ -228,7 +231,8 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
     }
 
     final db = context.read<AppDatabase>();
-    final inClosedPeriod = await db.accountingDao.isDateInClosedPeriod(_selectedDate);
+    final inClosedPeriod =
+        await db.accountingDao.isDateInClosedPeriod(_selectedDate);
     if (!mounted) return;
     if (inClosedPeriod) {
       AppSnackBar.error(context, 'لا يمكن الترحيل لفترة محاسبية مغلقة');
@@ -237,7 +241,8 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
 
     for (var i = 0; i < _lines.length; i++) {
       final line = _lines[i];
-      if (line.accountId == null && (line.debit > Decimal.zero || line.credit > Decimal.zero)) {
+      if (line.accountId == null &&
+          (line.debit > Decimal.zero || line.credit > Decimal.zero)) {
         AppSnackBar.warning(context, 'يرجى اختيار حساب للسطر رقم ${i + 1}');
         return;
       }
@@ -248,7 +253,9 @@ class _ManualJournalEntryPageState extends State<ManualJournalEntryPage> {
         );
         return;
       }
-      if (line.accountId != null && line.debit == Decimal.zero && line.credit == Decimal.zero) {
+      if (line.accountId != null &&
+          line.debit == Decimal.zero &&
+          line.credit == Decimal.zero) {
         AppSnackBar.warning(
           context,
           'السطر رقم ${i + 1} يحتوي على حساب بدون قيمة مدينة أو دائنة',

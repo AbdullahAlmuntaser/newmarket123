@@ -81,7 +81,8 @@ class LoyaltyService {
     if (balance < points) {
       throw Exception('Insufficient loyalty points');
     }
-    return adjustPoints(customerId: customerId, points: -points, reason: reason);
+    return adjustPoints(
+        customerId: customerId, points: -points, reason: reason);
   }
 
   Future<int> adjustPoints({
@@ -108,12 +109,14 @@ class LoyaltyService {
     return balances[customerId] ?? 0;
   }
 
-  Future<List<LoyaltyTransaction>> listTransactions({String? customerId}) async {
+  Future<List<LoyaltyTransaction>> listTransactions(
+      {String? customerId}) async {
     final raw = await _configService.getString(keyTransactions);
     if (raw == null || raw.trim().isEmpty) return [];
     final decoded = jsonDecode(raw) as List<dynamic>;
     final transactions = decoded
-        .map((item) => LoyaltyTransaction.fromJson(item as Map<String, dynamic>))
+        .map(
+            (item) => LoyaltyTransaction.fromJson(item as Map<String, dynamic>))
         .toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     if (customerId == null) return transactions;

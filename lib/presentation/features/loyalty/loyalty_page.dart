@@ -143,7 +143,8 @@ class _LoyaltyPageState extends State<LoyaltyPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text('الأرصدة', style: Theme.of(context).textTheme.titleMedium),
+                  Text('الأرصدة',
+                      style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 8),
                   if (_balances.isEmpty)
                     const Card(
@@ -163,14 +164,19 @@ class _LoyaltyPageState extends State<LoyaltyPage> {
                       ),
                     ),
                   const SizedBox(height: 16),
-                  Text('آخر العمليات', style: Theme.of(context).textTheme.titleMedium),
+                  Text('آخر العمليات',
+                      style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 8),
                   ..._transactions.take(20).map(
                         (item) => Card(
                           child: ListTile(
                             leading: Icon(
-                              item.points >= 0 ? Icons.add_circle : Icons.remove_circle,
-                              color: item.points >= 0 ? Colors.green : Colors.orange,
+                              item.points >= 0
+                                  ? Icons.add_circle
+                                  : Icons.remove_circle,
+                              color: item.points >= 0
+                                  ? Colors.green
+                                  : Colors.orange,
                             ),
                             title: Text('العميل: ${item.customerId}'),
                             subtitle: Text(

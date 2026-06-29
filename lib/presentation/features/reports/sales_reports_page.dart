@@ -94,16 +94,22 @@ class _SalesReportsPageState extends State<SalesReportsPage> {
           .get(),
       builder: (context, snapshot) {
         final sales = snapshot.data ?? [];
-        final totalRevenue = sales.fold<Decimal>(Decimal.zero, (sum, sale) => sum + sale.total).toDouble();
+        final totalRevenue = sales
+            .fold<Decimal>(Decimal.zero, (sum, sale) => sum + sale.total)
+            .toDouble();
 
         final retailSales = sales.where((s) => s.saleType == 'retail');
         final wholesaleSales = sales.where((s) => s.saleType == 'wholesale');
 
-        final retailTotal = retailSales.fold<Decimal>(Decimal.zero, (sum, s) => sum + s.total).toDouble();
-        final wholesaleTotal = wholesaleSales.fold<Decimal>(
-          Decimal.zero,
-          (sum, s) => sum + s.total,
-        ).toDouble();
+        final retailTotal = retailSales
+            .fold<Decimal>(Decimal.zero, (sum, s) => sum + s.total)
+            .toDouble();
+        final wholesaleTotal = wholesaleSales
+            .fold<Decimal>(
+              Decimal.zero,
+              (sum, s) => sum + s.total,
+            )
+            .toDouble();
 
         return Column(
           children: [

@@ -196,7 +196,8 @@ class FinancialControlService {
         errors.add('الكمية السالبة غير مسموحة: ${valuation.totalQuantity}');
       }
 
-      if (valuation.totalQuantity == Decimal.zero && valuation.totalValue != Decimal.zero) {
+      if (valuation.totalQuantity == Decimal.zero &&
+          valuation.totalValue != Decimal.zero) {
         errors.add(
             'تناقض في تقييم المخزون - الكمية صفر لكن القيمة: ${valuation.totalValue}');
       }
@@ -478,18 +479,15 @@ class FinancialControlService {
     // Resolve the original entry ID by looking up via reference if not provided
     String? resolvedOriginalId = originalEntryId;
     if (resolvedOriginalId == null) {
-      final originalReferenceType =
-          referenceType.replaceAll('_VOID', '');
+      final originalReferenceType = referenceType.replaceAll('_VOID', '');
       final originalEntries = await (db.select(db.gLEntries)
             ..where((e) => e.referenceId.equals(referenceId))
-            ..where((e) =>
-                e.referenceType.equals(originalReferenceType)))
+            ..where((e) => e.referenceType.equals(originalReferenceType)))
           .get();
       if (originalEntries.isNotEmpty) {
         for (final originalEntry in originalEntries) {
           final originalLines = await (db.select(db.gLLines)
-                ..where((l) =>
-                    l.entryId.equals(originalEntry.id)))
+                ..where((l) => l.entryId.equals(originalEntry.id)))
               .get();
           for (var line in originalLines) {
             reverseLines.add(GLLinesCompanion.insert(

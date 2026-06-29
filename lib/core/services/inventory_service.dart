@@ -145,7 +145,8 @@ class InventoryService {
     ])
       ..where(db.productBatches.expiryDate.isBiggerOrEqual(Variable(now)) &
           db.productBatches.expiryDate.isSmallerOrEqual(Variable(threshold)) &
-          db.productBatches.quantity.isBiggerThan(Constant(Decimal.zero.toString())));
+          db.productBatches.quantity
+              .isBiggerThan(Constant(Decimal.zero.toString())));
 
     return query.watch().map((rows) {
       return rows.map((row) {
@@ -168,7 +169,8 @@ class InventoryService {
   }) async {
     await db.transaction(() async {
       // 1. تسجيل رأس الجرد - نستخدم insertReturning للحصول على معرف UUID المنشأ
-      final auditRow = await db.into(db.inventoryAudits).insertReturning(auditCompanion);
+      final auditRow =
+          await db.into(db.inventoryAudits).insertReturning(auditCompanion);
       final auditId = auditRow.id;
 
       Decimal totalInventoryAdjustmentValue = Decimal.zero;
@@ -207,7 +209,8 @@ class InventoryService {
                   ..where(
                     (b) =>
                         b.productId.equals(productId) &
-                        b.quantity.isBiggerThan(Constant(Decimal.zero.toString())),
+                        b.quantity
+                            .isBiggerThan(Constant(Decimal.zero.toString())),
                   )
                   ..orderBy([
                     (b) => drift.OrderingTerm(
@@ -219,9 +222,10 @@ class InventoryService {
 
             for (var batch in batches) {
               if (remainingToDeduct <= Decimal.zero) break;
-              final Decimal deductFromThisBatch = batch.quantity >= remainingToDeduct
-                  ? remainingToDeduct
-                  : batch.quantity;
+              final Decimal deductFromThisBatch =
+                  batch.quantity >= remainingToDeduct
+                      ? remainingToDeduct
+                      : batch.quantity;
 
               await (db.update(
                 db.productBatches,
@@ -247,8 +251,8 @@ class InventoryService {
                     id: drift.Value(uuid.v4()),
                     productId: drift.Value(productId),
                     warehouseId: drift.Value(defaultWarehouseId),
-                    batchNumber: drift.Value(
-                        'AUDIT-${auditId.substring(0, 8)}'),
+                    batchNumber:
+                        drift.Value('AUDIT-${auditId.substring(0, 8)}'),
                     expiryDate: const drift.Value(null),
                     quantity: drift.Value(differenceDecimal),
                     initialQuantity: drift.Value(differenceDecimal),

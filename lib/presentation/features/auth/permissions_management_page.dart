@@ -8,7 +8,8 @@ class PermissionsManagementPage extends StatefulWidget {
   const PermissionsManagementPage({super.key});
 
   @override
-  State<PermissionsManagementPage> createState() => _PermissionsManagementPageState();
+  State<PermissionsManagementPage> createState() =>
+      _PermissionsManagementPageState();
 }
 
 class _PermissionsManagementPageState extends State<PermissionsManagementPage> {
@@ -31,7 +32,8 @@ class _PermissionsManagementPageState extends State<PermissionsManagementPage> {
 
       setState(() {
         _rolePermissions[role] = _allPermissions.map((p) {
-          final hasPermission = permissions.any((perm) => perm.permissionCode == p.code);
+          final hasPermission =
+              permissions.any((perm) => perm.permissionCode == p.code);
           return PermissionItem(
             code: p.code,
             name: p.name,
@@ -43,16 +45,17 @@ class _PermissionsManagementPageState extends State<PermissionsManagementPage> {
     }
   }
 
-  Future<void> _togglePermission(String role, String permissionCode, bool granted) async {
+  Future<void> _togglePermission(
+      String role, String permissionCode, bool granted) async {
     final db = Provider.of<AppDatabase>(context, listen: false);
 
     if (granted) {
       await db.into(db.rolePermissions).insert(
-        RolePermissionsCompanion.insert(
-          role: role,
-          permissionCode: permissionCode,
-        ),
-      );
+            RolePermissionsCompanion.insert(
+              role: role,
+              permissionCode: permissionCode,
+            ),
+          );
     } else {
       await (db.delete(db.rolePermissions)
             ..where((rp) =>
@@ -86,10 +89,13 @@ class _PermissionsManagementPageState extends State<PermissionsManagementPage> {
                   leading: Icon(_getRoleIcon(role)),
                   children: (_rolePermissions[role] ?? []).map((permission) {
                     return CheckboxListTile(
-                      title: Text(l10n.localeName == 'ar' ? permission.nameAr : permission.name),
+                      title: Text(l10n.localeName == 'ar'
+                          ? permission.nameAr
+                          : permission.name),
                       subtitle: Text(permission.code),
                       value: permission.granted,
-                      onChanged: (value) => _togglePermission(role, permission.code, value ?? false),
+                      onChanged: (value) => _togglePermission(
+                          role, permission.code, value ?? false),
                     );
                   }).toList(),
                 );
@@ -158,20 +164,84 @@ class PermissionDefinition {
 }
 
 final List<PermissionDefinition> _allPermissions = [
-  PermissionDefinition(code: 'POST_SALE', name: 'Post Sales', nameAr: 'نشر المبيعات', category: 'Sales'),
-  PermissionDefinition(code: 'POST_PURCHASE', name: 'Post Purchases', nameAr: 'نشر المشتريات', category: 'Purchases'),
-  PermissionDefinition(code: 'POST_SALE_RETURN', name: 'Post Sales Returns', nameAr: 'نشر مرتجعات المبيعات', category: 'Returns'),
-  PermissionDefinition(code: 'POST_PURCHASE_RETURN', name: 'Post Purchase Returns', nameAr: 'نشر مرتجعات المشتريات', category: 'Returns'),
-  PermissionDefinition(code: 'DELETE_INVOICE', name: 'Delete Invoices', nameAr: 'حذف الفواتير', category: 'Admin'),
-  PermissionDefinition(code: 'VOID_TRANSACTION', name: 'Void Transactions', nameAr: 'إلغاء المعاملات', category: 'Admin'),
-  PermissionDefinition(code: 'MANAGE_USERS', name: 'Manage Users', nameAr: 'إدارة المستخدمين', category: 'Admin'),
-  PermissionDefinition(code: 'VIEW_REPORTS', name: 'View Reports', nameAr: 'عرض التقارير', category: 'Reports'),
-  PermissionDefinition(code: 'MANAGE_SETTINGS', name: 'Manage Settings', nameAr: 'إدارة الإعدادات', category: 'Settings'),
-  PermissionDefinition(code: 'MANAGE_INVENTORY', name: 'Manage Inventory', nameAr: 'إدارة المخزون', category: 'Inventory'),
-  PermissionDefinition(code: 'APPROVE_DISCOUNT', name: 'Approve Discounts', nameAr: 'الموافقة على الخصومات', category: 'Sales'),
-  PermissionDefinition(code: 'EDIT_TAX', name: 'Edit Tax', nameAr: 'إدخال وتعديل الضريبة', category: 'Tax'),
-  PermissionDefinition(code: 'MANAGE_CUSTOMERS', name: 'Manage Customers', nameAr: 'إدارة العملاء', category: 'Customers'),
-  PermissionDefinition(code: 'MANAGE_SUPPLIERS', name: 'Manage Suppliers', nameAr: 'إدارة الموردين', category: 'Suppliers'),
-  PermissionDefinition(code: 'VIEW_FINANCIALS', name: 'View Financials', nameAr: 'عرض البيانات المالية', category: 'Accounting'),
-  PermissionDefinition(code: 'MANAGE_ACCOUNTS', name: 'Manage Accounts', nameAr: 'إدارة الحسابات', category: 'Accounting'),
+  PermissionDefinition(
+      code: 'POST_SALE',
+      name: 'Post Sales',
+      nameAr: 'نشر المبيعات',
+      category: 'Sales'),
+  PermissionDefinition(
+      code: 'POST_PURCHASE',
+      name: 'Post Purchases',
+      nameAr: 'نشر المشتريات',
+      category: 'Purchases'),
+  PermissionDefinition(
+      code: 'POST_SALE_RETURN',
+      name: 'Post Sales Returns',
+      nameAr: 'نشر مرتجعات المبيعات',
+      category: 'Returns'),
+  PermissionDefinition(
+      code: 'POST_PURCHASE_RETURN',
+      name: 'Post Purchase Returns',
+      nameAr: 'نشر مرتجعات المشتريات',
+      category: 'Returns'),
+  PermissionDefinition(
+      code: 'DELETE_INVOICE',
+      name: 'Delete Invoices',
+      nameAr: 'حذف الفواتير',
+      category: 'Admin'),
+  PermissionDefinition(
+      code: 'VOID_TRANSACTION',
+      name: 'Void Transactions',
+      nameAr: 'إلغاء المعاملات',
+      category: 'Admin'),
+  PermissionDefinition(
+      code: 'MANAGE_USERS',
+      name: 'Manage Users',
+      nameAr: 'إدارة المستخدمين',
+      category: 'Admin'),
+  PermissionDefinition(
+      code: 'VIEW_REPORTS',
+      name: 'View Reports',
+      nameAr: 'عرض التقارير',
+      category: 'Reports'),
+  PermissionDefinition(
+      code: 'MANAGE_SETTINGS',
+      name: 'Manage Settings',
+      nameAr: 'إدارة الإعدادات',
+      category: 'Settings'),
+  PermissionDefinition(
+      code: 'MANAGE_INVENTORY',
+      name: 'Manage Inventory',
+      nameAr: 'إدارة المخزون',
+      category: 'Inventory'),
+  PermissionDefinition(
+      code: 'APPROVE_DISCOUNT',
+      name: 'Approve Discounts',
+      nameAr: 'الموافقة على الخصومات',
+      category: 'Sales'),
+  PermissionDefinition(
+      code: 'EDIT_TAX',
+      name: 'Edit Tax',
+      nameAr: 'إدخال وتعديل الضريبة',
+      category: 'Tax'),
+  PermissionDefinition(
+      code: 'MANAGE_CUSTOMERS',
+      name: 'Manage Customers',
+      nameAr: 'إدارة العملاء',
+      category: 'Customers'),
+  PermissionDefinition(
+      code: 'MANAGE_SUPPLIERS',
+      name: 'Manage Suppliers',
+      nameAr: 'إدارة الموردين',
+      category: 'Suppliers'),
+  PermissionDefinition(
+      code: 'VIEW_FINANCIALS',
+      name: 'View Financials',
+      nameAr: 'عرض البيانات المالية',
+      category: 'Accounting'),
+  PermissionDefinition(
+      code: 'MANAGE_ACCOUNTS',
+      name: 'Manage Accounts',
+      nameAr: 'إدارة الحسابات',
+      category: 'Accounting'),
 ];

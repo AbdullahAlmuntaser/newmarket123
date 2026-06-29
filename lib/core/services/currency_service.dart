@@ -60,12 +60,14 @@ class CurrencyService {
     return rates;
   }
 
-  double convert(double amount, CurrencyType from, CurrencyType to, double rate) {
+  double convert(
+      double amount, CurrencyType from, CurrencyType to, double rate) {
     if (from == to) return amount;
     return amount * rate;
   }
 
-  String formatCurrency(double amount, CurrencyType currency, {int decimals = 2}) {
+  String formatCurrency(double amount, CurrencyType currency,
+      {int decimals = 2}) {
     return '${currency.symbol}${amount.toStringAsFixed(decimals)}';
   }
 }

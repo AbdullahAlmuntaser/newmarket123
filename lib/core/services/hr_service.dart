@@ -15,21 +15,22 @@ class HRService {
     await db.transaction(() async {
       // 1. Record in Additional Deductions
       await db.into(db.hRAdditionalDeductions).insert(
-        HRAdditionalDeductionsCompanion.insert(
-          employeeId: employeeId,
-          type: 'advance',
-          amount: amount,
-          deductionDate: DateTime.now(),
-          description: Value(note),
-        ),
-      );
+            HRAdditionalDeductionsCompanion.insert(
+              employeeId: employeeId,
+              type: 'advance',
+              amount: amount,
+              deductionDate: DateTime.now(),
+              description: Value(note),
+            ),
+          );
 
       // 2. Create Accounting Entry (Credit Cash, Debit Employee Advance Account)
       // Assuming 1030 is for all receivables, but normally we'd have a specific advance account.
       // For simplicity, we use a general expense or receivable.
       final entryId = const Uuid().v4();
       final cashAccount = await db.accountingDao.getAccountByCode('1010');
-      final advanceAccount = await db.accountingDao.getAccountByCode('1030'); // Simplified
+      final advanceAccount =
+          await db.accountingDao.getAccountByCode('1030'); // Simplified
 
       if (cashAccount != null && advanceAccount != null) {
         final entry = GLEntriesCompanion.insert(
@@ -65,51 +66,61 @@ class HRService {
   Future<void> calculateMonthlyPayroll(String period) async {
     // Basic logic: base salary + allowances - deductions
     await db.transaction(() async {
-      final employees = await (db.select(db.hREmployees)..where((t) => t.status.equals('active'))).get();
-      
+      final employees = await (db.select(db.hREmployees)
+            ..where((t) => t.status.equals('active')))
+          .get();
+
       double totalSalaries = 0;
       double totalAllowances = 0;
       double totalDeductions = 0;
 
       final runId = const Uuid().v4();
       await db.into(db.hRPayrollRuns).insert(
-        HRPayrollRunsCompanion.insert(
-          id: Value(runId),
-          period: period,
-          status: const Value('draft'),
-        ),
-      );
+            HRPayrollRunsCompanion.insert(
+              id: Value(runId),
+              period: period,
+              status: const Value('draft'),
+            ),
+          );
 
       for (var emp in employees) {
         // Get advances for this month
         final additions = await (db.select(db.hRAdditionalDeductions)
-          ..where((t) => t.employeeId.equals(emp.id))).get();
-        
-        double monthlyDeductions = additions.fold<double>(0.0, (sum, item) => sum + item.amount);
+              ..where((t) => t.employeeId.equals(emp.id)))
+            .get();
 
-        final gross = emp.basicSalary + emp.housingAllowance + emp.transportAllowance + emp.otherAllowances;
+        double monthlyDeductions =
+            additions.fold<double>(0.0, (sum, item) => sum + item.amount);
+
+        final gross = emp.basicSalary +
+            emp.housingAllowance +
+            emp.transportAllowance +
+            emp.otherAllowances;
         final net = gross - monthlyDeductions;
 
         await db.into(db.hRPayrollDetails).insert(
-          HRPayrollDetailsCompanion.insert(
-            payrollRunId: runId,
-            employeeId: emp.id,
-            basicSalary: emp.basicSalary,
-            housingAllowance: Value(emp.housingAllowance),
-            transportAllowance: Value(emp.transportAllowance),
-            otherAllowances: Value(emp.otherAllowances),
-            grossSalary: gross,
-            deductions: Value(monthlyDeductions),
-            netSalary: net,
-          ),
-        );
+              HRPayrollDetailsCompanion.insert(
+                payrollRunId: runId,
+                employeeId: emp.id,
+                basicSalary: emp.basicSalary,
+                housingAllowance: Value(emp.housingAllowance),
+                transportAllowance: Value(emp.transportAllowance),
+                otherAllowances: Value(emp.otherAllowances),
+                grossSalary: gross,
+                deductions: Value(monthlyDeductions),
+                netSalary: net,
+              ),
+            );
 
         totalSalaries += emp.basicSalary;
-        totalAllowances += (emp.housingAllowance + emp.transportAllowance + emp.otherAllowances);
+        totalAllowances += (emp.housingAllowance +
+            emp.transportAllowance +
+            emp.otherAllowances);
         totalDeductions += monthlyDeductions;
       }
 
-      await (db.update(db.hRPayrollRuns)..where((t) => t.id.equals(runId))).write(
+      await (db.update(db.hRPayrollRuns)..where((t) => t.id.equals(runId)))
+          .write(
         HRPayrollRunsCompanion(
           totalSalaries: Value(totalSalaries),
           totalAllowances: Value(totalAllowances),
@@ -135,7 +146,8 @@ class HRService {
     if (!employee.id.present) return;
     final idValue = employee.id.value;
 
-    await (db.update(db.hREmployees)..where((t) => t.id.equals(idValue))).write(employee);
+    await (db.update(db.hREmployees)..where((t) => t.id.equals(idValue)))
+        .write(employee);
   }
 
   Future<void> deleteEmployee(String id) async {
@@ -150,7 +162,8 @@ class HRService {
     await calculateMonthlyPayroll(period);
   }
 
-  Future<void> generatePayrollWithDetails(int month, int year, {String? note}) async {
+  Future<void> generatePayrollWithDetails(int month, int year,
+      {String? note}) async {
     final period = '$year-${month.toString().padLeft(2, '0')}';
     await calculateMonthlyPayroll(period);
   }

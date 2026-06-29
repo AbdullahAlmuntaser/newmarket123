@@ -37,7 +37,9 @@ class _SalesItemRowState extends State<SalesItemRow> {
     try {
       final results = await (widget.db.select(widget.db.products)
             ..where((p) =>
-                p.name.like('%$query%') | p.sku.like('%$query%') | p.barcode.like('%$query%'))
+                p.name.like('%$query%') |
+                p.sku.like('%$query%') |
+                p.barcode.like('%$query%'))
             ..limit(20))
           .get();
       if (mounted) setState(() => _searchResults = results);
@@ -93,7 +95,8 @@ class _SalesItemRowState extends State<SalesItemRow> {
                                   final product = options.elementAt(index);
                                   return ListTile(
                                     title: Text(product.name),
-                                    subtitle: Text('SKU: ${product.sku} | السعر: ${product.sellPrice}'),
+                                    subtitle: Text(
+                                        'SKU: ${product.sku} | السعر: ${product.sellPrice}'),
                                     onTap: () => onSelected(product),
                                   );
                                 },

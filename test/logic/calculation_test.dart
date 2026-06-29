@@ -81,10 +81,14 @@ class InvoiceCalculator {
     double otherExpenses = 0,
   }) {
     final subtotal = calculateSubtotal(items);
-    final discountAmount = DiscountCalculator.calculateDiscount(subtotal, discountPercent) + discountFixed;
+    final discountAmount =
+        DiscountCalculator.calculateDiscount(subtotal, discountPercent) +
+            discountFixed;
     final taxableAmount = subtotal - discountAmount;
-    final tax = TaxCalculator.calculateTax(taxableAmount > 0 ? taxableAmount : 0, taxRate);
-    final total = subtotal - discountAmount + tax + shippingCost + otherExpenses;
+    final tax = TaxCalculator.calculateTax(
+        taxableAmount > 0 ? taxableAmount : 0, taxRate);
+    final total =
+        subtotal - discountAmount + tax + shippingCost + otherExpenses;
 
     return {
       'subtotal': subtotal,
@@ -263,7 +267,8 @@ void main() {
       final items = [
         {'quantity': 999999.0, 'price': 999999.0, 'unitFactor': 1.0},
       ];
-      expect(InvoiceCalculator.calculateSubtotal(items), equals(999998000001.0));
+      expect(
+          InvoiceCalculator.calculateSubtotal(items), equals(999998000001.0));
     });
 
     test('handles decimal quantities', () {

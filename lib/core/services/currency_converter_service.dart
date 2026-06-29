@@ -14,29 +14,34 @@ class CurrencyConverterService {
     CurrencyType.eur: 4.05,
     CurrencyType.gbp: 4.75,
     CurrencyType.aed: 1.02,
+    CurrencyType.yer: 0.015,
+    CurrencyType.omr: 9.75,
   };
 
   Future<String> getDefaultCurrency() async {
     final setting = await (db.select(db.appConfigTable)
-      ..where((t) => t.key.equals('default_currency'))).getSingleOrNull();
+          ..where((t) => t.key.equals('default_currency')))
+        .getSingleOrNull();
     return setting?.value ?? defaultCurrency;
   }
 
   Future<void> setDefaultCurrency(String currencyCode) async {
     await db.into(db.appConfigTable).insertOnConflictUpdate(
-      AppConfigTableCompanion.insert(
-        key: 'default_currency',
-        value: Value(currencyCode),
-      ),
-    );
+          AppConfigTableCompanion.insert(
+            key: 'default_currency',
+            value: Value(currencyCode),
+          ),
+        );
   }
 
   Future<double> getExchangeRate(String fromCurrency, String toCurrency) async {
     if (fromCurrency == toCurrency) return 1.0;
 
     final setting = await (db.select(db.appConfigTable)
-      ..where((t) => t.key.equals('exchange_rate_${fromCurrency}_$toCurrency'))).getSingleOrNull();
-    
+          ..where(
+              (t) => t.key.equals('exchange_rate_${fromCurrency}_$toCurrency')))
+        .getSingleOrNull();
+
     if (setting != null && setting.value != null) {
       return double.tryParse(setting.value!) ?? 1.0;
     }
@@ -48,16 +53,18 @@ class CurrencyConverterService {
     return defaultRates[fromType] ?? 1.0;
   }
 
-  Future<void> setExchangeRate(String fromCurrency, String toCurrency, double rate) async {
+  Future<void> setExchangeRate(
+      String fromCurrency, String toCurrency, double rate) async {
     await db.into(db.appConfigTable).insertOnConflictUpdate(
-      AppConfigTableCompanion.insert(
-        key: 'exchange_rate_${fromCurrency}_$toCurrency',
-        value: Value(rate.toString()),
-      ),
-    );
+          AppConfigTableCompanion.insert(
+            key: 'exchange_rate_${fromCurrency}_$toCurrency',
+            value: Value(rate.toString()),
+          ),
+        );
   }
 
-  Future<double> convert(double amount, String fromCurrency, String toCurrency) async {
+  Future<double> convert(
+      double amount, String fromCurrency, String toCurrency) async {
     final rate = await getExchangeRate(fromCurrency, toCurrency);
     return amount * rate;
   }

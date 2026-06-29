@@ -2546,6 +2546,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Raw Materials'**
   String get rawMaterials;
+
+  /// No description provided for @bankReconciliation.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank Reconciliation'**
+  String get bankReconciliation;
+
+  /// No description provided for @autoBreakService.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-Break Service'**
+  String get autoBreakService;
+
+  /// No description provided for @unitHierarchy.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit Hierarchy'**
+  String get unitHierarchy;
+
+  /// No description provided for @addUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Unit'**
+  String get addUnit;
+
+  /// No description provided for @removeUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Unit'**
+  String get removeUnit;
+
+  /// No description provided for @unitName.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit Name'**
+  String get unitName;
+
+  /// No description provided for @unitFactor.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit Factor'**
+  String get unitFactor;
+
+  /// No description provided for @returnMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Return Mode'**
+  String get returnMode;
+
+  /// No description provided for @returnFromSale.
+  ///
+  /// In en, this message translates to:
+  /// **'Return from Sale'**
+  String get returnFromSale;
+
+  /// No description provided for @originalSaleReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Original Sale Reference'**
+  String get originalSaleReference;
+
+  /// No description provided for @searchSale.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Sale'**
+  String get searchSale;
+
+  /// No description provided for @returnItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Return Item'**
+  String get returnItem;
+
+  /// No description provided for @returnQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Return Quantity'**
+  String get returnQuantity;
+
+  /// No description provided for @returnReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Return Reason'**
+  String get returnReason;
+
+  /// No description provided for @returnSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Return processed successfully'**
+  String get returnSuccess;
+
+  /// No description provided for @totalRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Refund'**
+  String get totalRefund;
+
+  /// No description provided for @cancelReturn.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Return'**
+  String get cancelReturn;
+
+  /// No description provided for @unmatchedTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmatched Transactions'**
+  String get unmatchedTransactions;
+
+  /// No description provided for @reconcileSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconcile Selected'**
+  String get reconcileSelected;
+
+  /// No description provided for @autoReconcile.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Reconcile'**
+  String get autoReconcile;
+
+  /// No description provided for @reconcileAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconcile All'**
+  String get reconcileAll;
+
+  /// No description provided for @tolerance.
+  ///
+  /// In en, this message translates to:
+  /// **'Tolerance'**
+  String get tolerance;
+
+  /// No description provided for @noUnmatchedTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'No unmatched transactions'**
+  String get noUnmatchedTransactions;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

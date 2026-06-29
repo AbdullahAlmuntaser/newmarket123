@@ -213,7 +213,8 @@ class FinancialClosingService {
     final lines = <GLLinesCompanion>[];
 
     for (var acc in revenueAccounts) {
-      final Decimal rawBalance = await db.accountingDao.getAccountBalanceAsOfDate(
+      final Decimal rawBalance =
+          await db.accountingDao.getAccountBalanceAsOfDate(
         acc.id,
         periodEndDate,
       );
@@ -231,7 +232,8 @@ class FinancialClosingService {
     }
 
     for (var acc in expenseAccounts) {
-      final Decimal rawBalance = await db.accountingDao.getAccountBalanceAsOfDate(
+      final Decimal rawBalance =
+          await db.accountingDao.getAccountBalanceAsOfDate(
         acc.id,
         periodEndDate,
       );
@@ -302,7 +304,8 @@ class FinancialClosingService {
 
     final lines = <GLLinesCompanion>[];
     for (var acc in permanentAccounts) {
-      final Decimal rawBalance = await db.accountingDao.getAccountBalanceAsOfDate(
+      final Decimal rawBalance =
+          await db.accountingDao.getAccountBalanceAsOfDate(
         acc.id,
         openingDate.subtract(const Duration(seconds: 1)),
       );

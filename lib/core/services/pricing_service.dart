@@ -38,13 +38,15 @@ class PricingService {
     return await _getDefaultPrice(productId, isWholesale: isWholesale);
   }
 
-  Future<Decimal> _getDefaultPrice(String productId, {bool isWholesale = false}) async {
+  Future<Decimal> _getDefaultPrice(String productId,
+      {bool isWholesale = false}) async {
     final product = await (db.select(
       db.products,
     )..where((p) => p.id.equals(productId)))
         .getSingleOrNull();
-    
-    if (isWholesale && (product?.wholesalePrice ?? Decimal.zero) > Decimal.zero) {
+
+    if (isWholesale &&
+        (product?.wholesalePrice ?? Decimal.zero) > Decimal.zero) {
       return product!.wholesalePrice;
     }
     return product?.sellPrice ?? Decimal.zero;

@@ -81,9 +81,8 @@ class _ExpensesPageState extends State<ExpensesPage> {
     final accountingService = sl<AccountingService>();
 
     final allAccounts = await db.accountingDao.getAllAccounts();
-    final expenseAccounts = allAccounts
-        .where((a) => a.type == 'EXPENSE')
-        .toList();
+    final expenseAccounts =
+        allAccounts.where((a) => a.type == 'EXPENSE').toList();
     final paymentAccounts = allAccounts
         .where(
           (a) =>
@@ -173,7 +172,8 @@ class _ExpensesPageState extends State<ExpensesPage> {
                   amountController.text.isNotEmpty &&
                   selectedExpenseAccount != null &&
                   selectedPaymentAccount != null) {
-                final amount = Decimal.tryParse(amountController.text) ?? Decimal.zero;
+                final amount =
+                    Decimal.tryParse(amountController.text) ?? Decimal.zero;
                 try {
                   await accountingService.recordExpense(
                     description: descriptionController.text,
@@ -187,7 +187,9 @@ class _ExpensesPageState extends State<ExpensesPage> {
                 } catch (e) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                      SnackBar(
+                          content: Text('Error: $e'),
+                          backgroundColor: Colors.red),
                     );
                   }
                 }

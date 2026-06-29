@@ -18,7 +18,8 @@ class DateHelper {
     return date.year == now.year;
   }
 
-  static bool isInClosedPeriod(DateTime date, List<Map<String, dynamic>> closedPeriods) {
+  static bool isInClosedPeriod(
+      DateTime date, List<Map<String, dynamic>> closedPeriods) {
     for (var period in closedPeriods) {
       final start = period['startDate'] as DateTime;
       final end = period['endDate'] as DateTime;

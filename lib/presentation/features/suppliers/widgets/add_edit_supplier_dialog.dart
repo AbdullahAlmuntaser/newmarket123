@@ -51,7 +51,8 @@ class _AddEditSupplierDialogState extends State<AddEditSupplierDialog> {
         widget.supplier == null ? l10n.addSupplier : l10n.editSupplier,
       ),
       content: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: dialogWidth, maxHeight: maxHeight),
+        constraints:
+            BoxConstraints(maxWidth: dialogWidth, maxHeight: maxHeight),
         child: SingleChildScrollView(
           child: Form(
             key: _formKey,
@@ -62,8 +63,9 @@ class _AddEditSupplierDialogState extends State<AddEditSupplierDialog> {
                   controller: _nameController,
                   label: l10n.supplierName,
                   icon: Icons.business,
-                  validator: (value) =>
-                      value == null || value.isEmpty ? l10n.enterNameError : null,
+                  validator: (value) => value == null || value.isEmpty
+                      ? l10n.enterNameError
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 _buildTextField(

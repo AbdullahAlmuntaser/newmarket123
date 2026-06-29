@@ -517,4 +517,3 @@ class ProductPicker extends StatelessWidget {
     );
   }
 }
-

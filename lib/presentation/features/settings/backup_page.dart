@@ -51,7 +51,9 @@ class _BackupPageState extends State<BackupPage> {
       if (mounted) {
         setState(() => _lastBackupPath = result.backupPath);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تم إنشاء النسخة الاحتياطية بنجاح في: ${result.backupPath}')),
+          SnackBar(
+              content: Text(
+                  'تم إنشاء النسخة الاحتياطية بنجاح في: ${result.backupPath}')),
         );
       }
     } catch (e) {

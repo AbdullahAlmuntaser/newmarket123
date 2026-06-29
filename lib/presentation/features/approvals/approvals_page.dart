@@ -21,7 +21,8 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadRequests());
   }
 
-  ApprovalWorkflowService get _service => context.read<ApprovalWorkflowService>();
+  ApprovalWorkflowService get _service =>
+      context.read<ApprovalWorkflowService>();
 
   Future<void> _loadRequests() async {
     setState(() => _isLoading = true);
@@ -139,7 +140,8 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
                           child: ListTile(
                             leading: CircleAvatar(
                               backgroundColor: _statusColor(request.status),
-                              child: const Icon(Icons.rule, color: Colors.white),
+                              child:
+                                  const Icon(Icons.rule, color: Colors.white),
                             ),
                             title: Text(request.title),
                             subtitle: Text(
@@ -160,7 +162,8 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
                                       ),
                                       IconButton(
                                         tooltip: 'رفض',
-                                        onPressed: () => _decide(request, false),
+                                        onPressed: () =>
+                                            _decide(request, false),
                                         icon: const Icon(Icons.cancel),
                                         color: Colors.red,
                                       ),
@@ -169,7 +172,8 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
                                 : Chip(
                                     label: Text(_statusLabel(request.status)),
                                     backgroundColor:
-                                        _statusColor(request.status).withOpacity(0.12),
+                                        _statusColor(request.status)
+                                            .withOpacity(0.12),
                                   ),
                           ),
                         );

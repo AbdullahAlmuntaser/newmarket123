@@ -83,6 +83,7 @@ class PosLoaded extends PosState {
   final bool isReturnMode;
   final Sale? originalSale;
   final List<ReturnItem> returnItems;
+  final List<List<CartItem>> heldSales;
 
   PosLoaded({
     this.cart = const [],
@@ -98,6 +99,7 @@ class PosLoaded extends PosState {
     this.isReturnMode = false,
     this.originalSale,
     this.returnItems = const [],
+    this.heldSales = const [],
   })  : discount = discount ?? Decimal.zero,
         taxRate = taxRate ?? Decimal.zero;
 
@@ -123,6 +125,7 @@ class PosLoaded extends PosState {
     bool? isReturnMode,
     Sale? originalSale,
     List<ReturnItem>? returnItems,
+    List<List<CartItem>>? heldSales,
     bool clearOriginalSale = false,
   }) {
     return PosLoaded(
@@ -137,8 +140,10 @@ class PosLoaded extends PosState {
       activePriceListId: activePriceListId ?? this.activePriceListId,
       isProcessingCheckout: isProcessingCheckout ?? this.isProcessingCheckout,
       isReturnMode: isReturnMode ?? this.isReturnMode,
-      originalSale: clearOriginalSale ? null : (originalSale ?? this.originalSale),
+      originalSale:
+          clearOriginalSale ? null : (originalSale ?? this.originalSale),
       returnItems: returnItems ?? this.returnItems,
+      heldSales: heldSales ?? this.heldSales,
     );
   }
 
@@ -157,6 +162,7 @@ class PosLoaded extends PosState {
         isReturnMode,
         originalSale,
         returnItems,
+        heldSales,
       ];
 }
 

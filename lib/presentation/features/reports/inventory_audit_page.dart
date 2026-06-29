@@ -190,7 +190,8 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
               ..where((b) => b.warehouseId.equals(warehouseId)))
             .get();
 
-        final warehouseStock = batches.fold(0.0, (sum, b) => sum + b.quantity.toDouble());
+        final warehouseStock =
+            batches.fold(0.0, (sum, b) => sum + b.quantity.toDouble());
         results.add(
           ProductWithStock(product: product, warehouseStock: warehouseStock),
         );
@@ -282,7 +283,9 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
                       style: TextStyle(
                         color: item.difference == Decimal.zero
                             ? Colors.grey
-                            : (item.difference > Decimal.zero ? Colors.green : Colors.red),
+                            : (item.difference > Decimal.zero
+                                ? Colors.green
+                                : Colors.red),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -329,7 +332,8 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
                 ))
               .get();
 
-          final systemStock = batches.fold(0.0, (sum, b) => sum + b.quantity.toDouble());
+          final systemStock =
+              batches.fold(0.0, (sum, b) => sum + b.quantity.toDouble());
           final difference = actualStock - systemStock;
 
           await db.into(db.inventoryAuditItems).insert(
@@ -356,7 +360,8 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
               )..where((b) => b.id.equals(batch.id)))
                   .write(
                 ProductBatchesCompanion(
-                  quantity: Value(batch.quantity - Decimal.parse(reduction.toString())),
+                  quantity: Value(
+                      batch.quantity - Decimal.parse(reduction.toString())),
                 ),
               );
               remainingToReduce -= reduction;
@@ -370,7 +375,8 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
                     warehouseId: _selectedWarehouse!.id,
                     batchNumber: 'ADJ-${DateTime.now().millisecondsSinceEpoch}',
                     quantity: Value(Decimal.parse(difference.toString())),
-                    initialQuantity: Value(Decimal.parse(difference.toString())),
+                    initialQuantity:
+                        Value(Decimal.parse(difference.toString())),
                     costPrice: Value(product.buyPrice),
                   ),
                 );
@@ -381,9 +387,11 @@ class _InventoryAuditPageState extends State<InventoryAuditPage>
             db.productBatches,
           )..where((b) => b.productId.equals(productId)))
               .get();
-          final totalStock = allBatches.fold(0.0, (sum, b) => sum + b.quantity.toDouble());
+          final totalStock =
+              allBatches.fold(0.0, (sum, b) => sum + b.quantity.toDouble());
           await (db.update(db.products)..where((p) => p.id.equals(productId)))
-              .write(ProductsCompanion(stock: Value(Decimal.parse(totalStock.toString()))));
+              .write(ProductsCompanion(
+                  stock: Value(Decimal.parse(totalStock.toString()))));
         }
       });
 

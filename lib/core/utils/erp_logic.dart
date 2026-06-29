@@ -6,7 +6,8 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class ErpLogic {
   /// Calculates financial totals for an invoice based on items.
-  static ({Money subtotal, Money taxableAmount, Money tax, Money total}) calculateInvoiceTotals({
+  static ({Money subtotal, Money taxableAmount, Money tax, Money total})
+      calculateInvoiceTotals({
     required List<dynamic> items,
     Money? globalDiscount,
     Decimal? taxRate, // 15% in basis points
@@ -42,7 +43,12 @@ class ErpLogic {
     final tax = taxableAmount * (rate / Decimal.fromInt(100));
     final total = taxableAmount + tax;
 
-    return (subtotal: subtotal, taxableAmount: taxableAmount, tax: tax, total: total);
+    return (
+      subtotal: subtotal,
+      taxableAmount: taxableAmount,
+      tax: tax,
+      total: total
+    );
   }
 
   /// Generates ZATCA-compliant QR code.
@@ -77,7 +83,8 @@ class ErpLogic {
     Quantity requestedQty,
     bool isCarton,
   ) {
-    final actualQty = isCarton ? requestedQty * product.piecesPerCarton : requestedQty;
+    final actualQty =
+        isCarton ? requestedQty * product.piecesPerCarton : requestedQty;
     return product.stock >= actualQty.value;
   }
 
@@ -98,7 +105,8 @@ class ErpLogic {
     for (var unit in sortedConversions) {
       if (unit.factor <= Decimal.one) continue;
 
-      final count = (remaining / unit.factor).toDecimal(scaleOnInfinitePrecision: 0);
+      final count =
+          (remaining / unit.factor).toDecimal(scaleOnInfinitePrecision: 0);
       if (count > Decimal.zero) {
         parts.add('${count.toStringAsFixed(0)} ${unit.unitName}');
         remaining -= count * unit.factor;

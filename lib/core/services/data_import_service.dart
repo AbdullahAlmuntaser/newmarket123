@@ -34,8 +34,9 @@ class DataImportService {
       }
 
       final content = await file.readAsString();
-      final lines = content.split('\n').where((l) => l.trim().isNotEmpty).toList();
-      
+      final lines =
+          content.split('\n').where((l) => l.trim().isNotEmpty).toList();
+
       if (lines.isEmpty) {
         return ImportResult(
           successCount: 0,
@@ -103,7 +104,7 @@ class DataImportService {
 
     for (var i = 0; i < line.length; i++) {
       final char = line[i];
-      
+
       if (char == '"') {
         inQuotes = !inQuotes;
       } else if (char == ',' && !inQuotes) {
@@ -114,7 +115,7 @@ class DataImportService {
       }
     }
     result.add(current.toString());
-    
+
     return result;
   }
 
@@ -155,11 +156,34 @@ class DataImportService {
   List<String> getCsvTemplate(ImportType type) {
     switch (type) {
       case ImportType.products:
-        return ['name', 'barcode', 'sku', 'category', 'sell_price', 'buy_price', 'unit', 'tax_type'];
+        return [
+          'name',
+          'barcode',
+          'sku',
+          'category',
+          'sell_price',
+          'buy_price',
+          'unit',
+          'tax_type'
+        ];
       case ImportType.customers:
-        return ['name', 'phone', 'email', 'address', 'tax_number', 'credit_limit'];
+        return [
+          'name',
+          'phone',
+          'email',
+          'address',
+          'tax_number',
+          'credit_limit'
+        ];
       case ImportType.suppliers:
-        return ['name', 'phone', 'email', 'address', 'tax_number', 'payment_terms'];
+        return [
+          'name',
+          'phone',
+          'email',
+          'address',
+          'tax_number',
+          'payment_terms'
+        ];
       case ImportType.inventory:
         return ['product_id', 'warehouse_id', 'quantity', 'expiry_date'];
     }

@@ -90,16 +90,16 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
                 const SizedBox(height: 16),
                 _buildSectionHeader(l10n.revenue),
                 ...data.revenues.map(
-                  (item) =>
-                      _buildAccountRow(item.account.name, item.totalCredit.toDouble()),
+                  (item) => _buildAccountRow(
+                      item.account.name, item.totalCredit.toDouble()),
                 ),
                 const Divider(thickness: 2),
                 _buildTotalRow(l10n.totalRevenue, data.totalRevenue),
                 const SizedBox(height: 24),
                 _buildSectionHeader(l10n.expenses),
                 ...data.expenses.map(
-                  (item) =>
-                      _buildAccountRow(item.account.name, item.totalDebit.toDouble()),
+                  (item) => _buildAccountRow(
+                      item.account.name, item.totalDebit.toDouble()),
                 ),
                 const Divider(thickness: 2),
                 _buildTotalRow(l10n.totalExpense, data.totalExpense),
@@ -175,7 +175,8 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
         color: amount >= Decimal.zero
             ? Colors.green.withOpacity(0.1)
             : Colors.red.withOpacity(0.1),
-        border: Border.all(color: amount >= Decimal.zero ? Colors.green : Colors.red),
+        border: Border.all(
+            color: amount >= Decimal.zero ? Colors.green : Colors.red),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(

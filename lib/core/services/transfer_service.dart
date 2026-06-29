@@ -25,7 +25,8 @@ class TransferService {
       // 1. Create GL Entry
       final entry = GLEntriesCompanion.insert(
         id: Value(entryId),
-        description: 'تحويل مالي: من حـ/ ${await _getAccountName(senderAccountId)} إلى حـ/ ${await _getAccountName(receiverAccountId)} ${note ?? ""}',
+        description:
+            'تحويل مالي: من حـ/ ${await _getAccountName(senderAccountId)} إلى حـ/ ${await _getAccountName(receiverAccountId)} ${note ?? ""}',
         date: Value(DateTime.now()),
         referenceType: const Value('TRANSFER'),
         referenceId: Value(id),
@@ -52,7 +53,8 @@ class TransferService {
         if (commission > 0)
           GLLinesCompanion.insert(
             entryId: entryId,
-            accountId: (await db.accountingDao.getAccountByCode('6010'))!.id, // Commission Expense
+            accountId: (await db.accountingDao.getAccountByCode('6010'))!
+                .id, // Commission Expense
             debit: Value(Decimal.parse(commission.toString())),
             credit: Value(Decimal.zero),
           ),
