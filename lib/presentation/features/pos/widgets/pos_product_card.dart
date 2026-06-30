@@ -4,6 +4,8 @@ import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/core/services/packaging_engine.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:provider/provider.dart';
+import 'package:supermarket/injection_container.dart';
+import 'package:supermarket/core/services/app_config_service.dart';
 
 class PosProductCard extends StatelessWidget {
   final Product product;
@@ -40,14 +42,26 @@ class PosProductCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Flexible(
-                    child: Text(
-                      '${product.sellPrice.toStringAsFixed(2)} ${l10n.currencySymbol}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Theme.of(context).primaryColor,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    child: FutureBuilder<bool>(
+                      future: sl<AppConfigService>().hideSalePrices(),
+                      builder: (context, snapshot) {
+                        final hide = snapshot.data ?? false;
+                        if (hide) {
+                          return const Text(
+                            '***',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          );
+                        }
+                        return Text(
+                          '${product.sellPrice.toStringAsFixed(2)} ${l10n.currencySymbol}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Theme.of(context).primaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 4),

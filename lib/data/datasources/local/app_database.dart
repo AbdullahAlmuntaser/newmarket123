@@ -29,6 +29,7 @@ import 'daos/audit_dao.dart';
 import 'daos/stock_movement_dao.dart';
 import 'daos/cashbox_dao.dart';
 import 'daos/transfers_dao.dart';
+import 'daos/recurring_entry_dao.dart';
 import 'converters/decimal_converter.dart';
 export 'package:decimal/decimal.dart';
 export 'converters/decimal_converter.dart';
@@ -1189,6 +1190,8 @@ class CustomerPaymentLinks extends Table with SyncableTable {
     AccBankStatements,
     AccBankStatementLines,
     AccAuditLogs,
+    RecurringEntries,
+    RecurringEntryExecutions,
     HREmployees,
     HRPayrollRuns,
     HRPayrollDetails,
@@ -1210,13 +1213,14 @@ class CustomerPaymentLinks extends Table with SyncableTable {
     StockMovementDao,
     CashboxDao,
     TransfersDao,
+    RecurringEntryDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 43;
+  int get schemaVersion => 44;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1311,10 +1315,9 @@ class AppDatabase extends _$AppDatabase {
               await m.createTable(productionOrderItems);
             } catch (_) {}
           }
-          if (from < 39) {
-            // Version 39: Add query indexes for high-volume ERP screens.
-            await ensurePerformanceIndexes();
-          }
+          // NOTE: Performance indexes are NOT created here because later
+          // migrations (e.g. from < 42) may recreate tables with new columns.
+          // They are created safely in `beforeOpen` after ALL migrations finish.
           // Version 40: Currency unification + performance indexes + decimal precision fixes
           if (from < 40) {
             await _migrateToV40(m);
@@ -1330,6 +1333,15 @@ class AppDatabase extends _$AppDatabase {
             // Version 43: Add imagePath column to Products for product images
             try {
               await m.addColumn(products, products.imagePath);
+            } catch (_) {}
+          }
+          if (from < 44) {
+            // Version 44: Add RecurringEntries and RecurringEntryExecutions tables
+            try {
+              await m.createTable(recurringEntries);
+            } catch (_) {}
+            try {
+              await m.createTable(recurringEntryExecutions);
             } catch (_) {}
           }
         },
@@ -1433,6 +1445,37 @@ class AppDatabase extends _$AppDatabase {
     'CREATE INDEX IF NOT EXISTS permissions_code_idx ON permissions (code)',
     'CREATE INDEX IF NOT EXISTS role_permissions_role_idx ON role_permissions (role)',
     'CREATE INDEX IF NOT EXISTS role_permissions_permission_code_idx ON role_permissions (permission_code)',
+    'CREATE INDEX IF NOT EXISTS sales_order_number_idx ON sales_orders (order_number)',
+    'CREATE INDEX IF NOT EXISTS purchase_orders_order_number_idx ON purchase_orders (order_number)',
+    'CREATE INDEX IF NOT EXISTS purchase_orders_supplier_id_idx ON purchase_orders (supplier_id)',
+    'CREATE INDEX IF NOT EXISTS account_transactions_account_id_idx ON account_transactions (account_id)',
+    'CREATE INDEX IF NOT EXISTS account_transactions_date_idx ON account_transactions (date)',
+    'CREATE INDEX IF NOT EXISTS checks_partner_id_idx ON checks (partner_id)',
+    'CREATE INDEX IF NOT EXISTS checks_status_idx ON checks (status)',
+    'CREATE INDEX IF NOT EXISTS checks_due_date_idx ON checks (due_date)',
+    'CREATE INDEX IF NOT EXISTS stock_transfer_items_transfer_id_idx ON stock_transfer_items (transfer_id)',
+    'CREATE INDEX IF NOT EXISTS good_received_note_items_grn_id_idx ON good_received_note_items (grn_id)',
+    'CREATE INDEX IF NOT EXISTS delivery_note_items_delivery_note_id_idx ON delivery_note_items (delivery_note_id)',
+    'CREATE INDEX IF NOT EXISTS production_order_items_production_order_id_idx ON production_order_items (production_order_id)',
+    'CREATE INDEX IF NOT EXISTS sales_return_items_sales_return_id_idx ON sales_return_items (sales_return_id)',
+    'CREATE INDEX IF NOT EXISTS purchase_return_items_purchase_return_id_idx ON purchase_return_items (purchase_return_id)',
+    'CREATE INDEX IF NOT EXISTS price_list_items_list_id_idx ON price_list_items (price_list_id)',
+    'CREATE INDEX IF NOT EXISTS price_list_items_product_id_idx ON price_list_items (product_id)',
+    'CREATE INDEX IF NOT EXISTS promotions_category_id_idx ON promotions (category_id)',
+    'CREATE INDEX IF NOT EXISTS promotions_product_id_idx ON promotions (product_id)',
+    'CREATE INDEX IF NOT EXISTS price_history_product_id_idx ON price_history (product_id)',
+    'CREATE INDEX IF NOT EXISTS financial_transfers_sender_idx ON financial_transfers (sender_account_id)',
+    'CREATE INDEX IF NOT EXISTS financial_transfers_receiver_idx ON financial_transfers (receiver_account_id)',
+    'CREATE INDEX IF NOT EXISTS gl_accounts_type_idx ON gl_accounts (type)',
+    'CREATE INDEX IF NOT EXISTS gl_accounts_parent_id_idx ON gl_accounts (parent_id)',
+    'CREATE INDEX IF NOT EXISTS cost_centers_parent_id_idx ON cost_centers (parent_id)',
+    'CREATE INDEX IF NOT EXISTS cost_centers_type_idx ON cost_centers (type)',
+    'CREATE INDEX IF NOT EXISTS product_batches_batch_number_idx ON product_batches (batch_number)',
+    'CREATE INDEX IF NOT EXISTS employees_employee_code_idx ON employees (employee_code)',
+    'CREATE INDEX IF NOT EXISTS accounting_periods_fiscal_year_idx ON accounting_periods (fiscal_year)',
+    'CREATE INDEX IF NOT EXISTS recurring_entries_next_execution_idx ON recurring_entries (next_execution_date)',
+    'CREATE INDEX IF NOT EXISTS recurring_entries_status_idx ON recurring_entries (status)',
+    'CREATE INDEX IF NOT EXISTS recurring_entry_executions_recurring_id_idx ON recurring_entry_executions (recurring_entry_id)',
   ];
 
   Future<void> ensurePerformanceIndexes() async {
@@ -1442,36 +1485,22 @@ class AppDatabase extends _$AppDatabase {
   }
 
   // DAO getters
-  @override
   AccountingDao get accountingDao => AccountingDao(this);
-  @override
   CustomersDao get customersDao => CustomersDao(this);
-  @override
   ProductsDao get productsDao => ProductsDao(this);
-  @override
   SalesDao get salesDao => SalesDao(this);
-  @override
   PurchasesDao get purchasesDao => PurchasesDao(this);
-  @override
   SuppliersDao get suppliersDao => SuppliersDao(this);
-  @override
   UsersDao get usersDao => UsersDao(this);
-  @override
   WarehousesDao get warehousesDao => WarehousesDao(this);
-  @override
   GlobalUnitsDao get globalUnitsDao => GlobalUnitsDao(this);
-  @override
   ProductUnitsDao get productUnitsDao => ProductUnitsDao(this);
-  @override
   BomDao get bomDao => BomDao(this);
-  @override
   AuditDao get auditDao => AuditDao(this);
-  @override
   StockMovementDao get stockMovementDao => StockMovementDao(this);
-  @override
   CashboxDao get cashboxDao => CashboxDao(this);
-  @override
   TransfersDao get transfersDao => TransfersDao(this);
+  RecurringEntryDao get recurringEntryDao => RecurringEntryDao(this);
 
   // --- Missing Methods Recovery ---
 

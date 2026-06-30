@@ -73,3 +73,42 @@ class AccAuditLogs extends Table {
 // Fixed assets are defined in tables/fixed_assets_tables.dart
 
 // HR/Payroll tables are defined in tables/payroll_tables.dart
+
+// جدول القيود المحاسبية الدورية (Recurring Journal Entries)
+class RecurringEntries extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()(); // اسم القالب (مثال: "إيجار شهري")
+  TextColumn get description => text().nullable()();
+  TextColumn get referenceType => text()(); // EXPENSE, REVENUE, CUSTOM
+  TextColumn get frequency =>
+      text()(); // DAILY, WEEKLY, BIWEEKLY, MONTHLY, QUARTERLY, YEARLY
+  TextColumn get debitAccountCode => text().references(GLAccounts, #code)();
+  TextColumn get creditAccountCode => text().references(GLAccounts, #code)();
+  TextColumn get amount => text().map(const DecimalConverter())();
+  TextColumn get costCenterId =>
+      text().nullable().references(CostCenters, #id)();
+  TextColumn get branchId => text().nullable().references(Branches, #id)();
+  TextColumn get status =>
+      text().withDefault(const Constant('active'))(); // active, paused, completed
+  DateTimeColumn get startDate => dateTime()();
+  DateTimeColumn get endDate => dateTime().nullable()();
+  DateTimeColumn get nextExecutionDate => dateTime()();
+  IntColumn get totalExecutions => integer().withDefault(const Constant(0))();
+  IntColumn get maxExecutions => integer().nullable()(); // null = unlimited
+  TextColumn get createdBy => text().nullable().references(Users, #id)();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+// جدول سجل تنفيذ القيود الدورية
+class RecurringEntryExecutions extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get recurringEntryId =>
+      integer().references(RecurringEntries, #id)();
+  TextColumn get glEntryId => text().references(GLEntries, #id)();
+  DateTimeColumn get executionDate => dateTime()();
+  TextColumn get status =>
+      text().withDefault(const Constant('posted'))(); // posted, failed, skipped
+  TextColumn get errorMessage => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}

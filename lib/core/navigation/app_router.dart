@@ -63,6 +63,7 @@ import 'package:supermarket/presentation/features/accounting/checks_page.dart';
 import 'package:supermarket/presentation/features/accounting/transfers_page.dart';
 import 'package:supermarket/presentation/features/accounting/cash_management_page.dart';
 import 'package:supermarket/presentation/features/accounting/unified_statement_page.dart';
+import 'package:supermarket/presentation/features/accounting/recurring_entries_page.dart';
 import 'package:supermarket/presentation/features/reports/reports_hub_page.dart';
 import 'package:supermarket/presentation/features/reports/sales_reports_page.dart';
 import 'package:supermarket/presentation/features/reports/product_profitability_page.dart';
@@ -397,6 +398,9 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
         path: '/accounting/customer-ledger',
         builder: (context, state) => const CustomerLedgerPage()),
+    GoRoute(
+        path: '/accounting/recurring-entries',
+        builder: (context, state) => const RecurringEntriesPage()),
     GoRoute(
         path: '/reports', builder: (context, state) => const ReportsHubPage()),
     GoRoute(

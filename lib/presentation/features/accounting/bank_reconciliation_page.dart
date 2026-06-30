@@ -534,9 +534,11 @@ class _BankReconciliationPageState extends State<BankReconciliationPage> {
 
     try {
       for (final txId in _selectedTxIds) {
+        final tx = _transactions.firstWhere((t) => t.glLineId == txId);
         await _reconciliationService.reconcileTransaction(
           accountId: _selectedAccountId!,
-          glLineId: txId,
+          glLineId: tx.glLineId,
+          entryId: tx.entryId,
         );
       }
 
@@ -569,8 +571,16 @@ class _BankReconciliationPageState extends State<BankReconciliationPage> {
         Decimal.tryParse(_toleranceController.text) ?? Decimal.zero;
 
     try {
+      final bankLines = _transactions.map((tx) => BankStatementLine(
+        date: tx.date,
+        description: tx.description,
+        amount: tx.amount,
+        reference: tx.reference,
+      )).toList();
+
       final matched = await _reconciliationService.autoReconcile(
         accountId: _selectedAccountId!,
+        bankLines: bankLines,
         tolerance: tolerance,
       );
 
@@ -625,6 +635,7 @@ class _BankReconciliationPageState extends State<BankReconciliationPage> {
         await _reconciliationService.reconcileTransaction(
           accountId: _selectedAccountId!,
           glLineId: tx.glLineId,
+          entryId: tx.entryId,
         );
       }
 

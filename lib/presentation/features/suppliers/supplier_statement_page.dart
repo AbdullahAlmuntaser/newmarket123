@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:intl/intl.dart';
+import 'package:supermarket/injection_container.dart';
+import 'package:supermarket/core/services/statement_printing_service.dart';
 
 class SupplierStatementPage extends StatefulWidget {
   final String supplierId;
@@ -15,6 +17,7 @@ class SupplierStatementPage extends StatefulWidget {
 
 class _SupplierStatementPageState extends State<SupplierStatementPage> {
   Supplier? _supplier;
+  List<dynamic> _currentTransactions = [];
 
   @override
   void initState() {
@@ -42,7 +45,26 @@ class _SupplierStatementPageState extends State<SupplierStatementPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text('كشف حساب المورد: ${_supplier!.name}')),
+      appBar: AppBar(
+        title: Text('كشف حساب المورد: ${_supplier!.name}'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.print),
+            onPressed: () {
+              if (_currentTransactions.isNotEmpty) {
+                sl<StatementPrintingService>().printSupplierStatement(
+                  supplier: _supplier!,
+                  transactions: _currentTransactions,
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('لا توجد معاملات للطباعة')),
+                );
+              }
+            },
+          ),
+        ],
+      ),
       body: Column(
         children: [
           _buildSummaryHeader(context, l10n),
@@ -54,6 +76,7 @@ class _SupplierStatementPageState extends State<SupplierStatementPage> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final transactions = snapshot.data ?? [];
+                _currentTransactions = transactions;
                 if (transactions.isEmpty) {
                   return const Center(child: Text('لا توجد معاملات بعد.'));
                 }

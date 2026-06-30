@@ -410,7 +410,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     final currentState = state as PosLoaded;
 
     if (event.query.isEmpty) {
-      emit(currentState.copyWith(searchResults: []));
+      emit(currentState.copyWith(searchResults: [], searchQuery: ''));
       return;
     }
 
@@ -424,7 +424,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
             ..limit(10))
           .get();
 
-      emit(currentState.copyWith(searchResults: results));
+      emit(currentState.copyWith(searchResults: results, searchQuery: event.query));
     } catch (e) {
       emit(PosError("Search failed: $e"));
       emit(currentState);

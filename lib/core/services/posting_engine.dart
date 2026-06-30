@@ -36,32 +36,34 @@ class PostingEngine {
   }) async {
     await _checkPeriodOpen(context['date'] as DateTime?);
 
-    switch (type) {
-      case TransactionType.sale:
-        await _postSale(referenceId, context);
-        break;
-      case TransactionType.purchase:
-        await _postPurchase(referenceId, context);
-        break;
-      case TransactionType.saleReturn:
-        await _postSaleReturn(referenceId, context);
-        break;
-      case TransactionType.purchaseReturn:
-        await _postPurchaseReturn(referenceId, context);
-        break;
-      case TransactionType.customerPayment:
-        await _postCustomerPayment(referenceId, context);
-        break;
-      case TransactionType.supplierPayment:
-        await _postSupplierPayment(referenceId, context);
-        break;
-      case TransactionType.cashReceipt:
-      case TransactionType.cashPayment:
-        await _postCashTransaction(referenceId, context);
-        break;
-      default:
-        await _postGeneric(referenceId, context);
-    }
+    return db.transaction(() async {
+      switch (type) {
+        case TransactionType.sale:
+          await _postSale(referenceId, context);
+          break;
+        case TransactionType.purchase:
+          await _postPurchase(referenceId, context);
+          break;
+        case TransactionType.saleReturn:
+          await _postSaleReturn(referenceId, context);
+          break;
+        case TransactionType.purchaseReturn:
+          await _postPurchaseReturn(referenceId, context);
+          break;
+        case TransactionType.customerPayment:
+          await _postCustomerPayment(referenceId, context);
+          break;
+        case TransactionType.supplierPayment:
+          await _postSupplierPayment(referenceId, context);
+          break;
+        case TransactionType.cashReceipt:
+        case TransactionType.cashPayment:
+          await _postCashTransaction(referenceId, context);
+          break;
+        default:
+          await _postGeneric(referenceId, context);
+      }
+    });
   }
 
   Future<void> _postSale(
@@ -95,7 +97,7 @@ class PostingEngine {
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
       description:
-          context['description'] ?? 'Sale #${referenceId.substring(0, 8)}',
+          context['description'] ?? 'Sale #${_truncateRef(referenceId)}',
       date: Value(date),
       referenceType: const Value('SALE'),
       referenceId: Value(referenceId),
@@ -141,7 +143,7 @@ class PostingEngine {
 
       final cogsEntry = GLEntriesCompanion.insert(
         id: Value(cogsEntryId),
-        description: 'COGS for #${referenceId.substring(0, 8)}',
+        description: 'COGS for #${_truncateRef(referenceId)}',
         date: Value(date),
         referenceType: const Value('COGS'),
         referenceId: Value(referenceId),
@@ -200,7 +202,7 @@ class PostingEngine {
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
       description:
-          context['description'] ?? 'Purchase #${referenceId.substring(0, 8)}',
+          context['description'] ?? 'Purchase #${_truncateRef(referenceId)}',
       date: Value(date),
       referenceType: const Value('PURCHASE'),
       referenceId: Value(referenceId),
@@ -264,7 +266,7 @@ class PostingEngine {
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
       description: context['description'] ??
-          'Sale Return #${referenceId.substring(0, 8)}',
+          'Sale Return #${_truncateRef(referenceId)}',
       date: Value(date),
       referenceType: const Value('SALE_RETURN'),
       referenceId: Value(referenceId),
@@ -319,7 +321,7 @@ class PostingEngine {
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
       description: context['description'] ??
-          'Purchase Return #${referenceId.substring(0, 8)}',
+          'Purchase Return #${_truncateRef(referenceId)}',
       date: Value(date),
       referenceType: const Value('PURCHASE_RETURN'),
       referenceId: Value(referenceId),
@@ -375,7 +377,7 @@ class PostingEngine {
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
       description: context['description'] ??
-          'Customer Payment #${referenceId.substring(0, 8)}',
+          'Customer Payment #${_truncateRef(referenceId)}',
       date: Value(date),
       referenceType: const Value('RECEIPT'),
       referenceId: Value(referenceId),
@@ -431,7 +433,7 @@ class PostingEngine {
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
       description: context['description'] ??
-          'Supplier Payment #${referenceId.substring(0, 8)}',
+          'Supplier Payment #${_truncateRef(referenceId)}',
       date: Value(date),
       referenceType: const Value('PAYMENT'),
       referenceId: Value(referenceId),
@@ -475,10 +477,18 @@ class PostingEngine {
     final cashAccount =
         await _getAccountByProfileOrCode(profiles, 'CASH', '1010');
 
+    if (accountId == null || accountId.isEmpty) {
+      throw Exception('يجب تحديد الحساب المحاسبي المعاملة النقدية.');
+    }
+    if (accountId == cashAccount) {
+      throw Exception(
+          'لا يمكن أن يكون الحساب المقابل هو نفسه حساب الصندوق.');
+    }
+
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
       description: context['description'] ??
-          'Cash Transaction #${referenceId.substring(0, 8)}',
+          'Cash Transaction #${_truncateRef(referenceId)}',
       date: Value(date),
       referenceType: Value(direction == 'IN' ? 'RECEIPT' : 'PAYMENT'),
       referenceId: Value(referenceId),
@@ -498,7 +508,7 @@ class PostingEngine {
             ),
             GLLinesCompanion.insert(
               entryId: entryId,
-              accountId: accountId ?? cashAccount,
+              accountId: accountId,
               debit: Value(Decimal.zero),
               credit: Value(amount),
               branchId: Value(branchId),
@@ -507,7 +517,7 @@ class PostingEngine {
         : [
             GLLinesCompanion.insert(
               entryId: entryId,
-              accountId: accountId ?? cashAccount,
+              accountId: accountId,
               debit: Value(amount),
               credit: Value(Decimal.zero),
               branchId: Value(branchId),
@@ -533,10 +543,24 @@ class PostingEngine {
     final date = context['date'] as DateTime? ?? DateTime.now();
     final entryId = const Uuid().v4();
 
+    final debitAccountId = context['debitAccountId'] as String?;
+    final creditAccountId = context['creditAccountId'] as String?;
+
+    if (debitAccountId == null || debitAccountId.isEmpty) {
+      throw Exception('يجب تحديد حساب المدين للقيد العام.');
+    }
+    if (creditAccountId == null || creditAccountId.isEmpty) {
+      throw Exception('يجب تحديد حساب الدائن للقيد العام.');
+    }
+    if (debitAccountId == creditAccountId) {
+      throw Exception(
+          'لا يمكن أن يكون حساب المدين وحساب الدائن هما نفسهما.');
+    }
+
     final entry = GLEntriesCompanion.insert(
       id: Value(entryId),
       description: context['description'] ??
-          'Transaction #${referenceId.substring(0, 8)}',
+          'Transaction #${_truncateRef(referenceId)}',
       date: Value(date),
       referenceType: Value(context['referenceType'] as String? ?? 'GENERIC'),
       referenceId: Value(referenceId),
@@ -548,14 +572,14 @@ class PostingEngine {
     final lines = [
       GLLinesCompanion.insert(
         entryId: entryId,
-        accountId: context['debitAccountId'] as String? ?? '',
+        accountId: debitAccountId,
         debit: Value(amount),
         credit: Value(Decimal.zero),
         branchId: Value(branchId),
       ),
       GLLinesCompanion.insert(
         entryId: entryId,
-        accountId: context['creditAccountId'] as String? ?? '',
+        accountId: creditAccountId,
         debit: Value(Decimal.zero),
         credit: Value(amount),
         branchId: Value(branchId),
@@ -664,6 +688,21 @@ class PostingEngine {
     var totalDebit = Decimal.zero;
     var totalCredit = Decimal.zero;
     for (final line in lines) {
+      if (line.accountId.value.trim().isEmpty) {
+        throw Exception('الحساب المحاسبي غير محدد في أحد الأسطر.');
+      }
+      if (line.debit.value < Decimal.zero || line.credit.value < Decimal.zero) {
+        throw Exception('المبلغ يجب أن يكون أكبر من أو يساوي الصفر.');
+      }
+      if (line.debit.value > Decimal.zero &&
+          line.credit.value > Decimal.zero) {
+        throw Exception(
+            'لا يمكن أن يكون السطر مديناً ودائناً في نفس الوقت.');
+      }
+      if (line.debit.value == Decimal.zero &&
+          line.credit.value == Decimal.zero) {
+        throw Exception('لا يمكن ترحيل سطر محاسبي بقيمة صفرية.');
+      }
       totalDebit += line.debit.value;
       totalCredit += line.credit.value;
     }
@@ -708,10 +747,33 @@ class PostingEngine {
   }
 
   Decimal _readAmount(dynamic value) {
-    if (value is Decimal) return value;
-    if (value is num) return Decimal.parse(value.toString());
-    if (value is String) return Decimal.tryParse(value) ?? Decimal.zero;
-    return Decimal.zero;
+    if (value is Decimal) {
+      if (value < Decimal.zero) {
+        throw Exception('المبلغ لا يمكن أن يكون سالباً: $value');
+      }
+      return value;
+    }
+    if (value is num) {
+      if (value < 0) {
+        throw Exception('المبلغ لا يمكن أن يكون سالباً: $value');
+      }
+      return Decimal.parse(value.toString());
+    }
+    if (value is String) {
+      final parsed = Decimal.tryParse(value);
+      if (parsed == null) {
+        throw Exception('قيمة المبلغ غير صالحة: $value');
+      }
+      if (parsed < Decimal.zero) {
+        throw Exception('المبلغ لا يمكن أن يكون سالباً: $value');
+      }
+      return parsed;
+    }
+    throw Exception('قيمة المبلغ غير معروفة: $value');
+  }
+
+  String _truncateRef(String ref, [int maxLen = 8]) {
+    return ref.length <= maxLen ? ref : ref.substring(0, maxLen);
   }
 
   Future<void> _checkPeriodOpen([DateTime? postingDate]) async {

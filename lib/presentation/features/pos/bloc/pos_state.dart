@@ -75,6 +75,7 @@ class PosLoaded extends PosState {
   final Decimal taxRate;
   final bool isWholesaleMode;
   final List<Product> searchResults;
+  final String searchQuery;
   final List<Category> categories;
   final String? selectedCategoryId;
   final List<Product> filteredProducts;
@@ -91,6 +92,7 @@ class PosLoaded extends PosState {
     Decimal? taxRate,
     this.isWholesaleMode = false,
     this.searchResults = const [],
+    this.searchQuery = '',
     this.categories = const [],
     this.selectedCategoryId,
     this.filteredProducts = const [],
@@ -117,6 +119,7 @@ class PosLoaded extends PosState {
     Decimal? taxRate,
     bool? isWholesaleMode,
     List<Product>? searchResults,
+    String? searchQuery,
     List<Category>? categories,
     String? selectedCategoryId,
     List<Product>? filteredProducts,
@@ -134,6 +137,7 @@ class PosLoaded extends PosState {
       taxRate: taxRate ?? this.taxRate,
       isWholesaleMode: isWholesaleMode ?? this.isWholesaleMode,
       searchResults: searchResults ?? this.searchResults,
+      searchQuery: searchQuery ?? this.searchQuery,
       categories: categories ?? this.categories,
       selectedCategoryId: selectedCategoryId ?? this.selectedCategoryId,
       filteredProducts: filteredProducts ?? this.filteredProducts,
@@ -154,6 +158,7 @@ class PosLoaded extends PosState {
         taxRate,
         isWholesaleMode,
         searchResults,
+        searchQuery,
         categories,
         selectedCategoryId,
         filteredProducts,

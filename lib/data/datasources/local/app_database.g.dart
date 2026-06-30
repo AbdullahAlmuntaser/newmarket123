@@ -50043,6 +50043,1319 @@ class AccAuditLogsCompanion extends UpdateCompanion<AccAuditLog> {
   }
 }
 
+class $RecurringEntriesTable extends RecurringEntries
+    with TableInfo<$RecurringEntriesTable, RecurringEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RecurringEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _descriptionMeta =
+      const VerificationMeta('description');
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+      'description', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _referenceTypeMeta =
+      const VerificationMeta('referenceType');
+  @override
+  late final GeneratedColumn<String> referenceType = GeneratedColumn<String>(
+      'reference_type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _frequencyMeta =
+      const VerificationMeta('frequency');
+  @override
+  late final GeneratedColumn<String> frequency = GeneratedColumn<String>(
+      'frequency', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _debitAccountCodeMeta =
+      const VerificationMeta('debitAccountCode');
+  @override
+  late final GeneratedColumn<String> debitAccountCode = GeneratedColumn<String>(
+      'debit_account_code', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES gl_accounts (code)'));
+  static const VerificationMeta _creditAccountCodeMeta =
+      const VerificationMeta('creditAccountCode');
+  @override
+  late final GeneratedColumn<String> creditAccountCode =
+      GeneratedColumn<String>('credit_account_code', aliasedName, false,
+          type: DriftSqlType.string,
+          requiredDuringInsert: true,
+          defaultConstraints: GeneratedColumn.constraintIsAlways(
+              'REFERENCES gl_accounts (code)'));
+  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
+  @override
+  late final GeneratedColumnWithTypeConverter<Decimal, String> amount =
+      GeneratedColumn<String>('amount', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>($RecurringEntriesTable.$converteramount);
+  static const VerificationMeta _costCenterIdMeta =
+      const VerificationMeta('costCenterId');
+  @override
+  late final GeneratedColumn<String> costCenterId = GeneratedColumn<String>(
+      'cost_center_id', aliasedName, true,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES cost_centers (id)'));
+  static const VerificationMeta _branchIdMeta =
+      const VerificationMeta('branchId');
+  @override
+  late final GeneratedColumn<String> branchId = GeneratedColumn<String>(
+      'branch_id', aliasedName, true,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES branches (id)'));
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('active'));
+  static const VerificationMeta _startDateMeta =
+      const VerificationMeta('startDate');
+  @override
+  late final GeneratedColumn<DateTime> startDate = GeneratedColumn<DateTime>(
+      'start_date', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _endDateMeta =
+      const VerificationMeta('endDate');
+  @override
+  late final GeneratedColumn<DateTime> endDate = GeneratedColumn<DateTime>(
+      'end_date', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _nextExecutionDateMeta =
+      const VerificationMeta('nextExecutionDate');
+  @override
+  late final GeneratedColumn<DateTime> nextExecutionDate =
+      GeneratedColumn<DateTime>('next_execution_date', aliasedName, false,
+          type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _totalExecutionsMeta =
+      const VerificationMeta('totalExecutions');
+  @override
+  late final GeneratedColumn<int> totalExecutions = GeneratedColumn<int>(
+      'total_executions', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _maxExecutionsMeta =
+      const VerificationMeta('maxExecutions');
+  @override
+  late final GeneratedColumn<int> maxExecutions = GeneratedColumn<int>(
+      'max_executions', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _createdByMeta =
+      const VerificationMeta('createdBy');
+  @override
+  late final GeneratedColumn<String> createdBy = GeneratedColumn<String>(
+      'created_by', aliasedName, true,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES users (id)'));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        name,
+        description,
+        referenceType,
+        frequency,
+        debitAccountCode,
+        creditAccountCode,
+        amount,
+        costCenterId,
+        branchId,
+        status,
+        startDate,
+        endDate,
+        nextExecutionDate,
+        totalExecutions,
+        maxExecutions,
+        createdBy,
+        createdAt,
+        updatedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'recurring_entries';
+  @override
+  VerificationContext validateIntegrity(Insertable<RecurringEntry> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+          _descriptionMeta,
+          description.isAcceptableOrUnknown(
+              data['description']!, _descriptionMeta));
+    }
+    if (data.containsKey('reference_type')) {
+      context.handle(
+          _referenceTypeMeta,
+          referenceType.isAcceptableOrUnknown(
+              data['reference_type']!, _referenceTypeMeta));
+    } else if (isInserting) {
+      context.missing(_referenceTypeMeta);
+    }
+    if (data.containsKey('frequency')) {
+      context.handle(_frequencyMeta,
+          frequency.isAcceptableOrUnknown(data['frequency']!, _frequencyMeta));
+    } else if (isInserting) {
+      context.missing(_frequencyMeta);
+    }
+    if (data.containsKey('debit_account_code')) {
+      context.handle(
+          _debitAccountCodeMeta,
+          debitAccountCode.isAcceptableOrUnknown(
+              data['debit_account_code']!, _debitAccountCodeMeta));
+    } else if (isInserting) {
+      context.missing(_debitAccountCodeMeta);
+    }
+    if (data.containsKey('credit_account_code')) {
+      context.handle(
+          _creditAccountCodeMeta,
+          creditAccountCode.isAcceptableOrUnknown(
+              data['credit_account_code']!, _creditAccountCodeMeta));
+    } else if (isInserting) {
+      context.missing(_creditAccountCodeMeta);
+    }
+    context.handle(_amountMeta, const VerificationResult.success());
+    if (data.containsKey('cost_center_id')) {
+      context.handle(
+          _costCenterIdMeta,
+          costCenterId.isAcceptableOrUnknown(
+              data['cost_center_id']!, _costCenterIdMeta));
+    }
+    if (data.containsKey('branch_id')) {
+      context.handle(_branchIdMeta,
+          branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta));
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    }
+    if (data.containsKey('start_date')) {
+      context.handle(_startDateMeta,
+          startDate.isAcceptableOrUnknown(data['start_date']!, _startDateMeta));
+    } else if (isInserting) {
+      context.missing(_startDateMeta);
+    }
+    if (data.containsKey('end_date')) {
+      context.handle(_endDateMeta,
+          endDate.isAcceptableOrUnknown(data['end_date']!, _endDateMeta));
+    }
+    if (data.containsKey('next_execution_date')) {
+      context.handle(
+          _nextExecutionDateMeta,
+          nextExecutionDate.isAcceptableOrUnknown(
+              data['next_execution_date']!, _nextExecutionDateMeta));
+    } else if (isInserting) {
+      context.missing(_nextExecutionDateMeta);
+    }
+    if (data.containsKey('total_executions')) {
+      context.handle(
+          _totalExecutionsMeta,
+          totalExecutions.isAcceptableOrUnknown(
+              data['total_executions']!, _totalExecutionsMeta));
+    }
+    if (data.containsKey('max_executions')) {
+      context.handle(
+          _maxExecutionsMeta,
+          maxExecutions.isAcceptableOrUnknown(
+              data['max_executions']!, _maxExecutionsMeta));
+    }
+    if (data.containsKey('created_by')) {
+      context.handle(_createdByMeta,
+          createdBy.isAcceptableOrUnknown(data['created_by']!, _createdByMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RecurringEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RecurringEntry(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      description: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}description']),
+      referenceType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}reference_type'])!,
+      frequency: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}frequency'])!,
+      debitAccountCode: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}debit_account_code'])!,
+      creditAccountCode: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}credit_account_code'])!,
+      amount: $RecurringEntriesTable.$converteramount.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}amount'])!),
+      costCenterId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}cost_center_id']),
+      branchId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}branch_id']),
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      startDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}start_date'])!,
+      endDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}end_date']),
+      nextExecutionDate: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime,
+          data['${effectivePrefix}next_execution_date'])!,
+      totalExecutions: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}total_executions'])!,
+      maxExecutions: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}max_executions']),
+      createdBy: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}created_by']),
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $RecurringEntriesTable createAlias(String alias) {
+    return $RecurringEntriesTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<Decimal, String> $converteramount =
+      const DecimalConverter();
+}
+
+class RecurringEntry extends DataClass implements Insertable<RecurringEntry> {
+  final int id;
+  final String name;
+  final String? description;
+  final String referenceType;
+  final String frequency;
+  final String debitAccountCode;
+  final String creditAccountCode;
+  final Decimal amount;
+  final String? costCenterId;
+  final String? branchId;
+  final String status;
+  final DateTime startDate;
+  final DateTime? endDate;
+  final DateTime nextExecutionDate;
+  final int totalExecutions;
+  final int? maxExecutions;
+  final String? createdBy;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const RecurringEntry(
+      {required this.id,
+      required this.name,
+      this.description,
+      required this.referenceType,
+      required this.frequency,
+      required this.debitAccountCode,
+      required this.creditAccountCode,
+      required this.amount,
+      this.costCenterId,
+      this.branchId,
+      required this.status,
+      required this.startDate,
+      this.endDate,
+      required this.nextExecutionDate,
+      required this.totalExecutions,
+      this.maxExecutions,
+      this.createdBy,
+      required this.createdAt,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    map['reference_type'] = Variable<String>(referenceType);
+    map['frequency'] = Variable<String>(frequency);
+    map['debit_account_code'] = Variable<String>(debitAccountCode);
+    map['credit_account_code'] = Variable<String>(creditAccountCode);
+    {
+      map['amount'] = Variable<String>(
+          $RecurringEntriesTable.$converteramount.toSql(amount));
+    }
+    if (!nullToAbsent || costCenterId != null) {
+      map['cost_center_id'] = Variable<String>(costCenterId);
+    }
+    if (!nullToAbsent || branchId != null) {
+      map['branch_id'] = Variable<String>(branchId);
+    }
+    map['status'] = Variable<String>(status);
+    map['start_date'] = Variable<DateTime>(startDate);
+    if (!nullToAbsent || endDate != null) {
+      map['end_date'] = Variable<DateTime>(endDate);
+    }
+    map['next_execution_date'] = Variable<DateTime>(nextExecutionDate);
+    map['total_executions'] = Variable<int>(totalExecutions);
+    if (!nullToAbsent || maxExecutions != null) {
+      map['max_executions'] = Variable<int>(maxExecutions);
+    }
+    if (!nullToAbsent || createdBy != null) {
+      map['created_by'] = Variable<String>(createdBy);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  RecurringEntriesCompanion toCompanion(bool nullToAbsent) {
+    return RecurringEntriesCompanion(
+      id: Value(id),
+      name: Value(name),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      referenceType: Value(referenceType),
+      frequency: Value(frequency),
+      debitAccountCode: Value(debitAccountCode),
+      creditAccountCode: Value(creditAccountCode),
+      amount: Value(amount),
+      costCenterId: costCenterId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(costCenterId),
+      branchId: branchId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(branchId),
+      status: Value(status),
+      startDate: Value(startDate),
+      endDate: endDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endDate),
+      nextExecutionDate: Value(nextExecutionDate),
+      totalExecutions: Value(totalExecutions),
+      maxExecutions: maxExecutions == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maxExecutions),
+      createdBy: createdBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdBy),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory RecurringEntry.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RecurringEntry(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String?>(json['description']),
+      referenceType: serializer.fromJson<String>(json['referenceType']),
+      frequency: serializer.fromJson<String>(json['frequency']),
+      debitAccountCode: serializer.fromJson<String>(json['debitAccountCode']),
+      creditAccountCode: serializer.fromJson<String>(json['creditAccountCode']),
+      amount: serializer.fromJson<Decimal>(json['amount']),
+      costCenterId: serializer.fromJson<String?>(json['costCenterId']),
+      branchId: serializer.fromJson<String?>(json['branchId']),
+      status: serializer.fromJson<String>(json['status']),
+      startDate: serializer.fromJson<DateTime>(json['startDate']),
+      endDate: serializer.fromJson<DateTime?>(json['endDate']),
+      nextExecutionDate:
+          serializer.fromJson<DateTime>(json['nextExecutionDate']),
+      totalExecutions: serializer.fromJson<int>(json['totalExecutions']),
+      maxExecutions: serializer.fromJson<int?>(json['maxExecutions']),
+      createdBy: serializer.fromJson<String?>(json['createdBy']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String?>(description),
+      'referenceType': serializer.toJson<String>(referenceType),
+      'frequency': serializer.toJson<String>(frequency),
+      'debitAccountCode': serializer.toJson<String>(debitAccountCode),
+      'creditAccountCode': serializer.toJson<String>(creditAccountCode),
+      'amount': serializer.toJson<Decimal>(amount),
+      'costCenterId': serializer.toJson<String?>(costCenterId),
+      'branchId': serializer.toJson<String?>(branchId),
+      'status': serializer.toJson<String>(status),
+      'startDate': serializer.toJson<DateTime>(startDate),
+      'endDate': serializer.toJson<DateTime?>(endDate),
+      'nextExecutionDate': serializer.toJson<DateTime>(nextExecutionDate),
+      'totalExecutions': serializer.toJson<int>(totalExecutions),
+      'maxExecutions': serializer.toJson<int?>(maxExecutions),
+      'createdBy': serializer.toJson<String?>(createdBy),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  RecurringEntry copyWith(
+          {int? id,
+          String? name,
+          Value<String?> description = const Value.absent(),
+          String? referenceType,
+          String? frequency,
+          String? debitAccountCode,
+          String? creditAccountCode,
+          Decimal? amount,
+          Value<String?> costCenterId = const Value.absent(),
+          Value<String?> branchId = const Value.absent(),
+          String? status,
+          DateTime? startDate,
+          Value<DateTime?> endDate = const Value.absent(),
+          DateTime? nextExecutionDate,
+          int? totalExecutions,
+          Value<int?> maxExecutions = const Value.absent(),
+          Value<String?> createdBy = const Value.absent(),
+          DateTime? createdAt,
+          DateTime? updatedAt}) =>
+      RecurringEntry(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        description: description.present ? description.value : this.description,
+        referenceType: referenceType ?? this.referenceType,
+        frequency: frequency ?? this.frequency,
+        debitAccountCode: debitAccountCode ?? this.debitAccountCode,
+        creditAccountCode: creditAccountCode ?? this.creditAccountCode,
+        amount: amount ?? this.amount,
+        costCenterId:
+            costCenterId.present ? costCenterId.value : this.costCenterId,
+        branchId: branchId.present ? branchId.value : this.branchId,
+        status: status ?? this.status,
+        startDate: startDate ?? this.startDate,
+        endDate: endDate.present ? endDate.value : this.endDate,
+        nextExecutionDate: nextExecutionDate ?? this.nextExecutionDate,
+        totalExecutions: totalExecutions ?? this.totalExecutions,
+        maxExecutions:
+            maxExecutions.present ? maxExecutions.value : this.maxExecutions,
+        createdBy: createdBy.present ? createdBy.value : this.createdBy,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  RecurringEntry copyWithCompanion(RecurringEntriesCompanion data) {
+    return RecurringEntry(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      description:
+          data.description.present ? data.description.value : this.description,
+      referenceType: data.referenceType.present
+          ? data.referenceType.value
+          : this.referenceType,
+      frequency: data.frequency.present ? data.frequency.value : this.frequency,
+      debitAccountCode: data.debitAccountCode.present
+          ? data.debitAccountCode.value
+          : this.debitAccountCode,
+      creditAccountCode: data.creditAccountCode.present
+          ? data.creditAccountCode.value
+          : this.creditAccountCode,
+      amount: data.amount.present ? data.amount.value : this.amount,
+      costCenterId: data.costCenterId.present
+          ? data.costCenterId.value
+          : this.costCenterId,
+      branchId: data.branchId.present ? data.branchId.value : this.branchId,
+      status: data.status.present ? data.status.value : this.status,
+      startDate: data.startDate.present ? data.startDate.value : this.startDate,
+      endDate: data.endDate.present ? data.endDate.value : this.endDate,
+      nextExecutionDate: data.nextExecutionDate.present
+          ? data.nextExecutionDate.value
+          : this.nextExecutionDate,
+      totalExecutions: data.totalExecutions.present
+          ? data.totalExecutions.value
+          : this.totalExecutions,
+      maxExecutions: data.maxExecutions.present
+          ? data.maxExecutions.value
+          : this.maxExecutions,
+      createdBy: data.createdBy.present ? data.createdBy.value : this.createdBy,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecurringEntry(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('referenceType: $referenceType, ')
+          ..write('frequency: $frequency, ')
+          ..write('debitAccountCode: $debitAccountCode, ')
+          ..write('creditAccountCode: $creditAccountCode, ')
+          ..write('amount: $amount, ')
+          ..write('costCenterId: $costCenterId, ')
+          ..write('branchId: $branchId, ')
+          ..write('status: $status, ')
+          ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
+          ..write('nextExecutionDate: $nextExecutionDate, ')
+          ..write('totalExecutions: $totalExecutions, ')
+          ..write('maxExecutions: $maxExecutions, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      name,
+      description,
+      referenceType,
+      frequency,
+      debitAccountCode,
+      creditAccountCode,
+      amount,
+      costCenterId,
+      branchId,
+      status,
+      startDate,
+      endDate,
+      nextExecutionDate,
+      totalExecutions,
+      maxExecutions,
+      createdBy,
+      createdAt,
+      updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RecurringEntry &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.description == this.description &&
+          other.referenceType == this.referenceType &&
+          other.frequency == this.frequency &&
+          other.debitAccountCode == this.debitAccountCode &&
+          other.creditAccountCode == this.creditAccountCode &&
+          other.amount == this.amount &&
+          other.costCenterId == this.costCenterId &&
+          other.branchId == this.branchId &&
+          other.status == this.status &&
+          other.startDate == this.startDate &&
+          other.endDate == this.endDate &&
+          other.nextExecutionDate == this.nextExecutionDate &&
+          other.totalExecutions == this.totalExecutions &&
+          other.maxExecutions == this.maxExecutions &&
+          other.createdBy == this.createdBy &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class RecurringEntriesCompanion extends UpdateCompanion<RecurringEntry> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<String?> description;
+  final Value<String> referenceType;
+  final Value<String> frequency;
+  final Value<String> debitAccountCode;
+  final Value<String> creditAccountCode;
+  final Value<Decimal> amount;
+  final Value<String?> costCenterId;
+  final Value<String?> branchId;
+  final Value<String> status;
+  final Value<DateTime> startDate;
+  final Value<DateTime?> endDate;
+  final Value<DateTime> nextExecutionDate;
+  final Value<int> totalExecutions;
+  final Value<int?> maxExecutions;
+  final Value<String?> createdBy;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const RecurringEntriesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.description = const Value.absent(),
+    this.referenceType = const Value.absent(),
+    this.frequency = const Value.absent(),
+    this.debitAccountCode = const Value.absent(),
+    this.creditAccountCode = const Value.absent(),
+    this.amount = const Value.absent(),
+    this.costCenterId = const Value.absent(),
+    this.branchId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.startDate = const Value.absent(),
+    this.endDate = const Value.absent(),
+    this.nextExecutionDate = const Value.absent(),
+    this.totalExecutions = const Value.absent(),
+    this.maxExecutions = const Value.absent(),
+    this.createdBy = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  RecurringEntriesCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    this.description = const Value.absent(),
+    required String referenceType,
+    required String frequency,
+    required String debitAccountCode,
+    required String creditAccountCode,
+    required Decimal amount,
+    this.costCenterId = const Value.absent(),
+    this.branchId = const Value.absent(),
+    this.status = const Value.absent(),
+    required DateTime startDate,
+    this.endDate = const Value.absent(),
+    required DateTime nextExecutionDate,
+    this.totalExecutions = const Value.absent(),
+    this.maxExecutions = const Value.absent(),
+    this.createdBy = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  })  : name = Value(name),
+        referenceType = Value(referenceType),
+        frequency = Value(frequency),
+        debitAccountCode = Value(debitAccountCode),
+        creditAccountCode = Value(creditAccountCode),
+        amount = Value(amount),
+        startDate = Value(startDate),
+        nextExecutionDate = Value(nextExecutionDate);
+  static Insertable<RecurringEntry> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<String>? description,
+    Expression<String>? referenceType,
+    Expression<String>? frequency,
+    Expression<String>? debitAccountCode,
+    Expression<String>? creditAccountCode,
+    Expression<String>? amount,
+    Expression<String>? costCenterId,
+    Expression<String>? branchId,
+    Expression<String>? status,
+    Expression<DateTime>? startDate,
+    Expression<DateTime>? endDate,
+    Expression<DateTime>? nextExecutionDate,
+    Expression<int>? totalExecutions,
+    Expression<int>? maxExecutions,
+    Expression<String>? createdBy,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (referenceType != null) 'reference_type': referenceType,
+      if (frequency != null) 'frequency': frequency,
+      if (debitAccountCode != null) 'debit_account_code': debitAccountCode,
+      if (creditAccountCode != null) 'credit_account_code': creditAccountCode,
+      if (amount != null) 'amount': amount,
+      if (costCenterId != null) 'cost_center_id': costCenterId,
+      if (branchId != null) 'branch_id': branchId,
+      if (status != null) 'status': status,
+      if (startDate != null) 'start_date': startDate,
+      if (endDate != null) 'end_date': endDate,
+      if (nextExecutionDate != null) 'next_execution_date': nextExecutionDate,
+      if (totalExecutions != null) 'total_executions': totalExecutions,
+      if (maxExecutions != null) 'max_executions': maxExecutions,
+      if (createdBy != null) 'created_by': createdBy,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  RecurringEntriesCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? name,
+      Value<String?>? description,
+      Value<String>? referenceType,
+      Value<String>? frequency,
+      Value<String>? debitAccountCode,
+      Value<String>? creditAccountCode,
+      Value<Decimal>? amount,
+      Value<String?>? costCenterId,
+      Value<String?>? branchId,
+      Value<String>? status,
+      Value<DateTime>? startDate,
+      Value<DateTime?>? endDate,
+      Value<DateTime>? nextExecutionDate,
+      Value<int>? totalExecutions,
+      Value<int?>? maxExecutions,
+      Value<String?>? createdBy,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt}) {
+    return RecurringEntriesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      referenceType: referenceType ?? this.referenceType,
+      frequency: frequency ?? this.frequency,
+      debitAccountCode: debitAccountCode ?? this.debitAccountCode,
+      creditAccountCode: creditAccountCode ?? this.creditAccountCode,
+      amount: amount ?? this.amount,
+      costCenterId: costCenterId ?? this.costCenterId,
+      branchId: branchId ?? this.branchId,
+      status: status ?? this.status,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      nextExecutionDate: nextExecutionDate ?? this.nextExecutionDate,
+      totalExecutions: totalExecutions ?? this.totalExecutions,
+      maxExecutions: maxExecutions ?? this.maxExecutions,
+      createdBy: createdBy ?? this.createdBy,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (referenceType.present) {
+      map['reference_type'] = Variable<String>(referenceType.value);
+    }
+    if (frequency.present) {
+      map['frequency'] = Variable<String>(frequency.value);
+    }
+    if (debitAccountCode.present) {
+      map['debit_account_code'] = Variable<String>(debitAccountCode.value);
+    }
+    if (creditAccountCode.present) {
+      map['credit_account_code'] = Variable<String>(creditAccountCode.value);
+    }
+    if (amount.present) {
+      map['amount'] = Variable<String>(
+          $RecurringEntriesTable.$converteramount.toSql(amount.value));
+    }
+    if (costCenterId.present) {
+      map['cost_center_id'] = Variable<String>(costCenterId.value);
+    }
+    if (branchId.present) {
+      map['branch_id'] = Variable<String>(branchId.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (startDate.present) {
+      map['start_date'] = Variable<DateTime>(startDate.value);
+    }
+    if (endDate.present) {
+      map['end_date'] = Variable<DateTime>(endDate.value);
+    }
+    if (nextExecutionDate.present) {
+      map['next_execution_date'] = Variable<DateTime>(nextExecutionDate.value);
+    }
+    if (totalExecutions.present) {
+      map['total_executions'] = Variable<int>(totalExecutions.value);
+    }
+    if (maxExecutions.present) {
+      map['max_executions'] = Variable<int>(maxExecutions.value);
+    }
+    if (createdBy.present) {
+      map['created_by'] = Variable<String>(createdBy.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecurringEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('referenceType: $referenceType, ')
+          ..write('frequency: $frequency, ')
+          ..write('debitAccountCode: $debitAccountCode, ')
+          ..write('creditAccountCode: $creditAccountCode, ')
+          ..write('amount: $amount, ')
+          ..write('costCenterId: $costCenterId, ')
+          ..write('branchId: $branchId, ')
+          ..write('status: $status, ')
+          ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
+          ..write('nextExecutionDate: $nextExecutionDate, ')
+          ..write('totalExecutions: $totalExecutions, ')
+          ..write('maxExecutions: $maxExecutions, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RecurringEntryExecutionsTable extends RecurringEntryExecutions
+    with TableInfo<$RecurringEntryExecutionsTable, RecurringEntryExecution> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RecurringEntryExecutionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _recurringEntryIdMeta =
+      const VerificationMeta('recurringEntryId');
+  @override
+  late final GeneratedColumn<int> recurringEntryId = GeneratedColumn<int>(
+      'recurring_entry_id', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES recurring_entries (id)'));
+  static const VerificationMeta _glEntryIdMeta =
+      const VerificationMeta('glEntryId');
+  @override
+  late final GeneratedColumn<String> glEntryId = GeneratedColumn<String>(
+      'gl_entry_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES gl_entries (id)'));
+  static const VerificationMeta _executionDateMeta =
+      const VerificationMeta('executionDate');
+  @override
+  late final GeneratedColumn<DateTime> executionDate =
+      GeneratedColumn<DateTime>('execution_date', aliasedName, false,
+          type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('posted'));
+  static const VerificationMeta _errorMessageMeta =
+      const VerificationMeta('errorMessage');
+  @override
+  late final GeneratedColumn<String> errorMessage = GeneratedColumn<String>(
+      'error_message', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        recurringEntryId,
+        glEntryId,
+        executionDate,
+        status,
+        errorMessage,
+        createdAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'recurring_entry_executions';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<RecurringEntryExecution> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('recurring_entry_id')) {
+      context.handle(
+          _recurringEntryIdMeta,
+          recurringEntryId.isAcceptableOrUnknown(
+              data['recurring_entry_id']!, _recurringEntryIdMeta));
+    } else if (isInserting) {
+      context.missing(_recurringEntryIdMeta);
+    }
+    if (data.containsKey('gl_entry_id')) {
+      context.handle(
+          _glEntryIdMeta,
+          glEntryId.isAcceptableOrUnknown(
+              data['gl_entry_id']!, _glEntryIdMeta));
+    } else if (isInserting) {
+      context.missing(_glEntryIdMeta);
+    }
+    if (data.containsKey('execution_date')) {
+      context.handle(
+          _executionDateMeta,
+          executionDate.isAcceptableOrUnknown(
+              data['execution_date']!, _executionDateMeta));
+    } else if (isInserting) {
+      context.missing(_executionDateMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    }
+    if (data.containsKey('error_message')) {
+      context.handle(
+          _errorMessageMeta,
+          errorMessage.isAcceptableOrUnknown(
+              data['error_message']!, _errorMessageMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RecurringEntryExecution map(Map<String, dynamic> data,
+      {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RecurringEntryExecution(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      recurringEntryId: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}recurring_entry_id'])!,
+      glEntryId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}gl_entry_id'])!,
+      executionDate: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}execution_date'])!,
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      errorMessage: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}error_message']),
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+    );
+  }
+
+  @override
+  $RecurringEntryExecutionsTable createAlias(String alias) {
+    return $RecurringEntryExecutionsTable(attachedDatabase, alias);
+  }
+}
+
+class RecurringEntryExecution extends DataClass
+    implements Insertable<RecurringEntryExecution> {
+  final int id;
+  final int recurringEntryId;
+  final String glEntryId;
+  final DateTime executionDate;
+  final String status;
+  final String? errorMessage;
+  final DateTime createdAt;
+  const RecurringEntryExecution(
+      {required this.id,
+      required this.recurringEntryId,
+      required this.glEntryId,
+      required this.executionDate,
+      required this.status,
+      this.errorMessage,
+      required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['recurring_entry_id'] = Variable<int>(recurringEntryId);
+    map['gl_entry_id'] = Variable<String>(glEntryId);
+    map['execution_date'] = Variable<DateTime>(executionDate);
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || errorMessage != null) {
+      map['error_message'] = Variable<String>(errorMessage);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  RecurringEntryExecutionsCompanion toCompanion(bool nullToAbsent) {
+    return RecurringEntryExecutionsCompanion(
+      id: Value(id),
+      recurringEntryId: Value(recurringEntryId),
+      glEntryId: Value(glEntryId),
+      executionDate: Value(executionDate),
+      status: Value(status),
+      errorMessage: errorMessage == null && nullToAbsent
+          ? const Value.absent()
+          : Value(errorMessage),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory RecurringEntryExecution.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RecurringEntryExecution(
+      id: serializer.fromJson<int>(json['id']),
+      recurringEntryId: serializer.fromJson<int>(json['recurringEntryId']),
+      glEntryId: serializer.fromJson<String>(json['glEntryId']),
+      executionDate: serializer.fromJson<DateTime>(json['executionDate']),
+      status: serializer.fromJson<String>(json['status']),
+      errorMessage: serializer.fromJson<String?>(json['errorMessage']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'recurringEntryId': serializer.toJson<int>(recurringEntryId),
+      'glEntryId': serializer.toJson<String>(glEntryId),
+      'executionDate': serializer.toJson<DateTime>(executionDate),
+      'status': serializer.toJson<String>(status),
+      'errorMessage': serializer.toJson<String?>(errorMessage),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  RecurringEntryExecution copyWith(
+          {int? id,
+          int? recurringEntryId,
+          String? glEntryId,
+          DateTime? executionDate,
+          String? status,
+          Value<String?> errorMessage = const Value.absent(),
+          DateTime? createdAt}) =>
+      RecurringEntryExecution(
+        id: id ?? this.id,
+        recurringEntryId: recurringEntryId ?? this.recurringEntryId,
+        glEntryId: glEntryId ?? this.glEntryId,
+        executionDate: executionDate ?? this.executionDate,
+        status: status ?? this.status,
+        errorMessage:
+            errorMessage.present ? errorMessage.value : this.errorMessage,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  RecurringEntryExecution copyWithCompanion(
+      RecurringEntryExecutionsCompanion data) {
+    return RecurringEntryExecution(
+      id: data.id.present ? data.id.value : this.id,
+      recurringEntryId: data.recurringEntryId.present
+          ? data.recurringEntryId.value
+          : this.recurringEntryId,
+      glEntryId: data.glEntryId.present ? data.glEntryId.value : this.glEntryId,
+      executionDate: data.executionDate.present
+          ? data.executionDate.value
+          : this.executionDate,
+      status: data.status.present ? data.status.value : this.status,
+      errorMessage: data.errorMessage.present
+          ? data.errorMessage.value
+          : this.errorMessage,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecurringEntryExecution(')
+          ..write('id: $id, ')
+          ..write('recurringEntryId: $recurringEntryId, ')
+          ..write('glEntryId: $glEntryId, ')
+          ..write('executionDate: $executionDate, ')
+          ..write('status: $status, ')
+          ..write('errorMessage: $errorMessage, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, recurringEntryId, glEntryId,
+      executionDate, status, errorMessage, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RecurringEntryExecution &&
+          other.id == this.id &&
+          other.recurringEntryId == this.recurringEntryId &&
+          other.glEntryId == this.glEntryId &&
+          other.executionDate == this.executionDate &&
+          other.status == this.status &&
+          other.errorMessage == this.errorMessage &&
+          other.createdAt == this.createdAt);
+}
+
+class RecurringEntryExecutionsCompanion
+    extends UpdateCompanion<RecurringEntryExecution> {
+  final Value<int> id;
+  final Value<int> recurringEntryId;
+  final Value<String> glEntryId;
+  final Value<DateTime> executionDate;
+  final Value<String> status;
+  final Value<String?> errorMessage;
+  final Value<DateTime> createdAt;
+  const RecurringEntryExecutionsCompanion({
+    this.id = const Value.absent(),
+    this.recurringEntryId = const Value.absent(),
+    this.glEntryId = const Value.absent(),
+    this.executionDate = const Value.absent(),
+    this.status = const Value.absent(),
+    this.errorMessage = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  RecurringEntryExecutionsCompanion.insert({
+    this.id = const Value.absent(),
+    required int recurringEntryId,
+    required String glEntryId,
+    required DateTime executionDate,
+    this.status = const Value.absent(),
+    this.errorMessage = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  })  : recurringEntryId = Value(recurringEntryId),
+        glEntryId = Value(glEntryId),
+        executionDate = Value(executionDate);
+  static Insertable<RecurringEntryExecution> custom({
+    Expression<int>? id,
+    Expression<int>? recurringEntryId,
+    Expression<String>? glEntryId,
+    Expression<DateTime>? executionDate,
+    Expression<String>? status,
+    Expression<String>? errorMessage,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (recurringEntryId != null) 'recurring_entry_id': recurringEntryId,
+      if (glEntryId != null) 'gl_entry_id': glEntryId,
+      if (executionDate != null) 'execution_date': executionDate,
+      if (status != null) 'status': status,
+      if (errorMessage != null) 'error_message': errorMessage,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  RecurringEntryExecutionsCompanion copyWith(
+      {Value<int>? id,
+      Value<int>? recurringEntryId,
+      Value<String>? glEntryId,
+      Value<DateTime>? executionDate,
+      Value<String>? status,
+      Value<String?>? errorMessage,
+      Value<DateTime>? createdAt}) {
+    return RecurringEntryExecutionsCompanion(
+      id: id ?? this.id,
+      recurringEntryId: recurringEntryId ?? this.recurringEntryId,
+      glEntryId: glEntryId ?? this.glEntryId,
+      executionDate: executionDate ?? this.executionDate,
+      status: status ?? this.status,
+      errorMessage: errorMessage ?? this.errorMessage,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (recurringEntryId.present) {
+      map['recurring_entry_id'] = Variable<int>(recurringEntryId.value);
+    }
+    if (glEntryId.present) {
+      map['gl_entry_id'] = Variable<String>(glEntryId.value);
+    }
+    if (executionDate.present) {
+      map['execution_date'] = Variable<DateTime>(executionDate.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (errorMessage.present) {
+      map['error_message'] = Variable<String>(errorMessage.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecurringEntryExecutionsCompanion(')
+          ..write('id: $id, ')
+          ..write('recurringEntryId: $recurringEntryId, ')
+          ..write('glEntryId: $glEntryId, ')
+          ..write('executionDate: $executionDate, ')
+          ..write('status: $status, ')
+          ..write('errorMessage: $errorMessage, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $HREmployeesTable extends HREmployees
     with TableInfo<$HREmployeesTable, HREmployee> {
   @override
@@ -52479,30 +53792,16 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AccBankStatementLinesTable accBankStatementLines =
       $AccBankStatementLinesTable(this);
   late final $AccAuditLogsTable accAuditLogs = $AccAuditLogsTable(this);
+  late final $RecurringEntriesTable recurringEntries =
+      $RecurringEntriesTable(this);
+  late final $RecurringEntryExecutionsTable recurringEntryExecutions =
+      $RecurringEntryExecutionsTable(this);
   late final $HREmployeesTable hREmployees = $HREmployeesTable(this);
   late final $HRPayrollRunsTable hRPayrollRuns = $HRPayrollRunsTable(this);
   late final $HRPayrollDetailsTable hRPayrollDetails =
       $HRPayrollDetailsTable(this);
   late final $HRAdditionalDeductionsTable hRAdditionalDeductions =
       $HRAdditionalDeductionsTable(this);
-  late final ProductsDao productsDao = ProductsDao(this as AppDatabase);
-  late final SalesDao salesDao = SalesDao(this as AppDatabase);
-  late final CustomersDao customersDao = CustomersDao(this as AppDatabase);
-  late final AccountingDao accountingDao = AccountingDao(this as AppDatabase);
-  late final UsersDao usersDao = UsersDao(this as AppDatabase);
-  late final SuppliersDao suppliersDao = SuppliersDao(this as AppDatabase);
-  late final PurchasesDao purchasesDao = PurchasesDao(this as AppDatabase);
-  late final BomDao bomDao = BomDao(this as AppDatabase);
-  late final WarehousesDao warehousesDao = WarehousesDao(this as AppDatabase);
-  late final GlobalUnitsDao globalUnitsDao =
-      GlobalUnitsDao(this as AppDatabase);
-  late final ProductUnitsDao productUnitsDao =
-      ProductUnitsDao(this as AppDatabase);
-  late final AuditDao auditDao = AuditDao(this as AppDatabase);
-  late final StockMovementDao stockMovementDao =
-      StockMovementDao(this as AppDatabase);
-  late final CashboxDao cashboxDao = CashboxDao(this as AppDatabase);
-  late final TransfersDao transfersDao = TransfersDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -52589,6 +53888,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         accBankStatements,
         accBankStatementLines,
         accAuditLogs,
+        recurringEntries,
+        recurringEntryExecutions,
         hREmployees,
         hRPayrollRuns,
         hRPayrollDetails,
@@ -53689,6 +54990,23 @@ final class $$BranchesTableReferences
 
     final cache =
         $_typedResult.readTableOrNull(_deliveryNoteItemsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$RecurringEntriesTable, List<RecurringEntry>>
+      _recurringEntriesRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.recurringEntries,
+              aliasName: $_aliasNameGenerator(
+                  db.branches.id, db.recurringEntries.branchId));
+
+  $$RecurringEntriesTableProcessedTableManager get recurringEntriesRefs {
+    final manager =
+        $$RecurringEntriesTableTableManager($_db, $_db.recurringEntries)
+            .filter((f) => f.branchId.id($_item.id));
+
+    final cache =
+        $_typedResult.readTableOrNull(_recurringEntriesRefsTable($_db));
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
@@ -55138,6 +56456,27 @@ class $$BranchesTableFilterComposer
             $$DeliveryNoteItemsTableFilterComposer(
               $db: $db,
               $table: $db.deliveryNoteItems,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> recurringEntriesRefs(
+      Expression<bool> Function($$RecurringEntriesTableFilterComposer f) f) {
+    final $$RecurringEntriesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.recurringEntries,
+        getReferencedColumn: (t) => t.branchId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$RecurringEntriesTableFilterComposer(
+              $db: $db,
+              $table: $db.recurringEntries,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -56675,6 +58014,27 @@ class $$BranchesTableAnnotationComposer
                 ));
     return f(composer);
   }
+
+  Expression<T> recurringEntriesRefs<T extends Object>(
+      Expression<T> Function($$RecurringEntriesTableAnnotationComposer a) f) {
+    final $$RecurringEntriesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.recurringEntries,
+        getReferencedColumn: (t) => t.branchId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$RecurringEntriesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.recurringEntries,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
 }
 
 class $$BranchesTableTableManager extends RootTableManager<
@@ -56755,7 +58115,8 @@ class $$BranchesTableTableManager extends RootTableManager<
         bool goodReceivedNotesRefs,
         bool goodReceivedNoteItemsRefs,
         bool deliveryNotesRefs,
-        bool deliveryNoteItemsRefs})> {
+        bool deliveryNoteItemsRefs,
+        bool recurringEntriesRefs})> {
   $$BranchesTableTableManager(_$AppDatabase db, $BranchesTable table)
       : super(TableManagerState(
           db: db,
@@ -56893,7 +58254,8 @@ class $$BranchesTableTableManager extends RootTableManager<
               goodReceivedNotesRefs = false,
               goodReceivedNoteItemsRefs = false,
               deliveryNotesRefs = false,
-              deliveryNoteItemsRefs = false}) {
+              deliveryNoteItemsRefs = false,
+              recurringEntriesRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
@@ -56962,7 +58324,8 @@ class $$BranchesTableTableManager extends RootTableManager<
                 if (goodReceivedNotesRefs) db.goodReceivedNotes,
                 if (goodReceivedNoteItemsRefs) db.goodReceivedNoteItems,
                 if (deliveryNotesRefs) db.deliveryNotes,
-                if (deliveryNoteItemsRefs) db.deliveryNoteItems
+                if (deliveryNoteItemsRefs) db.deliveryNoteItems,
+                if (recurringEntriesRefs) db.recurringEntries
               ],
               addJoins: <
                   T extends TableManagerState<
@@ -57779,6 +59142,18 @@ class $$BranchesTableTableManager extends RootTableManager<
                         referencedItemsForCurrentItem: (item,
                                 referencedItems) =>
                             referencedItems.where((e) => e.branchId == item.id),
+                        typedResults: items),
+                  if (recurringEntriesRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$BranchesTableReferences
+                            ._recurringEntriesRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$BranchesTableReferences(db, table, p0)
+                                .recurringEntriesRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.branchId == item.id),
                         typedResults: items)
                 ];
               },
@@ -57865,7 +59240,8 @@ typedef $$BranchesTableProcessedTableManager = ProcessedTableManager<
         bool goodReceivedNotesRefs,
         bool goodReceivedNoteItemsRefs,
         bool deliveryNotesRefs,
-        bool deliveryNoteItemsRefs})>;
+        bool deliveryNoteItemsRefs,
+        bool recurringEntriesRefs})>;
 typedef $$UsersTableCreateCompanionBuilder = UsersCompanion Function({
   Value<String> id,
   Value<DateTime> createdAt,
@@ -57956,6 +59332,23 @@ final class $$UsersTableReferences
         .filter((f) => f.userId.id($_item.id));
 
     final cache = $_typedResult.readTableOrNull(_accAuditLogsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$RecurringEntriesTable, List<RecurringEntry>>
+      _recurringEntriesRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.recurringEntries,
+              aliasName: $_aliasNameGenerator(
+                  db.users.id, db.recurringEntries.createdBy));
+
+  $$RecurringEntriesTableProcessedTableManager get recurringEntriesRefs {
+    final manager =
+        $$RecurringEntriesTableTableManager($_db, $_db.recurringEntries)
+            .filter((f) => f.createdBy.id($_item.id));
+
+    final cache =
+        $_typedResult.readTableOrNull(_recurringEntriesRefsTable($_db));
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
@@ -58077,6 +59470,27 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
             $$AccAuditLogsTableFilterComposer(
               $db: $db,
               $table: $db.accAuditLogs,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> recurringEntriesRefs(
+      Expression<bool> Function($$RecurringEntriesTableFilterComposer f) f) {
+    final $$RecurringEntriesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.recurringEntries,
+        getReferencedColumn: (t) => t.createdBy,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$RecurringEntriesTableFilterComposer(
+              $db: $db,
+              $table: $db.recurringEntries,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -58277,6 +59691,27 @@ class $$UsersTableAnnotationComposer
             ));
     return f(composer);
   }
+
+  Expression<T> recurringEntriesRefs<T extends Object>(
+      Expression<T> Function($$RecurringEntriesTableAnnotationComposer a) f) {
+    final $$RecurringEntriesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.recurringEntries,
+        getReferencedColumn: (t) => t.createdBy,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$RecurringEntriesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.recurringEntries,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
 }
 
 class $$UsersTableTableManager extends RootTableManager<
@@ -58294,7 +59729,8 @@ class $$UsersTableTableManager extends RootTableManager<
         {bool branchId,
         bool shiftsRefs,
         bool cashboxTransactionsRefs,
-        bool accAuditLogsRefs})> {
+        bool accAuditLogsRefs,
+        bool recurringEntriesRefs})> {
   $$UsersTableTableManager(_$AppDatabase db, $UsersTable table)
       : super(TableManagerState(
           db: db,
@@ -58373,13 +59809,15 @@ class $$UsersTableTableManager extends RootTableManager<
               {branchId = false,
               shiftsRefs = false,
               cashboxTransactionsRefs = false,
-              accAuditLogsRefs = false}) {
+              accAuditLogsRefs = false,
+              recurringEntriesRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
                 if (shiftsRefs) db.shifts,
                 if (cashboxTransactionsRefs) db.cashboxTransactions,
-                if (accAuditLogsRefs) db.accAuditLogs
+                if (accAuditLogsRefs) db.accAuditLogs,
+                if (recurringEntriesRefs) db.recurringEntries
               ],
               addJoins: <
                   T extends TableManagerState<
@@ -58442,6 +59880,18 @@ class $$UsersTableTableManager extends RootTableManager<
                         referencedItemsForCurrentItem: (item,
                                 referencedItems) =>
                             referencedItems.where((e) => e.userId == item.id),
+                        typedResults: items),
+                  if (recurringEntriesRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$UsersTableReferences
+                            ._recurringEntriesRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$UsersTableReferences(db, table, p0)
+                                .recurringEntriesRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.createdBy == item.id),
                         typedResults: items)
                 ];
               },
@@ -58465,7 +59915,8 @@ typedef $$UsersTableProcessedTableManager = ProcessedTableManager<
         {bool branchId,
         bool shiftsRefs,
         bool cashboxTransactionsRefs,
-        bool accAuditLogsRefs})>;
+        bool accAuditLogsRefs,
+        bool recurringEntriesRefs})>;
 typedef $$CategoriesTableCreateCompanionBuilder = CategoriesCompanion Function({
   Value<String> id,
   Value<DateTime> createdAt,
@@ -70226,6 +71677,23 @@ final class $$CostCentersTableReferences
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
+
+  static MultiTypedResultKey<$RecurringEntriesTable, List<RecurringEntry>>
+      _recurringEntriesRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.recurringEntries,
+              aliasName: $_aliasNameGenerator(
+                  db.costCenters.id, db.recurringEntries.costCenterId));
+
+  $$RecurringEntriesTableProcessedTableManager get recurringEntriesRefs {
+    final manager =
+        $$RecurringEntriesTableTableManager($_db, $_db.recurringEntries)
+            .filter((f) => f.costCenterId.id($_item.id));
+
+    final cache =
+        $_typedResult.readTableOrNull(_recurringEntriesRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
 }
 
 class $$CostCentersTableFilterComposer
@@ -70359,6 +71827,27 @@ class $$CostCentersTableFilterComposer
             $$AccBudgetsTableFilterComposer(
               $db: $db,
               $table: $db.accBudgets,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> recurringEntriesRefs(
+      Expression<bool> Function($$RecurringEntriesTableFilterComposer f) f) {
+    final $$RecurringEntriesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.recurringEntries,
+        getReferencedColumn: (t) => t.costCenterId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$RecurringEntriesTableFilterComposer(
+              $db: $db,
+              $table: $db.recurringEntries,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -70583,6 +72072,27 @@ class $$CostCentersTableAnnotationComposer
             ));
     return f(composer);
   }
+
+  Expression<T> recurringEntriesRefs<T extends Object>(
+      Expression<T> Function($$RecurringEntriesTableAnnotationComposer a) f) {
+    final $$RecurringEntriesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.recurringEntries,
+        getReferencedColumn: (t) => t.costCenterId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$RecurringEntriesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.recurringEntries,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
 }
 
 class $$CostCentersTableTableManager extends RootTableManager<
@@ -70601,7 +72111,8 @@ class $$CostCentersTableTableManager extends RootTableManager<
         bool parentId,
         bool saleItemsRefs,
         bool gLLinesRefs,
-        bool accBudgetsRefs})> {
+        bool accBudgetsRefs,
+        bool recurringEntriesRefs})> {
   $$CostCentersTableTableManager(_$AppDatabase db, $CostCentersTable table)
       : super(TableManagerState(
           db: db,
@@ -70679,13 +72190,15 @@ class $$CostCentersTableTableManager extends RootTableManager<
               parentId = false,
               saleItemsRefs = false,
               gLLinesRefs = false,
-              accBudgetsRefs = false}) {
+              accBudgetsRefs = false,
+              recurringEntriesRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
                 if (saleItemsRefs) db.saleItems,
                 if (gLLinesRefs) db.gLLines,
-                if (accBudgetsRefs) db.accBudgets
+                if (accBudgetsRefs) db.accBudgets,
+                if (recurringEntriesRefs) db.recurringEntries
               ],
               addJoins: <
                   T extends TableManagerState<
@@ -70760,6 +72273,18 @@ class $$CostCentersTableTableManager extends RootTableManager<
                         referencedItemsForCurrentItem:
                             (item, referencedItems) => referencedItems
                                 .where((e) => e.costCenterId == item.id),
+                        typedResults: items),
+                  if (recurringEntriesRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$CostCentersTableReferences
+                            ._recurringEntriesRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$CostCentersTableReferences(db, table, p0)
+                                .recurringEntriesRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.costCenterId == item.id),
                         typedResults: items)
                 ];
               },
@@ -70784,7 +72309,8 @@ typedef $$CostCentersTableProcessedTableManager = ProcessedTableManager<
         bool parentId,
         bool saleItemsRefs,
         bool gLLinesRefs,
-        bool accBudgetsRefs})>;
+        bool accBudgetsRefs,
+        bool recurringEntriesRefs})>;
 typedef $$SaleItemsTableCreateCompanionBuilder = SaleItemsCompanion Function({
   Value<String> id,
   Value<DateTime> createdAt,
@@ -81668,6 +83194,25 @@ final class $$GLEntriesTableReferences
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
+
+  static MultiTypedResultKey<$RecurringEntryExecutionsTable,
+      List<RecurringEntryExecution>> _recurringEntryExecutionsRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.recurringEntryExecutions,
+          aliasName: $_aliasNameGenerator(
+              db.gLEntries.id, db.recurringEntryExecutions.glEntryId));
+
+  $$RecurringEntryExecutionsTableProcessedTableManager
+      get recurringEntryExecutionsRefs {
+    final manager = $$RecurringEntryExecutionsTableTableManager(
+            $_db, $_db.recurringEntryExecutions)
+        .filter((f) => f.glEntryId.id($_item.id));
+
+    final cache =
+        $_typedResult.readTableOrNull(_recurringEntryExecutionsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
 }
 
 class $$GLEntriesTableFilterComposer
@@ -81779,6 +83324,29 @@ class $$GLEntriesTableFilterComposer
                 $$AccBankStatementLinesTableFilterComposer(
                   $db: $db,
                   $table: $db.accBankStatementLines,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
+
+  Expression<bool> recurringEntryExecutionsRefs(
+      Expression<bool> Function($$RecurringEntryExecutionsTableFilterComposer f)
+          f) {
+    final $$RecurringEntryExecutionsTableFilterComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.recurringEntryExecutions,
+            getReferencedColumn: (t) => t.glEntryId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$RecurringEntryExecutionsTableFilterComposer(
+                  $db: $db,
+                  $table: $db.recurringEntryExecutions,
                   $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                   joinBuilder: joinBuilder,
                   $removeJoinBuilderFromRootComposer:
@@ -81977,6 +83545,30 @@ class $$GLEntriesTableAnnotationComposer
                 ));
     return f(composer);
   }
+
+  Expression<T> recurringEntryExecutionsRefs<T extends Object>(
+      Expression<T> Function(
+              $$RecurringEntryExecutionsTableAnnotationComposer a)
+          f) {
+    final $$RecurringEntryExecutionsTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.recurringEntryExecutions,
+            getReferencedColumn: (t) => t.glEntryId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$RecurringEntryExecutionsTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.recurringEntryExecutions,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
 }
 
 class $$GLEntriesTableTableManager extends RootTableManager<
@@ -81991,7 +83583,10 @@ class $$GLEntriesTableTableManager extends RootTableManager<
     (GLEntry, $$GLEntriesTableReferences),
     GLEntry,
     PrefetchHooks Function(
-        {bool branchId, bool gLLinesRefs, bool accBankStatementLinesRefs})> {
+        {bool branchId,
+        bool gLLinesRefs,
+        bool accBankStatementLinesRefs,
+        bool recurringEntryExecutionsRefs})> {
   $$GLEntriesTableTableManager(_$AppDatabase db, $GLEntriesTable table)
       : super(TableManagerState(
           db: db,
@@ -82083,12 +83678,14 @@ class $$GLEntriesTableTableManager extends RootTableManager<
           prefetchHooksCallback: (
               {branchId = false,
               gLLinesRefs = false,
-              accBankStatementLinesRefs = false}) {
+              accBankStatementLinesRefs = false,
+              recurringEntryExecutionsRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
                 if (gLLinesRefs) db.gLLines,
-                if (accBankStatementLinesRefs) db.accBankStatementLines
+                if (accBankStatementLinesRefs) db.accBankStatementLines,
+                if (recurringEntryExecutionsRefs) db.recurringEntryExecutions
               ],
               addJoins: <
                   T extends TableManagerState<
@@ -82141,6 +83738,18 @@ class $$GLEntriesTableTableManager extends RootTableManager<
                         referencedItemsForCurrentItem:
                             (item, referencedItems) => referencedItems.where(
                                 (e) => e.matchedJournalEntryId == item.id),
+                        typedResults: items),
+                  if (recurringEntryExecutionsRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$GLEntriesTableReferences
+                            ._recurringEntryExecutionsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$GLEntriesTableReferences(db, table, p0)
+                                .recurringEntryExecutionsRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.glEntryId == item.id),
                         typedResults: items)
                 ];
               },
@@ -82161,7 +83770,10 @@ typedef $$GLEntriesTableProcessedTableManager = ProcessedTableManager<
     (GLEntry, $$GLEntriesTableReferences),
     GLEntry,
     PrefetchHooks Function(
-        {bool branchId, bool gLLinesRefs, bool accBankStatementLinesRefs})>;
+        {bool branchId,
+        bool gLLinesRefs,
+        bool accBankStatementLinesRefs,
+        bool recurringEntryExecutionsRefs})>;
 typedef $$GLLinesTableCreateCompanionBuilder = GLLinesCompanion Function({
   Value<String> id,
   Value<DateTime> createdAt,
@@ -105658,6 +107270,1282 @@ typedef $$AccAuditLogsTableProcessedTableManager = ProcessedTableManager<
     (AccAuditLog, $$AccAuditLogsTableReferences),
     AccAuditLog,
     PrefetchHooks Function({bool userId})>;
+typedef $$RecurringEntriesTableCreateCompanionBuilder
+    = RecurringEntriesCompanion Function({
+  Value<int> id,
+  required String name,
+  Value<String?> description,
+  required String referenceType,
+  required String frequency,
+  required String debitAccountCode,
+  required String creditAccountCode,
+  required Decimal amount,
+  Value<String?> costCenterId,
+  Value<String?> branchId,
+  Value<String> status,
+  required DateTime startDate,
+  Value<DateTime?> endDate,
+  required DateTime nextExecutionDate,
+  Value<int> totalExecutions,
+  Value<int?> maxExecutions,
+  Value<String?> createdBy,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+});
+typedef $$RecurringEntriesTableUpdateCompanionBuilder
+    = RecurringEntriesCompanion Function({
+  Value<int> id,
+  Value<String> name,
+  Value<String?> description,
+  Value<String> referenceType,
+  Value<String> frequency,
+  Value<String> debitAccountCode,
+  Value<String> creditAccountCode,
+  Value<Decimal> amount,
+  Value<String?> costCenterId,
+  Value<String?> branchId,
+  Value<String> status,
+  Value<DateTime> startDate,
+  Value<DateTime?> endDate,
+  Value<DateTime> nextExecutionDate,
+  Value<int> totalExecutions,
+  Value<int?> maxExecutions,
+  Value<String?> createdBy,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+});
+
+final class $$RecurringEntriesTableReferences extends BaseReferences<
+    _$AppDatabase, $RecurringEntriesTable, RecurringEntry> {
+  $$RecurringEntriesTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $GLAccountsTable _debitAccountCodeTable(_$AppDatabase db) =>
+      db.gLAccounts.createAlias($_aliasNameGenerator(
+          db.recurringEntries.debitAccountCode, db.gLAccounts.code));
+
+  $$GLAccountsTableProcessedTableManager? get debitAccountCode {
+    if ($_item.debitAccountCode == null) return null;
+    final manager = $$GLAccountsTableTableManager($_db, $_db.gLAccounts)
+        .filter((f) => f.code($_item.debitAccountCode!));
+    final item = $_typedResult.readTableOrNull(_debitAccountCodeTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $GLAccountsTable _creditAccountCodeTable(_$AppDatabase db) =>
+      db.gLAccounts.createAlias($_aliasNameGenerator(
+          db.recurringEntries.creditAccountCode, db.gLAccounts.code));
+
+  $$GLAccountsTableProcessedTableManager? get creditAccountCode {
+    if ($_item.creditAccountCode == null) return null;
+    final manager = $$GLAccountsTableTableManager($_db, $_db.gLAccounts)
+        .filter((f) => f.code($_item.creditAccountCode!));
+    final item = $_typedResult.readTableOrNull(_creditAccountCodeTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $CostCentersTable _costCenterIdTable(_$AppDatabase db) =>
+      db.costCenters.createAlias($_aliasNameGenerator(
+          db.recurringEntries.costCenterId, db.costCenters.id));
+
+  $$CostCentersTableProcessedTableManager? get costCenterId {
+    if ($_item.costCenterId == null) return null;
+    final manager = $$CostCentersTableTableManager($_db, $_db.costCenters)
+        .filter((f) => f.id($_item.costCenterId!));
+    final item = $_typedResult.readTableOrNull(_costCenterIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $BranchesTable _branchIdTable(_$AppDatabase db) =>
+      db.branches.createAlias(
+          $_aliasNameGenerator(db.recurringEntries.branchId, db.branches.id));
+
+  $$BranchesTableProcessedTableManager? get branchId {
+    if ($_item.branchId == null) return null;
+    final manager = $$BranchesTableTableManager($_db, $_db.branches)
+        .filter((f) => f.id($_item.branchId!));
+    final item = $_typedResult.readTableOrNull(_branchIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $UsersTable _createdByTable(_$AppDatabase db) => db.users.createAlias(
+      $_aliasNameGenerator(db.recurringEntries.createdBy, db.users.id));
+
+  $$UsersTableProcessedTableManager? get createdBy {
+    if ($_item.createdBy == null) return null;
+    final manager = $$UsersTableTableManager($_db, $_db.users)
+        .filter((f) => f.id($_item.createdBy!));
+    final item = $_typedResult.readTableOrNull(_createdByTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static MultiTypedResultKey<$RecurringEntryExecutionsTable,
+      List<RecurringEntryExecution>> _recurringEntryExecutionsRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.recurringEntryExecutions,
+          aliasName: $_aliasNameGenerator(db.recurringEntries.id,
+              db.recurringEntryExecutions.recurringEntryId));
+
+  $$RecurringEntryExecutionsTableProcessedTableManager
+      get recurringEntryExecutionsRefs {
+    final manager = $$RecurringEntryExecutionsTableTableManager(
+            $_db, $_db.recurringEntryExecutions)
+        .filter((f) => f.recurringEntryId.id($_item.id));
+
+    final cache =
+        $_typedResult.readTableOrNull(_recurringEntryExecutionsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+}
+
+class $$RecurringEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $RecurringEntriesTable> {
+  $$RecurringEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get referenceType => $composableBuilder(
+      column: $table.referenceType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get frequency => $composableBuilder(
+      column: $table.frequency, builder: (column) => ColumnFilters(column));
+
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String> get amount =>
+      $composableBuilder(
+          column: $table.amount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get startDate => $composableBuilder(
+      column: $table.startDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get endDate => $composableBuilder(
+      column: $table.endDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get nextExecutionDate => $composableBuilder(
+      column: $table.nextExecutionDate,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get totalExecutions => $composableBuilder(
+      column: $table.totalExecutions,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get maxExecutions => $composableBuilder(
+      column: $table.maxExecutions, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  $$GLAccountsTableFilterComposer get debitAccountCode {
+    final $$GLAccountsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.debitAccountCode,
+        referencedTable: $db.gLAccounts,
+        getReferencedColumn: (t) => t.code,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$GLAccountsTableFilterComposer(
+              $db: $db,
+              $table: $db.gLAccounts,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$GLAccountsTableFilterComposer get creditAccountCode {
+    final $$GLAccountsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.creditAccountCode,
+        referencedTable: $db.gLAccounts,
+        getReferencedColumn: (t) => t.code,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$GLAccountsTableFilterComposer(
+              $db: $db,
+              $table: $db.gLAccounts,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$CostCentersTableFilterComposer get costCenterId {
+    final $$CostCentersTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.costCenterId,
+        referencedTable: $db.costCenters,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CostCentersTableFilterComposer(
+              $db: $db,
+              $table: $db.costCenters,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$BranchesTableFilterComposer get branchId {
+    final $$BranchesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.branchId,
+        referencedTable: $db.branches,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BranchesTableFilterComposer(
+              $db: $db,
+              $table: $db.branches,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$UsersTableFilterComposer get createdBy {
+    final $$UsersTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.createdBy,
+        referencedTable: $db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$UsersTableFilterComposer(
+              $db: $db,
+              $table: $db.users,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  Expression<bool> recurringEntryExecutionsRefs(
+      Expression<bool> Function($$RecurringEntryExecutionsTableFilterComposer f)
+          f) {
+    final $$RecurringEntryExecutionsTableFilterComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.recurringEntryExecutions,
+            getReferencedColumn: (t) => t.recurringEntryId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$RecurringEntryExecutionsTableFilterComposer(
+                  $db: $db,
+                  $table: $db.recurringEntryExecutions,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
+}
+
+class $$RecurringEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $RecurringEntriesTable> {
+  $$RecurringEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get referenceType => $composableBuilder(
+      column: $table.referenceType,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get frequency => $composableBuilder(
+      column: $table.frequency, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get amount => $composableBuilder(
+      column: $table.amount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get startDate => $composableBuilder(
+      column: $table.startDate, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get endDate => $composableBuilder(
+      column: $table.endDate, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get nextExecutionDate => $composableBuilder(
+      column: $table.nextExecutionDate,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get totalExecutions => $composableBuilder(
+      column: $table.totalExecutions,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get maxExecutions => $composableBuilder(
+      column: $table.maxExecutions,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  $$GLAccountsTableOrderingComposer get debitAccountCode {
+    final $$GLAccountsTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.debitAccountCode,
+        referencedTable: $db.gLAccounts,
+        getReferencedColumn: (t) => t.code,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$GLAccountsTableOrderingComposer(
+              $db: $db,
+              $table: $db.gLAccounts,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$GLAccountsTableOrderingComposer get creditAccountCode {
+    final $$GLAccountsTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.creditAccountCode,
+        referencedTable: $db.gLAccounts,
+        getReferencedColumn: (t) => t.code,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$GLAccountsTableOrderingComposer(
+              $db: $db,
+              $table: $db.gLAccounts,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$CostCentersTableOrderingComposer get costCenterId {
+    final $$CostCentersTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.costCenterId,
+        referencedTable: $db.costCenters,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CostCentersTableOrderingComposer(
+              $db: $db,
+              $table: $db.costCenters,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$BranchesTableOrderingComposer get branchId {
+    final $$BranchesTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.branchId,
+        referencedTable: $db.branches,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BranchesTableOrderingComposer(
+              $db: $db,
+              $table: $db.branches,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$UsersTableOrderingComposer get createdBy {
+    final $$UsersTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.createdBy,
+        referencedTable: $db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$UsersTableOrderingComposer(
+              $db: $db,
+              $table: $db.users,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$RecurringEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RecurringEntriesTable> {
+  $$RecurringEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => column);
+
+  GeneratedColumn<String> get referenceType => $composableBuilder(
+      column: $table.referenceType, builder: (column) => column);
+
+  GeneratedColumn<String> get frequency =>
+      $composableBuilder(column: $table.frequency, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<Decimal, String> get amount =>
+      $composableBuilder(column: $table.amount, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startDate =>
+      $composableBuilder(column: $table.startDate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get endDate =>
+      $composableBuilder(column: $table.endDate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get nextExecutionDate => $composableBuilder(
+      column: $table.nextExecutionDate, builder: (column) => column);
+
+  GeneratedColumn<int> get totalExecutions => $composableBuilder(
+      column: $table.totalExecutions, builder: (column) => column);
+
+  GeneratedColumn<int> get maxExecutions => $composableBuilder(
+      column: $table.maxExecutions, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$GLAccountsTableAnnotationComposer get debitAccountCode {
+    final $$GLAccountsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.debitAccountCode,
+        referencedTable: $db.gLAccounts,
+        getReferencedColumn: (t) => t.code,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$GLAccountsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.gLAccounts,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$GLAccountsTableAnnotationComposer get creditAccountCode {
+    final $$GLAccountsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.creditAccountCode,
+        referencedTable: $db.gLAccounts,
+        getReferencedColumn: (t) => t.code,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$GLAccountsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.gLAccounts,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$CostCentersTableAnnotationComposer get costCenterId {
+    final $$CostCentersTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.costCenterId,
+        referencedTable: $db.costCenters,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CostCentersTableAnnotationComposer(
+              $db: $db,
+              $table: $db.costCenters,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$BranchesTableAnnotationComposer get branchId {
+    final $$BranchesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.branchId,
+        referencedTable: $db.branches,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BranchesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.branches,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$UsersTableAnnotationComposer get createdBy {
+    final $$UsersTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.createdBy,
+        referencedTable: $db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$UsersTableAnnotationComposer(
+              $db: $db,
+              $table: $db.users,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  Expression<T> recurringEntryExecutionsRefs<T extends Object>(
+      Expression<T> Function(
+              $$RecurringEntryExecutionsTableAnnotationComposer a)
+          f) {
+    final $$RecurringEntryExecutionsTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.recurringEntryExecutions,
+            getReferencedColumn: (t) => t.recurringEntryId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$RecurringEntryExecutionsTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.recurringEntryExecutions,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
+}
+
+class $$RecurringEntriesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $RecurringEntriesTable,
+    RecurringEntry,
+    $$RecurringEntriesTableFilterComposer,
+    $$RecurringEntriesTableOrderingComposer,
+    $$RecurringEntriesTableAnnotationComposer,
+    $$RecurringEntriesTableCreateCompanionBuilder,
+    $$RecurringEntriesTableUpdateCompanionBuilder,
+    (RecurringEntry, $$RecurringEntriesTableReferences),
+    RecurringEntry,
+    PrefetchHooks Function(
+        {bool debitAccountCode,
+        bool creditAccountCode,
+        bool costCenterId,
+        bool branchId,
+        bool createdBy,
+        bool recurringEntryExecutionsRefs})> {
+  $$RecurringEntriesTableTableManager(
+      _$AppDatabase db, $RecurringEntriesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RecurringEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RecurringEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RecurringEntriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String?> description = const Value.absent(),
+            Value<String> referenceType = const Value.absent(),
+            Value<String> frequency = const Value.absent(),
+            Value<String> debitAccountCode = const Value.absent(),
+            Value<String> creditAccountCode = const Value.absent(),
+            Value<Decimal> amount = const Value.absent(),
+            Value<String?> costCenterId = const Value.absent(),
+            Value<String?> branchId = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<DateTime> startDate = const Value.absent(),
+            Value<DateTime?> endDate = const Value.absent(),
+            Value<DateTime> nextExecutionDate = const Value.absent(),
+            Value<int> totalExecutions = const Value.absent(),
+            Value<int?> maxExecutions = const Value.absent(),
+            Value<String?> createdBy = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+          }) =>
+              RecurringEntriesCompanion(
+            id: id,
+            name: name,
+            description: description,
+            referenceType: referenceType,
+            frequency: frequency,
+            debitAccountCode: debitAccountCode,
+            creditAccountCode: creditAccountCode,
+            amount: amount,
+            costCenterId: costCenterId,
+            branchId: branchId,
+            status: status,
+            startDate: startDate,
+            endDate: endDate,
+            nextExecutionDate: nextExecutionDate,
+            totalExecutions: totalExecutions,
+            maxExecutions: maxExecutions,
+            createdBy: createdBy,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required String name,
+            Value<String?> description = const Value.absent(),
+            required String referenceType,
+            required String frequency,
+            required String debitAccountCode,
+            required String creditAccountCode,
+            required Decimal amount,
+            Value<String?> costCenterId = const Value.absent(),
+            Value<String?> branchId = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            required DateTime startDate,
+            Value<DateTime?> endDate = const Value.absent(),
+            required DateTime nextExecutionDate,
+            Value<int> totalExecutions = const Value.absent(),
+            Value<int?> maxExecutions = const Value.absent(),
+            Value<String?> createdBy = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+          }) =>
+              RecurringEntriesCompanion.insert(
+            id: id,
+            name: name,
+            description: description,
+            referenceType: referenceType,
+            frequency: frequency,
+            debitAccountCode: debitAccountCode,
+            creditAccountCode: creditAccountCode,
+            amount: amount,
+            costCenterId: costCenterId,
+            branchId: branchId,
+            status: status,
+            startDate: startDate,
+            endDate: endDate,
+            nextExecutionDate: nextExecutionDate,
+            totalExecutions: totalExecutions,
+            maxExecutions: maxExecutions,
+            createdBy: createdBy,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$RecurringEntriesTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: (
+              {debitAccountCode = false,
+              creditAccountCode = false,
+              costCenterId = false,
+              branchId = false,
+              createdBy = false,
+              recurringEntryExecutionsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (recurringEntryExecutionsRefs) db.recurringEntryExecutions
+              ],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (debitAccountCode) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.debitAccountCode,
+                    referencedTable: $$RecurringEntriesTableReferences
+                        ._debitAccountCodeTable(db),
+                    referencedColumn: $$RecurringEntriesTableReferences
+                        ._debitAccountCodeTable(db)
+                        .code,
+                  ) as T;
+                }
+                if (creditAccountCode) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.creditAccountCode,
+                    referencedTable: $$RecurringEntriesTableReferences
+                        ._creditAccountCodeTable(db),
+                    referencedColumn: $$RecurringEntriesTableReferences
+                        ._creditAccountCodeTable(db)
+                        .code,
+                  ) as T;
+                }
+                if (costCenterId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.costCenterId,
+                    referencedTable: $$RecurringEntriesTableReferences
+                        ._costCenterIdTable(db),
+                    referencedColumn: $$RecurringEntriesTableReferences
+                        ._costCenterIdTable(db)
+                        .id,
+                  ) as T;
+                }
+                if (branchId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.branchId,
+                    referencedTable:
+                        $$RecurringEntriesTableReferences._branchIdTable(db),
+                    referencedColumn:
+                        $$RecurringEntriesTableReferences._branchIdTable(db).id,
+                  ) as T;
+                }
+                if (createdBy) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.createdBy,
+                    referencedTable:
+                        $$RecurringEntriesTableReferences._createdByTable(db),
+                    referencedColumn: $$RecurringEntriesTableReferences
+                        ._createdByTable(db)
+                        .id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (recurringEntryExecutionsRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$RecurringEntriesTableReferences
+                            ._recurringEntryExecutionsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$RecurringEntriesTableReferences(db, table, p0)
+                                .recurringEntryExecutionsRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.recurringEntryId == item.id),
+                        typedResults: items)
+                ];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$RecurringEntriesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $RecurringEntriesTable,
+    RecurringEntry,
+    $$RecurringEntriesTableFilterComposer,
+    $$RecurringEntriesTableOrderingComposer,
+    $$RecurringEntriesTableAnnotationComposer,
+    $$RecurringEntriesTableCreateCompanionBuilder,
+    $$RecurringEntriesTableUpdateCompanionBuilder,
+    (RecurringEntry, $$RecurringEntriesTableReferences),
+    RecurringEntry,
+    PrefetchHooks Function(
+        {bool debitAccountCode,
+        bool creditAccountCode,
+        bool costCenterId,
+        bool branchId,
+        bool createdBy,
+        bool recurringEntryExecutionsRefs})>;
+typedef $$RecurringEntryExecutionsTableCreateCompanionBuilder
+    = RecurringEntryExecutionsCompanion Function({
+  Value<int> id,
+  required int recurringEntryId,
+  required String glEntryId,
+  required DateTime executionDate,
+  Value<String> status,
+  Value<String?> errorMessage,
+  Value<DateTime> createdAt,
+});
+typedef $$RecurringEntryExecutionsTableUpdateCompanionBuilder
+    = RecurringEntryExecutionsCompanion Function({
+  Value<int> id,
+  Value<int> recurringEntryId,
+  Value<String> glEntryId,
+  Value<DateTime> executionDate,
+  Value<String> status,
+  Value<String?> errorMessage,
+  Value<DateTime> createdAt,
+});
+
+final class $$RecurringEntryExecutionsTableReferences extends BaseReferences<
+    _$AppDatabase, $RecurringEntryExecutionsTable, RecurringEntryExecution> {
+  $$RecurringEntryExecutionsTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $RecurringEntriesTable _recurringEntryIdTable(_$AppDatabase db) =>
+      db.recurringEntries.createAlias($_aliasNameGenerator(
+          db.recurringEntryExecutions.recurringEntryId,
+          db.recurringEntries.id));
+
+  $$RecurringEntriesTableProcessedTableManager? get recurringEntryId {
+    if ($_item.recurringEntryId == null) return null;
+    final manager =
+        $$RecurringEntriesTableTableManager($_db, $_db.recurringEntries)
+            .filter((f) => f.id($_item.recurringEntryId!));
+    final item = $_typedResult.readTableOrNull(_recurringEntryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $GLEntriesTable _glEntryIdTable(_$AppDatabase db) =>
+      db.gLEntries.createAlias($_aliasNameGenerator(
+          db.recurringEntryExecutions.glEntryId, db.gLEntries.id));
+
+  $$GLEntriesTableProcessedTableManager? get glEntryId {
+    if ($_item.glEntryId == null) return null;
+    final manager = $$GLEntriesTableTableManager($_db, $_db.gLEntries)
+        .filter((f) => f.id($_item.glEntryId!));
+    final item = $_typedResult.readTableOrNull(_glEntryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$RecurringEntryExecutionsTableFilterComposer
+    extends Composer<_$AppDatabase, $RecurringEntryExecutionsTable> {
+  $$RecurringEntryExecutionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get executionDate => $composableBuilder(
+      column: $table.executionDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get errorMessage => $composableBuilder(
+      column: $table.errorMessage, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  $$RecurringEntriesTableFilterComposer get recurringEntryId {
+    final $$RecurringEntriesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.recurringEntryId,
+        referencedTable: $db.recurringEntries,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$RecurringEntriesTableFilterComposer(
+              $db: $db,
+              $table: $db.recurringEntries,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$GLEntriesTableFilterComposer get glEntryId {
+    final $$GLEntriesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.glEntryId,
+        referencedTable: $db.gLEntries,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$GLEntriesTableFilterComposer(
+              $db: $db,
+              $table: $db.gLEntries,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$RecurringEntryExecutionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $RecurringEntryExecutionsTable> {
+  $$RecurringEntryExecutionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get executionDate => $composableBuilder(
+      column: $table.executionDate,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get errorMessage => $composableBuilder(
+      column: $table.errorMessage,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  $$RecurringEntriesTableOrderingComposer get recurringEntryId {
+    final $$RecurringEntriesTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.recurringEntryId,
+        referencedTable: $db.recurringEntries,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$RecurringEntriesTableOrderingComposer(
+              $db: $db,
+              $table: $db.recurringEntries,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$GLEntriesTableOrderingComposer get glEntryId {
+    final $$GLEntriesTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.glEntryId,
+        referencedTable: $db.gLEntries,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$GLEntriesTableOrderingComposer(
+              $db: $db,
+              $table: $db.gLEntries,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$RecurringEntryExecutionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RecurringEntryExecutionsTable> {
+  $$RecurringEntryExecutionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get executionDate => $composableBuilder(
+      column: $table.executionDate, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get errorMessage => $composableBuilder(
+      column: $table.errorMessage, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$RecurringEntriesTableAnnotationComposer get recurringEntryId {
+    final $$RecurringEntriesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.recurringEntryId,
+        referencedTable: $db.recurringEntries,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$RecurringEntriesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.recurringEntries,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$GLEntriesTableAnnotationComposer get glEntryId {
+    final $$GLEntriesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.glEntryId,
+        referencedTable: $db.gLEntries,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$GLEntriesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.gLEntries,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$RecurringEntryExecutionsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $RecurringEntryExecutionsTable,
+    RecurringEntryExecution,
+    $$RecurringEntryExecutionsTableFilterComposer,
+    $$RecurringEntryExecutionsTableOrderingComposer,
+    $$RecurringEntryExecutionsTableAnnotationComposer,
+    $$RecurringEntryExecutionsTableCreateCompanionBuilder,
+    $$RecurringEntryExecutionsTableUpdateCompanionBuilder,
+    (RecurringEntryExecution, $$RecurringEntryExecutionsTableReferences),
+    RecurringEntryExecution,
+    PrefetchHooks Function({bool recurringEntryId, bool glEntryId})> {
+  $$RecurringEntryExecutionsTableTableManager(
+      _$AppDatabase db, $RecurringEntryExecutionsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RecurringEntryExecutionsTableFilterComposer(
+                  $db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RecurringEntryExecutionsTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RecurringEntryExecutionsTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<int> recurringEntryId = const Value.absent(),
+            Value<String> glEntryId = const Value.absent(),
+            Value<DateTime> executionDate = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<String?> errorMessage = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+          }) =>
+              RecurringEntryExecutionsCompanion(
+            id: id,
+            recurringEntryId: recurringEntryId,
+            glEntryId: glEntryId,
+            executionDate: executionDate,
+            status: status,
+            errorMessage: errorMessage,
+            createdAt: createdAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required int recurringEntryId,
+            required String glEntryId,
+            required DateTime executionDate,
+            Value<String> status = const Value.absent(),
+            Value<String?> errorMessage = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+          }) =>
+              RecurringEntryExecutionsCompanion.insert(
+            id: id,
+            recurringEntryId: recurringEntryId,
+            glEntryId: glEntryId,
+            executionDate: executionDate,
+            status: status,
+            errorMessage: errorMessage,
+            createdAt: createdAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$RecurringEntryExecutionsTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: (
+              {recurringEntryId = false, glEntryId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (recurringEntryId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.recurringEntryId,
+                    referencedTable: $$RecurringEntryExecutionsTableReferences
+                        ._recurringEntryIdTable(db),
+                    referencedColumn: $$RecurringEntryExecutionsTableReferences
+                        ._recurringEntryIdTable(db)
+                        .id,
+                  ) as T;
+                }
+                if (glEntryId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.glEntryId,
+                    referencedTable: $$RecurringEntryExecutionsTableReferences
+                        ._glEntryIdTable(db),
+                    referencedColumn: $$RecurringEntryExecutionsTableReferences
+                        ._glEntryIdTable(db)
+                        .id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$RecurringEntryExecutionsTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $RecurringEntryExecutionsTable,
+        RecurringEntryExecution,
+        $$RecurringEntryExecutionsTableFilterComposer,
+        $$RecurringEntryExecutionsTableOrderingComposer,
+        $$RecurringEntryExecutionsTableAnnotationComposer,
+        $$RecurringEntryExecutionsTableCreateCompanionBuilder,
+        $$RecurringEntryExecutionsTableUpdateCompanionBuilder,
+        (RecurringEntryExecution, $$RecurringEntryExecutionsTableReferences),
+        RecurringEntryExecution,
+        PrefetchHooks Function({bool recurringEntryId, bool glEntryId})>;
 typedef $$HREmployeesTableCreateCompanionBuilder = HREmployeesCompanion
     Function({
   Value<String> id,
@@ -107447,6 +110335,11 @@ class $AppDatabaseManager {
       $$AccBankStatementLinesTableTableManager(_db, _db.accBankStatementLines);
   $$AccAuditLogsTableTableManager get accAuditLogs =>
       $$AccAuditLogsTableTableManager(_db, _db.accAuditLogs);
+  $$RecurringEntriesTableTableManager get recurringEntries =>
+      $$RecurringEntriesTableTableManager(_db, _db.recurringEntries);
+  $$RecurringEntryExecutionsTableTableManager get recurringEntryExecutions =>
+      $$RecurringEntryExecutionsTableTableManager(
+          _db, _db.recurringEntryExecutions);
   $$HREmployeesTableTableManager get hREmployees =>
       $$HREmployeesTableTableManager(_db, _db.hREmployees);
   $$HRPayrollRunsTableTableManager get hRPayrollRuns =>

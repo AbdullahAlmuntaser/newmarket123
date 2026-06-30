@@ -527,11 +527,10 @@ class AccountingService {
   Future<String> createCustomerAccount(String customerName) async {
     final dao = db.accountingDao;
     await db.ensureCoreReferenceData();
-    var parent = await dao.getAccountByCode(codeAccountsReceivable);
-    parent ??= await dao.getAccountByCode('1201');
+    final parent = await dao.getAccountByCode(codeAccountsReceivable);
     if (parent == null) {
       throw Exception(
-          'حساب الذمم المدينة الرئيسي غير موجود. تعذر إنشاء حساب العميل.');
+          'حساب الذمم المدينة الرئيسي ($codeAccountsReceivable) غير موجود. يجب إنشاءه أولاً من شجرة الحسابات.');
     }
     final parentAccount = parent;
 

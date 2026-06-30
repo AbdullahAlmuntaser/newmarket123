@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/utils/debouncer.dart';
 import 'package:uuid/uuid.dart';
+import 'package:supermarket/injection_container.dart';
+import 'package:supermarket/core/services/quick_customer_service.dart';
 
 /// A generic dialog for picking an entity from a stream
 class EntityPicker<T> extends StatefulWidget {
@@ -384,19 +386,8 @@ class CustomerPicker extends StatelessWidget {
   });
 
   Future<Customer?> _addNewCustomer(String name) async {
-    final id = drift.Value(const Uuid().v4());
-    await db.into(db.customers).insert(
-          CustomersCompanion.insert(
-            id: id,
-            name: name,
-            createdAt: drift.Value(DateTime.now()),
-          ),
-        );
-    final result = await (db.select(
-      db.customers,
-    )..where((c) => c.name.equals(name)))
-        .get();
-    return result.isNotEmpty ? result.first : null;
+    final quickCustomerService = sl<QuickCustomerService>();
+    return await quickCustomerService.getOrCreateCustomerForSale(name);
   }
 
   @override

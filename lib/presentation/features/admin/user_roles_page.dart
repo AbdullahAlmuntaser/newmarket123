@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:drift/drift.dart' show Expression;
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
+import 'package:bcrypt/bcrypt.dart';
 
 class UserRolesPage extends StatefulWidget {
   const UserRolesPage({super.key});
@@ -313,7 +314,7 @@ class _UserRolesPageState extends State<UserRolesPage> {
               await db.into(db.users).insert(
                     UsersCompanion.insert(
                       username: usernameController.text,
-                      password: passwordController.text,
+                      password: BCrypt.hashpw(passwordController.text, BCrypt.gensalt()),
                       role: selectedRole,
                       fullName: fullNameController.text.isEmpty
                           ? usernameController.text

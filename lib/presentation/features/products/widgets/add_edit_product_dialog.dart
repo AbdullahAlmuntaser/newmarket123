@@ -27,6 +27,8 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   late TextEditingController _wholesalePriceController;
   late TextEditingController _barcodeController;
   String? _imagePath;
+  String? _selectedCategoryId;
+  List<Category> _categories = [];
 
   @override
   void initState() {
@@ -44,6 +46,22 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     _barcodeController =
         TextEditingController(text: widget.product?.barcode ?? '');
     _imagePath = widget.product?.imagePath;
+    _selectedCategoryId = widget.product?.categoryId;
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    final db = Provider.of<AppDatabase>(context, listen: false);
+    final list = await db.select(db.categories).get();
+    if (mounted) {
+      setState(() {
+        _categories = list;
+        if (_selectedCategoryId != null &&
+            !list.any((c) => c.id == _selectedCategoryId)) {
+          _selectedCategoryId = null;
+        }
+      });
+    }
   }
 
   @override
@@ -91,6 +109,22 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 validator: (value) => value!.isEmpty ? l10n.enterSku : null,
               ),
               const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: _selectedCategoryId,
+                decoration: const InputDecoration(labelText: 'الفئة / التصنيف'),
+                items: _categories
+                    .map((c) => DropdownMenuItem(
+                          value: c.id,
+                          child: Text(c.name),
+                        ))
+                    .toList(),
+                onChanged: (val) {
+                  setState(() {
+                    _selectedCategoryId = val;
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -113,10 +147,15 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _stockController,
-                decoration: InputDecoration(labelText: l10n.stockLabel),
+                decoration: InputDecoration(
+                  labelText: l10n.stockLabel,
+                  helperText: widget.product != null ? 'تعديل المخزون يتم عبر الجرد أو التحويل' : null,
+                ),
                 keyboardType: TextInputType.number,
+                readOnly: widget.product != null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -252,6 +291,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                   barcode: Value(_barcodeController.text.isNotEmpty
                       ? _barcodeController.text
                       : null),
+                  categoryId: Value(_selectedCategoryId),
                 ))
                 .then((p) => p.id);
 
@@ -294,6 +334,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 barcode: Value(_barcodeController.text.isNotEmpty
                     ? _barcodeController.text
                     : null),
+                categoryId: Value(_selectedCategoryId),
               ),
             );
           }

@@ -17,10 +17,15 @@ class ProductGrid extends StatelessWidget {
         }
 
         if (state is PosLoaded) {
-          final products = state.filteredProducts;
+          final isSearching = state.searchQuery.isNotEmpty;
+          final products = isSearching ? state.searchResults : state.filteredProducts;
 
           if (products.isEmpty) {
-            return const Center(child: Text('لا يوجد منتجات في هذه الفئة'));
+            return Center(
+              child: Text(isSearching
+                  ? 'لا توجد منتجات تطابق بحثك'
+                  : 'لا يوجد منتجات في هذه الفئة'),
+            );
           }
 
           return LayoutBuilder(

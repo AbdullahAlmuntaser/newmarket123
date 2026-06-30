@@ -3,6 +3,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:intl/intl.dart' as intl;
+import 'package:supermarket/data/datasources/local/daos/customers_dao.dart';
 
 class StatementPrintingService {
   final AppDatabase db;
@@ -16,17 +17,31 @@ class StatementPrintingService {
     required DateTime endDate,
   }) async {
     final pdf = pw.Document();
+    final arabicFont = await PdfGoogleFonts.cairoRegular();
+    final arabicFontBold = await PdfGoogleFonts.cairoBold();
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
+        theme: pw.ThemeData.withFont(
+          base: arabicFont,
+          bold: arabicFontBold,
+        ),
         build: (pw.Context context) {
           return [
-            _buildHeader(account, startDate, endDate),
-            pw.SizedBox(height: 20),
-            _buildTransactionTable(transactions, account),
-            pw.SizedBox(height: 20),
-            _buildFooter(transactions, account),
+            pw.Directionality(
+              textDirection: pw.TextDirection.rtl,
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  _buildHeader(account, startDate, endDate),
+                  pw.SizedBox(height: 20),
+                  _buildTransactionTable(transactions, account),
+                  pw.SizedBox(height: 20),
+                  _buildFooter(transactions, account),
+                ],
+              ),
+            ),
           ];
         },
       ),
@@ -108,6 +123,212 @@ class StatementPrintingService {
         pw.Text('الرصيد النهائي: ${finalBalance.toStringAsFixed(2)}',
             style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
       ],
+    );
+  }
+
+  Future<void> printCustomerStatement({
+    required Customer customer,
+    required List<CustomerTransaction> transactions,
+  }) async {
+    final pdf = pw.Document();
+    final arabicFont = await PdfGoogleFonts.cairoRegular();
+    final arabicFontBold = await PdfGoogleFonts.cairoBold();
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        theme: pw.ThemeData.withFont(
+          base: arabicFont,
+          bold: arabicFontBold,
+        ),
+        build: (pw.Context context) {
+          double runningBalance = 0.0;
+          return [
+            pw.Directionality(
+              textDirection: pw.TextDirection.rtl,
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Text('كشف حساب العميل',
+                      style: pw.TextStyle(
+                          fontSize: 24, fontWeight: pw.FontWeight.bold)),
+                  pw.Text('Customer Statement',
+                      style: const pw.TextStyle(fontSize: 16)),
+                  pw.SizedBox(height: 10),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('العميل: ${customer.name}'),
+                      pw.Text('الهاتف: ${customer.phone ?? ""}'),
+                    ],
+                  ),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(
+                          'الرصيد الحالي في النظام: ${customer.balance.toStringAsFixed(2)} SAR'),
+                    ],
+                  ),
+                  pw.SizedBox(height: 20),
+                  pw.TableHelper.fromTextArray(
+                    headers: [
+                      'التاريخ',
+                      'البيان',
+                      'مدين (عليه)',
+                      'دائن (له)',
+                      'الرصيد'
+                    ],
+                    data: transactions.map((t) {
+                      runningBalance += t.debit - t.credit;
+                      return [
+                        intl.DateFormat('yyyy-MM-dd HH:mm').format(t.date),
+                        t.description,
+                        t.debit.toStringAsFixed(2),
+                        t.credit.toStringAsFixed(2),
+                        runningBalance.toStringAsFixed(2),
+                      ];
+                    }).toList(),
+                    headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                    headerDecoration:
+                        const pw.BoxDecoration(color: PdfColors.grey300),
+                    cellAlignment: pw.Alignment.centerRight,
+                  ),
+                  pw.SizedBox(height: 20),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Text(
+                          'إجمالي المدين (المبيعات): ${transactions.fold<double>(0, (sum, t) => sum + t.debit).toStringAsFixed(2)} SAR'),
+                      pw.Text(
+                          'إجمالي الدائن (المسدد/المرتجع): ${transactions.fold<double>(0, (sum, t) => sum + t.credit).toStringAsFixed(2)} SAR'),
+                      pw.Text(
+                          'الرصيد النهائي المحسوب: ${runningBalance.toStringAsFixed(2)} SAR',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ];
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
+    );
+  }
+
+  Future<void> printSupplierStatement({
+    required Supplier supplier,
+    required List<dynamic> transactions,
+  }) async {
+    final pdf = pw.Document();
+    final arabicFont = await PdfGoogleFonts.cairoRegular();
+    final arabicFontBold = await PdfGoogleFonts.cairoBold();
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        theme: pw.ThemeData.withFont(
+          base: arabicFont,
+          bold: arabicFontBold,
+        ),
+        build: (pw.Context context) {
+          final list = List.from(transactions);
+          list.sort((a, b) {
+            final dateA =
+                a is Purchase ? a.date : (a as SupplierPayment).paymentDate;
+            final dateB =
+                b is Purchase ? b.date : (b as SupplierPayment).paymentDate;
+            return dateA.compareTo(dateB);
+          });
+
+          double runningBalance = 0.0;
+
+          return [
+            pw.Directionality(
+              textDirection: pw.TextDirection.rtl,
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Text('كشف حساب المورد',
+                      style: pw.TextStyle(
+                          fontSize: 24, fontWeight: pw.FontWeight.bold)),
+                  pw.Text('Supplier Statement',
+                      style: const pw.TextStyle(fontSize: 16)),
+                  pw.SizedBox(height: 10),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('المورد: ${supplier.name}'),
+                      pw.Text('الهاتف: ${supplier.phone ?? ""}'),
+                    ],
+                  ),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(
+                          'الرصيد الحالي في النظام: ${supplier.balance.toStringAsFixed(2)} SAR'),
+                    ],
+                  ),
+                  pw.SizedBox(height: 20),
+                  pw.TableHelper.fromTextArray(
+                    headers: [
+                      'التاريخ',
+                      'البيان',
+                      'مدين (+ شراء)',
+                      'دائن (- تسديد)',
+                      'الرصيد'
+                    ],
+                    data: list.map((tx) {
+                      final date = tx is Purchase
+                          ? tx.date
+                          : (tx as SupplierPayment).paymentDate;
+                      final typeStr = tx is Purchase
+                          ? 'فاتورة مشتريات آجل ${tx.invoiceNumber != null ? "#${tx.invoiceNumber}" : ""}'
+                          : 'دفعة للمورد';
+                      final debit = tx is Purchase ? tx.total.toDouble() : 0.0;
+                      final credit =
+                          tx is SupplierPayment ? tx.amount.toDouble() : 0.0;
+                      runningBalance += debit - credit;
+
+                      return [
+                        intl.DateFormat('yyyy-MM-dd HH:mm').format(date),
+                        typeStr,
+                        debit > 0 ? debit.toStringAsFixed(2) : '0.00',
+                        credit > 0 ? credit.toStringAsFixed(2) : '0.00',
+                        runningBalance.toStringAsFixed(2),
+                      ];
+                    }).toList(),
+                    headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                    headerDecoration:
+                        const pw.BoxDecoration(color: PdfColors.grey300),
+                    cellAlignment: pw.Alignment.centerRight,
+                  ),
+                  pw.SizedBox(height: 20),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Text(
+                          'إجمالي المشتريات الآجلة (+): ${transactions.whereType<Purchase>().fold<double>(0, (sum, p) => sum + p.total.toDouble()).toStringAsFixed(2)} SAR'),
+                      pw.Text(
+                          'إجمالي المدفوعات للمورد (-): ${transactions.whereType<SupplierPayment>().fold<double>(0, (sum, sp) => sum + sp.amount.toDouble()).toStringAsFixed(2)} SAR'),
+                      pw.Text(
+                          'الرصيد النهائي المحسوب: ${runningBalance.toStringAsFixed(2)} SAR',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ];
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
     );
   }
 }

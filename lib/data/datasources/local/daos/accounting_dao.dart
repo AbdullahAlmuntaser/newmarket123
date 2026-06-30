@@ -260,17 +260,24 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     final account = await getAccountById(accountId);
     if (account == null) return Decimal.zero;
 
-    final query = select(db.accountTransactions)
-      ..where((t) => t.accountId.equals(accountId));
+    var query = db.select(db.accountTransactions).join([
+      innerJoin(db.gLEntries, db.gLEntries.id.equalsExp(db.accountTransactions.referenceId)),
+    ])
+      ..where(db.accountTransactions.accountId.equals(accountId));
+
     if (branchId != null) {
-      query.where((t) => t.branchId.equals(branchId));
+      query = query..where(db.accountTransactions.branchId.equals(branchId));
     }
 
     final rows = await query.get();
     if (rows.isEmpty) return Decimal.zero;
 
-    Decimal debit = rows.fold(Decimal.zero, (sum, r) => sum + r.debit);
-    Decimal credit = rows.fold(Decimal.zero, (sum, r) => sum + r.credit);
+    Decimal debit = Decimal.zero;
+    Decimal credit = Decimal.zero;
+    for (final row in rows) {
+      debit += row.readTable(db.accountTransactions).debit;
+      credit += row.readTable(db.accountTransactions).credit;
+    }
 
     if ([AccountType.asset, AccountType.expense].contains(account.type)) {
       return debit - credit;
@@ -332,13 +339,21 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
 
   // --- Reports (all Decimal-based) ---
   Future<List<TrialBalanceItem>> getTrialBalance({String? branchId}) async {
-    final allLines = await (select(gLLines).get());
     final accounts = await getAllAccounts();
-    final items = <TrialBalanceItem>[];
+
+    var query = db.select(db.gLLines).join([
+      innerJoin(db.gLEntries, db.gLEntries.id.equalsExp(db.gLLines.entryId)),
+    ]);
+
+    if (branchId != null) {
+      query = query..where(db.gLLines.branchId.equals(branchId));
+    }
+
+    final rows = await query.get();
 
     final Map<String, ({Decimal debit, Decimal credit})> totals = {};
-    for (final line in allLines) {
-      if (branchId != null && line.branchId != branchId) continue;
+    for (final row in rows) {
+      final line = row.readTable(db.gLLines);
       final entry =
           totals[line.accountId] ?? (debit: Decimal.zero, credit: Decimal.zero);
       totals[line.accountId] = (
@@ -347,6 +362,7 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
       );
     }
 
+    final items = <TrialBalanceItem>[];
     for (final account in accounts) {
       if (account.isHeader) continue;
       final t =
@@ -588,12 +604,14 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
 
     final Decimal costOfGoodsSold = accountByCode['5010'] ?? Decimal.zero;
 
+    final Decimal operatingExpenses = totalExpenses - costOfGoodsSold;
+
     return IncomeStatement(
       totalRevenue: totalRevenue,
       costOfGoodsSold: costOfGoodsSold,
       grossProfit: totalRevenue - costOfGoodsSold,
-      totalExpenses: totalExpenses,
-      netIncome: totalRevenue - totalExpenses - costOfGoodsSold,
+      totalExpenses: operatingExpenses,
+      netIncome: totalRevenue - costOfGoodsSold - operatingExpenses,
     );
   }
 
