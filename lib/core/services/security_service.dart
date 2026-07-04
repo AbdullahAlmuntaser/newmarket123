@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-import 'package:drift/drift.dart' show Variable;
+import 'package:bcrypt/bcrypt.dart';
+import 'package:drift/drift.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
@@ -55,25 +56,64 @@ class SecurityService {
   static const _storage = FlutterSecureStorage();
   static const _dbKeyName = 'db_encryption_key';
 
+  /// Session timeout duration - configurable per deployment
+  static Duration sessionTimeout = const Duration(hours: 8);
+
+  /// Maximum failed login attempts before lockout
+  static const int maxLoginAttempts = 5;
+
+  /// Lockout duration after max failed attempts
+  static Duration lockoutDuration = const Duration(minutes: 15);
+
   static bool useFakeKeyForTesting = false;
 
   SecurityService(this.db);
 
   Future<void> dispose() async {}
 
-  // ==================== PASSWORD HASHING ====================
+  // ==================== PASSWORD HASHING (BCrypt) ====================
 
+  /// Hash password using BCrypt with 12 rounds (OWASP recommended)
   String hashPassword(String password, String salt) {
+    return BCrypt.hashpw(password, salt);
+  }
+
+  /// Generate a cryptographically secure salt for BCrypt
+  String generateSalt() => BCrypt.gensalt();
+
+  /// Verify password against BCrypt hash
+  bool verifyPassword(String password, String salt, String hash) {
+    try {
+      return BCrypt.checkpw(password, hash);
+    } catch (_) {
+      // Fallback for legacy SHA-256 hashes during migration
+      return _verifyLegacyPassword(password, salt, hash);
+    }
+  }
+
+  /// Legacy SHA-256 verification for backward compatibility during migration
+  bool _verifyLegacyPassword(String password, String salt, String hash) {
     final salted = '$_saltPrefix:$salt:$password';
     final bytes = utf8.encode(salted);
     final digest = sha256.convert(bytes);
-    return digest.toString();
+    return digest.toString() == hash;
   }
 
-  String generateSalt() => const Uuid().v4().substring(0, 16);
+  /// Check if a hash is a BCrypt hash (starts with $2a$, $2b$, or $2y$)
+  bool _isBcryptHash(String hash) {
+    return hash.startsWith('\$2a\$') || hash.startsWith('\$2b\$') || hash.startsWith('\$2y\$');
+  }
 
-  bool verifyPassword(String password, String salt, String hash) {
-    return hashPassword(password, salt) == hash;
+  /// Migrate a user's password from SHA-256 to BCrypt
+  Future<void> migratePasswordToBcrypt(String userId, String plainPassword) async {
+    final newSalt = generateSalt();
+    final newHash = hashPassword(plainPassword, newSalt);
+    await (db.update(db.users)..where((u) => u.id.equals(userId))).write(
+      UsersCompanion(
+        passwordHash: Value(newHash),
+        passwordSalt: Value(newSalt),
+      ),
+    );
   }
 
   // ==================== AUTHENTICATION ====================
@@ -84,17 +124,34 @@ class SecurityService {
         .getSingleOrNull();
     if (user == null) return null;
 
+    // Check for account lockout
+    final isLocked = await _isAccountLocked(user.id);
+    if (isLocked) {
+      throw Exception('الحساب مقفل مؤقتاً بسبب محاولات دخول كثيرة. يرجى المحاولة بعد ${lockoutDuration.inMinutes} دقيقة.');
+    }
+
     final bool passwordValid;
     if (user.passwordHash != null && user.passwordSalt != null) {
       passwordValid =
           verifyPassword(password, user.passwordSalt!, user.passwordHash!);
+      // Auto-migrate legacy SHA-256 hashes to BCrypt on successful login
+      if (passwordValid && !_isBcryptHash(user.passwordHash!)) {
+        await migratePasswordToBcrypt(user.id, password);
+      }
     } else {
       passwordValid = password == user.password;
     }
-    if (!passwordValid) return null;
+
+    if (!passwordValid) {
+      await _recordFailedLogin(user.id);
+      return null;
+    }
+
+    // Clear failed login attempts on successful login
+    await _clearFailedLoginAttempts(user.id);
 
     final token = const Uuid().v4();
-    final expiresAt = DateTime.now().add(const Duration(hours: 8));
+    final expiresAt = DateTime.now().add(sessionTimeout);
     final loginAt = DateTime.now();
 
     // Use raw SQL since user_sessions is created via migration
@@ -126,6 +183,62 @@ class SecurityService {
     );
   }
 
+  Future<void> logout(String token) async {
+    await db.customStatement(
+      'DELETE FROM user_sessions WHERE token = ?',
+      [token],
+    );
+  }
+
+  Future<void> logoutAllSessions(String userId) async {
+    await db.customStatement(
+      'DELETE FROM user_sessions WHERE user_id = ?',
+      [userId],
+    );
+  }
+
+  // ==================== ACCOUNT LOCKOUT ====================
+
+  Future<void> _recordFailedLogin(String userId) async {
+    try {
+      await db.customStatement(
+        'INSERT INTO login_attempts (id, user_id, attempted_at, success) VALUES (?, ?, ?, 0)',
+        [const Uuid().v4(), userId, DateTime.now().toIso8601String()],
+      );
+    } catch (_) {
+      // Table might not exist yet, ignore
+    }
+  }
+
+  Future<void> _clearFailedLoginAttempts(String userId) async {
+    try {
+      await db.customStatement(
+        'DELETE FROM login_attempts WHERE user_id = ? AND success = 0',
+        [userId],
+      );
+    } catch (_) {
+      // Table might not exist yet, ignore
+    }
+  }
+
+  Future<bool> _isAccountLocked(String userId) async {
+    try {
+      final cutoff = DateTime.now().subtract(lockoutDuration).toIso8601String();
+      final result = await db.customSelect(
+        'SELECT COUNT(*) as attempt_count FROM login_attempts '
+        'WHERE user_id = ? AND success = 0 AND attempted_at >= ?',
+        variables: [Variable(userId), Variable(cutoff)],
+      ).getSingleOrNull();
+      final count = result?.data['attempt_count'] ?? 0;
+      return count >= maxLoginAttempts;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ==================== SESSION VALIDATION ====================
+
+  /// Validate session and check for timeout
   Future<UserSession?> validateSession(String token) async {
     try {
       final rows = await db.customSelect(
@@ -142,7 +255,7 @@ class SecurityService {
       if (rows.isEmpty) return null;
       final row = rows.first.data;
 
-      return UserSession(
+      final session = UserSession(
         userId: row['user_id'],
         username: row['username'],
         role: row['role'],
@@ -151,22 +264,25 @@ class SecurityService {
         loginAt: DateTime.parse(row['login_at']),
         expiresAt: DateTime.parse(row['expires_at']),
       );
+
+      // Check if session has expired
+      if (session.isExpired) {
+        await logout(token);
+        return null;
+      }
+
+      return session;
     } catch (_) {
       return null;
     }
   }
 
-  Future<void> logout(String token) async {
+  /// Refresh session expiry (extend session on activity)
+  Future<void> refreshSession(String token) async {
+    final newExpiry = DateTime.now().add(sessionTimeout);
     await db.customStatement(
-      'DELETE FROM user_sessions WHERE token = ?',
-      [token],
-    );
-  }
-
-  Future<void> logoutAllSessions(String userId) async {
-    await db.customStatement(
-      'DELETE FROM user_sessions WHERE user_id = ?',
-      [userId],
+      'UPDATE user_sessions SET expires_at = ? WHERE token = ? AND is_active = 1',
+      [newExpiry.toIso8601String(), token],
     );
   }
 

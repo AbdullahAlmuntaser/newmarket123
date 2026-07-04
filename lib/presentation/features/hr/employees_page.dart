@@ -94,6 +94,7 @@ class _EmployeesPageState extends State<EmployeesPage> {
     HRProvider provider,
     HREmployee? emp,
   ) {
+    final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: emp?.name);
     final codeController = TextEditingController(text: emp?.code);
     final positionController = TextEditingController(text: emp?.position);
@@ -107,45 +108,58 @@ class _EmployeesPageState extends State<EmployeesPage> {
       builder: (context) => AlertDialog(
         title: Text(emp == null ? 'إضافة موظف' : 'تعديل موظف'),
         content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'الاسم الكامل'),
-              ),
-              TextField(
-                controller: codeController,
-                decoration: const InputDecoration(labelText: 'كود الموظف'),
-              ),
-              TextField(
-                controller: positionController,
-                decoration: const InputDecoration(labelText: 'المنصب'),
-              ),
-              MoneyFormField(
-                controller: salaryController,
-                label: 'الراتب الأساسي',
-              ),
-              TextField(
-                controller: joinDateController,
-                decoration: const InputDecoration(
-                  labelText: 'تاريخ الانضمام',
-                  hintText: 'YYYY-MM-DD',
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'الاسم الكامل'),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'الاسم مطلوب';
+                    if (v.trim().length < 2) return 'الاسم يجب أن يكون على الأقل حرفين';
+                    return null;
+                  },
                 ),
-                onTap: () async {
-                  final date = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime(2100),
-                  );
-                  if (date != null) {
-                    joinDateController.text =
-                        date.toIso8601String().substring(0, 10);
-                  }
-                },
-              ),
-            ],
+                TextFormField(
+                  controller: codeController,
+                  decoration: const InputDecoration(labelText: 'كود الموظف'),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'الكود مطلوب';
+                    if (v.trim().length < 2) return 'الكود يجب أن يكون على الأقل حرفين';
+                    return null;
+                  },
+                ),
+                TextField(
+                  controller: positionController,
+                  decoration: const InputDecoration(labelText: 'المنصب'),
+                ),
+                MoneyFormField(
+                  controller: salaryController,
+                  label: 'الراتب الأساسي',
+                ),
+                TextField(
+                  controller: joinDateController,
+                  decoration: const InputDecoration(
+                    labelText: 'تاريخ الانضمام',
+                    hintText: 'YYYY-MM-DD',
+                  ),
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+                    if (date != null) {
+                      joinDateController.text =
+                          date.toIso8601String().substring(0, 10);
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
         ),
         actions: [
@@ -154,34 +168,46 @@ class _EmployeesPageState extends State<EmployeesPage> {
             child: const Text('إلغاء'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
+              if (!formKey.currentState!.validate()) return;
+
               final salary = double.tryParse(salaryController.text) ?? 0.0;
               final hireDate =
                   DateTime.tryParse(joinDateController.text) ?? DateTime.now();
 
-              if (emp == null) {
-                provider.addEmployee(
-                  HREmployeesCompanion.insert(
-                    name: nameController.text,
-                    code: codeController.text,
-                    position: Value(positionController.text),
-                    basicSalary: salary,
-                    hireDate: hireDate,
-                  ),
-                );
-              } else {
-                provider.updateEmployee(
-                  HREmployeesCompanion(
-                    id: Value(emp.id),
-                    name: Value(nameController.text),
-                    code: Value(codeController.text),
-                    position: Value(positionController.text),
-                    basicSalary: Value(salary),
-                    hireDate: Value(hireDate),
-                  ),
-                );
+              try {
+                if (emp == null) {
+                  await provider.addEmployee(
+                    HREmployeesCompanion.insert(
+                      name: nameController.text.trim(),
+                      code: codeController.text.trim(),
+                      position: Value(positionController.text.trim()),
+                      basicSalary: salary,
+                      hireDate: hireDate,
+                    ),
+                  );
+                } else {
+                  await provider.updateEmployee(
+                    HREmployeesCompanion(
+                      id: Value(emp.id),
+                      name: Value(nameController.text.trim()),
+                      code: Value(codeController.text.trim()),
+                      position: Value(positionController.text.trim()),
+                      basicSalary: Value(salary),
+                      hireDate: Value(hireDate),
+                    ),
+                  );
+                }
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  AppSnackBar.success(
+                      context, emp == null ? 'تم إضافة الموظف' : 'تم تعديل الموظف');
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  AppSnackBar.error(context, 'خطأ في الحفظ: $e');
+                }
               }
-              Navigator.pop(context);
             },
             child: const Text('حفظ'),
           ),

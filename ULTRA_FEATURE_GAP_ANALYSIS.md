@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-19
 **Project:** SystemMarket Flutter ERP/POS
-**Schema Version:** 42 | **Total Tables:** 87 | **Total DAOs:** 15 | **Total Services:** 72+ | **Total Pages:** 62+ Routes | **Total Dart Files:** 370
+**Schema Veral Services:** 72+ | **Total Pages:** 62+ Routes | **Total Dart Files:** 370
 
 ---
 

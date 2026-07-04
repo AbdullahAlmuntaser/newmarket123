@@ -41,6 +41,12 @@ part 'tables/fixed_assets_tables.dart';
 part 'tables/advanced_accounting_tables.dart';
 part 'tables/app_settings_table.dart';
 part 'tables/audit_logs_table.dart';
+part 'tables/leave_tables.dart';
+part 'tables/attendance_tables.dart';
+part 'tables/commission_credit_tables.dart';
+part 'tables/tax_serial_tables.dart';
+part 'tables/zakat_eosb_tables.dart';
+part 'tables/proforma_tables.dart';
 part 'app_database.g.dart';
 
 // Type Converters
@@ -1196,6 +1202,21 @@ class CustomerPaymentLinks extends Table with SyncableTable {
     HRPayrollRuns,
     HRPayrollDetails,
     HRAdditionalDeductions,
+    LeaveTypes,
+    LeaveRequests,
+    LeaveBalances,
+    AttendanceRecords,
+    WithholdingTaxEntries,
+    SerialNumbers,
+    CreditNotes,
+    CreditNoteItems,
+    SalesTargets,
+    SalesCommissions,
+    ZakatCalculations,
+    EndOfServiceBenefits,
+    InventoryReservations,
+    ProformaInvoices,
+    ProformaInvoiceItems,
   ],
   daos: [
     ProductsDao,
@@ -1220,7 +1241,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 44;
+  int get schemaVersion => 47;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1344,6 +1365,31 @@ class AppDatabase extends _$AppDatabase {
               await m.createTable(recurringEntryExecutions);
             } catch (_) {}
           }
+          if (from < 45) {
+            // Version 45: Add HR modules - Leave, Attendance, WHT, Serial, Credit, Commission, Zakat, EOSB, Reservation
+            try { await m.createTable(leaveTypes); } catch (_) {}
+            try { await m.createTable(leaveRequests); } catch (_) {}
+            try { await m.createTable(leaveBalances); } catch (_) {}
+            try { await m.createTable(attendanceRecords); } catch (_) {}
+            try { await m.createTable(withholdingTaxEntries); } catch (_) {}
+            try { await m.createTable(serialNumbers); } catch (_) {}
+            try { await m.createTable(creditNotes); } catch (_) {}
+            try { await m.createTable(creditNoteItems); } catch (_) {}
+            try { await m.createTable(salesTargets); } catch (_) {}
+            try { await m.createTable(salesCommissions); } catch (_) {}
+            try { await m.createTable(zakatCalculations); } catch (_) {}
+            try { await m.createTable(endOfServiceBenefits); } catch (_) {}
+            try { await m.createTable(inventoryReservations); } catch (_) {}
+          }
+          if (from < 46) {
+            // Version 46: Add Proforma Invoice tables
+            await m.createTable(proformaInvoices).catchError((_) {});
+            await m.createTable(proformaInvoiceItems).catchError((_) {});
+          }
+          if (from < 47) {
+            // Version 47: Critical Missing Tables Recovery (Self-healing)
+            await _recoverMissingTables(m);
+          }
         },
         beforeOpen: (details) async {
           debugPrint(
@@ -1352,6 +1398,11 @@ class AppDatabase extends _$AppDatabase {
           await customStatement('PRAGMA foreign_keys = ON;');
           await customStatement('PRAGMA journal_mode = WAL;');
           await customStatement('PRAGMA synchronous = NORMAL;');
+          
+          // Self-healing check: Ensure all tables exist before indexing
+          // This fixes cases where users might be on v46+ but missing tables due to failed migrations
+          await _recoverMissingTables(createMigrator());
+          
           await ensurePerformanceIndexes();
           // Existing databases might predate critical seed data. Keep this
           // idempotent so lookups (currencies/branches/GL headers) are never empty.
@@ -1476,30 +1527,87 @@ class AppDatabase extends _$AppDatabase {
     'CREATE INDEX IF NOT EXISTS recurring_entries_next_execution_idx ON recurring_entries (next_execution_date)',
     'CREATE INDEX IF NOT EXISTS recurring_entries_status_idx ON recurring_entries (status)',
     'CREATE INDEX IF NOT EXISTS recurring_entry_executions_recurring_id_idx ON recurring_entry_executions (recurring_entry_id)',
+    // Additional indexes for improved query performance
+    'CREATE INDEX IF NOT EXISTS customer_payments_sale_id_idx ON customer_payments (payment_date)',
+    'CREATE INDEX IF NOT EXISTS supplier_payments_date_idx ON supplier_payments (payment_date)',
+    'CREATE INDEX IF NOT EXISTS gl_entries_posted_by_idx ON gl_entries (posted_by)',
+    'CREATE INDEX IF NOT EXISTS sales_exchange_rate_idx ON sales (exchange_rate)',
+    'CREATE INDEX IF NOT EXISTS purchases_exchange_rate_idx ON purchases (exchange_rate)',
+    'CREATE INDEX IF NOT EXISTS checks_check_number_idx ON checks (check_number)',
+    'CREATE INDEX IF NOT EXISTS product_batches_cost_price_idx ON product_batches (cost_price)',
+    'CREATE INDEX IF NOT EXISTS fixed_assets_category_id_idx ON fixed_assets (category_id)',
+    'CREATE INDEX IF NOT EXISTS fixed_assets_status_idx ON fixed_assets (status)',
+    'CREATE INDEX IF NOT EXISTS acc_budgets_cost_center_id_idx ON acc_budgets (cost_center_id)',
+    'CREATE INDEX IF NOT EXISTS acc_budgets_period_idx ON acc_budgets (period)',
+    'CREATE INDEX IF NOT EXISTS ap_invoices_supplier_id_idx ON a_p_invoices (supplier_id)',
+    'CREATE INDEX IF NOT EXISTS ar_invoices_customer_id_idx ON a_r_invoices (customer_id)',
+    'CREATE INDEX IF NOT EXISTS delivery_notes_sale_order_id_idx ON delivery_notes (sale_order_id)',
+    'CREATE INDEX IF NOT EXISTS delivery_notes_status_idx ON delivery_notes (status)',
+    'CREATE INDEX IF NOT EXISTS good_received_notes_purchase_id_idx ON good_received_notes (purchase_id)',
+    'CREATE INDEX IF NOT EXISTS payroll_lines_employee_id_idx ON payroll_lines (employee_id)',
+    'CREATE INDEX IF NOT EXISTS payroll_lines_payroll_entry_id_idx ON payroll_lines (payroll_entry_id)',
   ];
 
   Future<void> ensurePerformanceIndexes() async {
     for (final statement in _performanceIndexStatements) {
-      await customStatement(statement);
+      try {
+        await customStatement(statement);
+      } catch (e) {
+        debugPrint('DB: Failed to create index: $statement — $e');
+      }
+    }
+  }
+
+  Future<void> _recoverMissingTables(Migrator m) async {
+    for (final table in allTables) {
+      try {
+        // Check if table exists in sqlite_master
+        final result = await customSelect(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='${table.actualTableName}'",
+        ).getSingleOrNull();
+
+        if (result == null) {
+          debugPrint('DB Forensic: Recovering missing table: ${table.actualTableName}');
+          await m.createTable(table);
+        }
+      } catch (e) {
+        debugPrint('DB Forensic: Failed to recover table ${table.actualTableName}: $e');
+      }
     }
   }
 
   // DAO getters
+  @override
   AccountingDao get accountingDao => AccountingDao(this);
+  @override
   CustomersDao get customersDao => CustomersDao(this);
+  @override
   ProductsDao get productsDao => ProductsDao(this);
+  @override
   SalesDao get salesDao => SalesDao(this);
+  @override
   PurchasesDao get purchasesDao => PurchasesDao(this);
+  @override
   SuppliersDao get suppliersDao => SuppliersDao(this);
+  @override
   UsersDao get usersDao => UsersDao(this);
+  @override
   WarehousesDao get warehousesDao => WarehousesDao(this);
+  @override
   GlobalUnitsDao get globalUnitsDao => GlobalUnitsDao(this);
+  @override
   ProductUnitsDao get productUnitsDao => ProductUnitsDao(this);
+  @override
   BomDao get bomDao => BomDao(this);
+  @override
   AuditDao get auditDao => AuditDao(this);
+  @override
   StockMovementDao get stockMovementDao => StockMovementDao(this);
+  @override
   CashboxDao get cashboxDao => CashboxDao(this);
+  @override
   TransfersDao get transfersDao => TransfersDao(this);
+  @override
   RecurringEntryDao get recurringEntryDao => RecurringEntryDao(this);
 
   // --- Missing Methods Recovery ---
@@ -1507,6 +1615,8 @@ class AppDatabase extends _$AppDatabase {
   Future<void> seedData() async {
     await ensureCoreReferenceData();
     await seedSecurityData();
+    await seedDefaultGLAccounts();
+    await seedDefaultPostingProfiles();
   }
 
   Future<void> ensureCoreReferenceData() async {
@@ -1537,6 +1647,91 @@ class AppDatabase extends _$AppDatabase {
           ));
         }
       }
+    }
+  }
+
+  /// Seeds the default GL accounts required for the posting engine.
+  /// Called automatically on first database creation.
+  Future<void> seedDefaultGLAccounts() async {
+    final existingAccounts = await select(gLAccounts).get();
+    if (existingAccounts.isNotEmpty) return;
+
+    final accounts = {
+      '1010': GLAccountsCompanion.insert(code: '1010', name: 'الصندوق', type: 'ASSET'),
+      '1020': GLAccountsCompanion.insert(code: '1020', name: 'البنك', type: 'ASSET'),
+      '1030': GLAccountsCompanion.insert(code: '1030', name: 'الذمم المدينة', type: 'ASSET'),
+      '1040': GLAccountsCompanion.insert(code: '1040', name: 'المخزون', type: 'ASSET'),
+      '1050': GLAccountsCompanion.insert(code: '1050', name: 'ضريبة المدخلات', type: 'ASSET'),
+      '1200': GLAccountsCompanion.insert(code: '1200', name: 'الأصول الثابتة', type: 'ASSET'),
+      '1201': GLAccountsCompanion.insert(code: '1201', name: 'مجمع الإهلاك', type: 'ASSET'),
+      '2010': GLAccountsCompanion.insert(code: '2010', name: 'الذمم الدائنة', type: 'LIABILITY'),
+      '2020': GLAccountsCompanion.insert(code: '2020', name: 'ضريبة المخرجات', type: 'LIABILITY'),
+      '2500': GLAccountsCompanion.insert(code: '2500', name: 'القروض', type: 'LIABILITY'),
+      '3000': GLAccountsCompanion.insert(code: '3000', name: 'رأس المال', type: 'EQUITY'),
+      '3010': GLAccountsCompanion.insert(code: '3010', name: 'الأرباح المحتجزة', type: 'EQUITY'),
+      '4010': GLAccountsCompanion.insert(code: '4010', name: 'إيرادات المبيعات', type: 'REVENUE'),
+      '4020': GLAccountsCompanion.insert(code: '4020', name: 'مردودات المبيعات', type: 'REVENUE'),
+      '5010': GLAccountsCompanion.insert(code: '5010', name: 'تكلفة البضاعة المباعة', type: 'EXPENSE'),
+      '5011': GLAccountsCompanion.insert(code: '5011', name: 'مردودات المشتريات', type: 'EXPENSE'),
+      '5020': GLAccountsCompanion.insert(code: '5020', name: 'العجز والزيادة في الصندوق', type: 'EXPENSE'),
+      '6000': GLAccountsCompanion.insert(code: '6000', name: 'المصروفات التشغيلية', type: 'EXPENSE'),
+      '6001': GLAccountsCompanion.insert(code: '6001', name: 'مصروف الإهلاك', type: 'EXPENSE'),
+    };
+
+    for (final acc in accounts.values) {
+      await into(gLAccounts).insert(acc);
+    }
+  }
+
+  /// Seeds default posting profiles so the posting engine can resolve accounts.
+  /// Called automatically on first database creation.
+  Future<void> seedDefaultPostingProfiles() async {
+    final existing = await select(postingProfiles).get();
+    if (existing.isNotEmpty) return;
+
+    // Map of (operationType, accountType) -> (accountCode, side)
+    const profileDefs = [
+      // SALE profiles
+      ('SALE', 'RECEIVABLE', '1030', 'DEBIT'),
+      ('SALE', 'REVENUE', '4010', 'CREDIT'),
+      ('SALE', 'OUTPUT_VAT', '2020', 'CREDIT'),
+      ('SALE', 'COGS', '5010', 'DEBIT'),
+      ('SALE', 'INVENTORY', '1040', 'CREDIT'),
+      // PURCHASE profiles
+      ('PURCHASE', 'INVENTORY', '1040', 'DEBIT'),
+      ('PURCHASE', 'INPUT_VAT', '1050', 'DEBIT'),
+      ('PURCHASE', 'PAYABLE', '2010', 'CREDIT'),
+      // SALE_RETURN profiles
+      ('SALE_RETURN', 'RECEIVABLE', '1030', 'CREDIT'),
+      ('SALE_RETURN', 'RETURN', '4020', 'DEBIT'),
+      // PURCHASE_RETURN profiles
+      ('PURCHASE_RETURN', 'PAYABLE', '2010', 'DEBIT'),
+      ('PURCHASE_RETURN', 'RETURN', '5011', 'CREDIT'),
+      // CUSTOMER_PAYMENT profiles
+      ('CUSTOMER_PAYMENT', 'CASH', '1010', 'DEBIT'),
+      ('CUSTOMER_PAYMENT', 'RECEIVABLE', '1030', 'CREDIT'),
+      // SUPPLIER_PAYMENT profiles
+      ('SUPPLIER_PAYMENT', 'PAYABLE', '2010', 'DEBIT'),
+      ('SUPPLIER_PAYMENT', 'CASH', '1010', 'CREDIT'),
+      // CASH_TRANSACTION profiles
+      ('CASH_TRANSACTION', 'CASH', '1010', 'DEBIT'),
+    ];
+
+    for (final def in profileDefs) {
+      final (operationType, accountType, accountCode, side) = def;
+      // Find the GL account by code
+      final account = await (select(gLAccounts)
+            ..where((a) => a.code.equals(accountCode)))
+          .getSingleOrNull();
+      await into(postingProfiles).insert(
+        PostingProfilesCompanion.insert(
+          operationType: operationType,
+          accountType: accountType,
+          accountId: Value(account?.id),
+          accountCode: Value(accountCode),
+          side: side,
+        ),
+      );
     }
   }
 
@@ -1598,37 +1793,35 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> _migrateToV42(Migrator m) async {
+    // Re-create tables with new types (Decimal instead of Real)
+    // We use individual try-catches to ensure one missing table doesn't stop the whole migration
+    final tablesToRecreate = [
+      (stockTakeItems, 'stock_take_items'),
+      (goodReceivedNoteItems, 'good_received_note_items'),
+      (deliveryNoteItems, 'delivery_note_items'),
+      (checks, 'checks'),
+      (purchaseOrders, 'purchase_orders'),
+      (purchaseOrderItems, 'purchase_order_items'),
+      (salesOrders, 'sales_orders'),
+      (salesOrderItems, 'sales_order_items'),
+      (customerPaymentLinks, 'customer_payment_links'),
+    ];
+
+    for (final entry in tablesToRecreate) {
+      final table = entry.$1 as TableInfo;
+      final name = entry.$2;
+      try {
+        await m.deleteTable(name);
+        await m.createTable(table);
+      } catch (e) {
+        debugPrint('Migration to V42: Failed to recreate $name (might not exist): $e');
+        try {
+          await m.createTable(table);
+        } catch (_) {} // If delete failed because it didn't exist, try creating anyway
+      }
+    }
+
     try {
-      // Re-create tables with new types (Decimal instead of Real)
-      // This is a destructive migration for early stage dev.
-      // In production, we'd use temp tables and copy data.
-      await m.deleteTable('stock_take_items');
-      await m.createTable(stockTakeItems);
-
-      await m.deleteTable('good_received_note_items');
-      await m.createTable(goodReceivedNoteItems);
-
-      await m.deleteTable('delivery_note_items');
-      await m.createTable(deliveryNoteItems);
-
-      await m.deleteTable('checks');
-      await m.createTable(checks);
-
-      await m.deleteTable('purchase_orders');
-      await m.createTable(purchaseOrders);
-
-      await m.deleteTable('purchase_order_items');
-      await m.createTable(purchaseOrderItems);
-
-      await m.deleteTable('sales_orders');
-      await m.createTable(salesOrders);
-
-      await m.deleteTable('sales_order_items');
-      await m.createTable(salesOrderItems);
-
-      await m.deleteTable('customer_payment_links');
-      await m.createTable(customerPaymentLinks);
-
       // Currency Unification: Copy AccCurrencies to Currencies
       final accCurrenciesExists = await customSelect(
         "SELECT name FROM sqlite_master WHERE type='table' AND name='acc_currencies'",
@@ -1642,11 +1835,8 @@ class AppDatabase extends _$AppDatabase {
         await m.deleteTable('acc_currencies');
         await m.deleteTable('acc_exchange_rates');
       }
-
-      debugPrint(
-          'Migration to V42 (Decimal & Currency Unification) completed.');
     } catch (e) {
-      debugPrint('Migration to V42 failed: $e');
+      debugPrint('Migration to V42 (Currency Copy) failed: $e');
     }
   }
 

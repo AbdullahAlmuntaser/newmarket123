@@ -10,6 +10,7 @@ import 'package:supermarket/data/datasources/local/daos/products_dao.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_event.dart';
 import 'package:supermarket/presentation/features/pos/bloc/pos_state.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
+import 'package:supermarket/core/services/loyalty_service.dart';
 import 'package:uuid/uuid.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
 
@@ -18,11 +19,12 @@ class PosBloc extends Bloc<PosEvent, PosState> {
   final PricingService pricingService;
   final TransactionEngine transactionEngine;
   final PackagingEngine packagingEngine;
+  final LoyaltyService? loyaltyService;
   late StreamSubscription<List<ProductWithCategory>> _productSubscription;
 
   PosBloc(this.db, this.pricingService, this.transactionEngine,
       this.packagingEngine,
-      {bool skipInit = false})
+      {this.loyaltyService, bool skipInit = false})
       : super(PosLoading()) {
     on<LoadCategories>(_onLoadCategories);
     on<SelectCategory>(_onSelectCategory);
@@ -761,6 +763,20 @@ class PosBloc extends Bloc<PosEvent, PosState> {
           currentState.cart.map((i) => i.product).toList(),
         ),
       );
+
+      // Award loyalty points to customer after successful sale
+      if (loyaltyService != null && event.customerId != null) {
+        try {
+          await loyaltyService!.awardPoints(
+            customerId: event.customerId!,
+            amount: total.toDouble(),
+            reason: 'مشتريات من نقطة بيع',
+          );
+        } catch (e) {
+          // Loyalty awarding failure should not break the checkout
+          developer.log('Loyalty points awarding failed: $e', name: 'pos_bloc');
+        }
+      }
     } catch (e) {
       developer.log('Checkout error: $e', name: 'pos_bloc');
       final errorMessage = e.toString().replaceFirst('Exception: ', '');

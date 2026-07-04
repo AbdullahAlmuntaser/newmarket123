@@ -289,7 +289,7 @@ class NewOperationSheet extends StatelessWidget {
       ));
     }
 
-    if (AccessGuard.canAccess('/accounting/cash-management', role)) {
+    if (AccessGuard.canAccess('/accounting/cashbox', role)) {
       cats.add(const OperationCategory(
         title: 'الصناديق',
         icon: Icons.account_balance_wallet,
@@ -297,11 +297,11 @@ class NewOperationSheet extends StatelessWidget {
         actions: [
           OperationAction(
               title: 'إيداع',
-              route: '/accounting/cash-management',
+              route: '/accounting/cashbox',
               icon: Icons.savings),
           OperationAction(
               title: 'سحب',
-              route: '/accounting/cash-management',
+              route: '/accounting/cashbox',
               icon: Icons.money_off),
           OperationAction(
               title: 'تحويل',

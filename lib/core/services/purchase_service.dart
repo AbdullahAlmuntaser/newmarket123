@@ -65,6 +65,18 @@ class PurchaseService {
             ..where((i) => i.purchaseId.equals(purchaseId)))
           .get();
 
+      // Pre-check: ensure required GL accounts exist
+      final requiredCodes = ['1040', '1050', '2010', '1010'];
+      for (final code in requiredCodes) {
+        final account = await db.accountingDao.getAccountByCode(code);
+        if (account == null) {
+          // Auto-seed GL accounts if missing
+          await db.seedDefaultGLAccounts();
+          await db.seedDefaultPostingProfiles();
+          break;
+        }
+      }
+
       double subtotal = 0;
       for (var item in items) {
         subtotal +=

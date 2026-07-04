@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:drift/drift.dart' hide Column;
@@ -110,7 +111,8 @@ class DashboardPage extends StatelessWidget {
             'الصناديق',
             '${data.cashboxBalance.toStringAsFixed(2)} ر.س',
             Icons.payments,
-            Colors.purple),
+            Colors.purple,
+            onTap: () => context.push('/accounting/cashbox')),
         _buildStatCard('طلبيات معلقة', '${data.pendingOrdersCount}',
             Icons.pending_actions, Colors.amber),
         _buildStatCard('تنبيهات المخزون', '${data.lowStockCount}',
@@ -375,24 +377,29 @@ class DashboardPage extends StatelessWidget {
   }
 
   Widget _buildStatCard(
-      String title, String value, IconData icon, Color color) {
+      String title, String value, IconData icon, Color color,
+      {VoidCallback? onTap}) {
     return Card(
       elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 4),
-            Text(title,
-                style: const TextStyle(fontSize: 12),
-                textAlign: TextAlign.center),
-            Text(value,
-                style: TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.bold, color: color),
-                textAlign: TextAlign.center),
-          ],
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 28),
+              const SizedBox(height: 4),
+              Text(title,
+                  style: const TextStyle(fontSize: 12),
+                  textAlign: TextAlign.center),
+              Text(value,
+                  style: TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.bold, color: color),
+                  textAlign: TextAlign.center),
+            ],
+          ),
         ),
       ),
     );

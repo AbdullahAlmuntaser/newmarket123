@@ -11,6 +11,7 @@ import 'core/services/app_settings_service.dart';
 import 'core/services/app_config_service.dart';
 import 'core/services/approval_workflow_service.dart';
 import 'core/services/loyalty_service.dart';
+import 'core/services/delivery_notes_service.dart';
 import 'core/services/inventory_service.dart';
 import 'core/services/accounting_service.dart';
 import 'core/services/event_bus_service.dart';
@@ -46,7 +47,7 @@ import 'core/services/purchase_service.dart';
 import 'core/services/reorder_service.dart';
 import 'core/services/supplier_analytics_service.dart';
 import 'core/services/statement_service.dart';
-import 'core/services/report_service.dart';
+
 import 'core/services/pricing_service.dart';
 import 'core/services/transaction_engine.dart';
 import 'core/services/communication_service.dart';
@@ -74,11 +75,22 @@ import 'core/services/fixed_assets_service.dart';
 import 'core/services/inventory_audit_service.dart';
 import 'core/services/invoice_service.dart';
 import 'core/services/profitability_service.dart';
-import 'core/services/reporting_service.dart';
+
 import 'core/services/pdf_service.dart';
 import 'core/services/budget_service.dart';
 import 'core/services/payroll_service.dart';
 import 'core/services/currency_conversion_service.dart';
+import 'core/services/zakat_service.dart';
+import 'core/services/eosb_service.dart';
+import 'core/services/inventory_reservation_service.dart';
+import 'core/services/multi_level_approval_service.dart';
+import 'core/services/leave_management_service.dart';
+import 'core/services/attendance_service.dart';
+import 'core/services/withholding_tax_service.dart';
+import 'core/services/serial_number_service.dart';
+import 'core/services/credit_note_service.dart';
+import 'core/services/sales_commission_service.dart';
+import 'core/services/proforma_service.dart';
 import 'presentation/features/accounting/accounting_provider.dart';
 import 'presentation/features/purchases/purchase_provider.dart';
 import 'presentation/features/accounting/shifts_provider.dart';
@@ -94,6 +106,9 @@ import 'core/services/fast_access_service.dart';
 import 'core/utils/cache_service.dart';
 import 'core/utils/paginated_query.dart';
 import 'presentation/features/products/products_provider.dart';
+import 'presentation/features/accounting/zakat_provider.dart';
+import 'presentation/features/hr/eosb_provider.dart';
+import 'presentation/features/sales/proforma_provider.dart';
 
 final sl = GetIt.instance;
 AppDatabase? _database;
@@ -237,9 +252,6 @@ Future<void> initServices() async {
     sl.registerLazySingleton<StatementService>(
       () => StatementService(sl<PostingEngine>()),
     );
-    sl.registerLazySingleton<ReportService>(
-      () => ReportService(sl<PostingEngine>()),
-    );
     debugPrint("DI: Business services registered");
 
     debugPrint("DI: Registering repositories...");
@@ -286,6 +298,8 @@ Future<void> initServices() async {
         sl<PackagingEngine>(),
       );
       engine.setCostingService(sl<InventoryCostingService>());
+      engine.setBudgetService(sl<BudgetService>());
+      engine.setApprovalService(sl<ApprovalWorkflowService>());
       return engine;
     });
     sl.registerLazySingleton<CashManagementService>(
@@ -345,9 +359,6 @@ Future<void> initServices() async {
     sl.registerLazySingleton<ProfitabilityService>(
       () => ProfitabilityService(db),
     );
-    sl.registerLazySingleton<ReportingService>(
-      () => ReportingService(db),
-    );
     sl.registerLazySingleton<PdfInvoiceService>(
       () => PdfInvoiceService(),
     );
@@ -362,6 +373,42 @@ Future<void> initServices() async {
     );
     sl.registerLazySingleton<CurrencyConversionService>(
       () => CurrencyConversionService(db),
+    );
+    sl.registerLazySingleton<DeliveryNotesService>(
+      () => DeliveryNotesService(db),
+    );
+    sl.registerLazySingleton<LeaveManagementService>(
+      () => LeaveManagementService(db),
+    );
+    sl.registerLazySingleton<AttendanceService>(
+      () => AttendanceService(db),
+    );
+    sl.registerLazySingleton<WithholdingTaxService>(
+      () => WithholdingTaxService(db),
+    );
+    sl.registerLazySingleton<SerialNumberService>(
+      () => SerialNumberService(db),
+    );
+    sl.registerLazySingleton<CreditNoteService>(
+      () => CreditNoteService(db),
+    );
+    sl.registerLazySingleton<SalesCommissionService>(
+      () => SalesCommissionService(db),
+    );
+    sl.registerLazySingleton<ZakatService>(
+      () => ZakatService(db),
+    );
+    sl.registerLazySingleton<EndOfServiceBenefitService>(
+      () => EndOfServiceBenefitService(db),
+    );
+    sl.registerLazySingleton<InventoryReservationService>(
+      () => InventoryReservationService(db),
+    );
+    sl.registerLazySingleton<MultiLevelApprovalService>(
+      () => MultiLevelApprovalService(sl<AppConfigService>()),
+    );
+    sl.registerLazySingleton<ProformaService>(
+      () => ProformaService(db),
     );
     sl.registerLazySingleton<FastAccessService>(() => FastAccessService());
     sl.registerLazySingleton<CommandCenterProvider>(() => CommandCenterProvider(
@@ -399,7 +446,7 @@ Future<void> initServices() async {
     sl.registerFactory<DashboardProvider>(() => DashboardProvider(db));
     sl.registerFactory<PosBloc>(
       () => PosBloc(db, sl<PricingService>(), sl<TransactionEngine>(),
-          sl<PackagingEngine>()),
+          sl<PackagingEngine>(), loyaltyService: sl<LoyaltyService>()),
     );
     debugPrint("DI: Providers registered");
 
@@ -480,18 +527,40 @@ List<SingleChildWidget> buildAppProviders() {
     Provider<InventoryAuditService>.value(value: sl<InventoryAuditService>()),
     Provider<InvoiceService>.value(value: sl<InvoiceService>()),
     Provider<ProfitabilityService>.value(value: sl<ProfitabilityService>()),
-    Provider<ReportingService>.value(value: sl<ReportingService>()),
     Provider<PdfInvoiceService>.value(value: sl<PdfInvoiceService>()),
     // Add missing providers for services that were registered but not provided
     Provider<FinancialControlService>.value(
         value: sl<FinancialControlService>()),
-    Provider<ReportService>.value(value: sl<ReportService>()),
     // Provide BudgetService and PayrollService
     Provider<BudgetService>.value(value: sl<BudgetService>()),
     Provider<PayrollService>.value(value: sl<PayrollService>()),
     Provider<PackagingEngine>.value(value: sl<PackagingEngine>()),
     Provider<CurrencyConversionService>.value(
         value: sl<CurrencyConversionService>()),
+    Provider<LeaveManagementService>.value(
+        value: sl<LeaveManagementService>()),
+    Provider<AttendanceService>.value(value: sl<AttendanceService>()),
+    Provider<WithholdingTaxService>.value(value: sl<WithholdingTaxService>()),
+    Provider<SerialNumberService>.value(value: sl<SerialNumberService>()),
+    Provider<CreditNoteService>.value(value: sl<CreditNoteService>()),
+    Provider<SalesCommissionService>.value(
+        value: sl<SalesCommissionService>()),
+    Provider<ZakatService>.value(value: sl<ZakatService>()),
+    Provider<EndOfServiceBenefitService>.value(
+        value: sl<EndOfServiceBenefitService>()),
+    Provider<InventoryReservationService>.value(
+        value: sl<InventoryReservationService>()),
+    Provider<MultiLevelApprovalService>.value(
+      value: sl<MultiLevelApprovalService>()),
+    ChangeNotifierProvider<ZakatProvider>(
+      create: (_) => ZakatProvider(sl<ZakatService>()),
+    ),
+    ChangeNotifierProvider<EOSBProvider>(
+      create: (_) => EOSBProvider(sl<EndOfServiceBenefitService>(), sl<AppDatabase>()),
+    ),
+    ChangeNotifierProvider<ProformaProvider>(
+      create: (_) => ProformaProvider(sl<ProformaService>()),
+    ),
   ];
 }
 

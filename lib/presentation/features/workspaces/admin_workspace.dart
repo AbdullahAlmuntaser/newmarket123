@@ -25,6 +25,12 @@ class AdminWorkspace extends StatelessWidget {
               onTap: () => context.push('/settings/system'),
             ),
             WorkspaceTile(
+              title: 'أسعار صرف العملات',
+              icon: Icons.monetization_on_rounded,
+              color: Colors.green,
+              onTap: () => context.push('/settings/currency-rates'),
+            ),
+            WorkspaceTile(
               title: 'الإعدادات المتقدمة',
               icon: Icons.settings_applications_rounded,
               onTap: () => context.push('/settings/advanced'),

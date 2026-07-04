@@ -39,6 +39,8 @@ class ApprovalRequest {
   final String? decisionNote;
 
   bool get isPending => status == ApprovalStatus.pending;
+  bool get isApproved => status == ApprovalStatus.approved;
+  bool get isRejected => status == ApprovalStatus.rejected;
 
   ApprovalRequest copyWith({
     String? status,
@@ -107,6 +109,7 @@ class ApprovalWorkflowService {
 
   final AppConfigService _configService;
 
+  /// Check if a transaction requires approval based on amount threshold
   Future<bool> requiresApproval({
     required String type,
     required double amount,
@@ -115,6 +118,26 @@ class ApprovalWorkflowService {
     return amount >= (threshold ?? defaultPurchaseApprovalThreshold);
   }
 
+  /// Submit a new approval request (alias for createRequest)
+  Future<ApprovalRequest> submitRequest({
+    required String type,
+    required String title,
+    required double amount,
+    required String requestedBy,
+    String? referenceId,
+    String? note,
+  }) async {
+    return await createRequest(
+      type: type,
+      title: title,
+      amount: amount,
+      requestedBy: requestedBy,
+      referenceId: referenceId,
+      note: note,
+    );
+  }
+
+  /// Create a new approval request
   Future<ApprovalRequest> createRequest({
     required String type,
     required String title,
@@ -140,6 +163,27 @@ class ApprovalWorkflowService {
     return request;
   }
 
+  /// Get approval request by reference ID
+  Future<ApprovalRequest?> getRequestByReferenceId(String referenceId) async {
+    final requests = await listRequests();
+    try {
+      return requests.firstWhere((r) => r.referenceId == referenceId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Get pending approval request for a reference
+  Future<ApprovalRequest?> getPendingRequestForReference(String referenceId) async {
+    final requests = await listRequests(status: ApprovalStatus.pending);
+    try {
+      return requests.firstWhere((r) => r.referenceId == referenceId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// List all approval requests, optionally filtered by status
   Future<List<ApprovalRequest>> listRequests({String? status}) async {
     final raw = await _configService.getString(keyApprovalRequests);
     if (raw == null || raw.trim().isEmpty) return [];
@@ -154,6 +198,13 @@ class ApprovalWorkflowService {
     return requests.where((request) => request.status == status).toList();
   }
 
+  /// Get count of pending approvals
+  Future<int> getPendingCount() async {
+    final requests = await listRequests(status: ApprovalStatus.pending);
+    return requests.length;
+  }
+
+  /// Approve an approval request
   Future<void> approve({
     required String requestId,
     required String decidedBy,
@@ -167,6 +218,20 @@ class ApprovalWorkflowService {
     );
   }
 
+  /// Alias for approveRequest
+  Future<void> approveRequest({
+    required String requestId,
+    required String decidedBy,
+    String? decisionNote,
+  }) async {
+    await approve(
+      requestId: requestId,
+      decidedBy: decidedBy,
+      decisionNote: decisionNote,
+    );
+  }
+
+  /// Reject an approval request
   Future<void> reject({
     required String requestId,
     required String decidedBy,
@@ -178,6 +243,34 @@ class ApprovalWorkflowService {
       decidedBy: decidedBy,
       decisionNote: decisionNote,
     );
+  }
+
+  /// Alias for reject
+  Future<void> rejectRequest({
+    required String requestId,
+    required String decidedBy,
+    String? decisionNote,
+  }) async {
+    await reject(
+      requestId: requestId,
+      decidedBy: decidedBy,
+      decisionNote: decisionNote,
+    );
+  }
+
+  /// Get all pending requests
+  Future<List<ApprovalRequest>> getPendingRequests() async {
+    return await listRequests(status: ApprovalStatus.pending);
+  }
+
+  /// Get a specific request by ID
+  Future<ApprovalRequest?> getRequestById(String requestId) async {
+    final requests = await listRequests();
+    try {
+      return requests.firstWhere((r) => r.id == requestId);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> _decide({

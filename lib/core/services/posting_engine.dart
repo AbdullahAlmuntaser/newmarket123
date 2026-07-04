@@ -590,12 +590,13 @@ class PostingEngine {
   }
 
   /// Resolves account ID from posting profiles or falls back to hardcoded code.
+  /// Also checks the profile's accountCode field as a secondary fallback.
   Future<String> _getAccountByProfileOrCode(
     List<PostingProfile> profiles,
     String accountType,
     String defaultCode,
   ) async {
-    // First try to find a matching posting profile entry
+    // First try to find a matching posting profile entry with accountId
     for (final profile in profiles) {
       if (profile.accountType.toUpperCase() == accountType.toUpperCase()) {
         if (profile.accountId != null && profile.accountId!.isNotEmpty) {
@@ -603,10 +604,23 @@ class PostingEngine {
         }
       }
     }
-    // Fall back to account code lookup
+    // Second: try profile's accountCode field
+    for (final profile in profiles) {
+      if (profile.accountType.toUpperCase() == accountType.toUpperCase()) {
+        if (profile.accountCode != null && profile.accountCode!.isNotEmpty) {
+          final account =
+              await db.accountingDao.getAccountByCode(profile.accountCode!);
+          if (account != null) return account.id;
+        }
+      }
+    }
+    // Fall back to hardcoded account code lookup
     final account = await db.accountingDao.getAccountByCode(defaultCode);
     if (account != null) return account.id;
-    throw Exception('لم يتم العثور على حساب محاسبي للكود: $defaultCode');
+    throw Exception(
+        'لم يتم العثور على حساب محاسبي للكود: $defaultCode '
+        '(accountType: $accountType). '
+        'تأكد من إنشاء دليل الحسابات من صفحة الإعدادات.');
   }
 
   /// Gets posting profiles for a given operation type.

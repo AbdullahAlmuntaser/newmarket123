@@ -126,6 +126,8 @@ class MainDrawer extends StatelessWidget {
                           '/accounting/manual-voucher'),
                       _buildSubItem(context, 'القيود اليدوية',
                           '/accounting/manual-journal'),
+                      _buildSubItem(context, 'الصندوق',
+                          '/accounting/cashbox'),
                     ],
                   ),
 
@@ -189,6 +191,8 @@ class MainDrawer extends StatelessWidget {
                       _buildSubItem(context, 'نظرة عامة', '/workspace/admin'),
                       _buildSubItem(
                           context, 'إعدادات النظام', '/settings/system'),
+                      _buildSubItem(
+                          context, 'أسعار صرف العملات', '/settings/currency-rates'),
                       _buildSubItem(
                           context, 'الصلاحيات', '/settings/permissions'),
                       _buildSubItem(

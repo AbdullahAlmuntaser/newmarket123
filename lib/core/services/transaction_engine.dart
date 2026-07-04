@@ -9,6 +9,8 @@ import 'package:supermarket/core/services/cash_management_service.dart';
 import 'package:supermarket/core/services/packaging_engine.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:supermarket/core/services/posting_engine.dart';
+import 'package:supermarket/core/services/budget_service.dart';
+import 'package:supermarket/core/services/approval_workflow_service.dart';
 import 'package:uuid/uuid.dart';
 
 /// Single source of truth for all business transactions.
@@ -20,6 +22,8 @@ class TransactionEngine {
   final AppConfigService _configService;
   final PostingEngine _postingEngine;
   final PackagingEngine packagingEngine;
+  BudgetService? _budgetService;
+  ApprovalWorkflowService? _approvalService;
   InventoryCostingService? _costingService;
 
   TransactionEngine(
@@ -32,6 +36,16 @@ class TransactionEngine {
 
   void setCostingService(InventoryCostingService costingService) {
     _costingService = costingService;
+  }
+
+  /// Wire budget validation service
+  void setBudgetService(BudgetService budgetService) {
+    _budgetService = budgetService;
+  }
+
+  /// Wire approval workflow service
+  void setApprovalService(ApprovalWorkflowService approvalService) {
+    _approvalService = approvalService;
   }
 
   Future<void> _checkAccountingPeriodOpen() async {
@@ -67,6 +81,27 @@ class TransactionEngine {
       }
       if (purchase.status == DocumentStatus.received) {
         throw Exception('هذه الفاتورة تم استلامها بالفعل.');
+      }
+
+      // Check if purchase requires approval (amount > 10,000)
+      if (_approvalService != null && purchase.total > Decimal.fromInt(10000)) {
+        final existingRequest = await _approvalService!.getRequestByReferenceId(purchaseId);
+        if (existingRequest == null) {
+          // Submit for approval instead of posting directly
+          await _approvalService!.submitRequest(
+            type: 'PURCHASE',
+            title: 'فاتورة مشتريات #${purchaseId.substring(0, 8)}',
+            amount: purchase.total.toDouble(),
+            requestedBy: userId ?? 'system',
+            referenceId: purchaseId,
+          );
+          // Update purchase status to indicate pending approval
+          await (db.update(db.purchases)..where((p) => p.id.equals(purchaseId)))
+              .write(const PurchasesCompanion(status: Value(DocumentStatus.draft)));
+          return; // Exit - don't post yet
+        } else if (!existingRequest.isApproved) {
+          throw Exception('هذه الفاتورة بانتظار الموافقة. لا يمكن الترحيل حتى تتم الموافقة عليها.');
+        }
       }
 
       final items = await (db.select(
@@ -877,7 +912,19 @@ class TransactionEngine {
     required String accountId,
     String? note,
     String? userId,
+    String? costCenterId,
   }) async {
+    // Validate against budget if cost center is provided
+    if (costCenterId != null && _budgetService != null) {
+      final now = DateTime.now();
+      final period = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+      await _budgetService!.validateExpenseAgainstBudget(
+        costCenterId: costCenterId,
+        expenseAmount: amount,
+        period: period,
+      );
+    }
+
     final cashService = CashManagementService(db, _postingEngine);
     await cashService.createCashPayment(
       amount: amount,
@@ -886,6 +933,17 @@ class TransactionEngine {
       note: note,
       userId: userId,
     );
+
+    // Update budget actual amount if cost center is provided
+    if (costCenterId != null && _budgetService != null) {
+      final now = DateTime.now();
+      final period = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+      await _budgetService!.updateActualBudget(
+        costCenterId: costCenterId,
+        expenseAmount: amount,
+        period: period,
+      );
+    }
   }
 
   /// ==================== OUTSTANDING BALANCES ====================

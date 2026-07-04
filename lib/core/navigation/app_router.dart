@@ -114,8 +114,19 @@ import 'package:supermarket/presentation/features/reports/income_expense_report_
 import 'package:supermarket/presentation/features/reports/slow_moving_products_page.dart';
 import 'package:supermarket/presentation/features/reports/top_selling_products_page.dart';
 import 'package:supermarket/presentation/features/reports/advanced_profit_report_page.dart';
+import 'package:supermarket/presentation/features/reports/abc_analysis_page.dart';
+import 'package:supermarket/presentation/features/reports/category_margin_page.dart';
 import 'package:supermarket/presentation/features/inventory/item_movement_detail_page.dart';
 import 'package:supermarket/presentation/features/inventory/product_edit_log_page.dart';
+import 'package:supermarket/presentation/features/sales/credit_notes_page.dart';
+import 'package:supermarket/presentation/features/hr/leave_page.dart';
+import 'package:supermarket/presentation/features/hr/attendance_page.dart';
+import 'package:supermarket/presentation/features/accounting/withholding_tax_page.dart';
+import 'package:supermarket/presentation/features/sales/commissions_page.dart';
+import 'package:supermarket/presentation/features/inventory/serial_numbers_page.dart';
+import 'package:supermarket/presentation/features/accounting/zakat_page.dart';
+import 'package:supermarket/presentation/features/hr/eosb_page.dart';
+import 'package:supermarket/presentation/features/sales/proforma_invoices_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -281,6 +292,32 @@ final GoRouter appRouter = GoRouter(
         path: '/hr/payroll', builder: (context, state) => const PayrollPage()),
     GoRoute(
         path: '/hr/extras', builder: (context, state) => const HRExtrasPage()),
+    GoRoute(
+        path: '/hr/leave', builder: (context, state) => const LeavePage()),
+    GoRoute(
+        path: '/hr/attendance',
+        builder: (context, state) => const AttendancePage()),
+    GoRoute(
+        path: '/sales/credit-notes',
+        builder: (context, state) => const CreditNotesPage()),
+    GoRoute(
+        path: '/sales/commissions',
+        builder: (context, state) => const CommissionsPage()),
+    GoRoute(
+        path: '/accounting/withholding-tax',
+        builder: (context, state) => const WithholdingTaxPage()),
+    GoRoute(
+        path: '/inventory/serial-numbers',
+        builder: (context, state) => const SerialNumbersPage()),
+    GoRoute(
+        path: '/accounting/zakat',
+        builder: (context, state) => const ZakatPage()),
+    GoRoute(
+        path: '/hr/eosb',
+        builder: (context, state) => const EOSBPage()),
+    GoRoute(
+        path: '/sales/proforma',
+        builder: (context, state) => const ProformaInvoicesPage()),
     GoRoute(
         path: '/customers', builder: (context, state) => const CustomersPage()),
     GoRoute(
@@ -463,6 +500,12 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
         path: '/reports/advanced-profit',
         builder: (context, state) => const AdvancedProfitReportPage()),
+    GoRoute(
+        path: '/reports/abc-analysis',
+        builder: (context, state) => const AbcAnalysisPage()),
+    GoRoute(
+        path: '/reports/category-margin',
+        builder: (context, state) => const CategoryMarginPage()),
     GoRoute(
         path: '/users',
         builder: (context, state) => const StaffManagementPage()),
