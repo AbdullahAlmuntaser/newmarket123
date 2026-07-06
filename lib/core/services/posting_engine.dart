@@ -34,9 +34,9 @@ class PostingEngine {
     required String referenceId,
     required Map<String, dynamic> context,
   }) async {
-    await _checkPeriodOpen(context['date'] as DateTime?);
-
     return db.transaction(() async {
+      await _checkPeriodOpen(context['date'] as DateTime?);
+
       switch (type) {
         case TransactionType.sale:
           await _postSale(referenceId, context);

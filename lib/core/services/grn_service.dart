@@ -19,6 +19,16 @@ class GrnService {
     String? notes,
     String? userId,
   }) async {
+    // Check accounting period before any writes
+    final openPeriod = await (db.select(db.accountingPeriods)
+          ..where((p) => p.isClosed.equals(false))
+          ..where((p) => p.startDate.isSmallerOrEqual(Variable(DateTime.now())))
+          ..where((p) => p.endDate.isBiggerOrEqual(Variable(DateTime.now()))))
+        .getSingleOrNull();
+    if (openPeriod == null) {
+      throw Exception('الفترة المحاسبية مغلقة. لا يمكن إنشاء إذن استلام.');
+    }
+
     return await db.transaction(() async {
       final purchase = await (db.select(db.purchases)
             ..where((p) => p.id.equals(purchaseId)))

@@ -531,6 +531,17 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
       final grnService = sl<GrnService>();
       final userId = currentUser?.id;
 
+      if (post) {
+        final openPeriod = await (db.select(db.accountingPeriods)
+              ..where((p) => p.isClosed.equals(false))
+              ..where((p) => p.startDate.isSmallerOrEqual(drift.Variable(_selectedDate)))
+              ..where((p) => p.endDate.isBiggerOrEqual(drift.Variable(_selectedDate))))
+            .getSingleOrNull();
+        if (openPeriod == null) {
+          throw Exception('الفترة المحاسبية مغلقة. لا يمكن الترحيل.');
+        }
+      }
+
       await db.transaction(() async {
         final itemsCompanions = _items
             .map((item) => PurchaseItemsCompanion.insert(
