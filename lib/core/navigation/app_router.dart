@@ -22,6 +22,7 @@ import 'package:supermarket/presentation/features/inventory/stock_take_page.dart
 import 'package:supermarket/presentation/features/inventory/beginning_of_period_page.dart';
 import 'package:supermarket/presentation/features/inventory/low_stock_alert_page.dart';
 import 'package:supermarket/presentation/features/inventory/warehouse_manager_page.dart';
+import 'package:supermarket/presentation/features/inventory/shifts_page.dart';
 import 'package:supermarket/presentation/features/manufacturing/bom_management_page.dart';
 import 'package:supermarket/presentation/features/manufacturing/production_orders_page.dart';
 import 'package:supermarket/presentation/features/hr/employees_page.dart';
@@ -269,7 +270,7 @@ final GoRouter appRouter = GoRouter(
         builder: (context, state) => const WarehouseManagerPage()),
     GoRoute(
         path: '/inventory/shifts',
-        builder: (context, state) => const ShiftsPage()),
+        builder: (context, state) => const InventoryShiftsPage()),
     GoRoute(
         path: '/inventory/item-movement/:id',
         builder: (context, state) => ItemMovementDetailPage(

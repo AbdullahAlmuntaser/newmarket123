@@ -5,8 +5,8 @@ import 'package:drift/drift.dart' as drift;
 import 'package:intl/intl.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
 
-class ShiftsPage extends StatelessWidget {
-  const ShiftsPage({super.key});
+class InventoryShiftsPage extends StatelessWidget {
+  const InventoryShiftsPage({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -128,6 +128,8 @@ class MainDrawer extends StatelessWidget {
                           '/accounting/manual-journal'),
                       _buildSubItem(context, 'الصندوق',
                           '/accounting/cashbox'),
+                      _buildSubItem(context, 'إدارة الورديات',
+                          '/accounting/shifts'),
                     ],
                   ),
 
@@ -148,6 +150,8 @@ class MainDrawer extends StatelessWidget {
                           context, 'التحويل المخزني', '/inventory/transfer'),
                       _buildSubItem(
                           context, 'إدارة التصنيع', '/manufacturing/bom'),
+                      _buildSubItem(
+                          context, 'تقرير الورديات', '/inventory/shifts'),
                     ],
                   ),
 

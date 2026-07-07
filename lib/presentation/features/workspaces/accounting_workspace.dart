@@ -103,6 +103,11 @@ class AccountingWorkspace extends StatelessWidget {
               icon: Icons.pie_chart_rounded,
               onTap: () => context.push('/accounting/cost-centers'),
             ),
+            WorkspaceTile(
+              title: 'إدارة الورديات',
+              icon: Icons.loop_rounded,
+              onTap: () => context.push('/accounting/shifts'),
+            ),
           ],
         ),
       ],

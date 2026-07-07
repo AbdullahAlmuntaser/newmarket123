@@ -279,7 +279,7 @@ class NewOperationSheet extends StatelessWidget {
               icon: Icons.fact_check),
           OperationAction(
               title: 'تحويل مخزني',
-              route: '/inventory/transfers',
+              route: '/inventory/transfer',
               icon: Icons.swap_horiz),
           OperationAction(
               title: 'طباعة باركود',

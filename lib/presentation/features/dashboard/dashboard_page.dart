@@ -264,7 +264,7 @@ class DashboardPage extends StatelessWidget {
     return ActionChip(
       avatar: Icon(icon, size: 18),
       label: Text(label),
-      onPressed: () => Navigator.pushNamed(context, route),
+      onPressed: () => context.push(route),
     );
   }
 

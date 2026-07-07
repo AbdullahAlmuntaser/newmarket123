@@ -81,6 +81,11 @@ class InventoryWorkspace extends StatelessWidget {
               icon: Icons.assignment_rounded,
               onTap: () => context.push('/manufacturing/production-orders'),
             ),
+            WorkspaceTile(
+              title: 'تقرير الورديات',
+              icon: Icons.loop_rounded,
+              onTap: () => context.push('/inventory/shifts'),
+            ),
           ],
         ),
       ],
