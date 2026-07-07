@@ -1,32 +1,11 @@
 import 'package:drift/drift.dart';
-import 'package:json_annotation/json_annotation.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'sync_log_mixin.dart';
+import 'package:supermarket/core/constants/account_types.dart';
+import '../mixins/sync_log_mixin.dart';
 
 part 'accounting_dao.g.dart';
 
-class GLAccountConverter
-    implements JsonConverter<GLAccount, Map<String, dynamic>> {
-  const GLAccountConverter();
-
-  @override
-  GLAccount fromJson(Map<String, dynamic> json) => GLAccount.fromJson(json);
-
-  @override
-  Map<String, dynamic> toJson(GLAccount object) => object.toJson();
-}
-
-class AccountType {
-  static const String asset = 'ASSET';
-  static const String liability = 'LIABILITY';
-  static const String equity = 'EQUITY';
-  static const String revenue = 'REVENUE';
-  static const String expense = 'EXPENSE';
-}
-
-@JsonSerializable(explicitToJson: true)
 class TrialBalanceItem {
-  @GLAccountConverter()
   final GLAccount account;
   final Decimal totalDebit;
   final Decimal totalCredit;
@@ -44,14 +23,13 @@ class TrialBalanceItem {
 
   factory TrialBalanceItem.fromJson(Map<String, dynamic> json) =>
       TrialBalanceItem(
-        const GLAccountConverter()
-            .fromJson(json['account'] as Map<String, dynamic>),
+        GLAccount.fromJson(json['account'] as Map<String, dynamic>),
         Decimal.parse(json['totalDebit'].toString()),
         Decimal.parse(json['totalCredit'].toString()),
       );
 
   Map<String, dynamic> toJson() => {
-        'account': const GLAccountConverter().toJson(account),
+        'account': account.toJson(),
         'totalDebit': totalDebit.toString(),
         'totalCredit': totalCredit.toString(),
       };

@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/utils/drift_extensions.dart';
 import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/core/services/inventory_costing_service.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
@@ -24,7 +25,7 @@ class GrnService {
           ..where((p) => p.isClosed.equals(false))
           ..where((p) => p.startDate.isSmallerOrEqual(Variable(DateTime.now())))
           ..where((p) => p.endDate.isBiggerOrEqual(Variable(DateTime.now()))))
-        .getSingleOrNull();
+        .getFirstOrNull();
     if (openPeriod == null) {
       throw Exception('الفترة المحاسبية مغلقة. لا يمكن إنشاء إذن استلام.');
     }

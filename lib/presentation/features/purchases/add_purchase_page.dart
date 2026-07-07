@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/utils/drift_extensions.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:supermarket/core/services/purchase_service.dart';
 import 'package:supermarket/core/services/audit_service.dart';
@@ -536,7 +537,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
               ..where((p) => p.isClosed.equals(false))
               ..where((p) => p.startDate.isSmallerOrEqual(drift.Variable(_selectedDate)))
               ..where((p) => p.endDate.isBiggerOrEqual(drift.Variable(_selectedDate))))
-            .getSingleOrNull();
+            .getFirstOrNull();
         if (openPeriod == null) {
           throw Exception('الفترة المحاسبية مغلقة. لا يمكن الترحيل.');
         }

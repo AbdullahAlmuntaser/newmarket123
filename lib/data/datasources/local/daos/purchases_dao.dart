@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 import '../app_database.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
-import 'sync_log_mixin.dart';
+import '../mixins/sync_log_mixin.dart';
 
 part 'purchases_dao.g.dart';
 

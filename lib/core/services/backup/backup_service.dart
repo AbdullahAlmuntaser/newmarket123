@@ -230,6 +230,9 @@ class BackupService {
         await backupFile.copy(dbFile.path);
 
         // Reopen database with a fresh connection and update DI registration
+        AppDatabase.encryptionKey = SecurityService.useFakeKeyForTesting
+            ? null
+            : await SecurityService.getDatabaseKey();
         database = AppDatabase();
         try {
           if (di.sl.isRegistered<AppDatabase>()) {

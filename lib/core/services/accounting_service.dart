@@ -1,5 +1,6 @@
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart';
+import 'package:supermarket/core/constants/account_types.dart';
 import 'package:drift/drift.dart' hide JsonKey;
 import 'package:uuid/uuid.dart';
 import 'audit_service.dart';

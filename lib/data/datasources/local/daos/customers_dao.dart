@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart';
+import 'package:supermarket/core/constants/account_types.dart';
 import 'package:supermarket/core/utils/name_normalizer.dart';
 import 'package:uuid/uuid.dart';
 

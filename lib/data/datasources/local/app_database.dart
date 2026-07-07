@@ -5,13 +5,11 @@ import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
-import 'package:supermarket/core/services/permission_service.dart';
 import 'package:supermarket/native_sql_override.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite;
 import 'package:decimal/decimal.dart';
 
 import 'package:uuid/uuid.dart';
-import 'package:supermarket/core/services/security_service.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
 
 import 'daos/products_dao.dart';
@@ -103,7 +101,7 @@ class Categories extends Table with SyncableTable {
 class Products extends Table with SyncableTable {
   TextColumn get name => text()();
   TextColumn get sku => text().unique()();
-  TextColumn get barcode => text().nullable()(); // Primary barcode
+  TextColumn get barcode => text().unique().nullable()(); // Primary barcode
   TextColumn get categoryId => text().nullable().references(Categories, #id)();
   TextColumn get unit =>
       text().withDefault(const Constant('pcs'))(); // Base unit
@@ -567,6 +565,11 @@ class AccountingPeriods extends Table with SyncableTable {
   TextColumn get closingType => text().nullable()(); // DAILY, MONTHLY, YEARLY
   TextColumn get status =>
       text().withDefault(const Constant('OPEN'))(); // OPEN, CLOSED
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {fiscalYear, status},
+  ];
 }
 
 class SyncQueue extends Table {
@@ -1240,6 +1243,9 @@ class CustomerPaymentLinks extends Table with SyncableTable {
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
+  /// Set externally before first instantiation to avoid circular import with SecurityService.
+  static String? encryptionKey;
+
   @override
   int get schemaVersion => 47;
 
@@ -1624,11 +1630,95 @@ class AppDatabase extends _$AppDatabase {
     await ensureDefaultCurrencies();
   }
 
-  Future<void> seedSecurityData() async {
-    final permissionService = PermissionService(this);
-    await permissionService.seedPermissions();
+  static const Map<String, String> _seedPermissions = {
+    'POST_SALE': 'تسجيل المبيعات',
+    'POST_PURCHASE': 'تسجيل المشتريات',
+    'POST_SALE_RETURN': 'تسجيل مردودات المبيعات',
+    'POST_PURCHASE_RETURN': 'تسجيل مردودات المشتريات',
+    'DELETE_INVOICE': 'حذف الفواتير',
+    'VOID_TRANSACTION': 'إلغاء الحركات',
+    'MANAGE_USERS': 'إدارة المستخدمين',
+    'VIEW_REPORTS': 'عرض التقارير',
+    'MANAGE_SETTINGS': 'إدارة الإعدادات',
+    'MANAGE_INVENTORY': 'إدارة المخزون',
+    'APPROVE_DISCOUNT': 'الموافقة على الخصومات',
+    'EDIT_TAX': 'تعديل الضريبة',
+    'CREATE_SALES_ORDER': 'إنشاء طلبيات مبيعات',
+    'EDIT_SALES_ORDER': 'تعديل طلبيات المبيعات',
+    'DELETE_SALES_ORDER': 'حذف طلبيات المبيعات',
+    'APPROVE_SALES_ORDER': 'الموافقة على طلبيات المبيعات',
+    'PRINT_BARCODE': 'طباعة الباركود',
+    'EXPORT_DATA': 'تصدير البيانات',
+    'VIEW_CUSTOMER_REPORT': 'تقرير العملاء',
+    'VIEW_SUPPLIER_REPORT': 'تقرير الموردين',
+    'VIEW_PURCHASE_REPORT': 'تقرير المشتريات',
+    'VIEW_CASHBOX_REPORT': 'تقرير الصناديق',
+    'VIEW_INVENTORY_REPORT': 'تقرير المخزون',
+    'VIEW_PROFIT_REPORT': 'تقرير الأرباح',
+    'VIEW_PRODUCTS': 'عرض المنتجات',
+    'CREATE_PRODUCT': 'إضافة منتج',
+    'EDIT_PRODUCT': 'تعديل منتج',
+    'DELETE_PRODUCT': 'حذف منتج',
+    'VIEW_CUSTOMERS': 'عرض العملاء',
+    'CREATE_CUSTOMER': 'إضافة عميل',
+    'EDIT_CUSTOMER': 'تعديل عميل',
+    'DELETE_CUSTOMER': 'حذف عميل',
+    'VIEW_SUPPLIERS': 'عرض الموردين',
+    'CREATE_SUPPLIER': 'إضافة مورد',
+    'EDIT_SUPPLIER': 'تعديل مورد',
+    'DELETE_SUPPLIER': 'حذف مورد',
+    'VIEW_SALES': 'عرض المبيعات',
+    'CREATE_SALE': 'إنشاء فاتورة مبيعات',
+    'EDIT_SALE': 'تعديل فاتورة مبيعات',
+    'VIEW_PURCHASES': 'عرض المشتريات',
+    'CREATE_PURCHASE': 'إنشاء فاتورة مشتريات',
+    'EDIT_PURCHASE': 'تعديل فاتورة مشتريات',
+    'VIEW_MANUFACTURING': 'عرض التصنيع',
+    'CREATE_MANUFACTURING': 'إنشاء أمر تصنيع',
+    'VIEW_HR': 'عرض الموارد البشرية',
+    'MANAGE_HR': 'إدارة الموارد البشرية',
+    'VIEW_ACCOUNTING': 'عرض المحاسبة',
+    'MANAGE_ACCOUNTING': 'إدارة المحاسبة',
+    'VIEW_SALES_REPORT': 'تقرير المبيعات',
+    'VIEW_ADVANCED_PROFIT_REPORT': 'تقرير الأرباح المتقدم',
+    'VIEW_TOP_SELLING_REPORT': 'تقرير الأكثر مبيعاً',
+    'VIEW_SLOW_MOVING_REPORT': 'تقرير المنتجات الراكدة',
+    'VIEW_STOCK_MOVEMENT_REPORT': 'تقرير حركة المخزون',
+    'VIEW_ITEM_MOVEMENT_REPORT': 'تقرير حركة الصنف',
+    'VIEW_VAT_REPORT': 'تقرير ضريبة القيمة المضافة',
+    'VIEW_AGING_REPORT': 'تقرير أعمار الديون',
+    'VIEW_CASH_FLOW_REPORT': 'تقرير التدفق النقدي',
+    'VIEW_AUDIT_REPORT': 'تقرير سجل التدقيق',
+    'VIEW_EXPENSES_REPORT': 'تقرير المصروفات',
+    'VIEW_INCOME_EXPENSE_REPORT': 'تقرير الإيرادات والمصروفات',
+    'CREATE_JOURNAL_ENTRY': 'إنشاء قيد يومية',
+    'APPROVE_JOURNAL_ENTRY': 'الموافقة على قيد يومية',
+    'MANAGE_CASHBOX': 'إدارة الصناديق',
+    'MANAGE_TRANSFERS': 'إدارة التحويلات',
+    'MANAGE_CHECKS': 'إدارة الشيكات',
+    'MANAGE_FIXED_ASSETS': 'إدارة الأصول الثابتة',
+    'MANAGE_BUDGETS': 'إدارة الميزانيات',
+    'CLOSE_PERIOD': 'إغلاق الفترة المحاسبية',
+    'MANAGE_RECONCILIATION': 'إدارة التسوية البنكية',
+  };
 
-    final roles = ['admin', 'manager', 'cashier'];
+  Future<void> seedSecurityData() async {
+    for (final entry in _seedPermissions.entries) {
+      await into(permissions).insert(
+        PermissionsCompanion.insert(
+          code: entry.key,
+          description: Value(entry.value),
+        ),
+        onConflict: DoUpdate(
+          (_) => PermissionsCompanion(
+            description: Value(entry.value),
+          ),
+          target: [permissions.code],
+        ),
+      );
+    }
+
+    const roles = ['admin', 'manager', 'cashier'];
     for (final role in roles) {
       final existingCount = await (select(rolePermissions)
             ..where((rp) => rp.role.equals(role)))
@@ -1636,11 +1726,11 @@ class AppDatabase extends _$AppDatabase {
           .then((list) => list.length);
       if (existingCount > 0) continue;
 
-      final permissions = PermissionService.allPermissions.keys.toList();
-      for (final pCode in permissions) {
+      final pCodes = _seedPermissions.keys.toList();
+      for (final pCode in pCodes) {
         if (role == 'admin' ||
-            (role == 'manager' && pCode != PermissionCode.manageUsers) ||
-            (role == 'cashier' && pCode == PermissionCode.postSale)) {
+            (role == 'manager' && pCode != 'MANAGE_USERS') ||
+            (role == 'cashier' && pCode == 'POST_SALE')) {
           await into(rolePermissions).insert(RolePermissionsCompanion.insert(
             role: role,
             permissionCode: pCode,
@@ -1991,10 +2081,7 @@ Future<QueryExecutor> _connectWithRecovery({bool isRetry = false}) async {
       }
     }
 
-    String? encryptionKey;
-    if (!SecurityService.useFakeKeyForTesting) {
-      encryptionKey = await SecurityService.getDatabaseKey();
-    }
+    final encryptionKey = AppDatabase.encryptionKey;
 
     if (encryptionKey != null && await file.exists()) {
       if (await _isPlainSqliteDatabase(file)) {

@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/utils/drift_extensions.dart';
 
 part 'products_dao.g.dart';
 
@@ -235,7 +236,7 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
     return (select(
       products,
     )..where((p) => p.barcode.equals(barcode)))
-        .getSingleOrNull();
+        .getFirstOrNull();
   }
 
   Future<int> addProduct(ProductsCompanion entry) {

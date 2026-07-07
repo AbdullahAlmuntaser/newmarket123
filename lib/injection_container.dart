@@ -122,6 +122,9 @@ Future<void> initDatabase() async {
       return;
     }
 
+    AppDatabase.encryptionKey = SecurityService.useFakeKeyForTesting
+        ? null
+        : await SecurityService.getDatabaseKey();
     _database = AppDatabase();
     sl.registerLazySingleton<AppDatabase>(() => _database!);
     debugPrint("DI: Database opened successfully");

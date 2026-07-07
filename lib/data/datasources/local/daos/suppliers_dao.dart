@@ -1,5 +1,5 @@
 import 'package:drift/drift.dart';
-import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart';
+import 'package:supermarket/core/constants/account_types.dart';
 import 'package:uuid/uuid.dart';
 import '../app_database.dart';
 

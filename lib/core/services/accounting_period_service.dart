@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/utils/drift_extensions.dart';
 import 'package:uuid/uuid.dart';
 
 class AccountingPeriodService {
@@ -12,6 +13,13 @@ class AccountingPeriodService {
     required int year,
     required String type, // monthly, quarterly, yearly
   }) async {
+    // Prevent duplicate creation: delete existing open periods for this year first
+    await (db.delete(db.accountingPeriods)
+          ..where((p) =>
+              p.fiscalYear.equals(year) &
+              p.status.equals('OPEN')))
+        .go();
+
     final periods = <AccountingPeriodsCompanion>[];
     const uuid = Uuid();
 
@@ -121,7 +129,7 @@ class AccountingPeriodService {
           ..where((p) => p.isClosed.equals(false))
           ..where((p) => p.startDate.isSmallerOrEqual(Variable(now)))
           ..where((p) => p.endDate.isBiggerOrEqual(Variable(now))))
-        .getSingleOrNull();
+        .getFirstOrNull();
 
     if (period == null) {
       final startOfMonth = DateTime(now.year, now.month, 1);

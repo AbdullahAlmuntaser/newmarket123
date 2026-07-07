@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/accounting/zakat_provider.dart';
 import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class ZakatPage extends StatefulWidget {
   const ZakatPage({super.key});
