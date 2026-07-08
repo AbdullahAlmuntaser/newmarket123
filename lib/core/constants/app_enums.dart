@@ -47,7 +47,7 @@ enum TransactionType {
   paymentOut,
 }
 
-enum AccountType { asset, liability, equity, revenue, expense }
+enum AccountType { asset, liability, equity, revenue, expense, cogs, otherIncome }
 
 enum TaxType {
   none,

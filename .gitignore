@@ -1,76 +1,46 @@
-# Compiled and build artifacts
-*.pyc
-__pycache__/
-<<<<<<< HEAD
-# Dart/Flutter
+```dart
+# Flutter/Dart specific
 .dart_tool/
 .packages
-.flutter-plugins
-.flutter-plugins-dependencies
-.dart_tool/
-=======
->>>>>>> eb5632be869c640994114fe3706073f0b505bf0d
-*.class
-*.o
-*.obj
-*.exe
-*.dll
-*.so
-*.a
-*.out
-dist/
+flutter_export_environment.sh
+
+# Build
 build/
-target/
+*.iws
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code related
+.vscode/
 
 # Dependencies
-node_modules/
-venv/
-.venv/
+pubspec.lock
+
+# Logs
+logs/
+*.log
+
+# Coverage
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Environment
 .env
 .env.local
 *.env.*
 
-# Logs and temp files
-*.log
-*.tmp
-*.swp
-*.swo
-
-# Editors
-.vscode/
-.idea/
-
-# System files
+# OS generated files
 .DS_Store
 Thumbs.db
 
-# Testing and coverage
-.coverage
-coverage/
-htmlcov/
-.mypy_cache/
-.pytest_cache/
-
-# Compressed files
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst.dart_tool/
+# Web
+web/.build/
+web/build/
+```

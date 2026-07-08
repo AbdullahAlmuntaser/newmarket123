@@ -64,6 +64,14 @@ class PaymentMethodConverter extends TypeConverter<PaymentMethod, int> {
   int toSql(PaymentMethod value) => value.index;
 }
 
+class AccountTypeConverter extends TypeConverter<AccountType, int> {
+  const AccountTypeConverter();
+  @override
+  AccountType fromSql(int fromDb) => AccountType.values[fromDb];
+  @override
+  int toSql(AccountType value) => value.index;
+}
+
 mixin SyncableTable on Table {
   TextColumn get id => text().clientDefault(() => const Uuid().v4())();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -494,7 +502,7 @@ class GLAccounts extends Table with SyncableTable {
 
   TextColumn get code => text().unique()();
   TextColumn get name => text()();
-  TextColumn get type => text()(); // ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
+  IntColumn get accountType => integer().map(const AccountTypeConverter())(); // ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE, COGS, OTHER_INCOME
   TextColumn get analyticType =>
       text().nullable()(); // جديد: صندوق، بنك، عميل، مورد، موظف، مركز تكلفة
   TextColumn get parentId => text().nullable().references(GLAccounts, #id)();
