@@ -172,6 +172,25 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
         .get();
   }
 
+  // CustomerPaymentLinks DAO methods
+  Future<void> createCustomerPaymentLink(CustomerPaymentLinksCompanion entry) {
+    return into(db.customerPaymentLinks).insert(entry);
+  }
+
+  Future<List<CustomerPaymentLink>> getLinksForPayment(String paymentId) {
+    return (select(db.customerPaymentLinks)
+      ..where((l) => l.paymentId.equals(paymentId))).get();
+  }
+
+  Future<List<CustomerPaymentLink>> getLinksForSale(String saleId) {
+    return (select(db.customerPaymentLinks)
+      ..where((l) => l.saleId.equals(saleId))).get();
+  }
+
+  Future<int> deleteCustomerPaymentLink(String id) {
+    return (delete(db.customerPaymentLinks)..where((l) => l.id.equals(id))).go();
+  }
+
   /// جلب كشف حساب تفصيلي للعميل مع الرصيد التراكمي
   Future<List<CustomerTransaction>> getCustomerStatement(
     String customerId,

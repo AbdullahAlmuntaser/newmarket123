@@ -47,6 +47,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   final TextEditingController _taxController = TextEditingController();
 
   bool _isSaving = false;
+  bool _isPeriodOpen = true;
   double _originalTax = 0.0;
   Purchase? _loadedPurchase;
 
@@ -71,8 +72,22 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   @override
   void initState() {
     super.initState();
+    _checkPeriodStatus();
     if (isEditMode) {
       _loadPurchaseData();
+    }
+  }
+
+  Future<void> _checkPeriodStatus() async {
+    final db = Provider.of<AppDatabase>(context, listen: false);
+    final now = DateTime.now();
+    final period = await (db.select(db.accountingPeriods)
+          ..where((p) => p.isClosed.equals(false))
+          ..where((p) => p.startDate.isSmallerOrEqual(drift.Variable(now)))
+          ..where((p) => p.endDate.isBiggerOrEqual(drift.Variable(now))))
+        .getSingleOrNull();
+    if (mounted) {
+      setState(() => _isPeriodOpen = period != null);
     }
   }
 
@@ -178,6 +193,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
+              if (!_isPeriodOpen) _buildPeriodClosedBanner(),
               if (_isLockedForEditing) _buildLockedBanner(),
               _buildHeader(db),
               ListView.builder(
@@ -239,6 +255,29 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
       bottomNavigationBar: _buildFooter(db),
     );
   }
+
+  Widget _buildPeriodClosedBanner() => Container(
+        width: double.infinity,
+        margin: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          border: Border.all(color: Colors.red.shade300),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red.shade800),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'الفترة المحاسبية مغلقة. لا يمكن ترحيل الفواتير حتى فتح فترة جديدة.',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+      );
 
   Widget _buildLockedBanner() => Container(
         width: double.infinity,

@@ -30,7 +30,7 @@ class SalesDao extends DatabaseAccessor<AppDatabase>
     return (select(saleItems)..where((si) => si.saleId.equals(saleId))).watch();
   }
 
-  Stream<double> watchTotalRevenueToday() {
+  Stream<Decimal> watchTotalRevenueToday() {
     final query = select(sales)
       ..where(
         (s) => s.createdAt.isBiggerOrEqualValue(
@@ -38,9 +38,9 @@ class SalesDao extends DatabaseAccessor<AppDatabase>
         ),
       );
     return query.watch().map(
-          (rows) => rows.fold<double>(
-            0.0,
-            (sum, sale) => sum + sale.total.toDouble(),
+          (rows) => rows.fold<Decimal>(
+            Decimal.zero,
+            (sum, sale) => sum + sale.total,
           ),
         );
   }
@@ -56,7 +56,7 @@ class SalesDao extends DatabaseAccessor<AppDatabase>
   }
 
   /// حساب أرباح اليوم
-  Stream<double> watchTotalProfitToday() {
+  Stream<Decimal> watchTotalProfitToday() {
     final startOfDay = DateTime.now().subtract(const Duration(days: 1));
     final query = select(saleItems).join([
       innerJoin(sales, sales.id.equalsExp(saleItems.saleId)),
@@ -65,11 +65,11 @@ class SalesDao extends DatabaseAccessor<AppDatabase>
       ..where(sales.createdAt.isBiggerOrEqual(Variable(startOfDay)));
 
     return query.watch().map((rows) {
-      double profit = 0;
+      Decimal profit = Decimal.zero;
       for (var row in rows) {
         final item = row.readTable(saleItems);
         final product = row.readTable(products);
-        profit += ((item.price - product.buyPrice) * item.quantity).toDouble();
+        profit += (item.price - product.buyPrice) * item.quantity;
       }
       return profit;
     });

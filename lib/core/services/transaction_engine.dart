@@ -284,13 +284,33 @@ class TransactionEngine {
           throw Exception('السعر يجب أن يكون أكبر من أو يساوي الصفر.');
         }
 
+        // Validate against budget if item has a cost center
+        if (item.costCenterId != null && _budgetService != null) {
+          final now = DateTime.now();
+          final period = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+          await _budgetService!.validateExpenseAgainstBudget(
+            costCenterId: item.costCenterId!,
+            expenseAmount: item.price * item.quantity,
+            period: period,
+          );
+        }
+
         Decimal remainingToDeduct = item.quantity * item.unitFactor;
         final product = await (db.select(
           db.products,
         )..where((p) => p.id.equals(item.productId)))
             .getSingle();
 
-        if (product.stock < remainingToDeduct) {
+        if (sale.warehouseId != null && sale.warehouseId!.isNotEmpty) {
+          final warehouseStock = await db.productsDao
+              .getWarehouseStock(item.productId, sale.warehouseId!);
+          if (warehouseStock < remainingToDeduct) {
+            throw Exception(
+              'المخزون غير كافٍ للمنتج: ${product.name} في المستودع المحدد. '
+              'المتوفر: $warehouseStock',
+            );
+          }
+        } else if (product.stock < remainingToDeduct) {
           throw Exception(
             'المخزون غير كافٍ للمنتج: ${product.name}. المتوفر: ${product.stock}',
           );
@@ -342,10 +362,14 @@ class TransactionEngine {
           );
         } else {
           // FIFO fallback
-          final batches = await (db.select(db.productBatches)
+          var batchQuery = db.select(db.productBatches)
                 ..where((b) => b.productId.equals(item.productId))
                 ..where((b) =>
-                    b.quantity.isBiggerThan(Variable(Decimal.zero.toString())))
+                    b.quantity.isBiggerThan(Variable(Decimal.zero.toString())));
+          if (sale.warehouseId != null && sale.warehouseId!.isNotEmpty) {
+            batchQuery.where((b) => b.warehouseId.equals(sale.warehouseId!));
+          }
+          final batches = await (batchQuery
                 ..orderBy([
                   (b) => OrderingTerm(
                       expression: b.expiryDate.isNull(),
@@ -428,6 +452,21 @@ class TransactionEngine {
           'date': sale.createdAt,
         },
       );
+
+      // Update budget actual amounts for items with cost centers
+      if (_budgetService != null) {
+        final now = DateTime.now();
+        final period = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+        for (var item in items) {
+          if (item.costCenterId != null) {
+            await _budgetService!.updateActualBudget(
+              costCenterId: item.costCenterId!,
+              expenseAmount: item.price * item.quantity,
+              period: period,
+            );
+          }
+        }
+      }
 
       await _auditService.log(
         action: 'POST_SALE',

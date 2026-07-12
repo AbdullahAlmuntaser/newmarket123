@@ -363,6 +363,19 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
           ]))
         .get();
   }
+
+  Future<Decimal> getWarehouseStock(String productId, String warehouseId) async {
+    final batches = await (select(productBatches)
+          ..where((b) =>
+              b.productId.equals(productId) &
+              b.warehouseId.equals(warehouseId) &
+              b.quantity.isBiggerThan(Variable(Decimal.zero.toString()))))
+        .get();
+    return batches.fold<Decimal>(
+      Decimal.zero,
+      (sum, b) => sum + b.quantity,
+    );
+  }
 }
 
 /// Helper class to return a product with its variants

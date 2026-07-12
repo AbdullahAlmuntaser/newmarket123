@@ -310,7 +310,7 @@ class SaleItems extends Table with SyncableTable {
   TextColumn get warehouseId => text().nullable().references(Warehouses, #id)();
   TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
   TextColumn get costCenterId =>
-      text().nullable().references(CostCenters, #id)(); // الحقل المضاف
+      text().nullable().references(CostCenters, #id)();
 }
 
 class StockMovements extends Table with SyncableTable {
@@ -334,7 +334,7 @@ class StockMovements extends Table with SyncableTable {
   TextColumn get transactionId => text().nullable()(); // ADDED transactionId
   TextColumn get date => text()
       .nullable()(); // ADDED date as string or something? Wait, StockMovements already has movementDate. I will use date if needed.
-  TextColumn get referenceId => text().nullable()(); // SaleId, PurchaseId, etc.
+  TextColumn get referenceId => text().nullable()();
 }
 
 class Purchases extends Table with SyncableTable {
@@ -377,39 +377,39 @@ class PurchaseItems extends Table with SyncableTable {
   TextColumn get purchaseId => text().references(Purchases, #id)();
   TextColumn get productId => text().references(Products, #id)();
   TextColumn get unitId =>
-      text().nullable()(); // New: Unit ID (e.g., carton, kilo)
+      text().nullable()();
   TextColumn get unitFactor => text().map(const DecimalConverter()).withDefault(
-      Constant(Decimal.one.toString()))(); // New: Conversion to base unit
+      Constant(Decimal.one.toString()))();
   TextColumn get quantity => text().map(const DecimalConverter())();
   TextColumn get quantityInBaseUnit => text()
       .map(const DecimalConverter())
-      .nullable()(); // New: Calculated base quantity
+      .nullable()();
   TextColumn get unitPrice =>
-      text().map(const DecimalConverter())(); // New: Price per selected unit
+      text().map(const DecimalConverter())();
   TextColumn get price => text()
-      .map(const DecimalConverter())(); // Total price (kept for compatibility)
+      .map(const DecimalConverter())();
   TextColumn get discount => text()
       .map(const DecimalConverter())
-      .withDefault(Constant(Decimal.zero.toString()))(); // New: Item discount
+      .withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get discountPercent =>
       text().map(const DecimalConverter()).withDefault(
-          Constant(Decimal.zero.toString()))(); // New: Discount percentage
+          Constant(Decimal.zero.toString()))();
   TextColumn get tax => text()
       .map(const DecimalConverter())
-      .withDefault(Constant(Decimal.zero.toString()))(); // New: Tax amount
+      .withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get taxPercent => text()
       .map(const DecimalConverter())
-      .withDefault(Constant(Decimal.zero.toString()))(); // New: Tax percentage
+      .withDefault(Constant(Decimal.zero.toString()))();
   TextColumn get landedCostShare =>
       text().map(const DecimalConverter()).withDefault(
-          Constant(Decimal.zero.toString()))(); // New: Share of landed costs
+          Constant(Decimal.zero.toString()))();
   TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
-  TextColumn get batchNumber => text().nullable()(); // New
-  DateTimeColumn get expiryDate => dateTime().nullable()(); // New
+  TextColumn get batchNumber => text().nullable()();
+  DateTimeColumn get expiryDate => dateTime().nullable()();
   TextColumn get warehouseId => text().nullable().references(
         Warehouses,
         #id,
-      )(); // New: Override warehouse per item
+      )();
   BoolColumn get isCarton => boolean().withDefault(const Constant(false))();
 }
 
@@ -494,7 +494,7 @@ class SupplierPayments extends Table with SyncableTable {
   TextColumn get amount => text().map(const DecimalConverter())();
   TextColumn get remainingAmount => text()
       .map(const DecimalConverter())
-      .withDefault(Constant(Decimal.zero.toString()))(); // Unapplied amount
+      .withDefault(Constant(Decimal.zero.toString()))();
   DateTimeColumn get paymentDate =>
       dateTime().withDefault(currentDateAndTime)();
   TextColumn get note => text().nullable()();
@@ -910,7 +910,7 @@ class InventoryTransactions extends Table with SyncableTable {
   TextColumn get warehouseId => text().references(Warehouses, #id)();
   TextColumn get batchId => text().nullable().references(ProductBatches, #id)();
   TextColumn get quantity => text().map(const DecimalConverter()).withDefault(
-      Constant(Decimal.zero.toString()))(); // Positive for in, negative for out
+      Constant(Decimal.zero.toString()))();
   TextColumn get type =>
       text()(); // PURCHASE, SALE, RETURN, TRANSFER, ADJUSTMENT
   TextColumn get referenceId => text()(); // PurchaseId, SaleId, etc.
@@ -1275,7 +1275,7 @@ class AppDatabase extends _$AppDatabase {
   static String? encryptionKey;
 
   @override
-  int get schemaVersion => 50;
+  int get schemaVersion => 51;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1483,6 +1483,37 @@ class AppDatabase extends _$AppDatabase {
               debugPrint('DB Migration v50: loginAttempts already exists or failed: $e');
             }
           }
+          if (from < 51) {
+            // Version 51: Add missing composite indexes for performance
+            try {
+              await customStatement(
+                  'CREATE INDEX IF NOT EXISTS inventory_transactions_product_warehouse_idx '
+                  'ON inventory_transactions (product_id, warehouse_id)');
+            } catch (e) {
+              debugPrint('DB Migration v51: inventory_transactions_product_warehouse_idx: $e');
+            }
+            try {
+              await customStatement(
+                  'CREATE INDEX IF NOT EXISTS inventory_transactions_reference_id_idx '
+                  'ON inventory_transactions (reference_id)');
+            } catch (e) {
+              debugPrint('DB Migration v51: inventory_transactions_reference_id_idx: $e');
+            }
+            try {
+              await customStatement(
+                  'CREATE INDEX IF NOT EXISTS account_transactions_reference_id_idx '
+                  'ON account_transactions (reference_id)');
+            } catch (e) {
+              debugPrint('DB Migration v51: account_transactions_reference_id_idx: $e');
+            }
+            try {
+              await customStatement(
+                  'CREATE INDEX IF NOT EXISTS account_transactions_reconciled_idx '
+                  'ON account_transactions (reconciled)');
+            } catch (e) {
+              debugPrint('DB Migration v51: account_transactions_reconciled_idx: $e');
+            }
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON;');
@@ -1639,6 +1670,11 @@ class AppDatabase extends _$AppDatabase {
     'CREATE INDEX IF NOT EXISTS good_received_notes_purchase_id_idx ON good_received_notes (purchase_id)',
     'CREATE INDEX IF NOT EXISTS payroll_lines_employee_id_idx ON payroll_lines (employee_id)',
     'CREATE INDEX IF NOT EXISTS payroll_lines_payroll_entry_id_idx ON payroll_lines (payroll_entry_id)',
+    // Version 51: Additional composite indexes
+    'CREATE INDEX IF NOT EXISTS inventory_transactions_product_warehouse_idx ON inventory_transactions (product_id, warehouse_id)',
+    'CREATE INDEX IF NOT EXISTS inventory_transactions_reference_id_idx ON inventory_transactions (reference_id)',
+    'CREATE INDEX IF NOT EXISTS account_transactions_reference_id_idx ON account_transactions (reference_id)',
+    'CREATE INDEX IF NOT EXISTS account_transactions_reconciled_idx ON account_transactions (reconciled)',
   ];
 
   Future<void> ensurePerformanceIndexes() async {

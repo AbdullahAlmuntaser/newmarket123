@@ -232,4 +232,23 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
 
     return allTransactions;
   }
+
+  // PurchasePaymentLinks DAO methods
+  Future<void> createPurchasePaymentLink(PurchasePaymentLinksCompanion entry) {
+    return into(db.purchasePaymentLinks).insert(entry);
+  }
+
+  Future<List<PurchasePaymentLink>> getLinksForPayment(String paymentId) {
+    return (select(db.purchasePaymentLinks)
+      ..where((l) => l.paymentId.equals(paymentId))).get();
+  }
+
+  Future<List<PurchasePaymentLink>> getLinksForPurchase(String purchaseId) {
+    return (select(db.purchasePaymentLinks)
+      ..where((l) => l.purchaseId.equals(purchaseId))).get();
+  }
+
+  Future<int> deletePurchasePaymentLink(String id) {
+    return (delete(db.purchasePaymentLinks)..where((l) => l.id.equals(id))).go();
+  }
 }

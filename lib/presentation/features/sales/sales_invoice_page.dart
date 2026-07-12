@@ -48,6 +48,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
   final TextEditingController _otherExpensesController =
       TextEditingController();
   bool _isSaving = false;
+  bool _isPeriodOpen = true;
   Sale? _loadedSale;
   final _currencyFormatter = NumberFormat.currency(locale: 'ar', symbol: '');
   double _originalTax = 0.0;
@@ -86,8 +87,22 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
     _taxController.addListener(() => setState(() {}));
     _shippingCostController.addListener(() => setState(() {}));
     _otherExpensesController.addListener(() => setState(() {}));
+    _checkPeriodStatus();
     if (isEditMode) {
       _loadSaleData();
+    }
+  }
+
+  Future<void> _checkPeriodStatus() async {
+    final db = Provider.of<AppDatabase>(context, listen: false);
+    final now = DateTime.now();
+    final period = await (db.select(db.accountingPeriods)
+          ..where((p) => p.isClosed.equals(false))
+          ..where((p) => p.startDate.isSmallerOrEqual(drift.Variable(now)))
+          ..where((p) => p.endDate.isBiggerOrEqual(drift.Variable(now))))
+        .getSingleOrNull();
+    if (mounted) {
+      setState(() => _isPeriodOpen = period != null);
     }
   }
 
@@ -272,6 +287,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
+                    if (!_isPeriodOpen) _buildPeriodClosedBanner(),
                     if (_isLockedForEditing) _buildLockedBanner(),
                     _buildCollapsibleHeader(db),
                     _buildBarcodeSearch(db),
@@ -290,6 +306,29 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       ),
     );
   }
+
+  Widget _buildPeriodClosedBanner() => Container(
+        width: double.infinity,
+        margin: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          border: Border.all(color: Colors.red.shade300),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red.shade800),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'الفترة المحاسبية مغلقة. لا يمكن ترحيل الفواتير حتى فتح فترة جديدة.',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+      );
 
   Widget _buildLockedBanner() => Container(
         width: double.infinity,
