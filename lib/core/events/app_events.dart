@@ -5,7 +5,7 @@ abstract class AppEvent {}
 class SaleCreatedEvent extends AppEvent {
   final Sale sale;
   final List<SaleItem> items;
-  final double cogs;
+  final Decimal cogs;
   final String? userId;
 
   SaleCreatedEvent(this.sale, this.items, {required this.cogs, this.userId});
@@ -53,11 +53,12 @@ class PurchaseReturnCreatedEvent extends AppEvent {
 
 class CustomerPaymentEvent extends AppEvent {
   final String customerId;
-  final double amount;
+  final Decimal amount;
   final String paymentMethod;
   final String? note;
   final String paymentId;
   final String? userId;
+  final DateTime? paymentDate;
 
   CustomerPaymentEvent({
     required this.customerId,
@@ -66,16 +67,18 @@ class CustomerPaymentEvent extends AppEvent {
     this.note,
     required this.paymentId,
     this.userId,
+    this.paymentDate,
   });
 }
 
 class SupplierPaymentEvent extends AppEvent {
   final String supplierId;
-  final double amount;
+  final Decimal amount;
   final String paymentMethod;
   final String? note;
   final String paymentId;
   final String? userId;
+  final DateTime? paymentDate;
 
   SupplierPaymentEvent({
     required this.supplierId,
@@ -84,11 +87,12 @@ class SupplierPaymentEvent extends AppEvent {
     this.note,
     required this.paymentId,
     this.userId,
+    this.paymentDate,
   });
 }
 
 class CashTransactionEvent extends AppEvent {
-  final double amount;
+  final Decimal amount;
   final String type; // IN, OUT
   final String category;
   final String accountId;

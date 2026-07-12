@@ -8,8 +8,6 @@ import 'package:intl/intl.dart' as intl;
 import 'app_localizations_ar.dart';
 import 'app_localizations_en.dart';
 
-// ignore_for_file: type=lint
-
 /// Callers can lookup localized strings with an instance of AppLocalizations
 /// returned by `AppLocalizations.of(context)`.
 ///
@@ -62,8 +60,7 @@ import 'app_localizations_en.dart';
 /// be consistent with the languages listed in the AppLocalizations.supportedLocales
 /// property.
 abstract class AppLocalizations {
-  AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -71,8 +68,7 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate =
-      _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -84,8 +80,7 @@ abstract class AppLocalizations {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
-      <LocalizationsDelegate<dynamic>>[
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
     delegate,
     GlobalMaterialLocalizations.delegate,
     GlobalCupertinoLocalizations.delegate,
@@ -95,7 +90,7 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('ar'),
-    Locale('en'),
+    Locale('en')
   ];
 
   /// No description provided for @appTitle.
@@ -347,7 +342,7 @@ abstract class AppLocalizations {
   /// No description provided for @tax.
   ///
   /// In en, this message translates to:
-  /// **'Tax (15%)'**
+  /// **'Tax'**
   String get tax;
 
   /// No description provided for @total.
@@ -2425,10 +2420,273 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Period'**
   String get period;
+
+  /// No description provided for @noItemsSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No items selected'**
+  String get noItemsSelected;
+
+  /// No description provided for @deleteCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Customer'**
+  String get deleteCustomer;
+
+  /// No description provided for @deleteSupplier.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Supplier'**
+  String get deleteSupplier;
+
+  /// No description provided for @confirmDeleteCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete {customerName}?'**
+  String confirmDeleteCustomer(Object customerName);
+
+  /// No description provided for @confirmDeleteSupplier.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete {supplierName}?'**
+  String confirmDeleteSupplier(Object supplierName);
+
+  /// No description provided for @customerDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer deleted'**
+  String get customerDeleted;
+
+  /// No description provided for @supplierDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier deleted'**
+  String get supplierDeleted;
+
+  /// No description provided for @failedToDeleteCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete customer'**
+  String get failedToDeleteCustomer;
+
+  /// No description provided for @failedToDeleteSupplier.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete supplier'**
+  String get failedToDeleteSupplier;
+
+  /// No description provided for @manufacturing.
+  ///
+  /// In en, this message translates to:
+  /// **'Manufacturing'**
+  String get manufacturing;
+
+  /// No description provided for @productionOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'Production Orders'**
+  String get productionOrders;
+
+  /// No description provided for @bomManagement.
+  ///
+  /// In en, this message translates to:
+  /// **'BOM Management'**
+  String get bomManagement;
+
+  /// No description provided for @createOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Order'**
+  String get createOrder;
+
+  /// No description provided for @plannedQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned Quantity'**
+  String get plannedQuantity;
+
+  /// No description provided for @productionOrderCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Production order created successfully'**
+  String get productionOrderCreated;
+
+  /// No description provided for @complete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete'**
+  String get complete;
+
+  /// No description provided for @bom.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill of Materials'**
+  String get bom;
+
+  /// No description provided for @executeAssembly.
+  ///
+  /// In en, this message translates to:
+  /// **'Execute Assembly'**
+  String get executeAssembly;
+
+  /// No description provided for @assemblySuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Assembly executed successfully'**
+  String get assemblySuccess;
+
+  /// No description provided for @finishedProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished Product'**
+  String get finishedProduct;
+
+  /// No description provided for @rawMaterials.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw Materials'**
+  String get rawMaterials;
+
+  /// No description provided for @bankReconciliation.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank Reconciliation'**
+  String get bankReconciliation;
+
+  /// No description provided for @autoBreakService.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-Break Service'**
+  String get autoBreakService;
+
+  /// No description provided for @unitHierarchy.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit Hierarchy'**
+  String get unitHierarchy;
+
+  /// No description provided for @addUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Unit'**
+  String get addUnit;
+
+  /// No description provided for @removeUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Unit'**
+  String get removeUnit;
+
+  /// No description provided for @unitName.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit Name'**
+  String get unitName;
+
+  /// No description provided for @unitFactor.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit Factor'**
+  String get unitFactor;
+
+  /// No description provided for @returnMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Return Mode'**
+  String get returnMode;
+
+  /// No description provided for @returnFromSale.
+  ///
+  /// In en, this message translates to:
+  /// **'Return from Sale'**
+  String get returnFromSale;
+
+  /// No description provided for @originalSaleReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Original Sale Reference'**
+  String get originalSaleReference;
+
+  /// No description provided for @searchSale.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Sale'**
+  String get searchSale;
+
+  /// No description provided for @returnItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Return Item'**
+  String get returnItem;
+
+  /// No description provided for @returnQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Return Quantity'**
+  String get returnQuantity;
+
+  /// No description provided for @returnReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Return Reason'**
+  String get returnReason;
+
+  /// No description provided for @returnSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Return processed successfully'**
+  String get returnSuccess;
+
+  /// No description provided for @totalRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Refund'**
+  String get totalRefund;
+
+  /// No description provided for @cancelReturn.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Return'**
+  String get cancelReturn;
+
+  /// No description provided for @unmatchedTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmatched Transactions'**
+  String get unmatchedTransactions;
+
+  /// No description provided for @reconcileSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconcile Selected'**
+  String get reconcileSelected;
+
+  /// No description provided for @autoReconcile.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Reconcile'**
+  String get autoReconcile;
+
+  /// No description provided for @reconcileAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconcile All'**
+  String get reconcileAll;
+
+  /// No description provided for @tolerance.
+  ///
+  /// In en, this message translates to:
+  /// **'Tolerance'**
+  String get tolerance;
+
+  /// No description provided for @noUnmatchedTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'No unmatched transactions'**
+  String get noUnmatchedTransactions;
 }
 
-class _AppLocalizationsDelegate
-    extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -2437,26 +2695,25 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool isSupported(Locale locale) =>
-      <String>['ar', 'en'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>['ar', 'en'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
+
+
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'ar':
-      return AppLocalizationsAr();
-    case 'en':
-      return AppLocalizationsEn();
+    case 'ar': return AppLocalizationsAr();
+    case 'en': return AppLocalizationsEn();
   }
 
   throw FlutterError(
     'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
+    'that was used.'
   );
 }

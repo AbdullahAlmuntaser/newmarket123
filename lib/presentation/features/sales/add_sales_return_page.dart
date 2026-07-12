@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 
 import 'package:supermarket/core/services/transaction_engine.dart';
 import 'package:supermarket/injection_container.dart';
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
 
 class AddSalesReturnPage extends StatefulWidget {
   final String? saleId;
@@ -132,7 +133,7 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
     _returnedQuantities.forEach((productId, qty) {
       final item = _saleItemsMap[productId];
       if (item != null) {
-        totalAmount += qty * item.price;
+        totalAmount += qty * item.price.toDouble();
       }
     });
 
@@ -241,7 +242,7 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
                             ),
                             IconButton(
                               icon: const Icon(Icons.add_circle_outline),
-                              onPressed: returnedQty < item.quantity
+                              onPressed: returnedQty < item.quantity.toDouble()
                                   ? () => setState(
                                         () => _returnedQuantities[
                                             item.productId] = returnedQty + 1,
@@ -276,14 +277,14 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
     _returnedQuantities.forEach((productId, qty) {
       if (qty > 0) {
         final item = _saleItemsMap[productId]!;
-        totalReturnedAmount += qty * item.price;
+        totalReturnedAmount += qty * item.price.toDouble();
         itemCompanions.add(
           SalesReturnItemsCompanion.insert(
             id: Value(const Uuid().v4()),
             salesReturnId: returnId,
             productId: productId,
-            quantity: qty,
-            price: item.price,
+            quantity: Decimal.parse(qty.toString()),
+            price: Decimal.parse(item.price.toString()),
             syncStatus: const Value(1),
           ),
         );
@@ -293,7 +294,7 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
     final returnCompanion = SalesReturnsCompanion.insert(
       id: Value(returnId),
       saleId: _selectedSale!.id,
-      amountReturned: totalReturnedAmount,
+      amountReturned: Value(Decimal.parse(totalReturnedAmount.toString())),
       createdAt: Value(DateTime.now()),
       updatedAt: Value(DateTime.now()),
       syncStatus: const Value(1),
@@ -313,19 +314,12 @@ class _AddSalesReturnPageState extends State<AddSalesReturnPage> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.returnProcessedSuccessfully),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppSnackBar.success(context, l10n.returnProcessedSuccessfully);
         context.pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-        );
+        AppSnackBar.error(context, e.toString());
       }
     }
   }

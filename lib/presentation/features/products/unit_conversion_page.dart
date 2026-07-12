@@ -40,7 +40,7 @@ class _UnitConversionPageState extends State<UnitConversionPage> {
             UnitConversionsCompanion.insert(
               productId: widget.productId,
               unitName: _unitNameController.text,
-              factor: double.parse(_factorController.text),
+              factor: drift.Value(Decimal.parse(_factorController.text)),
               barcode: drift.Value(
                 _barcodeController.text.isEmpty
                     ? null
@@ -49,7 +49,7 @@ class _UnitConversionPageState extends State<UnitConversionPage> {
               sellPrice: drift.Value(
                 _priceController.text.isEmpty
                     ? null
-                    : double.parse(_priceController.text),
+                    : Decimal.parse(_priceController.text),
               ),
             ),
           );

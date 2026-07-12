@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:drift/drift.dart' as drift;
 import 'package:supermarket/core/services/inventory_service.dart';
 import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/core/services/app_config_service.dart';
-import 'package:drift/drift.dart' as drift;
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 
@@ -23,7 +23,8 @@ class _StockTakePageState extends State<StockTakePage> {
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isLoadingProducts = false;
-  final TextEditingController _productSearchController = TextEditingController();
+  final TextEditingController _productSearchController =
+      TextEditingController();
   late TextEditingController _noteController;
 
   @override
@@ -257,7 +258,7 @@ class _StockTakePageState extends State<StockTakePage> {
     AppDatabase db,
     ColorScheme colorScheme,
   ) {
-    final bool hasVariance = item.variance != 0;
+    final bool hasVariance = item.variance != Decimal.zero;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -328,9 +329,11 @@ class _StockTakePageState extends State<StockTakePage> {
                               ))
                             .write(
                           StockTakeItemsCompanion(
-                            actualQty: drift.Value(actual),
+                            actualQty:
+                                drift.Value(Decimal.parse(actual.toString())),
                             variance: drift.Value(
-                              actual - item.expectedQty,
+                              Decimal.parse(actual.toString()) -
+                                  item.expectedQty,
                             ),
                           ),
                         );
@@ -350,8 +353,8 @@ class _StockTakePageState extends State<StockTakePage> {
                       ),
                     ),
                     Text(
-                      (item.variance > 0 ? '+' : '') +
-                          item.variance.toStringAsFixed(2),
+                      (item.variance > Decimal.zero ? '+' : '') +
+                          item.variance.toString(),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
@@ -425,7 +428,7 @@ class _StockTakePageState extends State<StockTakePage> {
   void _finalizeStockTake(AppDatabase db, StockTake stockTake) async {
     setState(() => _isSaving = true);
     try {
-      final inventoryService = InventoryService(
+      final inventoryService = InventoryService.fromDb(
         db,
         AuditService(db),
         AppConfigService(db),
@@ -438,9 +441,10 @@ class _StockTakePageState extends State<StockTakePage> {
           .map((i) => InventoryAuditItemsCompanion.insert(
                 auditId: i.stockTakeId,
                 productId: i.productId,
-                actualStock: i.actualQty,
-                systemStock: i.expectedQty,
-                difference: i.variance,
+                actualStock: drift.Value(Decimal.parse(i.actualQty.toString())),
+                systemStock:
+                    drift.Value(Decimal.parse(i.expectedQty.toString())),
+                difference: drift.Value(Decimal.parse(i.variance.toString())),
               ))
           .toList();
 
@@ -517,7 +521,8 @@ class _StockTakePageState extends State<StockTakePage> {
               onChanged: _searchProducts,
             ),
             const SizedBox(height: 8),
-            if (_filteredProducts.isEmpty && _productSearchController.text.isNotEmpty)
+            if (_filteredProducts.isEmpty &&
+                _productSearchController.text.isNotEmpty)
               const Padding(
                 padding: EdgeInsets.all(8),
                 child: Text('لا توجد نتائج'),
@@ -570,15 +575,16 @@ class _StockTakePageState extends State<StockTakePage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              final actual = double.tryParse(qtyController.text);
+              final actualStr = qtyController.text;
+              final actual = Decimal.tryParse(actualStr);
               if (actual != null) {
                 await db.into(db.stockTakeItems).insert(
                       StockTakeItemsCompanion.insert(
                         stockTakeId: stockTakeId,
                         productId: product.id,
-                        expectedQty: product.stock,
-                        actualQty: actual,
-                        variance: actual - product.stock,
+                        expectedQty: drift.Value(product.stock),
+                        actualQty: drift.Value(actual),
+                        variance: drift.Value(actual - product.stock),
                       ),
                     );
                 if (ctx.mounted) Navigator.pop(ctx);
@@ -597,9 +603,9 @@ class StockTakeItemData {
   final String productId;
   final String productName;
   final String productSku;
-  final double expectedQty;
-  final double actualQty;
-  final double variance;
+  final Decimal expectedQty;
+  final Decimal actualQty;
+  final Decimal variance;
   StockTakeItemData({
     required this.stockTakeId,
     required this.productId,

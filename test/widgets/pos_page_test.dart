@@ -80,11 +80,13 @@ class SimplePosView extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.inventory_2, size: 40, color: Colors.teal),
+                        const Icon(Icons.inventory_2,
+                            size: 40, color: Colors.teal),
                         const SizedBox(height: 8),
                         Text(product.name, textAlign: TextAlign.center),
                         Text('${product.price.toStringAsFixed(2)} ر.س',
-                            style: const TextStyle(fontWeight: FontWeight.bold)),
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
                         Text('المخزون: ${product.stock.toStringAsFixed(0)}'),
                       ],
                     ),

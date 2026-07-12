@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:equatable/equatable.dart';
 
 enum PurchaseStatus { draft, approved, received, completed }
@@ -8,7 +9,7 @@ class PurchaseOrder extends Equatable {
   final List<PurchaseItem> items;
   final PurchaseStatus status;
   final DateTime date;
-  final double totalAmount;
+  final Decimal totalAmount;
 
   const PurchaseOrder({
     required this.id,
@@ -26,7 +27,7 @@ class PurchaseOrder extends Equatable {
 class PurchaseItem extends Equatable {
   final String itemId;
   final double quantity;
-  final double price;
+  final Decimal price;
 
   const PurchaseItem({
     required this.itemId,

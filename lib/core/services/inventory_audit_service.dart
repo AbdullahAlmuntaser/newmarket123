@@ -13,7 +13,7 @@ class InventoryAuditService {
           .get();
 
       for (var item in auditItems) {
-        if (item.difference != 0) {
+        if (item.difference != Decimal.zero) {
           await db
               .into(db.stockMovements)
               .insert(StockMovementsCompanion.insert(

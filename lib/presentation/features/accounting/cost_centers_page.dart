@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
-import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/l10n/app_localizations.dart';
 
 class CostCentersPage extends StatelessWidget {
   const CostCentersPage({super.key});
@@ -49,47 +49,24 @@ class CostCentersPage extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () =>
                         _showAddCostCenterDialog(context, provider),
-                    child: Text(l10n.addCostCenter),
+                    child: Text(l10n.add),
                   ),
                 ],
               ),
             );
           }
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
+          return ListView.builder(
             itemCount: costCenters.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
               final cc = costCenters[index];
-              return Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: Colors.grey.withAlpha(50)),
-                ),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.primaryContainer,
-                    child: Text(
-                      cc.code,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                  title: Text(
-                    cc.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(cc.code),
-                  trailing: Switch(
-                    value: cc.isActive,
-                    onChanged: (val) => provider.toggleCostCenterStatus(cc),
-                  ),
+              return ListTile(
+                leading: const CircleAvatar(child: Icon(Icons.business_center)),
+                title: Text(cc.name),
+                subtitle: Text(cc.code),
+                trailing: Text(
+                  cc.code,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               );
             },
@@ -103,51 +80,40 @@ class CostCentersPage extends StatelessWidget {
     BuildContext context,
     AccountingProvider provider,
   ) {
-    final l10n = AppLocalizations.of(context)!;
     final nameController = TextEditingController();
     final codeController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(l10n.addCostCenter),
+        title: const Text('إضافة مركز تكلفة'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: codeController,
-              decoration: InputDecoration(
-                labelText: l10n.code,
-                border: const OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(labelText: 'الكود'),
             ),
-            const SizedBox(height: 16),
             TextField(
               controller: nameController,
-              decoration: InputDecoration(
-                labelText: l10n.name,
-                border: const OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(labelText: 'الاسم'),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
+            child: const Text('إلغاء'),
           ),
           ElevatedButton(
             onPressed: () {
-              if (nameController.text.isNotEmpty &&
-                  codeController.text.isNotEmpty) {
-                provider.addCostCenter(
-                  code: codeController.text,
-                  name: nameController.text,
-                );
-                Navigator.pop(context);
-              }
+              provider.addCostCenter(
+                name: nameController.text,
+                code: codeController.text,
+              );
+              Navigator.pop(context);
             },
-            child: Text(l10n.add),
+            child: const Text('إضافة'),
           ),
         ],
       ),

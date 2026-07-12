@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:decimal/decimal.dart';
 import 'package:equatable/equatable.dart';
 import 'package:supermarket/core/utils/failures.dart';
 import 'package:supermarket/core/utils/usecase.dart';
@@ -17,7 +18,7 @@ class AddStockUseCase extends UseCase<void, AddStockParams> {
       itemId: params.productId,
       unitId: '',
       quantity: params.quantity,
-      cost: 0.0,
+      cost: Decimal.zero,
       type: MovementType.adjustment,
       warehouseId: params.warehouseId,
       timestamp: DateTime.now(),

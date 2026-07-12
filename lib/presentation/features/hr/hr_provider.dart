@@ -6,32 +6,57 @@ class HRProvider with ChangeNotifier {
   final HRService _service;
   List<HREmployee> _employees = [];
   bool _isLoading = false;
+  String? _error;
 
   HRProvider(this._service);
 
   List<HREmployee> get employees => _employees;
   bool get isLoading => _isLoading;
+  String? get error => _error;
 
   Future<void> loadEmployees() async {
     _isLoading = true;
+    _error = null;
     notifyListeners();
-    _employees = await _service.getAllEmployees();
+    try {
+      _employees = await _service.getAllEmployees();
+    } catch (e) {
+      _error = e.toString();
+    }
     _isLoading = false;
     notifyListeners();
   }
 
   Future<void> addEmployee(HREmployeesCompanion employee) async {
-    await _service.addEmployee(employee);
-    await loadEmployees();
+    _error = null;
+    try {
+      await _service.addEmployee(employee);
+      await loadEmployees();
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    }
   }
 
-  Future<void> updateEmployee(HREmployee employee) async {
-    await _service.updateEmployee(employee);
-    await loadEmployees();
+  Future<void> updateEmployee(HREmployeesCompanion employee) async {
+    _error = null;
+    try {
+      await _service.updateEmployee(employee);
+      await loadEmployees();
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    }
   }
 
-  Future<void> deleteEmployee(int id) async {
-    await _service.deleteEmployee(id);
-    await loadEmployees();
+  Future<void> deleteEmployee(String id) async {
+    _error = null;
+    try {
+      await _service.deleteEmployee(id);
+      await loadEmployees();
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    }
   }
 }

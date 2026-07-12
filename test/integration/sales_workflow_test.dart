@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supermarket/domain/entities/sales_invoice.dart';
 
@@ -7,41 +8,60 @@ void main() {
       final invoice = SalesInvoice(
         id: 'inv-1',
         customerId: '',
-        items: const [
-          InvoiceItem(itemId: 'p1', quantity: 2, price: 50),
-          InvoiceItem(itemId: 'p2', quantity: 1, price: 100),
-          InvoiceItem(itemId: 'p3', quantity: 0.5, price: 200, unitFactor: 1),
+        items: [
+          InvoiceItem(
+              itemId: 'p1',
+              quantity: 2,
+              price: Decimal.fromInt(50),
+              discount: Decimal.zero),
+          InvoiceItem(
+              itemId: 'p2',
+              quantity: 1,
+              price: Decimal.fromInt(100),
+              discount: Decimal.zero),
+          InvoiceItem(
+              itemId: 'p3',
+              quantity: 0.5,
+              price: Decimal.fromInt(200),
+              unitFactor: 1,
+              discount: Decimal.zero),
         ],
-        subtotal: 250,
-        discount: 25,
-        taxAmount: 48.75,
-        totalAmount: 273.75,
+        subtotal: Decimal.fromInt(250),
+        discount: Decimal.fromInt(25),
+        taxAmount: Decimal.parse('48.75'),
+        totalAmount: Decimal.parse('273.75'),
         paymentMethod: 'cash',
         timestamp: DateTime.now(),
         qrCodeData: '',
       );
 
-      double calculatedSubtotal = 0;
+      Decimal calculatedSubtotal = Decimal.zero;
       for (var item in invoice.items) {
-        calculatedSubtotal += (item.quantity * item.unitFactor * item.price);
+        calculatedSubtotal += Decimal.parse(item.quantity.toString()) *
+            Decimal.parse(item.unitFactor.toString()) *
+            item.price;
       }
 
-      expect(calculatedSubtotal, closeTo(300.0, 0.01));
+      expect(calculatedSubtotal.toDouble(), closeTo(300.0, 0.01));
       final total = calculatedSubtotal - invoice.discount + invoice.taxAmount;
-      expect(total, closeTo(323.75, 0.01));
+      expect(total.toDouble(), closeTo(323.75, 0.01));
     });
 
     test('credit sale requires customer', () {
       final invoice = SalesInvoice(
         id: 'inv-1',
         customerId: 'CUST-001',
-        items: const [
-          InvoiceItem(itemId: 'p1', quantity: 1, price: 100),
+        items: [
+          InvoiceItem(
+              itemId: 'p1',
+              quantity: 1,
+              price: Decimal.fromInt(100),
+              discount: Decimal.zero),
         ],
-        subtotal: 100,
-        discount: 0,
-        taxAmount: 15,
-        totalAmount: 115,
+        subtotal: Decimal.fromInt(100),
+        discount: Decimal.zero,
+        taxAmount: Decimal.fromInt(15),
+        totalAmount: Decimal.fromInt(115),
         paymentMethod: 'credit',
         timestamp: DateTime.now(),
         qrCodeData: '',
@@ -55,13 +75,17 @@ void main() {
       final invoice = SalesInvoice(
         id: 'inv-1',
         customerId: '',
-        items: const [
-          InvoiceItem(itemId: 'p1', quantity: 1, price: 100),
+        items: [
+          InvoiceItem(
+              itemId: 'p1',
+              quantity: 1,
+              price: Decimal.fromInt(100),
+              discount: Decimal.zero),
         ],
-        subtotal: 100,
-        discount: 0,
-        taxAmount: 15,
-        totalAmount: 115,
+        subtotal: Decimal.fromInt(100),
+        discount: Decimal.zero,
+        taxAmount: Decimal.fromInt(15),
+        totalAmount: Decimal.fromInt(115),
         paymentMethod: 'cash',
         timestamp: DateTime.now(),
         qrCodeData: '',

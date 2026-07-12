@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/presentation/features/hr/hr_provider.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:drift/drift.dart' hide Column;
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/presentation/widgets/money_form_field.dart';
 
 class EmployeesPage extends StatefulWidget {
   const EmployeesPage({super.key});
@@ -51,146 +53,38 @@ class _EmployeesPageState extends State<EmployeesPage> {
     ColorScheme colorScheme,
   ) {
     return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: CircleAvatar(
+          backgroundColor: colorScheme.primaryContainer,
+          child: Text(emp.name[0],
+              style: TextStyle(color: colorScheme.onPrimaryContainer)),
+        ),
+        title:
+            Text(emp.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: colorScheme.primaryContainer,
-                  child: Text(
-                    emp.name[0].toUpperCase(),
-                    style: TextStyle(
-                      color: colorScheme.onPrimaryContainer,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        emp.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
-                      Text(
-                        emp.position ?? 'بدون مسمى وظيفي',
-                        style: TextStyle(
-                          color: colorScheme.outline,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'كود: ${emp.code}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: colorScheme.outline,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                _buildStatusBadge(emp.status == 'active'),
-              ],
-            ),
-            const Divider(height: 32),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'الراتب الأساسي',
-                      style: TextStyle(fontSize: 10, color: Colors.grey),
-                    ),
-                    Text(
-                      '${emp.basicSalary.toStringAsFixed(2)} ر.س',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    IconButton.filledTonal(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () =>
-                          _showAddEditDialog(context, provider, emp),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton.filledTonal(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      onPressed: () => _confirmDelete(emp, provider),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+            Text('المنصب: ${emp.position ?? 'غير محدد'}'),
+            Text('الراتب: ${emp.basicSalary.toStringAsFixed(2)}'),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(bool isActive) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: (isActive ? Colors.green : Colors.red).withAlpha(25),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: (isActive ? Colors.green : Colors.red).withAlpha(100),
+        trailing: PopupMenuButton<String>(
+          onSelected: (val) {
+            if (val == 'edit') {
+              _showAddEditDialog(context, provider, emp);
+            } else if (val == 'delete') {
+              _confirmDelete(context, provider, emp);
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(value: 'edit', child: Text('تعديل')),
+            const PopupMenuItem(value: 'delete', child: Text('حذف')),
+          ],
         ),
-      ),
-      child: Text(
-        isActive ? 'نشط' : 'متوقف',
-        style: TextStyle(
-          color: isActive ? Colors.green : Colors.red,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  void _confirmDelete(HREmployee emp, HRProvider provider) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('حذف موظف'),
-        content: Text('هل أنت متأكد من حذف الموظف ${emp.name}؟'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('إلغاء'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              provider.deleteEmployee(emp.id);
-              Navigator.pop(ctx);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('حذف'),
-          ),
-        ],
       ),
     );
   }
@@ -198,41 +92,74 @@ class _EmployeesPageState extends State<EmployeesPage> {
   void _showAddEditDialog(
     BuildContext context,
     HRProvider provider,
-    HREmployee? employee,
+    HREmployee? emp,
   ) {
-    final nameController = TextEditingController(text: employee?.name);
-    final codeController = TextEditingController(text: employee?.code);
-    final jobTitleController = TextEditingController(text: employee?.position);
-    final salaryController = TextEditingController(
-      text: employee?.basicSalary.toString(),
-    );
+    final formKey = GlobalKey<FormState>();
+    final nameController = TextEditingController(text: emp?.name);
+    final codeController = TextEditingController(text: emp?.code);
+    final positionController = TextEditingController(text: emp?.position);
+    final salaryController =
+        TextEditingController(text: emp?.basicSalary.toString());
+    final joinDateController = TextEditingController(
+        text: emp?.hireDate.toIso8601String().substring(0, 10));
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(employee == null ? 'إضافة موظف جديد' : 'تعديل بيانات موظف'),
+        title: Text(emp == null ? 'إضافة موظف' : 'تعديل موظف'),
         content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'الاسم الكامل'),
-              ),
-              TextField(
-                controller: codeController,
-                decoration: const InputDecoration(labelText: 'كود الموظف'),
-              ),
-              TextField(
-                controller: jobTitleController,
-                decoration: const InputDecoration(labelText: 'المسمى الوظيفي'),
-              ),
-              TextField(
-                controller: salaryController,
-                decoration: const InputDecoration(labelText: 'الراتب الأساسي'),
-                keyboardType: TextInputType.number,
-              ),
-            ],
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'الاسم الكامل'),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'الاسم مطلوب';
+                    if (v.trim().length < 2) return 'الاسم يجب أن يكون على الأقل حرفين';
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: codeController,
+                  decoration: const InputDecoration(labelText: 'كود الموظف'),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'الكود مطلوب';
+                    if (v.trim().length < 2) return 'الكود يجب أن يكون على الأقل حرفين';
+                    return null;
+                  },
+                ),
+                TextField(
+                  controller: positionController,
+                  decoration: const InputDecoration(labelText: 'المنصب'),
+                ),
+                MoneyFormField(
+                  controller: salaryController,
+                  label: 'الراتب الأساسي',
+                ),
+                TextField(
+                  controller: joinDateController,
+                  decoration: const InputDecoration(
+                    labelText: 'تاريخ الانضمام',
+                    hintText: 'YYYY-MM-DD',
+                  ),
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+                    if (date != null) {
+                      joinDateController.text =
+                          date.toIso8601String().substring(0, 10);
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
         ),
         actions: [
@@ -241,31 +168,77 @@ class _EmployeesPageState extends State<EmployeesPage> {
             child: const Text('إلغاء'),
           ),
           ElevatedButton(
-            onPressed: () {
-              if (employee == null) {
-                provider.addEmployee(
-                  HREmployeesCompanion.insert(
-                    name: nameController.text,
-                    code: codeController.text,
-                    position: Value(jobTitleController.text),
-                    basicSalary: double.tryParse(salaryController.text) ?? 0.0,
-                    hireDate: DateTime.now(),
-                    status: const Value('active'),
-                  ),
-                );
-              } else {
-                provider.updateEmployee(
-                  employee.copyWith(
-                    name: nameController.text,
-                    code: codeController.text,
-                    position: Value(jobTitleController.text),
-                    basicSalary: double.tryParse(salaryController.text) ?? 0.0,
-                  ),
-                );
+            onPressed: () async {
+              if (!formKey.currentState!.validate()) return;
+
+              final salary = Decimal.tryParse(salaryController.text) ?? Decimal.zero;
+              final hireDate =
+                  DateTime.tryParse(joinDateController.text) ?? DateTime.now();
+
+              try {
+                if (emp == null) {
+                  await provider.addEmployee(
+                    HREmployeesCompanion.insert(
+                      name: nameController.text.trim(),
+                      code: codeController.text.trim(),
+                      position: Value(positionController.text.trim()),
+                      basicSalary: salary,
+                      hireDate: hireDate,
+                    ),
+                  );
+                } else {
+                  await provider.updateEmployee(
+                    HREmployeesCompanion(
+                      id: Value(emp.id),
+                      name: Value(nameController.text.trim()),
+                      code: Value(codeController.text.trim()),
+                      position: Value(positionController.text.trim()),
+                      basicSalary: Value(salary),
+                      hireDate: Value(hireDate),
+                    ),
+                  );
+                }
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  AppSnackBar.success(
+                      context, emp == null ? 'تم إضافة الموظف' : 'تم تعديل الموظف');
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  AppSnackBar.error(context, 'خطأ في الحفظ: $e');
+                }
               }
-              Navigator.pop(context);
             },
-            child: const Text('حفظ البيانات'),
+            child: const Text('حفظ'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDelete(
+    BuildContext context,
+    HRProvider provider,
+    HREmployee emp,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('تأكيد الحذف'),
+        content: Text('هل أنت متأكد من حذف الموظف ${emp.name}؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              provider.deleteEmployee(emp.id);
+              Navigator.pop(context);
+              AppSnackBar.success(context, 'تم حذف الموظف');
+            },
+            child: const Text('حذف', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

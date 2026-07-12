@@ -1,12 +1,14 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:uuid/uuid.dart';
 
 class PayrollService {
   final AppDatabase db;
 
   PayrollService(this.db);
 
-  Future<int> postPayrollJournalEntry(int payrollRunId) async {
+  // Use String payrollRunId (UUID) to match table changes
+  Future<String> postPayrollJournalEntry(String payrollRunId) async {
     final payrollRun = await (db.select(db.hRPayrollRuns)
           ..where((t) => t.id.equals(payrollRunId)))
         .getSingle();
@@ -15,8 +17,11 @@ class PayrollService {
     final deductionsLiabilityAccountId = await _getDeductionsLiabilityAccount();
     final salariesPayableAccountId = await _getSalariesPayableAccount();
 
-    final entryId = await db.into(db.gLEntries).insert(
+    final entryId = const Uuid().v4();
+
+    await db.into(db.gLEntries).insert(
           GLEntriesCompanion.insert(
+            id: Value(entryId),
             description: 'قيد رواتب فترة ${payrollRun.period}',
             date: Value(DateTime.now()),
             referenceType: const Value('PAYROLL'),
@@ -29,30 +34,32 @@ class PayrollService {
       batch.insert(
           db.gLLines,
           GLLinesCompanion.insert(
-            entryId: entryId.toString(),
+            entryId: entryId,
             accountId: salaryExpenseAccountId,
-            debit: Value(payrollRun.totalSalaries + payrollRun.totalAllowances),
-            credit: const Value(0.0),
+            debit: Value(Decimal.parse(
+                (payrollRun.totalSalaries + payrollRun.totalAllowances)
+                    .toString())),
+            credit: Value(Decimal.zero),
             memo: const Value('مصروف الرواتب والبدلات'),
           ));
 
       batch.insert(
           db.gLLines,
           GLLinesCompanion.insert(
-            entryId: entryId.toString(),
+            entryId: entryId,
             accountId: deductionsLiabilityAccountId,
-            debit: const Value(0.0),
-            credit: Value(payrollRun.totalDeductions),
+            debit: Value(Decimal.zero),
+            credit: Value(Decimal.parse(payrollRun.totalDeductions.toString())),
             memo: const Value('الخصومات المستحقة'),
           ));
 
       batch.insert(
           db.gLLines,
           GLLinesCompanion.insert(
-            entryId: entryId.toString(),
+            entryId: entryId,
             accountId: salariesPayableAccountId,
-            debit: const Value(0.0),
-            credit: Value(payrollRun.netPayable),
+            debit: Value(Decimal.zero),
+            credit: Value(Decimal.parse(payrollRun.netPayable.toString())),
             memo: const Value('رواتب مستحقة الدفع'),
           ));
     });
@@ -70,7 +77,7 @@ class PayrollService {
     return entryId;
   }
 
-  Future<void> paySalaries(int payrollRunId) async {
+  Future<void> paySalaries(String payrollRunId) async {
     final payrollRun = await (db.select(db.hRPayrollRuns)
           ..where((t) => t.id.equals(payrollRunId)))
         .getSingle();
@@ -82,8 +89,11 @@ class PayrollService {
     final salariesPayableAccountId = await _getSalariesPayableAccount();
     final bankAccountId = await _getBankAccount();
 
-    final paymentEntryId = await db.into(db.gLEntries).insert(
+    final paymentEntryId = const Uuid().v4();
+
+    await db.into(db.gLEntries).insert(
           GLEntriesCompanion.insert(
+            id: Value(paymentEntryId),
             description: 'سداد رواتب فترة ${payrollRun.period}',
             date: Value(DateTime.now()),
             referenceType: const Value('PAYROLL_PAYMENT'),
@@ -96,19 +106,19 @@ class PayrollService {
       batch.insert(
           db.gLLines,
           GLLinesCompanion.insert(
-            entryId: paymentEntryId.toString(),
+            entryId: paymentEntryId,
             accountId: salariesPayableAccountId,
-            debit: Value(payrollRun.netPayable),
-            credit: const Value(0.0),
+            debit: Value(Decimal.parse(payrollRun.netPayable.toString())),
+            credit: Value(Decimal.zero),
             memo: const Value('سداد الرواتب المستحقة'),
           ));
       batch.insert(
           db.gLLines,
           GLLinesCompanion.insert(
-            entryId: paymentEntryId.toString(),
+            entryId: paymentEntryId,
             accountId: bankAccountId,
-            debit: const Value(0.0),
-            credit: Value(payrollRun.netPayable),
+            debit: Value(Decimal.zero),
+            credit: Value(Decimal.parse(payrollRun.netPayable.toString())),
             memo: const Value('خروج من البنك'),
           ));
     });
@@ -166,10 +176,8 @@ class PayrollService {
     return accounts.first.id;
   }
 
-  Future<void> _postGLEntry(int entryId) async {
-    await (db.update(db.gLEntries)
-          ..where((t) => t.id.equals(entryId.toString())))
-        .write(
+  Future<void> _postGLEntry(String entryId) async {
+    await (db.update(db.gLEntries)..where((t) => t.id.equals(entryId))).write(
       GLEntriesCompanion(
         status: const Value('POSTED'),
         postedAt: Value(DateTime.now()),

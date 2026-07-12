@@ -70,11 +70,11 @@ class ErpDataService {
 
     try {
       final valuation = await costingService.getInventoryValuation(productId);
-      stock = valuation.totalQuantity;
-      avgCost = valuation.averageCost;
+      stock = valuation.totalQuantity.toDouble();
+      avgCost = valuation.averageCost.toDouble();
     } catch (_) {
-      stock = product?.stock ?? 0;
-      avgCost = product?.buyPrice ?? 0;
+      stock = (product?.stock ?? Decimal.zero).toDouble();
+      avgCost = (product?.buyPrice ?? Decimal.zero).toDouble();
     }
 
     // Last purchase info from PurchasesDao
@@ -86,11 +86,11 @@ class ErpDataService {
     return ProductSmartData(
       currentStock: stock,
       averageCost: avgCost,
-      lastPurchasePrice: lastItem?.unitPrice ?? 0,
+      lastPurchasePrice: (lastItem?.unitPrice)?.toDouble() ?? 0,
       lastPurchaseDate: lastPurchase?.date,
       bestPurchasePrice: bestPrice,
-      retailPrice: product?.sellPrice ?? 0,
-      wholesalePrice: product?.wholesalePrice ?? 0,
+      retailPrice: (product?.sellPrice ?? Decimal.zero).toDouble(),
+      wholesalePrice: (product?.wholesalePrice ?? Decimal.zero).toDouble(),
     );
   }
 
@@ -102,8 +102,8 @@ class ErpDataService {
       db.customers,
     )..where((c) => c.id.equals(customerId)))
         .getSingleOrNull();
-    final balance = customer?.balance ?? 0;
-    final limit = customer?.creditLimit ?? 0;
+    final balance = (customer?.balance ?? Decimal.zero).toDouble();
+    final limit = (customer?.creditLimit ?? Decimal.zero).toDouble();
 
     final sales = await (db.select(
       db.sales,
@@ -125,7 +125,7 @@ class ErpDataService {
 
       final results = await query.get();
       if (results.isNotEmpty) {
-        lastPrice = results.first.readTable(db.saleItems).price;
+        lastPrice = results.first.readTable(db.saleItems).price.toDouble();
       }
     }
 
@@ -147,7 +147,7 @@ class ErpDataService {
       db.suppliers,
     )..where((s) => s.id.equals(supplierId)))
         .getSingleOrNull();
-    final balance = supplier?.balance ?? 0;
+    final balance = (supplier?.balance ?? Decimal.zero).toDouble();
 
     double lastPrice = 0;
     DateTime? lastDate;
@@ -162,24 +162,26 @@ class ErpDataService {
         productId,
         supplierId: supplierId,
       );
-      lastPrice = lastItem?.unitPrice ?? 0;
+      lastPrice = (lastItem?.unitPrice)?.toDouble() ?? 0;
       lastDate = lastPurchase?.date;
 
       // Best price from this supplier
+      final minExp =
+          CustomExpression<double>('MIN(${db.purchaseItems.unitPrice.name})');
       final query = db.selectOnly(db.purchaseItems).join([
         innerJoin(
           db.purchases,
           db.purchases.id.equalsExp(db.purchaseItems.purchaseId),
         ),
       ])
-        ..addColumns([db.purchaseItems.unitPrice.min()])
+        ..addColumns([minExp])
         ..where(
           db.purchaseItems.productId.equals(productId) &
               db.purchases.supplierId.equals(supplierId),
         );
 
       final row = await query.getSingle();
-      bestPrice = row.read(db.purchaseItems.unitPrice.min()) ?? 0;
+      bestPrice = (row.read(minExp) ?? 0).toDouble();
     }
 
     return SupplierSmartData(

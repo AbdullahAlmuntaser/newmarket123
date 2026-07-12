@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart';
+part of '../app_database.dart';
 
 @DataClassName('AppSetting')
 class AppSettings extends Table {

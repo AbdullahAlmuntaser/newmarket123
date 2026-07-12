@@ -1,12 +1,14 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart' as intl;
+import 'package:go_router/go_router.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
-import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:supermarket/core/models/accounting/accounting_dashboard_data.dart';
+import 'package:supermarket/core/models/accounting/financial_ratios_data.dart';
 import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
+import 'package:intl/intl.dart';
 
 class AdminDashboardPage extends StatelessWidget {
   const AdminDashboardPage({super.key});
@@ -123,7 +125,7 @@ class AdminDashboardPage extends StatelessWidget {
                   'هامش الربح الإجمالي',
                   ratios.grossProfitMargin,
                   isPercentage: true,
-                  color: ratios.grossProfitMargin > 0.2
+                  color: ratios.grossProfitMargin > Decimal.parse('0.2')
                       ? Colors.green
                       : Colors.orange,
                 ),
@@ -132,7 +134,7 @@ class AdminDashboardPage extends StatelessWidget {
                   'هامش الربح الصافي',
                   ratios.netProfitMargin,
                   isPercentage: true,
-                  color: ratios.netProfitMargin > 0.1
+                  color: ratios.netProfitMargin > Decimal.parse('0.1')
                       ? Colors.blue
                       : Colors.redAccent,
                 ),
@@ -141,7 +143,7 @@ class AdminDashboardPage extends StatelessWidget {
                   'نسبة السيولة',
                   ratios.currentRatio,
                   isPercentage: false,
-                  color: ratios.currentRatio >= 1.5
+                  color: ratios.currentRatio >= Decimal.parse('1.5')
                       ? Colors.teal
                       : Colors.deepOrange,
                 ),
@@ -156,15 +158,17 @@ class AdminDashboardPage extends StatelessWidget {
   Widget _buildRatioIndicator(
     BuildContext context,
     String label,
-    double value, {
+    Decimal value, {
     required bool isPercentage,
     required Color color,
   }) {
+    final doubleVal = value.toDouble();
     final displayValue = isPercentage
-        ? '${(value * 100).toStringAsFixed(1)}%'
+        ? '${(doubleVal * 100).toStringAsFixed(1)}%'
         : value.toStringAsFixed(2);
-    final progress =
-        isPercentage ? value.clamp(0.0, 1.0) : (value / 3.0).clamp(0.0, 1.0);
+    final progress = isPercentage
+        ? doubleVal.clamp(0.0, 1.0)
+        : (doubleVal / 3.0).clamp(0.0, 1.0);
 
     return Column(
       children: [
@@ -343,11 +347,13 @@ class AdminDashboardPage extends StatelessWidget {
   Widget _buildKPICard(
     BuildContext context,
     String label,
-    double value,
+    Object value,
     IconData icon,
     Color color,
   ) {
-    final currency = intl.NumberFormat.currency(symbol: '');
+    final currency = NumberFormat.currency(symbol: '');
+    final numValue =
+        value is Decimal ? value.toDouble() : (value as num).toDouble();
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -379,7 +385,7 @@ class AdminDashboardPage extends StatelessWidget {
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      currency.format(value),
+                      currency.format(numValue),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: color,
@@ -434,7 +440,7 @@ class AdminDashboardPage extends StatelessWidget {
                             return const SizedBox();
                           }
                           return Text(
-                            intl.DateFormat(
+                            DateFormat(
                               'E',
                             ).format(data.dailyRevenue[value.toInt()].date),
                             style: const TextStyle(fontSize: 10),
@@ -458,7 +464,7 @@ class AdminDashboardPage extends StatelessWidget {
                       spots: List.generate(data.dailyRevenue.length, (i) {
                         final profit = data.dailyRevenue[i].value -
                             data.dailyExpenses[i].value;
-                        return FlSpot(i.toDouble(), profit);
+                        return FlSpot(i.toDouble(), profit.toDouble());
                       }),
                       isCurved: true,
                       color: Colors.blue,
@@ -553,7 +559,7 @@ class AdminDashboardPage extends StatelessWidget {
                             return const SizedBox();
                           }
                           return Text(
-                            intl.DateFormat(
+                            DateFormat(
                               'E',
                             ).format(data.dailyRevenue[value.toInt()].date),
                             style: const TextStyle(fontSize: 10),
@@ -585,10 +591,12 @@ class AdminDashboardPage extends StatelessWidget {
   double _getMaxDailyValue(AccountingDashboardData data) {
     double max = 100;
     for (var d in data.dailyRevenue) {
-      if (d.value > max) max = d.value;
+      final v = d.value.toDouble();
+      if (v > max) max = v;
     }
     for (var d in data.dailyExpenses) {
-      if (d.value > max) max = d.value;
+      final v = d.value.toDouble();
+      if (v > max) max = v;
     }
     return max;
   }
@@ -599,12 +607,12 @@ class AdminDashboardPage extends StatelessWidget {
         x: i,
         barRods: [
           BarChartRodData(
-            toY: data.dailyRevenue[i].value,
+            toY: data.dailyRevenue[i].value.toDouble(),
             color: Colors.green,
             width: 8,
           ),
           BarChartRodData(
-            toY: data.dailyExpenses[i].value,
+            toY: data.dailyExpenses[i].value.toDouble(),
             color: Colors.red,
             width: 8,
           ),
@@ -661,9 +669,9 @@ class AdminDashboardPage extends StatelessWidget {
       final item = data.topExpenses[i];
       return PieChartSectionData(
         color: colors[i % colors.length],
-        value: item.totalDebit,
+        value: item.totalDebit.toDouble(),
         title:
-            '${(item.totalDebit / (data.totalExpenses == 0 ? 1 : data.totalExpenses) * 100).toStringAsFixed(0)}%',
+            '${(item.totalDebit.toDouble() / (data.totalExpenses == Decimal.zero ? 1.0 : data.totalExpenses.toDouble()) * 100).toStringAsFixed(0)}%',
         radius: 50,
         titleStyle: const TextStyle(
           fontSize: 10,
@@ -708,7 +716,7 @@ class AdminDashboardPage extends StatelessWidget {
                   BarChartData(
                     alignment: BarChartAlignment.spaceAround,
                     maxY: data.topSellingProducts
-                            .map((e) => e.quantity)
+                            .map((e) => e.quantity.toDouble())
                             .reduce((a, b) => a > b ? a : b) *
                         1.2,
                     barGroups: List.generate(data.topSellingProducts.length, (
@@ -719,7 +727,7 @@ class AdminDashboardPage extends StatelessWidget {
                         x: i,
                         barRods: [
                           BarChartRodData(
-                            toY: item.quantity,
+                            toY: item.quantity.toDouble(),
                             color: Theme.of(context).colorScheme.primary,
                             width: 20,
                             borderRadius: const BorderRadius.vertical(
@@ -922,7 +930,7 @@ class AdminDashboardPage extends StatelessWidget {
                   ),
                 ),
                 subtitle: Text(
-                  intl.DateFormat.yMMMd().format(entry.date),
+                  DateFormat.yMMMd().format(entry.date),
                   style: const TextStyle(fontSize: 12),
                 ),
                 trailing: const Icon(Icons.chevron_right, size: 20),

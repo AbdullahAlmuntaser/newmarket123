@@ -1,6 +1,7 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:supermarket/core/models/accounting/income_statement_data.dart';
 import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
@@ -89,16 +90,16 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
                 const SizedBox(height: 16),
                 _buildSectionHeader(l10n.revenue),
                 ...data.revenues.map(
-                  (item) =>
-                      _buildAccountRow(item.account.name, item.totalCredit),
+                  (item) => _buildAccountRow(
+                      item.account.name, item.totalCredit.toDouble()),
                 ),
                 const Divider(thickness: 2),
                 _buildTotalRow(l10n.totalRevenue, data.totalRevenue),
                 const SizedBox(height: 24),
                 _buildSectionHeader(l10n.expenses),
                 ...data.expenses.map(
-                  (item) =>
-                      _buildAccountRow(item.account.name, item.totalDebit),
+                  (item) => _buildAccountRow(
+                      item.account.name, item.totalDebit.toDouble()),
                 ),
                 const Divider(thickness: 2),
                 _buildTotalRow(l10n.totalExpense, data.totalExpense),
@@ -154,7 +155,7 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
     );
   }
 
-  Widget _buildTotalRow(String label, double amount) {
+  Widget _buildTotalRow(String label, Decimal amount) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -167,14 +168,15 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
     );
   }
 
-  Widget _buildNetIncomeRow(String label, double amount) {
+  Widget _buildNetIncomeRow(String label, Decimal amount) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: amount >= 0
+        color: amount >= Decimal.zero
             ? Colors.green.withOpacity(0.1)
             : Colors.red.withOpacity(0.1),
-        border: Border.all(color: amount >= 0 ? Colors.green : Colors.red),
+        border: Border.all(
+            color: amount >= Decimal.zero ? Colors.green : Colors.red),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -184,8 +186,7 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
             label,
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 18,
-              color: amount >= 0 ? Colors.green : Colors.red,
+              color: amount >= Decimal.zero ? Colors.green : Colors.red,
             ),
           ),
           Text(
@@ -193,7 +194,7 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 20,
-              color: amount >= 0 ? Colors.green : Colors.red,
+              color: amount >= Decimal.zero ? Colors.green : Colors.red,
             ),
           ),
         ],

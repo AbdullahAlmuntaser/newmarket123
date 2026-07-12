@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/presentation/widgets/main_drawer.dart';
+import 'package:supermarket/core/models/accounting/vat_report_data.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/event_bus_service.dart';
+import 'package:intl/intl.dart';
+import 'package:supermarket/presentation/widgets/main_drawer.dart';
 
 class VatReportPage extends StatefulWidget {
   const VatReportPage({super.key});
@@ -14,7 +15,7 @@ class VatReportPage extends StatefulWidget {
 }
 
 class _VatReportPageState extends State<VatReportPage> {
-  final DateTimeRange _range = DateTimeRange(
+  DateTimeRange _range = DateTimeRange(
     start: DateTime.now().subtract(const Duration(days: 30)),
     end: DateTime.now(),
   );
@@ -24,18 +25,37 @@ class _VatReportPageState extends State<VatReportPage> {
     final db = Provider.of<AppDatabase>(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('تقرير ضريبة القيمة المضافة')),
+      appBar: AppBar(
+        title: const Text('تقرير ضريبة القيمة المضافة'),
+        actions: [
+          IconButton(
+            tooltip: 'تغيير الفترة',
+            icon: const Icon(Icons.date_range),
+            onPressed: _pickDateRange,
+          ),
+        ],
+      ),
       drawer: const MainDrawer(),
       body: FutureBuilder<VatReportData>(
         future: _fetchVatReport(db),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Text('تعذر تحميل تقرير الضريبة: ${snapshot.error}'),
+            );
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: Text('لا توجد بيانات للفترة المحددة'));
           }
           final data = snapshot.data!;
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              _buildRangeCard(),
+              const SizedBox(height: 16),
               _buildSectionTitle('المبيعات والمخرجات'),
               _buildCard(
                   'إجمالي المبيعات الخاضعة للضريبة', data.totalTaxableSales),
@@ -53,6 +73,39 @@ class _VatReportPageState extends State<VatReportPage> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Future<void> _pickDateRange() async {
+    final picked = await showDateRangePicker(
+      context: context,
+      initialDateRange: _range,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      helpText: 'اختر فترة تقرير الضريبة',
+      cancelText: 'إلغاء',
+      confirmText: 'تطبيق',
+    );
+    if (picked != null && mounted) {
+      setState(() => _range = picked);
+    }
+  }
+
+  Widget _buildRangeCard() {
+    final formatter = DateFormat('yyyy-MM-dd');
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.date_range),
+        title: const Text('فترة التقرير'),
+        subtitle: Text(
+          '${formatter.format(_range.start)} إلى ${formatter.format(_range.end)}',
+        ),
+        trailing: TextButton.icon(
+          onPressed: _pickDateRange,
+          icon: const Icon(Icons.edit_calendar),
+          label: const Text('تغيير'),
+        ),
       ),
     );
   }
@@ -77,17 +130,18 @@ class _VatReportPageState extends State<VatReportPage> {
     );
   }
 
-  Widget _buildCard(String title, double amount, {bool isHighlight = false}) {
+  Widget _buildCard(String title, Decimal amount, {bool isHighlight = false}) {
     return Card(
       child: ListTile(
         title: Text(title),
         trailing: Text(
-          NumberFormat.currency(symbol: '').format(amount),
+          amount.toString(),
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color:
-                isHighlight ? (amount >= 0 ? Colors.red : Colors.green) : null,
+            color: isHighlight
+                ? (amount >= Decimal.zero ? Colors.red : Colors.green)
+                : null,
           ),
         ),
       ),

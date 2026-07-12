@@ -66,7 +66,7 @@ class StockTransferService {
                 productId: item.productId,
                 warehouseId: fromWarehouseId,
                 batchId: Value(item.batchId),
-                quantity: -item.quantity,
+                quantity: Value(-item.quantity),
                 type: 'TRANSFER_OUT',
                 referenceId: transferId,
               ),
@@ -116,7 +116,7 @@ class StockTransferService {
                 productId: item.productId,
                 warehouseId: toWarehouseId,
                 batchId: Value(destBatchId),
-                quantity: item.quantity,
+                quantity: Value(item.quantity),
                 type: 'TRANSFER_IN',
                 referenceId: transferId,
               ),
@@ -129,7 +129,7 @@ class StockTransferService {
                 transferId: transferId,
                 productId: item.productId,
                 batchId: item.batchId,
-                quantity: item.quantity,
+                quantity: Value(item.quantity),
               ),
             );
       }
@@ -155,7 +155,7 @@ class StockTransferService {
           ..where(
             (t) =>
                 t.warehouseId.equals(warehouseId) &
-                t.quantity.isBiggerThan(const Variable(0)),
+                t.quantity.isBiggerThan(Constant(Decimal.zero.toString())),
           ))
         .get();
   }
@@ -164,7 +164,7 @@ class StockTransferService {
 class TransferItemData {
   final String productId;
   final String batchId;
-  final double quantity;
+  final Decimal quantity;
 
   TransferItemData({
     required this.productId,

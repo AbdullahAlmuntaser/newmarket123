@@ -65,13 +65,38 @@ class AppConfigService {
 
   /// الحصول على معرف المستودع الافتراضي
   Future<String> getDefaultWarehouseId() async {
-    return await getString(keyDefaultWarehouse) ??
-        'MAIN_WAREHOUSE'; // قيمة افتراضية آمنة
+    final configuredId = await getString(keyDefaultWarehouse);
+    if (configuredId != null) return configuredId;
+
+    final defaultWarehouse = await (_db.select(_db.warehouses)
+          ..where((w) => w.isDefault.equals(true)))
+        .getSingleOrNull();
+    if (defaultWarehouse != null) {
+      await setString(keyDefaultWarehouse, defaultWarehouse.id);
+      return defaultWarehouse.id;
+    }
+
+    final firstWarehouse =
+        await (_db.select(_db.warehouses)..limit(1)).getSingleOrNull();
+    if (firstWarehouse != null) {
+      await setString(keyDefaultWarehouse, firstWarehouse.id);
+      return firstWarehouse.id;
+    }
+
+    throw Exception('لا يوجد مستودع افتراضي. يرجى تهيئة بيانات النظام أولاً.');
   }
 
   /// الحصول على معرف الفرع الافتراضي
   Future<String> getDefaultBranchId() async {
-    return await getString(keyDefaultBranch) ?? 'BR001';
+    final configuredId = await getString(keyDefaultBranch);
+    if (configuredId != null) {
+      final exists = await (_db.select(_db.branches)
+            ..where((b) => b.id.equals(configuredId)))
+          .getSingleOrNull();
+      if (exists != null) return configuredId;
+    }
+
+    return _db.ensureDefaultBranch();
   }
 
   /// الحصول على نسبة الضريبة

@@ -83,7 +83,7 @@ class _ReconciliationPageState extends State<ReconciliationPage> {
               final balance = await db.accountingDao.getAccountBalance(val);
               setState(() {
                 _selectedAccountId = val;
-                _bookBalance = balance;
+                _bookBalance = balance.toDouble();
               });
             }
           },
@@ -147,9 +147,11 @@ class _ReconciliationPageState extends State<ReconciliationPage> {
             await db.into(db.reconciliations).insert(
                   ReconciliationsCompanion.insert(
                     accountId: _selectedAccountId!,
-                    bookBalance: _bookBalance,
-                    actualBalance: actual,
-                    difference: diff,
+                    bookBalance:
+                        drift.Value(Decimal.parse(_bookBalance.toString())),
+                    actualBalance:
+                        drift.Value(Decimal.parse(actual.toString())),
+                    difference: drift.Value(Decimal.parse(diff.toString())),
                     note: drift.Value(_noteController.text),
                   ),
                 );
@@ -195,14 +197,14 @@ class _ReconciliationPageState extends State<ReconciliationPage> {
                     GLLinesCompanion.insert(
                       entryId: entryId,
                       accountId: cashAccount.id,
-                      debit: drift.Value(absDiff),
-                      credit: const drift.Value(0.0),
+                      debit: drift.Value(Decimal.parse(absDiff.toString())),
+                      credit: drift.Value(Decimal.zero),
                     ),
                     GLLinesCompanion.insert(
                       entryId: entryId,
                       accountId: cashOverShort.id,
-                      debit: const drift.Value(0.0),
-                      credit: drift.Value(absDiff),
+                      debit: drift.Value(Decimal.zero),
+                      credit: drift.Value(Decimal.parse(absDiff.toString())),
                     ),
                   ]
                 : // Actual < Book: Cash decreased (shortage)
@@ -210,14 +212,14 @@ class _ReconciliationPageState extends State<ReconciliationPage> {
                     GLLinesCompanion.insert(
                       entryId: entryId,
                       accountId: cashOverShort.id,
-                      debit: drift.Value(absDiff),
-                      credit: const drift.Value(0.0),
+                      debit: drift.Value(Decimal.parse(absDiff.toString())),
+                      credit: drift.Value(Decimal.zero),
                     ),
                     GLLinesCompanion.insert(
                       entryId: entryId,
                       accountId: cashAccount.id,
-                      debit: const drift.Value(0.0),
-                      credit: drift.Value(absDiff),
+                      debit: drift.Value(Decimal.zero),
+                      credit: drift.Value(Decimal.parse(absDiff.toString())),
                     ),
                   ];
 
@@ -227,9 +229,11 @@ class _ReconciliationPageState extends State<ReconciliationPage> {
             await db.into(db.reconciliations).insert(
                   ReconciliationsCompanion.insert(
                     accountId: _selectedAccountId!,
-                    bookBalance: _bookBalance,
-                    actualBalance: actual,
-                    difference: diff,
+                    bookBalance:
+                        drift.Value(Decimal.parse(_bookBalance.toString())),
+                    actualBalance:
+                        drift.Value(Decimal.parse(actual.toString())),
+                    difference: drift.Value(Decimal.parse(diff.toString())),
                     note: drift.Value(_noteController.text),
                   ),
                 );

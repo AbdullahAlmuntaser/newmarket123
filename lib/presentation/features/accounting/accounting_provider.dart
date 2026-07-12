@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
+import 'package:supermarket/core/models/accounting/accounting_dashboard_data.dart';
+import 'package:supermarket/core/models/accounting/balance_sheet_data.dart';
+import 'package:supermarket/core/models/accounting/cash_flow_data.dart';
+import 'package:supermarket/core/models/accounting/income_statement_data.dart';
+import 'package:supermarket/core/models/accounting/vat_report_data.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
-import 'package:supermarket/core/services/event_bus_service.dart';
 import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart';
+import 'package:supermarket/data/models/gl_entry_detail.dart';
 import 'package:supermarket/injection_container.dart';
 import 'package:uuid/uuid.dart';
 
 class AccountingProvider with ChangeNotifier {
   final AppDatabase db;
-  late final AccountingService service;
+  final AccountingService service;
 
-  AccountingProvider(this.db) {
-    service = AccountingService(db, sl<EventBusService>());
-  }
+  AccountingProvider(this.db, this.service);
 
   void refresh() {
     notifyListeners();
@@ -46,7 +50,7 @@ class AccountingProvider with ChangeNotifier {
       GLAccountsCompanion.insert(
         code: code,
         name: name,
-        type: type,
+        accountType: AccountType.values.byName(type.toLowerCase()),
         analyticType: Value(analyticType),
         isHeader: Value(isHeader),
       ),
@@ -99,14 +103,14 @@ class AccountingProvider with ChangeNotifier {
     required String? userId,
   }) async {
     // Basic validation for balanced entry
-    double totalDebit = 0;
-    double totalCredit = 0;
+    Decimal totalDebit = Decimal.zero;
+    Decimal totalCredit = Decimal.zero;
     for (var line in lines) {
       totalDebit += line.debit.value;
       totalCredit += line.credit.value;
     }
 
-    if ((totalDebit - totalCredit).abs() > 0.001) {
+    if ((totalDebit - totalCredit).abs() > Decimal.parse('0.001')) {
       throw Exception(
         'القيد غير متوازن. المدين: $totalDebit, الدائن: $totalCredit',
       );
@@ -164,5 +168,23 @@ class AccountingProvider with ChangeNotifier {
       cc.copyWith(isActive: !cc.isActive),
     );
     notifyListeners();
+  }
+
+  Future<List<GLEntryDetail>> getEntryDetails(String entryId) async {
+    final lines = await db.accountingDao.getLinesForEntry(entryId);
+    return lines
+        .map((l) => GLEntryDetail(
+              id: l.line.id,
+              entryId: l.line.entryId,
+              accountId: l.line.accountId,
+              debit: l.line.debit.toDouble(),
+              credit: l.line.credit.toDouble(),
+              memo: l.line.memo,
+            ))
+        .toList();
+  }
+
+  Future<GLAccount?> getAccountById(String id) {
+    return db.accountingDao.getAccountById(id);
   }
 }

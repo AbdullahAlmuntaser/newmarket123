@@ -18,8 +18,9 @@ class SystemAuditor {
         db.productBatches,
       )..where((b) => b.productId.equals(product.id)))
           .get();
-      final batchSum = batches.fold<double>(0, (sum, b) => sum + b.quantity);
-      if ((product.stock - batchSum).abs() > 0.001) {
+      final Decimal batchSum =
+          batches.fold<Decimal>(Decimal.zero, (sum, b) => sum + b.quantity);
+      if ((product.stock - batchSum).abs() > Decimal.parse('0.001')) {
         inventoryOk = false;
         break;
       }
@@ -34,8 +35,8 @@ class SystemAuditor {
         db.gLLines,
       )..where((l) => l.entryId.equals(entry.id)))
           .get();
-      double debit = lines.fold(0, (sum, l) => sum + l.debit);
-      double credit = lines.fold(0, (sum, l) => sum + l.credit);
+      double debit = lines.fold(0, (sum, l) => sum + l.debit.toDouble());
+      double credit = lines.fold(0, (sum, l) => sum + l.credit.toDouble());
       if ((debit - credit).abs() > 0.01) {
         accountingOk = false;
         break;

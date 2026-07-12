@@ -148,7 +148,7 @@ class _ChartOfAccountsPageState extends State<ChartOfAccountsPage> {
         account.balance.toStringAsFixed(2),
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          color: account.balance < 0 ? Colors.red : Colors.green,
+          color: account.balance < Decimal.zero ? Colors.red : Colors.green,
         ),
       ),
     );

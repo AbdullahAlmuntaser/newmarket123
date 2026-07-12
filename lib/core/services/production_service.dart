@@ -9,13 +9,13 @@ class ProductionService {
 
   Future<void> createProductionOrder({
     required String finishedProductId,
-    required double quantity,
+    required Decimal quantity,
     String? warehouseId,
     String? note,
   }) async {
     await db.transaction(() async {
       final orderId = const Uuid().v4();
-      
+
       // 1. Get BOM for this product
       final bom = await (db.select(db.billOfMaterials)
             ..where((t) => t.finishedProductId.equals(finishedProductId)))
@@ -25,32 +25,36 @@ class ProductionService {
 
       // 2. Create Order
       await db.into(db.productionOrders).insert(
-        ProductionOrdersCompanion.insert(
-          id: Value(orderId),
-          finishedProductId: finishedProductId,
-          plannedQuantity: quantity,
-          warehouseId: Value(warehouseId),
-          note: Value(note),
-        ),
-      );
+            ProductionOrdersCompanion.insert(
+              id: Value(orderId),
+              finishedProductId: finishedProductId,
+              plannedQuantity: Value(quantity),
+              warehouseId: Value(warehouseId),
+              note: Value(note),
+            ),
+          );
 
       // 3. Create Order Items from BOM
       for (var item in bom) {
         await db.into(db.productionOrderItems).insert(
-          ProductionOrderItemsCompanion.insert(
-            productionOrderId: orderId,
-            componentProductId: item.componentProductId,
-            plannedQuantity: item.quantity * quantity,
-          ),
-        );
+              ProductionOrderItemsCompanion.insert(
+                productionOrderId: orderId,
+                componentProductId: item.componentProductId,
+                plannedQuantity: Value(item.quantity * quantity),
+              ),
+            );
       }
     });
   }
 
   Future<void> completeProductionOrder(String orderId) async {
     await db.transaction(() async {
-      final order = await (db.select(db.productionOrders)..where((t) => t.id.equals(orderId))).getSingle();
-      final items = await (db.select(db.productionOrderItems)..where((t) => t.productionOrderId.equals(orderId))).get();
+      final order = await (db.select(db.productionOrders)
+            ..where((t) => t.id.equals(orderId)))
+          .getSingle();
+      final items = await (db.select(db.productionOrderItems)
+            ..where((t) => t.productionOrderId.equals(orderId)))
+          .get();
 
       // 1. Consume Raw Materials
       for (var item in items) {
@@ -77,7 +81,8 @@ class ProductionService {
       );
 
       // 3. Update Order Status
-      await (db.update(db.productionOrders)..where((t) => t.id.equals(orderId))).write(
+      await (db.update(db.productionOrders)..where((t) => t.id.equals(orderId)))
+          .write(
         ProductionOrdersCompanion(
           status: const Value('COMPLETED'),
           actualQuantity: Value(order.plannedQuantity),
@@ -85,5 +90,4 @@ class ProductionService {
       );
     });
   }
-
 }

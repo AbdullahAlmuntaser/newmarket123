@@ -58,11 +58,17 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
                       content: Text(
                           'تحويل أمر الشراء ${order.orderNumber} إلى فاتورة؟'),
                       actions: [
-                        TextButton(
+                        OutlinedButton(
                             onPressed: () => Navigator.pop(context, false),
+                            style: OutlinedButton.styleFrom(
+                              shape: const StadiumBorder(),
+                            ),
                             child: const Text('إلغاء')),
-                        TextButton(
+                        ElevatedButton(
                             onPressed: () => Navigator.pop(context, true),
+                            style: ElevatedButton.styleFrom(
+                              shape: const StadiumBorder(),
+                            ),
                             child: const Text('تحويل')),
                       ],
                     ),

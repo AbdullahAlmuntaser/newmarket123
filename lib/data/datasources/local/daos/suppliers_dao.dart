@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
-import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
-import '../app_database.dart';
 
 part 'suppliers_dao.g.dart';
 
@@ -99,11 +99,10 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
           id: Value(accountId),
           code: '2010-${supplierId.substring(0, 5)}',
           name: 'مورد: ${entry.name.value}',
-          type: AccountType
-              .liability, // Removed .name as AccountType.liability is already a String
+          accountType: AccountType.liability,
           parentId: Value(parentAccount?.id),
           isHeader: const Value(false),
-          balance: const Value(0.0),
+          balance: Value(Decimal.zero),
         ),
       );
 
@@ -160,7 +159,7 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
           date: purchase.date,
           description:
               'فاتورة مشتريات رقم ${purchase.invoiceNumber ?? purchase.id.substring(0, 8)}',
-          debit: purchase.total, // له
+          debit: purchase.total.toDouble(), // له
           credit: 0,
           referenceId: purchase.id,
           type: 'PURCHASE',
@@ -177,7 +176,7 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
         SupplierTransaction(
           date: inv.invoiceDate,
           description: 'فاتورة AP رقم ${inv.invoiceNumber}',
-          debit: inv.totalAmount, // له
+          debit: inv.totalAmount.toDouble(), // له
           credit: 0,
           referenceId: inv.id,
           type: 'AP_INVOICE',
@@ -197,7 +196,7 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
           date: payment.paymentDate,
           description: 'سند صرف - ${payment.note ?? ""}',
           debit: 0,
-          credit: payment.amount, // عليه
+          credit: payment.amount.toDouble(), // عليه
           referenceId: payment.id,
           type: 'PAYMENT',
         ),
@@ -221,7 +220,7 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
           date: ret.createdAt,
           description: 'مرتجع مشتريات فاتورة ${ret.purchaseId.substring(0, 8)}',
           debit: 0,
-          credit: ret.amountReturned, // عليه
+          credit: ret.amountReturned.toDouble(), // عليه
           referenceId: ret.id,
           type: 'RETURN',
         ),
@@ -232,5 +231,24 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
     allTransactions.sort((a, b) => a.date.compareTo(b.date));
 
     return allTransactions;
+  }
+
+  // PurchasePaymentLinks DAO methods
+  Future<void> createPurchasePaymentLink(PurchasePaymentLinksCompanion entry) {
+    return into(db.purchasePaymentLinks).insert(entry);
+  }
+
+  Future<List<PurchasePaymentLink>> getLinksForPayment(String paymentId) {
+    return (select(db.purchasePaymentLinks)
+      ..where((l) => l.paymentId.equals(paymentId))).get();
+  }
+
+  Future<List<PurchasePaymentLink>> getLinksForPurchase(String purchaseId) {
+    return (select(db.purchasePaymentLinks)
+      ..where((l) => l.purchaseId.equals(purchaseId))).get();
+  }
+
+  Future<int> deletePurchasePaymentLink(String id) {
+    return (delete(db.purchasePaymentLinks)..where((l) => l.id.equals(id))).go();
   }
 }

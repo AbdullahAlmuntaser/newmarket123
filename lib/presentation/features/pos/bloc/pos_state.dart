@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:decimal/decimal.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class CartItem extends Equatable {
@@ -10,7 +9,7 @@ class CartItem extends Equatable {
   final Decimal unitFactor; // المعامل الخاص بالوحدة المختارة
   final Decimal unitPrice;
   final Decimal? discount;
-  final List<UnitConversion>
+  final List<ProductUnit>
       availableUnits; // قائمة بكل الوحدات المتاحة لهذا المنتج
 
   const CartItem({
@@ -33,7 +32,7 @@ class CartItem extends Equatable {
     Decimal? unitFactor,
     Decimal? unitPrice,
     Decimal? discount,
-    List<UnitConversion>? availableUnits,
+    List<ProductUnit>? availableUnits,
   }) {
     return CartItem(
       product: product,
@@ -73,13 +72,19 @@ class PosLoading extends PosState {}
 class PosLoaded extends PosState {
   final List<CartItem> cart;
   final Decimal discount;
-  final Decimal taxRate; // e.g. 0.15 for 15%
+  final Decimal taxRate;
   final bool isWholesaleMode;
   final List<Product> searchResults;
+  final String searchQuery;
   final List<Category> categories;
   final String? selectedCategoryId;
   final List<Product> filteredProducts;
-  final String? activePriceListId; // New field
+  final String? activePriceListId;
+  final bool isProcessingCheckout;
+  final bool isReturnMode;
+  final Sale? originalSale;
+  final List<ReturnItem> returnItems;
+  final List<List<CartItem>> heldSales;
 
   PosLoaded({
     this.cart = const [],
@@ -87,10 +92,16 @@ class PosLoaded extends PosState {
     Decimal? taxRate,
     this.isWholesaleMode = false,
     this.searchResults = const [],
+    this.searchQuery = '',
     this.categories = const [],
     this.selectedCategoryId,
     this.filteredProducts = const [],
     this.activePriceListId,
+    this.isProcessingCheckout = false,
+    this.isReturnMode = false,
+    this.originalSale,
+    this.returnItems = const [],
+    this.heldSales = const [],
   })  : discount = discount ?? Decimal.zero,
         taxRate = taxRate ?? Decimal.zero;
 
@@ -99,16 +110,26 @@ class PosLoaded extends PosState {
   Decimal get taxAmount => (subtotal - discount) * taxRate;
   Decimal get total => (subtotal - discount) + taxAmount;
 
+  Decimal get returnTotal =>
+      returnItems.fold(Decimal.zero, (sum, item) => sum + item.total);
+
   PosLoaded copyWith({
     List<CartItem>? cart,
     Decimal? discount,
     Decimal? taxRate,
     bool? isWholesaleMode,
     List<Product>? searchResults,
+    String? searchQuery,
     List<Category>? categories,
     String? selectedCategoryId,
     List<Product>? filteredProducts,
     String? activePriceListId,
+    bool? isProcessingCheckout,
+    bool? isReturnMode,
+    Sale? originalSale,
+    List<ReturnItem>? returnItems,
+    List<List<CartItem>>? heldSales,
+    bool clearOriginalSale = false,
   }) {
     return PosLoaded(
       cart: cart ?? this.cart,
@@ -116,10 +137,17 @@ class PosLoaded extends PosState {
       taxRate: taxRate ?? this.taxRate,
       isWholesaleMode: isWholesaleMode ?? this.isWholesaleMode,
       searchResults: searchResults ?? this.searchResults,
+      searchQuery: searchQuery ?? this.searchQuery,
       categories: categories ?? this.categories,
       selectedCategoryId: selectedCategoryId ?? this.selectedCategoryId,
       filteredProducts: filteredProducts ?? this.filteredProducts,
       activePriceListId: activePriceListId ?? this.activePriceListId,
+      isProcessingCheckout: isProcessingCheckout ?? this.isProcessingCheckout,
+      isReturnMode: isReturnMode ?? this.isReturnMode,
+      originalSale:
+          clearOriginalSale ? null : (originalSale ?? this.originalSale),
+      returnItems: returnItems ?? this.returnItems,
+      heldSales: heldSales ?? this.heldSales,
     );
   }
 
@@ -130,11 +158,46 @@ class PosLoaded extends PosState {
         taxRate,
         isWholesaleMode,
         searchResults,
+        searchQuery,
         categories,
         selectedCategoryId,
         filteredProducts,
         activePriceListId,
+        isProcessingCheckout,
+        isReturnMode,
+        originalSale,
+        returnItems,
+        heldSales,
       ];
+}
+
+class ReturnItem extends Equatable {
+  final String productId;
+  final String? batchId;
+  final Decimal quantity;
+  final Decimal unitPrice;
+  final String reason;
+
+  const ReturnItem({
+    required this.productId,
+    this.batchId,
+    required this.quantity,
+    required this.unitPrice,
+    this.reason = '',
+  });
+
+  Decimal get total => quantity * unitPrice;
+
+  ReturnItem copyWith({Decimal? quantity, String? reason}) => ReturnItem(
+        productId: productId,
+        batchId: batchId,
+        quantity: quantity ?? this.quantity,
+        unitPrice: unitPrice,
+        reason: reason ?? this.reason,
+      );
+
+  @override
+  List<Object?> get props => [productId, batchId, quantity, unitPrice, reason];
 }
 
 class PosError extends PosState {
@@ -145,9 +208,19 @@ class PosError extends PosState {
 class PosCheckoutSuccess extends PosState {
   final Sale sale;
   final List<SaleItem> items;
-  final List<Product> products; // Need products for names/etc.
+  final List<Product> products;
   const PosCheckoutSuccess(this.sale, this.items, this.products);
 
   @override
   List<Object?> get props => [sale, items, products];
+}
+
+class PosReturnSuccess extends PosState {
+  final String returnId;
+  final Sale originalSale;
+  final Decimal totalRefund;
+  const PosReturnSuccess(this.returnId, this.originalSale, this.totalRefund);
+
+  @override
+  List<Object?> get props => [returnId, originalSale, totalRefund];
 }

@@ -31,18 +31,18 @@ class BomDao extends DatabaseAccessor<AppDatabase> with _$BomDaoMixin {
   Future<int> insertBom(
     String finishedProductId,
     String componentProductId,
-    double quantity,
+    Decimal quantity,
   ) {
     return into(billOfMaterials).insert(
       BillOfMaterialsCompanion.insert(
         finishedProductId: finishedProductId,
         componentProductId: componentProductId,
-        quantity: quantity,
+        quantity: Value(quantity),
       ),
     );
   }
 
-  Future<int> updateBom(String id, double quantity) {
+  Future<int> updateBom(String id, Decimal quantity) {
     return (update(billOfMaterials)..where((b) => b.id.equals(id))).write(
       BillOfMaterialsCompanion(quantity: Value(quantity)),
     );

@@ -25,7 +25,8 @@ class TransferService {
       // 1. Create GL Entry
       final entry = GLEntriesCompanion.insert(
         id: Value(entryId),
-        description: 'تحويل مالي: من حـ/ ${await _getAccountName(senderAccountId)} إلى حـ/ ${await _getAccountName(receiverAccountId)} ${note ?? ""}',
+        description:
+            'تحويل مالي: من حـ/ ${await _getAccountName(senderAccountId)} إلى حـ/ ${await _getAccountName(receiverAccountId)} ${note ?? ""}',
         date: Value(DateTime.now()),
         referenceType: const Value('TRANSFER'),
         referenceId: Value(id),
@@ -38,23 +39,24 @@ class TransferService {
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: receiverAccountId,
-          debit: Value(amount),
-          credit: const Value(0.0),
+          debit: Value(Decimal.parse(amount.toString())),
+          credit: Value(Decimal.zero),
         ),
         // Credit Sender
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: senderAccountId,
-          debit: const Value(0.0),
-          credit: Value(amount + commission),
+          debit: Value(Decimal.zero),
+          credit: Value(Decimal.parse((amount + commission).toString())),
         ),
         // Debit Commission Expense (if any)
         if (commission > 0)
           GLLinesCompanion.insert(
             entryId: entryId,
-            accountId: (await db.accountingDao.getAccountByCode('6010'))!.id, // Commission Expense
-            debit: Value(commission),
-            credit: const Value(0.0),
+            accountId: (await db.accountingDao.getAccountByCode('6010'))!
+                .id, // Commission Expense
+            debit: Value(Decimal.parse(commission.toString())),
+            credit: Value(Decimal.zero),
           ),
       ];
 
@@ -66,8 +68,8 @@ class TransferService {
           id: Value(id),
           senderAccountId: senderAccountId,
           receiverAccountId: receiverAccountId,
-          amount: amount,
-          commission: Value(commission),
+          amount: Value(Decimal.parse(amount.toString())),
+          commission: Value(Decimal.parse(commission.toString())),
           company: Value(company),
           transferType: transferType,
           checkId: Value(checkId),

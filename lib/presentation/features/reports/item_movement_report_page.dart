@@ -83,9 +83,15 @@ class _ItemMovementReportPageState extends State<ItemMovementReportPage> {
                     ],
                     rows: _movements!.map((m) {
                       return DataRow(cells: [
-                        DataCell(Text(intl.DateFormat('yyyy-MM-dd HH:mm').format(m.movementDate))),
+                        DataCell(Text(intl.DateFormat('yyyy-MM-dd HH:mm')
+                            .format(m.movementDate))),
                         DataCell(Text(m.type)),
-                        DataCell(Text(m.quantity.toString(), style: TextStyle(color: m.quantity > 0 ? Colors.green : Colors.red, fontWeight: FontWeight.bold))),
+                        DataCell(Text(m.quantity.toString(),
+                            style: TextStyle(
+                                color: m.quantity > Decimal.zero
+                                    ? Colors.green
+                                    : Colors.red,
+                                fontWeight: FontWeight.bold))),
                         DataCell(Text(m.cost.toStringAsFixed(2))),
                         DataCell(Text(m.referenceId ?? '')),
                       ]);

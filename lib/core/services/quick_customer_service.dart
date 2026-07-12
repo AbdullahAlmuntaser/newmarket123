@@ -98,7 +98,7 @@ class QuickCustomerService {
         CustomersCompanion(
           isQuickCustomer: const Value(false),
           customerType: Value(customerType),
-          creditLimit: Value(creditLimit),
+          creditLimit: Value(Decimal.parse(creditLimit.toString())),
           phone: Value(phone),
           address: Value(address),
           email: Value(email),
@@ -163,8 +163,8 @@ class QuickCustomerService {
             ..where((c) => c.isQuickCustomer.equals(true))
             ..where((c) => c.createdAt.isSmallerThanValue(cutoffDate))
             ..where(
-              (c) => c.balance.equals(0.0),
-            )) // Only if no outstanding balance
+              (c) => c.balance.equals(Decimal.zero.toString()),
+            ))
           .get();
 
       for (final customer in oldQuickCustomers) {

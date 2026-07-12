@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:equatable/equatable.dart';
 
 /// Represents a product/item in the system with full ERP capabilities
@@ -129,10 +130,10 @@ class ItemUnit extends Equatable {
   final String? barcode;
   final double conversionFactor; // How many base units in this unit
   final bool isDefault;
-  final double? buyPrice;
-  final double? sellPrice;
-  final double? wholesalePrice;
-  final double? halfWholesalePrice; // Additional price level
+  final Decimal? buyPrice;
+  final Decimal? sellPrice;
+  final Decimal? wholesalePrice;
+  final Decimal? halfWholesalePrice; // Additional price level
 
   const ItemUnit({
     required this.id,
@@ -171,7 +172,7 @@ class ItemPrice extends Equatable {
   final String? variantId;
   final String? unitId;
   final String priceType; // 'retail', 'wholesale', 'half_wholesale', 'cost'
-  final double price;
+  final Decimal price;
   final double? minQuantity; // Minimum quantity for this price
 
   const ItemPrice({

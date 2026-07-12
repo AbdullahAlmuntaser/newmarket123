@@ -5,6 +5,8 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
 import 'package:supermarket/injection_container.dart';
 import 'package:supermarket/presentation/features/accounting/widgets/bill_allocation_widget.dart';
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
+import 'package:supermarket/presentation/widgets/money_form_field.dart';
 
 /// صفحة سند القبض/الصرف اليدوي
 class ManualVoucherPage extends StatefulWidget {
@@ -119,9 +121,11 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    TextField(
+                    MoneyFormField(
                       controller: _amountController,
-                      keyboardType: TextInputType.number,
+                      label: 'المبلغ',
+                      required: true,
+                      allowZero: false,
                       decoration: const InputDecoration(
                         labelText: 'المبلغ',
                         border: OutlineInputBorder(),
@@ -200,8 +204,7 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
             if (widget.isReceipt && _selectedCustomer != null) ...[
               BillAllocationWidget(
                 customerId: _selectedCustomer!.id,
-                totalPaymentAmount:
-                    double.tryParse(_amountController.text) ?? 0.0,
+                totalPaymentAmount: MoneyFormField.valueOf(_amountController),
                 onAllocationChanged: (allocs) {},
               ),
               const SizedBox(height: 16),
@@ -376,18 +379,14 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
   }
 
   Future<void> _saveVoucher() async {
-    final amount = double.tryParse(_amountController.text);
+    final amount = MoneyFormField.tryParse(_amountController.text);
     if (amount == null || amount <= 0) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('الرجاء إدخال مبلغ صحيح')));
+      AppSnackBar.warning(context, 'الرجاء إدخال مبلغ صحيح');
       return;
     }
 
     if (_selectedCustomer == null && _selectedSupplier == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('الرجاء اختيار عميل أو مورد')),
-      );
+      AppSnackBar.warning(context, 'الرجاء اختيار عميل أو مورد');
       return;
     }
 
@@ -399,40 +398,30 @@ class _ManualVoucherPageState extends State<ManualVoucherPage> {
       if (_selectedCustomer != null) {
         await engine.postCustomerPayment(
           customerId: _selectedCustomer!.id,
-          amount: amount,
+          amount: Decimal.parse(amount.toString()),
           paymentMethod: _paymentMethod,
           note: _noteController.text.isEmpty ? null : _noteController.text,
         );
       } else if (_selectedSupplier != null) {
         await engine.postSupplierPayment(
           supplierId: _selectedSupplier!.id,
-          amount: amount,
+          amount: Decimal.parse(amount.toString()),
           paymentMethod: _paymentMethod,
           note: _noteController.text.isEmpty ? null : _noteController.text,
         );
       }
-
       if (mounted) {
         context.pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              widget.isReceipt
-                  ? 'تم حفظ سند القبض بنجاح'
-                  : 'تم حفظ سند الصرف بنجاح',
-            ),
-            backgroundColor: Colors.green,
-          ),
+        AppSnackBar.success(
+          context,
+          widget.isReceipt
+              ? 'تم حفظ سند القبض بنجاح'
+              : 'تم حفظ سند الصرف بنجاح',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('فشل في الحفظ: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackBar.error(context, 'فشل في الحفظ: $e');
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
+import 'package:supermarket/data/models/gl_entry_detail.dart';
 
 class GeneralLedgerPage extends StatelessWidget {
   const GeneralLedgerPage({super.key});
@@ -49,69 +49,75 @@ class GeneralLedgerPage extends StatelessWidget {
                   ),
                   subtitle: Row(
                     children: [
-                      Icon(
-                        Icons.calendar_today,
-                        size: 12,
-                        color: colorScheme.outline,
-                      ),
+                      Icon(Icons.calendar_today,
+                          size: 14, color: colorScheme.outline),
                       const SizedBox(width: 4),
                       Text(
                         DateFormat('yyyy-MM-dd HH:mm').format(entry.date),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: colorScheme.outline,
-                        ),
+                        style: TextStyle(color: colorScheme.outline),
                       ),
                     ],
                   ),
-                  leading: CircleAvatar(
-                    backgroundColor: colorScheme.primaryContainer,
-                    child: Icon(
-                      Icons.receipt_long,
-                      color: colorScheme.onPrimaryContainer,
-                      size: 20,
-                    ),
-                  ),
                   trailing: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: colorScheme.secondaryContainer,
-                      borderRadius: BorderRadius.circular(8),
+                      color: colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      entry.referenceType ?? '',
+                      entry.status,
                       style: TextStyle(
-                        fontSize: 10,
                         fontWeight: FontWeight.bold,
-                        color: colorScheme.onSecondaryContainer,
+                        color: colorScheme.onPrimaryContainer,
                       ),
                     ),
                   ),
                   children: [
-                    FutureBuilder<List<GLLineWithAccount>>(
-                      future: provider.getEntryLines(entry.id),
-                      builder: (context, lineSnapshot) {
-                        if (!lineSnapshot.hasData) {
-                          return const LinearProgressIndicator();
+                    FutureBuilder<List<GLEntryDetail>>(
+                      future: provider.getEntryDetails(entry.id),
+                      builder: (context, detailSnapshot) {
+                        if (!detailSnapshot.hasData) {
+                          return const Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(),
+                          );
                         }
-                        final lines = lineSnapshot.data!;
-                        return Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerHighest
-                                .withAlpha(50),
-                            borderRadius: const BorderRadius.vertical(
-                              bottom: Radius.circular(16),
-                            ),
-                          ),
-                          child: Column(
-                            children: lines
-                                .map((line) => _buildLineItem(context, line))
-                                .toList(),
-                          ),
+                        return ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: detailSnapshot.data!.length,
+                          separatorBuilder: (context, index) => const Divider(),
+                          itemBuilder: (context, dIndex) {
+                            final detail = detailSnapshot.data![dIndex];
+                            return ListTile(
+                              dense: true,
+                              title: FutureBuilder<GLAccount?>(
+                                future:
+                                    provider.getAccountById(detail.accountId),
+                                builder: (context, accSnapshot) {
+                                  return Text(accSnapshot.data?.name ?? '...');
+                                },
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (detail.debit > 0)
+                                    _buildAmountBox(
+                                      detail.debit,
+                                      Colors.green,
+                                      'مدين',
+                                    ),
+                                  if (detail.credit > 0)
+                                    _buildAmountBox(
+                                      detail.credit,
+                                      Colors.red,
+                                      'دائن',
+                                    ),
+                                ],
+                              ),
+                            );
+                          },
                         );
                       },
                     ),
@@ -125,66 +131,27 @@ class GeneralLedgerPage extends StatelessWidget {
     );
   }
 
-  Widget _buildLineItem(BuildContext context, GLLineWithAccount line) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
+  Widget _buildAmountBox(double amount, Color color, String label) {
+    return Container(
+      width: 80,
+      margin: const EdgeInsets.only(left: 8),
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        border: Border.all(color: color.withOpacity(0.5)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Column(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  line.account.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 13,
-                  ),
-                ),
-                Text(
-                  line.account.code,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
-                ),
-              ],
+          Text(label, style: TextStyle(fontSize: 10, color: color)),
+          Text(
+            amount.toStringAsFixed(2),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: color,
             ),
           ),
-          if (line.line.debit > 0)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                const Text(
-                  'مدين',
-                  style: TextStyle(fontSize: 9, color: Colors.green),
-                ),
-                Text(
-                  line.line.debit.toStringAsFixed(2),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
-                ),
-              ],
-            ),
-          if (line.line.credit > 0)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                const Text(
-                  'دائن',
-                  style: TextStyle(fontSize: 9, color: Colors.red),
-                ),
-                Text(
-                  line.line.credit.toStringAsFixed(2),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red,
-                  ),
-                ),
-              ],
-            ),
         ],
       ),
     );

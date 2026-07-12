@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
 import 'package:supermarket/injection_container.dart';
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
 
 class AddPurchaseReturnPage extends StatefulWidget {
   const AddPurchaseReturnPage({super.key});
@@ -107,7 +108,7 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
     _returnedQuantities.forEach((productId, qty) {
       final item = _purchaseItemsMap[productId];
       if (item != null) {
-        totalAmount += qty * item.price;
+        totalAmount += qty * item.price.toDouble();
       }
     });
 
@@ -216,7 +217,7 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
                             ),
                             IconButton(
                               icon: const Icon(Icons.add_circle_outline),
-                              onPressed: returnedQty < item.quantity
+                              onPressed: returnedQty < item.quantity.toDouble()
                                   ? () => setState(
                                         () => _returnedQuantities[
                                             item.productId] = returnedQty + 1,
@@ -249,14 +250,14 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
     _returnedQuantities.forEach((productId, qty) {
       if (qty > 0) {
         final item = _purchaseItemsMap[productId]!;
-        totalReturnedAmount += qty * item.price;
+        totalReturnedAmount += qty * item.price.toDouble();
         itemCompanions.add(
           PurchaseReturnItemsCompanion.insert(
             id: Value(const Uuid().v4()),
             purchaseReturnId: returnId,
             productId: productId,
-            quantity: qty,
-            price: item.price,
+            quantity: Decimal.parse(qty.toString()),
+            price: Decimal.parse(item.price.toString()),
             syncStatus: const Value(1),
           ),
         );
@@ -266,7 +267,7 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
     final returnCompanion = PurchaseReturnsCompanion.insert(
       id: Value(returnId),
       purchaseId: _selectedPurchase!.id,
-      amountReturned: totalReturnedAmount,
+      amountReturned: Value(Decimal.parse(totalReturnedAmount.toString())),
       createdAt: Value(DateTime.now()),
       updatedAt: Value(DateTime.now()),
       syncStatus: const Value(1),
@@ -286,19 +287,12 @@ class _AddPurchaseReturnPageState extends State<AddPurchaseReturnPage> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.returnProcessedSuccessfully),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppSnackBar.success(context, l10n.returnProcessedSuccessfully);
         context.pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-        );
+        AppSnackBar.error(context, e.toString());
       }
     }
   }

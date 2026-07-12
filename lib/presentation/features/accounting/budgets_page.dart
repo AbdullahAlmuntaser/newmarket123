@@ -13,7 +13,8 @@ class BudgetsPage extends StatefulWidget {
   State<BudgetsPage> createState() => _BudgetsPageState();
 }
 
-class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStateMixin {
+class _BudgetsPageState extends State<BudgetsPage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
@@ -72,18 +73,18 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        
+
         final budgets = snapshot.data ?? [];
-        
+
         if (budgets.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.account_balance_wallet_outlined, 
+                Icon(Icons.account_balance_wallet_outlined,
                     size: 64, color: Colors.grey[400]),
                 const SizedBox(height: 16),
-                Text('لا توجد ميزانيات تقديرية', 
+                Text('لا توجد ميزانيات تقديرية',
                     style: TextStyle(color: Colors.grey[600], fontSize: 16)),
                 const SizedBox(height: 8),
                 const Text('قم بإنشاء ميزانية جديدة من التبويب الثاني'),
@@ -97,11 +98,11 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
           itemCount: budgets.length,
           itemBuilder: (context, index) {
             final budget = budgets[index];
-            final progress = budget.budgetedAmount > 0 
-                ? budget.actualAmount / budget.budgetedAmount 
-                : 0.0;
+            final progress = budget.budgetedAmount > Decimal.zero
+                ? (budget.actualAmount / budget.budgetedAmount).toDecimal()
+                : Decimal.zero;
             final variance = budget.budgetedAmount - budget.actualAmount;
-            final isOverBudget = variance < 0;
+            final isOverBudget = variance < Decimal.zero;
 
             return Card(
               margin: const EdgeInsets.only(bottom: 12),
@@ -126,16 +127,16 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: budget.status == 'active' 
-                                ? Colors.green.shade100 
+                            color: budget.status == 'active'
+                                ? Colors.green.shade100
                                 : Colors.grey.shade200,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             budget.status == 'active' ? 'نشط' : 'مغلق',
                             style: TextStyle(
-                              color: budget.status == 'active' 
-                                  ? Colors.green.shade700 
+                              color: budget.status == 'active'
+                                  ? Colors.green.shade700
                                   : Colors.grey.shade700,
                               fontSize: 12,
                             ),
@@ -144,7 +145,7 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text('الفترة: ${budget.period}', 
+                    Text('الفترة: ${budget.period}',
                         style: TextStyle(color: Colors.grey[600])),
                     const SizedBox(height: 16),
                     Row(
@@ -152,12 +153,14 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
                       children: [
                         _buildBudgetInfo(
                           'المudgeted',
-                          NumberFormat.currency(symbol: '').format(budget.budgetedAmount),
+                          NumberFormat.currency(symbol: '')
+                              .format(budget.budgetedAmount),
                           Colors.blue,
                         ),
                         _buildBudgetInfo(
                           'الفعلي',
-                          NumberFormat.currency(symbol: '').format(budget.actualAmount),
+                          NumberFormat.currency(symbol: '')
+                              .format(budget.actualAmount),
                           Colors.orange,
                         ),
                         _buildBudgetInfo(
@@ -171,19 +174,21 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: LinearProgressIndicator(
-                        value: progress.clamp(0.0, 1.0),
+                        value: progress.toDouble().clamp(0.0, 1.0),
                         minHeight: 8,
                         backgroundColor: Colors.grey[200],
                         valueColor: AlwaysStoppedAnimation(
-                          progress > 1.0 ? Colors.red : Colors.green,
+                          progress > Decimal.one ? Colors.red : Colors.green,
                         ),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${(progress * 100).toStringAsFixed(1)}% مستهلك',
+                      '${(progress.toDouble() * 100).toStringAsFixed(1)}% مستهلك',
                       style: TextStyle(
-                        color: progress > 1.0 ? Colors.red : Colors.grey[600],
+                        color: progress > Decimal.one
+                            ? Colors.red
+                            : Colors.grey[600],
                         fontSize: 12,
                       ),
                     ),
@@ -247,8 +252,10 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
               onChanged: (value) => setState(() => _selectedPeriod = value!),
             ),
             const SizedBox(height: 16),
-            FutureBuilder<List<AccCostCenter>>(
-              future: (db.select(db.accCostCenters)..where((c) => c.isActive.equals(true))).get(),
+            FutureBuilder<List<CostCenter>>(
+              future: (db.select(db.costCenters)
+                    ..where((c) => c.isActive.equals(true)))
+                  .get(),
               builder: (context, snapshot) {
                 final costCenters = snapshot.data ?? [];
                 return DropdownButtonFormField<int?>(
@@ -259,13 +266,15 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
                     prefixIcon: Icon(Icons.business),
                   ),
                   items: [
-                    const DropdownMenuItem<int?>(value: null, child: Text('عام')),
+                    const DropdownMenuItem<int?>(
+                        value: null, child: Text('عام')),
                     ...costCenters.map((c) => DropdownMenuItem(
-                      value: c.id,
-                      child: Text(c.name),
-                    )),
+                          value: int.tryParse(c.id),
+                          child: Text(c.name),
+                        )),
                   ],
-                  onChanged: (value) => setState(() => _selectedCostCenterId = value),
+                  onChanged: (value) =>
+                      setState(() => _selectedCostCenterId = value),
                 );
               },
             ),
@@ -282,12 +291,15 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
                     prefixIcon: Icon(Icons.account_balance),
                   ),
                   items: [
-                    const DropdownMenuItem<int?>(value: null, child: Text('عام')),
-                    ...accounts.where((a) => a.type == 'EXPENSE').map((a) => 
-                      DropdownMenuItem(value: int.tryParse(a.id), child: Text(a.name)),
-                    ),
+                    const DropdownMenuItem<int?>(
+                        value: null, child: Text('عام')),
+                    ...accounts.where((a) => a.type == 'EXPENSE').map(
+                          (a) => DropdownMenuItem(
+                              value: int.tryParse(a.id), child: Text(a.name)),
+                        ),
                   ],
-                  onChanged: (value) => setState(() => _selectedAccountId = value),
+                  onChanged: (value) =>
+                      setState(() => _selectedAccountId = value),
                 );
               },
             ),
@@ -315,7 +327,7 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: _isLoading ? null : () => _createBudget(db),
-              icon: _isLoading 
+              icon: _isLoading
                   ? const SizedBox(
                       width: 20,
                       height: 20,
@@ -336,13 +348,20 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
   List<DropdownMenuItem<String>> _buildPeriodItems() {
     final currentYear = DateTime.now().year;
     return [
-      DropdownMenuItem(value: currentYear.toString(), child: Text('$currentYear')),
-      DropdownMenuItem(value: '${currentYear - 1}', child: Text('${currentYear - 1}')),
-      DropdownMenuItem(value: '${currentYear - 2}', child: Text('${currentYear - 2}')),
-      DropdownMenuItem(value: '$currentYear-Q1', child: Text('$currentYear - الربع الأول')),
-      DropdownMenuItem(value: '$currentYear-Q2', child: Text('$currentYear - الربع الثاني')),
-      DropdownMenuItem(value: '$currentYear-Q3', child: Text('$currentYear - الربع الثالث')),
-      DropdownMenuItem(value: '$currentYear-Q4', child: Text('$currentYear - الربع الرابع')),
+      DropdownMenuItem(
+          value: currentYear.toString(), child: Text('$currentYear')),
+      DropdownMenuItem(
+          value: '${currentYear - 1}', child: Text('${currentYear - 1}')),
+      DropdownMenuItem(
+          value: '${currentYear - 2}', child: Text('${currentYear - 2}')),
+      DropdownMenuItem(
+          value: '$currentYear-Q1', child: Text('$currentYear - الربع الأول')),
+      DropdownMenuItem(
+          value: '$currentYear-Q2', child: Text('$currentYear - الربع الثاني')),
+      DropdownMenuItem(
+          value: '$currentYear-Q3', child: Text('$currentYear - الربع الثالث')),
+      DropdownMenuItem(
+          value: '$currentYear-Q4', child: Text('$currentYear - الربع الرابع')),
     ];
   }
 
@@ -353,15 +372,15 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
 
     try {
       await db.into(db.accBudgets).insert(
-        AccBudgetsCompanion.insert(
-          name: _nameController.text,
-          period: _selectedPeriod,
-          costCenterId: drift.Value(_selectedCostCenterId),
-          accountId: drift.Value(_selectedAccountId),
-          budgetedAmount: double.parse(_amountController.text),
-          variance: double.parse(_amountController.text),
-        ),
-      );
+            AccBudgetsCompanion.insert(
+              name: _nameController.text,
+              period: _selectedPeriod,
+              costCenterId: drift.Value(_selectedCostCenterId?.toString()),
+              accountId: drift.Value(_selectedAccountId?.toString()),
+              budgetedAmount: Decimal.parse(_amountController.text),
+              variance: Decimal.parse(_amountController.text),
+            ),
+          );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

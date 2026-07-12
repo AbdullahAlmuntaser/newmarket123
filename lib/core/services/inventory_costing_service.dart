@@ -20,9 +20,9 @@ enum InventoryTransactionType {
 
 class InventoryValuation {
   final String productId;
-  final double totalQuantity;
-  final double averageCost;
-  final double totalValue;
+  final Decimal totalQuantity;
+  final Decimal averageCost;
+  final Decimal totalValue;
 
   InventoryValuation({
     required this.productId,
@@ -34,8 +34,8 @@ class InventoryValuation {
 
 class BatchWithCost {
   final ProductBatch batch;
-  final double remainingQuantity;
-  final double costPerUnit;
+  final Decimal remainingQuantity;
+  final Decimal costPerUnit;
 
   BatchWithCost({
     required this.batch,
@@ -71,23 +71,26 @@ class InventoryCostingService {
     return _parseMethod(product.valuationMethod);
   }
 
-  Future<double> calculateAverageCost(String productId) async {
+  Future<Decimal> calculateAverageCost(String productId) async {
     final batches = await (_db.select(_db.productBatches)
           ..where((b) => b.productId.equals(productId))
-          ..where((b) => b.quantity.isBiggerThan(const Variable(0.0))))
+          ..where((b) =>
+              b.quantity.isBiggerThan(Constant(Decimal.zero.toString()))))
         .get();
 
-    if (batches.isEmpty) return 0.0;
+    if (batches.isEmpty) return Decimal.zero;
 
-    double totalValue = 0.0;
-    double totalQty = 0.0;
+    Decimal totalValue = Decimal.zero;
+    Decimal totalQty = Decimal.zero;
 
     for (var batch in batches) {
       totalValue += batch.quantity * batch.costPrice;
       totalQty += batch.quantity;
     }
 
-    return totalQty > 0 ? totalValue / totalQty : 0.0;
+    return totalQty > Decimal.zero
+        ? (totalValue / totalQty).toDecimal()
+        : Decimal.zero;
   }
 
   Future<InventoryValuation> getInventoryValuation(String productId) async {
@@ -95,40 +98,42 @@ class InventoryCostingService {
     final batches = await (_db.select(_db.productBatches)).get();
 
     final productBatches = batches
-        .where((b) => b.productId == productId && b.quantity > 0)
+        .where((b) => b.productId == productId && b.quantity > Decimal.zero)
         .toList();
 
     if (productBatches.isEmpty) {
       return InventoryValuation(
         productId: productId,
-        totalQuantity: 0,
-        averageCost: 0,
-        totalValue: 0,
+        totalQuantity: Decimal.zero,
+        averageCost: Decimal.zero,
+        totalValue: Decimal.zero,
       );
     }
 
     switch (method) {
       case InventoryValuationMethod.avco:
-        return await _calculateAvcoValuation(productId, productBatches);
+        return _calculateAvcoValuation(productId, productBatches);
       case InventoryValuationMethod.lifo:
-        return await _calculateLifoValuation(productId, productBatches);
+        return _calculateLifoValuation(productId, productBatches);
       case InventoryValuationMethod.fifo:
       default:
-        return await _calculateFifoValuation(productId, productBatches);
+        return _calculateFifoValuation(productId, productBatches);
     }
   }
 
   Future<InventoryValuation> _calculateAvcoValuation(
       String productId, List<ProductBatch> batches) async {
-    double totalValue = 0.0;
-    double totalQty = 0.0;
+    Decimal totalValue = Decimal.zero;
+    Decimal totalQty = Decimal.zero;
 
     for (var batch in batches) {
       totalValue += batch.quantity * batch.costPrice;
       totalQty += batch.quantity;
     }
 
-    final avgCost = totalQty > 0 ? totalValue / totalQty : 0.0;
+    final avgCost = totalQty > Decimal.zero
+        ? (totalValue / totalQty).toDecimal()
+        : Decimal.zero;
 
     return InventoryValuation(
       productId: productId,
@@ -143,15 +148,17 @@ class InventoryCostingService {
     final sortedBatches = List<ProductBatch>.from(batches)
       ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
-    double totalValue = 0.0;
-    double totalQty = 0.0;
+    Decimal totalValue = Decimal.zero;
+    Decimal totalQty = Decimal.zero;
 
     for (var batch in sortedBatches) {
       totalValue += batch.quantity * batch.costPrice;
       totalQty += batch.quantity;
     }
 
-    final avgCost = totalQty > 0 ? totalValue / totalQty : 0.0;
+    final avgCost = totalQty > Decimal.zero
+        ? (totalValue / totalQty).toDecimal()
+        : Decimal.zero;
 
     return InventoryValuation(
       productId: productId,
@@ -166,15 +173,17 @@ class InventoryCostingService {
     final sortedBatches = List<ProductBatch>.from(batches)
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-    double totalValue = 0.0;
-    double totalQty = 0.0;
+    Decimal totalValue = Decimal.zero;
+    Decimal totalQty = Decimal.zero;
 
     for (var batch in sortedBatches) {
       totalValue += batch.quantity * batch.costPrice;
       totalQty += batch.quantity;
     }
 
-    final avgCost = totalQty > 0 ? totalValue / totalQty : 0.0;
+    final avgCost = totalQty > Decimal.zero
+        ? (totalValue / totalQty).toDecimal()
+        : Decimal.zero;
 
     return InventoryValuation(
       productId: productId,
@@ -185,12 +194,12 @@ class InventoryCostingService {
   }
 
   Future<List<BatchWithCost>> getBatchesForSale(
-      String productId, double quantity) async {
+      String productId, Decimal quantity) async {
     final method = await getProductValuationMethod(productId);
     final batches = await (_db.select(_db.productBatches)).get();
 
     final productBatches = batches
-        .where((b) => b.productId == productId && b.quantity > 0)
+        .where((b) => b.productId == productId && b.quantity > Decimal.zero)
         .toList();
 
     if (productBatches.isEmpty) return [];
@@ -225,11 +234,11 @@ class InventoryCostingService {
           });
     }
 
-    double remaining = quantity;
+    Decimal remaining = quantity;
     final result = <BatchWithCost>[];
 
     for (var batch in sortedBatches) {
-      if (remaining <= 0) break;
+      if (remaining <= Decimal.zero) break;
 
       final deduct = remaining > batch.quantity ? batch.quantity : remaining;
       result.add(BatchWithCost(
@@ -243,10 +252,11 @@ class InventoryCostingService {
     return result;
   }
 
-  Future<double> calculateCogsForSale(String productId, double quantity) async {
+  Future<Decimal> calculateCogsForSale(
+      String productId, Decimal quantity) async {
     final batches = await getBatchesForSale(productId, quantity);
 
-    double totalCogs = 0.0;
+    Decimal totalCogs = Decimal.zero;
     for (var batch in batches) {
       totalCogs += batch.remainingQuantity * batch.costPerUnit;
     }
@@ -256,7 +266,7 @@ class InventoryCostingService {
 
   Future<void> deductFromInventory({
     required String productId,
-    required double quantity,
+    required Decimal quantity,
     required InventoryTransactionType type,
     String? transactionId,
   }) async {
@@ -272,8 +282,8 @@ class InventoryCostingService {
 
   Future<void> addToInventory({
     required String productId,
-    required double quantity,
-    required double cost,
+    required Decimal quantity,
+    required Decimal cost,
     required InventoryTransactionType type,
     String? transactionId,
   }) async {
@@ -288,9 +298,9 @@ class InventoryCostingService {
     );
   }
 
-  Future<Map<String, double>> getBatchSummaryReport(
+  Future<Map<String, Decimal>> getBatchSummaryReport(
       {String? warehouseId}) async {
-    final Map<String, double> summary = {};
+    final Map<String, Decimal> summary = {};
 
     final query = _db.select(_db.productBatches);
     if (warehouseId != null) {
@@ -301,7 +311,7 @@ class InventoryCostingService {
 
     for (var batch in batches) {
       final key = '${batch.productId}_${batch.warehouseId}';
-      summary[key] = (summary[key] ?? 0) + batch.quantity;
+      summary[key] = (summary[key] ?? Decimal.zero) + batch.quantity;
     }
 
     return summary;

@@ -6,7 +6,9 @@ import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/core/services/app_config_service.dart';
 
 class MockAppDatabase extends Mock implements AppDatabase {}
+
 class MockAuditService extends Mock implements AuditService {}
+
 class MockAppConfigService extends Mock implements AppConfigService {}
 
 void main() {
@@ -22,7 +24,7 @@ void main() {
 
   group('InventoryService Tests', () {
     test('service can be created', () {
-      final inventoryService = InventoryService(
+      final inventoryService = InventoryService.fromDb(
         mockDatabase,
         mockAuditService,
         mockConfigService,

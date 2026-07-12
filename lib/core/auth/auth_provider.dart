@@ -12,7 +12,11 @@ class AuthProvider with ChangeNotifier {
 
   User? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
-  bool get isAdmin => _currentUser?.role == 'admin';
+  bool get isAdmin => _currentUser?.role.toLowerCase() == 'admin';
+  bool get isManager =>
+      isAdmin || _currentUser?.role.toLowerCase() == 'manager';
+  bool get isCashier =>
+      isManager || _currentUser?.role.toLowerCase() == 'cashier';
 
   Future<bool> login(String username, String password) async {
     final user = await (db.select(

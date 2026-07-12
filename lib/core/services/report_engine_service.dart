@@ -49,18 +49,22 @@ class ReportEngineService {
         productStats[productId] = {
           'productId': productId,
           'productName': productName,
-          'totalQuantity': 0,
+          'totalQuantity': 0.0,
           'totalRevenue': 0.0,
         };
       }
 
-      productStats[productId]!['totalQuantity'] += quantity;
-      productStats[productId]!['totalRevenue'] += (quantity * price);
+      productStats[productId]!['totalQuantity'] =
+          (productStats[productId]!['totalQuantity'] as double) +
+              quantity.toDouble();
+      productStats[productId]!['totalRevenue'] =
+          (productStats[productId]!['totalRevenue'] as double) +
+              (quantity * price).toDouble();
     }
 
     final report = productStats.values.toList()
-      ..sort((a, b) =>
-          (b['totalQuantity'] as int).compareTo(a['totalQuantity'] as int));
+      ..sort((a, b) => (b['totalQuantity'] as double)
+          .compareTo(a['totalQuantity'] as double));
 
     return report.take(limit).toList();
   }
@@ -88,14 +92,14 @@ class ReportEngineService {
           .get();
 
       double totalCost = 0;
-      double totalRevenue = sale.total;
+      double totalRevenue = sale.total.toDouble();
 
       for (final item in items) {
         final product = await (_db.select(_db.products)
               ..where((p) => p.id.equals(item.productId)))
             .getSingle();
 
-        totalCost += (product.buyPrice * item.quantity);
+        totalCost += (product.buyPrice * item.quantity).toDouble();
       }
 
       final profit = totalRevenue - totalCost;
@@ -135,27 +139,27 @@ class ReportEngineService {
         'date': sale.readTable(_db.sales).createdAt,
         'quantity': -sale.readTable(_db.saleItems).quantity,
         'reference': sale.readTable(_db.sales).id,
-        'balance': 0, // سيتم حسابه لاحقاً
+        'balance': 0.0, // Use double
       });
     }
 
-    // حركات المشتريات
+    // حركات المشتريات - Fix: Join with Purchases instead of PurchaseOrders
     final purchases = await (_db.select(_db.purchaseItems)
           ..where((i) => i.productId.equals(productId)))
         .join([
       leftOuterJoin(
-        _db.purchaseOrders,
-        _db.purchaseOrders.id.equalsExp(_db.purchaseItems.purchaseId),
+        _db.purchases,
+        _db.purchases.id.equalsExp(_db.purchaseItems.purchaseId),
       ),
     ]).get();
 
     for (final purchase in purchases) {
       movements.add({
         'type': 'purchase',
-        'date': purchase.readTable(_db.purchaseOrders).createdAt,
+        'date': purchase.readTable(_db.purchases).date,
         'quantity': purchase.readTable(_db.purchaseItems).quantity,
-        'reference': purchase.readTable(_db.purchaseOrders).id,
-        'balance': 0,
+        'reference': purchase.readTable(_db.purchases).id,
+        'balance': 0.0,
       });
     }
 
@@ -170,7 +174,7 @@ class ReportEngineService {
         'date': movement.movementDate,
         'quantity': movement.quantity,
         'reference': movement.id,
-        'balance': 0,
+        'balance': 0.0,
       });
     }
 
@@ -178,9 +182,9 @@ class ReportEngineService {
     movements.sort(
         (a, b) => (a['date'] as DateTime).compareTo(b['date'] as DateTime));
 
-    int runningBalance = 0;
+    double runningBalance = 0.0;
     for (final movement in movements) {
-      runningBalance += movement['quantity'] as int;
+      runningBalance += (movement['quantity'] as num).toDouble();
       movement['balance'] = runningBalance;
     }
 
@@ -227,13 +231,19 @@ class ReportEngineService {
         };
       }
 
-      dailySales[dateKey]!['totalSales'] += sale.total;
+      dailySales[dateKey]!['totalSales'] =
+          (dailySales[dateKey]!['totalSales'] as double) +
+              sale.total.toDouble();
       dailySales[dateKey]!['totalTransactions']++;
 
       if (sale.paymentMethod == PaymentMethod.cash) {
-        dailySales[dateKey]!['cashSales'] += sale.total;
+        dailySales[dateKey]!['cashSales'] =
+            (dailySales[dateKey]!['cashSales'] as double) +
+                sale.total.toDouble();
       } else {
-        dailySales[dateKey]!['cardSales'] += sale.total;
+        dailySales[dateKey]!['cardSales'] =
+            (dailySales[dateKey]!['cardSales'] as double) +
+                sale.total.toDouble();
       }
     }
 
@@ -250,9 +260,9 @@ class ReportEngineService {
     final categories = <String, double>{};
 
     for (final product in products) {
-      final value = product.buyPrice * product.stock;
+      final value = (product.buyPrice * product.stock).toDouble();
       totalValue += value;
-      totalItems += product.stock;
+      totalItems += product.stock.toDouble();
 
       final categoryName = product.categoryId ?? 'Uncategorized';
       categories[categoryName] = (categories[categoryName] ?? 0) + value;

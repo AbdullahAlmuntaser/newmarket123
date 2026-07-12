@@ -253,7 +253,9 @@ void main() {
 
       test('returns error for credit sale without customer', () {
         final errors = SalesValidator.validateSale(
-          items: [{'productId': 'p1', 'quantity': 1, 'price': 10}],
+          items: [
+            {'productId': 'p1', 'quantity': 1, 'price': 10}
+          ],
           total: 10,
           isCredit: true,
           customerId: null,

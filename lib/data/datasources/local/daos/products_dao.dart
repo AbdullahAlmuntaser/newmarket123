@@ -40,6 +40,10 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
     return select(products).watch();
   }
 
+  Future<List<Product>> getAllProducts() {
+    return select(products).get();
+  }
+
   // ========== Warehouse & Batch Management ==========
   Stream<List<Warehouse>> watchWarehouses() {
     return select(warehouses).watch();
@@ -58,8 +62,28 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
             (b) =>
                 b.productId.equals(productId) &
                 b.warehouseId.equals(warehouseId) &
-                b.quantity.isBiggerThan(const Variable(0)),
+                b.quantity.isBiggerThan(Variable(Decimal.zero.toString())),
           ))
+        .get();
+  }
+
+  Future<List<ProductBatch>> getBatchesByFefo(
+    String productId,
+    String warehouseId,
+  ) {
+    return (select(productBatches)
+          ..where(
+            (b) =>
+                b.productId.equals(productId) &
+                b.warehouseId.equals(warehouseId) &
+                b.quantity.isBiggerThan(Variable(Decimal.zero.toString())),
+          )
+          ..orderBy([
+            (t) => OrderingTerm(
+                  expression: t.expiryDate,
+                  mode: OrderingMode.asc,
+                ),
+          ]))
         .get();
   }
 
@@ -88,7 +112,8 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
         )..where((b) => b.id.equals(item.batchId)))
             .getSingle();
 
-        if (sourceBatch.quantity < item.quantity) {
+        final itemQuantityDecimal = Decimal.parse(item.quantity.toString());
+        if (sourceBatch.quantity < itemQuantityDecimal) {
           throw Exception('الكمية المطلوبة غير متوفرة في الدفعة المحددة');
         }
 
@@ -97,7 +122,7 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
         )..where((b) => b.id.equals(item.batchId)))
             .write(
           ProductBatchesCompanion(
-            quantity: Value(sourceBatch.quantity - item.quantity),
+            quantity: Value(sourceBatch.quantity - itemQuantityDecimal),
           ),
         );
 
@@ -116,7 +141,7 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
           )..where((b) => b.id.equals(targetBatch.id)))
               .write(
             ProductBatchesCompanion(
-              quantity: Value(targetBatch.quantity + item.quantity),
+              quantity: Value(targetBatch.quantity + itemQuantityDecimal),
             ),
           );
         } else {
@@ -126,8 +151,8 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
               warehouseId: toWarehouseId,
               batchNumber: sourceBatch.batchNumber,
               expiryDate: Value(sourceBatch.expiryDate),
-              quantity: Value(item.quantity),
-              initialQuantity: Value(item.quantity),
+              quantity: Value(itemQuantityDecimal),
+              initialQuantity: Value(itemQuantityDecimal),
               costPrice: Value(sourceBatch.costPrice),
             ),
           );
@@ -138,17 +163,37 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
             transferId: transferId,
             productId: item.productId,
             batchId: item.batchId,
-            quantity: item.quantity,
+            quantity: Value(Decimal.parse(item.quantity.toString())),
           ),
         );
       }
     });
   }
 
+  Future<int> countProducts({String? searchQuery, String? categoryId}) async {
+    final query = selectOnly(products);
+    if (searchQuery != null && searchQuery.isNotEmpty) {
+      query.where(
+        products.name.like('%$searchQuery%') |
+            products.sku.like('%$searchQuery%') |
+            products.barcode.like('%$searchQuery%'),
+      );
+    }
+    if (categoryId != null && categoryId.isNotEmpty) {
+      query.where(products.categoryId.equals(categoryId));
+    }
+    final countExp = products.id.count();
+    query.addColumns([countExp]);
+    final row = await query.getSingle();
+    return row.read(countExp) ?? 0;
+  }
+
   // ========== Products (Items) Operations ==========
   Stream<List<ProductWithCategory>> watchProducts({
     String? searchQuery,
     String? categoryId,
+    int? limit,
+    int? offset,
   }) {
     final query = select(products).join([
       leftOuterJoin(categories, categories.id.equalsExp(products.categoryId)),
@@ -167,6 +212,10 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
     }
 
     query.orderBy([OrderingTerm.asc(products.name)]);
+
+    if (limit != null) {
+      query.limit(limit, offset: offset);
+    }
 
     return query.watch().map((rows) {
       return rows.map((row) {
@@ -206,7 +255,8 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
     return (select(
       products,
     )..where((p) => p.barcode.equals(barcode)))
-        .getSingleOrNull();
+        .get()
+        .then((rows) => rows.isEmpty ? null : rows.first);
   }
 
   Future<int> addProduct(ProductsCompanion entry) {
@@ -270,7 +320,7 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
           ..where(
             (b) =>
                 b.expiryDate.isSmallerOrEqual(Variable(thresholdDate)) &
-                b.quantity.isBiggerThan(const Variable(0)),
+                b.quantity.isBiggerThan(Variable(Decimal.zero.toString())),
           )
           ..orderBy([
             (t) =>
@@ -287,13 +337,44 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
           ..where(
             (b) =>
                 b.expiryDate.isSmallerOrEqual(Variable(thresholdDate)) &
-                b.quantity.isBiggerThan(const Variable(0)),
+                b.quantity.isBiggerThan(Variable(Decimal.zero.toString())),
           )
           ..orderBy([
             (t) =>
                 OrderingTerm(expression: t.expiryDate, mode: OrderingMode.asc),
           ]))
         .get();
+  }
+
+  Future<List<ProductBatch>> getExpiredBatches({
+    required String warehouseId,
+  }) async {
+    final now = DateTime.now();
+    return (select(productBatches)
+          ..where(
+            (b) =>
+                b.warehouseId.equals(warehouseId) &
+                b.expiryDate.isSmallerOrEqual(Variable(now)) &
+                b.quantity.isBiggerThan(Variable(Decimal.zero.toString())),
+          )
+          ..orderBy([
+            (t) =>
+                OrderingTerm(expression: t.expiryDate, mode: OrderingMode.asc),
+          ]))
+        .get();
+  }
+
+  Future<Decimal> getWarehouseStock(String productId, String warehouseId) async {
+    final batches = await (select(productBatches)
+          ..where((b) =>
+              b.productId.equals(productId) &
+              b.warehouseId.equals(warehouseId) &
+              b.quantity.isBiggerThan(Variable(Decimal.zero.toString()))))
+        .get();
+    return batches.fold<Decimal>(
+      Decimal.zero,
+      (sum, b) => sum + b.quantity,
+    );
   }
 }
 

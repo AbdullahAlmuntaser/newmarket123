@@ -1,31 +1,46 @@
-```
-# Build artifacts
-*.dart_tool/
-*.build/
+```dart
+# Flutter/Dart specific
+.dart_tool/
+.packages
+flutter_export_environment.sh
+
+# Build
 build/
+*.iws
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code related
+.vscode/
 
 # Dependencies
-.pub/
-.dart_tool/
+pubspec.lock
 
 # Logs
+logs/
 *.log
+
+# Coverage
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
 
 # Environment
 .env
 .env.local
 *.env.*
 
-# IDE files
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# OS files
+# OS generated files
 .DS_Store
 Thumbs.db
 
-# Coverage
-coverage/
+# Web
+web/.build/
+web/build/
 ```

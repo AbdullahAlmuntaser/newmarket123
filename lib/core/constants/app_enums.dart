@@ -33,6 +33,12 @@ enum PaymentMethod {
 enum TransactionType {
   sale,
   purchase,
+  saleReturn,
+  purchaseReturn,
+  customerPayment,
+  supplierPayment,
+  cashReceipt,
+  cashPayment,
   returnItem,
   transfer,
   adjustment,
@@ -41,4 +47,61 @@ enum TransactionType {
   paymentOut,
 }
 
-enum AccountType { asset, liability, equity, revenue, expense }
+enum AccountType { asset, liability, equity, revenue, expense, cogs, otherIncome }
+
+enum TaxType {
+  none,
+  standard,
+  reduced,
+  zero,
+  exempt;
+
+  String get displayName => switch (this) {
+        TaxType.none => 'None',
+        TaxType.standard => 'Standard Rate',
+        TaxType.reduced => 'Reduced Rate',
+        TaxType.zero => 'Zero Rate',
+        TaxType.exempt => 'Exempt',
+      };
+
+  String get displayNameAr => switch (this) {
+        TaxType.none => 'بدون ضريبة',
+        TaxType.standard => 'نسبة عامة',
+        TaxType.reduced => 'نسبة مخفضة',
+        TaxType.zero => 'صفر',
+        TaxType.exempt => 'معفى',
+      };
+}
+
+enum CurrencyType {
+  sar,
+  usd,
+  eur,
+  gbp,
+  aed,
+  yer,
+  omr,
+  other;
+
+  String get displayName => switch (this) {
+        CurrencyType.sar => 'Saudi Riyal (SAR)',
+        CurrencyType.usd => 'US Dollar (USD)',
+        CurrencyType.eur => 'Euro (EUR)',
+        CurrencyType.gbp => 'British Pound (GBP)',
+        CurrencyType.aed => 'UAE Dirham (AED)',
+        CurrencyType.yer => 'Yemeni Riyal (YER)',
+        CurrencyType.omr => 'Omani Rial (OMR)',
+        CurrencyType.other => 'Other',
+      };
+
+  String get symbol => switch (this) {
+        CurrencyType.sar => 'ر.س',
+        CurrencyType.usd => '\$',
+        CurrencyType.eur => '€',
+        CurrencyType.gbp => '£',
+        CurrencyType.aed => 'د.إ',
+        CurrencyType.yer => '﷼',
+        CurrencyType.omr => 'ر.ع',
+        CurrencyType.other => '',
+      };
+}

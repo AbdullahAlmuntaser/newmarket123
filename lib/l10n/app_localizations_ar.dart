@@ -1,8 +1,4 @@
-// ignore: unused_import
-import 'package:intl/intl.dart' as intl;
 import 'app_localizations.dart';
-
-// ignore_for_file: type=lint
 
 /// The translations for Arabic (`ar`).
 class AppLocalizationsAr extends AppLocalizations {
@@ -132,7 +128,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get discount => 'الخصم';
 
   @override
-  String get tax => 'الضريبة (15%)';
+  String get tax => 'الضريبة';
 
   @override
   String get total => 'الإجمالي';
@@ -728,7 +724,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get enterActualBalanceError => 'يرجى إدخال الرصيد الفعلي';
 
   @override
-  String get reconciliationDifference => 'فارق التسوية';
+  String get reconciliationDifference => 'فرق التسوية';
 
   @override
   String get vatOnSales => 'ضريبة المخرجات (المبيعات)';
@@ -752,8 +748,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeAdmin => 'مرحباً بك أيها المشرف';
 
   @override
-  String get adminDashboardDescription =>
-      'إدارة عمليات السوبر ماركت الخاصة بك بكل سهولة.';
+  String get adminDashboardDescription => 'إدارة عمليات السوبر ماركت الخاصة بك بكل سهولة.';
 
   @override
   String get manageStaff => 'إدارة الموظفين';
@@ -852,8 +847,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get confirmRestore => 'تأكيد الاستعادة';
 
   @override
-  String get restoreWarning =>
-      'الاستعادة ستؤدي إلى مسح البيانات الحالية. هل أنت متأكد؟';
+  String get restoreWarning => 'الاستعادة ستؤدي إلى مسح البيانات الحالية. هل أنت متأكد؟';
 
   @override
   String get simplifiedTaxInvoice => 'فاتورة ضريبية مبسطة';
@@ -1046,12 +1040,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get viewInvoice => 'عرض الفاتورة';
 
   @override
-  String get confirmDeleteCategory =>
-      'هل أنت متأكد من حذف هذه الفئة؟ سيؤدي هذا إلى منع الوصول إلى المنتجات المرتبطة بها.';
+  String get confirmDeleteCategory => 'هل أنت متأكد من حذف هذه الفئة؟ سيؤدي هذا إلى منع الوصول إلى المنتجات المرتبطة بها.';
 
   @override
-  String get categoryHasProductsError =>
-      'لا يمكن حذف الفئة لأنها مرتبطة بمنتجات موجودة.';
+  String get categoryHasProductsError => 'لا يمكن حذف الفئة لأنها مرتبطة بمنتجات موجودة.';
 
   @override
   String get deleteCategory => 'حذف فئة';
@@ -1069,7 +1061,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get selectAPurchaseToContinue => 'اختر مشتريات للمتابعة';
 
   @override
-  String get processReturn => 'إتمام المرتجع';
+  String get processReturn => 'تنفيذ المرتجع';
 
   @override
   String get returnProcessedSuccessfully => 'تم إتمام المرتجع بنجاح';
@@ -1207,4 +1199,140 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get period => 'الفترة';
+
+  @override
+  String get noItemsSelected => 'لم يتم اختيار أي أصناف';
+
+  @override
+  String get deleteCustomer => 'حذف العميل';
+
+  @override
+  String get deleteSupplier => 'حذف المورد';
+
+  @override
+  String confirmDeleteCustomer(Object customerName) {
+    return 'هل أنت متأكد من حذف العميل $customerName؟';
+  }
+
+  @override
+  String confirmDeleteSupplier(Object supplierName) {
+    return 'هل أنت متأكد من حذف المورد $supplierName؟';
+  }
+
+  @override
+  String get customerDeleted => 'تم حذف العميل';
+
+  @override
+  String get supplierDeleted => 'تم حذف المورد';
+
+  @override
+  String get failedToDeleteCustomer => 'فشل حذف العميل';
+
+  @override
+  String get failedToDeleteSupplier => 'فشل حذف المورد';
+
+  @override
+  String get manufacturing => 'التصنيع';
+
+  @override
+  String get productionOrders => 'أوامر الإنتاج';
+
+  @override
+  String get bomManagement => 'إدارة BOM';
+
+  @override
+  String get createOrder => 'إنشاء أمر';
+
+  @override
+  String get plannedQuantity => 'الكمية المخططة';
+
+  @override
+  String get productionOrderCreated => 'تم إنشاء أمر الإنتاج بنجاح';
+
+  @override
+  String get complete => 'إكمال';
+
+  @override
+  String get bom => 'قائمة المواد (BOM)';
+
+  @override
+  String get executeAssembly => 'تنفيذ التجميع';
+
+  @override
+  String get assemblySuccess => 'تم تنفيذ التجميع بنجاح';
+
+  @override
+  String get finishedProduct => 'منتج تام الصنع';
+
+  @override
+  String get rawMaterials => 'المواد الخام';
+
+  @override
+  String get bankReconciliation => 'تسوية البنك';
+
+  @override
+  String get autoBreakService => 'خدمة التفكيك التلقائي';
+
+  @override
+  String get unitHierarchy => 'هرمية الوحدات';
+
+  @override
+  String get addUnit => 'إضافة وحدة';
+
+  @override
+  String get removeUnit => 'إزالة وحدة';
+
+  @override
+  String get unitName => 'اسم الوحدة';
+
+  @override
+  String get unitFactor => 'معامل الوحدة';
+
+  @override
+  String get returnMode => 'وضع المرتجعات';
+
+  @override
+  String get returnFromSale => 'إرجاع من فاتورة';
+
+  @override
+  String get originalSaleReference => 'رقم الفاتورة الأصلية';
+
+  @override
+  String get searchSale => 'بحث عن فاتورة';
+
+  @override
+  String get returnItem => 'صنف مرتجع';
+
+  @override
+  String get returnQuantity => 'كمية الإرجاع';
+
+  @override
+  String get returnReason => 'سبب الإرجاع';
+
+  @override
+  String get returnSuccess => 'تم تنفيذ المرتجع بنجاح';
+
+  @override
+  String get totalRefund => 'إجمالي المرتجع';
+
+  @override
+  String get cancelReturn => 'إلغاء المرتجع';
+
+  @override
+  String get unmatchedTransactions => 'المعاملات غير المسوّاة';
+
+  @override
+  String get reconcileSelected => 'تسوية المحدد';
+
+  @override
+  String get autoReconcile => 'تسوية تلقائية';
+
+  @override
+  String get reconcileAll => 'تسوية الكل';
+
+  @override
+  String get tolerance => 'التحمّل';
+
+  @override
+  String get noUnmatchedTransactions => 'لا توجد معاملات غير مسوّاة';
 }

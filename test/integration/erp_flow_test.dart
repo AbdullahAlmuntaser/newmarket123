@@ -2,9 +2,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/native.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/services/security_service.dart';
 
 void main() {
   late AppDatabase db;
+
+  setUpAll(() {
+    SecurityService.useFakeKeyForTesting = true;
+  });
 
   setUp(() async {
     db = AppDatabase(NativeDatabase.memory());
@@ -50,16 +55,16 @@ void main() {
             id: const drift.Value(productId),
             name: 'صنف اختبار',
             sku: 'P001',
-            buyPrice: const drift.Value(50.0),
-            sellPrice: const drift.Value(100.0),
-            stock: const drift.Value(0.0),
+            buyPrice: drift.Value(Decimal.parse('50')),
+            sellPrice: drift.Value(Decimal.parse('100')),
+            stock: drift.Value(Decimal.zero),
           ));
 
       final product = await (db.select(db.products)
             ..where((p) => p.id.equals(productId)))
           .getSingle();
 
-      expect(product.stock, 0.0);
+      expect(product.stock, Decimal.zero);
     });
   });
 }

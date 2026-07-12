@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/data/datasources/local/daos/accounting_dao.dart';
 import 'package:supermarket/core/utils/name_normalizer.dart';
 import 'package:uuid/uuid.dart';
 
@@ -121,13 +121,12 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
           id: Value(accountId),
           code: '1201-${customerId.substring(0, 5)}',
           name: 'عميل: ${entry.name.value}',
-          type:
-              AccountType.asset, // Corrected to use the static String constant
+          accountType: AccountType.asset,
           parentId: parentAccount?.id != null
               ? Value(parentAccount!.id)
               : const Value.absent(),
           isHeader: const Value(false),
-          balance: const Value(0.0),
+          balance: Value(Decimal.zero),
         ),
       );
 
@@ -173,6 +172,25 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
         .get();
   }
 
+  // CustomerPaymentLinks DAO methods
+  Future<void> createCustomerPaymentLink(CustomerPaymentLinksCompanion entry) {
+    return into(db.customerPaymentLinks).insert(entry);
+  }
+
+  Future<List<CustomerPaymentLink>> getLinksForPayment(String paymentId) {
+    return (select(db.customerPaymentLinks)
+      ..where((l) => l.paymentId.equals(paymentId))).get();
+  }
+
+  Future<List<CustomerPaymentLink>> getLinksForSale(String saleId) {
+    return (select(db.customerPaymentLinks)
+      ..where((l) => l.saleId.equals(saleId))).get();
+  }
+
+  Future<int> deleteCustomerPaymentLink(String id) {
+    return (delete(db.customerPaymentLinks)..where((l) => l.id.equals(id))).go();
+  }
+
   /// جلب كشف حساب تفصيلي للعميل مع الرصيد التراكمي
   Future<List<CustomerTransaction>> getCustomerStatement(
     String customerId,
@@ -191,7 +209,7 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
         CustomerTransaction(
           date: sale.createdAt,
           description: 'فاتورة مبيعات آجل رقم ${sale.id.substring(0, 8)}',
-          debit: sale.total,
+          debit: sale.total.toDouble(),
           credit: 0,
           referenceId: sale.id,
           type: 'SALE',
@@ -208,7 +226,7 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
         CustomerTransaction(
           date: inv.invoiceDate,
           description: 'فاتورة AR رقم ${inv.invoiceNumber}',
-          debit: inv.totalAmount,
+          debit: inv.totalAmount.toDouble(),
           credit: 0,
           referenceId: inv.id,
           type: 'AR_INVOICE',
@@ -228,7 +246,7 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
           date: payment.paymentDate,
           description: 'سند قبض - ${payment.note ?? ""}',
           debit: 0,
-          credit: payment.amount,
+          credit: payment.amount.toDouble(),
           referenceId: payment.id,
           type: 'PAYMENT',
         ),
@@ -249,7 +267,7 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
           date: ret.createdAt,
           description: 'مرتجع مبيعات فاتورة ${ret.saleId.substring(0, 8)}',
           debit: 0,
-          credit: ret.amountReturned,
+          credit: ret.amountReturned.toDouble(),
           referenceId: ret.id,
           type: 'RETURN',
         ),
@@ -351,8 +369,8 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
           phone: Value(phone),
           isQuickCustomer: const Value(true),
           createdFromPOS: const Value(true),
-          creditLimit: const Value(0.0),
-          balance: const Value(0.0),
+          creditLimit: Value(Decimal.zero),
+          balance: Value(Decimal.zero),
           isActive: const Value(true),
         ),
       );

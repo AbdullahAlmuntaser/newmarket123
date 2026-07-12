@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/core/events/app_events.dart';
-import 'package:supermarket/core/services/event_bus_service.dart';
+import 'package:supermarket/core/services/transaction_engine.dart';
 import 'package:supermarket/injection_container.dart';
-import 'package:uuid/uuid.dart';
-import 'package:drift/drift.dart' as drift;
 import 'package:go_router/go_router.dart';
 
 class AddSupplierPaymentPage extends StatefulWidget {
@@ -146,31 +143,15 @@ class _AddSupplierPaymentPageState extends State<AddSupplierPaymentPage> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSaving = true);
-    final db = Provider.of<AppDatabase>(context, listen: false);
-    final paymentId = const Uuid().v4();
     final amount = double.parse(_amountController.text);
 
     try {
-      // 1. Record payment in database
-      await db.into(db.supplierPayments).insert(
-            SupplierPaymentsCompanion.insert(
-              id: drift.Value(paymentId),
-              supplierId: _supplier!.id,
-              amount: amount,
-              paymentDate: drift.Value(_selectedDate),
-              syncStatus: const drift.Value(1),
-            ),
-          );
-
-      // 2. Fire event for accounting
-      sl<EventBusService>().fire(
-        SupplierPaymentEvent(
-          supplierId: _supplier!.id,
-          amount: amount,
-          paymentMethod: 'cash',
-          paymentId: paymentId,
-          note: _noteController.text,
-        ),
+      await sl<TransactionEngine>().postSupplierPayment(
+        supplierId: _supplier!.id,
+        amount: Decimal.parse(amount.toString()),
+        paymentMethod: 'cash',
+        note: _noteController.text,
+        paymentDate: _selectedDate,
       );
 
       if (mounted) {
@@ -186,7 +167,9 @@ class _AddSupplierPaymentPageState extends State<AddSupplierPaymentPage> {
         ).showSnackBar(SnackBar(content: Text('خطأ: $e')));
       }
     } finally {
-      setState(() => _isSaving = false);
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 }

@@ -13,23 +13,7 @@ mixin _$AccountingDaoMixin on DatabaseAccessor<AppDatabase> {
   $ReconciliationsTable get reconciliations => attachedDatabase.reconciliations;
   $AccountingPeriodsTable get accountingPeriods =>
       attachedDatabase.accountingPeriods;
+  $AccountTransactionsTable get accountTransactions =>
+      attachedDatabase.accountTransactions;
+  $SyncQueueTable get syncQueue => attachedDatabase.syncQueue;
 }
-
-// **************************************************************************
-// JsonSerializableGenerator
-// **************************************************************************
-
-TrialBalanceItem _$TrialBalanceItemFromJson(Map<String, dynamic> json) =>
-    TrialBalanceItem(
-      const GLAccountConverter()
-          .fromJson(json['account'] as Map<String, dynamic>),
-      (json['totalDebit'] as num).toDouble(),
-      (json['totalCredit'] as num).toDouble(),
-    );
-
-Map<String, dynamic> _$TrialBalanceItemToJson(TrialBalanceItem instance) =>
-    <String, dynamic>{
-      'account': const GLAccountConverter().toJson(instance.account),
-      'totalDebit': instance.totalDebit,
-      'totalCredit': instance.totalCredit,
-    };

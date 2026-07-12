@@ -97,3 +97,52 @@ class SelectPriceList extends PosEvent {
 class ClearCart extends PosEvent {}
 
 class RefreshPricesEvent extends PosEvent {}
+
+// ====== RETURN EVENTS ======
+
+class ToggleReturnMode extends PosEvent {
+  final bool isReturnMode;
+  const ToggleReturnMode(this.isReturnMode);
+}
+
+class LookupOriginalSale extends PosEvent {
+  final String saleReference;
+  const LookupOriginalSale(this.saleReference);
+}
+
+class AddReturnItem extends PosEvent {
+  final String productId;
+  final String? batchId;
+  final Decimal quantity;
+  final Decimal unitPrice;
+  final String reason;
+  const AddReturnItem({
+    required this.productId,
+    this.batchId,
+    required this.quantity,
+    required this.unitPrice,
+    this.reason = '',
+  });
+}
+
+class RemoveReturnItem extends PosEvent {
+  final String productId;
+  const RemoveReturnItem(this.productId);
+}
+
+class ProcessReturn extends PosEvent {
+  final String originalSaleId;
+  final String? customerId;
+  const ProcessReturn(this.originalSaleId, {this.customerId});
+}
+
+class ClearReturn extends PosEvent {}
+
+class HoldSale extends PosEvent {}
+
+class RecallSale extends PosEvent {
+  final int holdIndex;
+  const RecallSale(this.holdIndex);
+  @override
+  List<Object?> get props => [holdIndex];
+}

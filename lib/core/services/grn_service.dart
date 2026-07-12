@@ -19,6 +19,17 @@ class GrnService {
     String? notes,
     String? userId,
   }) async {
+    // Check accounting period before any writes
+    final openPeriod = await (db.select(db.accountingPeriods)
+          ..where((p) => p.isClosed.equals(false))
+          ..where((p) => p.startDate.isSmallerOrEqual(Variable(DateTime.now())))
+          ..where((p) => p.endDate.isBiggerOrEqual(Variable(DateTime.now()))))
+        .get()
+        .then((rows) => rows.isEmpty ? null : rows.first);
+    if (openPeriod == null) {
+      throw Exception('الفترة المحاسبية مغلقة. لا يمكن إنشاء إذن استلام.');
+    }
+
     return await db.transaction(() async {
       final purchase = await (db.select(db.purchases)
             ..where((p) => p.id.equals(purchaseId)))
@@ -46,27 +57,27 @@ class GrnService {
             ),
           );
 
-      final landedCosts =
+      final Decimal landedCosts =
           purchase.landedCosts + purchase.shippingCost + purchase.otherExpenses;
-      double itemsSubtotal = 0;
+      Decimal itemsSubtotal = Decimal.zero;
       for (var item in purchaseItems) {
         itemsSubtotal += item.quantity * item.price;
       }
 
       for (var item in purchaseItems) {
         final String productId = item.productId;
-        final double qty = item.quantity;
-        final double unitFactor = item.unitFactor;
-        final double qtyInBaseUnit = qty * unitFactor;
+        final Decimal qty = item.quantity;
+        final Decimal unitFactor = item.unitFactor;
+        final Decimal qtyInBaseUnit = qty * unitFactor;
 
-        double landedCostPerUnit = 0;
-        if (landedCosts > 0 && itemsSubtotal > 0) {
-          final double itemValue = qty * item.price;
-          final double proportion = itemValue / itemsSubtotal;
-          landedCostPerUnit = (landedCosts * proportion) / qty;
+        Decimal landedCostPerUnit = Decimal.zero;
+        if (landedCosts > Decimal.zero && itemsSubtotal > Decimal.zero) {
+          final Decimal itemValue = qty * item.price;
+          final Decimal proportion = (itemValue / itemsSubtotal).toDecimal();
+          landedCostPerUnit = (landedCosts * proportion / qty).toDecimal();
         }
 
-        final double unitCost = item.price + landedCostPerUnit;
+        final Decimal unitCost = item.price + landedCostPerUnit;
 
         final String batchId = const Uuid().v4();
         await db.into(db.productBatches).insert(
@@ -99,7 +110,7 @@ class GrnService {
                 productId: productId,
                 warehouseId: warehouseId,
                 batchId: Value(batchId),
-                quantity: qtyInBaseUnit,
+                quantity: Value(qtyInBaseUnit),
                 type: 'PURCHASE',
                 referenceId: grnId,
               ),
@@ -109,7 +120,7 @@ class GrnService {
               GoodReceivedNoteItemsCompanion.insert(
                 grnId: grnId,
                 productId: productId,
-                quantity: qty,
+                quantity: Value(qty),
                 batchNumber: Value(item.batchNumber),
                 expiryDate: Value(item.expiryDate),
               ),
@@ -174,7 +185,7 @@ class GrnService {
             ..where((i) => i.grnId.equals(grn.id)))
           .get();
 
-      double totalQty = 0;
+      Decimal totalQty = Decimal.zero;
       for (var item in items) {
         totalQty += item.quantity;
       }
@@ -184,7 +195,7 @@ class GrnService {
         grnNumber: grn.grnNumber,
         warehouseName: warehouse?.name ?? 'Unknown',
         receivedDate: grn.receivedDate,
-        totalQuantity: totalQty,
+        totalQuantity: totalQty.toDouble(),
         status: grn.status,
         notes: grn.notes,
       ));
@@ -218,16 +229,16 @@ class GrnService {
       if (batch.expiryDate != null &&
           batch.expiryDate!.isAfter(now) &&
           batch.expiryDate!.isBefore(threshold) &&
-          batch.quantity > 0) {
+          batch.quantity > Decimal.zero) {
         final daysUntilExpiry = batch.expiryDate!.difference(now).inDays;
         result.add(ExpiringBatchReport(
           batchNumber: batch.batchNumber,
           productName: product.name,
           warehouseName: warehouse?.name ?? 'Unknown',
-          quantity: batch.quantity,
+          quantity: batch.quantity.toDouble(),
           expiryDate: batch.expiryDate!,
           daysUntilExpiry: daysUntilExpiry,
-          costValue: batch.quantity * batch.costPrice,
+          costValue: (batch.quantity * batch.costPrice).toDouble(),
         ));
       }
     }

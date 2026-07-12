@@ -12,7 +12,8 @@ class PricingLogic {
     }
 
     final sortedItems = List<Map<String, dynamic>>.from(priceListItems)
-      ..sort((a, b) => (b['minQuantity'] as num).compareTo(a['minQuantity'] as num));
+      ..sort((a, b) =>
+          (b['minQuantity'] as num).compareTo(a['minQuantity'] as num));
 
     for (var item in sortedItems) {
       if (quantity >= Decimal.parse((item['minQuantity'] as num).toString())) {
@@ -23,7 +24,8 @@ class PricingLogic {
     return Decimal.parse(defaultPrice.toString());
   }
 
-  static Decimal applyPercentageDiscount(Decimal price, double discountPercent) {
+  static Decimal applyPercentageDiscount(
+      Decimal price, double discountPercent) {
     final discountFactor = Decimal.parse((discountPercent / 100).toString());
     return price - (price * discountFactor);
   }
@@ -46,13 +48,16 @@ class PricingLogic {
 
     if (promotions != null) {
       for (var promo in promotions) {
-        final minQty = Decimal.parse((promo['minQuantity'] as num?)?.toString() ?? '0');
+        final minQty =
+            Decimal.parse((promo['minQuantity'] as num?)?.toString() ?? '0');
         if (quantity < minQty) continue;
 
         if (promo['type'] == 'PERCENTAGE_DISCOUNT') {
-          finalPrice = applyPercentageDiscount(finalPrice, (promo['value'] as num).toDouble());
+          finalPrice = applyPercentageDiscount(
+              finalPrice, (promo['value'] as num).toDouble());
         } else if (promo['type'] == 'FIXED_DISCOUNT') {
-          finalPrice = applyFixedDiscount(finalPrice, Decimal.parse(promo['value'].toString()));
+          finalPrice = applyFixedDiscount(
+              finalPrice, Decimal.parse(promo['value'].toString()));
         }
       }
     }

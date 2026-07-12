@@ -5,6 +5,8 @@ import 'package:drift/drift.dart' as drift;
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:supermarket/presentation/widgets/money_form_field.dart';
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
 
 class ChecksPage extends StatefulWidget {
   const ChecksPage({super.key});
@@ -70,14 +72,14 @@ class _ChecksPageState extends State<ChecksPage> {
     if (!_formKey.currentState!.validate()) return;
 
     final db = context.read<AppDatabase>();
-    final amount = double.tryParse(_amountController.text) ?? 0.0;
+    final amount = MoneyFormField.valueOf(_amountController);
 
     final check = ChecksCompanion.insert(
       id: drift.Value(const Uuid().v4()),
       checkNumber: _checkNumberController.text,
       bankName: _bankNameController.text,
       dueDate: _selectedDueDate!,
-      amount: amount,
+      amount: drift.Value(Decimal.parse(amount.toString())),
       type: _selectedType,
       status: drift.Value(_selectedStatus),
       partnerId: drift.Value(_selectedPartnerId),
@@ -88,9 +90,7 @@ class _ChecksPageState extends State<ChecksPage> {
     await db.into(db.checks).insert(check);
     _clearForm();
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('تم حفظ الشيك بنجاح')));
+      AppSnackBar.success(context, 'تم حفظ الشيك بنجاح');
     }
   }
 
@@ -153,16 +153,11 @@ class _ChecksPageState extends State<ChecksPage> {
                       validator: (v) => v!.isEmpty ? 'مطلوب' : null,
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    MoneyFormField(
                       controller: _amountController,
-                      decoration: const InputDecoration(
-                        labelText: 'المبلغ',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: (v) => double.tryParse(v ?? '') == null
-                          ? 'مبلغ غير صحيح'
-                          : null,
+                      label: 'المبلغ',
+                      required: true,
+                      allowZero: false,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -322,18 +317,116 @@ class _ChecksPageState extends State<ChecksPage> {
     Check check,
     String newStatus,
   ) async {
-    final accountingService = context.read<AccountingService>();
-
     await (db.update(db.checks)..where((c) => c.id.equals(check.id))).write(
       ChecksCompanion(status: drift.Value(newStatus)),
     );
 
-    final updatedCheck = check.copyWith(status: newStatus);
-
     if (newStatus == 'COLLECTED') {
-      await accountingService.recordCheckCollected(updatedCheck);
+      // Record check collection
+      final entryId = const Uuid().v4();
+      final cashAccount =
+          await db.accountingDao.getAccountByCode(AccountingService.codeCash);
+      final partnerAccount = check.type == 'RECEIVED'
+          ? await db.accountingDao
+              .getAccountByCode(AccountingService.codeAccountsReceivable)
+          : await db.accountingDao
+              .getAccountByCode(AccountingService.codeAccountsPayable);
+      if (cashAccount != null && partnerAccount != null) {
+        final lines = check.type == 'RECEIVED'
+            ? [
+                GLLinesCompanion.insert(
+                  entryId: entryId,
+                  accountId: cashAccount.id,
+                  debit: drift.Value(Decimal.parse(check.amount.toString())),
+                  credit: drift.Value(Decimal.zero),
+                ),
+                GLLinesCompanion.insert(
+                  entryId: entryId,
+                  accountId: partnerAccount.id,
+                  debit: drift.Value(Decimal.zero),
+                  credit: drift.Value(Decimal.parse(check.amount.toString())),
+                ),
+              ]
+            : [
+                GLLinesCompanion.insert(
+                  entryId: entryId,
+                  accountId: partnerAccount.id,
+                  debit: drift.Value(Decimal.parse(check.amount.toString())),
+                  credit: drift.Value(Decimal.zero),
+                ),
+                GLLinesCompanion.insert(
+                  entryId: entryId,
+                  accountId: cashAccount.id,
+                  debit: drift.Value(Decimal.zero),
+                  credit: drift.Value(Decimal.parse(check.amount.toString())),
+                ),
+              ];
+        await db.accountingDao.createEntry(
+          GLEntriesCompanion.insert(
+            id: drift.Value(entryId),
+            description: 'تحصيل شيك: ${check.checkNumber}',
+            date: drift.Value(DateTime.now()),
+            referenceType: const drift.Value('CHECK'),
+            referenceId: drift.Value(check.id),
+            status: const drift.Value('POSTED'),
+            postedAt: drift.Value(DateTime.now()),
+          ),
+          lines,
+        );
+      }
     } else if (newStatus == 'BOUNCED') {
-      await accountingService.recordCheckBounced(updatedCheck);
+      // Record check bounce reversal
+      final entryId = const Uuid().v4();
+      final cashAccount =
+          await db.accountingDao.getAccountByCode(AccountingService.codeCash);
+      final partnerAccount = check.type == 'RECEIVED'
+          ? await db.accountingDao
+              .getAccountByCode(AccountingService.codeAccountsReceivable)
+          : await db.accountingDao
+              .getAccountByCode(AccountingService.codeAccountsPayable);
+      if (cashAccount != null && partnerAccount != null) {
+        final lines = check.type == 'RECEIVED'
+            ? [
+                GLLinesCompanion.insert(
+                  entryId: entryId,
+                  accountId: partnerAccount.id,
+                  debit: drift.Value(Decimal.parse(check.amount.toString())),
+                  credit: drift.Value(Decimal.zero),
+                ),
+                GLLinesCompanion.insert(
+                  entryId: entryId,
+                  accountId: cashAccount.id,
+                  debit: drift.Value(Decimal.zero),
+                  credit: drift.Value(Decimal.parse(check.amount.toString())),
+                ),
+              ]
+            : [
+                GLLinesCompanion.insert(
+                  entryId: entryId,
+                  accountId: cashAccount.id,
+                  debit: drift.Value(Decimal.parse(check.amount.toString())),
+                  credit: drift.Value(Decimal.zero),
+                ),
+                GLLinesCompanion.insert(
+                  entryId: entryId,
+                  accountId: partnerAccount.id,
+                  debit: drift.Value(Decimal.zero),
+                  credit: drift.Value(Decimal.parse(check.amount.toString())),
+                ),
+              ];
+        await db.accountingDao.createEntry(
+          GLEntriesCompanion.insert(
+            id: drift.Value(entryId),
+            description: 'ارتداد شيك: ${check.checkNumber}',
+            date: drift.Value(DateTime.now()),
+            referenceType: const drift.Value('CHECK'),
+            referenceId: drift.Value(check.id),
+            status: const drift.Value('POSTED'),
+            postedAt: drift.Value(DateTime.now()),
+          ),
+          lines,
+        );
+      }
       // تحديث رصيد العميل/المورد عند الارتداد
       if (check.type == 'RECEIVED' && check.partnerId != null) {
         final customer = await (db.select(
@@ -346,7 +439,8 @@ class _ChecksPageState extends State<ChecksPage> {
           )..where((c) => c.id.equals(customer.id)))
               .write(
             CustomersCompanion(
-              balance: drift.Value(customer.balance + check.amount),
+              balance: drift.Value(
+                  customer.balance + Decimal.parse(check.amount.toString())),
             ),
           );
         }
@@ -361,7 +455,8 @@ class _ChecksPageState extends State<ChecksPage> {
           )..where((s) => s.id.equals(supplier.id)))
               .write(
             SuppliersCompanion(
-              balance: drift.Value(supplier.balance + check.amount),
+              balance: drift.Value(
+                  supplier.balance + Decimal.parse(check.amount.toString())),
             ),
           );
         }
@@ -369,9 +464,7 @@ class _ChecksPageState extends State<ChecksPage> {
     }
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('تم تحديث حالة الشيك إلى $newStatus')),
-      );
+      AppSnackBar.success(context, 'تم تحديث حالة الشيك إلى $newStatus');
     }
   }
 }

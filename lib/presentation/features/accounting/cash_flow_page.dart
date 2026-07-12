@@ -1,6 +1,7 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:supermarket/core/models/accounting/cash_flow_data.dart';
 import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
@@ -166,7 +167,7 @@ class _CashFlowPageState extends State<CashFlowPage> {
 
   Widget _buildRow(
     String label,
-    double amount,
+    Decimal amount,
     NumberFormat currency, {
     bool isBold = false,
     bool hasUnderline = false,
@@ -192,12 +193,12 @@ class _CashFlowPageState extends State<CashFlowPage> {
                   )
                 : null,
             child: Text(
-              currency.format(amount),
+              currency.format(amount.toDouble()),
               style: TextStyle(
                 fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-                color: amount < 0
+                color: amount < Decimal.zero
                     ? Colors.red
-                    : (amount > 0 ? Colors.green : Colors.black),
+                    : (amount > Decimal.zero ? Colors.green : Colors.black),
                 fontFamily: 'monospace',
               ),
             ),

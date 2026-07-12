@@ -45,7 +45,7 @@ class StockTransferProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void addTransferItem(ProductBatch batch, double quantity) {
+  void addTransferItem(ProductBatch batch, Decimal quantity) {
     final existingIndex = _transferItems.indexWhere(
       (item) => item.batchId == batch.id,
     );

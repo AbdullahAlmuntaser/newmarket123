@@ -2,9 +2,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/services/security_service.dart';
 import 'package:uuid/uuid.dart';
 
 void main() {
+  setUpAll(() {
+    SecurityService.useFakeKeyForTesting = true;
+  });
+
   test('Debug FK should throw SqliteException', () async {
     final db = AppDatabase(NativeDatabase.memory());
     final bId = const Uuid().v4();
@@ -33,7 +38,7 @@ void main() {
             GLLinesCompanion.insert(
               entryId: entryId,
               accountId: 'NONE', // This should fail!
-              debit: const Value(100.0),
+              debit: Value(Decimal.parse('100')),
               branchId: Value(bId),
             ),
           ),

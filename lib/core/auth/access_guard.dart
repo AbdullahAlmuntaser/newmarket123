@@ -36,6 +36,9 @@ class AccessGuard {
   static bool _isManagerArea(String location) {
     return location.startsWith('/reports') ||
         location.startsWith('/purchases') ||
+        location.startsWith('/approvals') ||
+        location.startsWith('/loyalty') ||
+        location.startsWith('/promotions') ||
         location.startsWith('/inventory') ||
         location.startsWith('/manufacturing') ||
         location.startsWith('/hr') ||

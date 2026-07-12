@@ -1,9 +1,10 @@
 import 'package:drift/drift.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/core/constants/app_enums.dart';
+import 'package:supermarket/core/constants/account_types.dart';
+import 'package:supermarket/core/constants/app_enums.dart' hide AccountType;
+import 'package:supermarket/core/services/app_config_service.dart';
 import 'package:supermarket/core/services/audit_service.dart';
-import 'package:supermarket/core/services/accounting_service.dart';
-import 'package:supermarket/core/services/event_bus_service.dart';
+import 'package:supermarket/core/services/financial_report_service.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
 
 enum ClosingType { daily, monthly, yearly }
@@ -25,7 +26,7 @@ class ClosingResult {
   final String? error;
   final String message;
   final String? journalEntryId;
-  final double? netIncome;
+  final Decimal? netIncome;
 
   ClosingResult({
     required this.success,
@@ -38,12 +39,11 @@ class ClosingResult {
 
 class FinancialClosingService {
   final AppDatabase db;
+  final FinancialReportService reportService;
   late final AuditService _auditService;
-  late final AccountingService _accountingService;
 
-  FinancialClosingService(this.db) {
+  FinancialClosingService(this.db, this.reportService) {
     _auditService = AuditService(db);
-    _accountingService = AccountingService(db, EventBusService());
   }
 
   Future<ClosingValidation> validateBeforeMonthlyClosing(
@@ -116,13 +116,13 @@ class FinancialClosingService {
     )..where((p) => p.id.equals(periodId)))
         .getSingle();
 
-    final incomeStatement = await _accountingService.getIncomeStatement(
+    final incomeStatement = await reportService.getIncomeStatement(
       startDate: period.startDate,
       endDate: period.endDate,
     );
 
     await _createClosingEntry(
-      netIncome: incomeStatement.netIncome,
+      netIncome: Decimal.parse(incomeStatement.netIncome.toString()),
       periodEndDate: period.endDate,
     );
 
@@ -163,13 +163,13 @@ class FinancialClosingService {
     )..where((p) => p.id.equals(periodId)))
         .getSingle();
 
-    final incomeStatement = await _accountingService.getIncomeStatement(
+    final incomeStatement = await reportService.getIncomeStatement(
       startDate: period.startDate,
       endDate: period.endDate,
     );
 
     await _createClosingEntry(
-      netIncome: incomeStatement.netIncome,
+      netIncome: Decimal.parse(incomeStatement.netIncome.toString()),
       periodEndDate: period.endDate,
     );
 
@@ -192,66 +192,70 @@ class FinancialClosingService {
   }
 
   Future<String> _createClosingEntry({
-    required double netIncome,
+    required Decimal netIncome,
     required DateTime periodEndDate,
   }) async {
-    if (netIncome == 0) return '';
+    if (netIncome == Decimal.zero) return '';
 
     final entryId = const Uuid().v4();
     final retainedEarnings = await db.accountingDao.getAccountByCode('3010');
 
     if (retainedEarnings == null) return '';
 
-    final revenues = await db.accountingDao.getAllAccounts();
-    final revenueAccounts = revenues.where(
+    final allAccounts = await db.accountingDao.getAllAccounts();
+    final revenueAccounts = allAccounts.where(
       (a) => a.type == 'REVENUE' && !a.isHeader,
     );
-    final expenseAccounts = revenues.where(
+    final expenseAccounts = allAccounts.where(
       (a) => a.type == 'EXPENSE' && !a.isHeader,
     );
 
     final lines = <GLLinesCompanion>[];
 
     for (var acc in revenueAccounts) {
-      final balance = await db.accountingDao.getAccountBalanceAsOfDate(
+      final Decimal rawBalance =
+          await db.accountingDao.getAccountBalanceAsOfDate(
         acc.id,
         periodEndDate,
       );
-      if (balance > 0) {
+      final Decimal balance = Decimal.parse(rawBalance.toString());
+      if (balance > Decimal.zero) {
         lines.add(
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: acc.id,
             debit: Value(balance),
-            credit: const Value(0.0),
+            credit: Value(Decimal.zero),
           ),
         );
       }
     }
 
     for (var acc in expenseAccounts) {
-      final balance = await db.accountingDao.getAccountBalanceAsOfDate(
+      final Decimal rawBalance =
+          await db.accountingDao.getAccountBalanceAsOfDate(
         acc.id,
         periodEndDate,
       );
-      if (balance > 0) {
+      final Decimal balance = Decimal.parse(rawBalance.toString());
+      if (balance > Decimal.zero) {
         lines.add(
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: acc.id,
-            debit: const Value(0.0),
+            debit: Value(Decimal.zero),
             credit: Value(balance),
           ),
         );
       }
     }
 
-    if (netIncome > 0) {
+    if (netIncome > Decimal.zero) {
       lines.add(
         GLLinesCompanion.insert(
           entryId: entryId,
           accountId: retainedEarnings.id,
-          debit: const Value(0.0),
+          debit: Value(Decimal.zero),
           credit: Value(netIncome),
         ),
       );
@@ -261,7 +265,7 @@ class FinancialClosingService {
           entryId: entryId,
           accountId: retainedEarnings.id,
           debit: Value(netIncome.abs()),
-          credit: const Value(0.0),
+          credit: Value(Decimal.zero),
         ),
       );
     }
@@ -283,6 +287,120 @@ class FinancialClosingService {
     return entryId;
   }
 
+  Future<void> generateOpeningBalances({
+    required int newFiscalYear,
+    required String userId,
+  }) async {
+    final dao = db.accountingDao;
+    final previousYear = newFiscalYear - 1;
+
+    final prevYearPeriod = await (db.select(db.accountingPeriods)
+          ..where((p) => p.fiscalYear.equals(previousYear))
+          ..orderBy([
+            (t) =>
+                OrderingTerm(expression: t.endDate, mode: OrderingMode.desc)
+          ])
+          ..limit(1))
+        .getSingleOrNull();
+
+    if (prevYearPeriod == null) {
+      throw Exception(
+          'Previous fiscal year $previousYear not found or not closed.');
+    }
+
+    final allAccounts = await dao.getAllAccounts();
+    final balanceSheetAccounts = allAccounts.where((a) =>
+        a.type == AccountType.asset ||
+        a.type == AccountType.liability ||
+        a.type == AccountType.equity);
+
+    final entryId = const Uuid().v4();
+    final entry = GLEntriesCompanion.insert(
+      id: Value(entryId),
+      description: 'أرصدة افتتاحية للسنة المالية $newFiscalYear',
+      date: Value(DateTime(newFiscalYear, 1, 1)),
+      referenceType: const Value('OPENING_BALANCE'),
+      status: const Value('POSTED'),
+      postedAt: Value(DateTime.now()),
+      branchId: Value(await _getDefaultBranchId()),
+    );
+
+    List<GLLinesCompanion> lines = [];
+
+    for (var acc in balanceSheetAccounts) {
+      final Decimal balance = Decimal.parse(
+          (await dao.getAccountBalanceAsOfDate(acc.id, prevYearPeriod.endDate))
+              .toString());
+
+      if (balance == Decimal.zero) continue;
+
+      if (acc.type == AccountType.asset) {
+        if (balance > Decimal.zero) {
+          lines.add(GLLinesCompanion.insert(
+            entryId: entryId,
+            accountId: acc.id,
+            debit: Value(balance),
+            credit: Value(Decimal.zero),
+            memo: const Value('Opening Balance'),
+            branchId: Value(await _getDefaultBranchId()),
+          ));
+        } else if (balance < Decimal.zero) {
+          lines.add(GLLinesCompanion.insert(
+            entryId: entryId,
+            accountId: acc.id,
+            debit: Value(Decimal.zero),
+            credit: Value(balance.abs()),
+            memo: const Value('Opening Balance'),
+            branchId: Value(await _getDefaultBranchId()),
+          ));
+        }
+      } else {
+        if (balance > Decimal.zero) {
+          lines.add(GLLinesCompanion.insert(
+            entryId: entryId,
+            accountId: acc.id,
+            debit: Value(Decimal.zero),
+            credit: Value(balance),
+            memo: const Value('Opening Balance'),
+            branchId: Value(await _getDefaultBranchId()),
+          ));
+        } else if (balance < Decimal.zero) {
+          lines.add(GLLinesCompanion.insert(
+            entryId: entryId,
+            accountId: acc.id,
+            debit: Value(balance.abs()),
+            credit: Value(Decimal.zero),
+            memo: const Value('Opening Balance'),
+            branchId: Value(await _getDefaultBranchId()),
+          ));
+        }
+      }
+    }
+
+    if (lines.isNotEmpty) {
+      await dao.createEntry(entry, lines);
+    }
+  }
+
+  Future<void> closeFinancialYear(DateTime date) async {
+    final fiscalYear = date.year;
+
+    await db.transaction(() async {
+      await (db.update(db.accountingPeriods)
+            ..where((p) => p.fiscalYear.equals(fiscalYear)))
+          .write(const AccountingPeriodsCompanion(
+              isClosed: Value(true), status: Value('CLOSED')));
+
+      await generateOpeningBalances(
+          newFiscalYear: fiscalYear + 1, userId: 'SYSTEM');
+    });
+  }
+
+  Future<String> _getDefaultBranchId() async {
+    final configService = AppConfigService(db);
+    return await configService.getDefaultBranchId();
+  }
+
   /// Creates an opening entry for a new period based on previous balances
   Future<String> createOpeningEntry({
     required String newPeriodId,
@@ -300,20 +418,22 @@ class FinancialClosingService {
 
     final lines = <GLLinesCompanion>[];
     for (var acc in permanentAccounts) {
-      final balance = await db.accountingDao.getAccountBalanceAsOfDate(
+      final Decimal rawBalance =
+          await db.accountingDao.getAccountBalanceAsOfDate(
         acc.id,
         openingDate.subtract(const Duration(seconds: 1)),
       );
+      final Decimal balance = Decimal.parse(rawBalance.toString());
 
-      if (balance == 0) continue;
+      if (balance == Decimal.zero) continue;
 
-      if (balance > 0) {
+      if (balance > Decimal.zero) {
         lines.add(
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: acc.id,
             debit: Value(balance),
-            credit: const Value(0.0),
+            credit: Value(Decimal.zero),
           ),
         );
       } else {
@@ -321,7 +441,7 @@ class FinancialClosingService {
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: acc.id,
-            debit: const Value(0.0),
+            debit: Value(Decimal.zero),
             credit: Value(balance.abs()),
           ),
         );
@@ -420,8 +540,8 @@ class FinancialClosingService {
   Future<ClosingResult> closeDailyShift({
     required String shiftId,
     required String userId,
-    required double expectedCash,
-    required double actualCash,
+    required Decimal expectedCash,
+    required Decimal actualCash,
     String? note,
   }) async {
     final shift = await (db.select(
@@ -449,7 +569,7 @@ class FinancialClosingService {
 
     final difference = actualCash - expectedCash;
 
-    if (note != null || difference.abs() > 0.01) {
+    if (note != null || difference.abs() > Decimal.parse('0.01')) {
       await _recordShiftDifference(
         shiftId: shiftId,
         difference: difference,
@@ -461,8 +581,8 @@ class FinancialClosingService {
     await (db.update(db.shifts)..where((s) => s.id.equals(shiftId))).write(
       ShiftsCompanion(
         isOpen: const Value(false),
-        closingCash: Value(actualCash),
-        expectedCash: Value(expectedCash),
+        closingCash: Value<Decimal?>(actualCash),
+        expectedCash: Value<Decimal?>(expectedCash),
         endTime: Value(DateTime.now()),
       ),
     );
@@ -483,11 +603,11 @@ class FinancialClosingService {
 
   Future<void> _recordShiftDifference({
     required String shiftId,
-    required double difference,
+    required Decimal difference,
     required String note,
     required String userId,
   }) async {
-    if (difference == 0) return;
+    if (difference == Decimal.zero) return;
 
     final cashAccount = await db.accountingDao.getAccountByCode('1010');
     final diffAccount = await db.accountingDao.getAccountByCode('5020');
@@ -502,7 +622,7 @@ class FinancialClosingService {
       status: const Value('POSTED'),
     );
 
-    final lines = difference > 0
+    final lines = difference > Decimal.zero
         ? [
             GLLinesCompanion.insert(
               entryId: entryId,
@@ -564,6 +684,7 @@ class FinancialClosingService {
           AccountingPeriodsCompanion.insert(
             id: Value(periodId),
             name: name,
+            fiscalYear: startDate.year,
             startDate: startDate,
             endDate: endDate,
             isClosed: const Value(false),

@@ -56,7 +56,7 @@ class FinancialControlService {
       errors.add('الفاتورة ملغاة');
     }
 
-    if (sale.total <= 0) {
+    if (sale.total <= Decimal.zero) {
       errors.add('إجمالي الفاتورة يجب أن يكون أكبر من صفر');
     }
 
@@ -69,10 +69,10 @@ class FinancialControlService {
     }
 
     for (var item in items) {
-      if (item.quantity <= 0) {
+      if (item.quantity <= Decimal.zero) {
         errors.add('الكمية يجب أن تكون أكبر من صفر للمنتج');
       }
-      if (item.price < 0) {
+      if (item.price < Decimal.zero) {
         errors.add('السعر لا يمكن أن يكون سالب');
       }
     }
@@ -99,7 +99,7 @@ class FinancialControlService {
       errors.add('الفاتورة ملغاة');
     }
 
-    if (purchase.total <= 0) {
+    if (purchase.total <= Decimal.zero) {
       errors.add('إجمالي الفاتورة يجب أن يكون أكبر من صفر');
     }
 
@@ -143,8 +143,8 @@ class FinancialControlService {
     double totalCredit = 0;
 
     for (var line in lines) {
-      totalDebit += line.debit;
-      totalCredit += line.credit;
+      totalDebit += line.debit.toDouble();
+      totalCredit += line.credit.toDouble();
     }
 
     final difference = (totalDebit - totalCredit).abs();
@@ -192,11 +192,12 @@ class FinancialControlService {
     try {
       final valuation = await costingService!.getInventoryValuation(productId);
 
-      if (valuation.totalQuantity < 0) {
+      if (valuation.totalQuantity < Decimal.zero) {
         errors.add('الكمية السالبة غير مسموحة: ${valuation.totalQuantity}');
       }
 
-      if (valuation.totalQuantity == 0 && valuation.totalValue != 0) {
+      if (valuation.totalQuantity == Decimal.zero &&
+          valuation.totalValue != Decimal.zero) {
         errors.add(
             'تناقض في تقييم المخزون - الكمية صفر لكن القيمة: ${valuation.totalValue}');
       }
@@ -345,7 +346,7 @@ class FinancialControlService {
               InventoryTransactionsCompanion.insert(
                 productId: item.productId,
                 warehouseId: '',
-                quantity: item.quantity * item.unitFactor,
+                quantity: Value(item.quantity * item.unitFactor),
                 type: 'RETURN',
                 referenceId: saleId,
               ),
@@ -357,7 +358,7 @@ class FinancialControlService {
         description: 'إلغاء فاتورة مبيعات #${sale.id.substring(0, 8)}',
         referenceType: 'SALE_VOID',
         referenceId: saleId,
-        amount: sale.total,
+        amount: sale.total.toDouble(),
         date: sale.createdAt,
       );
 
@@ -429,7 +430,7 @@ class FinancialControlService {
               InventoryTransactionsCompanion.insert(
                 productId: item.productId,
                 warehouseId: '',
-                quantity: -item.quantity,
+                quantity: Value(-item.quantity),
                 type: 'PURCHASE_RETURN',
                 referenceId: purchaseId,
               ),
@@ -441,7 +442,7 @@ class FinancialControlService {
         description: 'إلغاء فاتورة مشتريات #${purchase.id.substring(0, 8)}',
         referenceType: 'PURCHASE_VOID',
         referenceId: purchaseId,
-        amount: purchase.total,
+        amount: purchase.total.toDouble(),
         date: purchase.date,
         isPurchase: true,
       );
@@ -473,50 +474,63 @@ class FinancialControlService {
     bool isPurchase = false,
   }) async {
     final entryId = const Uuid().v4();
+    List<GLLinesCompanion> reverseLines = [];
 
-    final arAccount = await db.accountingDao.getAccountByCode('1030');
-    final apAccount = await db.accountingDao.getAccountByCode('2010');
-    final revenueAccount = await db.accountingDao.getAccountByCode('4010');
-    final expenseAccount = await db.accountingDao.getAccountByCode('5010');
-    final cashAccount = await db.accountingDao.getAccountByCode('1010');
-
-    if (arAccount == null ||
-        apAccount == null ||
-        revenueAccount == null ||
-        expenseAccount == null ||
-        cashAccount == null) {
-      throw Exception('بعض الحسابات المطلوبة غير موجودة');
+    // Resolve the original entry ID by looking up via reference if not provided
+    String? resolvedOriginalId = originalEntryId;
+    if (resolvedOriginalId == null) {
+      final originalReferenceType = referenceType.replaceAll('_VOID', '');
+      final originalEntries = await (db.select(db.gLEntries)
+            ..where((e) => e.referenceId.equals(referenceId))
+            ..where((e) => e.referenceType.equals(originalReferenceType)))
+          .get();
+      if (originalEntries.isNotEmpty) {
+        for (final originalEntry in originalEntries) {
+          final originalLines = await (db.select(db.gLLines)
+                ..where((l) => l.entryId.equals(originalEntry.id)))
+              .get();
+          for (var line in originalLines) {
+            reverseLines.add(GLLinesCompanion.insert(
+              entryId: entryId,
+              accountId: line.accountId,
+              debit: Value(line.credit),
+              credit: Value(line.debit),
+            ));
+          }
+        }
+      }
+    } else {
+      final originalLines = await (db.select(db.gLLines)
+            ..where((l) => l.entryId.equals(resolvedOriginalId)))
+          .get();
+      for (var line in originalLines) {
+        reverseLines.add(GLLinesCompanion.insert(
+          entryId: entryId,
+          accountId: line.accountId,
+          debit: Value(line.credit),
+          credit: Value(line.debit),
+        ));
+      }
     }
 
-    GLLinesCompanion line1;
-    GLLinesCompanion line2;
-
-    if (isPurchase) {
-      line1 = GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: apAccount.id,
-        debit: Value(amount),
-        credit: const Value(0.0),
-      );
-      line2 = GLLinesCompanion.insert(
+    // Fallback if no original entry found: create simple reversal
+    if (reverseLines.isEmpty) {
+      final cashAccount = await db.accountingDao.getAccountByCode('1010');
+      if (cashAccount == null) {
+        throw Exception('حساب الصندوق غير موجود');
+      }
+      reverseLines.add(GLLinesCompanion.insert(
         entryId: entryId,
         accountId: cashAccount.id,
-        debit: const Value(0.0),
-        credit: Value(amount),
-      );
-    } else {
-      line1 = GLLinesCompanion.insert(
+        debit: Value(Decimal.parse(amount.toString())),
+        credit: Value(Decimal.zero),
+      ));
+      reverseLines.add(GLLinesCompanion.insert(
         entryId: entryId,
         accountId: cashAccount.id,
-        debit: Value(amount),
-        credit: const Value(0.0),
-      );
-      line2 = GLLinesCompanion.insert(
-        entryId: entryId,
-        accountId: arAccount.id,
-        debit: const Value(0.0),
-        credit: Value(amount),
-      );
+        debit: Value(Decimal.zero),
+        credit: Value(Decimal.parse(amount.toString())),
+      ));
     }
 
     final entry = GLEntriesCompanion.insert(
@@ -529,7 +543,7 @@ class FinancialControlService {
       postedAt: Value(DateTime.now()),
     );
 
-    await db.accountingDao.createEntry(entry, [line1, line2]);
+    await db.accountingDao.createEntry(entry, reverseLines);
 
     return entryId;
   }
@@ -600,6 +614,7 @@ class FinancialControlService {
           AccountingPeriodsCompanion.insert(
             id: Value(periodId),
             name: name,
+            fiscalYear: startDate.year,
             startDate: startDate,
             endDate: endDate,
             isClosed: const Value(false),

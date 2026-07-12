@@ -1,36 +1,18 @@
 import 'package:drift/drift.dart';
-import 'package:json_annotation/json_annotation.dart';
+import 'package:supermarket/core/constants/app_enums.dart' as enums;
+import 'package:supermarket/core/models/accounting/account_tree_node.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
+import 'package:supermarket/core/constants/account_types.dart';
+import '../mixins/sync_log_mixin.dart';
 
 part 'accounting_dao.g.dart';
 
-class GLAccountConverter
-    implements JsonConverter<GLAccount, Map<String, dynamic>> {
-  const GLAccountConverter();
-
-  @override
-  GLAccount fromJson(Map<String, dynamic> json) => GLAccount.fromJson(json);
-
-  @override
-  Map<String, dynamic> toJson(GLAccount object) => object.toJson();
-}
-
-class AccountType {
-  static const String asset = 'ASSET';
-  static const String liability = 'LIABILITY';
-  static const String equity = 'EQUITY';
-  static const String revenue = 'REVENUE';
-  static const String expense = 'EXPENSE';
-}
-
-@JsonSerializable(explicitToJson: true)
 class TrialBalanceItem {
-  @GLAccountConverter()
   final GLAccount account;
-  final double totalDebit;
-  final double totalCredit;
+  final Decimal totalDebit;
+  final Decimal totalCredit;
 
-  double get netBalance {
+  Decimal get netBalance {
     if (account.type == AccountType.asset ||
         account.type == AccountType.expense) {
       return totalDebit - totalCredit;
@@ -42,8 +24,17 @@ class TrialBalanceItem {
   TrialBalanceItem(this.account, this.totalDebit, this.totalCredit);
 
   factory TrialBalanceItem.fromJson(Map<String, dynamic> json) =>
-      _$TrialBalanceItemFromJson(json);
-  Map<String, dynamic> toJson() => _$TrialBalanceItemToJson(this);
+      TrialBalanceItem(
+        GLAccount.fromJson(json['account'] as Map<String, dynamic>),
+        Decimal.parse(json['totalDebit'].toString()),
+        Decimal.parse(json['totalCredit'].toString()),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'account': account.toJson(),
+        'totalDebit': totalDebit.toString(),
+        'totalCredit': totalCredit.toString(),
+      };
 }
 
 class GLLineWithAccount {
@@ -53,11 +44,11 @@ class GLLineWithAccount {
 }
 
 class IncomeStatement {
-  final double totalRevenue;
-  final double costOfGoodsSold;
-  final double grossProfit;
-  final double totalExpenses;
-  final double netIncome;
+  final Decimal totalRevenue;
+  final Decimal costOfGoodsSold;
+  final Decimal grossProfit;
+  final Decimal totalExpenses;
+  final Decimal netIncome;
 
   IncomeStatement({
     required this.totalRevenue,
@@ -72,9 +63,9 @@ class BalanceSheet {
   final List<TrialBalanceItem> assets;
   final List<TrialBalanceItem> liabilities;
   final List<TrialBalanceItem> equity;
-  final double totalAssets;
-  final double totalLiabilities;
-  final double totalEquity;
+  final Decimal totalAssets;
+  final Decimal totalLiabilities;
+  final Decimal totalEquity;
 
   BalanceSheet({
     required this.assets,
@@ -94,13 +85,14 @@ class BalanceSheet {
     GLLines,
     Reconciliations,
     AccountingPeriods,
+    AccountTransactions,
+    SyncQueue,
   ],
 )
 class AccountingDao extends DatabaseAccessor<AppDatabase>
-    with _$AccountingDaoMixin {
+    with _$AccountingDaoMixin, SyncLogMixin {
   AccountingDao(super.db);
 
-  // New: Check if a date is within a closed accounting period
   Future<bool> isDateInClosedPeriod(DateTime date) async {
     final query = select(db.accountingPeriods)
       ..where((p) =>
@@ -140,46 +132,82 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
   Future<GLAccount?> getAccountById(String id) =>
       (select(gLAccounts)..where((t) => t.id.equals(id))).getSingleOrNull();
 
-  Future<int> createAccount(GLAccountsCompanion account) =>
-      into(gLAccounts).insert(account);
+  Future<String> createAccount(GLAccountsCompanion account) async {
+    final row = await into(gLAccounts).insertReturning(account);
+    await logSyncOperation(
+      table: 'gl_accounts',
+      entityId: row.id,
+      operation: 'CREATE',
+    );
+    return row.id;
+  }
 
-  Future<bool> updateAccount(GLAccount account) =>
-      update(gLAccounts).replace(account);
+  Future<bool> updateAccount(GLAccount account) async {
+    final result = await update(gLAccounts).replace(account);
+    if (result) {
+      await logSyncOperation(
+        table: 'gl_accounts',
+        entityId: account.id,
+        operation: 'UPDATE',
+      );
+    }
+    return result;
+  }
 
-  // New: Get accounts by type
   Future<List<GLAccount>> getAccountsByType(String type) =>
-      (select(gLAccounts)..where((tbl) => tbl.type.equals(type))).get();
+      (select(gLAccounts)..where((tbl) => tbl.accountType.equals(enums.AccountType.values.byName(type.toLowerCase()).index))).get();
 
   // --- Cost Centers ---
   Future<List<CostCenter>> getAllCostCenters() => (select(costCenters)).get();
   Stream<List<CostCenter>> watchCostCenters() => (select(costCenters)).watch();
-  Future<int> createCostCenter(CostCentersCompanion cc) =>
-      into(costCenters).insert(cc);
+  Future<String> createCostCenter(CostCentersCompanion cc) async {
+    final row = await into(costCenters).insertReturning(cc);
+    return row.id;
+  }
+
   Future<bool> updateCostCenter(CostCenter cc) =>
       update(costCenters).replace(cc);
 
-  // --- GL Entries ---
   Future<void> createEntry(
     GLEntriesCompanion entry,
     List<GLLinesCompanion> lines,
   ) {
     return transaction(() async {
+      if (entry.referenceType.present &&
+          entry.referenceType.value != null &&
+          entry.referenceId.present &&
+          entry.referenceId.value != null) {
+        final duplicate = await (select(gLEntries)
+              ..where((e) => e.referenceType.equals(entry.referenceType.value!))
+              ..where((e) => e.referenceId.equals(entry.referenceId.value!)))
+            .getSingleOrNull();
+        if (duplicate != null) {
+          return;
+        }
+      }
+
       // Validate accounting balance: Sum of Debits == Sum of Credits
-      double totalDebit = 0.0;
-      double totalCredit = 0.0;
+      Decimal totalDebit = Decimal.zero;
+      Decimal totalCredit = Decimal.zero;
       for (var line in lines) {
         totalDebit += line.debit.value;
         totalCredit += line.credit.value;
       }
-      if ((totalDebit - totalCredit).abs() > 0.001) {
+      if (totalDebit != totalCredit) {
         throw Exception(
           'القيد المحاسبي غير متوازن! (المدين: $totalDebit، الدائن: $totalCredit)',
         );
       }
 
       final entryRow = await into(gLEntries).insertReturning(entry);
+
+      await logSyncOperation(
+        table: 'gl_entries',
+        entityId: entryRow.id,
+        operation: 'CREATE',
+      );
+
       for (var line in lines) {
-        // Propagate branchId from entry if not present in line
         final lineToInsert = line.copyWith(
           entryId: Value(entryRow.id),
           branchId:
@@ -188,42 +216,12 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
 
         final lineRow = await into(gLLines).insertReturning(lineToInsert);
 
-        // Update AccountTransactions for running balance
-        await _updateAccountRunningBalance(lineRow, entryRow);
+        await _recordAccountTransaction(lineRow, entryRow);
       }
     });
   }
 
-  Future<void> _updateAccountRunningBalance(GLLine line, GLEntry entry) async {
-    // Get last running balance for this account
-    final lastTrans = await (select(db.accountTransactions)
-          ..where((t) => t.accountId.equals(line.accountId))
-          ..orderBy([
-            (t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc),
-            (t) => OrderingTerm(
-                  expression: t.createdAt,
-                  mode: OrderingMode.desc,
-                ),
-          ])
-          ..limit(1))
-        .getSingleOrNull();
-
-    double lastBalance = lastTrans?.runningBalance ?? 0;
-
-    final account = await (select(
-      gLAccounts,
-    )..where((a) => a.id.equals(line.accountId)))
-        .getSingle();
-
-    double newBalance;
-    // ASSET and EXPENSE accounts increase with Debit, decrease with Credit.
-    // LIABILITY, EQUITY, and REVENUE accounts increase with Credit, decrease with Debit.
-    if ([AccountType.asset, AccountType.expense].contains(account.type)) {
-      newBalance = lastBalance + line.debit - line.credit;
-    } else {
-      newBalance = lastBalance + line.credit - line.debit;
-    }
-
+  Future<void> _recordAccountTransaction(GLLine line, GLEntry entry) async {
     await into(db.accountTransactions).insert(
       AccountTransactionsCompanion.insert(
         accountId: line.accountId,
@@ -231,11 +229,41 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
         referenceId: Value(entry.referenceId),
         debit: Value(line.debit),
         credit: Value(line.credit),
-        runningBalance: Value(newBalance),
         date: Value(entry.date),
-        branchId: Value(entry.branchId),
       ),
     );
+  }
+
+  // --- Decimal-based Account Balance Calculation ---
+  Future<Decimal> getAccountBalance(String accountId,
+      {String? branchId}) async {
+    final account = await getAccountById(accountId);
+    if (account == null) return Decimal.zero;
+
+    var query = db.select(db.accountTransactions).join([
+      innerJoin(db.gLEntries, db.gLEntries.id.equalsExp(db.accountTransactions.referenceId)),
+    ])
+      ..where(db.accountTransactions.accountId.equals(accountId));
+
+    if (branchId != null) {
+      query = query..where(db.accountTransactions.branchId.equals(branchId));
+    }
+
+    final rows = await query.get();
+    if (rows.isEmpty) return Decimal.zero;
+
+    Decimal debit = Decimal.zero;
+    Decimal credit = Decimal.zero;
+    for (final row in rows) {
+      debit += row.readTable(db.accountTransactions).debit;
+      credit += row.readTable(db.accountTransactions).credit;
+    }
+
+    if ([AccountType.asset, AccountType.expense].contains(account.type)) {
+      return debit - credit;
+    } else {
+      return credit - debit;
+    }
   }
 
   Stream<List<GLEntry>> watchRecentEntries({int limit = 50}) {
@@ -262,7 +290,6 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     }).toList();
   }
 
-  // New: Get GL entries within a date range
   Future<List<GLEntry>> getGLEntriesInDateRange(
     DateTime startDate,
     DateTime endDate,
@@ -290,83 +317,49 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
   Future<int> deletePostingProfile(String id) =>
       (delete(db.postingProfiles)..where((t) => t.id.equals(id))).go();
 
-  // --- Reports ---
+  // --- Reports (all Decimal-based) ---
   Future<List<TrialBalanceItem>> getTrialBalance({String? branchId}) async {
     final accounts = await getAllAccounts();
+
+    var query = db.select(db.gLLines).join([
+      innerJoin(db.gLEntries, db.gLEntries.id.equalsExp(db.gLLines.entryId)),
+    ]);
+
+    if (branchId != null) {
+      query = query..where(db.gLLines.branchId.equals(branchId));
+    }
+
+    final rows = await query.get();
+
+    final Map<String, ({Decimal debit, Decimal credit})> totals = {};
+    for (final row in rows) {
+      final line = row.readTable(db.gLLines);
+      final entry =
+          totals[line.accountId] ?? (debit: Decimal.zero, credit: Decimal.zero);
+      totals[line.accountId] = (
+        debit: entry.debit + line.debit,
+        credit: entry.credit + line.credit,
+      );
+    }
+
     final items = <TrialBalanceItem>[];
     for (final account in accounts) {
       if (account.isHeader) continue;
-
-      final debitSum = gLLines.debit.sum();
-      final creditSum = gLLines.credit.sum();
-
-      final query = selectOnly(gLLines)..addColumns([debitSum, creditSum]);
-
-      if (branchId != null) {
-        query.where(gLLines.accountId.equals(account.id) &
-            gLLines.branchId.equals(branchId));
-      } else {
-        query.where(gLLines.accountId.equals(account.id));
-      }
-
-      final result = await query.getSingle();
-      final debit = result.read(debitSum) ?? 0.0;
-      final credit = result.read(creditSum) ?? 0.0;
-
-      items.add(TrialBalanceItem(account, debit, credit));
+      final t =
+          totals[account.id] ?? (debit: Decimal.zero, credit: Decimal.zero);
+      items.add(TrialBalanceItem(account, t.debit, t.credit));
     }
     return items;
   }
 
-  Future<double> getAccountBalance(String accountId, {String? branchId}) async {
-    final account = await getAccountById(accountId);
-    if (account == null) return 0.0;
-
-    final debitSum = gLLines.debit.sum();
-    final creditSum = gLLines.credit.sum();
-
-    final query = selectOnly(gLLines)..addColumns([debitSum, creditSum]);
-
-    if (branchId != null) {
-      query.where(gLLines.accountId.equals(accountId) &
-          gLLines.branchId.equals(branchId));
-    } else {
-      query.where(gLLines.accountId.equals(accountId));
-    }
-
-    final result = await query.getSingleOrNull();
-
-    if (result == null) {
-      return 0.0;
-    }
-
-    final debit = result.read(debitSum) ?? 0.0;
-    final credit = result.read(creditSum) ?? 0.0;
-
-    if (account.type == AccountType.asset ||
-        account.type == AccountType.expense) {
-      return debit - credit;
-    } else {
-      return credit - debit;
-    }
-  }
-
-  // New: Get account balance up to a specific date
-  Future<double> getAccountBalanceAsOfDate(
+  // --- Decimal-based Account Balance As Of Date ---
+  Future<Decimal> getAccountBalanceAsOfDate(
     String accountId,
     DateTime asOfDate, {
     String? branchId,
   }) async {
     final account = await getAccountById(accountId);
-    if (account == null) return 0.0;
-
-    final debitSum = gLLines.debit.sum();
-    final creditSum = gLLines.credit.sum();
-
-    final query = selectOnly(gLLines).join([
-      innerJoin(gLEntries, gLEntries.id.equalsExp(db.gLLines.entryId)),
-    ])
-      ..addColumns([debitSum, creditSum]);
+    if (account == null) return Decimal.zero;
 
     var predicate = gLLines.accountId.equals(accountId) &
         gLEntries.date.isSmallerOrEqual(Variable(asOfDate));
@@ -375,16 +368,20 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
       predicate = predicate & gLLines.branchId.equals(branchId);
     }
 
-    query.where(predicate);
+    final rows = await (select(gLLines).join([
+      innerJoin(gLEntries, gLEntries.id.equalsExp(db.gLLines.entryId)),
+    ])
+          ..where(predicate))
+        .get();
 
-    final result = await query.getSingleOrNull();
+    if (rows.isEmpty) return Decimal.zero;
 
-    if (result == null) {
-      return 0.0;
+    Decimal debit = Decimal.zero;
+    Decimal credit = Decimal.zero;
+    for (final row in rows) {
+      debit += row.readTable(gLLines).debit;
+      credit += row.readTable(gLLines).credit;
     }
-
-    final debit = result.read(debitSum) ?? 0.0;
-    final credit = result.read(creditSum) ?? 0.0;
 
     if (account.type == AccountType.asset ||
         account.type == AccountType.expense) {
@@ -394,23 +391,15 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     }
   }
 
-  // New: Get account balance movement in a specific date range
-  Future<double> getAccountBalanceInRange(
+  // --- Decimal-based Account Balance In Range ---
+  Future<Decimal> getAccountBalanceInRange(
     String accountId,
     DateTime startDate,
     DateTime endDate, {
     String? branchId,
   }) async {
     final account = await getAccountById(accountId);
-    if (account == null) return 0.0;
-
-    final debitSum = gLLines.debit.sum();
-    final creditSum = gLLines.credit.sum();
-
-    final query = selectOnly(gLLines).join([
-      innerJoin(gLEntries, gLEntries.id.equalsExp(db.gLLines.entryId)),
-    ])
-      ..addColumns([debitSum, creditSum]);
+    if (account == null) return Decimal.zero;
 
     var predicate = gLLines.accountId.equals(accountId) &
         gLEntries.date.isBetween(Variable(startDate), Variable(endDate));
@@ -419,16 +408,20 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
       predicate = predicate & gLLines.branchId.equals(branchId);
     }
 
-    query.where(predicate);
+    final rows = await (select(gLLines).join([
+      innerJoin(gLEntries, gLEntries.id.equalsExp(db.gLLines.entryId)),
+    ])
+          ..where(predicate))
+        .get();
 
-    final result = await query.getSingleOrNull();
+    if (rows.isEmpty) return Decimal.zero;
 
-    if (result == null) {
-      return 0.0;
+    Decimal debit = Decimal.zero;
+    Decimal credit = Decimal.zero;
+    for (final row in rows) {
+      debit += row.readTable(gLLines).debit;
+      credit += row.readTable(gLLines).credit;
     }
-
-    final debit = result.read(debitSum) ?? 0.0;
-    final credit = result.read(creditSum) ?? 0.0;
 
     if (account.type == AccountType.asset ||
         account.type == AccountType.expense) {
@@ -438,44 +431,81 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     }
   }
 
-  // New: Get all account balances as of a specific date efficiently
+  // --- Decimal-based All Account Balances As Of Date ---
   Future<List<TrialBalanceItem>> getAllAccountBalancesAsOfDate(
     DateTime asOfDate, {
     String? branchId,
   }) async {
     final allAccounts = await getAllAccounts();
-    final debitSum = gLLines.debit.sum();
-    final creditSum = gLLines.credit.sum();
-
-    final query = selectOnly(gLLines).join([
-      innerJoin(gLEntries, gLEntries.id.equalsExp(db.gLLines.entryId)),
-    ])
-      ..addColumns([gLLines.accountId, debitSum, creditSum]);
 
     var predicate = gLEntries.date.isSmallerOrEqual(Variable(asOfDate));
     if (branchId != null) {
       predicate = predicate & gLLines.branchId.equals(branchId);
     }
 
-    query.where(predicate);
-    query.groupBy([gLLines.accountId]);
+    final rows = await (select(gLLines).join([
+      innerJoin(gLEntries, gLEntries.id.equalsExp(db.gLLines.entryId)),
+    ])
+          ..where(predicate))
+        .get();
 
-    final rows = await query.get();
-    final Map<String, ({double debit, double credit})> balanceMap = {
-      for (final row in rows)
-        row.read(gLLines.accountId)!: (
-          debit: row.read(debitSum) ?? 0.0,
-          credit: row.read(creditSum) ?? 0.0,
-        ),
-    };
+    final Map<String, ({Decimal debit, Decimal credit})> balanceMap = {};
+    for (final row in rows) {
+      final line = row.readTable(gLLines);
+      final entry = balanceMap[line.accountId] ??
+          (debit: Decimal.zero, credit: Decimal.zero);
+      balanceMap[line.accountId] = (
+        debit: entry.debit + line.debit,
+        credit: entry.credit + line.credit,
+      );
+    }
 
     return allAccounts.map((account) {
-      final balance = balanceMap[account.id] ?? (debit: 0.0, credit: 0.0);
+      final balance =
+          balanceMap[account.id] ?? (debit: Decimal.zero, credit: Decimal.zero);
       return TrialBalanceItem(account, balance.debit, balance.credit);
     }).toList();
   }
 
-  // New: Get all GL lines for a specific account within a date range
+  // --- Decimal-based All Account Balances In Date Range ---
+  Future<List<TrialBalanceItem>> getAllAccountBalancesInRange(
+    DateTime startDate,
+    DateTime endDate, {
+    String? branchId,
+  }) async {
+    final allAccounts = await getAllAccounts();
+
+    var predicate =
+        gLEntries.date.isBetween(Variable(startDate), Variable(endDate));
+    if (branchId != null) {
+      predicate = predicate & gLLines.branchId.equals(branchId);
+    }
+
+    final rows = await (select(gLLines).join([
+      innerJoin(gLEntries, gLEntries.id.equalsExp(db.gLLines.entryId)),
+    ])
+          ..where(predicate))
+        .get();
+
+    final Map<String, ({Decimal debit, Decimal credit})> balanceMap = {};
+    for (final row in rows) {
+      final line = row.readTable(gLLines);
+      final entry = balanceMap[line.accountId] ??
+          (debit: Decimal.zero, credit: Decimal.zero);
+      balanceMap[line.accountId] = (
+        debit: entry.debit + line.debit,
+        credit: entry.credit + line.credit,
+      );
+    }
+
+    return allAccounts.map((account) {
+      final balance =
+          balanceMap[account.id] ?? (debit: Decimal.zero, credit: Decimal.zero);
+      return TrialBalanceItem(account, balance.debit, balance.credit);
+    }).toList();
+  }
+
+  // --- Get GL Lines For Account In Date Range ---
   Future<List<GLLine>> getGLLinesForAccountInDateRange(
     String accountId,
     DateTime startDate,
@@ -497,7 +527,7 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
         .get();
   }
 
-  // New: Get all GLLines with their associated GLEntries within a date range
+  // --- Get All GL Lines With Entries In Date Range ---
   Future<List<GLLineWithAccount>> getGLLinesWithEntriesInDateRange(
     DateTime startDate,
     DateTime endDate, {
@@ -525,38 +555,47 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     }).toList();
   }
 
+  // --- Income Statement (Decimal-based) ---
   Future<IncomeStatement> getIncomeStatement({
     required DateTime startDate,
     required DateTime endDate,
     String? branchId,
   }) async {
-    final revenueAccounts = await getAccountsByType(AccountType.revenue);
-    final expenseAccounts = await getAccountsByType(AccountType.expense);
+    final allBalances = await getAllAccountBalancesInRange(
+      startDate,
+      endDate,
+      branchId: branchId,
+    );
 
-    double totalRevenue = 0;
-    for (final account in revenueAccounts) {
-      totalRevenue += await getAccountBalanceInRange(
-          account.id, startDate, endDate,
-          branchId: branchId);
+    final accountByCode = <String, Decimal>{};
+    for (final item in allBalances) {
+      accountByCode[item.account.code] = item.netBalance;
     }
 
-    double totalExpenses = 0;
-    for (final account in expenseAccounts) {
-      totalExpenses += await getAccountBalanceInRange(
-          account.id, startDate, endDate,
-          branchId: branchId);
+    Decimal totalRevenue = Decimal.zero;
+    Decimal totalExpenses = Decimal.zero;
+    for (final item in allBalances) {
+      if (item.account.type == AccountType.revenue) {
+        totalRevenue += item.netBalance;
+      } else if (item.account.type == AccountType.expense) {
+        totalExpenses += item.netBalance;
+      }
     }
 
-    // In this model, COGS is typically part of expenses
+    final Decimal costOfGoodsSold = accountByCode['5010'] ?? Decimal.zero;
+
+    final Decimal operatingExpenses = totalExpenses - costOfGoodsSold;
+
     return IncomeStatement(
       totalRevenue: totalRevenue,
-      costOfGoodsSold: 0, // Simplified
-      grossProfit: totalRevenue,
-      totalExpenses: totalExpenses,
-      netIncome: totalRevenue - totalExpenses,
+      costOfGoodsSold: costOfGoodsSold,
+      grossProfit: totalRevenue - costOfGoodsSold,
+      totalExpenses: operatingExpenses,
+      netIncome: totalRevenue - costOfGoodsSold - operatingExpenses,
     );
   }
 
+  // --- Balance Sheet (Decimal-based) ---
   Future<BalanceSheet> getBalanceSheet(
       {DateTime? asOfDate, String? branchId}) async {
     final date = asOfDate ?? DateTime.now();
@@ -573,12 +612,13 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
         .where((item) => item.account.type == AccountType.equity)
         .toList();
 
-    double totalAssets = assets.fold(0.0, (sum, item) => sum + item.netBalance);
-    double totalLiabilities =
-        liabilities.fold(0.0, (sum, item) => sum + item.netBalance);
-    double totalEquity = equity.fold(0.0, (sum, item) => sum + item.netBalance);
+    Decimal totalAssets =
+        assets.fold(Decimal.zero, (sum, item) => sum + item.netBalance);
+    Decimal totalLiabilities =
+        liabilities.fold(Decimal.zero, (sum, item) => sum + item.netBalance);
+    Decimal totalEquity =
+        equity.fold(Decimal.zero, (sum, item) => sum + item.netBalance);
 
-    // Note: In a real system, Current Period Net Income should be added to Equity
     return BalanceSheet(
       assets: assets,
       liabilities: liabilities,
@@ -589,44 +629,138 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
+  // --- Expenses By Cost Center ---
   Future<List<CostCenterExpense>> getExpensesByCostCenter({
     required DateTime startDate,
     required DateTime endDate,
     String? branchId,
   }) async {
-    final debitSum = gLLines.debit.sum();
-    final creditSum = gLLines.credit.sum();
-
-    final query = selectOnly(gLLines).join([
-      innerJoin(gLEntries, gLEntries.id.equalsExp(gLLines.entryId)),
-      innerJoin(gLAccounts, gLAccounts.id.equalsExp(gLLines.accountId)),
-      innerJoin(costCenters, costCenters.id.equalsExp(gLLines.costCenterId)),
-    ])
-      ..addColumns([costCenters.name, debitSum, creditSum])
-      ..where(gLEntries.date.isBetween(Variable(startDate), Variable(endDate)))
-      ..where(gLAccounts.type.equals(AccountType.expense));
+    var predicate =
+        gLEntries.date.isBetween(Variable(startDate), Variable(endDate));
 
     if (branchId != null) {
-      query.where(gLLines.branchId.equals(branchId));
+      predicate = predicate & gLLines.branchId.equals(branchId);
     }
 
-    query.groupBy([costCenters.id]);
+    final rows = await (select(gLLines).join([
+      innerJoin(gLEntries, gLEntries.id.equalsExp(gLLines.entryId)),
+      innerJoin(gLAccounts, gLAccounts.id.equalsExp(gLLines.accountId)),
+      leftOuterJoin(
+          costCenters, costCenters.id.equalsExp(gLLines.costCenterId)),
+    ])
+          ..where(predicate)
+          ..where(gLAccounts.accountType.equals(enums.AccountType.expense.index)))
+        .get();
 
-    final rows = await query.get();
-    return rows.map((row) {
-      return CostCenterExpense(
-        name: row.read(costCenters.name)!,
-        total: (row.read(debitSum) ?? 0.0) - (row.read(creditSum) ?? 0.0),
+    final Map<String, Decimal> ccTotals = {};
+    for (final row in rows) {
+      final line = row.readTable(gLLines);
+      final ccName =
+          row.readTableOrNull(costCenters)?.name ?? 'بدون مركز تكلفة';
+      ccTotals[ccName] =
+          (ccTotals[ccName] ?? Decimal.zero) + line.debit - line.credit;
+    }
+
+    return ccTotals.entries
+        .map((e) => CostCenterExpense(name: e.key, total: e.value))
+        .toList();
+  }
+
+  Future<List<AccountTreeNode>> getAccountTree({
+    DateTime? asOfDate,
+    String? branchId,
+  }) async {
+    final allAccounts = await getAllAccounts();
+    final allBalances = await (asOfDate != null
+        ? getAllAccountBalancesAsOfDate(asOfDate, branchId: branchId)
+        : getAllAccountBalancesInRange(
+            DateTime(2000), DateTime.now(),
+            branchId: branchId,
+          ));
+
+    final balanceMap = <String, Decimal>{};
+    for (final item in allBalances) {
+      if (!item.account.isHeader) {
+        balanceMap[item.account.id] = item.netBalance;
+      }
+    }
+
+    final nodeMap = <String, AccountTreeNodeBuilder>{};
+    for (final account in allAccounts) {
+      nodeMap[account.id] = AccountTreeNodeBuilder(account: account);
+    }
+
+    final roots = <AccountTreeNodeBuilder>[];
+    for (final account in allAccounts) {
+      final builder = nodeMap[account.id]!;
+      if (account.parentId != null && nodeMap.containsKey(account.parentId)) {
+        nodeMap[account.parentId]!.children.add(builder);
+      } else {
+        roots.add(builder);
+      }
+    }
+
+    _computeTreeBalances(roots, balanceMap);
+
+    return roots.map((b) => b.build()).toList();
+  }
+
+  void _computeTreeBalances(
+    List<AccountTreeNodeBuilder> nodes,
+    Map<String, Decimal> balanceMap,
+  ) {
+    for (final node in nodes) {
+      final directBalance = balanceMap[node.account.id] ?? Decimal.zero;
+      _computeTreeBalances(node.children, balanceMap);
+      final childrenBalance = node.children.fold<Decimal>(
+        Decimal.zero,
+        (sum, child) => sum + child.treeBalance,
       );
-    }).toList();
+      node.treeBalance = directBalance + childrenBalance;
+    }
+  }
+
+  Future<Decimal> getAccountTreeBalance(
+    String accountId, {
+    DateTime? asOfDate,
+    String? branchId,
+  }) async {
+    final tree = await getAccountTree(asOfDate: asOfDate, branchId: branchId);
+    return _findBalance(tree, accountId);
+  }
+
+  Decimal _findBalance(
+    List<AccountTreeNode> nodes,
+    String accountId,
+  ) {
+    for (final node in nodes) {
+      if (node.account.id == accountId) return node.treeBalance;
+      final childResult = _findBalance(node.children, accountId);
+      if (childResult != Decimal.zero) return childResult;
+    }
+    return Decimal.zero;
+  }
+}
+
+class AccountTreeNodeBuilder {
+  final GLAccount account;
+  Decimal treeBalance = Decimal.zero;
+  final List<AccountTreeNodeBuilder> children = [];
+
+  AccountTreeNodeBuilder({required this.account});
+
+  AccountTreeNode build() {
+    return AccountTreeNode(
+      account: account,
+      balance: treeBalance,
+      treeBalance: treeBalance,
+      children: children.map((c) => c.build()).toList(),
+    );
   }
 }
 
 class CostCenterExpense {
   final String name;
-  final double total;
+  final Decimal total;
   CostCenterExpense({required this.name, required this.total});
 }
-
-
-

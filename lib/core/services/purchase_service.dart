@@ -26,7 +26,7 @@ class PurchaseService {
       id: Value(purchaseId),
       supplierId: Value(supplierId),
       date: Value(DateTime.now()),
-      total: total,
+      total: Decimal.parse(total.toString()),
       status: const Value(DocumentStatus.draft),
       warehouseId: Value(warehouseId),
     );
@@ -47,6 +47,17 @@ class PurchaseService {
 
   Future<void> postPurchase(String purchaseId) async {
     try {
+      // 0. Check accounting period before any writes
+      final period = await (db.select(db.accountingPeriods)
+            ..where((p) => p.isClosed.equals(false))
+            ..where((p) => p.startDate.isSmallerOrEqual(Variable(DateTime.now())))
+            ..where((p) => p.endDate.isBiggerOrEqual(Variable(DateTime.now()))))
+          .get()
+          .then((rows) => rows.isEmpty ? null : rows.first);
+      if (period == null) {
+        throw Exception('الفترة المحاسبية مغلقة. لا يمكن الترحيل.');
+      }
+
       // 1. Verify that GRN exists for this purchase
       final grn = await (db.select(db.goodReceivedNotes)
             ..where((g) => g.purchaseId.equals(purchaseId))
@@ -58,25 +69,45 @@ class PurchaseService {
             'لا يمكن ترحيل الفاتورة قبل استلام البضاعة (GRN غير موجود أو غير مرحل).');
       }
 
+      // 2. Prevent double posting
       final purchase = await (db.select(db.purchases)
             ..where((p) => p.id.equals(purchaseId)))
           .getSingle();
+      if (purchase.status == DocumentStatus.posted) {
+        throw Exception('هذه الفاتورة تم ترحيلها بالفعل.');
+      }
+
       final items = await (db.select(db.purchaseItems)
             ..where((i) => i.purchaseId.equals(purchaseId)))
           .get();
 
+      // Pre-check: ensure required GL accounts exist
+      final requiredCodes = ['1040', '1050', '2010', '1010'];
+      for (final code in requiredCodes) {
+        final account = await db.accountingDao.getAccountByCode(code);
+        if (account == null) {
+          // Auto-seed GL accounts if missing
+          await db.seedDefaultGLAccounts();
+          await db.seedDefaultPostingProfiles();
+          break;
+        }
+      }
+
       double subtotal = 0;
       for (var item in items) {
-        subtotal += (item.quantity * item.unitFactor * item.unitPrice);
+        subtotal +=
+            (item.quantity * item.unitFactor * item.unitPrice).toDouble();
       }
 
       // حساب إجمالي المصاريف الإضافية
-      double totalExpenses = (purchase.shippingCost + purchase.otherExpenses);
+      double totalExpenses =
+          (purchase.shippingCost + purchase.otherExpenses).toDouble();
 
-      double discount = purchase.discount;
+      double discount = purchase.discount.toDouble();
 
       // استخدام قيمة الضريبة الموجودة في الفاتورة مباشرة
-      double tax = (purchase.tax > 0) ? purchase.tax : 0.0;
+      double tax =
+          (purchase.tax > Decimal.zero) ? purchase.tax.toDouble() : 0.0;
 
       await postingEngine.post(
         type: TransactionType.purchase,

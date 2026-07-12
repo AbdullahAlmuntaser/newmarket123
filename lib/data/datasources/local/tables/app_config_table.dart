@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart';
+part of '../app_database.dart';
 
 /// جدول إعدادات التطبيق الديناميكية
 /// يستخدم لتخزين القيم التي كانت مزروعة (Hardcoded) سابقاً

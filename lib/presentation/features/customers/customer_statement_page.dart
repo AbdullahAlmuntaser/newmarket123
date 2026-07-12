@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:supermarket/presentation/features/customers/customer_statement_provider.dart';
+import 'package:supermarket/injection_container.dart';
+import 'package:supermarket/core/services/statement_printing_service.dart';
 
 class CustomerStatementPage extends StatefulWidget {
   final String customerId;
@@ -29,10 +31,24 @@ class _CustomerStatementPageState extends State<CustomerStatementPage> {
       appBar: AppBar(
         title: const Text('كشف حساب العميل'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.print),
-            onPressed: () {
-              // مستقبلاً: إضافة طباعة كشف الحساب
+          Consumer<CustomerStatementProvider>(
+            builder: (context, provider, _) {
+              return IconButton(
+                icon: const Icon(Icons.print),
+                onPressed: () {
+                  if (provider.customer != null &&
+                      provider.transactions.isNotEmpty) {
+                    sl<StatementPrintingService>().printCustomerStatement(
+                      customer: provider.customer!,
+                      transactions: provider.transactions,
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('لا توجد معاملات للطباعة')),
+                    );
+                  }
+                },
+              );
             },
           ),
         ],

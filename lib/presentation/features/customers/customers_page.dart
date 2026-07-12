@@ -6,6 +6,7 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/customers/widgets/add_edit_customer_dialog.dart';
 import 'package:supermarket/presentation/widgets/main_drawer.dart';
 import 'package:supermarket/presentation/features/customers/widgets/customer_trailing_widgets.dart';
+import 'package:supermarket/presentation/features/customers/widgets/customer_payment_dialog.dart';
 import 'package:supermarket/core/services/transaction_engine.dart';
 import 'package:supermarket/injection_container.dart';
 import 'package:supermarket/core/auth/auth_provider.dart';
@@ -51,8 +52,7 @@ class _CustomersPageState extends State<CustomersPage> {
     }
   }
 
-  bool get _hasMoreItems =>
-      (_currentPage + 1) * _pageSize < _totalCustomers;
+  bool get _hasMoreItems => (_currentPage + 1) * _pageSize < _totalCustomers;
 
   Future<void> _loadTotalCount() async {
     final db = context.read<AppDatabase>();
@@ -287,9 +287,9 @@ class _CustomersPageState extends State<CustomersPage> {
       ),
       selected: isSelected,
       onSelected: (v) => setState(() {
-              _selectedType = value;
-              _resetPagination();
-            }),
+        _selectedType = value;
+        _resetPagination();
+      }),
       selectedColor: Theme.of(context).colorScheme.primary,
       checkmarkColor: Colors.white,
     );
@@ -301,7 +301,7 @@ class _CustomersPageState extends State<CustomersPage> {
     AppLocalizations l10n,
     ColorScheme colorScheme,
   ) {
-    final bool isDebit = customer.balance > 0;
+    final bool isDebit = customer.balance > Decimal.zero;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -425,7 +425,8 @@ class _CustomersPageState extends State<CustomersPage> {
   Stream<String> _getTotalBalance(AppDatabase db) {
     return db.select(db.customers).watch().map(
           (customers) => customers
-              .fold(0.0, (sum, item) => sum + item.balance)
+              .fold<Decimal>(Decimal.zero, (sum, item) => sum + item.balance)
+              .toDouble()
               .toStringAsFixed(2),
         );
   }
@@ -452,51 +453,47 @@ class _CustomersPageState extends State<CustomersPage> {
       context,
       listen: false,
     ).currentUser?.id;
-    _payAmountController.clear();
-    final amount = await showDialog<double>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.payAmount),
-        content: TextField(
-          controller: _payAmountController,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'المبلغ'),
-          autofocus: true,
+    final engine = sl<TransactionEngine>();
+
+    try {
+      final outstandingInvoices = await engine.getOutstandingSales(customer.id);
+      if (!mounted) return;
+
+      if (outstandingInvoices.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('لا توجد فواتير مستحقة لهذا العميل')),
+        );
+        return;
+      }
+
+      final result = await showDialog<CustomerPaymentResult>(
+        context: context,
+        builder: (ctx) => CustomerPaymentDialog(
+          customer: customer,
+          outstandingInvoices: outstandingInvoices,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final val = double.tryParse(_payAmountController.text);
-              if (val != null && val > 0) Navigator.pop(ctx, val);
-            },
-            child: Text(l10n.save),
-          ),
-        ],
-      ),
-    );
-    if (amount != null) {
-      try {
-        await sl<TransactionEngine>().postCustomerPayment(
+      );
+
+      if (result != null) {
+        await engine.postCustomerPaymentWithAllocations(
           customerId: customer.id,
-          amount: amount,
+          amount: result.totalAmount,
           paymentMethod: 'cash',
+          note: result.note,
           userId: userId,
+          allocations: result.allocations,
         );
         if (mounted) {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(l10n.paymentSuccess)));
         }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('خطأ: $e')));
-        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('خطأ: $e')));
       }
     }
   }

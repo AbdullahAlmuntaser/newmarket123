@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/purchases/purchase_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:supermarket/presentation/widgets/money_form_field.dart';
 
 class PurchaseItemRow extends StatefulWidget {
   final int index;
@@ -70,13 +71,11 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
               children: [
                 Expanded(
                   flex: 2,
-                  child: TextFormField(
+                  child: QuantityFormField(
                     initialValue: widget.item.quantity.toString(),
-                    decoration: const InputDecoration(
-                        labelText: 'الكمية', border: OutlineInputBorder()),
-                    keyboardType: TextInputType.number,
-                    onChanged: (v) {
-                      widget.item.quantity = double.tryParse(v) ?? 0.0;
+                    label: 'الكمية',
+                    onValidChanged: (value) {
+                      widget.item.quantity = value;
                       widget.onChanged();
                     },
                   ),
@@ -89,15 +88,12 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
             Row(
               children: [
                 Expanded(
-                  child: TextFormField(
+                  child: MoneyFormField(
                     initialValue: widget.item.unitPrice.toString(),
-                    decoration: const InputDecoration(
-                      labelText: 'سعر الشراء',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (v) {
-                      widget.item.unitPrice = double.tryParse(v) ?? 0.0;
+                    label: 'سعر الشراء',
+                    required: true,
+                    onValidChanged: (value) {
+                      widget.item.unitPrice = value;
                       widget.onChanged();
                     },
                   ),
@@ -108,6 +104,32 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
                     'الإجمالي: ${(widget.item.quantity * widget.item.unitPrice).toStringAsFixed(2)}',
                     textAlign: TextAlign.end,
                     style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: MoneyFormField(
+                    initialValue: widget.item.retailPrice.toString(),
+                    label: 'سعر التجزئة',
+                    onValidChanged: (value) {
+                      widget.item.retailPrice = value;
+                      widget.onChanged();
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: MoneyFormField(
+                    initialValue: widget.item.wholesalePrice.toString(),
+                    label: 'سعر الجملة',
+                    onValidChanged: (value) {
+                      widget.item.wholesalePrice = value;
+                      widget.onChanged();
+                    },
                   ),
                 ),
               ],
@@ -160,11 +182,11 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
               ],
             ),
             if (widget.item.selectedUnit != null &&
-                widget.item.selectedUnit!.factor > 1)
+                widget.item.selectedUnit!.factor > Decimal.one)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
-                  'إجمالي الكمية بالوحدة الأساسية: ${(widget.item.quantity * widget.item.selectedUnit!.factor).toStringAsFixed(2)} ${widget.item.product.unit}',
+                  'إجمالي الكمية بالوحدة الأساسية: ${(widget.item.quantity * widget.item.selectedUnit!.factor.toDouble()).toStringAsFixed(2)} ${widget.item.product.unit}',
                   style: const TextStyle(
                     color: Colors.blue,
                     fontWeight: FontWeight.bold,
@@ -200,11 +222,12 @@ class _PurchaseItemRowState extends State<PurchaseItemRow> {
           ],
           onChanged: (value) {
             setState(() {
-              final newFactor = value?.factor ?? 1.0;
+              final newFactor = value?.factor.toDouble() ?? 1.0;
 
               // تحديث السعر بناءً على الوحدة الجديدة (السعر = السعر الأساسي * عامل التحويل)
               // يفترض أن السعر الأساسي (buyPrice) هو للوحدة الأساسية
-              widget.item.unitPrice = widget.item.product.buyPrice * newFactor;
+              widget.item.unitPrice =
+                  widget.item.product.buyPrice.toDouble() * newFactor;
               widget.item.selectedUnit = value;
             });
             widget.onChanged();

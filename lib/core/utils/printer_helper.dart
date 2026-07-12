@@ -81,14 +81,18 @@ class PrinterHelper {
               pw.TableHelper.fromTextArray(
                 headers: ['Item', 'Qty', 'Price', 'Total'],
                 data: items.map((item) {
-                  final product =
-                      products.firstWhere((p) => p.id == item.productId);
-                  return [
-                    product.name,
-                    item.quantity.toString(),
-                    item.price.toStringAsFixed(2),
-                    (item.quantity * item.price).toStringAsFixed(2),
-                  ];
+                  try {
+                    final product =
+                        products.firstWhere((p) => p.id == item.productId);
+                    return [
+                      product.name,
+                      item.quantity.toString(),
+                      item.price.toStringAsFixed(2),
+                      (item.quantity * item.price).toStringAsFixed(2),
+                    ];
+                  } catch (_) {
+                    return ['', '', '', ''];
+                  }
                 }).toList(),
               ),
               pw.Divider(),
@@ -160,16 +164,18 @@ class PrinterHelper {
     ]);
 
     for (var item in items) {
-      final product = products.firstWhere((p) => p.id == item.productId);
-      bytes += generator.row([
-        PosColumn(text: product.name, width: 6),
-        PosColumn(text: item.quantity.toString(), width: 2),
-        PosColumn(text: item.price.toString(), width: 2),
-        PosColumn(
-          text: (item.quantity * item.price).toStringAsFixed(2),
-          width: 2,
-        ),
-      ]);
+      try {
+        final product = products.firstWhere((p) => p.id == item.productId);
+        bytes += generator.row([
+          PosColumn(text: product.name, width: 6),
+          PosColumn(text: item.quantity.toString(), width: 2),
+          PosColumn(text: item.price.toStringAsFixed(2), width: 2),
+          PosColumn(
+            text: (item.quantity * item.price).toStringAsFixed(2),
+            width: 2,
+          ),
+        ]);
+      } catch (_) {}
     }
 
     bytes += generator.hr();

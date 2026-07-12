@@ -1,9 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/data/datasources/local/daos/products_dao.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
+import 'package:supermarket/core/services/audit_service.dart';
+import 'package:supermarket/injection_container.dart';
 import 'package:supermarket/presentation/widgets/main_drawer.dart';
 import 'package:supermarket/presentation/features/products/widgets/add_edit_product_dialog.dart';
 import 'package:supermarket/presentation/features/products/widgets/smart_stock_widget.dart';
@@ -28,6 +31,7 @@ class _ProductsPageState extends State<ProductsPage> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateTotalCount());
   }
 
   @override
@@ -45,15 +49,16 @@ class _ProductsPageState extends State<ProductsPage> {
     }
   }
 
-  bool get _hasMoreItems =>
-      (_currentPage + 1) * _pageSize < _totalProducts;
+  bool get _hasMoreItems => (_currentPage + 1) * _pageSize < _totalProducts;
 
   Future<void> _loadMore() async {
     if (_isLoadingMore) return;
     setState(() {
       _currentPage++;
-      _isLoadingMore = false;
+      _isLoadingMore = true;
     });
+    await _updateTotalCount();
+    if (mounted) setState(() => _isLoadingMore = false);
   }
 
   void _resetPagination() {
@@ -61,6 +66,18 @@ class _ProductsPageState extends State<ProductsPage> {
       _currentPage = 0;
       _totalProducts = 0;
     });
+    _updateTotalCount();
+  }
+
+  Future<void> _updateTotalCount() async {
+    final db = Provider.of<AppDatabase>(context, listen: false);
+    final count = await db.productsDao.countProducts(
+      searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+      categoryId: _selectedCategoryId,
+    );
+    if (mounted) {
+      setState(() => _totalProducts = count);
+    }
   }
 
   @override
@@ -129,35 +146,25 @@ class _ProductsPageState extends State<ProductsPage> {
         stream: db.productsDao.watchProducts(
           searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
           categoryId: _selectedCategoryId,
+          limit: (_currentPage + 1) * _pageSize,
+          offset: 0,
         ),
         builder: (context, snapshot) {
-          final allProducts = snapshot.data ?? [];
-          
-          if (_totalProducts == 0 && allProducts.isNotEmpty) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              setState(() => _totalProducts = allProducts.length);
-            });
-          }
-          
-          if (allProducts.isEmpty && _currentPage == 0) {
+          final displayedProducts = snapshot.data ?? [];
+
+          if (displayedProducts.isEmpty && _currentPage == 0) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
             return Center(child: Text(l10n.noProductsFound));
           }
-          
-          // Calculate pagination
-          final start = _currentPage * _pageSize;
-          final end = start + _pageSize;
-          final displayedProducts = allProducts.sublist(
-            start, 
-            end > allProducts.length ? allProducts.length : end
-          );
 
           return Column(
             children: [
               Expanded(
                 child: ListView.builder(
                   controller: _scrollController,
-                  itemCount: displayedProducts.length + 
-                      (_hasMoreItems ? 1 : 0),
+                  itemCount: displayedProducts.length + (_hasMoreItems ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (index == displayedProducts.length) {
                       return const Center(
@@ -167,12 +174,14 @@ class _ProductsPageState extends State<ProductsPage> {
                         ),
                       );
                     }
-                    
+
                     final productWithCategory = displayedProducts[index];
                     final product = productWithCategory.product;
-                    final categoryName = productWithCategory.category?.name ?? '';
+                    final categoryName =
+                        productWithCategory.category?.name ?? '';
 
                     return ListTile(
+                      leading: _buildProductImage(product),
                       title: Text(product.name),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -205,6 +214,8 @@ class _ProductsPageState extends State<ProductsPage> {
                                   '/products/unit-conversion/${product.id}',
                                   extra: product.name,
                                 );
+                              } else if (value == 'delete') {
+                                _deleteProduct(context, product);
                               }
                             },
                             itemBuilder: (context) => [
@@ -215,6 +226,10 @@ class _ProductsPageState extends State<ProductsPage> {
                               const PopupMenuItem(
                                 value: 'units',
                                 child: Text('تحويل الوحدات'),
+                              ),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Text('حذف المنتج'),
                               ),
                             ],
                           ),
@@ -274,10 +289,87 @@ class _ProductsPageState extends State<ProductsPage> {
     );
   }
 
+  Widget _buildProductImage(Product product) {
+    if (product.imagePath != null && product.imagePath!.isNotEmpty) {
+      final file = File(product.imagePath!);
+      if (file.existsSync()) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.file(
+            file,
+            width: 48,
+            height: 48,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _defaultImageIcon(),
+          ),
+        );
+      }
+    }
+    return _defaultImageIcon();
+  }
+
+  Widget _defaultImageIcon() {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(Icons.inventory_2, color: Colors.grey[500], size: 24),
+    );
+  }
+
   void _showAddEditDialog(BuildContext context, Product? product) {
     showDialog(
       context: context,
       builder: (context) => AddEditProductDialog(product: product),
     );
+  }
+
+  Future<void> _deleteProduct(BuildContext context, Product product) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('حذف المنتج'),
+        content: Text(l10n.deleteProductConfirmation(product.name)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      try {
+        await sl<AppDatabase>().productsDao.deleteProduct(product);
+        if (context.mounted) {
+          await sl<AuditService>().logDelete(
+            'Product',
+            product.id,
+            details: 'Product deleted: ${product.name}, SKU: ${product.sku}',
+          );
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم حذف المنتج')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${l10n.failedToDeleteProduct}: $e')),
+          );
+        }
+      }
+    }
   }
 }

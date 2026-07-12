@@ -1,82 +1,74 @@
-import 'dart:io';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/core/utils/logger.dart';
+import 'package:supermarket/core/services/backup/backup_service.dart'
+    as unified_backup;
+
+// Adapter: keep the old lightweight API but delegate to the unified
+// BackupService implementation in lib/core/services/backup/backup_service.dart.
+
+class LocalBackupInfo {
+  final String path;
+  final String name;
+  final DateTime createdAt;
+  final int sizeBytes;
+
+  const LocalBackupInfo({
+    required this.path,
+    required this.name,
+    required this.createdAt,
+    required this.sizeBytes,
+  });
+
+  String get formattedSize {
+    if (sizeBytes < 1024) return '$sizeBytes B';
+    final kb = sizeBytes / 1024;
+    if (kb < 1024) return '${kb.toStringAsFixed(1)} KB';
+    final mb = kb / 1024;
+    return '${mb.toStringAsFixed(1)} MB';
+  }
+}
 
 class BackupService {
   final AppDatabase db;
 
   BackupService(this.db);
 
-  /// إنشاء نسخة احتياطية عبر نسخ ملف قاعدة البيانات مباشرة مع فحص سلامة البيانات
   Future<String> createLocalBackup() async {
-    // 1. فحص سلامة قاعدة البيانات قبل النسخ
-    final result = await db.customSelect('PRAGMA integrity_check;').get();
-    final status = result.first.data.values.first as String;
-
-    if (status != 'ok') {
-      AppLogger.error('Database integrity check failed: $status');
-      throw Exception(
-          'لا يمكن إنشاء نسخة احتياطية: قاعدة البيانات تالفة ($status)');
-    }
-
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final dbFile = File(p.join(dbFolder.path, 'app_db.sqlite'));
-
-    if (!await dbFile.exists()) {
-      throw Exception('Database file not found');
-    }
-
-    final backupDir = await getExternalStorageDirectory() ??
-        await getApplicationDocumentsDirectory();
-    final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
-    final backupPath = p.join(
-      backupDir.path,
-      'supermarket_backup_$timestamp.sqlite',
-    );
-
-    // نسخ الملف
-    await dbFile.copy(backupPath);
-
-    return backupPath;
+    final unified = unified_backup.BackupService(db);
+    final result = await unified.createBackup();
+    if (!result.success) throw Exception(result.message);
+    return result.backupPath ?? '';
   }
 
-  /// استعادة البيانات عبر استبدال ملف قاعدة البيانات
-  Future<void> restoreFromLocal(String filePath) async {
-    final backupFile = File(filePath);
-    if (!await backupFile.exists()) {
-      throw Exception('Backup file not found');
-    }
+  Future<List<LocalBackupInfo>> listLocalBackups() async {
+    final unified = unified_backup.BackupService(db);
+    final metas = await unified.listBackups();
+    return metas
+        .map((m) => LocalBackupInfo(
+              path: m.databasePath,
+              name: m.backupName,
+              createdAt: m.backupDate,
+              sizeBytes: m.fileSize,
+            ))
+        .toList();
+  }
 
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final dbFile = File(p.join(dbFolder.path, 'app_db.sqlite'));
+  Future<void> deleteLocalBackup(String filePath) async {
+    final unified = unified_backup.BackupService(db);
+    await unified.deleteBackup(filePath);
+  }
 
-    // إغلاق قاعدة البيانات أولاً لتجنب قفل الملف
-    await db.close();
-
-    // استبدال الملف
-    await backupFile.copy(dbFile.path);
+  Future<String> restoreFromLocal(String filePath) async {
+    final unified = unified_backup.BackupService(db);
+    final result = await unified.restoreBackup(filePath);
+    if (!result.success) throw Exception(result.message);
+    return result.backupPath ?? '';
   }
 
   Future<void> shareBackup(String filePath) async {
-    // ignore: deprecated_member_use
+    // Delegate to share_plus directly
     await Share.shareXFiles([XFile(filePath)], text: 'ERP Database Backup');
   }
-
-  // دعم النسخ الاحتياطي التلقائي (يومي)
-  Future<void> runAutoBackup() async {
-    try {
-      final path = await createLocalBackup();
-      AppLogger.info('Auto backup created at: $path');
-      // Cloud upload disabled
-    } catch (e) {
-      AppLogger.error('Auto backup failed', error: e);
-    }
-  }
-
-  Future<List<String>> listCloudBackups() async {
-    return [];
-  }
 }
+
+// (alias import moved to top)

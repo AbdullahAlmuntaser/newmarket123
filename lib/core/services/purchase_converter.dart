@@ -23,7 +23,7 @@ class PurchaseConverter {
       await db.into(db.purchases).insert(PurchasesCompanion.insert(
             id: Value(invoiceId),
             supplierId: Value(order.supplierId),
-            total: order.total,
+            total: Decimal.parse(order.total.toString()),
             status: const Value(DocumentStatus.draft),
             date: Value(DateTime.now()),
             invoiceNumber:
@@ -35,9 +35,9 @@ class PurchaseConverter {
         await db.into(db.purchaseItems).insert(PurchaseItemsCompanion.insert(
               purchaseId: invoiceId,
               productId: item.productId,
-              quantity: item.quantity,
-              unitPrice: item.price,
-              price: item.quantity * item.price,
+              quantity: Decimal.parse(item.quantity.toString()),
+              unitPrice: Decimal.parse(item.price.toString()),
+              price: Decimal.parse((item.quantity * item.price).toString()),
             ));
       }
 

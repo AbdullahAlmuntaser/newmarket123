@@ -4,6 +4,8 @@ import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/services/cash_management_service.dart';
 import 'package:supermarket/presentation/widgets/shared/account_selector_widget.dart';
 import 'package:intl/intl.dart' as intl;
+import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
+import 'package:supermarket/presentation/widgets/money_form_field.dart';
 
 class CashManagementPage extends StatefulWidget {
   const CashManagementPage({super.key});
@@ -17,7 +19,7 @@ class _CashManagementPageState extends State<CashManagementPage> {
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
   final _categoryController = TextEditingController();
-  
+
   String? _accountId;
   bool _isReceipt = true; // true for Receipt (In), false for Payment (Out)
 
@@ -54,7 +56,9 @@ class _CashManagementPageState extends State<CashManagementPage> {
                   ),
                   const SizedBox(height: 10),
                   AccountSelectorWidget(
-                    label: _isReceipt ? 'الحساب الدائن (المصدر)' : 'الحساب المدين (الجهة)',
+                    label: _isReceipt
+                        ? 'الحساب الدائن (المصدر)'
+                        : 'الحساب المدين (الجهة)',
                     selectedAccountId: _accountId,
                     onSelected: (acc) => setState(() => _accountId = acc?.id),
                   ),
@@ -62,18 +66,20 @@ class _CashManagementPageState extends State<CashManagementPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: TextFormField(
+                        child: MoneyFormField(
                           controller: _amountController,
-                          decoration: const InputDecoration(labelText: 'المبلغ', border: OutlineInputBorder()),
-                          keyboardType: TextInputType.number,
-                          validator: (v) => v!.isEmpty ? 'مطلوب' : null,
+                          label: 'المبلغ',
+                          required: true,
+                          allowZero: false,
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: TextFormField(
                           controller: _categoryController,
-                          decoration: const InputDecoration(labelText: 'التصنيف (مثلاً: إيجار، رواتب)', border: OutlineInputBorder()),
+                          decoration: const InputDecoration(
+                              labelText: 'التصنيف (مثلاً: إيجار، رواتب)',
+                              border: OutlineInputBorder()),
                           validator: (v) => v!.isEmpty ? 'مطلوب' : null,
                         ),
                       ),
@@ -82,40 +88,46 @@ class _CashManagementPageState extends State<CashManagementPage> {
                   const SizedBox(height: 10),
                   TextFormField(
                     controller: _noteController,
-                    decoration: const InputDecoration(labelText: 'ملاحظات', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(
+                        labelText: 'ملاحظات', border: OutlineInputBorder()),
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
                         if (_accountId == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(ApiResponseSnackBar(message: 'يرجى اختيار الحساب', isError: true));
+                          AppSnackBar.warning(context, 'يرجى اختيار الحساب');
                           return;
                         }
-                        final messenger = ScaffoldMessenger.of(context);
                         try {
                           if (_isReceipt) {
                             await cashService.createCashReceipt(
-                              amount: double.parse(_amountController.text),
+                              amount: Decimal.parse(
+                                  MoneyFormField.valueOf(_amountController)
+                                      .toString()),
                               category: _categoryController.text,
                               accountId: _accountId!,
                               note: _noteController.text,
                             );
                           } else {
                             await cashService.createCashPayment(
-                              amount: double.parse(_amountController.text),
+                              amount: Decimal.parse(
+                                  MoneyFormField.valueOf(_amountController)
+                                      .toString()),
                               category: _categoryController.text,
                               accountId: _accountId!,
                               note: _noteController.text,
                             );
                           }
-                          if (!mounted) return;
-                          messenger.showSnackBar(ApiResponseSnackBar(message: 'تم تسجيل السند بنجاح'));
+                          if (!context.mounted) return;
+
+                          AppSnackBar.success(context, 'تم تسجيل السند بنجاح');
                           _formKey.currentState!.reset();
                           setState(() => _accountId = null);
                         } catch (e) {
-                          if (!mounted) return;
-                          messenger.showSnackBar(ApiResponseSnackBar(message: 'خطأ: $e', isError: true));
+                          if (!context.mounted) return;
+
+                          AppSnackBar.error(context, 'خطأ: $e');
                         }
                       }
                     },
@@ -130,16 +142,23 @@ class _CashManagementPageState extends State<CashManagementPage> {
             child: StreamBuilder<List<CashboxTransaction>>(
               stream: db.cashboxDao.watchAllTransactions(),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
                 final transactions = snapshot.data!;
                 return ListView.builder(
                   itemCount: transactions.length,
                   itemBuilder: (context, index) {
                     final t = transactions[index];
                     return ListTile(
-                      leading: Icon(t.type == 'IN' ? Icons.arrow_downward : Icons.arrow_upward, color: t.type == 'IN' ? Colors.green : Colors.red),
+                      leading: Icon(
+                          t.type == 'IN'
+                              ? Icons.arrow_downward
+                              : Icons.arrow_upward,
+                          color: t.type == 'IN' ? Colors.green : Colors.red),
                       title: Text('${t.category}: ${t.amount}'),
-                      subtitle: Text('${intl.DateFormat('yyyy-MM-dd').format(t.createdAt)} - ${t.note ?? ""}'),
+                      subtitle: Text(
+                          '${intl.DateFormat('yyyy-MM-dd').format(t.createdAt)} - ${t.note ?? ""}'),
                     );
                   },
                 );
@@ -153,7 +172,8 @@ class _CashManagementPageState extends State<CashManagementPage> {
 }
 
 class ApiResponseSnackBar extends SnackBar {
-  ApiResponseSnackBar({super.key, required String message, bool isError = false})
+  ApiResponseSnackBar(
+      {super.key, required String message, bool isError = false})
       : super(
           content: Text(message),
           backgroundColor: isError ? Colors.red : Colors.green,

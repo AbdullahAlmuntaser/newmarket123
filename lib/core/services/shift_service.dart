@@ -29,7 +29,7 @@ class ShiftService {
           ShiftsCompanion.insert(
             id: Value(const Uuid().v4()),
             userId: userId,
-            openingCash: Value(openingCash),
+            openingCash: Value(Decimal.parse(openingCash.toString())),
             startTime: Value(DateTime.now()),
             isOpen: const Value(true),
             note: Value(note),
@@ -50,7 +50,8 @@ class ShiftService {
                 t.paymentMethod.equals(PaymentMethod.cash.index),
           ))
         .get();
-    final totalCashSales = cashSales.fold(0.0, (sum, sale) => sum + sale.total);
+    final Decimal totalCashSales =
+        cashSales.fold<Decimal>(Decimal.zero, (sum, sale) => sum + sale.total);
 
     // Get all customer cash payments during the shift
     final customerPayments = await (db.select(db.customerPayments)
@@ -60,9 +61,9 @@ class ShiftService {
                 t.paymentDate.isSmallerOrEqual(Variable(endTime)),
           ))
         .get();
-    final totalCustomerPayments = customerPayments.fold(
-      0.0,
-      (sum, p) => sum + p.amount,
+    final Decimal totalCustomerPayments = customerPayments.fold<Decimal>(
+      Decimal.zero,
+      (sum, p) => sum + Decimal.parse(p.amount.toString()),
     );
 
     // Get all supplier cash payments (expenses) during the shift
@@ -73,15 +74,16 @@ class ShiftService {
                 t.paymentDate.isSmallerOrEqual(Variable(endTime)),
           ))
         .get();
-    final totalSupplierPayments = supplierPayments.fold(
-      0.0,
-      (sum, p) => sum + p.amount,
+    final Decimal totalSupplierPayments = supplierPayments.fold<Decimal>(
+      Decimal.zero,
+      (sum, p) => sum + Decimal.parse(p.amount.toString()),
     );
 
-    return shift.openingCash +
-        totalCashSales +
-        totalCustomerPayments -
-        totalSupplierPayments;
+    return (shift.openingCash +
+            totalCashSales +
+            totalCustomerPayments -
+            totalSupplierPayments)
+        .toDouble();
   }
 
   Future<void> closeShift(
@@ -98,8 +100,8 @@ class ShiftService {
     await (db.update(db.shifts)..where((t) => t.id.equals(shiftId))).write(
       ShiftsCompanion(
         endTime: Value(DateTime.now()),
-        closingCash: Value(closingCash),
-        expectedCash: Value(expectedCash),
+        closingCash: Value(Decimal.parse(closingCash.toString())),
+        expectedCash: Value(Decimal.parse(expectedCash.toString())),
         isOpen: const Value(false),
         note: Value(note),
       ),

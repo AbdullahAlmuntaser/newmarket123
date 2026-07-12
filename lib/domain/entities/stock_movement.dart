@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:equatable/equatable.dart';
 
 enum MovementType { addition, deduction, transfer, adjustment }
@@ -7,7 +8,7 @@ class StockMovement extends Equatable {
   final String itemId;
   final String unitId;
   final double quantity;
-  final double cost;
+  final Decimal cost;
   final MovementType type;
   final String warehouseId;
   final DateTime timestamp;

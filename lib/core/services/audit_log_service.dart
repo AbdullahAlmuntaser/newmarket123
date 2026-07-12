@@ -10,10 +10,10 @@ class AuditLogService {
 
   /// تسجيل عملية
   Future<void> logAction({
-    required int userId,
+    required String userId,
     required String action,
     required String logTableName,
-    required int recordId,
+    required String recordId,
     Map<String, dynamic>? oldValues,
     Map<String, dynamic>? newValues,
   }) async {
@@ -31,7 +31,7 @@ class AuditLogService {
 
   /// الحصول على سجل التدقيقات لكيان معين
   Future<List<AccAuditLog>> getAuditLogForTable(
-      String logTableName, int recordId) async {
+      String logTableName, String recordId) async {
     return (db.select(db.accAuditLogs)
           ..where((t) =>
               t.logTableName.equals(logTableName) & t.recordId.equals(recordId))
@@ -40,7 +40,7 @@ class AuditLogService {
   }
 
   /// الحصول على سجل التدقيقات لمستخدم معين
-  Future<List<AccAuditLog>> getAuditLogForUser(int userId) async {
+  Future<List<AccAuditLog>> getAuditLogForUser(String userId) async {
     return (db.select(db.accAuditLogs)
           ..where((t) => t.userId.equals(userId))
           ..orderBy([(t) => OrderingTerm.desc(t.timestamp)]))

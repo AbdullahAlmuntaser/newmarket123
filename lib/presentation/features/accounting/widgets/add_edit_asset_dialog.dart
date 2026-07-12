@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:drift/drift.dart' hide Column;
-import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/accounting/asset_provider.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class AddEditAssetDialog extends StatefulWidget {
   final AssetProvider assetProvider;
@@ -71,12 +71,13 @@ class _AddEditAssetDialogState extends State<AddEditAssetDialog> {
       final companion = FixedAssetsCompanion(
         id: _isEditing ? Value(widget.asset!.id) : const Value.absent(),
         name: Value(_nameController.text),
-        cost: Value(double.tryParse(_costController.text) ?? 0.0),
+        cost: Value(Decimal.tryParse(_costController.text) ?? Decimal.zero),
         usefulLifeYears: Value(int.tryParse(_lifeController.text) ?? 5),
-        salvageValue: Value(double.tryParse(_salvageController.text) ?? 0.0),
+        salvageValue:
+            Value(Decimal.tryParse(_salvageController.text) ?? Decimal.zero),
         purchaseDate: Value(_purchaseDate),
         accumulatedDepreciation:
-            _isEditing ? const Value.absent() : const Value(0.0),
+            _isEditing ? const Value.absent() : Value(Decimal.zero),
       );
 
       if (_isEditing) {
