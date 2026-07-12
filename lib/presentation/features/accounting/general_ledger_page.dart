@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:supermarket/data/models/gl_entry_detail.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class GeneralLedgerPage extends StatelessWidget {
   const GeneralLedgerPage({super.key});

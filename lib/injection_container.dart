@@ -1,60 +1,27 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 import 'package:get_it/get_it.dart';
 import 'core/auth/auth_provider.dart';
 import 'core/services/permission_service.dart';
-import 'core/services/app_settings_service.dart';
 import 'core/services/app_config_service.dart';
 import 'core/services/approval_workflow_service.dart';
 import 'core/services/loyalty_service.dart';
-import 'core/services/delivery_notes_service.dart';
-import 'core/services/inventory_service.dart';
 import 'core/services/accounting_service.dart';
 import 'core/services/event_bus_service.dart';
 import 'core/services/financial_control_service.dart';
-import 'core/services/grn_service.dart';
-import 'core/services/reconciliation_service.dart';
-import 'core/services/aging_service.dart';
 import 'core/services/security_service.dart';
 import 'core/utils/drive_backup_service.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/theme/locale_provider.dart';
-import 'core/services/unit_conversion_service.dart';
 import 'core/services/packaging_engine.dart';
-import 'core/services/auto_break_service.dart';
 import 'data/datasources/local/app_database.dart';
-import 'data/datasources/local/daos/products_dao.dart';
-import 'data/datasources/local/daos/product_units_dao.dart';
-import 'core/services/posting_engine.dart';
 import 'core/services/inventory_costing_service.dart';
-import 'data/datasources/local/daos/stock_movement_dao.dart';
-import 'data/datasources/local/daos/audit_dao.dart';
-import 'core/services/audit_service.dart';
-import 'data/repositories/inventory_repository_impl.dart';
-import 'data/repositories/item_repository_impl.dart';
-import 'domain/repositories/inventory_repository.dart';
-import 'domain/repositories/item_repository.dart';
-import 'domain/usecases/create_item.dart';
-import 'domain/usecases/add_stock.dart';
-import 'core/services/bom_service.dart';
-import 'core/services/sales_service.dart';
-import 'core/services/sales_order_service.dart';
 import 'core/services/purchase_service.dart';
-import 'core/services/reorder_service.dart';
-import 'core/services/supplier_analytics_service.dart';
-import 'core/services/statement_service.dart';
 
 import 'core/services/pricing_service.dart';
 import 'core/services/transaction_engine.dart';
 import 'core/services/communication_service.dart';
-import 'core/services/cash_management_service.dart';
-import 'core/services/transfer_service.dart';
-import 'core/services/statement_printing_service.dart';
-import 'core/services/unified_statement_service.dart';
 import 'core/services/production_service.dart';
 import 'core/services/hr_service.dart';
 import 'core/services/notification_service.dart';
@@ -78,6 +45,9 @@ import 'core/services/profitability_service.dart';
 
 import 'core/services/pdf_service.dart';
 import 'core/services/budget_service.dart';
+import 'core/services/cash_management_service.dart';
+import 'core/services/transfer_service.dart';
+import 'core/services/unified_statement_service.dart';
 import 'core/services/payroll_service.dart';
 import 'core/services/currency_conversion_service.dart';
 import 'core/services/zakat_service.dart';
@@ -91,6 +61,12 @@ import 'core/services/serial_number_service.dart';
 import 'core/services/credit_note_service.dart';
 import 'core/services/sales_commission_service.dart';
 import 'core/services/proforma_service.dart';
+import 'core/di/core_module.dart';
+import 'core/di/accounting_module.dart';
+import 'core/di/inventory_module.dart';
+import 'core/di/purchase_module.dart';
+import 'core/di/sales_module.dart';
+import 'core/di/hr_module.dart';
 import 'presentation/features/accounting/accounting_provider.dart';
 import 'presentation/features/purchases/purchase_provider.dart';
 import 'presentation/features/accounting/shifts_provider.dart';
@@ -109,6 +85,12 @@ import 'presentation/features/products/products_provider.dart';
 import 'presentation/features/accounting/zakat_provider.dart';
 import 'presentation/features/hr/eosb_provider.dart';
 import 'presentation/features/sales/proforma_provider.dart';
+import 'presentation/features/sales/credit_note_provider.dart';
+import 'presentation/features/sales/commission_provider.dart';
+import 'presentation/features/accounting/wht_provider.dart';
+import 'presentation/features/hr/attendance_provider.dart';
+import 'presentation/features/hr/leave_provider.dart';
+import 'presentation/features/inventory/serial_number_provider.dart';
 
 final sl = GetIt.instance;
 AppDatabase? _database;
@@ -122,9 +104,10 @@ Future<void> initDatabase() async {
       return;
     }
 
-    AppDatabase.encryptionKey = SecurityService.useFakeKeyForTesting
-        ? null
-        : await SecurityService.getDatabaseKey();
+    final key = await SecurityService.getDatabaseKey();
+    AppDatabase.encryptionKey = key;
+    debugPrint("DI: Encryption key is set (${key.length} chars)");
+
     _database = AppDatabase();
     sl.registerLazySingleton<AppDatabase>(() => _database!);
     debugPrint("DI: Database opened successfully");
@@ -132,40 +115,24 @@ Future<void> initDatabase() async {
     debugPrint("DI: Database opening error: $e");
     debugPrintStack(stackTrace: stack);
 
-    // Attempt recovery: back up corrupted file, delete it, and retry once
-    // Do NOT attempt destructive recovery when the failure indicates
-    // the native sqlite3 lacks SQLCipher support (NO_SQLCIPHER). That
-    // situation should be handled by providing a SQLCipher-enabled
-    // runtime or by migrating the DB differently; deleting the file
-    // would irreversibly destroy encrypted data.
     final err = e.toString();
-    if ((err.contains('code 26') ||
-            err.contains('file is not a database') ||
-            err.contains('SqliteException')) &&
-        !err.contains('NO_SQLCIPHER')) {
+    if (err.contains('NO_SQLCIPHER')) {
       debugPrint(
-          "DI: Attempting recovery — backing up and recreating database...");
-      try {
-        final dbFolder = await getApplicationDocumentsDirectory();
-        final file = File(p.join(dbFolder.path, 'app_db.sqlite'));
-        if (await file.exists()) {
-          final backupPath =
-              "${file.path}.recovered_${DateTime.now().millisecondsSinceEpoch}";
-          await file.copy(backupPath);
-          debugPrint("DI: Corrupted file backed up to $backupPath");
-          await file.delete();
-          debugPrint(
-              "DI: Corrupted file deleted. Retrying database creation...");
-        }
-      } catch (recoveryError) {
-        debugPrint("DI: Recovery backup failed: $recoveryError");
-      }
-
-      // Retry with a fresh database
-      _database = AppDatabase();
-      sl.registerLazySingleton<AppDatabase>(() => _database!);
-      debugPrint("DI: Database recovered and opened successfully after retry");
-      return;
+          "DI: CRITICAL - SQLCipher library not available. "
+          "Database encryption is required but the native library is missing. "
+          "Ensure sqlcipher_flutter_libs is properly included.");
+    } else if (err.contains('CRITICAL')) {
+      debugPrint(
+          "DI: CRITICAL - Encryption key initialization failed. "
+          "The app cannot safely open the encrypted database.");
+    } else if (err.contains('code 26') ||
+        err.contains('file is not a database') ||
+        err.contains('DATABASE_ENCRYPTION_ERROR') ||
+        err.contains('SqliteException')) {
+      debugPrint(
+          "DI: Database encryption/decryption error. "
+          "The database file is preserved for debugging. "
+          "Error: $e");
     }
 
     rethrow;
@@ -175,255 +142,81 @@ Future<void> initDatabase() async {
 Future<void> initServices() async {
   debugPrint("DI: ==== Initializing Services ====");
   try {
-    final db = sl<AppDatabase>();
-
     if (sl.isRegistered<EventBusService>()) {
       debugPrint("DI: Services already registered");
       return;
     }
 
-    debugPrint("DI: Registering DAOs...");
-    sl.registerLazySingleton<AuditDao>(() => AuditDao(db));
-    sl.registerLazySingleton<StockMovementDao>(() => StockMovementDao(db));
-    sl.registerLazySingleton<ProductsDao>(() => ProductsDao(db));
-    sl.registerLazySingleton<ProductUnitsDao>(() => ProductUnitsDao(db));
+    registerCoreModule(sl);
+    registerAccountingModule(sl);
+    registerInventoryModule(sl);
+    registerPurchaseModule(sl);
+    registerSalesModule(sl);
+    registerHRModule(sl);
 
-    debugPrint("DI: Registering UnitConversionService...");
-    sl.registerLazySingleton<UnitConversionService>(
-      () => UnitConversionService(
-        productsDao: sl<ProductsDao>(),
-        productUnitsDao: sl<ProductUnitsDao>(),
-      ),
-    );
-    sl.registerLazySingleton<PackagingEngine>(() => PackagingEngine(db));
-    sl.registerLazySingleton<AutoBreakService>(
-      () => AutoBreakService(db, sl<PackagingEngine>()),
-    );
-    debugPrint("DI: DAOs registered");
+    final db = sl<AppDatabase>();
 
-    debugPrint("DI: Registering core services...");
-    sl.registerLazySingleton<EventBusService>(() => EventBusService());
-    sl.registerLazySingleton<InventoryCostingService>(
-      () => InventoryCostingService(sl<StockMovementDao>(), sl<AppDatabase>()),
-    );
-    sl.registerLazySingleton<PostingEngine>(
-      () => PostingEngine(db, costingService: sl<InventoryCostingService>()),
-    );
-    sl.registerLazySingleton<AccountingService>(
-      () => AccountingService(db, sl<EventBusService>()),
-    );
-    sl.registerLazySingleton<SecurityService>(() => SecurityService(db));
-    sl.registerLazySingleton<ReconciliationService>(
-        () => ReconciliationService(db));
-    sl.registerLazySingleton<AgingService>(() => AgingService(db));
-    sl.registerLazySingleton<PermissionService>(() => PermissionService(db));
-    sl.registerLazySingleton<AuditService>(() => AuditService(db));
-    sl.registerLazySingleton<AppConfigService>(() => AppConfigService(db));
-    sl.registerLazySingleton<AppSettingsService>(() => AppSettingsService(db));
-    sl.registerLazySingleton<ApprovalWorkflowService>(
-      () => ApprovalWorkflowService(sl<AppConfigService>()),
-    );
-    sl.registerLazySingleton<LoyaltyService>(
-      () => LoyaltyService(sl<AppConfigService>()),
-    );
-    sl.registerLazySingleton<InventoryService>(
-      () => InventoryService(
-        db,
-        sl<AuditService>(),
-        sl<AppConfigService>(),
-      ),
-    );
-    debugPrint("DI: Core services registered");
-
-    debugPrint("DI: Registering business services...");
-    sl.registerLazySingleton<PurchaseService>(
-      () => PurchaseService(db, sl<PostingEngine>(),
-          sl<InventoryCostingService>(), sl<AppConfigService>()),
-    );
-    sl.registerLazySingleton<SalesService>(
-      () => SalesService(
-          sl<AppDatabase>(),
-          sl<PostingEngine>(),
-          sl<InventoryService>(),
-          sl<AppSettingsService>(),
-          sl<PermissionService>(),
-          sl<TransactionEngine>()),
-    );
-    sl.registerLazySingleton<SalesOrderService>(
-      () => SalesOrderService(sl<AppDatabase>()),
-    );
-    sl.registerLazySingleton<StatementService>(
-      () => StatementService(sl<PostingEngine>()),
-    );
-    debugPrint("DI: Business services registered");
-
-    debugPrint("DI: Registering repositories...");
-    sl.registerLazySingleton<AuthProvider>(
-      () => AuthProvider(sl<AppDatabase>(), sl<PermissionService>()),
-    );
-    sl.registerLazySingleton<ItemRepository>(
-      () => ItemRepositoryImpl(sl<ProductsDao>()),
-    );
-    sl.registerLazySingleton<InventoryRepository>(
-      () => InventoryRepositoryImpl(sl<StockMovementDao>(), sl<ProductsDao>()),
-    );
-    sl.registerLazySingleton<CreateItemUseCase>(
-      () => CreateItemUseCase(sl<ItemRepository>()),
-    );
-    sl.registerLazySingleton<AddStockUseCase>(
-      () => AddStockUseCase(sl<InventoryRepository>()),
-    );
-    debugPrint("DI: Repositories registered");
-
-    debugPrint("DI: Registering additional services...");
-    sl.registerLazySingleton<ThemeProvider>(() => ThemeProvider());
-    sl.registerLazySingleton<LocaleProvider>(
-      () => LocaleProvider(sl<AppConfigService>()),
-    );
-    sl.registerLazySingleton(() => BomService(db, sl<AccountingService>()));
-    sl.registerLazySingleton<GrnService>(() => GrnService(db));
-    sl.registerLazySingleton<ReorderService>(() => ReorderService(db));
-    sl.registerLazySingleton<SupplierAnalyticsService>(
-        () => SupplierAnalyticsService(db));
+    debugPrint("DI: Registering services not in modules...");
+    // NOTE: UnitConversionService is registered in inventory_module.dart
+    // NOTE: AutoBreakService is registered in hr_module.dart
+    // NOTE: LoyaltyService is registered in sales_module.dart
     sl.registerLazySingleton<DriveBackupService>(() => DriveBackupService(db));
-    sl.registerLazySingleton<FinancialControlService>(
-      () => FinancialControlService(
-        db,
-        costingService: sl<InventoryCostingService>(),
-      ),
-    );
-    sl.registerLazySingleton<PricingService>(() => PricingService(db));
-    sl.registerLazySingleton<TransactionEngine>(() {
-      final engine = TransactionEngine(
-        db,
-        sl<EventBusService>(),
-        sl<PostingEngine>(),
-        sl<PackagingEngine>(),
-      );
-      engine.setCostingService(sl<InventoryCostingService>());
-      engine.setBudgetService(sl<BudgetService>());
-      engine.setApprovalService(sl<ApprovalWorkflowService>());
-      return engine;
-    });
-    sl.registerLazySingleton<CashManagementService>(
-      () => CashManagementService(db, sl<PostingEngine>()),
-    );
-    sl.registerLazySingleton<TransferService>(() => TransferService(db));
-    sl.registerLazySingleton<StatementPrintingService>(
-        () => StatementPrintingService(db));
-    sl.registerLazySingleton<UnifiedStatementService>(
-        () => UnifiedStatementService(db));
-    sl.registerLazySingleton<ProductionService>(() => ProductionService(db));
-    sl.registerLazySingleton<HRService>(() => HRService(db));
-    sl.registerLazySingleton<NotificationService>(() => NotificationService());
-    sl.registerLazySingleton<DashboardService>(() => DashboardService(db));
-    sl.registerLazySingleton<ShiftService>(() => ShiftService(db));
-    sl.registerLazySingleton<StockTransferService>(
-      () => StockTransferService(db),
-    );
     sl.registerLazySingleton<AssetService>(() => AssetService(db));
     sl.registerLazySingleton<CommunicationService>(
         () => CommunicationService());
-    sl.registerLazySingleton<ReturnService>(() => ReturnService(db));
-    sl.registerLazySingleton<QuickCustomerService>(
-      () => QuickCustomerService(db),
-    );
-    sl.registerLazySingleton<FinancialClosingService>(
-      () => FinancialClosingService(db),
-    );
+    sl.registerLazySingleton<ProductionService>(() => ProductionService(db));
     sl.registerLazySingleton<SystemAuditor>(() => SystemAuditor(db));
-    sl.registerLazySingleton<ReportEngineService>(
-      () => ReportEngineService(db),
-    );
-
-    // Register additional services that were not previously registered
-    debugPrint("DI: Registering additional unregistered services...");
-    sl.registerLazySingleton<AccountingPeriodService>(
-      () => AccountingPeriodService(db),
-    );
-    sl.registerLazySingleton<AnalyticsService>(
-      () => AnalyticsService(db),
-    );
-    sl.registerLazySingleton<AuditLogService>(
-      () => AuditLogService(db),
-    );
     sl.registerLazySingleton<ErpDataService>(
       () => ErpDataService(db, sl<InventoryCostingService>()),
-    );
-    sl.registerLazySingleton<FixedAssetsService>(
-      () => FixedAssetsService(db),
-    );
-    sl.registerLazySingleton<InventoryAuditService>(
-      () => InventoryAuditService(db),
-    );
-    sl.registerLazySingleton<InvoiceService>(
-      () => InvoiceService(db),
     );
     sl.registerLazySingleton<ProfitabilityService>(
       () => ProfitabilityService(db),
     );
-    sl.registerLazySingleton<PdfInvoiceService>(
-      () => PdfInvoiceService(),
-    );
-
-    // Register BudgetService and PayrollService
-    debugPrint("DI: Registering BudgetService and PayrollService...");
-    sl.registerLazySingleton<BudgetService>(
-      () => BudgetService(db, sl<NotificationService>()),
-    );
-    sl.registerLazySingleton<PayrollService>(
-      () => PayrollService(db),
-    );
-    sl.registerLazySingleton<CurrencyConversionService>(
-      () => CurrencyConversionService(db),
-    );
-    sl.registerLazySingleton<DeliveryNotesService>(
-      () => DeliveryNotesService(db),
-    );
-    sl.registerLazySingleton<LeaveManagementService>(
-      () => LeaveManagementService(db),
-    );
-    sl.registerLazySingleton<AttendanceService>(
-      () => AttendanceService(db),
-    );
-    sl.registerLazySingleton<WithholdingTaxService>(
-      () => WithholdingTaxService(db),
-    );
-    sl.registerLazySingleton<SerialNumberService>(
-      () => SerialNumberService(db),
-    );
-    sl.registerLazySingleton<CreditNoteService>(
-      () => CreditNoteService(db),
-    );
-    sl.registerLazySingleton<SalesCommissionService>(
-      () => SalesCommissionService(db),
-    );
-    sl.registerLazySingleton<ZakatService>(
-      () => ZakatService(db),
-    );
-    sl.registerLazySingleton<EndOfServiceBenefitService>(
-      () => EndOfServiceBenefitService(db),
-    );
-    sl.registerLazySingleton<InventoryReservationService>(
-      () => InventoryReservationService(db),
-    );
-    sl.registerLazySingleton<MultiLevelApprovalService>(
-      () => MultiLevelApprovalService(sl<AppConfigService>()),
-    );
-    sl.registerLazySingleton<ProformaService>(
-      () => ProformaService(db),
-    );
+    // NOTE: PdfInvoiceService is registered in core_module.dart
     sl.registerLazySingleton<FastAccessService>(() => FastAccessService());
-    sl.registerLazySingleton<CommandCenterProvider>(() => CommandCenterProvider(
-          sl<AppDatabase>(),
-          sl<FastAccessService>(),
-        ));
     sl.registerLazySingleton<CacheService>(() => CacheService());
     sl.registerLazySingleton<PaginatedQuery>(
         () => PaginatedQuery(sl<AppDatabase>()));
-    debugPrint("DI: BudgetService and PayrollService registered");
+    sl.registerLazySingleton<MultiLevelApprovalService>(
+      () => MultiLevelApprovalService(sl<AppConfigService>()),
+    );
+    // NOTE: EndOfServiceBenefitService is registered in hr_module.dart
+    sl.registerLazySingleton<AuditLogService>(
+      () => AuditLogService(db),
+    );
+
+    // Register missing ChangeNotifier providers
+    sl.registerLazySingleton<CreditNoteProvider>(
+      () => CreditNoteProvider(sl<CreditNoteService>()),
+    );
+    sl.registerLazySingleton<WhtProvider>(
+      () => WhtProvider(sl<WithholdingTaxService>()),
+    );
+    sl.registerLazySingleton<CommissionProvider>(
+      () => CommissionProvider(sl<SalesCommissionService>(), db),
+    );
+    sl.registerLazySingleton<AttendanceProvider>(
+      () => AttendanceProvider(sl<AttendanceService>()),
+    );
+    sl.registerLazySingleton<LeaveProvider>(
+      () => LeaveProvider(sl<LeaveManagementService>()),
+    );
+    sl.registerLazySingleton<SerialNumberProvider>(
+      () => SerialNumberProvider(sl<SerialNumberService>(), db),
+    );
 
     debugPrint("DI: Registering providers...");
+    sl.registerLazySingleton<AuthProvider>(
+      () => AuthProvider(db, sl<PermissionService>()),
+    );
+    sl.registerLazySingleton<ThemeProvider>(() => ThemeProvider());
+    sl.registerLazySingleton<LocaleProvider>(
+      () => LocaleProvider(sl<AppConfigService>()),
+    );
+    sl.registerLazySingleton<CommandCenterProvider>(() => CommandCenterProvider(
+          db,
+          sl<FastAccessService>(),
+        ));
     sl.registerFactory<ProductsProvider>(() => ProductsProvider(db));
     sl.registerFactory<AccountingProvider>(
         () => AccountingProvider(db, sl<AccountingService>()));
@@ -563,6 +356,32 @@ List<SingleChildWidget> buildAppProviders() {
     ),
     ChangeNotifierProvider<ProformaProvider>(
       create: (_) => ProformaProvider(sl<ProformaService>()),
+    ),
+    // Missing service providers (Fix 4)
+    Provider<TransferService>.value(value: sl<TransferService>()),
+    Provider<CashManagementService>.value(value: sl<CashManagementService>()),
+    Provider<EventBusService>.value(value: sl<EventBusService>()),
+    Provider<HRService>.value(value: sl<HRService>()),
+    Provider<ProductionService>.value(value: sl<ProductionService>()),
+    Provider<UnifiedStatementService>.value(value: sl<UnifiedStatementService>()),
+    // Missing ChangeNotifier providers (Fix 5)
+    ChangeNotifierProvider<CreditNoteProvider>(
+      create: (_) => sl<CreditNoteProvider>(),
+    ),
+    ChangeNotifierProvider<WhtProvider>(
+      create: (_) => sl<WhtProvider>(),
+    ),
+    ChangeNotifierProvider<CommissionProvider>(
+      create: (_) => sl<CommissionProvider>(),
+    ),
+    ChangeNotifierProvider<AttendanceProvider>(
+      create: (_) => sl<AttendanceProvider>(),
+    ),
+    ChangeNotifierProvider<LeaveProvider>(
+      create: (_) => sl<LeaveProvider>(),
+    ),
+    ChangeNotifierProvider<SerialNumberProvider>(
+      create: (_) => sl<SerialNumberProvider>(),
     ),
   ];
 }

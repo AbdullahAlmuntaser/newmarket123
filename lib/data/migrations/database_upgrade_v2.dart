@@ -1,12 +1,11 @@
-import 'package:sqflite/sqflite.dart';
+import 'package:flutter/foundation.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class DatabaseMigration {
-  static Future<void> upgradeDatabase(Database db, int oldVersion, int newVersion) async {
-    // تفعيل Foreign Keys
-    await db.execute('PRAGMA foreign_keys = ON');
+  static Future<void> upgradeDatabase(AppDatabase db, int oldVersion, int newVersion) async {
+    await db.customStatement('PRAGMA foreign_keys = ON');
 
-    // 1. جدول عروض الأسعار (Quotations)
-    await db.execute('''
+    await db.customStatement('''
       CREATE TABLE IF NOT EXISTS quotations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         quotation_number TEXT UNIQUE NOT NULL,
@@ -31,7 +30,7 @@ class DatabaseMigration {
       )
     ''');
 
-    await db.execute('''
+    await db.customStatement('''
       CREATE TABLE IF NOT EXISTS quotation_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         quotation_id INTEGER NOT NULL,
@@ -49,8 +48,7 @@ class DatabaseMigration {
       )
     ''');
 
-    // 2. جدول مواقع التخزين (Bin Locations)
-    await db.execute('''
+    await db.customStatement('''
       CREATE TABLE IF NOT EXISTS bin_locations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         warehouse_id INTEGER NOT NULL,
@@ -68,8 +66,7 @@ class DatabaseMigration {
       )
     ''');
 
-    // 3. جدول احتياطي المخزون (Stock Reservations)
-    await db.execute('''
+    await db.customStatement('''
       CREATE TABLE IF NOT EXISTS stock_reservations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         reference_type TEXT NOT NULL,
@@ -90,8 +87,7 @@ class DatabaseMigration {
       )
     ''');
 
-    // 4. جدول سير الموافقات (Approval Workflows)
-    await db.execute('''
+    await db.customStatement('''
       CREATE TABLE IF NOT EXISTS approval_workflows (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -105,23 +101,22 @@ class DatabaseMigration {
       )
     ''');
 
-    await db.execute('''
+    await db.customStatement('''
       CREATE TABLE IF NOT EXISTS approval_levels (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         workflow_id INTEGER NOT NULL,
         level_order INTEGER NOT NULL,
-        role_id INTEGER,
+        role TEXT,
         user_id INTEGER,
         min_amount REAL,
         max_amount REAL,
         requires_signature INTEGER DEFAULT 0,
         FOREIGN KEY (workflow_id) REFERENCES approval_workflows(id) ON DELETE CASCADE,
-        FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       )
     ''');
 
-    await db.execute('''
+    await db.customStatement('''
       CREATE TABLE IF NOT EXISTS approval_requests (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         document_type TEXT NOT NULL,
@@ -137,24 +132,22 @@ class DatabaseMigration {
       )
     ''');
 
-    await db.execute('''
+    await db.customStatement('''
       CREATE TABLE IF NOT EXISTS approval_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         request_id INTEGER NOT NULL,
         level_order INTEGER NOT NULL,
         approver_id INTEGER,
-        approver_role_id INTEGER,
+        approver_role TEXT,
         action TEXT NOT NULL,
         comments TEXT,
         action_date TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (request_id) REFERENCES approval_requests(id) ON DELETE CASCADE,
-        FOREIGN KEY (approver_id) REFERENCES users(id) ON DELETE SET NULL,
-        FOREIGN KEY (approver_role_id) REFERENCES roles(id) ON DELETE SET NULL
+        FOREIGN KEY (approver_id) REFERENCES users(id) ON DELETE SET NULL
       )
     ''');
 
-    // 5. جدول قيود الإغلاق (Closing Entries)
-    await db.execute('''
+    await db.customStatement('''
       CREATE TABLE IF NOT EXISTS closing_entries (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         period_start TEXT NOT NULL,
@@ -169,14 +162,13 @@ class DatabaseMigration {
         posted_by INTEGER,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         posted_at TEXT,
-        FOREIGN KEY (retained_earnings_account_id) REFERENCES chart_of_accounts(id) ON DELETE SET NULL,
+        FOREIGN KEY (retained_earnings_account_id) REFERENCES gl_accounts(id) ON DELETE SET NULL,
         FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
         FOREIGN KEY (posted_by) REFERENCES users(id) ON DELETE SET NULL
       )
     ''');
 
-    // 6. جدول التدفق النقدي (Cash Flow)
-    await db.execute('''
+    await db.customStatement('''
       CREATE TABLE IF NOT EXISTS cash_flow_entries (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         entry_date TEXT NOT NULL,
@@ -188,12 +180,11 @@ class DatabaseMigration {
         amount REAL NOT NULL,
         description TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (account_id) REFERENCES chart_of_accounts(id) ON DELETE CASCADE
+        FOREIGN KEY (account_id) REFERENCES gl_accounts(id) ON DELETE CASCADE
       )
     ''');
 
-    // 7. جدول قواعد الخصم (Discount Rules)
-    await db.execute('''
+    await db.customStatement('''
       CREATE TABLE IF NOT EXISTS discount_rules (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -212,7 +203,7 @@ class DatabaseMigration {
       )
     ''');
 
-    await db.execute('''
+    await db.customStatement('''
       CREATE TABLE IF NOT EXISTS discount_rule_conditions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         rule_id INTEGER NOT NULL,
@@ -222,30 +213,27 @@ class DatabaseMigration {
       )
     ''');
 
-    // 8. جدول صلاحيات مستوى الصف (Row Level Permissions)
-    await db.execute('''
+    await db.customStatement('''
       CREATE TABLE IF NOT EXISTS row_level_permissions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        role_id INTEGER NOT NULL,
+        role TEXT NOT NULL,
         table_name TEXT NOT NULL,
         permission_type TEXT NOT NULL,
         condition_sql TEXT,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
     ''');
 
-    // إنشاء فهارس محسنة للأداء
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_quotations_customer ON quotations(customer_id)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_quotations_status ON quotations(status)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_quotation_items_quotation ON quotation_items(quotation_id)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_bin_locations_warehouse ON bin_locations(warehouse_id)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_stock_reservations_product ON stock_reservations(product_id)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_stock_reservations_status ON stock_reservations(status)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_approval_requests_status ON approval_requests(status)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_cash_flow_entries_date ON cash_flow_entries(entry_date)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_discount_rules_active ON discount_rules(is_active)');
-    
-    print('تم تنفيذ جميع عمليات الترقية بنجاح');
+    await db.customStatement('CREATE INDEX IF NOT EXISTS idx_quotations_customer ON quotations(customer_id)');
+    await db.customStatement('CREATE INDEX IF NOT EXISTS idx_quotations_status ON quotations(status)');
+    await db.customStatement('CREATE INDEX IF NOT EXISTS idx_quotation_items_quotation ON quotation_items(quotation_id)');
+    await db.customStatement('CREATE INDEX IF NOT EXISTS idx_bin_locations_warehouse ON bin_locations(warehouse_id)');
+    await db.customStatement('CREATE INDEX IF NOT EXISTS idx_stock_reservations_product ON stock_reservations(product_id)');
+    await db.customStatement('CREATE INDEX IF NOT EXISTS idx_stock_reservations_status ON stock_reservations(status)');
+    await db.customStatement('CREATE INDEX IF NOT EXISTS idx_approval_requests_status ON approval_requests(status)');
+    await db.customStatement('CREATE INDEX IF NOT EXISTS idx_cash_flow_entries_date ON cash_flow_entries(entry_date)');
+    await db.customStatement('CREATE INDEX IF NOT EXISTS idx_discount_rules_active ON discount_rules(is_active)');
+
+    debugPrint('تم تنفيذ جميع عمليات الترقية بنجاح');
   }
 }

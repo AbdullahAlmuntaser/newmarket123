@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
+import 'package:supermarket/core/constants/account_codes.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
-import 'accounting_service.dart';
 
 class AssetService {
   final AppDatabase db;
@@ -73,10 +73,10 @@ class AssetService {
 
         // We need the specific expense and contra-asset accounts
         final expenseAccount = await dao.getAccountByCode(
-          AccountingService.codeDepreciationExpense,
+          AccountCodes.depreciationExpense,
         );
         final contraAssetAccount = await dao.getAccountByCode(
-          AccountingService.codeAccumulatedDepreciation,
+          AccountCodes.accumulatedDepreciation,
         );
 
         if (expenseAccount != null && contraAssetAccount != null) {

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart';
@@ -26,18 +27,18 @@ void main() {
           id: Value(id),
           code: Value(code),
           name: Value(name),
-          type: Value(type)));
+          accountType: Value(AccountType.values.byName(type.toLowerCase()))));
       return id;
     }
 
-    await ensureAccount('6000', 'Salary Expense', 'EXPENSE');
-    await ensureAccount('2000', 'Deductions Liability', 'LIABILITY');
-    await ensureAccount('2100', 'Salaries Payable', 'LIABILITY');
-    await ensureAccount('1000', 'Bank', 'ASSET');
+    await ensureAccount('6000', 'Salary Expense', 'expense');
+    await ensureAccount('2000', 'Deductions Liability', 'liability');
+    await ensureAccount('2100', 'Salaries Payable', 'liability');
+    await ensureAccount('1000', 'Bank', 'asset');
     // Accounts required by fixed assets flows
-    await ensureAccount('6000', 'Depreciation Expense', 'EXPENSE');
-    await ensureAccount('1600', 'Accumulated Depreciation', 'ASSET');
-    await ensureAccount('1500', 'Fixed Assets Account', 'ASSET');
+    await ensureAccount('6000', 'Depreciation Expense', 'expense');
+    await ensureAccount('1600', 'Accumulated Depreciation', 'asset');
+    await ensureAccount('1500', 'Fixed Assets Account', 'asset');
 
     final payrollService = PayrollService(db);
 
@@ -52,7 +53,7 @@ void main() {
         name: const Value('Test'),
         code: const Value('EMP1'),
         hireDate: Value(DateTime.now()),
-        basicSalary: const Value(1000.0)));
+        basicSalary: Value(Decimal.fromInt(1000))));
     await db.into(db.hRPayrollRuns).insert(HRPayrollRunsCompanion(
         id: Value(runId), period: const Value('2026-05')));
 
@@ -61,17 +62,17 @@ void main() {
         id: Value(const Uuid().v4()),
         payrollRunId: Value(runId),
         employeeId: Value(empId),
-        basicSalary: const Value(1000.0),
-        grossSalary: const Value(1000.0),
-        netSalary: const Value(1000.0)));
+        basicSalary: Value(Decimal.fromInt(1000)),
+        grossSalary: Value(Decimal.fromInt(1000)),
+        netSalary: Value(Decimal.fromInt(1000))));
 
     // Update payroll totals using Value wrappers when needed
     await (db.update(db.hRPayrollRuns)..where((t) => t.id.equals(runId))).write(
-        const HRPayrollRunsCompanion(
-            totalSalaries: Value(1000.0),
-            totalAllowances: Value(0.0),
-            totalDeductions: Value(0.0),
-            netPayable: Value(1000.0)));
+        HRPayrollRunsCompanion(
+            totalSalaries: Value(Decimal.fromInt(1000)),
+            totalAllowances: Value(Decimal.zero),
+            totalDeductions: Value(Decimal.zero),
+            netPayable: Value(Decimal.fromInt(1000))));
 
     final entryId = await payrollService.postPayrollJournalEntry(runId);
     expect(entryId, isNotEmpty);

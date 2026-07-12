@@ -1,6 +1,5 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/core/utils/drift_extensions.dart';
 import 'package:uuid/uuid.dart';
 
 class AccountingPeriodService {
@@ -129,7 +128,8 @@ class AccountingPeriodService {
           ..where((p) => p.isClosed.equals(false))
           ..where((p) => p.startDate.isSmallerOrEqual(Variable(now)))
           ..where((p) => p.endDate.isBiggerOrEqual(Variable(now))))
-        .getFirstOrNull();
+        .get()
+        .then((rows) => rows.isEmpty ? null : rows.first);
 
     if (period == null) {
       final startOfMonth = DateTime(now.year, now.month, 1);

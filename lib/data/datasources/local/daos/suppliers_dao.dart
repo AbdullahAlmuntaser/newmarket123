@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
-import 'package:supermarket/core/constants/account_types.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
-import '../app_database.dart';
 
 part 'suppliers_dao.g.dart';
 
@@ -99,8 +99,7 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
           id: Value(accountId),
           code: '2010-${supplierId.substring(0, 5)}',
           name: 'مورد: ${entry.name.value}',
-          type: AccountType
-              .liability, // Removed .name as AccountType.liability is already a String
+          accountType: AccountType.liability,
           parentId: Value(parentAccount?.id),
           isHeader: const Value(false),
           balance: Value(Decimal.zero),
@@ -177,7 +176,7 @@ class SuppliersDao extends DatabaseAccessor<AppDatabase>
         SupplierTransaction(
           date: inv.invoiceDate,
           description: 'فاتورة AP رقم ${inv.invoiceNumber}',
-          debit: inv.totalAmount, // له
+          debit: inv.totalAmount.toDouble(), // له
           credit: 0,
           referenceId: inv.id,
           type: 'AP_INVOICE',

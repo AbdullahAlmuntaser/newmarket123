@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
+import 'package:supermarket/core/constants/account_codes.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
-import 'accounting_service.dart';
 import 'audit_service.dart';
 
 class ReturnService {
@@ -105,11 +105,11 @@ class ReturnService {
       );
 
       final salesRevenueAcc = await dao.getAccountByCode(
-        AccountingService.codeSalesRevenue,
+        AccountCodes.salesRevenue,
       );
       final creditAccCode = sale.isCredit
-          ? AccountingService.codeAccountsReceivable
-          : AccountingService.codeCash;
+          ? AccountCodes.accountsReceivable
+          : AccountCodes.cash;
       final creditAcc = await dao.getAccountByCode(creditAccCode);
 
       if (salesRevenueAcc != null && creditAcc != null) {
@@ -133,9 +133,9 @@ class ReturnService {
       // B. COGS Reversal (if value exists)
       if (totalCogsToReverse > 0) {
         final cogsEntryId = const Uuid().v4();
-        final cogsAcc = await dao.getAccountByCode(AccountingService.codeCOGS);
+        final cogsAcc = await dao.getAccountByCode(AccountCodes.cogs);
         final inventoryAcc = await dao.getAccountByCode(
-          AccountingService.codeInventory,
+          AccountCodes.inventory,
         );
 
         if (cogsAcc != null && inventoryAcc != null) {
@@ -272,11 +272,11 @@ class ReturnService {
       );
 
       final inventoryAcc = await dao.getAccountByCode(
-        AccountingService.codeInventory,
+        AccountCodes.inventory,
       );
       final debtAccCode = purchase.isCredit
-          ? AccountingService.codeAccountsPayable
-          : AccountingService.codeCash;
+          ? AccountCodes.accountsPayable
+          : AccountCodes.cash;
       final debtAcc = await dao.getAccountByCode(debtAccCode);
 
       if (inventoryAcc != null && debtAcc != null) {

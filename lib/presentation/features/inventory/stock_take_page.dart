@@ -428,7 +428,7 @@ class _StockTakePageState extends State<StockTakePage> {
   void _finalizeStockTake(AppDatabase db, StockTake stockTake) async {
     setState(() => _isSaving = true);
     try {
-      final inventoryService = InventoryService(
+      final inventoryService = InventoryService.fromDb(
         db,
         AuditService(db),
         AppConfigService(db),

@@ -33,6 +33,17 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 
+    signingConfigs {
+        // TODO: Replace with your release keystore for production builds
+        // debug is used for development only — never publish to Play Store with this
+        release {
+            // keyAlias 'your_key_alias'
+            // keyPassword 'your_key_password'
+            // storeFile file('your_keystore.jks')
+            // storePassword 'your_store_password'
+        }
+    }
+
     defaultConfig {
         applicationId = "com.example.systemmarket"
         minSdk = 23
@@ -43,6 +54,8 @@ android {
 
     buildTypes {
         release {
+            // TODO: Configure proper signing for production release
+            // For now, use debug signing for development/testing only
             signingConfig = signingConfigs.debug
         }
     }

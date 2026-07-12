@@ -2,7 +2,6 @@ import 'package:supermarket/core/auth/auth_provider.dart';
 import 'package:supermarket/presentation/widgets/permission_guard.dart';
 import 'package:supermarket/core/services/permission_service.dart';
 import 'package:supermarket/core/services/audit_service.dart';
-import 'package:supermarket/core/services/audit_log_service.dart';
 import 'package:supermarket/core/services/unit_conversion_service.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
@@ -1043,7 +1042,7 @@ class _SalesInvoicePageState extends State<SalesInvoicePage> {
       if (!mounted) return;
       final currentUser =
           Provider.of<AuthProvider>(context, listen: false).currentUser;
-      await sl<AuditLogService>().logAction(
+      await sl<AuditService>().logAction(
         userId: currentUser?.id ?? 'system',
         action: 'INVOICE_SAVE_ERROR',
         logTableName: 'SalesInvoice',

@@ -321,7 +321,7 @@ class PurchaseProvider with ChangeNotifier {
   /// Get last purchase prices for all products from a supplier
   Future<void> _loadLastPurchasePricesForSupplier(String supplierId) async {
     // Get all products
-    final products = await db.select(db.products).get();
+    final products = await (db.select(db.products)..limit(200)).get();
 
     for (var product in products) {
       // Get last purchase of this product from this supplier

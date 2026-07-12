@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:bcrypt/bcrypt.dart';
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
@@ -65,6 +66,8 @@ class SecurityService {
   /// Lockout duration after max failed attempts
   static Duration lockoutDuration = const Duration(minutes: 15);
 
+  /// WARNING: This flag is ONLY for unit tests. In release builds, this is
+  /// always false regardless of what is set here.
   static bool useFakeKeyForTesting = false;
 
   SecurityService(this.db);
@@ -139,7 +142,12 @@ class SecurityService {
         await migratePasswordToBcrypt(user.id, password);
       }
     } else {
-      passwordValid = password == user.password;
+      // No password hash set — try legacy SHA-256 verification
+      passwordValid = _verifyLegacyPassword(password, '', user.password);
+      if (passwordValid) {
+        // Auto-migrate to BCrypt on successful legacy login
+        await migratePasswordToBcrypt(user.id, password);
+      }
     }
 
     if (!passwordValid) {
@@ -313,15 +321,38 @@ class SecurityService {
   // ==================== DATA ENCRYPTION ====================
 
   static Future<String> getDatabaseKey() async {
+    // NEVER allow fake key in release builds
+    if (useFakeKeyForTesting && kReleaseMode) {
+      throw Exception(
+          'SECURITY VIOLATION: useFakeKeyForTesting is true in a release build. '
+          'This must never happen in production.');
+    }
     if (useFakeKeyForTesting) {
       return 'test_encryption_key_for_unit_tests_32_chars_';
     }
-    String? key = await _storage.read(key: _dbKeyName);
-    if (key == null) {
-      key = _generateSecureKey();
-      await _storage.write(key: _dbKeyName, value: key);
+    try {
+      String? key = await _storage.read(key: _dbKeyName);
+      if (key == null || key.isEmpty) {
+        key = _generateSecureKey();
+        await _storage.write(key: _dbKeyName, value: key);
+        final verify = await _storage.read(key: _dbKeyName);
+        if (verify == null || verify.isEmpty || verify != key) {
+          debugPrint('SECURITY: FlutterSecureStorage write verification failed.');
+          throw Exception(
+              'CRITICAL: FlutterSecureStorage failed to persist the encryption key. '
+              'The app cannot guarantee data encryption safety. '
+              'Please reinstall the app or check device storage.');
+        }
+      }
+      return key;
+    } catch (e) {
+      debugPrint('SECURITY: FlutterSecureStorage error: $e');
+      if (e.toString().contains('CRITICAL')) rethrow;
+      throw Exception(
+          'CRITICAL: Cannot access encryption key from secure storage. '
+          'The app cannot safely open the encrypted database. '
+          'Please reinstall the app. Original error: $e');
     }
-    return key;
   }
 
   static String _generateSecureKey() {

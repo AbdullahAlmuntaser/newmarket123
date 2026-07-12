@@ -171,7 +171,7 @@ class _EmployeesPageState extends State<EmployeesPage> {
             onPressed: () async {
               if (!formKey.currentState!.validate()) return;
 
-              final salary = double.tryParse(salaryController.text) ?? 0.0;
+              final salary = Decimal.tryParse(salaryController.text) ?? Decimal.zero;
               final hireDate =
                   DateTime.tryParse(joinDateController.text) ?? DateTime.now();
 

@@ -1,6 +1,5 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/core/utils/drift_extensions.dart';
 
 part 'products_dao.g.dart';
 
@@ -65,6 +64,26 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
                 b.warehouseId.equals(warehouseId) &
                 b.quantity.isBiggerThan(Variable(Decimal.zero.toString())),
           ))
+        .get();
+  }
+
+  Future<List<ProductBatch>> getBatchesByFefo(
+    String productId,
+    String warehouseId,
+  ) {
+    return (select(productBatches)
+          ..where(
+            (b) =>
+                b.productId.equals(productId) &
+                b.warehouseId.equals(warehouseId) &
+                b.quantity.isBiggerThan(Variable(Decimal.zero.toString())),
+          )
+          ..orderBy([
+            (t) => OrderingTerm(
+                  expression: t.expiryDate,
+                  mode: OrderingMode.asc,
+                ),
+          ]))
         .get();
   }
 
@@ -236,7 +255,8 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
     return (select(
       products,
     )..where((p) => p.barcode.equals(barcode)))
-        .getFirstOrNull();
+        .get()
+        .then((rows) => rows.isEmpty ? null : rows.first);
   }
 
   Future<int> addProduct(ProductsCompanion entry) {
@@ -317,6 +337,24 @@ class ProductsDao extends DatabaseAccessor<AppDatabase>
           ..where(
             (b) =>
                 b.expiryDate.isSmallerOrEqual(Variable(thresholdDate)) &
+                b.quantity.isBiggerThan(Variable(Decimal.zero.toString())),
+          )
+          ..orderBy([
+            (t) =>
+                OrderingTerm(expression: t.expiryDate, mode: OrderingMode.asc),
+          ]))
+        .get();
+  }
+
+  Future<List<ProductBatch>> getExpiredBatches({
+    required String warehouseId,
+  }) async {
+    final now = DateTime.now();
+    return (select(productBatches)
+          ..where(
+            (b) =>
+                b.warehouseId.equals(warehouseId) &
+                b.expiryDate.isSmallerOrEqual(Variable(now)) &
                 b.quantity.isBiggerThan(Variable(Decimal.zero.toString())),
           )
           ..orderBy([

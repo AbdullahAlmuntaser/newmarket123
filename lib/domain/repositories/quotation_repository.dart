@@ -1,4 +1,4 @@
-import 'package:erp_pos_app/data/models/quotation.dart';
+import '../../data/models/quotation.dart';
 
 abstract class QuotationRepository {
   Future<List<Quotation>> getAllQuotations();

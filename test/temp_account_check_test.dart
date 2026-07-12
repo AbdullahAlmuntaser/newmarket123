@@ -1,4 +1,5 @@
 
+import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -7,7 +8,7 @@ void main() {
   test('Fetch and print all GL accounts', () async {
     TestWidgetsFlutterBinding.ensureInitialized();
 
-    final db = AppDatabase();
+    final db = AppDatabase(NativeDatabase.memory());
     final dao = db.accountingDao;
 
     try {

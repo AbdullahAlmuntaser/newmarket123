@@ -24,7 +24,7 @@ void main() {
 
   group('InventoryService Tests', () {
     test('service can be created', () {
-      final inventoryService = InventoryService(
+      final inventoryService = InventoryService.fromDb(
         mockDatabase,
         mockAuditService,
         mockConfigService,

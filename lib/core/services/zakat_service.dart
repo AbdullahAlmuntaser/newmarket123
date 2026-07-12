@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:uuid/uuid.dart';
 
@@ -52,7 +53,7 @@ class ZakatService {
   /// Calculate total assets from GL accounts
   Future<Decimal> _calculateTotalAssets() async {
     final assetAccounts = await (db.select(db.gLAccounts)
-          ..where((a) => a.type.equals('ASSET')))
+          ..where((a) => a.accountType.equals(AccountType.asset.index)))
         .get();
 
     Decimal total = Decimal.zero;
@@ -65,7 +66,7 @@ class ZakatService {
   /// Calculate total liabilities from GL accounts
   Future<Decimal> _calculateTotalLiabilities() async {
     final liabilityAccounts = await (db.select(db.gLAccounts)
-          ..where((a) => a.type.equals('LIABILITY')))
+          ..where((a) => a.accountType.equals(AccountType.liability.index)))
         .get();
 
     Decimal total = Decimal.zero;

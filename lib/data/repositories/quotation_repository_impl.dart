@@ -1,25 +1,22 @@
-import 'package:sqflite/sqflite.dart';
-import 'package:erp_pos_app/data/models/quotation.dart';
-import 'package:erp_pos_app/domain/repositories/quotation_repository.dart';
+import 'package:drift/drift.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
+import '../models/quotation.dart';
+import '../../domain/repositories/quotation_repository.dart';
 
 class QuotationRepositoryImpl implements QuotationRepository {
-  final Database database;
+  final AppDatabase database;
 
   QuotationRepositoryImpl({required this.database});
 
   @override
   Future<List<Quotation>> getAllQuotations() async {
-    final List<Map<String, dynamic>> maps = await database.query('quotations', orderBy: 'created_at DESC');
+    final maps = (await database.customSelect('SELECT * FROM quotations ORDER BY created_at DESC').get()).map((e) => e.data).toList();
     return maps.map((map) => Quotation.fromJson(map)).toList();
   }
 
   @override
   Future<Quotation?> getQuotationById(int id) async {
-    final List<Map<String, dynamic>> maps = await database.query(
-      'quotations',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    final maps = (await database.customSelect('SELECT * FROM quotations WHERE id = ?', variables: [Variable(id)]).get()).map((e) => e.data).toList();
     if (maps.isNotEmpty) {
       return Quotation.fromJson(maps.first);
     }
@@ -28,11 +25,7 @@ class QuotationRepositoryImpl implements QuotationRepository {
 
   @override
   Future<Quotation?> getQuotationByNumber(String number) async {
-    final List<Map<String, dynamic>> maps = await database.query(
-      'quotations',
-      where: 'quotation_number = ?',
-      whereArgs: [number],
-    );
+    final maps = (await database.customSelect('SELECT * FROM quotations WHERE quotation_number = ?', variables: [Variable(number)]).get()).map((e) => e.data).toList();
     if (maps.isNotEmpty) {
       return Quotation.fromJson(maps.first);
     }
@@ -41,82 +34,62 @@ class QuotationRepositoryImpl implements QuotationRepository {
 
   @override
   Future<List<Quotation>> getQuotationsByCustomer(int customerId) async {
-    final List<Map<String, dynamic>> maps = await database.query(
-      'quotations',
-      where: 'customer_id = ?',
-      whereArgs: [customerId],
-      orderBy: 'created_at DESC',
-    );
+    final maps = (await database.customSelect('SELECT * FROM quotations WHERE customer_id = ? ORDER BY created_at DESC', variables: [Variable(customerId)]).get()).map((e) => e.data).toList();
     return maps.map((map) => Quotation.fromJson(map)).toList();
   }
 
   @override
   Future<List<Quotation>> getQuotationsByStatus(String status) async {
-    final List<Map<String, dynamic>> maps = await database.query(
-      'quotations',
-      where: 'status = ?',
-      whereArgs: [status],
-      orderBy: 'created_at DESC',
-    );
+    final maps = (await database.customSelect('SELECT * FROM quotations WHERE status = ? ORDER BY created_at DESC', variables: [Variable(status)]).get()).map((e) => e.data).toList();
     return maps.map((map) => Quotation.fromJson(map)).toList();
   }
 
   @override
   Future<Quotation> createQuotation(Quotation quotation, List<QuotationItem> items) async {
-    await database.transaction((txn) async {
-      final int id = await txn.insert('quotations', quotation.toJson());
-      for (var item in items) {
-        await txn.insert('quotation_items', {
-          ...item.toJson(),
-          'quotation_id': id,
-        });
-      }
-    });
+    final json = quotation.toJson();
+    final cols = json.keys.join(', ');
+    final vals = json.keys.map((_) => '?').join(', ');
+    final args = json.values.map((v) => Variable(v as Object)).toList();
+    await database.customInsert('INSERT INTO quotations ($cols) VALUES ($vals)', variables: args);
+    for (var item in items) {
+      final ij = item.toJson();
+      final ic = ij.keys.join(', ');
+      final iv = ij.keys.map((_) => '?').join(', ');
+      await database.customInsert('INSERT INTO quotation_items ($ic) VALUES ($iv)', variables: ij.values.map((v) => Variable(v as Object)).toList());
+    }
     return quotation;
   }
 
   @override
   Future<Quotation> updateQuotation(Quotation quotation, List<QuotationItem> items) async {
-    await database.transaction((txn) async {
-      await txn.update(
-        'quotations',
-        quotation.toJson(),
-        where: 'id = ?',
-        whereArgs: [quotation.id],
-      );
-      await txn.delete('quotation_items', where: 'quotation_id = ?', whereArgs: [quotation.id]);
-      for (var item in items) {
-        await txn.insert('quotation_items', {
-          ...item.toJson(),
-          'quotation_id': quotation.id,
-        });
-      }
-    });
+    final json = quotation.toJson();
+    final setClause = json.keys.map((k) => '$k = ?').join(', ');
+    await database.customUpdate('UPDATE quotations SET $setClause WHERE id = ?',
+        variables: [...json.values.map((v) => Variable(v as Object)), Variable(quotation.id as Object)]);
+    await database.customUpdate('DELETE FROM quotation_items WHERE quotation_id = ?', variables: [Variable(quotation.id as Object)]);
+    for (var item in items) {
+      final ij = item.toJson();
+      final ic = ij.keys.join(', ');
+      final iv = ij.keys.map((_) => '?').join(', ');
+      await database.customInsert('INSERT INTO quotation_items ($ic) VALUES ($iv)', variables: ij.values.map((v) => Variable(v as Object)).toList());
+    }
     return quotation;
   }
 
   @override
   Future<void> deleteQuotation(int id) async {
-    await database.delete('quotations', where: 'id = ?', whereArgs: [id]);
+    await database.customUpdate('DELETE FROM quotations WHERE id = ?', variables: [Variable(id)]);
   }
 
   @override
   Future<void> updateQuotationStatus(int id, String status) async {
-    await database.update(
-      'quotations',
-      {'status': status, 'updated_at': DateTime.now().toIso8601String()},
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    await database.customUpdate('UPDATE quotations SET status = ?, updated_at = ? WHERE id = ?',
+        variables: [Variable(status), Variable(DateTime.now().toIso8601String()), Variable(id)]);
   }
 
   @override
   Future<List<QuotationItem>> getQuotationItems(int quotationId) async {
-    final List<Map<String, dynamic>> maps = await database.query(
-      'quotation_items',
-      where: 'quotation_id = ?',
-      whereArgs: [quotationId],
-    );
+    final maps = (await database.customSelect('SELECT * FROM quotation_items WHERE quotation_id = ?', variables: [Variable(quotationId)]).get()).map((e) => e.data).toList();
     return maps.map((map) => QuotationItem.fromJson(map)).toList();
   }
 }

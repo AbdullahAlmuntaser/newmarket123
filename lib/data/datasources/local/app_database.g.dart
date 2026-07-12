@@ -1648,11 +1648,13 @@ class $GLAccountsTable extends GLAccounts
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
       'name', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  static const VerificationMeta _accountTypeMeta =
+      const VerificationMeta('accountType');
   @override
-  late final GeneratedColumn<String> type = GeneratedColumn<String>(
-      'type', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<AccountType, int> accountType =
+      GeneratedColumn<int>('account_type', aliasedName, false,
+              type: DriftSqlType.int, requiredDuringInsert: true)
+          .withConverter<AccountType>($GLAccountsTable.$converteraccountType);
   static const VerificationMeta _analyticTypeMeta =
       const VerificationMeta('analyticType');
   @override
@@ -1697,7 +1699,7 @@ class $GLAccountsTable extends GLAccounts
         branchId,
         code,
         name,
-        type,
+        accountType,
         analyticType,
         parentId,
         isHeader,
@@ -1750,12 +1752,7 @@ class $GLAccountsTable extends GLAccounts
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
-    if (data.containsKey('type')) {
-      context.handle(
-          _typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
-    } else if (isInserting) {
-      context.missing(_typeMeta);
-    }
+    context.handle(_accountTypeMeta, const VerificationResult.success());
     if (data.containsKey('analytic_type')) {
       context.handle(
           _analyticTypeMeta,
@@ -1796,8 +1793,9 @@ class $GLAccountsTable extends GLAccounts
           .read(DriftSqlType.string, data['${effectivePrefix}code'])!,
       name: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
-      type: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}type'])!,
+      accountType: $GLAccountsTable.$converteraccountType.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.int, data['${effectivePrefix}account_type'])!),
       analyticType: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}analytic_type']),
       parentId: attachedDatabase.typeMapping
@@ -1815,6 +1813,8 @@ class $GLAccountsTable extends GLAccounts
     return $GLAccountsTable(attachedDatabase, alias);
   }
 
+  static TypeConverter<AccountType, int> $converteraccountType =
+      const AccountTypeConverter();
   static TypeConverter<Decimal, String> $converterbalance =
       const DecimalConverter();
 }
@@ -1828,7 +1828,7 @@ class GLAccount extends DataClass implements Insertable<GLAccount> {
   final String? branchId;
   final String code;
   final String name;
-  final String type;
+  final AccountType accountType;
   final String? analyticType;
   final String? parentId;
   final bool isHeader;
@@ -1842,7 +1842,7 @@ class GLAccount extends DataClass implements Insertable<GLAccount> {
       this.branchId,
       required this.code,
       required this.name,
-      required this.type,
+      required this.accountType,
       this.analyticType,
       this.parentId,
       required this.isHeader,
@@ -1862,7 +1862,10 @@ class GLAccount extends DataClass implements Insertable<GLAccount> {
     }
     map['code'] = Variable<String>(code);
     map['name'] = Variable<String>(name);
-    map['type'] = Variable<String>(type);
+    {
+      map['account_type'] = Variable<int>(
+          $GLAccountsTable.$converteraccountType.toSql(accountType));
+    }
     if (!nullToAbsent || analyticType != null) {
       map['analytic_type'] = Variable<String>(analyticType);
     }
@@ -1891,7 +1894,7 @@ class GLAccount extends DataClass implements Insertable<GLAccount> {
           : Value(branchId),
       code: Value(code),
       name: Value(name),
-      type: Value(type),
+      accountType: Value(accountType),
       analyticType: analyticType == null && nullToAbsent
           ? const Value.absent()
           : Value(analyticType),
@@ -1915,7 +1918,7 @@ class GLAccount extends DataClass implements Insertable<GLAccount> {
       branchId: serializer.fromJson<String?>(json['branchId']),
       code: serializer.fromJson<String>(json['code']),
       name: serializer.fromJson<String>(json['name']),
-      type: serializer.fromJson<String>(json['type']),
+      accountType: serializer.fromJson<AccountType>(json['accountType']),
       analyticType: serializer.fromJson<String?>(json['analyticType']),
       parentId: serializer.fromJson<String?>(json['parentId']),
       isHeader: serializer.fromJson<bool>(json['isHeader']),
@@ -1934,7 +1937,7 @@ class GLAccount extends DataClass implements Insertable<GLAccount> {
       'branchId': serializer.toJson<String?>(branchId),
       'code': serializer.toJson<String>(code),
       'name': serializer.toJson<String>(name),
-      'type': serializer.toJson<String>(type),
+      'accountType': serializer.toJson<AccountType>(accountType),
       'analyticType': serializer.toJson<String?>(analyticType),
       'parentId': serializer.toJson<String?>(parentId),
       'isHeader': serializer.toJson<bool>(isHeader),
@@ -1951,7 +1954,7 @@ class GLAccount extends DataClass implements Insertable<GLAccount> {
           Value<String?> branchId = const Value.absent(),
           String? code,
           String? name,
-          String? type,
+          AccountType? accountType,
           Value<String?> analyticType = const Value.absent(),
           Value<String?> parentId = const Value.absent(),
           bool? isHeader,
@@ -1965,7 +1968,7 @@ class GLAccount extends DataClass implements Insertable<GLAccount> {
         branchId: branchId.present ? branchId.value : this.branchId,
         code: code ?? this.code,
         name: name ?? this.name,
-        type: type ?? this.type,
+        accountType: accountType ?? this.accountType,
         analyticType:
             analyticType.present ? analyticType.value : this.analyticType,
         parentId: parentId.present ? parentId.value : this.parentId,
@@ -1983,7 +1986,8 @@ class GLAccount extends DataClass implements Insertable<GLAccount> {
       branchId: data.branchId.present ? data.branchId.value : this.branchId,
       code: data.code.present ? data.code.value : this.code,
       name: data.name.present ? data.name.value : this.name,
-      type: data.type.present ? data.type.value : this.type,
+      accountType:
+          data.accountType.present ? data.accountType.value : this.accountType,
       analyticType: data.analyticType.present
           ? data.analyticType.value
           : this.analyticType,
@@ -2004,7 +2008,7 @@ class GLAccount extends DataClass implements Insertable<GLAccount> {
           ..write('branchId: $branchId, ')
           ..write('code: $code, ')
           ..write('name: $name, ')
-          ..write('type: $type, ')
+          ..write('accountType: $accountType, ')
           ..write('analyticType: $analyticType, ')
           ..write('parentId: $parentId, ')
           ..write('isHeader: $isHeader, ')
@@ -2023,7 +2027,7 @@ class GLAccount extends DataClass implements Insertable<GLAccount> {
       branchId,
       code,
       name,
-      type,
+      accountType,
       analyticType,
       parentId,
       isHeader,
@@ -2040,7 +2044,7 @@ class GLAccount extends DataClass implements Insertable<GLAccount> {
           other.branchId == this.branchId &&
           other.code == this.code &&
           other.name == this.name &&
-          other.type == this.type &&
+          other.accountType == this.accountType &&
           other.analyticType == this.analyticType &&
           other.parentId == this.parentId &&
           other.isHeader == this.isHeader &&
@@ -2056,7 +2060,7 @@ class GLAccountsCompanion extends UpdateCompanion<GLAccount> {
   final Value<String?> branchId;
   final Value<String> code;
   final Value<String> name;
-  final Value<String> type;
+  final Value<AccountType> accountType;
   final Value<String?> analyticType;
   final Value<String?> parentId;
   final Value<bool> isHeader;
@@ -2071,7 +2075,7 @@ class GLAccountsCompanion extends UpdateCompanion<GLAccount> {
     this.branchId = const Value.absent(),
     this.code = const Value.absent(),
     this.name = const Value.absent(),
-    this.type = const Value.absent(),
+    this.accountType = const Value.absent(),
     this.analyticType = const Value.absent(),
     this.parentId = const Value.absent(),
     this.isHeader = const Value.absent(),
@@ -2087,7 +2091,7 @@ class GLAccountsCompanion extends UpdateCompanion<GLAccount> {
     this.branchId = const Value.absent(),
     required String code,
     required String name,
-    required String type,
+    required AccountType accountType,
     this.analyticType = const Value.absent(),
     this.parentId = const Value.absent(),
     this.isHeader = const Value.absent(),
@@ -2095,7 +2099,7 @@ class GLAccountsCompanion extends UpdateCompanion<GLAccount> {
     this.rowid = const Value.absent(),
   })  : code = Value(code),
         name = Value(name),
-        type = Value(type);
+        accountType = Value(accountType);
   static Insertable<GLAccount> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
@@ -2105,7 +2109,7 @@ class GLAccountsCompanion extends UpdateCompanion<GLAccount> {
     Expression<String>? branchId,
     Expression<String>? code,
     Expression<String>? name,
-    Expression<String>? type,
+    Expression<int>? accountType,
     Expression<String>? analyticType,
     Expression<String>? parentId,
     Expression<bool>? isHeader,
@@ -2121,7 +2125,7 @@ class GLAccountsCompanion extends UpdateCompanion<GLAccount> {
       if (branchId != null) 'branch_id': branchId,
       if (code != null) 'code': code,
       if (name != null) 'name': name,
-      if (type != null) 'type': type,
+      if (accountType != null) 'account_type': accountType,
       if (analyticType != null) 'analytic_type': analyticType,
       if (parentId != null) 'parent_id': parentId,
       if (isHeader != null) 'is_header': isHeader,
@@ -2139,7 +2143,7 @@ class GLAccountsCompanion extends UpdateCompanion<GLAccount> {
       Value<String?>? branchId,
       Value<String>? code,
       Value<String>? name,
-      Value<String>? type,
+      Value<AccountType>? accountType,
       Value<String?>? analyticType,
       Value<String?>? parentId,
       Value<bool>? isHeader,
@@ -2154,7 +2158,7 @@ class GLAccountsCompanion extends UpdateCompanion<GLAccount> {
       branchId: branchId ?? this.branchId,
       code: code ?? this.code,
       name: name ?? this.name,
-      type: type ?? this.type,
+      accountType: accountType ?? this.accountType,
       analyticType: analyticType ?? this.analyticType,
       parentId: parentId ?? this.parentId,
       isHeader: isHeader ?? this.isHeader,
@@ -2190,8 +2194,9 @@ class GLAccountsCompanion extends UpdateCompanion<GLAccount> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
-    if (type.present) {
-      map['type'] = Variable<String>(type.value);
+    if (accountType.present) {
+      map['account_type'] = Variable<int>(
+          $GLAccountsTable.$converteraccountType.toSql(accountType.value));
     }
     if (analyticType.present) {
       map['analytic_type'] = Variable<String>(analyticType.value);
@@ -2223,7 +2228,7 @@ class GLAccountsCompanion extends UpdateCompanion<GLAccount> {
           ..write('branchId: $branchId, ')
           ..write('code: $code, ')
           ..write('name: $name, ')
-          ..write('type: $type, ')
+          ..write('accountType: $accountType, ')
           ..write('analyticType: $analyticType, ')
           ..write('parentId: $parentId, ')
           ..write('isHeader: $isHeader, ')
@@ -38538,6 +38543,15 @@ class $PostingProfilesTable extends PostingProfiles
       type: DriftSqlType.dateTime,
       requiredDuringInsert: false,
       defaultValue: currentDateAndTime);
+  static const VerificationMeta _branchIdMeta =
+      const VerificationMeta('branchId');
+  @override
+  late final GeneratedColumn<String> branchId = GeneratedColumn<String>(
+      'branch_id', aliasedName, true,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES branches (id)'));
   static const VerificationMeta _syncStatusMeta =
       const VerificationMeta('syncStatus');
   @override
@@ -38559,6 +38573,7 @@ class $PostingProfilesTable extends PostingProfiles
         side,
         createdAt,
         updatedAt,
+        branchId,
         syncStatus
       ];
   @override
@@ -38628,6 +38643,10 @@ class $PostingProfilesTable extends PostingProfiles
       context.handle(_updatedAtMeta,
           updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
     }
+    if (data.containsKey('branch_id')) {
+      context.handle(_branchIdMeta,
+          branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta));
+    }
     if (data.containsKey('sync_status')) {
       context.handle(
           _syncStatusMeta,
@@ -38665,6 +38684,8 @@ class $PostingProfilesTable extends PostingProfiles
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       updatedAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      branchId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}branch_id']),
       syncStatus: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}sync_status'])!,
     );
@@ -38688,6 +38709,7 @@ class PostingProfile extends DataClass implements Insertable<PostingProfile> {
   final String side;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? branchId;
   final int syncStatus;
   const PostingProfile(
       {required this.id,
@@ -38701,6 +38723,7 @@ class PostingProfile extends DataClass implements Insertable<PostingProfile> {
       required this.side,
       required this.createdAt,
       required this.updatedAt,
+      this.branchId,
       required this.syncStatus});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -38722,6 +38745,9 @@ class PostingProfile extends DataClass implements Insertable<PostingProfile> {
     map['side'] = Variable<String>(side);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || branchId != null) {
+      map['branch_id'] = Variable<String>(branchId);
+    }
     map['sync_status'] = Variable<int>(syncStatus);
     return map;
   }
@@ -38745,6 +38771,9 @@ class PostingProfile extends DataClass implements Insertable<PostingProfile> {
       side: Value(side),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
+      branchId: branchId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(branchId),
       syncStatus: Value(syncStatus),
     );
   }
@@ -38764,6 +38793,7 @@ class PostingProfile extends DataClass implements Insertable<PostingProfile> {
       side: serializer.fromJson<String>(json['side']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      branchId: serializer.fromJson<String?>(json['branchId']),
       syncStatus: serializer.fromJson<int>(json['syncStatus']),
     );
   }
@@ -38782,6 +38812,7 @@ class PostingProfile extends DataClass implements Insertable<PostingProfile> {
       'side': serializer.toJson<String>(side),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'branchId': serializer.toJson<String?>(branchId),
       'syncStatus': serializer.toJson<int>(syncStatus),
     };
   }
@@ -38798,6 +38829,7 @@ class PostingProfile extends DataClass implements Insertable<PostingProfile> {
           String? side,
           DateTime? createdAt,
           DateTime? updatedAt,
+          Value<String?> branchId = const Value.absent(),
           int? syncStatus}) =>
       PostingProfile(
         id: id ?? this.id,
@@ -38811,6 +38843,7 @@ class PostingProfile extends DataClass implements Insertable<PostingProfile> {
         side: side ?? this.side,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
+        branchId: branchId.present ? branchId.value : this.branchId,
         syncStatus: syncStatus ?? this.syncStatus,
       );
   PostingProfile copyWithCompanion(PostingProfilesCompanion data) {
@@ -38831,6 +38864,7 @@ class PostingProfile extends DataClass implements Insertable<PostingProfile> {
       side: data.side.present ? data.side.value : this.side,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      branchId: data.branchId.present ? data.branchId.value : this.branchId,
       syncStatus:
           data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
     );
@@ -38850,6 +38884,7 @@ class PostingProfile extends DataClass implements Insertable<PostingProfile> {
           ..write('side: $side, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('branchId: $branchId, ')
           ..write('syncStatus: $syncStatus')
           ..write(')'))
         .toString();
@@ -38868,6 +38903,7 @@ class PostingProfile extends DataClass implements Insertable<PostingProfile> {
       side,
       createdAt,
       updatedAt,
+      branchId,
       syncStatus);
   @override
   bool operator ==(Object other) =>
@@ -38884,6 +38920,7 @@ class PostingProfile extends DataClass implements Insertable<PostingProfile> {
           other.side == this.side &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
+          other.branchId == this.branchId &&
           other.syncStatus == this.syncStatus);
 }
 
@@ -38899,6 +38936,7 @@ class PostingProfilesCompanion extends UpdateCompanion<PostingProfile> {
   final Value<String> side;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
+  final Value<String?> branchId;
   final Value<int> syncStatus;
   final Value<int> rowid;
   const PostingProfilesCompanion({
@@ -38913,6 +38951,7 @@ class PostingProfilesCompanion extends UpdateCompanion<PostingProfile> {
     this.side = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.branchId = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -38928,6 +38967,7 @@ class PostingProfilesCompanion extends UpdateCompanion<PostingProfile> {
     required String side,
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.branchId = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : operationType = Value(operationType),
@@ -38945,6 +38985,7 @@ class PostingProfilesCompanion extends UpdateCompanion<PostingProfile> {
     Expression<String>? side,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
+    Expression<String>? branchId,
     Expression<int>? syncStatus,
     Expression<int>? rowid,
   }) {
@@ -38960,6 +39001,7 @@ class PostingProfilesCompanion extends UpdateCompanion<PostingProfile> {
       if (side != null) 'side': side,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (branchId != null) 'branch_id': branchId,
       if (syncStatus != null) 'sync_status': syncStatus,
       if (rowid != null) 'rowid': rowid,
     });
@@ -38977,6 +39019,7 @@ class PostingProfilesCompanion extends UpdateCompanion<PostingProfile> {
       Value<String>? side,
       Value<DateTime>? createdAt,
       Value<DateTime>? updatedAt,
+      Value<String?>? branchId,
       Value<int>? syncStatus,
       Value<int>? rowid}) {
     return PostingProfilesCompanion(
@@ -38991,6 +39034,7 @@ class PostingProfilesCompanion extends UpdateCompanion<PostingProfile> {
       side: side ?? this.side,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      branchId: branchId ?? this.branchId,
       syncStatus: syncStatus ?? this.syncStatus,
       rowid: rowid ?? this.rowid,
     );
@@ -39032,6 +39076,9 @@ class PostingProfilesCompanion extends UpdateCompanion<PostingProfile> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (branchId.present) {
+      map['branch_id'] = Variable<String>(branchId.value);
+    }
     if (syncStatus.present) {
       map['sync_status'] = Variable<int>(syncStatus.value);
     }
@@ -39055,6 +39102,7 @@ class PostingProfilesCompanion extends UpdateCompanion<PostingProfile> {
           ..write('side: $side, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('branchId: $branchId, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -40745,9 +40793,10 @@ class $APInvoicesTable extends APInvoices
   static const VerificationMeta _totalAmountMeta =
       const VerificationMeta('totalAmount');
   @override
-  late final GeneratedColumn<double> totalAmount = GeneratedColumn<double>(
-      'total_amount', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, int> totalAmount =
+      GeneratedColumn<int>('total_amount', aliasedName, false,
+              type: DriftSqlType.int, requiredDuringInsert: true)
+          .withConverter<Decimal>($APInvoicesTable.$convertertotalAmount);
   static const VerificationMeta _taxAmountMeta =
       const VerificationMeta('taxAmount');
   @override
@@ -40867,14 +40916,7 @@ class $APInvoicesTable extends APInvoices
       context.handle(_dueDateMeta,
           dueDate.isAcceptableOrUnknown(data['due_date']!, _dueDateMeta));
     }
-    if (data.containsKey('total_amount')) {
-      context.handle(
-          _totalAmountMeta,
-          totalAmount.isAcceptableOrUnknown(
-              data['total_amount']!, _totalAmountMeta));
-    } else if (isInserting) {
-      context.missing(_totalAmountMeta);
-    }
+    context.handle(_totalAmountMeta, const VerificationResult.success());
     context.handle(_taxAmountMeta, const VerificationResult.success());
     context.handle(_paidAmountMeta, const VerificationResult.success());
     if (data.containsKey('status')) {
@@ -40918,8 +40960,9 @@ class $APInvoicesTable extends APInvoices
           .read(DriftSqlType.dateTime, data['${effectivePrefix}invoice_date'])!,
       dueDate: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}due_date']),
-      totalAmount: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}total_amount'])!,
+      totalAmount: $APInvoicesTable.$convertertotalAmount.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.int, data['${effectivePrefix}total_amount'])!),
       taxAmount: $APInvoicesTable.$convertertaxAmount.fromSql(attachedDatabase
           .typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}tax_amount'])!),
@@ -40940,6 +40983,8 @@ class $APInvoicesTable extends APInvoices
     return $APInvoicesTable(attachedDatabase, alias);
   }
 
+  static TypeConverter<Decimal, int> $convertertotalAmount =
+      const CentConverter();
   static TypeConverter<Decimal, String> $convertertaxAmount =
       const DecimalConverter();
   static TypeConverter<Decimal, String> $converterpaidAmount =
@@ -40957,7 +41002,7 @@ class APInvoice extends DataClass implements Insertable<APInvoice> {
   final String invoiceNumber;
   final DateTime invoiceDate;
   final DateTime? dueDate;
-  final double totalAmount;
+  final Decimal totalAmount;
   final Decimal taxAmount;
   final Decimal paidAmount;
   final String status;
@@ -40999,7 +41044,10 @@ class APInvoice extends DataClass implements Insertable<APInvoice> {
     if (!nullToAbsent || dueDate != null) {
       map['due_date'] = Variable<DateTime>(dueDate);
     }
-    map['total_amount'] = Variable<double>(totalAmount);
+    {
+      map['total_amount'] = Variable<int>(
+          $APInvoicesTable.$convertertotalAmount.toSql(totalAmount));
+    }
     {
       map['tax_amount'] = Variable<String>(
           $APInvoicesTable.$convertertaxAmount.toSql(taxAmount));
@@ -41062,7 +41110,7 @@ class APInvoice extends DataClass implements Insertable<APInvoice> {
       invoiceNumber: serializer.fromJson<String>(json['invoiceNumber']),
       invoiceDate: serializer.fromJson<DateTime>(json['invoiceDate']),
       dueDate: serializer.fromJson<DateTime?>(json['dueDate']),
-      totalAmount: serializer.fromJson<double>(json['totalAmount']),
+      totalAmount: serializer.fromJson<Decimal>(json['totalAmount']),
       taxAmount: serializer.fromJson<Decimal>(json['taxAmount']),
       paidAmount: serializer.fromJson<Decimal>(json['paidAmount']),
       status: serializer.fromJson<String>(json['status']),
@@ -41084,7 +41132,7 @@ class APInvoice extends DataClass implements Insertable<APInvoice> {
       'invoiceNumber': serializer.toJson<String>(invoiceNumber),
       'invoiceDate': serializer.toJson<DateTime>(invoiceDate),
       'dueDate': serializer.toJson<DateTime?>(dueDate),
-      'totalAmount': serializer.toJson<double>(totalAmount),
+      'totalAmount': serializer.toJson<Decimal>(totalAmount),
       'taxAmount': serializer.toJson<Decimal>(taxAmount),
       'paidAmount': serializer.toJson<Decimal>(paidAmount),
       'status': serializer.toJson<String>(status),
@@ -41104,7 +41152,7 @@ class APInvoice extends DataClass implements Insertable<APInvoice> {
           String? invoiceNumber,
           DateTime? invoiceDate,
           Value<DateTime?> dueDate = const Value.absent(),
-          double? totalAmount,
+          Decimal? totalAmount,
           Decimal? taxAmount,
           Decimal? paidAmount,
           String? status,
@@ -41230,7 +41278,7 @@ class APInvoicesCompanion extends UpdateCompanion<APInvoice> {
   final Value<String> invoiceNumber;
   final Value<DateTime> invoiceDate;
   final Value<DateTime?> dueDate;
-  final Value<double> totalAmount;
+  final Value<Decimal> totalAmount;
   final Value<Decimal> taxAmount;
   final Value<Decimal> paidAmount;
   final Value<String> status;
@@ -41267,7 +41315,7 @@ class APInvoicesCompanion extends UpdateCompanion<APInvoice> {
     required String invoiceNumber,
     this.invoiceDate = const Value.absent(),
     this.dueDate = const Value.absent(),
-    required double totalAmount,
+    required Decimal totalAmount,
     this.taxAmount = const Value.absent(),
     this.paidAmount = const Value.absent(),
     this.status = const Value.absent(),
@@ -41288,7 +41336,7 @@ class APInvoicesCompanion extends UpdateCompanion<APInvoice> {
     Expression<String>? invoiceNumber,
     Expression<DateTime>? invoiceDate,
     Expression<DateTime>? dueDate,
-    Expression<double>? totalAmount,
+    Expression<int>? totalAmount,
     Expression<String>? taxAmount,
     Expression<String>? paidAmount,
     Expression<String>? status,
@@ -41328,7 +41376,7 @@ class APInvoicesCompanion extends UpdateCompanion<APInvoice> {
       Value<String>? invoiceNumber,
       Value<DateTime>? invoiceDate,
       Value<DateTime?>? dueDate,
-      Value<double>? totalAmount,
+      Value<Decimal>? totalAmount,
       Value<Decimal>? taxAmount,
       Value<Decimal>? paidAmount,
       Value<String>? status,
@@ -41390,7 +41438,8 @@ class APInvoicesCompanion extends UpdateCompanion<APInvoice> {
       map['due_date'] = Variable<DateTime>(dueDate.value);
     }
     if (totalAmount.present) {
-      map['total_amount'] = Variable<double>(totalAmount.value);
+      map['total_amount'] = Variable<int>(
+          $APInvoicesTable.$convertertotalAmount.toSql(totalAmount.value));
     }
     if (taxAmount.present) {
       map['tax_amount'] = Variable<String>(
@@ -41524,9 +41573,10 @@ class $ARInvoicesTable extends ARInvoices
   static const VerificationMeta _totalAmountMeta =
       const VerificationMeta('totalAmount');
   @override
-  late final GeneratedColumn<double> totalAmount = GeneratedColumn<double>(
-      'total_amount', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, int> totalAmount =
+      GeneratedColumn<int>('total_amount', aliasedName, false,
+              type: DriftSqlType.int, requiredDuringInsert: true)
+          .withConverter<Decimal>($ARInvoicesTable.$convertertotalAmount);
   static const VerificationMeta _taxAmountMeta =
       const VerificationMeta('taxAmount');
   @override
@@ -41646,14 +41696,7 @@ class $ARInvoicesTable extends ARInvoices
       context.handle(_dueDateMeta,
           dueDate.isAcceptableOrUnknown(data['due_date']!, _dueDateMeta));
     }
-    if (data.containsKey('total_amount')) {
-      context.handle(
-          _totalAmountMeta,
-          totalAmount.isAcceptableOrUnknown(
-              data['total_amount']!, _totalAmountMeta));
-    } else if (isInserting) {
-      context.missing(_totalAmountMeta);
-    }
+    context.handle(_totalAmountMeta, const VerificationResult.success());
     context.handle(_taxAmountMeta, const VerificationResult.success());
     context.handle(_paidAmountMeta, const VerificationResult.success());
     if (data.containsKey('status')) {
@@ -41697,8 +41740,9 @@ class $ARInvoicesTable extends ARInvoices
           .read(DriftSqlType.dateTime, data['${effectivePrefix}invoice_date'])!,
       dueDate: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}due_date']),
-      totalAmount: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}total_amount'])!,
+      totalAmount: $ARInvoicesTable.$convertertotalAmount.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.int, data['${effectivePrefix}total_amount'])!),
       taxAmount: $ARInvoicesTable.$convertertaxAmount.fromSql(attachedDatabase
           .typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}tax_amount'])!),
@@ -41719,6 +41763,8 @@ class $ARInvoicesTable extends ARInvoices
     return $ARInvoicesTable(attachedDatabase, alias);
   }
 
+  static TypeConverter<Decimal, int> $convertertotalAmount =
+      const CentConverter();
   static TypeConverter<Decimal, String> $convertertaxAmount =
       const DecimalConverter();
   static TypeConverter<Decimal, String> $converterpaidAmount =
@@ -41736,7 +41782,7 @@ class ARInvoice extends DataClass implements Insertable<ARInvoice> {
   final String invoiceNumber;
   final DateTime invoiceDate;
   final DateTime? dueDate;
-  final double totalAmount;
+  final Decimal totalAmount;
   final Decimal taxAmount;
   final Decimal paidAmount;
   final String status;
@@ -41778,7 +41824,10 @@ class ARInvoice extends DataClass implements Insertable<ARInvoice> {
     if (!nullToAbsent || dueDate != null) {
       map['due_date'] = Variable<DateTime>(dueDate);
     }
-    map['total_amount'] = Variable<double>(totalAmount);
+    {
+      map['total_amount'] = Variable<int>(
+          $ARInvoicesTable.$convertertotalAmount.toSql(totalAmount));
+    }
     {
       map['tax_amount'] = Variable<String>(
           $ARInvoicesTable.$convertertaxAmount.toSql(taxAmount));
@@ -41841,7 +41890,7 @@ class ARInvoice extends DataClass implements Insertable<ARInvoice> {
       invoiceNumber: serializer.fromJson<String>(json['invoiceNumber']),
       invoiceDate: serializer.fromJson<DateTime>(json['invoiceDate']),
       dueDate: serializer.fromJson<DateTime?>(json['dueDate']),
-      totalAmount: serializer.fromJson<double>(json['totalAmount']),
+      totalAmount: serializer.fromJson<Decimal>(json['totalAmount']),
       taxAmount: serializer.fromJson<Decimal>(json['taxAmount']),
       paidAmount: serializer.fromJson<Decimal>(json['paidAmount']),
       status: serializer.fromJson<String>(json['status']),
@@ -41863,7 +41912,7 @@ class ARInvoice extends DataClass implements Insertable<ARInvoice> {
       'invoiceNumber': serializer.toJson<String>(invoiceNumber),
       'invoiceDate': serializer.toJson<DateTime>(invoiceDate),
       'dueDate': serializer.toJson<DateTime?>(dueDate),
-      'totalAmount': serializer.toJson<double>(totalAmount),
+      'totalAmount': serializer.toJson<Decimal>(totalAmount),
       'taxAmount': serializer.toJson<Decimal>(taxAmount),
       'paidAmount': serializer.toJson<Decimal>(paidAmount),
       'status': serializer.toJson<String>(status),
@@ -41883,7 +41932,7 @@ class ARInvoice extends DataClass implements Insertable<ARInvoice> {
           String? invoiceNumber,
           DateTime? invoiceDate,
           Value<DateTime?> dueDate = const Value.absent(),
-          double? totalAmount,
+          Decimal? totalAmount,
           Decimal? taxAmount,
           Decimal? paidAmount,
           String? status,
@@ -42009,7 +42058,7 @@ class ARInvoicesCompanion extends UpdateCompanion<ARInvoice> {
   final Value<String> invoiceNumber;
   final Value<DateTime> invoiceDate;
   final Value<DateTime?> dueDate;
-  final Value<double> totalAmount;
+  final Value<Decimal> totalAmount;
   final Value<Decimal> taxAmount;
   final Value<Decimal> paidAmount;
   final Value<String> status;
@@ -42046,7 +42095,7 @@ class ARInvoicesCompanion extends UpdateCompanion<ARInvoice> {
     required String invoiceNumber,
     this.invoiceDate = const Value.absent(),
     this.dueDate = const Value.absent(),
-    required double totalAmount,
+    required Decimal totalAmount,
     this.taxAmount = const Value.absent(),
     this.paidAmount = const Value.absent(),
     this.status = const Value.absent(),
@@ -42067,7 +42116,7 @@ class ARInvoicesCompanion extends UpdateCompanion<ARInvoice> {
     Expression<String>? invoiceNumber,
     Expression<DateTime>? invoiceDate,
     Expression<DateTime>? dueDate,
-    Expression<double>? totalAmount,
+    Expression<int>? totalAmount,
     Expression<String>? taxAmount,
     Expression<String>? paidAmount,
     Expression<String>? status,
@@ -42107,7 +42156,7 @@ class ARInvoicesCompanion extends UpdateCompanion<ARInvoice> {
       Value<String>? invoiceNumber,
       Value<DateTime>? invoiceDate,
       Value<DateTime?>? dueDate,
-      Value<double>? totalAmount,
+      Value<Decimal>? totalAmount,
       Value<Decimal>? taxAmount,
       Value<Decimal>? paidAmount,
       Value<String>? status,
@@ -42169,7 +42218,8 @@ class ARInvoicesCompanion extends UpdateCompanion<ARInvoice> {
       map['due_date'] = Variable<DateTime>(dueDate.value);
     }
     if (totalAmount.present) {
-      map['total_amount'] = Variable<double>(totalAmount.value);
+      map['total_amount'] = Variable<int>(
+          $ARInvoicesTable.$convertertotalAmount.toSql(totalAmount.value));
     }
     if (taxAmount.present) {
       map['tax_amount'] = Variable<String>(
@@ -51412,41 +51462,47 @@ class $HREmployeesTable extends HREmployees
   static const VerificationMeta _basicSalaryMeta =
       const VerificationMeta('basicSalary');
   @override
-  late final GeneratedColumn<double> basicSalary = GeneratedColumn<double>(
-      'basic_salary', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, int> basicSalary =
+      GeneratedColumn<int>('basic_salary', aliasedName, false,
+              type: DriftSqlType.int, requiredDuringInsert: true)
+          .withConverter<Decimal>($HREmployeesTable.$converterbasicSalary);
   static const VerificationMeta _housingAllowanceMeta =
       const VerificationMeta('housingAllowance');
   @override
-  late final GeneratedColumn<double> housingAllowance = GeneratedColumn<double>(
-      'housing_allowance', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, int> housingAllowance =
+      GeneratedColumn<int>('housing_allowance', aliasedName, false,
+              type: DriftSqlType.int,
+              requiredDuringInsert: false,
+              defaultValue: const Constant(0))
+          .withConverter<Decimal>($HREmployeesTable.$converterhousingAllowance);
   static const VerificationMeta _transportAllowanceMeta =
       const VerificationMeta('transportAllowance');
   @override
-  late final GeneratedColumn<double> transportAllowance =
-      GeneratedColumn<double>('transport_allowance', aliasedName, false,
-          type: DriftSqlType.double,
-          requiredDuringInsert: false,
-          defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, int> transportAllowance =
+      GeneratedColumn<int>('transport_allowance', aliasedName, false,
+              type: DriftSqlType.int,
+              requiredDuringInsert: false,
+              defaultValue: const Constant(0))
+          .withConverter<Decimal>(
+              $HREmployeesTable.$convertertransportAllowance);
   static const VerificationMeta _otherAllowancesMeta =
       const VerificationMeta('otherAllowances');
   @override
-  late final GeneratedColumn<double> otherAllowances = GeneratedColumn<double>(
-      'other_allowances', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, int> otherAllowances =
+      GeneratedColumn<int>('other_allowances', aliasedName, false,
+              type: DriftSqlType.int,
+              requiredDuringInsert: false,
+              defaultValue: const Constant(0))
+          .withConverter<Decimal>($HREmployeesTable.$converterotherAllowances);
   static const VerificationMeta _totalDeductionsMeta =
       const VerificationMeta('totalDeductions');
   @override
-  late final GeneratedColumn<double> totalDeductions = GeneratedColumn<double>(
-      'total_deductions', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, int> totalDeductions =
+      GeneratedColumn<int>('total_deductions', aliasedName, false,
+              type: DriftSqlType.int,
+              requiredDuringInsert: false,
+              defaultValue: const Constant(0))
+          .withConverter<Decimal>($HREmployeesTable.$convertertotalDeductions);
   static const VerificationMeta _bankAccountNumberMeta =
       const VerificationMeta('bankAccountNumber');
   @override
@@ -51524,38 +51580,11 @@ class $HREmployeesTable extends HREmployees
     } else if (isInserting) {
       context.missing(_hireDateMeta);
     }
-    if (data.containsKey('basic_salary')) {
-      context.handle(
-          _basicSalaryMeta,
-          basicSalary.isAcceptableOrUnknown(
-              data['basic_salary']!, _basicSalaryMeta));
-    } else if (isInserting) {
-      context.missing(_basicSalaryMeta);
-    }
-    if (data.containsKey('housing_allowance')) {
-      context.handle(
-          _housingAllowanceMeta,
-          housingAllowance.isAcceptableOrUnknown(
-              data['housing_allowance']!, _housingAllowanceMeta));
-    }
-    if (data.containsKey('transport_allowance')) {
-      context.handle(
-          _transportAllowanceMeta,
-          transportAllowance.isAcceptableOrUnknown(
-              data['transport_allowance']!, _transportAllowanceMeta));
-    }
-    if (data.containsKey('other_allowances')) {
-      context.handle(
-          _otherAllowancesMeta,
-          otherAllowances.isAcceptableOrUnknown(
-              data['other_allowances']!, _otherAllowancesMeta));
-    }
-    if (data.containsKey('total_deductions')) {
-      context.handle(
-          _totalDeductionsMeta,
-          totalDeductions.isAcceptableOrUnknown(
-              data['total_deductions']!, _totalDeductionsMeta));
-    }
+    context.handle(_basicSalaryMeta, const VerificationResult.success());
+    context.handle(_housingAllowanceMeta, const VerificationResult.success());
+    context.handle(_transportAllowanceMeta, const VerificationResult.success());
+    context.handle(_otherAllowancesMeta, const VerificationResult.success());
+    context.handle(_totalDeductionsMeta, const VerificationResult.success());
     if (data.containsKey('bank_account_number')) {
       context.handle(
           _bankAccountNumberMeta,
@@ -51591,16 +51620,21 @@ class $HREmployeesTable extends HREmployees
           .read(DriftSqlType.string, data['${effectivePrefix}department']),
       hireDate: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}hire_date'])!,
-      basicSalary: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}basic_salary'])!,
-      housingAllowance: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}housing_allowance'])!,
-      transportAllowance: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}transport_allowance'])!,
-      otherAllowances: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}other_allowances'])!,
-      totalDeductions: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}total_deductions'])!,
+      basicSalary: $HREmployeesTable.$converterbasicSalary.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.int, data['${effectivePrefix}basic_salary'])!),
+      housingAllowance: $HREmployeesTable.$converterhousingAllowance.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.int, data['${effectivePrefix}housing_allowance'])!),
+      transportAllowance: $HREmployeesTable.$convertertransportAllowance
+          .fromSql(attachedDatabase.typeMapping.read(DriftSqlType.int,
+              data['${effectivePrefix}transport_allowance'])!),
+      otherAllowances: $HREmployeesTable.$converterotherAllowances.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.int, data['${effectivePrefix}other_allowances'])!),
+      totalDeductions: $HREmployeesTable.$convertertotalDeductions.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.int, data['${effectivePrefix}total_deductions'])!),
       bankAccountNumber: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}bank_account_number']),
       bankName: attachedDatabase.typeMapping
@@ -51614,6 +51648,17 @@ class $HREmployeesTable extends HREmployees
   $HREmployeesTable createAlias(String alias) {
     return $HREmployeesTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, int> $converterbasicSalary =
+      const CentConverter();
+  static TypeConverter<Decimal, int> $converterhousingAllowance =
+      const CentConverter();
+  static TypeConverter<Decimal, int> $convertertransportAllowance =
+      const CentConverter();
+  static TypeConverter<Decimal, int> $converterotherAllowances =
+      const CentConverter();
+  static TypeConverter<Decimal, int> $convertertotalDeductions =
+      const CentConverter();
 }
 
 class HREmployee extends DataClass implements Insertable<HREmployee> {
@@ -51623,11 +51668,11 @@ class HREmployee extends DataClass implements Insertable<HREmployee> {
   final String? position;
   final String? department;
   final DateTime hireDate;
-  final double basicSalary;
-  final double housingAllowance;
-  final double transportAllowance;
-  final double otherAllowances;
-  final double totalDeductions;
+  final Decimal basicSalary;
+  final Decimal housingAllowance;
+  final Decimal transportAllowance;
+  final Decimal otherAllowances;
+  final Decimal totalDeductions;
   final String? bankAccountNumber;
   final String? bankName;
   final String status;
@@ -51659,11 +51704,27 @@ class HREmployee extends DataClass implements Insertable<HREmployee> {
       map['department'] = Variable<String>(department);
     }
     map['hire_date'] = Variable<DateTime>(hireDate);
-    map['basic_salary'] = Variable<double>(basicSalary);
-    map['housing_allowance'] = Variable<double>(housingAllowance);
-    map['transport_allowance'] = Variable<double>(transportAllowance);
-    map['other_allowances'] = Variable<double>(otherAllowances);
-    map['total_deductions'] = Variable<double>(totalDeductions);
+    {
+      map['basic_salary'] = Variable<int>(
+          $HREmployeesTable.$converterbasicSalary.toSql(basicSalary));
+    }
+    {
+      map['housing_allowance'] = Variable<int>(
+          $HREmployeesTable.$converterhousingAllowance.toSql(housingAllowance));
+    }
+    {
+      map['transport_allowance'] = Variable<int>($HREmployeesTable
+          .$convertertransportAllowance
+          .toSql(transportAllowance));
+    }
+    {
+      map['other_allowances'] = Variable<int>(
+          $HREmployeesTable.$converterotherAllowances.toSql(otherAllowances));
+    }
+    {
+      map['total_deductions'] = Variable<int>(
+          $HREmployeesTable.$convertertotalDeductions.toSql(totalDeductions));
+    }
     if (!nullToAbsent || bankAccountNumber != null) {
       map['bank_account_number'] = Variable<String>(bankAccountNumber);
     }
@@ -51711,12 +51772,12 @@ class HREmployee extends DataClass implements Insertable<HREmployee> {
       position: serializer.fromJson<String?>(json['position']),
       department: serializer.fromJson<String?>(json['department']),
       hireDate: serializer.fromJson<DateTime>(json['hireDate']),
-      basicSalary: serializer.fromJson<double>(json['basicSalary']),
-      housingAllowance: serializer.fromJson<double>(json['housingAllowance']),
+      basicSalary: serializer.fromJson<Decimal>(json['basicSalary']),
+      housingAllowance: serializer.fromJson<Decimal>(json['housingAllowance']),
       transportAllowance:
-          serializer.fromJson<double>(json['transportAllowance']),
-      otherAllowances: serializer.fromJson<double>(json['otherAllowances']),
-      totalDeductions: serializer.fromJson<double>(json['totalDeductions']),
+          serializer.fromJson<Decimal>(json['transportAllowance']),
+      otherAllowances: serializer.fromJson<Decimal>(json['otherAllowances']),
+      totalDeductions: serializer.fromJson<Decimal>(json['totalDeductions']),
       bankAccountNumber:
           serializer.fromJson<String?>(json['bankAccountNumber']),
       bankName: serializer.fromJson<String?>(json['bankName']),
@@ -51733,11 +51794,11 @@ class HREmployee extends DataClass implements Insertable<HREmployee> {
       'position': serializer.toJson<String?>(position),
       'department': serializer.toJson<String?>(department),
       'hireDate': serializer.toJson<DateTime>(hireDate),
-      'basicSalary': serializer.toJson<double>(basicSalary),
-      'housingAllowance': serializer.toJson<double>(housingAllowance),
-      'transportAllowance': serializer.toJson<double>(transportAllowance),
-      'otherAllowances': serializer.toJson<double>(otherAllowances),
-      'totalDeductions': serializer.toJson<double>(totalDeductions),
+      'basicSalary': serializer.toJson<Decimal>(basicSalary),
+      'housingAllowance': serializer.toJson<Decimal>(housingAllowance),
+      'transportAllowance': serializer.toJson<Decimal>(transportAllowance),
+      'otherAllowances': serializer.toJson<Decimal>(otherAllowances),
+      'totalDeductions': serializer.toJson<Decimal>(totalDeductions),
       'bankAccountNumber': serializer.toJson<String?>(bankAccountNumber),
       'bankName': serializer.toJson<String?>(bankName),
       'status': serializer.toJson<String>(status),
@@ -51751,11 +51812,11 @@ class HREmployee extends DataClass implements Insertable<HREmployee> {
           Value<String?> position = const Value.absent(),
           Value<String?> department = const Value.absent(),
           DateTime? hireDate,
-          double? basicSalary,
-          double? housingAllowance,
-          double? transportAllowance,
-          double? otherAllowances,
-          double? totalDeductions,
+          Decimal? basicSalary,
+          Decimal? housingAllowance,
+          Decimal? transportAllowance,
+          Decimal? otherAllowances,
+          Decimal? totalDeductions,
           Value<String?> bankAccountNumber = const Value.absent(),
           Value<String?> bankName = const Value.absent(),
           String? status}) =>
@@ -51872,11 +51933,11 @@ class HREmployeesCompanion extends UpdateCompanion<HREmployee> {
   final Value<String?> position;
   final Value<String?> department;
   final Value<DateTime> hireDate;
-  final Value<double> basicSalary;
-  final Value<double> housingAllowance;
-  final Value<double> transportAllowance;
-  final Value<double> otherAllowances;
-  final Value<double> totalDeductions;
+  final Value<Decimal> basicSalary;
+  final Value<Decimal> housingAllowance;
+  final Value<Decimal> transportAllowance;
+  final Value<Decimal> otherAllowances;
+  final Value<Decimal> totalDeductions;
   final Value<String?> bankAccountNumber;
   final Value<String?> bankName;
   final Value<String> status;
@@ -51905,7 +51966,7 @@ class HREmployeesCompanion extends UpdateCompanion<HREmployee> {
     this.position = const Value.absent(),
     this.department = const Value.absent(),
     required DateTime hireDate,
-    required double basicSalary,
+    required Decimal basicSalary,
     this.housingAllowance = const Value.absent(),
     this.transportAllowance = const Value.absent(),
     this.otherAllowances = const Value.absent(),
@@ -51925,11 +51986,11 @@ class HREmployeesCompanion extends UpdateCompanion<HREmployee> {
     Expression<String>? position,
     Expression<String>? department,
     Expression<DateTime>? hireDate,
-    Expression<double>? basicSalary,
-    Expression<double>? housingAllowance,
-    Expression<double>? transportAllowance,
-    Expression<double>? otherAllowances,
-    Expression<double>? totalDeductions,
+    Expression<int>? basicSalary,
+    Expression<int>? housingAllowance,
+    Expression<int>? transportAllowance,
+    Expression<int>? otherAllowances,
+    Expression<int>? totalDeductions,
     Expression<String>? bankAccountNumber,
     Expression<String>? bankName,
     Expression<String>? status,
@@ -51961,11 +52022,11 @@ class HREmployeesCompanion extends UpdateCompanion<HREmployee> {
       Value<String?>? position,
       Value<String?>? department,
       Value<DateTime>? hireDate,
-      Value<double>? basicSalary,
-      Value<double>? housingAllowance,
-      Value<double>? transportAllowance,
-      Value<double>? otherAllowances,
-      Value<double>? totalDeductions,
+      Value<Decimal>? basicSalary,
+      Value<Decimal>? housingAllowance,
+      Value<Decimal>? transportAllowance,
+      Value<Decimal>? otherAllowances,
+      Value<Decimal>? totalDeductions,
       Value<String?>? bankAccountNumber,
       Value<String?>? bankName,
       Value<String>? status,
@@ -52011,19 +52072,28 @@ class HREmployeesCompanion extends UpdateCompanion<HREmployee> {
       map['hire_date'] = Variable<DateTime>(hireDate.value);
     }
     if (basicSalary.present) {
-      map['basic_salary'] = Variable<double>(basicSalary.value);
+      map['basic_salary'] = Variable<int>(
+          $HREmployeesTable.$converterbasicSalary.toSql(basicSalary.value));
     }
     if (housingAllowance.present) {
-      map['housing_allowance'] = Variable<double>(housingAllowance.value);
+      map['housing_allowance'] = Variable<int>($HREmployeesTable
+          .$converterhousingAllowance
+          .toSql(housingAllowance.value));
     }
     if (transportAllowance.present) {
-      map['transport_allowance'] = Variable<double>(transportAllowance.value);
+      map['transport_allowance'] = Variable<int>($HREmployeesTable
+          .$convertertransportAllowance
+          .toSql(transportAllowance.value));
     }
     if (otherAllowances.present) {
-      map['other_allowances'] = Variable<double>(otherAllowances.value);
+      map['other_allowances'] = Variable<int>($HREmployeesTable
+          .$converterotherAllowances
+          .toSql(otherAllowances.value));
     }
     if (totalDeductions.present) {
-      map['total_deductions'] = Variable<double>(totalDeductions.value);
+      map['total_deductions'] = Variable<int>($HREmployeesTable
+          .$convertertotalDeductions
+          .toSql(totalDeductions.value));
     }
     if (bankAccountNumber.present) {
       map['bank_account_number'] = Variable<String>(bankAccountNumber.value);
@@ -52092,35 +52162,41 @@ class $HRPayrollRunsTable extends HRPayrollRuns
   static const VerificationMeta _totalSalariesMeta =
       const VerificationMeta('totalSalaries');
   @override
-  late final GeneratedColumn<double> totalSalaries = GeneratedColumn<double>(
-      'total_salaries', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, int> totalSalaries =
+      GeneratedColumn<int>('total_salaries', aliasedName, false,
+              type: DriftSqlType.int,
+              requiredDuringInsert: false,
+              defaultValue: const Constant(0))
+          .withConverter<Decimal>($HRPayrollRunsTable.$convertertotalSalaries);
   static const VerificationMeta _totalAllowancesMeta =
       const VerificationMeta('totalAllowances');
   @override
-  late final GeneratedColumn<double> totalAllowances = GeneratedColumn<double>(
-      'total_allowances', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, int> totalAllowances =
+      GeneratedColumn<int>('total_allowances', aliasedName, false,
+              type: DriftSqlType.int,
+              requiredDuringInsert: false,
+              defaultValue: const Constant(0))
+          .withConverter<Decimal>(
+              $HRPayrollRunsTable.$convertertotalAllowances);
   static const VerificationMeta _totalDeductionsMeta =
       const VerificationMeta('totalDeductions');
   @override
-  late final GeneratedColumn<double> totalDeductions = GeneratedColumn<double>(
-      'total_deductions', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, int> totalDeductions =
+      GeneratedColumn<int>('total_deductions', aliasedName, false,
+              type: DriftSqlType.int,
+              requiredDuringInsert: false,
+              defaultValue: const Constant(0))
+          .withConverter<Decimal>(
+              $HRPayrollRunsTable.$convertertotalDeductions);
   static const VerificationMeta _netPayableMeta =
       const VerificationMeta('netPayable');
   @override
-  late final GeneratedColumn<double> netPayable = GeneratedColumn<double>(
-      'net_payable', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, int> netPayable =
+      GeneratedColumn<int>('net_payable', aliasedName, false,
+              type: DriftSqlType.int,
+              requiredDuringInsert: false,
+              defaultValue: const Constant(0))
+          .withConverter<Decimal>($HRPayrollRunsTable.$converternetPayable);
   static const VerificationMeta _journalEntryIdMeta =
       const VerificationMeta('journalEntryId');
   @override
@@ -52175,30 +52251,10 @@ class $HRPayrollRunsTable extends HRPayrollRuns
       context.handle(_runDateMeta,
           runDate.isAcceptableOrUnknown(data['run_date']!, _runDateMeta));
     }
-    if (data.containsKey('total_salaries')) {
-      context.handle(
-          _totalSalariesMeta,
-          totalSalaries.isAcceptableOrUnknown(
-              data['total_salaries']!, _totalSalariesMeta));
-    }
-    if (data.containsKey('total_allowances')) {
-      context.handle(
-          _totalAllowancesMeta,
-          totalAllowances.isAcceptableOrUnknown(
-              data['total_allowances']!, _totalAllowancesMeta));
-    }
-    if (data.containsKey('total_deductions')) {
-      context.handle(
-          _totalDeductionsMeta,
-          totalDeductions.isAcceptableOrUnknown(
-              data['total_deductions']!, _totalDeductionsMeta));
-    }
-    if (data.containsKey('net_payable')) {
-      context.handle(
-          _netPayableMeta,
-          netPayable.isAcceptableOrUnknown(
-              data['net_payable']!, _netPayableMeta));
-    }
+    context.handle(_totalSalariesMeta, const VerificationResult.success());
+    context.handle(_totalAllowancesMeta, const VerificationResult.success());
+    context.handle(_totalDeductionsMeta, const VerificationResult.success());
+    context.handle(_netPayableMeta, const VerificationResult.success());
     if (data.containsKey('journal_entry_id')) {
       context.handle(
           _journalEntryIdMeta,
@@ -52228,14 +52284,18 @@ class $HRPayrollRunsTable extends HRPayrollRuns
           .read(DriftSqlType.string, data['${effectivePrefix}period'])!,
       runDate: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}run_date'])!,
-      totalSalaries: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}total_salaries'])!,
-      totalAllowances: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}total_allowances'])!,
-      totalDeductions: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}total_deductions'])!,
-      netPayable: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}net_payable'])!,
+      totalSalaries: $HRPayrollRunsTable.$convertertotalSalaries.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.int, data['${effectivePrefix}total_salaries'])!),
+      totalAllowances: $HRPayrollRunsTable.$convertertotalAllowances.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.int, data['${effectivePrefix}total_allowances'])!),
+      totalDeductions: $HRPayrollRunsTable.$convertertotalDeductions.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.int, data['${effectivePrefix}total_deductions'])!),
+      netPayable: $HRPayrollRunsTable.$converternetPayable.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.int, data['${effectivePrefix}net_payable'])!),
       journalEntryId: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}journal_entry_id']),
       status: attachedDatabase.typeMapping
@@ -52249,16 +52309,25 @@ class $HRPayrollRunsTable extends HRPayrollRuns
   $HRPayrollRunsTable createAlias(String alias) {
     return $HRPayrollRunsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, int> $convertertotalSalaries =
+      const CentConverter();
+  static TypeConverter<Decimal, int> $convertertotalAllowances =
+      const CentConverter();
+  static TypeConverter<Decimal, int> $convertertotalDeductions =
+      const CentConverter();
+  static TypeConverter<Decimal, int> $converternetPayable =
+      const CentConverter();
 }
 
 class HRPayrollRun extends DataClass implements Insertable<HRPayrollRun> {
   final String id;
   final String period;
   final DateTime runDate;
-  final double totalSalaries;
-  final double totalAllowances;
-  final double totalDeductions;
-  final double netPayable;
+  final Decimal totalSalaries;
+  final Decimal totalAllowances;
+  final Decimal totalDeductions;
+  final Decimal netPayable;
   final String? journalEntryId;
   final String status;
   final String? notes;
@@ -52279,10 +52348,22 @@ class HRPayrollRun extends DataClass implements Insertable<HRPayrollRun> {
     map['id'] = Variable<String>(id);
     map['period'] = Variable<String>(period);
     map['run_date'] = Variable<DateTime>(runDate);
-    map['total_salaries'] = Variable<double>(totalSalaries);
-    map['total_allowances'] = Variable<double>(totalAllowances);
-    map['total_deductions'] = Variable<double>(totalDeductions);
-    map['net_payable'] = Variable<double>(netPayable);
+    {
+      map['total_salaries'] = Variable<int>(
+          $HRPayrollRunsTable.$convertertotalSalaries.toSql(totalSalaries));
+    }
+    {
+      map['total_allowances'] = Variable<int>(
+          $HRPayrollRunsTable.$convertertotalAllowances.toSql(totalAllowances));
+    }
+    {
+      map['total_deductions'] = Variable<int>(
+          $HRPayrollRunsTable.$convertertotalDeductions.toSql(totalDeductions));
+    }
+    {
+      map['net_payable'] = Variable<int>(
+          $HRPayrollRunsTable.$converternetPayable.toSql(netPayable));
+    }
     if (!nullToAbsent || journalEntryId != null) {
       map['journal_entry_id'] = Variable<String>(journalEntryId);
     }
@@ -52318,10 +52399,10 @@ class HRPayrollRun extends DataClass implements Insertable<HRPayrollRun> {
       id: serializer.fromJson<String>(json['id']),
       period: serializer.fromJson<String>(json['period']),
       runDate: serializer.fromJson<DateTime>(json['runDate']),
-      totalSalaries: serializer.fromJson<double>(json['totalSalaries']),
-      totalAllowances: serializer.fromJson<double>(json['totalAllowances']),
-      totalDeductions: serializer.fromJson<double>(json['totalDeductions']),
-      netPayable: serializer.fromJson<double>(json['netPayable']),
+      totalSalaries: serializer.fromJson<Decimal>(json['totalSalaries']),
+      totalAllowances: serializer.fromJson<Decimal>(json['totalAllowances']),
+      totalDeductions: serializer.fromJson<Decimal>(json['totalDeductions']),
+      netPayable: serializer.fromJson<Decimal>(json['netPayable']),
       journalEntryId: serializer.fromJson<String?>(json['journalEntryId']),
       status: serializer.fromJson<String>(json['status']),
       notes: serializer.fromJson<String?>(json['notes']),
@@ -52334,10 +52415,10 @@ class HRPayrollRun extends DataClass implements Insertable<HRPayrollRun> {
       'id': serializer.toJson<String>(id),
       'period': serializer.toJson<String>(period),
       'runDate': serializer.toJson<DateTime>(runDate),
-      'totalSalaries': serializer.toJson<double>(totalSalaries),
-      'totalAllowances': serializer.toJson<double>(totalAllowances),
-      'totalDeductions': serializer.toJson<double>(totalDeductions),
-      'netPayable': serializer.toJson<double>(netPayable),
+      'totalSalaries': serializer.toJson<Decimal>(totalSalaries),
+      'totalAllowances': serializer.toJson<Decimal>(totalAllowances),
+      'totalDeductions': serializer.toJson<Decimal>(totalDeductions),
+      'netPayable': serializer.toJson<Decimal>(netPayable),
       'journalEntryId': serializer.toJson<String?>(journalEntryId),
       'status': serializer.toJson<String>(status),
       'notes': serializer.toJson<String?>(notes),
@@ -52348,10 +52429,10 @@ class HRPayrollRun extends DataClass implements Insertable<HRPayrollRun> {
           {String? id,
           String? period,
           DateTime? runDate,
-          double? totalSalaries,
-          double? totalAllowances,
-          double? totalDeductions,
-          double? netPayable,
+          Decimal? totalSalaries,
+          Decimal? totalAllowances,
+          Decimal? totalDeductions,
+          Decimal? netPayable,
           Value<String?> journalEntryId = const Value.absent(),
           String? status,
           Value<String?> notes = const Value.absent()}) =>
@@ -52441,10 +52522,10 @@ class HRPayrollRunsCompanion extends UpdateCompanion<HRPayrollRun> {
   final Value<String> id;
   final Value<String> period;
   final Value<DateTime> runDate;
-  final Value<double> totalSalaries;
-  final Value<double> totalAllowances;
-  final Value<double> totalDeductions;
-  final Value<double> netPayable;
+  final Value<Decimal> totalSalaries;
+  final Value<Decimal> totalAllowances;
+  final Value<Decimal> totalDeductions;
+  final Value<Decimal> netPayable;
   final Value<String?> journalEntryId;
   final Value<String> status;
   final Value<String?> notes;
@@ -52479,10 +52560,10 @@ class HRPayrollRunsCompanion extends UpdateCompanion<HRPayrollRun> {
     Expression<String>? id,
     Expression<String>? period,
     Expression<DateTime>? runDate,
-    Expression<double>? totalSalaries,
-    Expression<double>? totalAllowances,
-    Expression<double>? totalDeductions,
-    Expression<double>? netPayable,
+    Expression<int>? totalSalaries,
+    Expression<int>? totalAllowances,
+    Expression<int>? totalDeductions,
+    Expression<int>? netPayable,
     Expression<String>? journalEntryId,
     Expression<String>? status,
     Expression<String>? notes,
@@ -52507,10 +52588,10 @@ class HRPayrollRunsCompanion extends UpdateCompanion<HRPayrollRun> {
       {Value<String>? id,
       Value<String>? period,
       Value<DateTime>? runDate,
-      Value<double>? totalSalaries,
-      Value<double>? totalAllowances,
-      Value<double>? totalDeductions,
-      Value<double>? netPayable,
+      Value<Decimal>? totalSalaries,
+      Value<Decimal>? totalAllowances,
+      Value<Decimal>? totalDeductions,
+      Value<Decimal>? netPayable,
       Value<String?>? journalEntryId,
       Value<String>? status,
       Value<String?>? notes,
@@ -52543,16 +52624,23 @@ class HRPayrollRunsCompanion extends UpdateCompanion<HRPayrollRun> {
       map['run_date'] = Variable<DateTime>(runDate.value);
     }
     if (totalSalaries.present) {
-      map['total_salaries'] = Variable<double>(totalSalaries.value);
+      map['total_salaries'] = Variable<int>($HRPayrollRunsTable
+          .$convertertotalSalaries
+          .toSql(totalSalaries.value));
     }
     if (totalAllowances.present) {
-      map['total_allowances'] = Variable<double>(totalAllowances.value);
+      map['total_allowances'] = Variable<int>($HRPayrollRunsTable
+          .$convertertotalAllowances
+          .toSql(totalAllowances.value));
     }
     if (totalDeductions.present) {
-      map['total_deductions'] = Variable<double>(totalDeductions.value);
+      map['total_deductions'] = Variable<int>($HRPayrollRunsTable
+          .$convertertotalDeductions
+          .toSql(totalDeductions.value));
     }
     if (netPayable.present) {
-      map['net_payable'] = Variable<double>(netPayable.value);
+      map['net_payable'] = Variable<int>(
+          $HRPayrollRunsTable.$converternetPayable.toSql(netPayable.value));
     }
     if (journalEntryId.present) {
       map['journal_entry_id'] = Variable<String>(journalEntryId.value);
@@ -52622,53 +52710,63 @@ class $HRPayrollDetailsTable extends HRPayrollDetails
   static const VerificationMeta _basicSalaryMeta =
       const VerificationMeta('basicSalary');
   @override
-  late final GeneratedColumn<double> basicSalary = GeneratedColumn<double>(
-      'basic_salary', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, int> basicSalary =
+      GeneratedColumn<int>('basic_salary', aliasedName, false,
+              type: DriftSqlType.int, requiredDuringInsert: true)
+          .withConverter<Decimal>($HRPayrollDetailsTable.$converterbasicSalary);
   static const VerificationMeta _housingAllowanceMeta =
       const VerificationMeta('housingAllowance');
   @override
-  late final GeneratedColumn<double> housingAllowance = GeneratedColumn<double>(
-      'housing_allowance', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, int> housingAllowance =
+      GeneratedColumn<int>('housing_allowance', aliasedName, false,
+              type: DriftSqlType.int,
+              requiredDuringInsert: false,
+              defaultValue: const Constant(0))
+          .withConverter<Decimal>(
+              $HRPayrollDetailsTable.$converterhousingAllowance);
   static const VerificationMeta _transportAllowanceMeta =
       const VerificationMeta('transportAllowance');
   @override
-  late final GeneratedColumn<double> transportAllowance =
-      GeneratedColumn<double>('transport_allowance', aliasedName, false,
-          type: DriftSqlType.double,
-          requiredDuringInsert: false,
-          defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, int> transportAllowance =
+      GeneratedColumn<int>('transport_allowance', aliasedName, false,
+              type: DriftSqlType.int,
+              requiredDuringInsert: false,
+              defaultValue: const Constant(0))
+          .withConverter<Decimal>(
+              $HRPayrollDetailsTable.$convertertransportAllowance);
   static const VerificationMeta _otherAllowancesMeta =
       const VerificationMeta('otherAllowances');
   @override
-  late final GeneratedColumn<double> otherAllowances = GeneratedColumn<double>(
-      'other_allowances', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, int> otherAllowances =
+      GeneratedColumn<int>('other_allowances', aliasedName, false,
+              type: DriftSqlType.int,
+              requiredDuringInsert: false,
+              defaultValue: const Constant(0))
+          .withConverter<Decimal>(
+              $HRPayrollDetailsTable.$converterotherAllowances);
   static const VerificationMeta _grossSalaryMeta =
       const VerificationMeta('grossSalary');
   @override
-  late final GeneratedColumn<double> grossSalary = GeneratedColumn<double>(
-      'gross_salary', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, int> grossSalary =
+      GeneratedColumn<int>('gross_salary', aliasedName, false,
+              type: DriftSqlType.int, requiredDuringInsert: true)
+          .withConverter<Decimal>($HRPayrollDetailsTable.$convertergrossSalary);
   static const VerificationMeta _deductionsMeta =
       const VerificationMeta('deductions');
   @override
-  late final GeneratedColumn<double> deductions = GeneratedColumn<double>(
-      'deductions', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+  late final GeneratedColumnWithTypeConverter<Decimal, int> deductions =
+      GeneratedColumn<int>('deductions', aliasedName, false,
+              type: DriftSqlType.int,
+              requiredDuringInsert: false,
+              defaultValue: const Constant(0))
+          .withConverter<Decimal>($HRPayrollDetailsTable.$converterdeductions);
   static const VerificationMeta _netSalaryMeta =
       const VerificationMeta('netSalary');
   @override
-  late final GeneratedColumn<double> netSalary = GeneratedColumn<double>(
-      'net_salary', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, int> netSalary =
+      GeneratedColumn<int>('net_salary', aliasedName, false,
+              type: DriftSqlType.int, requiredDuringInsert: true)
+          .withConverter<Decimal>($HRPayrollDetailsTable.$converternetSalary);
   static const VerificationMeta _paymentJournalEntryIdMeta =
       const VerificationMeta('paymentJournalEntryId');
   @override
@@ -52727,52 +52825,13 @@ class $HRPayrollDetailsTable extends HRPayrollDetails
     } else if (isInserting) {
       context.missing(_employeeIdMeta);
     }
-    if (data.containsKey('basic_salary')) {
-      context.handle(
-          _basicSalaryMeta,
-          basicSalary.isAcceptableOrUnknown(
-              data['basic_salary']!, _basicSalaryMeta));
-    } else if (isInserting) {
-      context.missing(_basicSalaryMeta);
-    }
-    if (data.containsKey('housing_allowance')) {
-      context.handle(
-          _housingAllowanceMeta,
-          housingAllowance.isAcceptableOrUnknown(
-              data['housing_allowance']!, _housingAllowanceMeta));
-    }
-    if (data.containsKey('transport_allowance')) {
-      context.handle(
-          _transportAllowanceMeta,
-          transportAllowance.isAcceptableOrUnknown(
-              data['transport_allowance']!, _transportAllowanceMeta));
-    }
-    if (data.containsKey('other_allowances')) {
-      context.handle(
-          _otherAllowancesMeta,
-          otherAllowances.isAcceptableOrUnknown(
-              data['other_allowances']!, _otherAllowancesMeta));
-    }
-    if (data.containsKey('gross_salary')) {
-      context.handle(
-          _grossSalaryMeta,
-          grossSalary.isAcceptableOrUnknown(
-              data['gross_salary']!, _grossSalaryMeta));
-    } else if (isInserting) {
-      context.missing(_grossSalaryMeta);
-    }
-    if (data.containsKey('deductions')) {
-      context.handle(
-          _deductionsMeta,
-          deductions.isAcceptableOrUnknown(
-              data['deductions']!, _deductionsMeta));
-    }
-    if (data.containsKey('net_salary')) {
-      context.handle(_netSalaryMeta,
-          netSalary.isAcceptableOrUnknown(data['net_salary']!, _netSalaryMeta));
-    } else if (isInserting) {
-      context.missing(_netSalaryMeta);
-    }
+    context.handle(_basicSalaryMeta, const VerificationResult.success());
+    context.handle(_housingAllowanceMeta, const VerificationResult.success());
+    context.handle(_transportAllowanceMeta, const VerificationResult.success());
+    context.handle(_otherAllowancesMeta, const VerificationResult.success());
+    context.handle(_grossSalaryMeta, const VerificationResult.success());
+    context.handle(_deductionsMeta, const VerificationResult.success());
+    context.handle(_netSalaryMeta, const VerificationResult.success());
     if (data.containsKey('payment_journal_entry_id')) {
       context.handle(
           _paymentJournalEntryIdMeta,
@@ -52800,20 +52859,27 @@ class $HRPayrollDetailsTable extends HRPayrollDetails
           .read(DriftSqlType.string, data['${effectivePrefix}payroll_run_id'])!,
       employeeId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}employee_id'])!,
-      basicSalary: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}basic_salary'])!,
-      housingAllowance: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}housing_allowance'])!,
-      transportAllowance: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}transport_allowance'])!,
-      otherAllowances: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}other_allowances'])!,
-      grossSalary: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}gross_salary'])!,
-      deductions: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}deductions'])!,
-      netSalary: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}net_salary'])!,
+      basicSalary: $HRPayrollDetailsTable.$converterbasicSalary.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.int, data['${effectivePrefix}basic_salary'])!),
+      housingAllowance: $HRPayrollDetailsTable.$converterhousingAllowance
+          .fromSql(attachedDatabase.typeMapping.read(
+              DriftSqlType.int, data['${effectivePrefix}housing_allowance'])!),
+      transportAllowance: $HRPayrollDetailsTable.$convertertransportAllowance
+          .fromSql(attachedDatabase.typeMapping.read(DriftSqlType.int,
+              data['${effectivePrefix}transport_allowance'])!),
+      otherAllowances: $HRPayrollDetailsTable.$converterotherAllowances.fromSql(
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.int, data['${effectivePrefix}other_allowances'])!),
+      grossSalary: $HRPayrollDetailsTable.$convertergrossSalary.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.int, data['${effectivePrefix}gross_salary'])!),
+      deductions: $HRPayrollDetailsTable.$converterdeductions.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.int, data['${effectivePrefix}deductions'])!),
+      netSalary: $HRPayrollDetailsTable.$converternetSalary.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.int, data['${effectivePrefix}net_salary'])!),
       paymentJournalEntryId: attachedDatabase.typeMapping.read(
           DriftSqlType.string,
           data['${effectivePrefix}payment_journal_entry_id']),
@@ -52826,19 +52892,34 @@ class $HRPayrollDetailsTable extends HRPayrollDetails
   $HRPayrollDetailsTable createAlias(String alias) {
     return $HRPayrollDetailsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, int> $converterbasicSalary =
+      const CentConverter();
+  static TypeConverter<Decimal, int> $converterhousingAllowance =
+      const CentConverter();
+  static TypeConverter<Decimal, int> $convertertransportAllowance =
+      const CentConverter();
+  static TypeConverter<Decimal, int> $converterotherAllowances =
+      const CentConverter();
+  static TypeConverter<Decimal, int> $convertergrossSalary =
+      const CentConverter();
+  static TypeConverter<Decimal, int> $converterdeductions =
+      const CentConverter();
+  static TypeConverter<Decimal, int> $converternetSalary =
+      const CentConverter();
 }
 
 class HRPayrollDetail extends DataClass implements Insertable<HRPayrollDetail> {
   final String id;
   final String payrollRunId;
   final String employeeId;
-  final double basicSalary;
-  final double housingAllowance;
-  final double transportAllowance;
-  final double otherAllowances;
-  final double grossSalary;
-  final double deductions;
-  final double netSalary;
+  final Decimal basicSalary;
+  final Decimal housingAllowance;
+  final Decimal transportAllowance;
+  final Decimal otherAllowances;
+  final Decimal grossSalary;
+  final Decimal deductions;
+  final Decimal netSalary;
   final String? paymentJournalEntryId;
   final String paymentStatus;
   const HRPayrollDetail(
@@ -52860,13 +52941,37 @@ class HRPayrollDetail extends DataClass implements Insertable<HRPayrollDetail> {
     map['id'] = Variable<String>(id);
     map['payroll_run_id'] = Variable<String>(payrollRunId);
     map['employee_id'] = Variable<String>(employeeId);
-    map['basic_salary'] = Variable<double>(basicSalary);
-    map['housing_allowance'] = Variable<double>(housingAllowance);
-    map['transport_allowance'] = Variable<double>(transportAllowance);
-    map['other_allowances'] = Variable<double>(otherAllowances);
-    map['gross_salary'] = Variable<double>(grossSalary);
-    map['deductions'] = Variable<double>(deductions);
-    map['net_salary'] = Variable<double>(netSalary);
+    {
+      map['basic_salary'] = Variable<int>(
+          $HRPayrollDetailsTable.$converterbasicSalary.toSql(basicSalary));
+    }
+    {
+      map['housing_allowance'] = Variable<int>($HRPayrollDetailsTable
+          .$converterhousingAllowance
+          .toSql(housingAllowance));
+    }
+    {
+      map['transport_allowance'] = Variable<int>($HRPayrollDetailsTable
+          .$convertertransportAllowance
+          .toSql(transportAllowance));
+    }
+    {
+      map['other_allowances'] = Variable<int>($HRPayrollDetailsTable
+          .$converterotherAllowances
+          .toSql(otherAllowances));
+    }
+    {
+      map['gross_salary'] = Variable<int>(
+          $HRPayrollDetailsTable.$convertergrossSalary.toSql(grossSalary));
+    }
+    {
+      map['deductions'] = Variable<int>(
+          $HRPayrollDetailsTable.$converterdeductions.toSql(deductions));
+    }
+    {
+      map['net_salary'] = Variable<int>(
+          $HRPayrollDetailsTable.$converternetSalary.toSql(netSalary));
+    }
     if (!nullToAbsent || paymentJournalEntryId != null) {
       map['payment_journal_entry_id'] = Variable<String>(paymentJournalEntryId);
     }
@@ -52900,14 +53005,14 @@ class HRPayrollDetail extends DataClass implements Insertable<HRPayrollDetail> {
       id: serializer.fromJson<String>(json['id']),
       payrollRunId: serializer.fromJson<String>(json['payrollRunId']),
       employeeId: serializer.fromJson<String>(json['employeeId']),
-      basicSalary: serializer.fromJson<double>(json['basicSalary']),
-      housingAllowance: serializer.fromJson<double>(json['housingAllowance']),
+      basicSalary: serializer.fromJson<Decimal>(json['basicSalary']),
+      housingAllowance: serializer.fromJson<Decimal>(json['housingAllowance']),
       transportAllowance:
-          serializer.fromJson<double>(json['transportAllowance']),
-      otherAllowances: serializer.fromJson<double>(json['otherAllowances']),
-      grossSalary: serializer.fromJson<double>(json['grossSalary']),
-      deductions: serializer.fromJson<double>(json['deductions']),
-      netSalary: serializer.fromJson<double>(json['netSalary']),
+          serializer.fromJson<Decimal>(json['transportAllowance']),
+      otherAllowances: serializer.fromJson<Decimal>(json['otherAllowances']),
+      grossSalary: serializer.fromJson<Decimal>(json['grossSalary']),
+      deductions: serializer.fromJson<Decimal>(json['deductions']),
+      netSalary: serializer.fromJson<Decimal>(json['netSalary']),
       paymentJournalEntryId:
           serializer.fromJson<String?>(json['paymentJournalEntryId']),
       paymentStatus: serializer.fromJson<String>(json['paymentStatus']),
@@ -52920,13 +53025,13 @@ class HRPayrollDetail extends DataClass implements Insertable<HRPayrollDetail> {
       'id': serializer.toJson<String>(id),
       'payrollRunId': serializer.toJson<String>(payrollRunId),
       'employeeId': serializer.toJson<String>(employeeId),
-      'basicSalary': serializer.toJson<double>(basicSalary),
-      'housingAllowance': serializer.toJson<double>(housingAllowance),
-      'transportAllowance': serializer.toJson<double>(transportAllowance),
-      'otherAllowances': serializer.toJson<double>(otherAllowances),
-      'grossSalary': serializer.toJson<double>(grossSalary),
-      'deductions': serializer.toJson<double>(deductions),
-      'netSalary': serializer.toJson<double>(netSalary),
+      'basicSalary': serializer.toJson<Decimal>(basicSalary),
+      'housingAllowance': serializer.toJson<Decimal>(housingAllowance),
+      'transportAllowance': serializer.toJson<Decimal>(transportAllowance),
+      'otherAllowances': serializer.toJson<Decimal>(otherAllowances),
+      'grossSalary': serializer.toJson<Decimal>(grossSalary),
+      'deductions': serializer.toJson<Decimal>(deductions),
+      'netSalary': serializer.toJson<Decimal>(netSalary),
       'paymentJournalEntryId':
           serializer.toJson<String?>(paymentJournalEntryId),
       'paymentStatus': serializer.toJson<String>(paymentStatus),
@@ -52937,13 +53042,13 @@ class HRPayrollDetail extends DataClass implements Insertable<HRPayrollDetail> {
           {String? id,
           String? payrollRunId,
           String? employeeId,
-          double? basicSalary,
-          double? housingAllowance,
-          double? transportAllowance,
-          double? otherAllowances,
-          double? grossSalary,
-          double? deductions,
-          double? netSalary,
+          Decimal? basicSalary,
+          Decimal? housingAllowance,
+          Decimal? transportAllowance,
+          Decimal? otherAllowances,
+          Decimal? grossSalary,
+          Decimal? deductions,
+          Decimal? netSalary,
           Value<String?> paymentJournalEntryId = const Value.absent(),
           String? paymentStatus}) =>
       HRPayrollDetail(
@@ -53050,13 +53155,13 @@ class HRPayrollDetailsCompanion extends UpdateCompanion<HRPayrollDetail> {
   final Value<String> id;
   final Value<String> payrollRunId;
   final Value<String> employeeId;
-  final Value<double> basicSalary;
-  final Value<double> housingAllowance;
-  final Value<double> transportAllowance;
-  final Value<double> otherAllowances;
-  final Value<double> grossSalary;
-  final Value<double> deductions;
-  final Value<double> netSalary;
+  final Value<Decimal> basicSalary;
+  final Value<Decimal> housingAllowance;
+  final Value<Decimal> transportAllowance;
+  final Value<Decimal> otherAllowances;
+  final Value<Decimal> grossSalary;
+  final Value<Decimal> deductions;
+  final Value<Decimal> netSalary;
   final Value<String?> paymentJournalEntryId;
   final Value<String> paymentStatus;
   final Value<int> rowid;
@@ -53079,13 +53184,13 @@ class HRPayrollDetailsCompanion extends UpdateCompanion<HRPayrollDetail> {
     this.id = const Value.absent(),
     required String payrollRunId,
     required String employeeId,
-    required double basicSalary,
+    required Decimal basicSalary,
     this.housingAllowance = const Value.absent(),
     this.transportAllowance = const Value.absent(),
     this.otherAllowances = const Value.absent(),
-    required double grossSalary,
+    required Decimal grossSalary,
     this.deductions = const Value.absent(),
-    required double netSalary,
+    required Decimal netSalary,
     this.paymentJournalEntryId = const Value.absent(),
     this.paymentStatus = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -53098,13 +53203,13 @@ class HRPayrollDetailsCompanion extends UpdateCompanion<HRPayrollDetail> {
     Expression<String>? id,
     Expression<String>? payrollRunId,
     Expression<String>? employeeId,
-    Expression<double>? basicSalary,
-    Expression<double>? housingAllowance,
-    Expression<double>? transportAllowance,
-    Expression<double>? otherAllowances,
-    Expression<double>? grossSalary,
-    Expression<double>? deductions,
-    Expression<double>? netSalary,
+    Expression<int>? basicSalary,
+    Expression<int>? housingAllowance,
+    Expression<int>? transportAllowance,
+    Expression<int>? otherAllowances,
+    Expression<int>? grossSalary,
+    Expression<int>? deductions,
+    Expression<int>? netSalary,
     Expression<String>? paymentJournalEntryId,
     Expression<String>? paymentStatus,
     Expression<int>? rowid,
@@ -53131,13 +53236,13 @@ class HRPayrollDetailsCompanion extends UpdateCompanion<HRPayrollDetail> {
       {Value<String>? id,
       Value<String>? payrollRunId,
       Value<String>? employeeId,
-      Value<double>? basicSalary,
-      Value<double>? housingAllowance,
-      Value<double>? transportAllowance,
-      Value<double>? otherAllowances,
-      Value<double>? grossSalary,
-      Value<double>? deductions,
-      Value<double>? netSalary,
+      Value<Decimal>? basicSalary,
+      Value<Decimal>? housingAllowance,
+      Value<Decimal>? transportAllowance,
+      Value<Decimal>? otherAllowances,
+      Value<Decimal>? grossSalary,
+      Value<Decimal>? deductions,
+      Value<Decimal>? netSalary,
       Value<String?>? paymentJournalEntryId,
       Value<String>? paymentStatus,
       Value<int>? rowid}) {
@@ -53172,25 +53277,37 @@ class HRPayrollDetailsCompanion extends UpdateCompanion<HRPayrollDetail> {
       map['employee_id'] = Variable<String>(employeeId.value);
     }
     if (basicSalary.present) {
-      map['basic_salary'] = Variable<double>(basicSalary.value);
+      map['basic_salary'] = Variable<int>($HRPayrollDetailsTable
+          .$converterbasicSalary
+          .toSql(basicSalary.value));
     }
     if (housingAllowance.present) {
-      map['housing_allowance'] = Variable<double>(housingAllowance.value);
+      map['housing_allowance'] = Variable<int>($HRPayrollDetailsTable
+          .$converterhousingAllowance
+          .toSql(housingAllowance.value));
     }
     if (transportAllowance.present) {
-      map['transport_allowance'] = Variable<double>(transportAllowance.value);
+      map['transport_allowance'] = Variable<int>($HRPayrollDetailsTable
+          .$convertertransportAllowance
+          .toSql(transportAllowance.value));
     }
     if (otherAllowances.present) {
-      map['other_allowances'] = Variable<double>(otherAllowances.value);
+      map['other_allowances'] = Variable<int>($HRPayrollDetailsTable
+          .$converterotherAllowances
+          .toSql(otherAllowances.value));
     }
     if (grossSalary.present) {
-      map['gross_salary'] = Variable<double>(grossSalary.value);
+      map['gross_salary'] = Variable<int>($HRPayrollDetailsTable
+          .$convertergrossSalary
+          .toSql(grossSalary.value));
     }
     if (deductions.present) {
-      map['deductions'] = Variable<double>(deductions.value);
+      map['deductions'] = Variable<int>(
+          $HRPayrollDetailsTable.$converterdeductions.toSql(deductions.value));
     }
     if (netSalary.present) {
-      map['net_salary'] = Variable<double>(netSalary.value);
+      map['net_salary'] = Variable<int>(
+          $HRPayrollDetailsTable.$converternetSalary.toSql(netSalary.value));
     }
     if (paymentJournalEntryId.present) {
       map['payment_journal_entry_id'] =
@@ -53255,9 +53372,11 @@ class $HRAdditionalDeductionsTable extends HRAdditionalDeductions
       type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _amountMeta = const VerificationMeta('amount');
   @override
-  late final GeneratedColumn<double> amount = GeneratedColumn<double>(
-      'amount', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Decimal, int> amount =
+      GeneratedColumn<int>('amount', aliasedName, false,
+              type: DriftSqlType.int, requiredDuringInsert: true)
+          .withConverter<Decimal>(
+              $HRAdditionalDeductionsTable.$converteramount);
   static const VerificationMeta _deductionDateMeta =
       const VerificationMeta('deductionDate');
   @override
@@ -53327,12 +53446,7 @@ class $HRAdditionalDeductionsTable extends HRAdditionalDeductions
     } else if (isInserting) {
       context.missing(_typeMeta);
     }
-    if (data.containsKey('amount')) {
-      context.handle(_amountMeta,
-          amount.isAcceptableOrUnknown(data['amount']!, _amountMeta));
-    } else if (isInserting) {
-      context.missing(_amountMeta);
-    }
+    context.handle(_amountMeta, const VerificationResult.success());
     if (data.containsKey('deduction_date')) {
       context.handle(
           _deductionDateMeta,
@@ -53374,8 +53488,9 @@ class $HRAdditionalDeductionsTable extends HRAdditionalDeductions
           .read(DriftSqlType.string, data['${effectivePrefix}employee_id'])!,
       type: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}type'])!,
-      amount: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}amount'])!,
+      amount: $HRAdditionalDeductionsTable.$converteramount.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.int, data['${effectivePrefix}amount'])!),
       deductionDate: attachedDatabase.typeMapping.read(
           DriftSqlType.dateTime, data['${effectivePrefix}deduction_date'])!,
       description: attachedDatabase.typeMapping
@@ -53391,6 +53506,8 @@ class $HRAdditionalDeductionsTable extends HRAdditionalDeductions
   $HRAdditionalDeductionsTable createAlias(String alias) {
     return $HRAdditionalDeductionsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Decimal, int> $converteramount = const CentConverter();
 }
 
 class HRAdditionalDeduction extends DataClass
@@ -53398,7 +53515,7 @@ class HRAdditionalDeduction extends DataClass
   final String id;
   final String employeeId;
   final String type;
-  final double amount;
+  final Decimal amount;
   final DateTime deductionDate;
   final String? description;
   final bool isRecurring;
@@ -53418,7 +53535,10 @@ class HRAdditionalDeduction extends DataClass
     map['id'] = Variable<String>(id);
     map['employee_id'] = Variable<String>(employeeId);
     map['type'] = Variable<String>(type);
-    map['amount'] = Variable<double>(amount);
+    {
+      map['amount'] = Variable<int>(
+          $HRAdditionalDeductionsTable.$converteramount.toSql(amount));
+    }
     map['deduction_date'] = Variable<DateTime>(deductionDate);
     if (!nullToAbsent || description != null) {
       map['description'] = Variable<String>(description);
@@ -53450,7 +53570,7 @@ class HRAdditionalDeduction extends DataClass
       id: serializer.fromJson<String>(json['id']),
       employeeId: serializer.fromJson<String>(json['employeeId']),
       type: serializer.fromJson<String>(json['type']),
-      amount: serializer.fromJson<double>(json['amount']),
+      amount: serializer.fromJson<Decimal>(json['amount']),
       deductionDate: serializer.fromJson<DateTime>(json['deductionDate']),
       description: serializer.fromJson<String?>(json['description']),
       isRecurring: serializer.fromJson<bool>(json['isRecurring']),
@@ -53465,7 +53585,7 @@ class HRAdditionalDeduction extends DataClass
       'id': serializer.toJson<String>(id),
       'employeeId': serializer.toJson<String>(employeeId),
       'type': serializer.toJson<String>(type),
-      'amount': serializer.toJson<double>(amount),
+      'amount': serializer.toJson<Decimal>(amount),
       'deductionDate': serializer.toJson<DateTime>(deductionDate),
       'description': serializer.toJson<String?>(description),
       'isRecurring': serializer.toJson<bool>(isRecurring),
@@ -53477,7 +53597,7 @@ class HRAdditionalDeduction extends DataClass
           {String? id,
           String? employeeId,
           String? type,
-          double? amount,
+          Decimal? amount,
           DateTime? deductionDate,
           Value<String?> description = const Value.absent(),
           bool? isRecurring,
@@ -53551,7 +53671,7 @@ class HRAdditionalDeductionsCompanion
   final Value<String> id;
   final Value<String> employeeId;
   final Value<String> type;
-  final Value<double> amount;
+  final Value<Decimal> amount;
   final Value<DateTime> deductionDate;
   final Value<String?> description;
   final Value<bool> isRecurring;
@@ -53572,7 +53692,7 @@ class HRAdditionalDeductionsCompanion
     this.id = const Value.absent(),
     required String employeeId,
     required String type,
-    required double amount,
+    required Decimal amount,
     required DateTime deductionDate,
     this.description = const Value.absent(),
     this.isRecurring = const Value.absent(),
@@ -53586,7 +53706,7 @@ class HRAdditionalDeductionsCompanion
     Expression<String>? id,
     Expression<String>? employeeId,
     Expression<String>? type,
-    Expression<double>? amount,
+    Expression<int>? amount,
     Expression<DateTime>? deductionDate,
     Expression<String>? description,
     Expression<bool>? isRecurring,
@@ -53611,7 +53731,7 @@ class HRAdditionalDeductionsCompanion
       {Value<String>? id,
       Value<String>? employeeId,
       Value<String>? type,
-      Value<double>? amount,
+      Value<Decimal>? amount,
       Value<DateTime>? deductionDate,
       Value<String?>? description,
       Value<bool>? isRecurring,
@@ -53644,7 +53764,8 @@ class HRAdditionalDeductionsCompanion
       map['type'] = Variable<String>(type.value);
     }
     if (amount.present) {
-      map['amount'] = Variable<double>(amount.value);
+      map['amount'] = Variable<int>(
+          $HRAdditionalDeductionsTable.$converteramount.toSql(amount.value));
     }
     if (deductionDate.present) {
       map['deduction_date'] = Variable<DateTime>(deductionDate.value);
@@ -64249,6 +64370,1017 @@ class ProformaInvoiceItemsCompanion
   }
 }
 
+class $ReconciliationDetailsTable extends ReconciliationDetails
+    with TableInfo<$ReconciliationDetailsTable, ReconciliationDetail> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ReconciliationDetailsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _reconciliationIdMeta =
+      const VerificationMeta('reconciliationId');
+  @override
+  late final GeneratedColumn<String> reconciliationId = GeneratedColumn<String>(
+      'reconciliation_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES reconciliations (id)'));
+  static const VerificationMeta _transactionIdMeta =
+      const VerificationMeta('transactionId');
+  @override
+  late final GeneratedColumn<String> transactionId = GeneratedColumn<String>(
+      'transaction_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES account_transactions (id)'));
+  static const VerificationMeta _statementAmountMeta =
+      const VerificationMeta('statementAmount');
+  @override
+  late final GeneratedColumnWithTypeConverter<Decimal, String> statementAmount =
+      GeneratedColumn<String>('statement_amount', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<Decimal>(
+              $ReconciliationDetailsTable.$converterstatementAmount);
+  static const VerificationMeta _statementDateMeta =
+      const VerificationMeta('statementDate');
+  @override
+  late final GeneratedColumn<DateTime> statementDate =
+      GeneratedColumn<DateTime>('statement_date', aliasedName, false,
+          type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _referenceMeta =
+      const VerificationMeta('reference');
+  @override
+  late final GeneratedColumn<String> reference = GeneratedColumn<String>(
+      'reference', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _branchIdMeta =
+      const VerificationMeta('branchId');
+  @override
+  late final GeneratedColumn<String> branchId = GeneratedColumn<String>(
+      'branch_id', aliasedName, true,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES branches (id)'));
+  @override
+  List<GeneratedColumn> get $columns => [
+        reconciliationId,
+        transactionId,
+        statementAmount,
+        statementDate,
+        reference,
+        branchId
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'reconciliation_details';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<ReconciliationDetail> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('reconciliation_id')) {
+      context.handle(
+          _reconciliationIdMeta,
+          reconciliationId.isAcceptableOrUnknown(
+              data['reconciliation_id']!, _reconciliationIdMeta));
+    } else if (isInserting) {
+      context.missing(_reconciliationIdMeta);
+    }
+    if (data.containsKey('transaction_id')) {
+      context.handle(
+          _transactionIdMeta,
+          transactionId.isAcceptableOrUnknown(
+              data['transaction_id']!, _transactionIdMeta));
+    } else if (isInserting) {
+      context.missing(_transactionIdMeta);
+    }
+    context.handle(_statementAmountMeta, const VerificationResult.success());
+    if (data.containsKey('statement_date')) {
+      context.handle(
+          _statementDateMeta,
+          statementDate.isAcceptableOrUnknown(
+              data['statement_date']!, _statementDateMeta));
+    } else if (isInserting) {
+      context.missing(_statementDateMeta);
+    }
+    if (data.containsKey('reference')) {
+      context.handle(_referenceMeta,
+          reference.isAcceptableOrUnknown(data['reference']!, _referenceMeta));
+    }
+    if (data.containsKey('branch_id')) {
+      context.handle(_branchIdMeta,
+          branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => const {};
+  @override
+  ReconciliationDetail map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ReconciliationDetail(
+      reconciliationId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}reconciliation_id'])!,
+      transactionId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}transaction_id'])!,
+      statementAmount: $ReconciliationDetailsTable.$converterstatementAmount
+          .fromSql(attachedDatabase.typeMapping.read(DriftSqlType.string,
+              data['${effectivePrefix}statement_amount'])!),
+      statementDate: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}statement_date'])!,
+      reference: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}reference']),
+      branchId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}branch_id']),
+    );
+  }
+
+  @override
+  $ReconciliationDetailsTable createAlias(String alias) {
+    return $ReconciliationDetailsTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<Decimal, String> $converterstatementAmount =
+      const DecimalConverter();
+}
+
+class ReconciliationDetail extends DataClass
+    implements Insertable<ReconciliationDetail> {
+  final String reconciliationId;
+  final String transactionId;
+  final Decimal statementAmount;
+  final DateTime statementDate;
+  final String? reference;
+  final String? branchId;
+  const ReconciliationDetail(
+      {required this.reconciliationId,
+      required this.transactionId,
+      required this.statementAmount,
+      required this.statementDate,
+      this.reference,
+      this.branchId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['reconciliation_id'] = Variable<String>(reconciliationId);
+    map['transaction_id'] = Variable<String>(transactionId);
+    {
+      map['statement_amount'] = Variable<String>($ReconciliationDetailsTable
+          .$converterstatementAmount
+          .toSql(statementAmount));
+    }
+    map['statement_date'] = Variable<DateTime>(statementDate);
+    if (!nullToAbsent || reference != null) {
+      map['reference'] = Variable<String>(reference);
+    }
+    if (!nullToAbsent || branchId != null) {
+      map['branch_id'] = Variable<String>(branchId);
+    }
+    return map;
+  }
+
+  ReconciliationDetailsCompanion toCompanion(bool nullToAbsent) {
+    return ReconciliationDetailsCompanion(
+      reconciliationId: Value(reconciliationId),
+      transactionId: Value(transactionId),
+      statementAmount: Value(statementAmount),
+      statementDate: Value(statementDate),
+      reference: reference == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reference),
+      branchId: branchId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(branchId),
+    );
+  }
+
+  factory ReconciliationDetail.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ReconciliationDetail(
+      reconciliationId: serializer.fromJson<String>(json['reconciliationId']),
+      transactionId: serializer.fromJson<String>(json['transactionId']),
+      statementAmount: serializer.fromJson<Decimal>(json['statementAmount']),
+      statementDate: serializer.fromJson<DateTime>(json['statementDate']),
+      reference: serializer.fromJson<String?>(json['reference']),
+      branchId: serializer.fromJson<String?>(json['branchId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'reconciliationId': serializer.toJson<String>(reconciliationId),
+      'transactionId': serializer.toJson<String>(transactionId),
+      'statementAmount': serializer.toJson<Decimal>(statementAmount),
+      'statementDate': serializer.toJson<DateTime>(statementDate),
+      'reference': serializer.toJson<String?>(reference),
+      'branchId': serializer.toJson<String?>(branchId),
+    };
+  }
+
+  ReconciliationDetail copyWith(
+          {String? reconciliationId,
+          String? transactionId,
+          Decimal? statementAmount,
+          DateTime? statementDate,
+          Value<String?> reference = const Value.absent(),
+          Value<String?> branchId = const Value.absent()}) =>
+      ReconciliationDetail(
+        reconciliationId: reconciliationId ?? this.reconciliationId,
+        transactionId: transactionId ?? this.transactionId,
+        statementAmount: statementAmount ?? this.statementAmount,
+        statementDate: statementDate ?? this.statementDate,
+        reference: reference.present ? reference.value : this.reference,
+        branchId: branchId.present ? branchId.value : this.branchId,
+      );
+  ReconciliationDetail copyWithCompanion(ReconciliationDetailsCompanion data) {
+    return ReconciliationDetail(
+      reconciliationId: data.reconciliationId.present
+          ? data.reconciliationId.value
+          : this.reconciliationId,
+      transactionId: data.transactionId.present
+          ? data.transactionId.value
+          : this.transactionId,
+      statementAmount: data.statementAmount.present
+          ? data.statementAmount.value
+          : this.statementAmount,
+      statementDate: data.statementDate.present
+          ? data.statementDate.value
+          : this.statementDate,
+      reference: data.reference.present ? data.reference.value : this.reference,
+      branchId: data.branchId.present ? data.branchId.value : this.branchId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReconciliationDetail(')
+          ..write('reconciliationId: $reconciliationId, ')
+          ..write('transactionId: $transactionId, ')
+          ..write('statementAmount: $statementAmount, ')
+          ..write('statementDate: $statementDate, ')
+          ..write('reference: $reference, ')
+          ..write('branchId: $branchId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(reconciliationId, transactionId,
+      statementAmount, statementDate, reference, branchId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ReconciliationDetail &&
+          other.reconciliationId == this.reconciliationId &&
+          other.transactionId == this.transactionId &&
+          other.statementAmount == this.statementAmount &&
+          other.statementDate == this.statementDate &&
+          other.reference == this.reference &&
+          other.branchId == this.branchId);
+}
+
+class ReconciliationDetailsCompanion
+    extends UpdateCompanion<ReconciliationDetail> {
+  final Value<String> reconciliationId;
+  final Value<String> transactionId;
+  final Value<Decimal> statementAmount;
+  final Value<DateTime> statementDate;
+  final Value<String?> reference;
+  final Value<String?> branchId;
+  final Value<int> rowid;
+  const ReconciliationDetailsCompanion({
+    this.reconciliationId = const Value.absent(),
+    this.transactionId = const Value.absent(),
+    this.statementAmount = const Value.absent(),
+    this.statementDate = const Value.absent(),
+    this.reference = const Value.absent(),
+    this.branchId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ReconciliationDetailsCompanion.insert({
+    required String reconciliationId,
+    required String transactionId,
+    required Decimal statementAmount,
+    required DateTime statementDate,
+    this.reference = const Value.absent(),
+    this.branchId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : reconciliationId = Value(reconciliationId),
+        transactionId = Value(transactionId),
+        statementAmount = Value(statementAmount),
+        statementDate = Value(statementDate);
+  static Insertable<ReconciliationDetail> custom({
+    Expression<String>? reconciliationId,
+    Expression<String>? transactionId,
+    Expression<String>? statementAmount,
+    Expression<DateTime>? statementDate,
+    Expression<String>? reference,
+    Expression<String>? branchId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (reconciliationId != null) 'reconciliation_id': reconciliationId,
+      if (transactionId != null) 'transaction_id': transactionId,
+      if (statementAmount != null) 'statement_amount': statementAmount,
+      if (statementDate != null) 'statement_date': statementDate,
+      if (reference != null) 'reference': reference,
+      if (branchId != null) 'branch_id': branchId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ReconciliationDetailsCompanion copyWith(
+      {Value<String>? reconciliationId,
+      Value<String>? transactionId,
+      Value<Decimal>? statementAmount,
+      Value<DateTime>? statementDate,
+      Value<String?>? reference,
+      Value<String?>? branchId,
+      Value<int>? rowid}) {
+    return ReconciliationDetailsCompanion(
+      reconciliationId: reconciliationId ?? this.reconciliationId,
+      transactionId: transactionId ?? this.transactionId,
+      statementAmount: statementAmount ?? this.statementAmount,
+      statementDate: statementDate ?? this.statementDate,
+      reference: reference ?? this.reference,
+      branchId: branchId ?? this.branchId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (reconciliationId.present) {
+      map['reconciliation_id'] = Variable<String>(reconciliationId.value);
+    }
+    if (transactionId.present) {
+      map['transaction_id'] = Variable<String>(transactionId.value);
+    }
+    if (statementAmount.present) {
+      map['statement_amount'] = Variable<String>($ReconciliationDetailsTable
+          .$converterstatementAmount
+          .toSql(statementAmount.value));
+    }
+    if (statementDate.present) {
+      map['statement_date'] = Variable<DateTime>(statementDate.value);
+    }
+    if (reference.present) {
+      map['reference'] = Variable<String>(reference.value);
+    }
+    if (branchId.present) {
+      map['branch_id'] = Variable<String>(branchId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReconciliationDetailsCompanion(')
+          ..write('reconciliationId: $reconciliationId, ')
+          ..write('transactionId: $transactionId, ')
+          ..write('statementAmount: $statementAmount, ')
+          ..write('statementDate: $statementDate, ')
+          ..write('reference: $reference, ')
+          ..write('branchId: $branchId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $UserSessionsTable extends UserSessions
+    with TableInfo<$UserSessionsTable, UserSession> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserSessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      clientDefault: () => const Uuid().v4());
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+      'user_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES users (id)'));
+  static const VerificationMeta _tokenMeta = const VerificationMeta('token');
+  @override
+  late final GeneratedColumn<String> token = GeneratedColumn<String>(
+      'token', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'));
+  static const VerificationMeta _loginAtMeta =
+      const VerificationMeta('loginAt');
+  @override
+  late final GeneratedColumn<DateTime> loginAt = GeneratedColumn<DateTime>(
+      'login_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _expiresAtMeta =
+      const VerificationMeta('expiresAt');
+  @override
+  late final GeneratedColumn<DateTime> expiresAt = GeneratedColumn<DateTime>(
+      'expires_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _isActiveMeta =
+      const VerificationMeta('isActive');
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+      'is_active', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, userId, token, loginAt, expiresAt, isActive];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'user_sessions';
+  @override
+  VerificationContext validateIntegrity(Insertable<UserSession> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(_userIdMeta,
+          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('token')) {
+      context.handle(
+          _tokenMeta, token.isAcceptableOrUnknown(data['token']!, _tokenMeta));
+    } else if (isInserting) {
+      context.missing(_tokenMeta);
+    }
+    if (data.containsKey('login_at')) {
+      context.handle(_loginAtMeta,
+          loginAt.isAcceptableOrUnknown(data['login_at']!, _loginAtMeta));
+    }
+    if (data.containsKey('expires_at')) {
+      context.handle(_expiresAtMeta,
+          expiresAt.isAcceptableOrUnknown(data['expires_at']!, _expiresAtMeta));
+    } else if (isInserting) {
+      context.missing(_expiresAtMeta);
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(_isActiveMeta,
+          isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  UserSession map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserSession(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      userId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}user_id'])!,
+      token: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}token'])!,
+      loginAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}login_at'])!,
+      expiresAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}expires_at'])!,
+      isActive: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
+    );
+  }
+
+  @override
+  $UserSessionsTable createAlias(String alias) {
+    return $UserSessionsTable(attachedDatabase, alias);
+  }
+}
+
+class UserSession extends DataClass implements Insertable<UserSession> {
+  final String id;
+  final String userId;
+  final String token;
+  final DateTime loginAt;
+  final DateTime expiresAt;
+  final bool isActive;
+  const UserSession(
+      {required this.id,
+      required this.userId,
+      required this.token,
+      required this.loginAt,
+      required this.expiresAt,
+      required this.isActive});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
+    map['token'] = Variable<String>(token);
+    map['login_at'] = Variable<DateTime>(loginAt);
+    map['expires_at'] = Variable<DateTime>(expiresAt);
+    map['is_active'] = Variable<bool>(isActive);
+    return map;
+  }
+
+  UserSessionsCompanion toCompanion(bool nullToAbsent) {
+    return UserSessionsCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      token: Value(token),
+      loginAt: Value(loginAt),
+      expiresAt: Value(expiresAt),
+      isActive: Value(isActive),
+    );
+  }
+
+  factory UserSession.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserSession(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      token: serializer.fromJson<String>(json['token']),
+      loginAt: serializer.fromJson<DateTime>(json['loginAt']),
+      expiresAt: serializer.fromJson<DateTime>(json['expiresAt']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
+      'token': serializer.toJson<String>(token),
+      'loginAt': serializer.toJson<DateTime>(loginAt),
+      'expiresAt': serializer.toJson<DateTime>(expiresAt),
+      'isActive': serializer.toJson<bool>(isActive),
+    };
+  }
+
+  UserSession copyWith(
+          {String? id,
+          String? userId,
+          String? token,
+          DateTime? loginAt,
+          DateTime? expiresAt,
+          bool? isActive}) =>
+      UserSession(
+        id: id ?? this.id,
+        userId: userId ?? this.userId,
+        token: token ?? this.token,
+        loginAt: loginAt ?? this.loginAt,
+        expiresAt: expiresAt ?? this.expiresAt,
+        isActive: isActive ?? this.isActive,
+      );
+  UserSession copyWithCompanion(UserSessionsCompanion data) {
+    return UserSession(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      token: data.token.present ? data.token.value : this.token,
+      loginAt: data.loginAt.present ? data.loginAt.value : this.loginAt,
+      expiresAt: data.expiresAt.present ? data.expiresAt.value : this.expiresAt,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserSession(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('token: $token, ')
+          ..write('loginAt: $loginAt, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('isActive: $isActive')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, userId, token, loginAt, expiresAt, isActive);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserSession &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.token == this.token &&
+          other.loginAt == this.loginAt &&
+          other.expiresAt == this.expiresAt &&
+          other.isActive == this.isActive);
+}
+
+class UserSessionsCompanion extends UpdateCompanion<UserSession> {
+  final Value<String> id;
+  final Value<String> userId;
+  final Value<String> token;
+  final Value<DateTime> loginAt;
+  final Value<DateTime> expiresAt;
+  final Value<bool> isActive;
+  final Value<int> rowid;
+  const UserSessionsCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.token = const Value.absent(),
+    this.loginAt = const Value.absent(),
+    this.expiresAt = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  UserSessionsCompanion.insert({
+    this.id = const Value.absent(),
+    required String userId,
+    required String token,
+    this.loginAt = const Value.absent(),
+    required DateTime expiresAt,
+    this.isActive = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : userId = Value(userId),
+        token = Value(token),
+        expiresAt = Value(expiresAt);
+  static Insertable<UserSession> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<String>? token,
+    Expression<DateTime>? loginAt,
+    Expression<DateTime>? expiresAt,
+    Expression<bool>? isActive,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (token != null) 'token': token,
+      if (loginAt != null) 'login_at': loginAt,
+      if (expiresAt != null) 'expires_at': expiresAt,
+      if (isActive != null) 'is_active': isActive,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  UserSessionsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? userId,
+      Value<String>? token,
+      Value<DateTime>? loginAt,
+      Value<DateTime>? expiresAt,
+      Value<bool>? isActive,
+      Value<int>? rowid}) {
+    return UserSessionsCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      token: token ?? this.token,
+      loginAt: loginAt ?? this.loginAt,
+      expiresAt: expiresAt ?? this.expiresAt,
+      isActive: isActive ?? this.isActive,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (token.present) {
+      map['token'] = Variable<String>(token.value);
+    }
+    if (loginAt.present) {
+      map['login_at'] = Variable<DateTime>(loginAt.value);
+    }
+    if (expiresAt.present) {
+      map['expires_at'] = Variable<DateTime>(expiresAt.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserSessionsCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('token: $token, ')
+          ..write('loginAt: $loginAt, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('isActive: $isActive, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LoginAttemptsTable extends LoginAttempts
+    with TableInfo<$LoginAttemptsTable, LoginAttempt> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LoginAttemptsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      clientDefault: () => const Uuid().v4());
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+      'user_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES users (id)'));
+  static const VerificationMeta _attemptedAtMeta =
+      const VerificationMeta('attemptedAt');
+  @override
+  late final GeneratedColumn<DateTime> attemptedAt = GeneratedColumn<DateTime>(
+      'attempted_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _successMeta =
+      const VerificationMeta('success');
+  @override
+  late final GeneratedColumn<bool> success = GeneratedColumn<bool>(
+      'success', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("success" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  @override
+  List<GeneratedColumn> get $columns => [id, userId, attemptedAt, success];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'login_attempts';
+  @override
+  VerificationContext validateIntegrity(Insertable<LoginAttempt> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(_userIdMeta,
+          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('attempted_at')) {
+      context.handle(
+          _attemptedAtMeta,
+          attemptedAt.isAcceptableOrUnknown(
+              data['attempted_at']!, _attemptedAtMeta));
+    }
+    if (data.containsKey('success')) {
+      context.handle(_successMeta,
+          success.isAcceptableOrUnknown(data['success']!, _successMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LoginAttempt map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LoginAttempt(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      userId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}user_id'])!,
+      attemptedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}attempted_at'])!,
+      success: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}success'])!,
+    );
+  }
+
+  @override
+  $LoginAttemptsTable createAlias(String alias) {
+    return $LoginAttemptsTable(attachedDatabase, alias);
+  }
+}
+
+class LoginAttempt extends DataClass implements Insertable<LoginAttempt> {
+  final String id;
+  final String userId;
+  final DateTime attemptedAt;
+  final bool success;
+  const LoginAttempt(
+      {required this.id,
+      required this.userId,
+      required this.attemptedAt,
+      required this.success});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
+    map['attempted_at'] = Variable<DateTime>(attemptedAt);
+    map['success'] = Variable<bool>(success);
+    return map;
+  }
+
+  LoginAttemptsCompanion toCompanion(bool nullToAbsent) {
+    return LoginAttemptsCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      attemptedAt: Value(attemptedAt),
+      success: Value(success),
+    );
+  }
+
+  factory LoginAttempt.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LoginAttempt(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      attemptedAt: serializer.fromJson<DateTime>(json['attemptedAt']),
+      success: serializer.fromJson<bool>(json['success']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
+      'attemptedAt': serializer.toJson<DateTime>(attemptedAt),
+      'success': serializer.toJson<bool>(success),
+    };
+  }
+
+  LoginAttempt copyWith(
+          {String? id, String? userId, DateTime? attemptedAt, bool? success}) =>
+      LoginAttempt(
+        id: id ?? this.id,
+        userId: userId ?? this.userId,
+        attemptedAt: attemptedAt ?? this.attemptedAt,
+        success: success ?? this.success,
+      );
+  LoginAttempt copyWithCompanion(LoginAttemptsCompanion data) {
+    return LoginAttempt(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      attemptedAt:
+          data.attemptedAt.present ? data.attemptedAt.value : this.attemptedAt,
+      success: data.success.present ? data.success.value : this.success,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LoginAttempt(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('attemptedAt: $attemptedAt, ')
+          ..write('success: $success')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, userId, attemptedAt, success);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LoginAttempt &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.attemptedAt == this.attemptedAt &&
+          other.success == this.success);
+}
+
+class LoginAttemptsCompanion extends UpdateCompanion<LoginAttempt> {
+  final Value<String> id;
+  final Value<String> userId;
+  final Value<DateTime> attemptedAt;
+  final Value<bool> success;
+  final Value<int> rowid;
+  const LoginAttemptsCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.attemptedAt = const Value.absent(),
+    this.success = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LoginAttemptsCompanion.insert({
+    this.id = const Value.absent(),
+    required String userId,
+    this.attemptedAt = const Value.absent(),
+    this.success = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : userId = Value(userId);
+  static Insertable<LoginAttempt> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<DateTime>? attemptedAt,
+    Expression<bool>? success,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (attemptedAt != null) 'attempted_at': attemptedAt,
+      if (success != null) 'success': success,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LoginAttemptsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? userId,
+      Value<DateTime>? attemptedAt,
+      Value<bool>? success,
+      Value<int>? rowid}) {
+    return LoginAttemptsCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      attemptedAt: attemptedAt ?? this.attemptedAt,
+      success: success ?? this.success,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (attemptedAt.present) {
+      map['attempted_at'] = Variable<DateTime>(attemptedAt.value);
+    }
+    if (success.present) {
+      map['success'] = Variable<bool>(success.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LoginAttemptsCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('attemptedAt: $attemptedAt, ')
+          ..write('success: $success, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -64399,6 +65531,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ProformaInvoicesTable(this);
   late final $ProformaInvoiceItemsTable proformaInvoiceItems =
       $ProformaInvoiceItemsTable(this);
+  late final $ReconciliationDetailsTable reconciliationDetails =
+      $ReconciliationDetailsTable(this);
+  late final $UserSessionsTable userSessions = $UserSessionsTable(this);
+  late final $LoginAttemptsTable loginAttempts = $LoginAttemptsTable(this);
   late final ProductsDao productsDao = ProductsDao(this as AppDatabase);
   late final SalesDao salesDao = SalesDao(this as AppDatabase);
   late final CustomersDao customersDao = CustomersDao(this as AppDatabase);
@@ -64525,7 +65661,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         endOfServiceBenefits,
         inventoryReservations,
         proformaInvoices,
-        proformaInvoiceItems
+        proformaInvoiceItems,
+        reconciliationDetails,
+        userSessions,
+        loginAttempts
       ];
 }
 
@@ -65498,6 +66637,23 @@ final class $$BranchesTableReferences
         manager.$state.copyWith(prefetchedData: cache));
   }
 
+  static MultiTypedResultKey<$PostingProfilesTable, List<PostingProfile>>
+      _postingProfilesRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.postingProfiles,
+              aliasName: $_aliasNameGenerator(
+                  db.branches.id, db.postingProfiles.branchId));
+
+  $$PostingProfilesTableProcessedTableManager get postingProfilesRefs {
+    final manager =
+        $$PostingProfilesTableTableManager($_db, $_db.postingProfiles)
+            .filter((f) => f.branchId.id($_item.id));
+
+    final cache =
+        $_typedResult.readTableOrNull(_postingProfilesRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
   static MultiTypedResultKey<$StockMovementsTable, List<StockMovement>>
       _stockMovementsRefsTable(_$AppDatabase db) =>
           MultiTypedResultKey.fromTable(db.stockMovements,
@@ -65890,6 +67046,25 @@ final class $$BranchesTableReferences
 
     final cache =
         $_typedResult.readTableOrNull(_proformaInvoiceItemsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$ReconciliationDetailsTable,
+      List<ReconciliationDetail>> _reconciliationDetailsRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.reconciliationDetails,
+          aliasName: $_aliasNameGenerator(
+              db.branches.id, db.reconciliationDetails.branchId));
+
+  $$ReconciliationDetailsTableProcessedTableManager
+      get reconciliationDetailsRefs {
+    final manager = $$ReconciliationDetailsTableTableManager(
+            $_db, $_db.reconciliationDetails)
+        .filter((f) => f.branchId.id($_item.id));
+
+    final cache =
+        $_typedResult.readTableOrNull(_reconciliationDetailsRefsTable($_db));
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
@@ -67177,6 +68352,27 @@ class $$BranchesTableFilterComposer
     return f(composer);
   }
 
+  Expression<bool> postingProfilesRefs(
+      Expression<bool> Function($$PostingProfilesTableFilterComposer f) f) {
+    final $$PostingProfilesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.postingProfiles,
+        getReferencedColumn: (t) => t.branchId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$PostingProfilesTableFilterComposer(
+              $db: $db,
+              $table: $db.postingProfiles,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
   Expression<bool> stockMovementsRefs(
       Expression<bool> Function($$StockMovementsTableFilterComposer f) f) {
     final $$StockMovementsTableFilterComposer composer = $composerBuilder(
@@ -67686,6 +68882,29 @@ class $$BranchesTableFilterComposer
               $removeJoinBuilderFromRootComposer:
                   $removeJoinBuilderFromRootComposer,
             ));
+    return f(composer);
+  }
+
+  Expression<bool> reconciliationDetailsRefs(
+      Expression<bool> Function($$ReconciliationDetailsTableFilterComposer f)
+          f) {
+    final $$ReconciliationDetailsTableFilterComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.reconciliationDetails,
+            getReferencedColumn: (t) => t.branchId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$ReconciliationDetailsTableFilterComposer(
+                  $db: $db,
+                  $table: $db.reconciliationDetails,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
     return f(composer);
   }
 }
@@ -69047,6 +70266,27 @@ class $$BranchesTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> postingProfilesRefs<T extends Object>(
+      Expression<T> Function($$PostingProfilesTableAnnotationComposer a) f) {
+    final $$PostingProfilesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.postingProfiles,
+        getReferencedColumn: (t) => t.branchId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$PostingProfilesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.postingProfiles,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
   Expression<T> stockMovementsRefs<T extends Object>(
       Expression<T> Function($$StockMovementsTableAnnotationComposer a) f) {
     final $$StockMovementsTableAnnotationComposer composer = $composerBuilder(
@@ -69564,6 +70804,29 @@ class $$BranchesTableAnnotationComposer
                 ));
     return f(composer);
   }
+
+  Expression<T> reconciliationDetailsRefs<T extends Object>(
+      Expression<T> Function($$ReconciliationDetailsTableAnnotationComposer a)
+          f) {
+    final $$ReconciliationDetailsTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.reconciliationDetails,
+            getReferencedColumn: (t) => t.branchId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$ReconciliationDetailsTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.reconciliationDetails,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
 }
 
 class $$BranchesTableTableManager extends RootTableManager<
@@ -69637,6 +70900,7 @@ class $$BranchesTableTableManager extends RootTableManager<
         bool billOfMaterialsRefs,
         bool inventoryTransactionsRefs,
         bool accountTransactionsRefs,
+        bool postingProfilesRefs,
         bool stockMovementsRefs,
         bool productUnitsRefs,
         bool aPInvoicesRefs,
@@ -69660,7 +70924,8 @@ class $$BranchesTableTableManager extends RootTableManager<
         bool endOfServiceBenefitsRefs,
         bool inventoryReservationsRefs,
         bool proformaInvoicesRefs,
-        bool proformaInvoiceItemsRefs})> {
+        bool proformaInvoiceItemsRefs,
+        bool reconciliationDetailsRefs})> {
   $$BranchesTableTableManager(_$AppDatabase db, $BranchesTable table)
       : super(TableManagerState(
           db: db,
@@ -69791,6 +71056,7 @@ class $$BranchesTableTableManager extends RootTableManager<
               billOfMaterialsRefs = false,
               inventoryTransactionsRefs = false,
               accountTransactionsRefs = false,
+              postingProfilesRefs = false,
               stockMovementsRefs = false,
               productUnitsRefs = false,
               aPInvoicesRefs = false,
@@ -69814,7 +71080,8 @@ class $$BranchesTableTableManager extends RootTableManager<
               endOfServiceBenefitsRefs = false,
               inventoryReservationsRefs = false,
               proformaInvoicesRefs = false,
-              proformaInvoiceItemsRefs = false}) {
+              proformaInvoiceItemsRefs = false,
+              reconciliationDetailsRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
@@ -69876,6 +71143,7 @@ class $$BranchesTableTableManager extends RootTableManager<
                 if (billOfMaterialsRefs) db.billOfMaterials,
                 if (inventoryTransactionsRefs) db.inventoryTransactions,
                 if (accountTransactionsRefs) db.accountTransactions,
+                if (postingProfilesRefs) db.postingProfiles,
                 if (stockMovementsRefs) db.stockMovements,
                 if (productUnitsRefs) db.productUnits,
                 if (aPInvoicesRefs) db.aPInvoices,
@@ -69899,7 +71167,8 @@ class $$BranchesTableTableManager extends RootTableManager<
                 if (endOfServiceBenefitsRefs) db.endOfServiceBenefits,
                 if (inventoryReservationsRefs) db.inventoryReservations,
                 if (proformaInvoicesRefs) db.proformaInvoices,
-                if (proformaInvoiceItemsRefs) db.proformaInvoiceItems
+                if (proformaInvoiceItemsRefs) db.proformaInvoiceItems,
+                if (reconciliationDetailsRefs) db.reconciliationDetails
               ],
               addJoins: <
                   T extends TableManagerState<
@@ -70621,6 +71890,18 @@ class $$BranchesTableTableManager extends RootTableManager<
                                 referencedItems) =>
                             referencedItems.where((e) => e.branchId == item.id),
                         typedResults: items),
+                  if (postingProfilesRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$BranchesTableReferences
+                            ._postingProfilesRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$BranchesTableReferences(db, table, p0)
+                                .postingProfilesRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.branchId == item.id),
+                        typedResults: items),
                   if (stockMovementsRefs)
                     await $_getPrefetchedData(
                         currentTable: table,
@@ -70908,6 +72189,18 @@ class $$BranchesTableTableManager extends RootTableManager<
                         referencedItemsForCurrentItem: (item,
                                 referencedItems) =>
                             referencedItems.where((e) => e.branchId == item.id),
+                        typedResults: items),
+                  if (reconciliationDetailsRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$BranchesTableReferences
+                            ._reconciliationDetailsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$BranchesTableReferences(db, table, p0)
+                                .reconciliationDetailsRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.branchId == item.id),
                         typedResults: items)
                 ];
               },
@@ -70987,6 +72280,7 @@ typedef $$BranchesTableProcessedTableManager = ProcessedTableManager<
         bool billOfMaterialsRefs,
         bool inventoryTransactionsRefs,
         bool accountTransactionsRefs,
+        bool postingProfilesRefs,
         bool stockMovementsRefs,
         bool productUnitsRefs,
         bool aPInvoicesRefs,
@@ -71010,7 +72304,8 @@ typedef $$BranchesTableProcessedTableManager = ProcessedTableManager<
         bool endOfServiceBenefitsRefs,
         bool inventoryReservationsRefs,
         bool proformaInvoicesRefs,
-        bool proformaInvoiceItemsRefs})>;
+        bool proformaInvoiceItemsRefs,
+        bool reconciliationDetailsRefs})>;
 typedef $$UsersTableCreateCompanionBuilder = UsersCompanion Function({
   Value<String> id,
   Value<DateTime> createdAt,
@@ -71118,6 +72413,35 @@ final class $$UsersTableReferences
 
     final cache =
         $_typedResult.readTableOrNull(_recurringEntriesRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$UserSessionsTable, List<UserSession>>
+      _userSessionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+          db.userSessions,
+          aliasName: $_aliasNameGenerator(db.users.id, db.userSessions.userId));
+
+  $$UserSessionsTableProcessedTableManager get userSessionsRefs {
+    final manager = $$UserSessionsTableTableManager($_db, $_db.userSessions)
+        .filter((f) => f.userId.id($_item.id));
+
+    final cache = $_typedResult.readTableOrNull(_userSessionsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$LoginAttemptsTable, List<LoginAttempt>>
+      _loginAttemptsRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.loginAttempts,
+              aliasName:
+                  $_aliasNameGenerator(db.users.id, db.loginAttempts.userId));
+
+  $$LoginAttemptsTableProcessedTableManager get loginAttemptsRefs {
+    final manager = $$LoginAttemptsTableTableManager($_db, $_db.loginAttempts)
+        .filter((f) => f.userId.id($_item.id));
+
+    final cache = $_typedResult.readTableOrNull(_loginAttemptsRefsTable($_db));
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
@@ -71260,6 +72584,48 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
             $$RecurringEntriesTableFilterComposer(
               $db: $db,
               $table: $db.recurringEntries,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> userSessionsRefs(
+      Expression<bool> Function($$UserSessionsTableFilterComposer f) f) {
+    final $$UserSessionsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.userSessions,
+        getReferencedColumn: (t) => t.userId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$UserSessionsTableFilterComposer(
+              $db: $db,
+              $table: $db.userSessions,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> loginAttemptsRefs(
+      Expression<bool> Function($$LoginAttemptsTableFilterComposer f) f) {
+    final $$LoginAttemptsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.loginAttempts,
+        getReferencedColumn: (t) => t.userId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$LoginAttemptsTableFilterComposer(
+              $db: $db,
+              $table: $db.loginAttempts,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -71481,6 +72847,48 @@ class $$UsersTableAnnotationComposer
             ));
     return f(composer);
   }
+
+  Expression<T> userSessionsRefs<T extends Object>(
+      Expression<T> Function($$UserSessionsTableAnnotationComposer a) f) {
+    final $$UserSessionsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.userSessions,
+        getReferencedColumn: (t) => t.userId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$UserSessionsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.userSessions,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<T> loginAttemptsRefs<T extends Object>(
+      Expression<T> Function($$LoginAttemptsTableAnnotationComposer a) f) {
+    final $$LoginAttemptsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.loginAttempts,
+        getReferencedColumn: (t) => t.userId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$LoginAttemptsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.loginAttempts,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
 }
 
 class $$UsersTableTableManager extends RootTableManager<
@@ -71499,7 +72907,9 @@ class $$UsersTableTableManager extends RootTableManager<
         bool shiftsRefs,
         bool cashboxTransactionsRefs,
         bool accAuditLogsRefs,
-        bool recurringEntriesRefs})> {
+        bool recurringEntriesRefs,
+        bool userSessionsRefs,
+        bool loginAttemptsRefs})> {
   $$UsersTableTableManager(_$AppDatabase db, $UsersTable table)
       : super(TableManagerState(
           db: db,
@@ -71579,14 +72989,18 @@ class $$UsersTableTableManager extends RootTableManager<
               shiftsRefs = false,
               cashboxTransactionsRefs = false,
               accAuditLogsRefs = false,
-              recurringEntriesRefs = false}) {
+              recurringEntriesRefs = false,
+              userSessionsRefs = false,
+              loginAttemptsRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
                 if (shiftsRefs) db.shifts,
                 if (cashboxTransactionsRefs) db.cashboxTransactions,
                 if (accAuditLogsRefs) db.accAuditLogs,
-                if (recurringEntriesRefs) db.recurringEntries
+                if (recurringEntriesRefs) db.recurringEntries,
+                if (userSessionsRefs) db.userSessions,
+                if (loginAttemptsRefs) db.loginAttempts
               ],
               addJoins: <
                   T extends TableManagerState<
@@ -71661,6 +73075,30 @@ class $$UsersTableTableManager extends RootTableManager<
                         referencedItemsForCurrentItem:
                             (item, referencedItems) => referencedItems
                                 .where((e) => e.createdBy == item.id),
+                        typedResults: items),
+                  if (userSessionsRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable:
+                            $$UsersTableReferences._userSessionsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$UsersTableReferences(db, table, p0)
+                                .userSessionsRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.userId == item.id),
+                        typedResults: items),
+                  if (loginAttemptsRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable:
+                            $$UsersTableReferences._loginAttemptsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$UsersTableReferences(db, table, p0)
+                                .loginAttemptsRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.userId == item.id),
                         typedResults: items)
                 ];
               },
@@ -71685,7 +73123,9 @@ typedef $$UsersTableProcessedTableManager = ProcessedTableManager<
         bool shiftsRefs,
         bool cashboxTransactionsRefs,
         bool accAuditLogsRefs,
-        bool recurringEntriesRefs})>;
+        bool recurringEntriesRefs,
+        bool userSessionsRefs,
+        bool loginAttemptsRefs})>;
 typedef $$CategoriesTableCreateCompanionBuilder = CategoriesCompanion Function({
   Value<String> id,
   Value<DateTime> createdAt,
@@ -72159,7 +73599,7 @@ typedef $$GLAccountsTableCreateCompanionBuilder = GLAccountsCompanion Function({
   Value<String?> branchId,
   required String code,
   required String name,
-  required String type,
+  required AccountType accountType,
   Value<String?> analyticType,
   Value<String?> parentId,
   Value<bool> isHeader,
@@ -72175,7 +73615,7 @@ typedef $$GLAccountsTableUpdateCompanionBuilder = GLAccountsCompanion Function({
   Value<String?> branchId,
   Value<String> code,
   Value<String> name,
-  Value<String> type,
+  Value<AccountType> accountType,
   Value<String?> analyticType,
   Value<String?> parentId,
   Value<bool> isHeader,
@@ -72470,8 +73910,10 @@ class $$GLAccountsTableFilterComposer
   ColumnFilters<String> get name => $composableBuilder(
       column: $table.name, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get type => $composableBuilder(
-      column: $table.type, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<AccountType, AccountType, int>
+      get accountType => $composableBuilder(
+          column: $table.accountType,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get analyticType => $composableBuilder(
       column: $table.analyticType, builder: (column) => ColumnFilters(column));
@@ -72849,8 +74291,8 @@ class $$GLAccountsTableOrderingComposer
   ColumnOrderings<String> get name => $composableBuilder(
       column: $table.name, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get type => $composableBuilder(
-      column: $table.type, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get accountType => $composableBuilder(
+      column: $table.accountType, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get analyticType => $composableBuilder(
       column: $table.analyticType,
@@ -72933,8 +74375,9 @@ class $$GLAccountsTableAnnotationComposer
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumn<String> get type =>
-      $composableBuilder(column: $table.type, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<AccountType, int> get accountType =>
+      $composableBuilder(
+          column: $table.accountType, builder: (column) => column);
 
   GeneratedColumn<String> get analyticType => $composableBuilder(
       column: $table.analyticType, builder: (column) => column);
@@ -73332,7 +74775,7 @@ class $$GLAccountsTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             Value<String> code = const Value.absent(),
             Value<String> name = const Value.absent(),
-            Value<String> type = const Value.absent(),
+            Value<AccountType> accountType = const Value.absent(),
             Value<String?> analyticType = const Value.absent(),
             Value<String?> parentId = const Value.absent(),
             Value<bool> isHeader = const Value.absent(),
@@ -73348,7 +74791,7 @@ class $$GLAccountsTableTableManager extends RootTableManager<
             branchId: branchId,
             code: code,
             name: name,
-            type: type,
+            accountType: accountType,
             analyticType: analyticType,
             parentId: parentId,
             isHeader: isHeader,
@@ -73364,7 +74807,7 @@ class $$GLAccountsTableTableManager extends RootTableManager<
             Value<String?> branchId = const Value.absent(),
             required String code,
             required String name,
-            required String type,
+            required AccountType accountType,
             Value<String?> analyticType = const Value.absent(),
             Value<String?> parentId = const Value.absent(),
             Value<bool> isHeader = const Value.absent(),
@@ -73380,7 +74823,7 @@ class $$GLAccountsTableTableManager extends RootTableManager<
             branchId: branchId,
             code: code,
             name: name,
-            type: type,
+            accountType: accountType,
             analyticType: analyticType,
             parentId: parentId,
             isHeader: isHeader,
@@ -99264,6 +100707,25 @@ final class $$ReconciliationsTableReferences extends BaseReferences<
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: [item]));
   }
+
+  static MultiTypedResultKey<$ReconciliationDetailsTable,
+      List<ReconciliationDetail>> _reconciliationDetailsRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.reconciliationDetails,
+          aliasName: $_aliasNameGenerator(db.reconciliations.id,
+              db.reconciliationDetails.reconciliationId));
+
+  $$ReconciliationDetailsTableProcessedTableManager
+      get reconciliationDetailsRefs {
+    final manager = $$ReconciliationDetailsTableTableManager(
+            $_db, $_db.reconciliationDetails)
+        .filter((f) => f.reconciliationId.id($_item.id));
+
+    final cache =
+        $_typedResult.readTableOrNull(_reconciliationDetailsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
 }
 
 class $$ReconciliationsTableFilterComposer
@@ -99349,6 +100811,29 @@ class $$ReconciliationsTableFilterComposer
                   $removeJoinBuilderFromRootComposer,
             ));
     return composer;
+  }
+
+  Expression<bool> reconciliationDetailsRefs(
+      Expression<bool> Function($$ReconciliationDetailsTableFilterComposer f)
+          f) {
+    final $$ReconciliationDetailsTableFilterComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.reconciliationDetails,
+            getReferencedColumn: (t) => t.reconciliationId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$ReconciliationDetailsTableFilterComposer(
+                  $db: $db,
+                  $table: $db.reconciliationDetails,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
   }
 }
 
@@ -99514,6 +100999,29 @@ class $$ReconciliationsTableAnnotationComposer
             ));
     return composer;
   }
+
+  Expression<T> reconciliationDetailsRefs<T extends Object>(
+      Expression<T> Function($$ReconciliationDetailsTableAnnotationComposer a)
+          f) {
+    final $$ReconciliationDetailsTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.reconciliationDetails,
+            getReferencedColumn: (t) => t.reconciliationId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$ReconciliationDetailsTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.reconciliationDetails,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
 }
 
 class $$ReconciliationsTableTableManager extends RootTableManager<
@@ -99527,7 +101035,8 @@ class $$ReconciliationsTableTableManager extends RootTableManager<
     $$ReconciliationsTableUpdateCompanionBuilder,
     (Reconciliation, $$ReconciliationsTableReferences),
     Reconciliation,
-    PrefetchHooks Function({bool branchId, bool accountId})> {
+    PrefetchHooks Function(
+        {bool branchId, bool accountId, bool reconciliationDetailsRefs})> {
   $$ReconciliationsTableTableManager(
       _$AppDatabase db, $ReconciliationsTable table)
       : super(TableManagerState(
@@ -99605,10 +101114,15 @@ class $$ReconciliationsTableTableManager extends RootTableManager<
                     $$ReconciliationsTableReferences(db, table, e)
                   ))
               .toList(),
-          prefetchHooksCallback: ({branchId = false, accountId = false}) {
+          prefetchHooksCallback: (
+              {branchId = false,
+              accountId = false,
+              reconciliationDetailsRefs = false}) {
             return PrefetchHooks(
               db: db,
-              explicitlyWatchedTables: [],
+              explicitlyWatchedTables: [
+                if (reconciliationDetailsRefs) db.reconciliationDetails
+              ],
               addJoins: <
                   T extends TableManagerState<
                       dynamic,
@@ -99646,7 +101160,20 @@ class $$ReconciliationsTableTableManager extends RootTableManager<
                 return state;
               },
               getPrefetchedDataCallback: (items) async {
-                return [];
+                return [
+                  if (reconciliationDetailsRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$ReconciliationsTableReferences
+                            ._reconciliationDetailsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$ReconciliationsTableReferences(db, table, p0)
+                                .reconciliationDetailsRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.reconciliationId == item.id),
+                        typedResults: items)
+                ];
               },
             );
           },
@@ -99664,7 +101191,8 @@ typedef $$ReconciliationsTableProcessedTableManager = ProcessedTableManager<
     $$ReconciliationsTableUpdateCompanionBuilder,
     (Reconciliation, $$ReconciliationsTableReferences),
     Reconciliation,
-    PrefetchHooks Function({bool branchId, bool accountId})>;
+    PrefetchHooks Function(
+        {bool branchId, bool accountId, bool reconciliationDetailsRefs})>;
 typedef $$AuditLogsTableCreateCompanionBuilder = AuditLogsCompanion Function({
   Value<String> id,
   Value<DateTime> createdAt,
@@ -110643,6 +112171,25 @@ final class $$AccountTransactionsTableReferences extends BaseReferences<
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: [item]));
   }
+
+  static MultiTypedResultKey<$ReconciliationDetailsTable,
+      List<ReconciliationDetail>> _reconciliationDetailsRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.reconciliationDetails,
+          aliasName: $_aliasNameGenerator(db.accountTransactions.id,
+              db.reconciliationDetails.transactionId));
+
+  $$ReconciliationDetailsTableProcessedTableManager
+      get reconciliationDetailsRefs {
+    final manager = $$ReconciliationDetailsTableTableManager(
+            $_db, $_db.reconciliationDetails)
+        .filter((f) => f.transactionId.id($_item.id));
+
+    final cache =
+        $_typedResult.readTableOrNull(_reconciliationDetailsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
 }
 
 class $$AccountTransactionsTableFilterComposer
@@ -110729,6 +112276,29 @@ class $$AccountTransactionsTableFilterComposer
                   $removeJoinBuilderFromRootComposer,
             ));
     return composer;
+  }
+
+  Expression<bool> reconciliationDetailsRefs(
+      Expression<bool> Function($$ReconciliationDetailsTableFilterComposer f)
+          f) {
+    final $$ReconciliationDetailsTableFilterComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.reconciliationDetails,
+            getReferencedColumn: (t) => t.transactionId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$ReconciliationDetailsTableFilterComposer(
+                  $db: $db,
+                  $table: $db.reconciliationDetails,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
   }
 }
 
@@ -110896,6 +112466,29 @@ class $$AccountTransactionsTableAnnotationComposer
             ));
     return composer;
   }
+
+  Expression<T> reconciliationDetailsRefs<T extends Object>(
+      Expression<T> Function($$ReconciliationDetailsTableAnnotationComposer a)
+          f) {
+    final $$ReconciliationDetailsTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.reconciliationDetails,
+            getReferencedColumn: (t) => t.transactionId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$ReconciliationDetailsTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.reconciliationDetails,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
 }
 
 class $$AccountTransactionsTableTableManager extends RootTableManager<
@@ -110909,7 +112502,8 @@ class $$AccountTransactionsTableTableManager extends RootTableManager<
     $$AccountTransactionsTableUpdateCompanionBuilder,
     (AccountTransaction, $$AccountTransactionsTableReferences),
     AccountTransaction,
-    PrefetchHooks Function({bool branchId, bool accountId})> {
+    PrefetchHooks Function(
+        {bool branchId, bool accountId, bool reconciliationDetailsRefs})> {
   $$AccountTransactionsTableTableManager(
       _$AppDatabase db, $AccountTransactionsTable table)
       : super(TableManagerState(
@@ -110993,10 +112587,15 @@ class $$AccountTransactionsTableTableManager extends RootTableManager<
                     $$AccountTransactionsTableReferences(db, table, e)
                   ))
               .toList(),
-          prefetchHooksCallback: ({branchId = false, accountId = false}) {
+          prefetchHooksCallback: (
+              {branchId = false,
+              accountId = false,
+              reconciliationDetailsRefs = false}) {
             return PrefetchHooks(
               db: db,
-              explicitlyWatchedTables: [],
+              explicitlyWatchedTables: [
+                if (reconciliationDetailsRefs) db.reconciliationDetails
+              ],
               addJoins: <
                   T extends TableManagerState<
                       dynamic,
@@ -111036,7 +112635,20 @@ class $$AccountTransactionsTableTableManager extends RootTableManager<
                 return state;
               },
               getPrefetchedDataCallback: (items) async {
-                return [];
+                return [
+                  if (reconciliationDetailsRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$AccountTransactionsTableReferences
+                            ._reconciliationDetailsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$AccountTransactionsTableReferences(db, table, p0)
+                                .reconciliationDetailsRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.transactionId == item.id),
+                        typedResults: items)
+                ];
               },
             );
           },
@@ -111054,7 +112666,8 @@ typedef $$AccountTransactionsTableProcessedTableManager = ProcessedTableManager<
     $$AccountTransactionsTableUpdateCompanionBuilder,
     (AccountTransaction, $$AccountTransactionsTableReferences),
     AccountTransaction,
-    PrefetchHooks Function({bool branchId, bool accountId})>;
+    PrefetchHooks Function(
+        {bool branchId, bool accountId, bool reconciliationDetailsRefs})>;
 typedef $$PostingProfilesTableCreateCompanionBuilder = PostingProfilesCompanion
     Function({
   Value<String> id,
@@ -111068,6 +112681,7 @@ typedef $$PostingProfilesTableCreateCompanionBuilder = PostingProfilesCompanion
   required String side,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
+  Value<String?> branchId,
   Value<int> syncStatus,
   Value<int> rowid,
 });
@@ -111084,6 +112698,7 @@ typedef $$PostingProfilesTableUpdateCompanionBuilder = PostingProfilesCompanion
   Value<String> side,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
+  Value<String?> branchId,
   Value<int> syncStatus,
   Value<int> rowid,
 });
@@ -111102,6 +112717,20 @@ final class $$PostingProfilesTableReferences extends BaseReferences<
     final manager = $$GLAccountsTableTableManager($_db, $_db.gLAccounts)
         .filter((f) => f.id($_item.accountId!));
     final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $BranchesTable _branchIdTable(_$AppDatabase db) =>
+      db.branches.createAlias(
+          $_aliasNameGenerator(db.postingProfiles.branchId, db.branches.id));
+
+  $$BranchesTableProcessedTableManager? get branchId {
+    if ($_item.branchId == null) return null;
+    final manager = $$BranchesTableTableManager($_db, $_db.branches)
+        .filter((f) => f.id($_item.branchId!));
+    final item = $_typedResult.readTableOrNull(_branchIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: [item]));
@@ -111162,6 +112791,26 @@ class $$PostingProfilesTableFilterComposer
             $$GLAccountsTableFilterComposer(
               $db: $db,
               $table: $db.gLAccounts,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$BranchesTableFilterComposer get branchId {
+    final $$BranchesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.branchId,
+        referencedTable: $db.branches,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BranchesTableFilterComposer(
+              $db: $db,
+              $table: $db.branches,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -111233,6 +112882,26 @@ class $$PostingProfilesTableOrderingComposer
             ));
     return composer;
   }
+
+  $$BranchesTableOrderingComposer get branchId {
+    final $$BranchesTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.branchId,
+        referencedTable: $db.branches,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BranchesTableOrderingComposer(
+              $db: $db,
+              $table: $db.branches,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
 }
 
 class $$PostingProfilesTableAnnotationComposer
@@ -111296,6 +112965,26 @@ class $$PostingProfilesTableAnnotationComposer
             ));
     return composer;
   }
+
+  $$BranchesTableAnnotationComposer get branchId {
+    final $$BranchesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.branchId,
+        referencedTable: $db.branches,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BranchesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.branches,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
 }
 
 class $$PostingProfilesTableTableManager extends RootTableManager<
@@ -111309,7 +112998,7 @@ class $$PostingProfilesTableTableManager extends RootTableManager<
     $$PostingProfilesTableUpdateCompanionBuilder,
     (PostingProfile, $$PostingProfilesTableReferences),
     PostingProfile,
-    PrefetchHooks Function({bool accountId})> {
+    PrefetchHooks Function({bool accountId, bool branchId})> {
   $$PostingProfilesTableTableManager(
       _$AppDatabase db, $PostingProfilesTable table)
       : super(TableManagerState(
@@ -111333,6 +113022,7 @@ class $$PostingProfilesTableTableManager extends RootTableManager<
             Value<String> side = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
+            Value<String?> branchId = const Value.absent(),
             Value<int> syncStatus = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -111348,6 +113038,7 @@ class $$PostingProfilesTableTableManager extends RootTableManager<
             side: side,
             createdAt: createdAt,
             updatedAt: updatedAt,
+            branchId: branchId,
             syncStatus: syncStatus,
             rowid: rowid,
           ),
@@ -111363,6 +113054,7 @@ class $$PostingProfilesTableTableManager extends RootTableManager<
             required String side,
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
+            Value<String?> branchId = const Value.absent(),
             Value<int> syncStatus = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -111378,6 +113070,7 @@ class $$PostingProfilesTableTableManager extends RootTableManager<
             side: side,
             createdAt: createdAt,
             updatedAt: updatedAt,
+            branchId: branchId,
             syncStatus: syncStatus,
             rowid: rowid,
           ),
@@ -111387,7 +113080,7 @@ class $$PostingProfilesTableTableManager extends RootTableManager<
                     $$PostingProfilesTableReferences(db, table, e)
                   ))
               .toList(),
-          prefetchHooksCallback: ({accountId = false}) {
+          prefetchHooksCallback: ({accountId = false, branchId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -111414,6 +113107,16 @@ class $$PostingProfilesTableTableManager extends RootTableManager<
                         $$PostingProfilesTableReferences._accountIdTable(db).id,
                   ) as T;
                 }
+                if (branchId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.branchId,
+                    referencedTable:
+                        $$PostingProfilesTableReferences._branchIdTable(db),
+                    referencedColumn:
+                        $$PostingProfilesTableReferences._branchIdTable(db).id,
+                  ) as T;
+                }
 
                 return state;
               },
@@ -111436,7 +113139,7 @@ typedef $$PostingProfilesTableProcessedTableManager = ProcessedTableManager<
     $$PostingProfilesTableUpdateCompanionBuilder,
     (PostingProfile, $$PostingProfilesTableReferences),
     PostingProfile,
-    PrefetchHooks Function({bool accountId})>;
+    PrefetchHooks Function({bool accountId, bool branchId})>;
 typedef $$StockMovementsTableCreateCompanionBuilder = StockMovementsCompanion
     Function({
   Value<String> id,
@@ -112741,7 +114444,7 @@ typedef $$APInvoicesTableCreateCompanionBuilder = APInvoicesCompanion Function({
   required String invoiceNumber,
   Value<DateTime> invoiceDate,
   Value<DateTime?> dueDate,
-  required double totalAmount,
+  required Decimal totalAmount,
   Value<Decimal> taxAmount,
   Value<Decimal> paidAmount,
   Value<String> status,
@@ -112760,7 +114463,7 @@ typedef $$APInvoicesTableUpdateCompanionBuilder = APInvoicesCompanion Function({
   Value<String> invoiceNumber,
   Value<DateTime> invoiceDate,
   Value<DateTime?> dueDate,
-  Value<double> totalAmount,
+  Value<Decimal> totalAmount,
   Value<Decimal> taxAmount,
   Value<Decimal> paidAmount,
   Value<String> status,
@@ -112849,8 +114552,10 @@ class $$APInvoicesTableFilterComposer
   ColumnFilters<DateTime> get dueDate => $composableBuilder(
       column: $table.dueDate, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get totalAmount => $composableBuilder(
-      column: $table.totalAmount, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, int> get totalAmount =>
+      $composableBuilder(
+          column: $table.totalAmount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnWithTypeConverterFilters<Decimal, Decimal, String> get taxAmount =>
       $composableBuilder(
@@ -112963,7 +114668,7 @@ class $$APInvoicesTableOrderingComposer
   ColumnOrderings<DateTime> get dueDate => $composableBuilder(
       column: $table.dueDate, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get totalAmount => $composableBuilder(
+  ColumnOrderings<int> get totalAmount => $composableBuilder(
       column: $table.totalAmount, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get taxAmount => $composableBuilder(
@@ -113072,8 +114777,9 @@ class $$APInvoicesTableAnnotationComposer
   GeneratedColumn<DateTime> get dueDate =>
       $composableBuilder(column: $table.dueDate, builder: (column) => column);
 
-  GeneratedColumn<double> get totalAmount => $composableBuilder(
-      column: $table.totalAmount, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, int> get totalAmount =>
+      $composableBuilder(
+          column: $table.totalAmount, builder: (column) => column);
 
   GeneratedColumnWithTypeConverter<Decimal, String> get taxAmount =>
       $composableBuilder(column: $table.taxAmount, builder: (column) => column);
@@ -113182,7 +114888,7 @@ class $$APInvoicesTableTableManager extends RootTableManager<
             Value<String> invoiceNumber = const Value.absent(),
             Value<DateTime> invoiceDate = const Value.absent(),
             Value<DateTime?> dueDate = const Value.absent(),
-            Value<double> totalAmount = const Value.absent(),
+            Value<Decimal> totalAmount = const Value.absent(),
             Value<Decimal> taxAmount = const Value.absent(),
             Value<Decimal> paidAmount = const Value.absent(),
             Value<String> status = const Value.absent(),
@@ -113220,7 +114926,7 @@ class $$APInvoicesTableTableManager extends RootTableManager<
             required String invoiceNumber,
             Value<DateTime> invoiceDate = const Value.absent(),
             Value<DateTime?> dueDate = const Value.absent(),
-            required double totalAmount,
+            required Decimal totalAmount,
             Value<Decimal> taxAmount = const Value.absent(),
             Value<Decimal> paidAmount = const Value.absent(),
             Value<String> status = const Value.absent(),
@@ -113335,7 +115041,7 @@ typedef $$ARInvoicesTableCreateCompanionBuilder = ARInvoicesCompanion Function({
   required String invoiceNumber,
   Value<DateTime> invoiceDate,
   Value<DateTime?> dueDate,
-  required double totalAmount,
+  required Decimal totalAmount,
   Value<Decimal> taxAmount,
   Value<Decimal> paidAmount,
   Value<String> status,
@@ -113354,7 +115060,7 @@ typedef $$ARInvoicesTableUpdateCompanionBuilder = ARInvoicesCompanion Function({
   Value<String> invoiceNumber,
   Value<DateTime> invoiceDate,
   Value<DateTime?> dueDate,
-  Value<double> totalAmount,
+  Value<Decimal> totalAmount,
   Value<Decimal> taxAmount,
   Value<Decimal> paidAmount,
   Value<String> status,
@@ -113443,8 +115149,10 @@ class $$ARInvoicesTableFilterComposer
   ColumnFilters<DateTime> get dueDate => $composableBuilder(
       column: $table.dueDate, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get totalAmount => $composableBuilder(
-      column: $table.totalAmount, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, int> get totalAmount =>
+      $composableBuilder(
+          column: $table.totalAmount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnWithTypeConverterFilters<Decimal, Decimal, String> get taxAmount =>
       $composableBuilder(
@@ -113557,7 +115265,7 @@ class $$ARInvoicesTableOrderingComposer
   ColumnOrderings<DateTime> get dueDate => $composableBuilder(
       column: $table.dueDate, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get totalAmount => $composableBuilder(
+  ColumnOrderings<int> get totalAmount => $composableBuilder(
       column: $table.totalAmount, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get taxAmount => $composableBuilder(
@@ -113666,8 +115374,9 @@ class $$ARInvoicesTableAnnotationComposer
   GeneratedColumn<DateTime> get dueDate =>
       $composableBuilder(column: $table.dueDate, builder: (column) => column);
 
-  GeneratedColumn<double> get totalAmount => $composableBuilder(
-      column: $table.totalAmount, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, int> get totalAmount =>
+      $composableBuilder(
+          column: $table.totalAmount, builder: (column) => column);
 
   GeneratedColumnWithTypeConverter<Decimal, String> get taxAmount =>
       $composableBuilder(column: $table.taxAmount, builder: (column) => column);
@@ -113776,7 +115485,7 @@ class $$ARInvoicesTableTableManager extends RootTableManager<
             Value<String> invoiceNumber = const Value.absent(),
             Value<DateTime> invoiceDate = const Value.absent(),
             Value<DateTime?> dueDate = const Value.absent(),
-            Value<double> totalAmount = const Value.absent(),
+            Value<Decimal> totalAmount = const Value.absent(),
             Value<Decimal> taxAmount = const Value.absent(),
             Value<Decimal> paidAmount = const Value.absent(),
             Value<String> status = const Value.absent(),
@@ -113814,7 +115523,7 @@ class $$ARInvoicesTableTableManager extends RootTableManager<
             required String invoiceNumber,
             Value<DateTime> invoiceDate = const Value.absent(),
             Value<DateTime?> dueDate = const Value.absent(),
-            required double totalAmount,
+            required Decimal totalAmount,
             Value<Decimal> taxAmount = const Value.absent(),
             Value<Decimal> paidAmount = const Value.absent(),
             Value<String> status = const Value.absent(),
@@ -121702,11 +123411,11 @@ typedef $$HREmployeesTableCreateCompanionBuilder = HREmployeesCompanion
   Value<String?> position,
   Value<String?> department,
   required DateTime hireDate,
-  required double basicSalary,
-  Value<double> housingAllowance,
-  Value<double> transportAllowance,
-  Value<double> otherAllowances,
-  Value<double> totalDeductions,
+  required Decimal basicSalary,
+  Value<Decimal> housingAllowance,
+  Value<Decimal> transportAllowance,
+  Value<Decimal> otherAllowances,
+  Value<Decimal> totalDeductions,
   Value<String?> bankAccountNumber,
   Value<String?> bankName,
   Value<String> status,
@@ -121720,11 +123429,11 @@ typedef $$HREmployeesTableUpdateCompanionBuilder = HREmployeesCompanion
   Value<String?> position,
   Value<String?> department,
   Value<DateTime> hireDate,
-  Value<double> basicSalary,
-  Value<double> housingAllowance,
-  Value<double> transportAllowance,
-  Value<double> otherAllowances,
-  Value<double> totalDeductions,
+  Value<Decimal> basicSalary,
+  Value<Decimal> housingAllowance,
+  Value<Decimal> transportAllowance,
+  Value<Decimal> otherAllowances,
+  Value<Decimal> totalDeductions,
   Value<String?> bankAccountNumber,
   Value<String?> bankName,
   Value<String> status,
@@ -121799,24 +123508,30 @@ class $$HREmployeesTableFilterComposer
   ColumnFilters<DateTime> get hireDate => $composableBuilder(
       column: $table.hireDate, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get basicSalary => $composableBuilder(
-      column: $table.basicSalary, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, int> get basicSalary =>
+      $composableBuilder(
+          column: $table.basicSalary,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get housingAllowance => $composableBuilder(
-      column: $table.housingAllowance,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, int> get housingAllowance =>
+      $composableBuilder(
+          column: $table.housingAllowance,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get transportAllowance => $composableBuilder(
-      column: $table.transportAllowance,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, int>
+      get transportAllowance => $composableBuilder(
+          column: $table.transportAllowance,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get otherAllowances => $composableBuilder(
-      column: $table.otherAllowances,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, int> get otherAllowances =>
+      $composableBuilder(
+          column: $table.otherAllowances,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get totalDeductions => $composableBuilder(
-      column: $table.totalDeductions,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, int> get totalDeductions =>
+      $composableBuilder(
+          column: $table.totalDeductions,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get bankAccountNumber => $composableBuilder(
       column: $table.bankAccountNumber,
@@ -121900,22 +123615,22 @@ class $$HREmployeesTableOrderingComposer
   ColumnOrderings<DateTime> get hireDate => $composableBuilder(
       column: $table.hireDate, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get basicSalary => $composableBuilder(
+  ColumnOrderings<int> get basicSalary => $composableBuilder(
       column: $table.basicSalary, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get housingAllowance => $composableBuilder(
+  ColumnOrderings<int> get housingAllowance => $composableBuilder(
       column: $table.housingAllowance,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get transportAllowance => $composableBuilder(
+  ColumnOrderings<int> get transportAllowance => $composableBuilder(
       column: $table.transportAllowance,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get otherAllowances => $composableBuilder(
+  ColumnOrderings<int> get otherAllowances => $composableBuilder(
       column: $table.otherAllowances,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get totalDeductions => $composableBuilder(
+  ColumnOrderings<int> get totalDeductions => $composableBuilder(
       column: $table.totalDeductions,
       builder: (column) => ColumnOrderings(column));
 
@@ -121957,20 +123672,25 @@ class $$HREmployeesTableAnnotationComposer
   GeneratedColumn<DateTime> get hireDate =>
       $composableBuilder(column: $table.hireDate, builder: (column) => column);
 
-  GeneratedColumn<double> get basicSalary => $composableBuilder(
-      column: $table.basicSalary, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, int> get basicSalary =>
+      $composableBuilder(
+          column: $table.basicSalary, builder: (column) => column);
 
-  GeneratedColumn<double> get housingAllowance => $composableBuilder(
-      column: $table.housingAllowance, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, int> get housingAllowance =>
+      $composableBuilder(
+          column: $table.housingAllowance, builder: (column) => column);
 
-  GeneratedColumn<double> get transportAllowance => $composableBuilder(
-      column: $table.transportAllowance, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, int> get transportAllowance =>
+      $composableBuilder(
+          column: $table.transportAllowance, builder: (column) => column);
 
-  GeneratedColumn<double> get otherAllowances => $composableBuilder(
-      column: $table.otherAllowances, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, int> get otherAllowances =>
+      $composableBuilder(
+          column: $table.otherAllowances, builder: (column) => column);
 
-  GeneratedColumn<double> get totalDeductions => $composableBuilder(
-      column: $table.totalDeductions, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, int> get totalDeductions =>
+      $composableBuilder(
+          column: $table.totalDeductions, builder: (column) => column);
 
   GeneratedColumn<String> get bankAccountNumber => $composableBuilder(
       column: $table.bankAccountNumber, builder: (column) => column);
@@ -122056,11 +123776,11 @@ class $$HREmployeesTableTableManager extends RootTableManager<
             Value<String?> position = const Value.absent(),
             Value<String?> department = const Value.absent(),
             Value<DateTime> hireDate = const Value.absent(),
-            Value<double> basicSalary = const Value.absent(),
-            Value<double> housingAllowance = const Value.absent(),
-            Value<double> transportAllowance = const Value.absent(),
-            Value<double> otherAllowances = const Value.absent(),
-            Value<double> totalDeductions = const Value.absent(),
+            Value<Decimal> basicSalary = const Value.absent(),
+            Value<Decimal> housingAllowance = const Value.absent(),
+            Value<Decimal> transportAllowance = const Value.absent(),
+            Value<Decimal> otherAllowances = const Value.absent(),
+            Value<Decimal> totalDeductions = const Value.absent(),
             Value<String?> bankAccountNumber = const Value.absent(),
             Value<String?> bankName = const Value.absent(),
             Value<String> status = const Value.absent(),
@@ -122090,11 +123810,11 @@ class $$HREmployeesTableTableManager extends RootTableManager<
             Value<String?> position = const Value.absent(),
             Value<String?> department = const Value.absent(),
             required DateTime hireDate,
-            required double basicSalary,
-            Value<double> housingAllowance = const Value.absent(),
-            Value<double> transportAllowance = const Value.absent(),
-            Value<double> otherAllowances = const Value.absent(),
-            Value<double> totalDeductions = const Value.absent(),
+            required Decimal basicSalary,
+            Value<Decimal> housingAllowance = const Value.absent(),
+            Value<Decimal> transportAllowance = const Value.absent(),
+            Value<Decimal> otherAllowances = const Value.absent(),
+            Value<Decimal> totalDeductions = const Value.absent(),
             Value<String?> bankAccountNumber = const Value.absent(),
             Value<String?> bankName = const Value.absent(),
             Value<String> status = const Value.absent(),
@@ -122184,10 +123904,10 @@ typedef $$HRPayrollRunsTableCreateCompanionBuilder = HRPayrollRunsCompanion
   Value<String> id,
   required String period,
   Value<DateTime> runDate,
-  Value<double> totalSalaries,
-  Value<double> totalAllowances,
-  Value<double> totalDeductions,
-  Value<double> netPayable,
+  Value<Decimal> totalSalaries,
+  Value<Decimal> totalAllowances,
+  Value<Decimal> totalDeductions,
+  Value<Decimal> netPayable,
   Value<String?> journalEntryId,
   Value<String> status,
   Value<String?> notes,
@@ -122198,10 +123918,10 @@ typedef $$HRPayrollRunsTableUpdateCompanionBuilder = HRPayrollRunsCompanion
   Value<String> id,
   Value<String> period,
   Value<DateTime> runDate,
-  Value<double> totalSalaries,
-  Value<double> totalAllowances,
-  Value<double> totalDeductions,
-  Value<double> netPayable,
+  Value<Decimal> totalSalaries,
+  Value<Decimal> totalAllowances,
+  Value<Decimal> totalDeductions,
+  Value<Decimal> netPayable,
   Value<String?> journalEntryId,
   Value<String> status,
   Value<String?> notes,
@@ -122249,19 +123969,25 @@ class $$HRPayrollRunsTableFilterComposer
   ColumnFilters<DateTime> get runDate => $composableBuilder(
       column: $table.runDate, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get totalSalaries => $composableBuilder(
-      column: $table.totalSalaries, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, int> get totalSalaries =>
+      $composableBuilder(
+          column: $table.totalSalaries,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get totalAllowances => $composableBuilder(
-      column: $table.totalAllowances,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, int> get totalAllowances =>
+      $composableBuilder(
+          column: $table.totalAllowances,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get totalDeductions => $composableBuilder(
-      column: $table.totalDeductions,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, int> get totalDeductions =>
+      $composableBuilder(
+          column: $table.totalDeductions,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get netPayable => $composableBuilder(
-      column: $table.netPayable, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, int> get netPayable =>
+      $composableBuilder(
+          column: $table.netPayable,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get journalEntryId => $composableBuilder(
       column: $table.journalEntryId,
@@ -122313,19 +124039,19 @@ class $$HRPayrollRunsTableOrderingComposer
   ColumnOrderings<DateTime> get runDate => $composableBuilder(
       column: $table.runDate, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get totalSalaries => $composableBuilder(
+  ColumnOrderings<int> get totalSalaries => $composableBuilder(
       column: $table.totalSalaries,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get totalAllowances => $composableBuilder(
+  ColumnOrderings<int> get totalAllowances => $composableBuilder(
       column: $table.totalAllowances,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get totalDeductions => $composableBuilder(
+  ColumnOrderings<int> get totalDeductions => $composableBuilder(
       column: $table.totalDeductions,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get netPayable => $composableBuilder(
+  ColumnOrderings<int> get netPayable => $composableBuilder(
       column: $table.netPayable, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get journalEntryId => $composableBuilder(
@@ -122357,17 +124083,21 @@ class $$HRPayrollRunsTableAnnotationComposer
   GeneratedColumn<DateTime> get runDate =>
       $composableBuilder(column: $table.runDate, builder: (column) => column);
 
-  GeneratedColumn<double> get totalSalaries => $composableBuilder(
-      column: $table.totalSalaries, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, int> get totalSalaries =>
+      $composableBuilder(
+          column: $table.totalSalaries, builder: (column) => column);
 
-  GeneratedColumn<double> get totalAllowances => $composableBuilder(
-      column: $table.totalAllowances, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, int> get totalAllowances =>
+      $composableBuilder(
+          column: $table.totalAllowances, builder: (column) => column);
 
-  GeneratedColumn<double> get totalDeductions => $composableBuilder(
-      column: $table.totalDeductions, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, int> get totalDeductions =>
+      $composableBuilder(
+          column: $table.totalDeductions, builder: (column) => column);
 
-  GeneratedColumn<double> get netPayable => $composableBuilder(
-      column: $table.netPayable, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, int> get netPayable =>
+      $composableBuilder(
+          column: $table.netPayable, builder: (column) => column);
 
   GeneratedColumn<String> get journalEntryId => $composableBuilder(
       column: $table.journalEntryId, builder: (column) => column);
@@ -122426,10 +124156,10 @@ class $$HRPayrollRunsTableTableManager extends RootTableManager<
             Value<String> id = const Value.absent(),
             Value<String> period = const Value.absent(),
             Value<DateTime> runDate = const Value.absent(),
-            Value<double> totalSalaries = const Value.absent(),
-            Value<double> totalAllowances = const Value.absent(),
-            Value<double> totalDeductions = const Value.absent(),
-            Value<double> netPayable = const Value.absent(),
+            Value<Decimal> totalSalaries = const Value.absent(),
+            Value<Decimal> totalAllowances = const Value.absent(),
+            Value<Decimal> totalDeductions = const Value.absent(),
+            Value<Decimal> netPayable = const Value.absent(),
             Value<String?> journalEntryId = const Value.absent(),
             Value<String> status = const Value.absent(),
             Value<String?> notes = const Value.absent(),
@@ -122452,10 +124182,10 @@ class $$HRPayrollRunsTableTableManager extends RootTableManager<
             Value<String> id = const Value.absent(),
             required String period,
             Value<DateTime> runDate = const Value.absent(),
-            Value<double> totalSalaries = const Value.absent(),
-            Value<double> totalAllowances = const Value.absent(),
-            Value<double> totalDeductions = const Value.absent(),
-            Value<double> netPayable = const Value.absent(),
+            Value<Decimal> totalSalaries = const Value.absent(),
+            Value<Decimal> totalAllowances = const Value.absent(),
+            Value<Decimal> totalDeductions = const Value.absent(),
+            Value<Decimal> netPayable = const Value.absent(),
             Value<String?> journalEntryId = const Value.absent(),
             Value<String> status = const Value.absent(),
             Value<String?> notes = const Value.absent(),
@@ -122525,13 +124255,13 @@ typedef $$HRPayrollDetailsTableCreateCompanionBuilder
   Value<String> id,
   required String payrollRunId,
   required String employeeId,
-  required double basicSalary,
-  Value<double> housingAllowance,
-  Value<double> transportAllowance,
-  Value<double> otherAllowances,
-  required double grossSalary,
-  Value<double> deductions,
-  required double netSalary,
+  required Decimal basicSalary,
+  Value<Decimal> housingAllowance,
+  Value<Decimal> transportAllowance,
+  Value<Decimal> otherAllowances,
+  required Decimal grossSalary,
+  Value<Decimal> deductions,
+  required Decimal netSalary,
   Value<String?> paymentJournalEntryId,
   Value<String> paymentStatus,
   Value<int> rowid,
@@ -122541,13 +124271,13 @@ typedef $$HRPayrollDetailsTableUpdateCompanionBuilder
   Value<String> id,
   Value<String> payrollRunId,
   Value<String> employeeId,
-  Value<double> basicSalary,
-  Value<double> housingAllowance,
-  Value<double> transportAllowance,
-  Value<double> otherAllowances,
-  Value<double> grossSalary,
-  Value<double> deductions,
-  Value<double> netSalary,
+  Value<Decimal> basicSalary,
+  Value<Decimal> housingAllowance,
+  Value<Decimal> transportAllowance,
+  Value<Decimal> otherAllowances,
+  Value<Decimal> grossSalary,
+  Value<Decimal> deductions,
+  Value<Decimal> netSalary,
   Value<String?> paymentJournalEntryId,
   Value<String> paymentStatus,
   Value<int> rowid,
@@ -122599,29 +124329,40 @@ class $$HRPayrollDetailsTableFilterComposer
   ColumnFilters<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get basicSalary => $composableBuilder(
-      column: $table.basicSalary, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, int> get basicSalary =>
+      $composableBuilder(
+          column: $table.basicSalary,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get housingAllowance => $composableBuilder(
-      column: $table.housingAllowance,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, int> get housingAllowance =>
+      $composableBuilder(
+          column: $table.housingAllowance,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get transportAllowance => $composableBuilder(
-      column: $table.transportAllowance,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, int>
+      get transportAllowance => $composableBuilder(
+          column: $table.transportAllowance,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get otherAllowances => $composableBuilder(
-      column: $table.otherAllowances,
-      builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, int> get otherAllowances =>
+      $composableBuilder(
+          column: $table.otherAllowances,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get grossSalary => $composableBuilder(
-      column: $table.grossSalary, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, int> get grossSalary =>
+      $composableBuilder(
+          column: $table.grossSalary,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get deductions => $composableBuilder(
-      column: $table.deductions, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, int> get deductions =>
+      $composableBuilder(
+          column: $table.deductions,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
-  ColumnFilters<double> get netSalary => $composableBuilder(
-      column: $table.netSalary, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, int> get netSalary =>
+      $composableBuilder(
+          column: $table.netSalary,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get paymentJournalEntryId => $composableBuilder(
       column: $table.paymentJournalEntryId,
@@ -122683,28 +124424,28 @@ class $$HRPayrollDetailsTableOrderingComposer
   ColumnOrderings<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get basicSalary => $composableBuilder(
+  ColumnOrderings<int> get basicSalary => $composableBuilder(
       column: $table.basicSalary, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get housingAllowance => $composableBuilder(
+  ColumnOrderings<int> get housingAllowance => $composableBuilder(
       column: $table.housingAllowance,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get transportAllowance => $composableBuilder(
+  ColumnOrderings<int> get transportAllowance => $composableBuilder(
       column: $table.transportAllowance,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get otherAllowances => $composableBuilder(
+  ColumnOrderings<int> get otherAllowances => $composableBuilder(
       column: $table.otherAllowances,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get grossSalary => $composableBuilder(
+  ColumnOrderings<int> get grossSalary => $composableBuilder(
       column: $table.grossSalary, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get deductions => $composableBuilder(
+  ColumnOrderings<int> get deductions => $composableBuilder(
       column: $table.deductions, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get netSalary => $composableBuilder(
+  ColumnOrderings<int> get netSalary => $composableBuilder(
       column: $table.netSalary, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get paymentJournalEntryId => $composableBuilder(
@@ -122768,25 +124509,31 @@ class $$HRPayrollDetailsTableAnnotationComposer
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<double> get basicSalary => $composableBuilder(
-      column: $table.basicSalary, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, int> get basicSalary =>
+      $composableBuilder(
+          column: $table.basicSalary, builder: (column) => column);
 
-  GeneratedColumn<double> get housingAllowance => $composableBuilder(
-      column: $table.housingAllowance, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, int> get housingAllowance =>
+      $composableBuilder(
+          column: $table.housingAllowance, builder: (column) => column);
 
-  GeneratedColumn<double> get transportAllowance => $composableBuilder(
-      column: $table.transportAllowance, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, int> get transportAllowance =>
+      $composableBuilder(
+          column: $table.transportAllowance, builder: (column) => column);
 
-  GeneratedColumn<double> get otherAllowances => $composableBuilder(
-      column: $table.otherAllowances, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, int> get otherAllowances =>
+      $composableBuilder(
+          column: $table.otherAllowances, builder: (column) => column);
 
-  GeneratedColumn<double> get grossSalary => $composableBuilder(
-      column: $table.grossSalary, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, int> get grossSalary =>
+      $composableBuilder(
+          column: $table.grossSalary, builder: (column) => column);
 
-  GeneratedColumn<double> get deductions => $composableBuilder(
-      column: $table.deductions, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Decimal, int> get deductions =>
+      $composableBuilder(
+          column: $table.deductions, builder: (column) => column);
 
-  GeneratedColumn<double> get netSalary =>
+  GeneratedColumnWithTypeConverter<Decimal, int> get netSalary =>
       $composableBuilder(column: $table.netSalary, builder: (column) => column);
 
   GeneratedColumn<String> get paymentJournalEntryId => $composableBuilder(
@@ -122863,13 +124610,13 @@ class $$HRPayrollDetailsTableTableManager extends RootTableManager<
             Value<String> id = const Value.absent(),
             Value<String> payrollRunId = const Value.absent(),
             Value<String> employeeId = const Value.absent(),
-            Value<double> basicSalary = const Value.absent(),
-            Value<double> housingAllowance = const Value.absent(),
-            Value<double> transportAllowance = const Value.absent(),
-            Value<double> otherAllowances = const Value.absent(),
-            Value<double> grossSalary = const Value.absent(),
-            Value<double> deductions = const Value.absent(),
-            Value<double> netSalary = const Value.absent(),
+            Value<Decimal> basicSalary = const Value.absent(),
+            Value<Decimal> housingAllowance = const Value.absent(),
+            Value<Decimal> transportAllowance = const Value.absent(),
+            Value<Decimal> otherAllowances = const Value.absent(),
+            Value<Decimal> grossSalary = const Value.absent(),
+            Value<Decimal> deductions = const Value.absent(),
+            Value<Decimal> netSalary = const Value.absent(),
             Value<String?> paymentJournalEntryId = const Value.absent(),
             Value<String> paymentStatus = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -122893,13 +124640,13 @@ class $$HRPayrollDetailsTableTableManager extends RootTableManager<
             Value<String> id = const Value.absent(),
             required String payrollRunId,
             required String employeeId,
-            required double basicSalary,
-            Value<double> housingAllowance = const Value.absent(),
-            Value<double> transportAllowance = const Value.absent(),
-            Value<double> otherAllowances = const Value.absent(),
-            required double grossSalary,
-            Value<double> deductions = const Value.absent(),
-            required double netSalary,
+            required Decimal basicSalary,
+            Value<Decimal> housingAllowance = const Value.absent(),
+            Value<Decimal> transportAllowance = const Value.absent(),
+            Value<Decimal> otherAllowances = const Value.absent(),
+            required Decimal grossSalary,
+            Value<Decimal> deductions = const Value.absent(),
+            required Decimal netSalary,
             Value<String?> paymentJournalEntryId = const Value.absent(),
             Value<String> paymentStatus = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -122992,7 +124739,7 @@ typedef $$HRAdditionalDeductionsTableCreateCompanionBuilder
   Value<String> id,
   required String employeeId,
   required String type,
-  required double amount,
+  required Decimal amount,
   required DateTime deductionDate,
   Value<String?> description,
   Value<bool> isRecurring,
@@ -123004,7 +124751,7 @@ typedef $$HRAdditionalDeductionsTableUpdateCompanionBuilder
   Value<String> id,
   Value<String> employeeId,
   Value<String> type,
-  Value<double> amount,
+  Value<Decimal> amount,
   Value<DateTime> deductionDate,
   Value<String?> description,
   Value<bool> isRecurring,
@@ -123047,8 +124794,10 @@ class $$HRAdditionalDeductionsTableFilterComposer
   ColumnFilters<String> get type => $composableBuilder(
       column: $table.type, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get amount => $composableBuilder(
-      column: $table.amount, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Decimal, Decimal, int> get amount =>
+      $composableBuilder(
+          column: $table.amount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<DateTime> get deductionDate => $composableBuilder(
       column: $table.deductionDate, builder: (column) => ColumnFilters(column));
@@ -123099,7 +124848,7 @@ class $$HRAdditionalDeductionsTableOrderingComposer
   ColumnOrderings<String> get type => $composableBuilder(
       column: $table.type, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get amount => $composableBuilder(
+  ColumnOrderings<int> get amount => $composableBuilder(
       column: $table.amount, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<DateTime> get deductionDate => $composableBuilder(
@@ -123152,7 +124901,7 @@ class $$HRAdditionalDeductionsTableAnnotationComposer
   GeneratedColumn<String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => column);
 
-  GeneratedColumn<double> get amount =>
+  GeneratedColumnWithTypeConverter<Decimal, int> get amount =>
       $composableBuilder(column: $table.amount, builder: (column) => column);
 
   GeneratedColumn<DateTime> get deductionDate => $composableBuilder(
@@ -123218,7 +124967,7 @@ class $$HRAdditionalDeductionsTableTableManager extends RootTableManager<
             Value<String> id = const Value.absent(),
             Value<String> employeeId = const Value.absent(),
             Value<String> type = const Value.absent(),
-            Value<double> amount = const Value.absent(),
+            Value<Decimal> amount = const Value.absent(),
             Value<DateTime> deductionDate = const Value.absent(),
             Value<String?> description = const Value.absent(),
             Value<bool> isRecurring = const Value.absent(),
@@ -123240,7 +124989,7 @@ class $$HRAdditionalDeductionsTableTableManager extends RootTableManager<
             Value<String> id = const Value.absent(),
             required String employeeId,
             required String type,
-            required double amount,
+            required Decimal amount,
             required DateTime deductionDate,
             Value<String?> description = const Value.absent(),
             Value<bool> isRecurring = const Value.absent(),
@@ -131646,6 +133395,1015 @@ typedef $$ProformaInvoiceItemsTableProcessedTableManager
         ProformaInvoiceItem,
         PrefetchHooks Function(
             {bool branchId, bool proformaId, bool productId, bool unitId})>;
+typedef $$ReconciliationDetailsTableCreateCompanionBuilder
+    = ReconciliationDetailsCompanion Function({
+  required String reconciliationId,
+  required String transactionId,
+  required Decimal statementAmount,
+  required DateTime statementDate,
+  Value<String?> reference,
+  Value<String?> branchId,
+  Value<int> rowid,
+});
+typedef $$ReconciliationDetailsTableUpdateCompanionBuilder
+    = ReconciliationDetailsCompanion Function({
+  Value<String> reconciliationId,
+  Value<String> transactionId,
+  Value<Decimal> statementAmount,
+  Value<DateTime> statementDate,
+  Value<String?> reference,
+  Value<String?> branchId,
+  Value<int> rowid,
+});
+
+final class $$ReconciliationDetailsTableReferences extends BaseReferences<
+    _$AppDatabase, $ReconciliationDetailsTable, ReconciliationDetail> {
+  $$ReconciliationDetailsTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $ReconciliationsTable _reconciliationIdTable(_$AppDatabase db) =>
+      db.reconciliations.createAlias($_aliasNameGenerator(
+          db.reconciliationDetails.reconciliationId, db.reconciliations.id));
+
+  $$ReconciliationsTableProcessedTableManager? get reconciliationId {
+    if ($_item.reconciliationId == null) return null;
+    final manager =
+        $$ReconciliationsTableTableManager($_db, $_db.reconciliations)
+            .filter((f) => f.id($_item.reconciliationId!));
+    final item = $_typedResult.readTableOrNull(_reconciliationIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $AccountTransactionsTable _transactionIdTable(_$AppDatabase db) =>
+      db.accountTransactions.createAlias($_aliasNameGenerator(
+          db.reconciliationDetails.transactionId, db.accountTransactions.id));
+
+  $$AccountTransactionsTableProcessedTableManager? get transactionId {
+    if ($_item.transactionId == null) return null;
+    final manager =
+        $$AccountTransactionsTableTableManager($_db, $_db.accountTransactions)
+            .filter((f) => f.id($_item.transactionId!));
+    final item = $_typedResult.readTableOrNull(_transactionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $BranchesTable _branchIdTable(_$AppDatabase db) =>
+      db.branches.createAlias($_aliasNameGenerator(
+          db.reconciliationDetails.branchId, db.branches.id));
+
+  $$BranchesTableProcessedTableManager? get branchId {
+    if ($_item.branchId == null) return null;
+    final manager = $$BranchesTableTableManager($_db, $_db.branches)
+        .filter((f) => f.id($_item.branchId!));
+    final item = $_typedResult.readTableOrNull(_branchIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$ReconciliationDetailsTableFilterComposer
+    extends Composer<_$AppDatabase, $ReconciliationDetailsTable> {
+  $$ReconciliationDetailsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnWithTypeConverterFilters<Decimal, Decimal, String>
+      get statementAmount => $composableBuilder(
+          column: $table.statementAmount,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
+
+  ColumnFilters<DateTime> get statementDate => $composableBuilder(
+      column: $table.statementDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get reference => $composableBuilder(
+      column: $table.reference, builder: (column) => ColumnFilters(column));
+
+  $$ReconciliationsTableFilterComposer get reconciliationId {
+    final $$ReconciliationsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.reconciliationId,
+        referencedTable: $db.reconciliations,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ReconciliationsTableFilterComposer(
+              $db: $db,
+              $table: $db.reconciliations,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$AccountTransactionsTableFilterComposer get transactionId {
+    final $$AccountTransactionsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.transactionId,
+        referencedTable: $db.accountTransactions,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$AccountTransactionsTableFilterComposer(
+              $db: $db,
+              $table: $db.accountTransactions,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$BranchesTableFilterComposer get branchId {
+    final $$BranchesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.branchId,
+        referencedTable: $db.branches,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BranchesTableFilterComposer(
+              $db: $db,
+              $table: $db.branches,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$ReconciliationDetailsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ReconciliationDetailsTable> {
+  $$ReconciliationDetailsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get statementAmount => $composableBuilder(
+      column: $table.statementAmount,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get statementDate => $composableBuilder(
+      column: $table.statementDate,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get reference => $composableBuilder(
+      column: $table.reference, builder: (column) => ColumnOrderings(column));
+
+  $$ReconciliationsTableOrderingComposer get reconciliationId {
+    final $$ReconciliationsTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.reconciliationId,
+        referencedTable: $db.reconciliations,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ReconciliationsTableOrderingComposer(
+              $db: $db,
+              $table: $db.reconciliations,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$AccountTransactionsTableOrderingComposer get transactionId {
+    final $$AccountTransactionsTableOrderingComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.transactionId,
+            referencedTable: $db.accountTransactions,
+            getReferencedColumn: (t) => t.id,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$AccountTransactionsTableOrderingComposer(
+                  $db: $db,
+                  $table: $db.accountTransactions,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return composer;
+  }
+
+  $$BranchesTableOrderingComposer get branchId {
+    final $$BranchesTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.branchId,
+        referencedTable: $db.branches,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BranchesTableOrderingComposer(
+              $db: $db,
+              $table: $db.branches,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$ReconciliationDetailsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ReconciliationDetailsTable> {
+  $$ReconciliationDetailsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumnWithTypeConverter<Decimal, String> get statementAmount =>
+      $composableBuilder(
+          column: $table.statementAmount, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get statementDate => $composableBuilder(
+      column: $table.statementDate, builder: (column) => column);
+
+  GeneratedColumn<String> get reference =>
+      $composableBuilder(column: $table.reference, builder: (column) => column);
+
+  $$ReconciliationsTableAnnotationComposer get reconciliationId {
+    final $$ReconciliationsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.reconciliationId,
+        referencedTable: $db.reconciliations,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ReconciliationsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.reconciliations,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$AccountTransactionsTableAnnotationComposer get transactionId {
+    final $$AccountTransactionsTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.transactionId,
+            referencedTable: $db.accountTransactions,
+            getReferencedColumn: (t) => t.id,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$AccountTransactionsTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.accountTransactions,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return composer;
+  }
+
+  $$BranchesTableAnnotationComposer get branchId {
+    final $$BranchesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.branchId,
+        referencedTable: $db.branches,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BranchesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.branches,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$ReconciliationDetailsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $ReconciliationDetailsTable,
+    ReconciliationDetail,
+    $$ReconciliationDetailsTableFilterComposer,
+    $$ReconciliationDetailsTableOrderingComposer,
+    $$ReconciliationDetailsTableAnnotationComposer,
+    $$ReconciliationDetailsTableCreateCompanionBuilder,
+    $$ReconciliationDetailsTableUpdateCompanionBuilder,
+    (ReconciliationDetail, $$ReconciliationDetailsTableReferences),
+    ReconciliationDetail,
+    PrefetchHooks Function(
+        {bool reconciliationId, bool transactionId, bool branchId})> {
+  $$ReconciliationDetailsTableTableManager(
+      _$AppDatabase db, $ReconciliationDetailsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ReconciliationDetailsTableFilterComposer(
+                  $db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ReconciliationDetailsTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ReconciliationDetailsTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> reconciliationId = const Value.absent(),
+            Value<String> transactionId = const Value.absent(),
+            Value<Decimal> statementAmount = const Value.absent(),
+            Value<DateTime> statementDate = const Value.absent(),
+            Value<String?> reference = const Value.absent(),
+            Value<String?> branchId = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ReconciliationDetailsCompanion(
+            reconciliationId: reconciliationId,
+            transactionId: transactionId,
+            statementAmount: statementAmount,
+            statementDate: statementDate,
+            reference: reference,
+            branchId: branchId,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String reconciliationId,
+            required String transactionId,
+            required Decimal statementAmount,
+            required DateTime statementDate,
+            Value<String?> reference = const Value.absent(),
+            Value<String?> branchId = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ReconciliationDetailsCompanion.insert(
+            reconciliationId: reconciliationId,
+            transactionId: transactionId,
+            statementAmount: statementAmount,
+            statementDate: statementDate,
+            reference: reference,
+            branchId: branchId,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$ReconciliationDetailsTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: (
+              {reconciliationId = false,
+              transactionId = false,
+              branchId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (reconciliationId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.reconciliationId,
+                    referencedTable: $$ReconciliationDetailsTableReferences
+                        ._reconciliationIdTable(db),
+                    referencedColumn: $$ReconciliationDetailsTableReferences
+                        ._reconciliationIdTable(db)
+                        .id,
+                  ) as T;
+                }
+                if (transactionId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.transactionId,
+                    referencedTable: $$ReconciliationDetailsTableReferences
+                        ._transactionIdTable(db),
+                    referencedColumn: $$ReconciliationDetailsTableReferences
+                        ._transactionIdTable(db)
+                        .id,
+                  ) as T;
+                }
+                if (branchId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.branchId,
+                    referencedTable: $$ReconciliationDetailsTableReferences
+                        ._branchIdTable(db),
+                    referencedColumn: $$ReconciliationDetailsTableReferences
+                        ._branchIdTable(db)
+                        .id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$ReconciliationDetailsTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $ReconciliationDetailsTable,
+        ReconciliationDetail,
+        $$ReconciliationDetailsTableFilterComposer,
+        $$ReconciliationDetailsTableOrderingComposer,
+        $$ReconciliationDetailsTableAnnotationComposer,
+        $$ReconciliationDetailsTableCreateCompanionBuilder,
+        $$ReconciliationDetailsTableUpdateCompanionBuilder,
+        (ReconciliationDetail, $$ReconciliationDetailsTableReferences),
+        ReconciliationDetail,
+        PrefetchHooks Function(
+            {bool reconciliationId, bool transactionId, bool branchId})>;
+typedef $$UserSessionsTableCreateCompanionBuilder = UserSessionsCompanion
+    Function({
+  Value<String> id,
+  required String userId,
+  required String token,
+  Value<DateTime> loginAt,
+  required DateTime expiresAt,
+  Value<bool> isActive,
+  Value<int> rowid,
+});
+typedef $$UserSessionsTableUpdateCompanionBuilder = UserSessionsCompanion
+    Function({
+  Value<String> id,
+  Value<String> userId,
+  Value<String> token,
+  Value<DateTime> loginAt,
+  Value<DateTime> expiresAt,
+  Value<bool> isActive,
+  Value<int> rowid,
+});
+
+final class $$UserSessionsTableReferences
+    extends BaseReferences<_$AppDatabase, $UserSessionsTable, UserSession> {
+  $$UserSessionsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $UsersTable _userIdTable(_$AppDatabase db) => db.users
+      .createAlias($_aliasNameGenerator(db.userSessions.userId, db.users.id));
+
+  $$UsersTableProcessedTableManager? get userId {
+    if ($_item.userId == null) return null;
+    final manager = $$UsersTableTableManager($_db, $_db.users)
+        .filter((f) => f.id($_item.userId!));
+    final item = $_typedResult.readTableOrNull(_userIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$UserSessionsTableFilterComposer
+    extends Composer<_$AppDatabase, $UserSessionsTable> {
+  $$UserSessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get token => $composableBuilder(
+      column: $table.token, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get loginAt => $composableBuilder(
+      column: $table.loginAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get expiresAt => $composableBuilder(
+      column: $table.expiresAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnFilters(column));
+
+  $$UsersTableFilterComposer get userId {
+    final $$UsersTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.userId,
+        referencedTable: $db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$UsersTableFilterComposer(
+              $db: $db,
+              $table: $db.users,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$UserSessionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserSessionsTable> {
+  $$UserSessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get token => $composableBuilder(
+      column: $table.token, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get loginAt => $composableBuilder(
+      column: $table.loginAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get expiresAt => $composableBuilder(
+      column: $table.expiresAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnOrderings(column));
+
+  $$UsersTableOrderingComposer get userId {
+    final $$UsersTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.userId,
+        referencedTable: $db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$UsersTableOrderingComposer(
+              $db: $db,
+              $table: $db.users,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$UserSessionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserSessionsTable> {
+  $$UserSessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get token =>
+      $composableBuilder(column: $table.token, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get loginAt =>
+      $composableBuilder(column: $table.loginAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get expiresAt =>
+      $composableBuilder(column: $table.expiresAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  $$UsersTableAnnotationComposer get userId {
+    final $$UsersTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.userId,
+        referencedTable: $db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$UsersTableAnnotationComposer(
+              $db: $db,
+              $table: $db.users,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$UserSessionsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $UserSessionsTable,
+    UserSession,
+    $$UserSessionsTableFilterComposer,
+    $$UserSessionsTableOrderingComposer,
+    $$UserSessionsTableAnnotationComposer,
+    $$UserSessionsTableCreateCompanionBuilder,
+    $$UserSessionsTableUpdateCompanionBuilder,
+    (UserSession, $$UserSessionsTableReferences),
+    UserSession,
+    PrefetchHooks Function({bool userId})> {
+  $$UserSessionsTableTableManager(_$AppDatabase db, $UserSessionsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$UserSessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$UserSessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$UserSessionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> userId = const Value.absent(),
+            Value<String> token = const Value.absent(),
+            Value<DateTime> loginAt = const Value.absent(),
+            Value<DateTime> expiresAt = const Value.absent(),
+            Value<bool> isActive = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              UserSessionsCompanion(
+            id: id,
+            userId: userId,
+            token: token,
+            loginAt: loginAt,
+            expiresAt: expiresAt,
+            isActive: isActive,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            required String userId,
+            required String token,
+            Value<DateTime> loginAt = const Value.absent(),
+            required DateTime expiresAt,
+            Value<bool> isActive = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              UserSessionsCompanion.insert(
+            id: id,
+            userId: userId,
+            token: token,
+            loginAt: loginAt,
+            expiresAt: expiresAt,
+            isActive: isActive,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$UserSessionsTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({userId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (userId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.userId,
+                    referencedTable:
+                        $$UserSessionsTableReferences._userIdTable(db),
+                    referencedColumn:
+                        $$UserSessionsTableReferences._userIdTable(db).id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$UserSessionsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $UserSessionsTable,
+    UserSession,
+    $$UserSessionsTableFilterComposer,
+    $$UserSessionsTableOrderingComposer,
+    $$UserSessionsTableAnnotationComposer,
+    $$UserSessionsTableCreateCompanionBuilder,
+    $$UserSessionsTableUpdateCompanionBuilder,
+    (UserSession, $$UserSessionsTableReferences),
+    UserSession,
+    PrefetchHooks Function({bool userId})>;
+typedef $$LoginAttemptsTableCreateCompanionBuilder = LoginAttemptsCompanion
+    Function({
+  Value<String> id,
+  required String userId,
+  Value<DateTime> attemptedAt,
+  Value<bool> success,
+  Value<int> rowid,
+});
+typedef $$LoginAttemptsTableUpdateCompanionBuilder = LoginAttemptsCompanion
+    Function({
+  Value<String> id,
+  Value<String> userId,
+  Value<DateTime> attemptedAt,
+  Value<bool> success,
+  Value<int> rowid,
+});
+
+final class $$LoginAttemptsTableReferences
+    extends BaseReferences<_$AppDatabase, $LoginAttemptsTable, LoginAttempt> {
+  $$LoginAttemptsTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $UsersTable _userIdTable(_$AppDatabase db) => db.users
+      .createAlias($_aliasNameGenerator(db.loginAttempts.userId, db.users.id));
+
+  $$UsersTableProcessedTableManager? get userId {
+    if ($_item.userId == null) return null;
+    final manager = $$UsersTableTableManager($_db, $_db.users)
+        .filter((f) => f.id($_item.userId!));
+    final item = $_typedResult.readTableOrNull(_userIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$LoginAttemptsTableFilterComposer
+    extends Composer<_$AppDatabase, $LoginAttemptsTable> {
+  $$LoginAttemptsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get attemptedAt => $composableBuilder(
+      column: $table.attemptedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get success => $composableBuilder(
+      column: $table.success, builder: (column) => ColumnFilters(column));
+
+  $$UsersTableFilterComposer get userId {
+    final $$UsersTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.userId,
+        referencedTable: $db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$UsersTableFilterComposer(
+              $db: $db,
+              $table: $db.users,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$LoginAttemptsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LoginAttemptsTable> {
+  $$LoginAttemptsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get attemptedAt => $composableBuilder(
+      column: $table.attemptedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get success => $composableBuilder(
+      column: $table.success, builder: (column) => ColumnOrderings(column));
+
+  $$UsersTableOrderingComposer get userId {
+    final $$UsersTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.userId,
+        referencedTable: $db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$UsersTableOrderingComposer(
+              $db: $db,
+              $table: $db.users,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$LoginAttemptsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LoginAttemptsTable> {
+  $$LoginAttemptsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get attemptedAt => $composableBuilder(
+      column: $table.attemptedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get success =>
+      $composableBuilder(column: $table.success, builder: (column) => column);
+
+  $$UsersTableAnnotationComposer get userId {
+    final $$UsersTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.userId,
+        referencedTable: $db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$UsersTableAnnotationComposer(
+              $db: $db,
+              $table: $db.users,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$LoginAttemptsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $LoginAttemptsTable,
+    LoginAttempt,
+    $$LoginAttemptsTableFilterComposer,
+    $$LoginAttemptsTableOrderingComposer,
+    $$LoginAttemptsTableAnnotationComposer,
+    $$LoginAttemptsTableCreateCompanionBuilder,
+    $$LoginAttemptsTableUpdateCompanionBuilder,
+    (LoginAttempt, $$LoginAttemptsTableReferences),
+    LoginAttempt,
+    PrefetchHooks Function({bool userId})> {
+  $$LoginAttemptsTableTableManager(_$AppDatabase db, $LoginAttemptsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LoginAttemptsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LoginAttemptsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LoginAttemptsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> userId = const Value.absent(),
+            Value<DateTime> attemptedAt = const Value.absent(),
+            Value<bool> success = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              LoginAttemptsCompanion(
+            id: id,
+            userId: userId,
+            attemptedAt: attemptedAt,
+            success: success,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            required String userId,
+            Value<DateTime> attemptedAt = const Value.absent(),
+            Value<bool> success = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              LoginAttemptsCompanion.insert(
+            id: id,
+            userId: userId,
+            attemptedAt: attemptedAt,
+            success: success,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$LoginAttemptsTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({userId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (userId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.userId,
+                    referencedTable:
+                        $$LoginAttemptsTableReferences._userIdTable(db),
+                    referencedColumn:
+                        $$LoginAttemptsTableReferences._userIdTable(db).id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$LoginAttemptsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $LoginAttemptsTable,
+    LoginAttempt,
+    $$LoginAttemptsTableFilterComposer,
+    $$LoginAttemptsTableOrderingComposer,
+    $$LoginAttemptsTableAnnotationComposer,
+    $$LoginAttemptsTableCreateCompanionBuilder,
+    $$LoginAttemptsTableUpdateCompanionBuilder,
+    (LoginAttempt, $$LoginAttemptsTableReferences),
+    LoginAttempt,
+    PrefetchHooks Function({bool userId})>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -131857,4 +134615,10 @@ class $AppDatabaseManager {
       $$ProformaInvoicesTableTableManager(_db, _db.proformaInvoices);
   $$ProformaInvoiceItemsTableTableManager get proformaInvoiceItems =>
       $$ProformaInvoiceItemsTableTableManager(_db, _db.proformaInvoiceItems);
+  $$ReconciliationDetailsTableTableManager get reconciliationDetails =>
+      $$ReconciliationDetailsTableTableManager(_db, _db.reconciliationDetails);
+  $$UserSessionsTableTableManager get userSessions =>
+      $$UserSessionsTableTableManager(_db, _db.userSessions);
+  $$LoginAttemptsTableTableManager get loginAttempts =>
+      $$LoginAttemptsTableTableManager(_db, _db.loginAttempts);
 }

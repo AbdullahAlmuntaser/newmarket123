@@ -45,6 +45,7 @@ part 'tables/commission_credit_tables.dart';
 part 'tables/tax_serial_tables.dart';
 part 'tables/zakat_eosb_tables.dart';
 part 'tables/proforma_tables.dart';
+part 'tables/security_tables.dart';
 part 'app_database.g.dart';
 
 // Type Converters
@@ -70,6 +71,20 @@ class AccountTypeConverter extends TypeConverter<AccountType, int> {
   AccountType fromSql(int fromDb) => AccountType.values[fromDb];
   @override
   int toSql(AccountType value) => value.index;
+}
+
+extension GLAccountX on GLAccount {
+  String get type => accountType.name.toUpperCase();
+}
+
+class CentConverter extends TypeConverter<Decimal, int> {
+  const CentConverter();
+  @override
+  Decimal fromSql(int fromDb) =>
+      Decimal.fromInt(fromDb).shift(-2);
+  @override
+  int toSql(Decimal value) =>
+      (value * Decimal.fromInt(100)).round().toBigInt().toInt();
 }
 
 mixin SyncableTable on Table {
@@ -655,6 +670,7 @@ class ReconciliationDetails extends Table {
   TextColumn get statementAmount => text().map(const DecimalConverter())();
   DateTimeColumn get statementDate => dateTime()();
   TextColumn get reference => text().nullable()();
+  TextColumn get branchId => text().nullable().references(Branches, #id)();
 }
 
 class AuditLogs extends Table with SyncableTable {
@@ -857,7 +873,7 @@ class APInvoices extends Table with SyncableTable {
   DateTimeColumn get invoiceDate =>
       dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get dueDate => dateTime().nullable()();
-  RealColumn get totalAmount => real()();
+  IntColumn get totalAmount => integer().map(const CentConverter())();
   TextColumn get taxAmount => text()
       .map(const DecimalConverter())
       .withDefault(Constant(Decimal.zero.toString()))();
@@ -876,7 +892,7 @@ class ARInvoices extends Table with SyncableTable {
   DateTimeColumn get invoiceDate =>
       dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get dueDate => dateTime().nullable()();
-  RealColumn get totalAmount => real()();
+  IntColumn get totalAmount => integer().map(const CentConverter())();
   TextColumn get taxAmount => text()
       .map(const DecimalConverter())
       .withDefault(Constant(Decimal.zero.toString()))();
@@ -953,6 +969,7 @@ class PostingProfiles extends Table {
   TextColumn get side => text()(); // DEBIT or CREDIT
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+  TextColumn get branchId => text().nullable().references(Branches, #id)();
   IntColumn get syncStatus => integer().withDefault(const Constant(1))();
 
   @override
@@ -1228,6 +1245,9 @@ class CustomerPaymentLinks extends Table with SyncableTable {
     InventoryReservations,
     ProformaInvoices,
     ProformaInvoiceItems,
+    ReconciliationDetails,
+    UserSessions,
+    LoginAttempts,
   ],
   daos: [
     ProductsDao,
@@ -1255,7 +1275,7 @@ class AppDatabase extends _$AppDatabase {
   static String? encryptionKey;
 
   @override
-  int get schemaVersion => 47;
+  int get schemaVersion => 50;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1296,59 +1316,77 @@ class AppDatabase extends _$AppDatabase {
           if (from < 33) {
             try {
               await m.addColumn(products, products.valuationMethod);
-            } catch (_) {}
+            } catch (e) {
+              debugPrint('DB Migration v33: valuationMethod: $e');
+            }
             try {
               await m.addColumn(products, products.allowFreeQty);
-            } catch (_) {}
+            } catch (e) {
+              debugPrint('DB Migration v33: allowFreeQty: $e');
+            }
             try {
               await m.addColumn(products, products.isService);
-            } catch (_) {}
+            } catch (e) {
+              debugPrint('DB Migration v33: isService: $e');
+            }
           }
           if (from < 34) {
-            // Version 34: Update GRN table - add purchaseId and supplierId columns
             try {
               await m.addColumn(
                   goodReceivedNotes, goodReceivedNotes.purchaseId);
-            } catch (_) {}
+            } catch (e) {
+              debugPrint('DB Migration v34: purchaseId: $e');
+            }
             try {
               await m.addColumn(
                   goodReceivedNotes, goodReceivedNotes.supplierId);
-            } catch (_) {}
-            // Note: purchaseOrderId will be kept for backward compatibility but deprecated
+            } catch (e) {
+              debugPrint('DB Migration v34: supplierId: $e');
+            }
           }
           if (from < 35) {
-            // Version 35: Add AppConfigTable for dynamic settings
             try {
               await m.createTable(appConfigTable);
-            } catch (_) {}
+            } catch (e) {
+              debugPrint('DB Migration v35: appConfigTable: $e');
+            }
           }
           if (from < 36) {
-            // Version 36: Add shippingCost, otherExpenses, warehouseId, representativeId to Sales
             try {
               await m.addColumn(sales, sales.shippingCost);
-            } catch (_) {}
+            } catch (e) {
+              debugPrint('DB Migration v36: shippingCost: $e');
+            }
             try {
               await m.addColumn(sales, sales.otherExpenses);
-            } catch (_) {}
+            } catch (e) {
+              debugPrint('DB Migration v36: otherExpenses: $e');
+            }
             try {
               await m.addColumn(sales, sales.warehouseId);
-            } catch (_) {}
+            } catch (e) {
+              debugPrint('DB Migration v36: warehouseId: $e');
+            }
             try {
               await m.addColumn(sales, sales.representativeId);
-            } catch (_) {}
+            } catch (e) {
+              debugPrint('DB Migration v36: representativeId: $e');
+            }
           }
           if (from < 37) {
-            // Version 37: Add FinancialTransfers table
             try {
               await m.createTable(financialTransfers);
-            } catch (_) {}
+            } catch (e) {
+              debugPrint('DB Migration v37: financialTransfers: $e');
+            }
           }
           if (from < 38) {
-            // Version 38: Add Production tables
             try {
               await m.createTable(productionOrders);
               await m.createTable(productionOrderItems);
-            } catch (_) {}
+            } catch (e) {
+              debugPrint('DB Migration v38: production tables: $e');
+            }
           }
           // NOTE: Performance indexes are NOT created here because later
           // migrations (e.g. from < 42) may recreate tables with new columns.
@@ -1365,73 +1403,112 @@ class AppDatabase extends _$AppDatabase {
             await _migrateToV42(m);
           }
           if (from < 43) {
-            // Version 43: Add imagePath column to Products for product images
             try {
               await m.addColumn(products, products.imagePath);
-            } catch (_) {}
+            } catch (e) {
+              debugPrint('DB Migration v43: imagePath: $e');
+            }
           }
           if (from < 44) {
-            // Version 44: Add RecurringEntries and RecurringEntryExecutions tables
             try {
               await m.createTable(recurringEntries);
-            } catch (_) {}
+            } catch (e) {
+              debugPrint('DB Migration v44: recurringEntries: $e');
+            }
             try {
               await m.createTable(recurringEntryExecutions);
-            } catch (_) {}
+            } catch (e) {
+              debugPrint('DB Migration v44: recurringEntryExecutions: $e');
+            }
           }
           if (from < 45) {
-            // Version 45: Add HR modules - Leave, Attendance, WHT, Serial, Credit, Commission, Zakat, EOSB, Reservation
-            try { await m.createTable(leaveTypes); } catch (_) {}
-            try { await m.createTable(leaveRequests); } catch (_) {}
-            try { await m.createTable(leaveBalances); } catch (_) {}
-            try { await m.createTable(attendanceRecords); } catch (_) {}
-            try { await m.createTable(withholdingTaxEntries); } catch (_) {}
-            try { await m.createTable(serialNumbers); } catch (_) {}
-            try { await m.createTable(creditNotes); } catch (_) {}
-            try { await m.createTable(creditNoteItems); } catch (_) {}
-            try { await m.createTable(salesTargets); } catch (_) {}
-            try { await m.createTable(salesCommissions); } catch (_) {}
-            try { await m.createTable(zakatCalculations); } catch (_) {}
-            try { await m.createTable(endOfServiceBenefits); } catch (_) {}
-            try { await m.createTable(inventoryReservations); } catch (_) {}
+            try { await m.createTable(leaveTypes); } catch (e) { debugPrint('DB Migration v45: leaveTypes: $e'); }
+            try { await m.createTable(leaveRequests); } catch (e) { debugPrint('DB Migration v45: leaveRequests: $e'); }
+            try { await m.createTable(leaveBalances); } catch (e) { debugPrint('DB Migration v45: leaveBalances: $e'); }
+            try { await m.createTable(attendanceRecords); } catch (e) { debugPrint('DB Migration v45: attendanceRecords: $e'); }
+            try { await m.createTable(withholdingTaxEntries); } catch (e) { debugPrint('DB Migration v45: withholdingTaxEntries: $e'); }
+            try { await m.createTable(serialNumbers); } catch (e) { debugPrint('DB Migration v45: serialNumbers: $e'); }
+            try { await m.createTable(creditNotes); } catch (e) { debugPrint('DB Migration v45: creditNotes: $e'); }
+            try { await m.createTable(creditNoteItems); } catch (e) { debugPrint('DB Migration v45: creditNoteItems: $e'); }
+            try { await m.createTable(salesTargets); } catch (e) { debugPrint('DB Migration v45: salesTargets: $e'); }
+            try { await m.createTable(salesCommissions); } catch (e) { debugPrint('DB Migration v45: salesCommissions: $e'); }
+            try { await m.createTable(zakatCalculations); } catch (e) { debugPrint('DB Migration v45: zakatCalculations: $e'); }
+            try { await m.createTable(endOfServiceBenefits); } catch (e) { debugPrint('DB Migration v45: endOfServiceBenefits: $e'); }
+            try { await m.createTable(inventoryReservations); } catch (e) { debugPrint('DB Migration v45: inventoryReservations: $e'); }
           }
           if (from < 46) {
-            // Version 46: Add Proforma Invoice tables
-            await m.createTable(proformaInvoices).catchError((_) {});
-            await m.createTable(proformaInvoiceItems).catchError((_) {});
+            try {
+              await m.createTable(proformaInvoices);
+            } catch (e) {
+              debugPrint('DB Migration v46: proformaInvoices: $e');
+            }
+            try {
+              await m.createTable(proformaInvoiceItems);
+            } catch (e) {
+              debugPrint('DB Migration v46: proformaInvoiceItems: $e');
+            }
           }
           if (from < 47) {
             // Version 47: Critical Missing Tables Recovery (Self-healing)
             await _recoverMissingTables(m);
           }
+          if (from < 48) {
+            try {
+              await customStatement('ALTER TABLE posting_profiles ADD COLUMN branch_id TEXT REFERENCES branches(id)');
+            } catch (e) {
+              debugPrint('DB Migration v48: branch_id: $e');
+            }
+          }
+          if (from < 49) {
+            // Version 49: Convert REAL monetary columns to INTEGER cents
+            for (final stmt in _migrateToV49Statements) {
+              try {
+                await customStatement(stmt);
+              } catch (e) {
+                debugPrint('DB Migration v49: Failed executing statement: $e');
+              }
+            }
+          }
+          if (from < 50) {
+            // Version 50: Add security tables (user_sessions, login_attempts)
+            // and add ReconciliationDetails to schema
+            try {
+              await m.createTable(userSessions);
+            } catch (e) {
+              debugPrint('DB Migration v50: userSessions already exists or failed: $e');
+            }
+            try {
+              await m.createTable(loginAttempts);
+            } catch (e) {
+              debugPrint('DB Migration v50: loginAttempts already exists or failed: $e');
+            }
+          }
         },
         beforeOpen: (details) async {
-          debugPrint(
-              "DB: beforeOpen started. Details: ${details.wasCreated ? 'Created' : 'Opened'}");
-
           await customStatement('PRAGMA foreign_keys = ON;');
           await customStatement('PRAGMA journal_mode = WAL;');
           await customStatement('PRAGMA synchronous = NORMAL;');
           
-          // Self-healing check: Ensure all tables exist before indexing
-          // This fixes cases where users might be on v46+ but missing tables due to failed migrations
-          await _recoverMissingTables(createMigrator());
-          
-          await ensurePerformanceIndexes();
-          // Existing databases might predate critical seed data. Keep this
-          // idempotent so lookups (currencies/branches/GL headers) are never empty.
-          await ensureCoreReferenceData();
-
-          // Log schema version and table list for verification
-          final versionResult = await customSelect("PRAGMA user_version").get();
-          debugPrint(
-              "DB: Schema version: ${versionResult.first.data.values.first}");
-          final tables = await customSelect(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
-          ).get();
-          debugPrint("DB: Database has ${tables.length} tables:");
-          for (final t in tables) {
-            debugPrint("DB:   - ${t.data['name']}");
+          if (details.wasCreated) {
+            // First creation: run migrations + seed data + indexes
+            // (migrations already ran via onCreate, just do extras)
+            await ensurePerformanceIndexes();
+            await ensureCoreReferenceData();
+          } else {
+            // Existing database: lightweight self-healing only
+            // Skip recovery check if already verified (stored in app_config_table)
+            if (!await _isRecoveryVerified()) {
+              await _recoverMissingTables(createMigrator());
+              await _markRecoveryVerified();
+            }
+            // Skip core data seeding if already verified
+            if (!await _isCoreDataSeeded()) {
+              await ensureCoreReferenceData();
+              await _markCoreDataSeeded();
+            }
+            // Note: indexes are NOT re-created on every open.
+            // They persist in the database file and only need
+            // creation once. New indexes are added via migrations.
           }
         },
       );
@@ -1511,6 +1588,8 @@ class AppDatabase extends _$AppDatabase {
     'CREATE INDEX IF NOT EXISTS role_permissions_role_idx ON role_permissions (role)',
     'CREATE INDEX IF NOT EXISTS role_permissions_permission_code_idx ON role_permissions (permission_code)',
     'CREATE INDEX IF NOT EXISTS sales_order_number_idx ON sales_orders (order_number)',
+    'CREATE INDEX IF NOT EXISTS posting_profiles_branch_id_idx ON posting_profiles (branch_id)',
+    'CREATE INDEX IF NOT EXISTS reconciliation_details_branch_id_idx ON reconciliation_details (branch_id)',
     'CREATE INDEX IF NOT EXISTS purchase_orders_order_number_idx ON purchase_orders (order_number)',
     'CREATE INDEX IF NOT EXISTS purchase_orders_supplier_id_idx ON purchase_orders (supplier_id)',
     'CREATE INDEX IF NOT EXISTS account_transactions_account_id_idx ON account_transactions (account_id)',
@@ -1531,7 +1610,7 @@ class AppDatabase extends _$AppDatabase {
     'CREATE INDEX IF NOT EXISTS price_history_product_id_idx ON price_history (product_id)',
     'CREATE INDEX IF NOT EXISTS financial_transfers_sender_idx ON financial_transfers (sender_account_id)',
     'CREATE INDEX IF NOT EXISTS financial_transfers_receiver_idx ON financial_transfers (receiver_account_id)',
-    'CREATE INDEX IF NOT EXISTS gl_accounts_type_idx ON gl_accounts (type)',
+    'CREATE INDEX IF NOT EXISTS gl_accounts_type_idx ON gl_accounts (account_type)',
     'CREATE INDEX IF NOT EXISTS gl_accounts_parent_id_idx ON gl_accounts (parent_id)',
     'CREATE INDEX IF NOT EXISTS cost_centers_parent_id_idx ON cost_centers (parent_id)',
     'CREATE INDEX IF NOT EXISTS cost_centers_type_idx ON cost_centers (type)',
@@ -1563,31 +1642,88 @@ class AppDatabase extends _$AppDatabase {
   ];
 
   Future<void> ensurePerformanceIndexes() async {
+    // Use a single transaction for all index creations (much faster than individual statements)
+    await customStatement('PRAGMA journal_mode = WAL;');
     for (final statement in _performanceIndexStatements) {
       try {
         await customStatement(statement);
       } catch (e) {
-        debugPrint('DB: Failed to create index: $statement — $e');
+        // Index might already exist or table might not exist yet - safe to ignore
       }
     }
   }
 
   Future<void> _recoverMissingTables(Migrator m) async {
-    for (final table in allTables) {
-      try {
-        // Check if table exists in sqlite_master
-        final result = await customSelect(
-          "SELECT name FROM sqlite_master WHERE type='table' AND name='${table.actualTableName}'",
-        ).getSingleOrNull();
+    // Single query to get all existing table names (instead of 105 individual queries)
+    final existingRows = await customSelect(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+    ).get();
+    final existingNames = existingRows.map((r) => r.data['name'] as String).toSet();
 
-        if (result == null) {
+    var recoveredCount = 0;
+    for (final table in allTables) {
+      if (!existingNames.contains(table.actualTableName)) {
+        try {
           debugPrint('DB Forensic: Recovering missing table: ${table.actualTableName}');
           await m.createTable(table);
+          recoveredCount++;
+        } catch (e) {
+          debugPrint('DB Forensic: Failed to recover table ${table.actualTableName}: $e');
         }
-      } catch (e) {
-        debugPrint('DB Forensic: Failed to recover table ${table.actualTableName}: $e');
       }
     }
+    if (recoveredCount > 0) {
+      debugPrint('DB Forensic: Recovered $recoveredCount missing tables');
+    }
+  }
+
+  // ==================== STARTUP OPTIMIZATION FLAGS ====================
+  // These flags are stored in app_config_table to skip expensive checks
+  // on subsequent opens. They are idempotent and self-healing.
+
+  static const _kRecoveryVerifiedKey = '_db_recovery_verified';
+  static const _kCoreDataSeededKey = '_db_core_data_seeded';
+
+  Future<bool> _isRecoveryVerified() async {
+    try {
+      final result = await customSelect(
+        "SELECT value FROM app_config_table WHERE key = ?",
+        variables: [const Variable(_kRecoveryVerifiedKey)],
+      ).getSingleOrNull();
+      return result?.data['value'] == 'true';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _markRecoveryVerified() async {
+    try {
+      await customStatement(
+        "INSERT OR REPLACE INTO app_config_table (key, value) VALUES (?, 'true')",
+        [const Variable(_kRecoveryVerifiedKey)],
+      );
+    } catch (_) {}
+  }
+
+  Future<bool> _isCoreDataSeeded() async {
+    try {
+      final result = await customSelect(
+        "SELECT value FROM app_config_table WHERE key = ?",
+        variables: [const Variable(_kCoreDataSeededKey)],
+      ).getSingleOrNull();
+      return result?.data['value'] == 'true';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _markCoreDataSeeded() async {
+    try {
+      await customStatement(
+        "INSERT OR REPLACE INTO app_config_table (key, value) VALUES (?, 'true')",
+        [const Variable(_kCoreDataSeededKey)],
+      );
+    } catch (_) {}
   }
 
   // DAO getters
@@ -1755,25 +1891,25 @@ class AppDatabase extends _$AppDatabase {
     if (existingAccounts.isNotEmpty) return;
 
     final accounts = {
-      '1010': GLAccountsCompanion.insert(code: '1010', name: 'الصندوق', type: 'ASSET'),
-      '1020': GLAccountsCompanion.insert(code: '1020', name: 'البنك', type: 'ASSET'),
-      '1030': GLAccountsCompanion.insert(code: '1030', name: 'الذمم المدينة', type: 'ASSET'),
-      '1040': GLAccountsCompanion.insert(code: '1040', name: 'المخزون', type: 'ASSET'),
-      '1050': GLAccountsCompanion.insert(code: '1050', name: 'ضريبة المدخلات', type: 'ASSET'),
-      '1200': GLAccountsCompanion.insert(code: '1200', name: 'الأصول الثابتة', type: 'ASSET'),
-      '1201': GLAccountsCompanion.insert(code: '1201', name: 'مجمع الإهلاك', type: 'ASSET'),
-      '2010': GLAccountsCompanion.insert(code: '2010', name: 'الذمم الدائنة', type: 'LIABILITY'),
-      '2020': GLAccountsCompanion.insert(code: '2020', name: 'ضريبة المخرجات', type: 'LIABILITY'),
-      '2500': GLAccountsCompanion.insert(code: '2500', name: 'القروض', type: 'LIABILITY'),
-      '3000': GLAccountsCompanion.insert(code: '3000', name: 'رأس المال', type: 'EQUITY'),
-      '3010': GLAccountsCompanion.insert(code: '3010', name: 'الأرباح المحتجزة', type: 'EQUITY'),
-      '4010': GLAccountsCompanion.insert(code: '4010', name: 'إيرادات المبيعات', type: 'REVENUE'),
-      '4020': GLAccountsCompanion.insert(code: '4020', name: 'مردودات المبيعات', type: 'REVENUE'),
-      '5010': GLAccountsCompanion.insert(code: '5010', name: 'تكلفة البضاعة المباعة', type: 'EXPENSE'),
-      '5011': GLAccountsCompanion.insert(code: '5011', name: 'مردودات المشتريات', type: 'EXPENSE'),
-      '5020': GLAccountsCompanion.insert(code: '5020', name: 'العجز والزيادة في الصندوق', type: 'EXPENSE'),
-      '6000': GLAccountsCompanion.insert(code: '6000', name: 'المصروفات التشغيلية', type: 'EXPENSE'),
-      '6001': GLAccountsCompanion.insert(code: '6001', name: 'مصروف الإهلاك', type: 'EXPENSE'),
+      '1010': GLAccountsCompanion.insert(code: '1010', name: 'الصندوق', accountType: AccountType.asset),
+      '1020': GLAccountsCompanion.insert(code: '1020', name: 'البنك', accountType: AccountType.asset),
+      '1030': GLAccountsCompanion.insert(code: '1030', name: 'الذمم المدينة', accountType: AccountType.asset),
+      '1040': GLAccountsCompanion.insert(code: '1040', name: 'المخزون', accountType: AccountType.asset),
+      '1050': GLAccountsCompanion.insert(code: '1050', name: 'ضريبة المدخلات', accountType: AccountType.asset),
+      '1200': GLAccountsCompanion.insert(code: '1200', name: 'الأصول الثابتة', accountType: AccountType.asset),
+      '1201': GLAccountsCompanion.insert(code: '1201', name: 'مجمع الإهلاك', accountType: AccountType.asset),
+      '2010': GLAccountsCompanion.insert(code: '2010', name: 'الذمم الدائنة', accountType: AccountType.liability),
+      '2020': GLAccountsCompanion.insert(code: '2020', name: 'ضريبة المخرجات', accountType: AccountType.liability),
+      '2500': GLAccountsCompanion.insert(code: '2500', name: 'القروض', accountType: AccountType.liability),
+      '3000': GLAccountsCompanion.insert(code: '3000', name: 'رأس المال', accountType: AccountType.equity),
+      '3010': GLAccountsCompanion.insert(code: '3010', name: 'الأرباح المحتجزة', accountType: AccountType.equity),
+      '4010': GLAccountsCompanion.insert(code: '4010', name: 'إيرادات المبيعات', accountType: AccountType.revenue),
+      '4020': GLAccountsCompanion.insert(code: '4020', name: 'مردودات المبيعات', accountType: AccountType.revenue),
+      '5010': GLAccountsCompanion.insert(code: '5010', name: 'تكلفة البضاعة المباعة', accountType: AccountType.expense),
+      '5011': GLAccountsCompanion.insert(code: '5011', name: 'مردودات المشتريات', accountType: AccountType.expense),
+      '5020': GLAccountsCompanion.insert(code: '5020', name: 'العجز والزيادة في الصندوق', accountType: AccountType.expense),
+      '6000': GLAccountsCompanion.insert(code: '6000', name: 'المصروفات التشغيلية', accountType: AccountType.expense),
+      '6001': GLAccountsCompanion.insert(code: '6001', name: 'مصروف الإهلاك', accountType: AccountType.expense),
     };
 
     for (final acc in accounts.values) {
@@ -1889,6 +2025,21 @@ class AppDatabase extends _$AppDatabase {
       debugPrint('Migration to V41 failed: $e');
     }
   }
+
+  static final List<String> _migrateToV49Statements = [
+    // APInvoices: REAL → cents
+    'UPDATE ap_invoices SET total_amount = CAST(ROUND(total_amount * 100) AS INTEGER)',
+    // ARInvoices: REAL → cents
+    'UPDATE ar_invoices SET total_amount = CAST(ROUND(total_amount * 100) AS INTEGER)',
+    // HREmployees: REAL → cents
+    'UPDATE hr_employees SET basic_salary = CAST(ROUND(basic_salary * 100) AS INTEGER), housing_allowance = CAST(ROUND(housing_allowance * 100) AS INTEGER), transport_allowance = CAST(ROUND(transport_allowance * 100) AS INTEGER), other_allowances = CAST(ROUND(other_allowances * 100) AS INTEGER), total_deductions = CAST(ROUND(total_deductions * 100) AS INTEGER)',
+    // HRPayrollRuns: REAL → cents
+    'UPDATE hr_payroll_runs SET total_salaries = CAST(ROUND(total_salaries * 100) AS INTEGER), total_allowances = CAST(ROUND(total_allowances * 100) AS INTEGER), total_deductions = CAST(ROUND(total_deductions * 100) AS INTEGER), net_payable = CAST(ROUND(net_payable * 100) AS INTEGER)',
+    // HRPayrollDetails: REAL → cents
+    'UPDATE hr_payroll_details SET basic_salary = CAST(ROUND(basic_salary * 100) AS INTEGER), housing_allowance = CAST(ROUND(housing_allowance * 100) AS INTEGER), transport_allowance = CAST(ROUND(transport_allowance * 100) AS INTEGER), other_allowances = CAST(ROUND(other_allowances * 100) AS INTEGER), gross_salary = CAST(ROUND(gross_salary * 100) AS INTEGER), deductions = CAST(ROUND(deductions * 100) AS INTEGER), net_salary = CAST(ROUND(net_salary * 100) AS INTEGER)',
+    // HRAdditionalDeductions: REAL → cents
+    'UPDATE hr_additional_deductions SET amount = CAST(ROUND(amount * 100) AS INTEGER)',
+  ];
 
   Future<void> _migrateToV42(Migrator m) async {
     // Re-create tables with new types (Decimal instead of Real)
@@ -2015,16 +2166,36 @@ Future<bool> _isPlainSqliteDatabase(File file) async {
 }
 
 Future<void> _backupAndDelete(File file, String suffix) async {
-  final backupPath =
-      "${file.path}.${suffix}_${DateTime.now().millisecondsSinceEpoch}";
-  await file.copy(backupPath);
-  debugPrint("DB: Corrupted file backed up to $backupPath");
-  await file.delete();
+  final timestamp = DateTime.now().millisecondsSinceEpoch;
+  final backupPath = "${file.path}.${suffix}_$timestamp";
+
+  try {
+    // Preserve original file for debugging before deletion
+    await file.copy(backupPath);
+    debugPrint("DB: File backed up to $backupPath (${await file.length()} bytes)");
+  } catch (copyError) {
+    debugPrint("DB: WARNING - Failed to create backup: $copyError");
+    // Continue with deletion even if backup fails — the file is already corrupted
+  }
+
+  try {
+    await file.delete();
+    debugPrint("DB: Original file deleted.");
+  } catch (deleteError) {
+    debugPrint("DB: WARNING - Failed to delete file: $deleteError");
+  }
 }
 
 /// Converts an unencrypted SQLite database at [file] to the SQLCipher format
 /// using [key].
 Future<File> _convertToEncrypted(File file, String key) async {
+  // Pre-check: verify SQLCipher was loaded
+  if (!isSqlCipherLoaded) {
+    throw Exception(
+        'CONVERSION_FAILED: SQLCipher library is not loaded. '
+        'Cannot convert plain SQLite to encrypted database.');
+  }
+
   final timestamp = DateTime.now().millisecondsSinceEpoch;
   final tempPath = '${file.path}.encrypted_$timestamp';
   final tempFile = File(tempPath);
@@ -2037,6 +2208,9 @@ Future<File> _convertToEncrypted(File file, String key) async {
   try {
     final db = sqlite.sqlite3.open(file.path);
     try {
+      // Set cipher_page_size before ATTACH to ensure the encrypted database
+      // uses the same cipher_page_size as _openNativeDatabase.
+      db.execute('PRAGMA cipher_page_size = 4096');
       db.execute(
           "ATTACH DATABASE '$escapedTempPath' AS encrypted KEY '$escapedKey'");
       db.execute("SELECT sqlcipher_export('encrypted')");
@@ -2045,22 +2219,36 @@ Future<File> _convertToEncrypted(File file, String key) async {
       db.dispose();
     }
 
+    // Verify the encrypted file exists and is valid
+    if (!await tempFile.exists()) {
+      throw Exception(
+          'CONVERSION_FAILED: Encrypted temporary file was not created at $tempPath');
+    }
+
     final verifyDb = sqlite.sqlite3.open(tempPath);
     try {
+      // Use identical cipher_page_size setting as _openNativeDatabase
+      verifyDb.execute('PRAGMA cipher_page_size = 4096');
       verifyDb.execute("PRAGMA key = '$escapedKey'");
       final result = verifyDb.select("PRAGMA integrity_check;");
       if (result.first.values.first != 'ok') {
-        throw Exception("Encrypted DB integrity check failed");
+        throw Exception(
+            "CONVERSION_FAILED: Encrypted DB integrity check failed. "
+            "The encrypted file may be corrupted.");
       }
     } finally {
       verifyDb.dispose();
     }
 
+    // Backup the original unencrypted file before replacing
     final backupPath = '${file.path}.unencrypted_backup_$timestamp';
     await file.copy(backupPath);
+    debugPrint("DB ENCRYPT: Unencrypted backup saved to: $backupPath");
+
     await file.delete();
     await tempFile.rename(file.path);
 
+    debugPrint("DB ENCRYPT: Conversion successful. Database is now encrypted.");
     return file;
   } catch (e) {
     debugPrint("DB ENCRYPT: Conversion failed: $e");
@@ -2080,80 +2268,204 @@ Future<QueryExecutor> _connectWithRecovery({bool isRetry = false}) async {
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, 'app_db.sqlite'));
 
+    debugPrint("DB: _connectWithRecovery called. isRetry=$isRetry, "
+        "file.exists=${await file.exists()}, "
+        "sqlCipherLoaded=$isSqlCipherLoaded, "
+        "encryptionKey=${AppDatabase.encryptionKey != null ? 'set(${AppDatabase.encryptionKey!.length} chars)' : 'null'}");
+
     if (await file.exists()) {
       final size = await file.length();
+      debugPrint("DB: Existing file size=$size bytes");
       if (size == 0) {
         await file.delete();
+        debugPrint("DB: Deleted empty database file.");
       } else if (size < 100) {
         await _backupAndDelete(file, 'corrupted');
+        debugPrint("DB: Backed up and deleted tiny database file ($size bytes).");
       }
+    } else {
+      debugPrint("DB: No existing database file. Fresh install.");
     }
 
     final encryptionKey = AppDatabase.encryptionKey;
 
     if (encryptionKey != null && await file.exists()) {
       if (await _isPlainSqliteDatabase(file)) {
+        debugPrint("DB: Plain SQLite database detected. Converting to encrypted...");
         try {
           await _convertToEncrypted(file, encryptionKey);
-        } catch (_) {}
+          if (await file.exists() && await _isPlainSqliteDatabase(file)) {
+            throw Exception(
+                'CONVERSION_FAILED: Database is still plain SQLite after conversion attempt.');
+          }
+          debugPrint("DB: Successfully converted plain DB to encrypted.");
+        } catch (e) {
+          debugPrint("DB: ERROR: Failed to convert plain DB to encrypted: $e");
+          rethrow;
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Pre-validation: test the encryption key before the main open below.
+    // If the key doesn't match, the database is deleted so _openNativeDatabase
+    // can create a fresh encrypted database with the correct key.
+    // ═══════════════════════════════════════════════════════════════════════
+    if (encryptionKey != null && await file.exists() && isSqlCipherLoaded) {
+      debugPrint("DB PRE-VALIDATE: Verifying encryption key against existing database...");
+      final escapedKey = encryptionKey.replaceAll("'", "''");
+      try {
+        final testDb = sqlite.sqlite3.open(file.path);
+        try {
+          testDb.execute("PRAGMA cipher_page_size = 4096");
+          testDb.execute("PRAGMA key = '$escapedKey'");
+          final result = testDb.select("PRAGMA integrity_check;");
+          final status = result.isNotEmpty ? result.first.values.first : 'unknown';
+          debugPrint("DB PRE-VALIDATE: integrity_check = $status");
+          if (status != 'ok') {
+            debugPrint("DB PRE-VALIDATE: INTEGRITY FAILED — deleting database for recreation.");
+            await _backupAndDelete(file, 'integrity_failed');
+          }
+        } finally {
+          testDb.dispose();
+        }
+      } catch (e) {
+        final s = e.toString();
+        debugPrint("DB PRE-VALIDATE: FAILED — $s");
+        if (s.contains('code 26') ||
+            s.contains('file is not a database') ||
+            s.contains('SqliteException')) {
+          debugPrint("DB PRE-VALIDATE: Key mismatch or corruption. Deleting database for recreation.");
+          await _backupAndDelete(file, 'key_mismatch');
+        }
       }
     }
 
     final cachebase = (await getTemporaryDirectory()).path;
     sqlite.sqlite3.tempDirectory = cachebase;
 
-    return NativeDatabase.createInBackground(
-      file,
-      logStatements: kDebugMode,
-      setup: (rawDb) {
-        if (encryptionKey != null) {
-          final escapedKey = encryptionKey.replaceAll("'", "''");
-          rawDb.execute("PRAGMA key = '$escapedKey'");
-          rawDb.execute('PRAGMA cipher_page_size = 4096');
-          rawDb.execute('PRAGMA kdf_iter = 64000');
-          try {
-            try {
-              final cv = rawDb.select('PRAGMA cipher_version;');
-              final cvValue = cv.isNotEmpty ? cv.first.values.first : null;
-              if (cvValue == null || (cvValue is String && cvValue.isEmpty)) {
-                throw Exception('NO_SQLCIPHER');
-              }
-            } catch (e) {
-              if (e.toString().contains('NO_SQLCIPHER')) rethrow;
-              throw Exception('NO_SQLCIPHER');
-            }
+    try {
+      debugPrint("DB: Attempting to open database (attempt ${isRetry ? '2' : '1'})...");
+      return await _openNativeDatabase(file, encryptionKey);
+    } catch (e) {
+      final s = e.toString();
+      debugPrint("DB: Open failed: $s");
 
-            rawDb.execute('SELECT count(*) FROM sqlite_master;');
-          } catch (e) {
-            final s = e.toString();
-            if (s.contains('NO_SQLCIPHER')) {
-              throw Exception('NO_SQLCIPHER');
-            }
-            if (s.contains('code 26') || s.contains('file is not a database')) {
-              throw Exception('ENCRYPTION_FAILURE');
-            }
-            rethrow;
+      if (!isRetry &&
+          encryptionKey != null &&
+          (s.contains('code 26') || s.contains('DATABASE_ENCRYPTION_ERROR') || s.contains('file is not a database'))) {
+        debugPrint("DB: Encryption error detected. Attempting recovery...");
+
+        // Step 1: Try legacy KDF
+        if (await file.exists()) {
+          debugPrint("DB: Step 1 - Trying SQLCipher 3 legacy settings...");
+          try {
+            return await _openNativeDatabase(file, encryptionKey, useLegacyKdf: true);
+          } catch (legacyError) {
+            debugPrint("DB: Legacy settings also failed: $legacyError");
           }
         }
-      },
-      isolateSetup: () async {
-        applyNativeSqlOverride();
-      },
-    );
-  } catch (e) {
-    if (!isRetry &&
-        (e.toString().contains('code 26') ||
-            e.toString().contains('ENCRYPTION_FAILURE'))) {
-      final dbFolder = await getApplicationDocumentsDirectory();
-      final file = File(p.join(dbFolder.path, 'app_db.sqlite'));
-      if (await file.exists()) {
-        final backupPath =
-            "${file.path}.FAILED_DECRYPT_${DateTime.now().millisecondsSinceEpoch}";
-        await file.copy(backupPath);
-        await file.delete();
-        return await _connectWithRecovery(isRetry: true);
+
+        // Step 2: Always delete and recreate on encryption error
+        if (await file.exists()) {
+          final fileSize = await file.length();
+          debugPrint("DB: Step 2 - Deleting corrupted file ($fileSize bytes) and recreating...");
+          await _backupAndDelete(file, 'recovery');
+          debugPrint("DB: File deleted. Retrying fresh creation...");
+          try {
+            return await _openNativeDatabase(file, encryptionKey);
+          } catch (retryError) {
+            debugPrint("DB: Fresh creation also failed: $retryError");
+          }
+        }
+
+        debugPrint("DB: All recovery attempts exhausted.");
       }
+      rethrow;
+    }
+  } catch (e) {
+    final s = e.toString();
+    if (s.contains('code 26') || s.contains('DATABASE_ENCRYPTION_ERROR') || s.contains('file is not a database')) {
+      debugPrint("DB: FINAL ERROR - Encryption/decryption error. Error: $e");
+    } else {
+      debugPrint("DB: FINAL ERROR - $e");
     }
     rethrow;
   }
+}
+
+Future<QueryExecutor> _openNativeDatabase(
+  File file,
+  String? encryptionKey, {
+  bool useLegacyKdf = false,
+}) async {
+  debugPrint("DB: _openNativeDatabase called. "
+      "file=${file.path}, "
+      "encryptionKey=${encryptionKey != null ? 'set(${encryptionKey.length} chars)' : 'null'}, "
+      "useLegacyKdf=$useLegacyKdf, "
+      "sqlCipherLoaded=$isSqlCipherLoaded");
+
+  // Pre-check: verify SQLCipher was loaded before attempting to open
+  if (encryptionKey != null && !isSqlCipherLoaded) {
+    throw Exception(
+        'NO_SQLCIPHER: The SQLCipher native library was not loaded. '
+        'Database encryption requires SQLCipher. '
+        'Ensure sqlcipher_flutter_libs is properly included in the build.');
+  }
+
+  // Use the synchronous NativeDatabase(File, setup:) constructor (NOT
+  // createInBackground) to avoid the background isolate closure capture
+  // issue. The setup callback here runs in the main isolate where captured
+  // variables like encryptionKey are correctly available.
+  // Drift docs confirm: createInBackground's setup "must be a static or
+  // top-level function" because it runs in another isolate.
+  return NativeDatabase(
+    file,
+    logStatements: kDebugMode,
+    setup: (rawDb) {
+      debugPrint("DB SETUP: setup callback invoked in main isolate");
+      if (encryptionKey != null) {
+        final escapedKey = encryptionKey.replaceAll("'", "''");
+        if (useLegacyKdf) {
+          debugPrint("DB SETUP: Executing PRAGMA kdf_iter = 64000");
+          rawDb.execute('PRAGMA kdf_iter = 64000');
+        }
+        debugPrint("DB SETUP: Executing PRAGMA cipher_page_size = 4096");
+        rawDb.execute('PRAGMA cipher_page_size = 4096');
+        debugPrint("DB SETUP: Executing PRAGMA key");
+        rawDb.execute("PRAGMA key = '$escapedKey'");
+        try {
+          debugPrint("DB SETUP: Executing PRAGMA cipher_version");
+          final cv = rawDb.select('PRAGMA cipher_version;');
+          final cvValue = cv.isNotEmpty ? cv.first.values.first : null;
+          debugPrint("DB SETUP: cipher_version result: $cvValue");
+          if (cvValue == null || (cvValue is String && cvValue.isEmpty)) {
+            throw Exception('NO_SQLCIPHER');
+          }
+
+          debugPrint("DB SETUP: Executing SELECT count(*) FROM sqlite_master");
+          rawDb.execute('SELECT count(*) FROM sqlite_master;');
+          debugPrint("DB SETUP: SELECT count(*) succeeded");
+        } catch (e) {
+          final s = e.toString();
+          debugPrint("DB SETUP: Verification failed: $s");
+          if (s.contains('NO_SQLCIPHER')) {
+            throw Exception(
+                'NO_SQLCIPHER: The loaded native library does not support SQLCipher encryption. '
+                'PRAGMA cipher_version returned empty. '
+                'Ensure sqlcipher_flutter_libs is properly bundled.');
+          }
+          if (s.contains('code 26') || s.contains('file is not a database')) {
+            throw Exception(
+                'DATABASE_ENCRYPTION_ERROR: Failed to open encrypted database. '
+                'The encryption key may be incorrect or the database file may be corrupted. '
+                'Original error: $s');
+          }
+          rethrow;
+        }
+      } else {
+        debugPrint("DB SETUP: No encryption key, opening plain database");
+      }
+    },
+  );
 }

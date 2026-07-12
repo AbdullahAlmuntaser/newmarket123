@@ -1,4 +1,6 @@
 import 'package:drift/drift.dart';
+import 'package:supermarket/core/constants/app_enums.dart' as enums;
+import 'package:supermarket/core/models/accounting/account_tree_node.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/core/constants/account_types.dart';
 import '../mixins/sync_log_mixin.dart';
@@ -153,7 +155,7 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
   }
 
   Future<List<GLAccount>> getAccountsByType(String type) =>
-      (select(gLAccounts)..where((tbl) => tbl.type.equals(type))).get();
+      (select(gLAccounts)..where((tbl) => tbl.accountType.equals(enums.AccountType.values.byName(type.toLowerCase()).index))).get();
 
   // --- Cost Centers ---
   Future<List<CostCenter>> getAllCostCenters() => (select(costCenters)).get();
@@ -647,7 +649,7 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
           costCenters, costCenters.id.equalsExp(gLLines.costCenterId)),
     ])
           ..where(predicate)
-          ..where(gLAccounts.type.equals(AccountType.expense)))
+          ..where(gLAccounts.accountType.equals(enums.AccountType.expense.index)))
         .get();
 
     final Map<String, Decimal> ccTotals = {};
@@ -662,6 +664,98 @@ class AccountingDao extends DatabaseAccessor<AppDatabase>
     return ccTotals.entries
         .map((e) => CostCenterExpense(name: e.key, total: e.value))
         .toList();
+  }
+
+  Future<List<AccountTreeNode>> getAccountTree({
+    DateTime? asOfDate,
+    String? branchId,
+  }) async {
+    final allAccounts = await getAllAccounts();
+    final allBalances = await (asOfDate != null
+        ? getAllAccountBalancesAsOfDate(asOfDate, branchId: branchId)
+        : getAllAccountBalancesInRange(
+            DateTime(2000), DateTime.now(),
+            branchId: branchId,
+          ));
+
+    final balanceMap = <String, Decimal>{};
+    for (final item in allBalances) {
+      if (!item.account.isHeader) {
+        balanceMap[item.account.id] = item.netBalance;
+      }
+    }
+
+    final nodeMap = <String, AccountTreeNodeBuilder>{};
+    for (final account in allAccounts) {
+      nodeMap[account.id] = AccountTreeNodeBuilder(account: account);
+    }
+
+    final roots = <AccountTreeNodeBuilder>[];
+    for (final account in allAccounts) {
+      final builder = nodeMap[account.id]!;
+      if (account.parentId != null && nodeMap.containsKey(account.parentId)) {
+        nodeMap[account.parentId]!.children.add(builder);
+      } else {
+        roots.add(builder);
+      }
+    }
+
+    _computeTreeBalances(roots, balanceMap);
+
+    return roots.map((b) => b.build()).toList();
+  }
+
+  void _computeTreeBalances(
+    List<AccountTreeNodeBuilder> nodes,
+    Map<String, Decimal> balanceMap,
+  ) {
+    for (final node in nodes) {
+      final directBalance = balanceMap[node.account.id] ?? Decimal.zero;
+      _computeTreeBalances(node.children, balanceMap);
+      final childrenBalance = node.children.fold<Decimal>(
+        Decimal.zero,
+        (sum, child) => sum + child.treeBalance,
+      );
+      node.treeBalance = directBalance + childrenBalance;
+    }
+  }
+
+  Future<Decimal> getAccountTreeBalance(
+    String accountId, {
+    DateTime? asOfDate,
+    String? branchId,
+  }) async {
+    final tree = await getAccountTree(asOfDate: asOfDate, branchId: branchId);
+    return _findBalance(tree, accountId);
+  }
+
+  Decimal _findBalance(
+    List<AccountTreeNode> nodes,
+    String accountId,
+  ) {
+    for (final node in nodes) {
+      if (node.account.id == accountId) return node.treeBalance;
+      final childResult = _findBalance(node.children, accountId);
+      if (childResult != Decimal.zero) return childResult;
+    }
+    return Decimal.zero;
+  }
+}
+
+class AccountTreeNodeBuilder {
+  final GLAccount account;
+  Decimal treeBalance = Decimal.zero;
+  final List<AccountTreeNodeBuilder> children = [];
+
+  AccountTreeNodeBuilder({required this.account});
+
+  AccountTreeNode build() {
+    return AccountTreeNode(
+      account: account,
+      balance: treeBalance,
+      treeBalance: treeBalance,
+      children: children.map((c) => c.build()).toList(),
+    );
   }
 }
 

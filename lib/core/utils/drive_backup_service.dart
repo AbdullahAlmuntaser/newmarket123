@@ -285,7 +285,9 @@ class DriveBackupService {
               '${dbFile.path}.pre_restore_${DateTime.now().millisecondsSinceEpoch}.db');
           await dbFile.copy(preRestore.path);
         }
-      } catch (_) {}
+      } catch (e) {
+        AppLogger.error('Failed to create pre-restore backup', error: e);
+      }
 
       // Safe to copy now
       await tempFile.copy(dbFile.path);

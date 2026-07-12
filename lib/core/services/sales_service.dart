@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import '../../domain/entities/sales_invoice.dart';
 import 'transaction_engine.dart';
 import 'posting_engine.dart';
-import 'inventory_service.dart';
 import 'app_settings_service.dart';
 import 'permission_service.dart';
 import '../../data/datasources/local/app_database.dart';
@@ -10,12 +9,11 @@ import '../../data/datasources/local/app_database.dart';
 class SalesService {
   final AppDatabase db;
   final PostingEngine postingEngine;
-  final InventoryService inventoryService;
   final AppSettingsService settings;
   final PermissionService permissions;
   final TransactionEngine transactionEngine;
 
-  SalesService(this.db, this.postingEngine, this.inventoryService,
+  SalesService(this.db, this.postingEngine,
       this.settings, this.permissions, this.transactionEngine);
 
   @Deprecated('استخدم TransactionEngine.postSale بدلاً من ذلك')

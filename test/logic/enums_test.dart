@@ -56,12 +56,14 @@ void main() {
 
   group('AccountType', () {
     test('has all required types', () {
-      expect(AccountType.values.length, equals(5));
+      expect(AccountType.values.length, equals(7));
       expect(AccountType.asset, isNotNull);
       expect(AccountType.liability, isNotNull);
       expect(AccountType.equity, isNotNull);
       expect(AccountType.revenue, isNotNull);
       expect(AccountType.expense, isNotNull);
+      expect(AccountType.cogs, isNotNull);
+      expect(AccountType.otherIncome, isNotNull);
     });
   });
 }

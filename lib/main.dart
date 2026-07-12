@@ -1,15 +1,21 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:supermarket/core/theme/app_theme.dart';
 import 'package:supermarket/core/theme/theme_provider.dart';
 import 'package:supermarket/core/theme/locale_provider.dart';
 import 'package:supermarket/core/navigation/app_router.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/injection_container.dart' as di;
+import 'package:supermarket/injection_container.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supermarket/native_sql_override.dart';
+import 'package:supermarket/core/services/security_service.dart';
+import 'package:sqlite3/sqlite3.dart' as sqlite3;
 import 'package:supermarket/presentation/widgets/navigation/command_palette.dart';
 
 // Define a Intent for the Command Palette
@@ -22,9 +28,79 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // 2. Apply native sqlite override as early as possible
-  applyNativeSqlOverride();
+  try {
+    applyNativeSqlOverride();
+    // Trigger the override callback NOW in the main isolate to actually
+    // load SQLCipher and set isSqlCipherLoaded = true. Without this,
+    // isSqlCipherLoaded stays false because the override callback is only
+    // registered (not executed) by applyNativeSqlOverride().
+    // The callback executes when openSqlite() is called, which normally
+    // only happens in Drift's background isolate.
+    sqlite3.sqlite3.openInMemory().dispose();
+  } catch (e) {
+    debugPrint('CRITICAL: Failed to load native SQL library: $e');
+    runApp(const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, color: Colors.red, size: 64),
+                SizedBox(height: 16),
+                Text("Critical System Error",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                SizedBox(height: 8),
+                Text(
+                    "Failed to load the database encryption library.\n"
+                    "Please reinstall the app.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ));
+    return;
+  }
 
-  // 3. Run the Initialization Wrapper as the Root
+  // 3. Pre-warm FlutterSecureStorage key fetch — must succeed
+  try {
+    await SecurityService.getDatabaseKey();
+  } catch (e) {
+    debugPrint('CRITICAL: Failed to initialize encryption key: $e');
+    runApp(MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 64),
+                const SizedBox(height: 16),
+                const Text("Critical System Error",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text(
+                    "Failed to initialize the encryption key.\n"
+                    "Please reinstall the app.\n\n$e",
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.grey)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ));
+    return;
+  }
+
+  // 4. Run the Initialization Wrapper as the Root
   runApp(const AppRoot());
 }
 
@@ -57,15 +133,8 @@ class _AppRootState extends State<AppRoot> {
       debugPrint("INIT: Verifying Database Connection...");
       final db = di.sl<AppDatabase>();
 
-      // Increased timeout to 15s to allow for background migrations/seeding
-      // If it fails, we log and proceed as the DB might still be warming up
-      try {
-        await db.select(db.users).get().timeout(const Duration(seconds: 15));
-        debugPrint("INIT: Database connection verified.");
-      } catch (e) {
-        debugPrint("INIT WARNING: Database verification delayed: $e");
-        // Proceeding anyway - the background isolate might just be busy
-      }
+      await db.select(db.users).get().timeout(const Duration(seconds: 15));
+      debugPrint("INIT: Database connection verified.");
 
       debugPrint("INIT: Loading Locale...");
       await di.sl<LocaleProvider>().loadLocale();
@@ -76,8 +145,46 @@ class _AppRootState extends State<AppRoot> {
         });
       }
     } catch (e, stack) {
-      debugPrint("FATAL INITIALIZATION ERROR: $e");
+      final errStr = e.toString();
+      debugPrint("FATAL INITIALIZATION ERROR: $errStr");
       debugPrintStack(stackTrace: stack);
+
+      // Secondary recovery: if the error is an encryption/DB error,
+      // delete the database file and retry once.
+      if (errStr.contains('DATABASE_ENCRYPTION_ERROR') ||
+          errStr.contains('code 26') ||
+          errStr.contains('file is not a database')) {
+        debugPrint("INIT: Database encryption error detected. Attempting file-level recovery...");
+        try {
+          final dbFolder = await getApplicationDocumentsDirectory();
+          final file = File(p.join(dbFolder.path, 'app_db.sqlite'));
+          if (await file.exists()) {
+            final ts = DateTime.now().millisecondsSinceEpoch;
+            final backupPath = "${file.path}.init_recovery_$ts";
+            await file.copy(backupPath);
+            await file.delete();
+            debugPrint("INIT: Database file deleted. Backed up to $backupPath");
+          }
+          // Reset DI and retry
+          if (sl.isRegistered<AppDatabase>()) {
+            sl.unregister<AppDatabase>();
+          }
+          await di.init().timeout(const Duration(seconds: 30));
+          final db2 = di.sl<AppDatabase>();
+          await db2.select(db2.users).get().timeout(const Duration(seconds: 15));
+          debugPrint("INIT: Recovery successful after file deletion.");
+          if (mounted) {
+            setState(() {
+              _isInitialized = true;
+              _error = "";
+            });
+          }
+          return;
+        } catch (retryErr) {
+          debugPrint("INIT: Recovery also failed: $retryErr");
+        }
+      }
+
       if (mounted) {
         setState(() {
           _error = e.toString();

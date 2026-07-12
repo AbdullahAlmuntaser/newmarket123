@@ -3,4 +3,8 @@
   "geminicodeassist.outlines.automaticOutlineGeneration": true,
   "scm.inputFontFamily": "Cascadia Code ",
   "gemini-cli.debug.logging.enabled": false,
+  "antigravityPulse.showResetTime": true,
+  "editor.mouseWheelZoom": true,
+  "IDX.aI.enableCodebaseIndexing": false,
+  "IDX.aI.enableInlineCompletion": false,
 }

@@ -9,7 +9,7 @@ class HRService {
 
   Future<void> recordAdvance({
     required String employeeId,
-    required double amount,
+    required Decimal amount,
     String? note,
   }) async {
     await db.transaction(() async {
@@ -47,14 +47,14 @@ class HRService {
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: advanceAccount.id,
-            debit: Value(Decimal.parse(amount.toString())),
+            debit: Value(amount),
             credit: Value(Decimal.zero),
           ),
           GLLinesCompanion.insert(
             entryId: entryId,
             accountId: cashAccount.id,
             debit: Value(Decimal.zero),
-            credit: Value(Decimal.parse(amount.toString())),
+            credit: Value(amount),
           ),
         ];
 
@@ -70,9 +70,9 @@ class HRService {
             ..where((t) => t.status.equals('active')))
           .get();
 
-      double totalSalaries = 0;
-      double totalAllowances = 0;
-      double totalDeductions = 0;
+      Decimal totalSalaries = Decimal.zero;
+      Decimal totalAllowances = Decimal.zero;
+      Decimal totalDeductions = Decimal.zero;
 
       final runId = const Uuid().v4();
       await db.into(db.hRPayrollRuns).insert(
@@ -89,8 +89,8 @@ class HRService {
               ..where((t) => t.employeeId.equals(emp.id)))
             .get();
 
-        double monthlyDeductions =
-            additions.fold<double>(0.0, (sum, item) => sum + item.amount);
+        final monthlyDeductions = additions.fold<Decimal>(
+            Decimal.zero, (sum, item) => sum + item.amount);
 
         final gross = emp.basicSalary +
             emp.housingAllowance +

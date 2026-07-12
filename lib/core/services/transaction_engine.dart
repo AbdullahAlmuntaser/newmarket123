@@ -1,6 +1,5 @@
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/core/utils/drift_extensions.dart';
 import 'package:supermarket/core/events/app_events.dart';
 import 'package:supermarket/core/services/event_bus_service.dart';
 import 'package:supermarket/core/services/audit_service.dart';
@@ -55,7 +54,8 @@ class TransactionEngine {
           ..where((p) => p.isClosed.equals(false))
           ..where((p) => p.startDate.isSmallerOrEqual(Variable(now)))
           ..where((p) => p.endDate.isBiggerOrEqual(Variable(now))))
-        .getFirstOrNull();
+        .get()
+        .then((rows) => rows.isEmpty ? null : rows.first);
     if (openPeriod == null) {
       throw Exception(
           'لا توجد فترة محاسبية مفتوحة حالياً. يرجى فتح فترة محاسبية جديدة.');

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:supermarket/core/constants/app_enums.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/presentation/features/sales/proforma_provider.dart';
 import 'package:supermarket/presentation/widgets/app_snack_bar.dart';
-import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class ProformaInvoicesPage extends StatefulWidget {
   const ProformaInvoicesPage({super.key});

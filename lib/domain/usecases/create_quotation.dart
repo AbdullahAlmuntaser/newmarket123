@@ -1,5 +1,5 @@
-import 'package:erp_pos_app/data/models/quotation.dart';
-import 'package:erp_pos_app/domain/repositories/quotation_repository.dart';
+import '../../data/models/quotation.dart';
+import '../../domain/repositories/quotation_repository.dart';
 
 class CreateQuotation {
   final QuotationRepository repository;

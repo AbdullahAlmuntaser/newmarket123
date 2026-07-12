@@ -223,13 +223,14 @@ class _AddARInvoiceDialogState extends State<AddARInvoiceDialog> {
           onPressed: () async {
             if (_formKey.currentState!.validate() &&
                 _selectedCustomer != null) {
-              final totalAmount = MoneyFormField.tryParse(
+                  final rawAmount = MoneyFormField.tryParse(
                 _totalAmountController.text,
               );
-              if (totalAmount == null || totalAmount <= 0) {
+              if (rawAmount == null || rawAmount <= 0) {
                 AppSnackBar.warning(context, l10n.enterAmountError);
                 return;
               }
+              final totalAmount = Decimal.parse(rawAmount.toStringAsFixed(2));
               await db.customersDao.createARInvoice(
                 ARInvoicesCompanion.insert(
                   customerId: _selectedCustomer!.id,

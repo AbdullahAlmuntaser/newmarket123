@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
-import 'package:erp_pos_app/data/models/quotation.dart';
-import 'package:erp_pos_app/domain/usecases/create_quotation.dart';
+import '../../../../data/models/quotation.dart';
+import '../../../../domain/repositories/quotation_repository.dart';
+import '../../../../domain/usecases/create_quotation.dart';
 
 class QuotationProvider extends ChangeNotifier {
   final CreateQuotation createQuotation;
-  
+  final QuotationRepository repository;
+
   List<Quotation> _quotations = [];
   bool _isLoading = false;
   String? _error;
@@ -13,7 +15,7 @@ class QuotationProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  QuotationProvider(this.createQuotation);
+  QuotationProvider(this.createQuotation, this.repository);
 
   Future<void> loadQuotations() async {
     _isLoading = true;
@@ -21,8 +23,7 @@ class QuotationProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // TODO: Implement fetch from repository
-      _quotations = [];
+      _quotations = await repository.getAllQuotations();
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -54,7 +55,29 @@ class QuotationProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // TODO: Implement update status in repository
+      await repository.updateQuotationStatus(id, status);
+      final index = _quotations.indexWhere((q) => q.id == id);
+      if (index != -1) {
+        _quotations[index] = Quotation(
+          id: id,
+          quotationNumber: _quotations[index].quotationNumber,
+          customerId: _quotations[index].customerId,
+          branchId: _quotations[index].branchId,
+          warehouseId: _quotations[index].warehouseId,
+          date: _quotations[index].date,
+          expiryDate: _quotations[index].expiryDate,
+          status: status,
+          subtotal: _quotations[index].subtotal,
+          discountTotal: _quotations[index].discountTotal,
+          taxTotal: _quotations[index].taxTotal,
+          totalAmount: _quotations[index].totalAmount,
+          notes: _quotations[index].notes,
+          createdBy: _quotations[index].createdBy,
+          createdAt: _quotations[index].createdAt,
+          updatedAt: _quotations[index].updatedAt,
+        );
+        notifyListeners();
+      }
     } catch (e) {
       _error = e.toString();
     } finally {

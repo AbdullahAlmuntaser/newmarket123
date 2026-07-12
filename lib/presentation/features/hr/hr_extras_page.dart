@@ -88,7 +88,7 @@ class _HRExtrasPageState extends State<HRExtrasPage> {
                       try {
                         await hrService.recordAdvance(
                           employeeId: _selectedEmployee!.id,
-                          amount: MoneyFormField.valueOf(_amountController),
+                          amount: Decimal.parse(MoneyFormField.valueOf(_amountController).toStringAsFixed(2)),
                           note: _noteController.text,
                         );
                         if (!context.mounted) return;

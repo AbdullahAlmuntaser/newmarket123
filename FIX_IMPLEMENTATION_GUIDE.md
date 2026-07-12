@@ -135,16 +135,7 @@ Implement a unified `AutoBreakService` that:
 ```dart
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:uuid/uuid.dart';
-
-class UnitConversionNode {
-  final String unitName;
-  final Decimal factorToBase; // e.g., 1 carton = 12 base units → factor = 12
-  final bool isBaseUnit;
-
-  UnitConversionNode({
-    required this.unitName,
-    required this.factorToBase,
+import 'package:uuid/uuid.dart';خ
     required this.isBaseUnit,
   });
 }

@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/core/utils/failures.dart';
+import 'package:supermarket/domain/entities/batch_info.dart';
 import 'package:supermarket/domain/entities/stock_movement.dart' as entity;
 import 'package:supermarket/domain/repositories/inventory_repository.dart';
 import 'package:supermarket/data/datasources/local/daos/stock_movement_dao.dart';
@@ -72,5 +73,103 @@ class InventoryRepositoryImpl implements InventoryRepository {
     } catch (e) {
       return Left(DatabaseFailure(e.toString()));
     }
+  }
+
+  @override
+  Future<Either<Failure, List<BatchInfo>>> getBatchesByFefo({
+    required String productId,
+    required String warehouseId,
+  }) async {
+    try {
+      final batches = await _productsDao.getBatchesByFefo(
+        productId,
+        warehouseId,
+      );
+      return Right(batches.map(_toBatchInfo).toList());
+    } catch (e) {
+      return Left(DatabaseFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<BatchAllocation>>> allocateStockFefo({
+    required String productId,
+    required String warehouseId,
+    required Decimal quantityNeeded,
+  }) async {
+    try {
+      final batches = await _productsDao.getBatchesByFefo(
+        productId,
+        warehouseId,
+      );
+      var remaining = quantityNeeded;
+      final allocations = <BatchAllocation>[];
+
+      for (final batch in batches) {
+        if (remaining <= Decimal.zero) break;
+        final allocate =
+            remaining > batch.quantity ? batch.quantity : remaining;
+        allocations.add(BatchAllocation(
+          batchId: batch.id,
+          quantity: allocate,
+          expiryDate: batch.expiryDate,
+        ));
+        remaining -= allocate;
+      }
+
+      if (remaining > Decimal.zero) {
+        return Left(DatabaseFailure(
+          'Insufficient stock. Still need: $remaining',
+        ));
+      }
+
+      return Right(allocations);
+    } catch (e) {
+      return Left(DatabaseFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<BatchInfo>>> getExpiringBatches({
+    required String warehouseId,
+    int daysThreshold = 30,
+  }) async {
+    try {
+      final batches = await _productsDao.getExpiringBatches(
+        daysThreshold: daysThreshold,
+      );
+      final filtered =
+          batches.where((b) => b.warehouseId == warehouseId).toList();
+      return Right(filtered.map(_toBatchInfo).toList());
+    } catch (e) {
+      return Left(DatabaseFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<BatchInfo>>> getExpiredBatches({
+    required String warehouseId,
+  }) async {
+    try {
+      final batches = await _productsDao.getExpiredBatches(
+        warehouseId: warehouseId,
+      );
+      return Right(batches.map(_toBatchInfo).toList());
+    } catch (e) {
+      return Left(DatabaseFailure(e.toString()));
+    }
+  }
+
+  BatchInfo _toBatchInfo(ProductBatch batch) {
+    return BatchInfo(
+      id: batch.id,
+      productId: batch.productId,
+      warehouseId: batch.warehouseId,
+      batchNumber: batch.batchNumber,
+      expiryDate: batch.expiryDate,
+      quantity: batch.quantity,
+      initialQuantity: batch.initialQuantity,
+      costPrice: batch.costPrice,
+    );
   }
 }

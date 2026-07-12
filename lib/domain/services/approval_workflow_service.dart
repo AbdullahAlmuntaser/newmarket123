@@ -1,20 +1,19 @@
-import 'package:sqflite/sqflite.dart';
+import 'package:drift/drift.dart';
+import 'package:supermarket/data/datasources/local/app_database.dart';
 
 class ApprovalWorkflowService {
-  final Database database;
+  final AppDatabase database;
 
   ApprovalWorkflowService({required this.database});
 
-  /// Check if document requires approval
   Future<bool> requiresApproval({
     required String documentType,
     required double amount,
   }) async {
-    final workflows = await database.query(
-      'approval_workflows',
-      where: 'document_type = ? AND is_active = 1',
-      whereArgs: [documentType],
-    );
+    final workflows = (await database.customSelect(
+      'SELECT * FROM approval_workflows WHERE document_type = ? AND is_active = 1',
+      variables: [Variable(documentType)],
+    ).get()).map((e) => e.data).toList();
 
     for (var workflow in workflows) {
       final conditionType = workflow['condition_type'] as String?;
@@ -50,19 +49,15 @@ class ApprovalWorkflowService {
     return false;
   }
 
-  /// Create approval request
   Future<int> createApprovalRequest({
     required String documentType,
     required int documentId,
     required int requestedBy,
   }) async {
-    // Find applicable workflow
-    final workflows = await database.query(
-      'approval_workflows',
-      where: 'document_type = ? AND is_active = 1',
-      whereArgs: [documentType],
-      orderBy: 'level_order ASC',
-    );
+    final workflows = (await database.customSelect(
+      'SELECT * FROM approval_workflows WHERE document_type = ? AND is_active = 1 ORDER BY level_order ASC',
+      variables: [Variable(documentType)],
+    ).get()).map((e) => e.data).toList();
 
     if (workflows.isEmpty) {
       throw Exception('No active workflow found for document type: $documentType');
@@ -70,43 +65,32 @@ class ApprovalWorkflowService {
 
     final workflowId = workflows.first['id'] as int;
 
-    // Create approval request
-    final requestId = await database.insert('approval_requests', {
-      'document_type': documentType,
-      'document_id': documentId,
-      'workflow_id': workflowId,
-      'current_level': 1,
-      'status': 'pending',
-      'requested_by': requestedBy,
-    });
+    final requestId = await database.customInsert(
+      'INSERT INTO approval_requests (document_type, document_id, workflow_id, current_level, status, requested_by) VALUES (?, ?, ?, 1, \'pending\', ?)',
+      variables: [Variable(documentType), Variable(documentId), Variable(workflowId), Variable(requestedBy)],
+    );
 
     return requestId;
   }
 
-  /// Get approval levels for a workflow
   Future<List<Map<String, dynamic>>> getApprovalLevels(int workflowId) async {
-    return await database.query(
-      'approval_levels',
-      where: 'workflow_id = ?',
-      whereArgs: [workflowId],
-      orderBy: 'level_order ASC',
-    );
+    return (await database.customSelect(
+      'SELECT * FROM approval_levels WHERE workflow_id = ? ORDER BY level_order ASC',
+      variables: [Variable(workflowId)],
+    ).get()).map((e) => e.data).toList();
   }
 
-  /// Approve or reject request
   Future<void> processApproval({
     required int requestId,
     required int approverId,
     required String action,
     String? comments,
   }) async {
-    await database.transaction((txn) async {
-      // Get current request
-      final requests = await txn.query(
-        'approval_requests',
-        where: 'id = ?',
-        whereArgs: [requestId],
-      );
+    await database.transaction(() async {
+      final requests = (await database.customSelect(
+        'SELECT * FROM approval_requests WHERE id = ?',
+        variables: [Variable(requestId)],
+      ).get()).map((e) => e.data).toList();
 
       if (requests.isEmpty) {
         throw Exception('Approval request not found');
@@ -116,89 +100,60 @@ class ApprovalWorkflowService {
       final currentLevel = request['current_level'] as int;
       final workflowId = request['workflow_id'] as int;
 
-      // Get approver info
-      final approverInfo = await txn.query(
-        'approval_levels',
-        where: 'workflow_id = ? AND level_order = ?',
-        whereArgs: [workflowId, currentLevel],
-      );
+      final approverInfo = (await database.customSelect(
+        'SELECT * FROM approval_levels WHERE workflow_id = ? AND level_order = ?',
+        variables: [Variable(workflowId), Variable(currentLevel)],
+      ).get()).map((e) => e.data).toList();
 
       final roleId = approverInfo.isNotEmpty ? approverInfo.first['role_id'] : null;
 
-      // Record approval history
-      await txn.insert('approval_history', {
-        'request_id': requestId,
-        'level_order': currentLevel,
-        'approver_id': approverId,
-        'approver_role_id': roleId,
-        'action': action,
-        'comments': comments,
-      });
+      await database.customInsert(
+        'INSERT INTO approval_history (request_id, level_order, approver_id, approver_role_id, action, comments) VALUES (?, ?, ?, ?, ?, ?)',
+        variables: [Variable(requestId), Variable(currentLevel), Variable(approverId), Variable(roleId as Object), Variable(action), Variable(comments)],
+      );
 
       if (action == 'approved') {
-        // Check if there are more levels
-        final nextLevels = await txn.query(
-          'approval_levels',
-          where: 'workflow_id = ? AND level_order > ?',
-          whereArgs: [workflowId, currentLevel],
-          orderBy: 'level_order ASC',
-          limit: 1,
-        );
+        final nextLevels = (await database.customSelect(
+          'SELECT * FROM approval_levels WHERE workflow_id = ? AND level_order > ? ORDER BY level_order ASC LIMIT 1',
+          variables: [Variable(workflowId), Variable(currentLevel)],
+        ).get()).map((e) => e.data).toList();
 
         if (nextLevels.isNotEmpty) {
-          // Move to next level
-          await txn.update(
-            'approval_requests',
-            {'current_level': currentLevel + 1},
-            where: 'id = ?',
-            whereArgs: [requestId],
+          await database.customUpdate(
+            'UPDATE approval_requests SET current_level = ? WHERE id = ?',
+            variables: [Variable(currentLevel + 1), Variable(requestId)],
           );
         } else {
-          // All levels approved
-          await txn.update(
-            'approval_requests',
-            {
-              'status': 'approved',
-              'completed_at': DateTime.now().toIso8601String(),
-            },
-            where: 'id = ?',
-            whereArgs: [requestId],
+          await database.customUpdate(
+            "UPDATE approval_requests SET status = 'approved', completed_at = ? WHERE id = ?",
+            variables: [Variable(DateTime.now().toIso8601String()), Variable(requestId)],
           );
         }
       } else if (action == 'rejected') {
-        // Reject the request
-        await txn.update(
-          'approval_requests',
-          {
-            'status': 'rejected',
-            'completed_at': DateTime.now().toIso8601String(),
-          },
-          where: 'id = ?',
-          whereArgs: [requestId],
+        await database.customUpdate(
+          "UPDATE approval_requests SET status = 'rejected', completed_at = ? WHERE id = ?",
+          variables: [Variable(DateTime.now().toIso8601String()), Variable(requestId)],
         );
       }
     });
   }
 
-  /// Get pending approvals for a user
   Future<List<Map<String, dynamic>>> getPendingApprovalsForUser({
     required int userId,
     String? documentType,
   }) async {
-    String whereClause = 'status = ?';
-    List<dynamic> whereArgs = ['pending'];
+    String whereClause = "status = 'pending'";
+    List<Variable> docVars = [];
 
     if (documentType != null) {
       whereClause += ' AND document_type = ?';
-      whereArgs.add(documentType);
+      docVars = [Variable(documentType)];
     }
 
-    // Get user's role
-    final userRoles = await database.query(
-      'user_roles',
-      where: 'user_id = ?',
-      whereArgs: [userId],
-    );
+    final userRoles = (await database.customSelect(
+      'SELECT * FROM user_roles WHERE user_id = ?',
+      variables: [Variable(userId)],
+    ).get()).map((e) => e.data).toList();
 
     if (userRoles.isEmpty) {
       return [];
@@ -206,12 +161,10 @@ class ApprovalWorkflowService {
 
     final roleIds = userRoles.map((r) => r['role_id']).toList();
 
-    // Get pending requests where user's role is the current approver
-    final pendingRequests = await database.query(
-      'approval_requests',
-      where: whereClause,
-      whereArgs: whereArgs,
-    );
+    final pendingRequests = (await database.customSelect(
+      'SELECT * FROM approval_requests WHERE $whereClause',
+      variables: docVars,
+    ).get()).map((e) => e.data).toList();
 
     List<Map<String, dynamic>> filteredRequests = [];
 
@@ -219,11 +172,10 @@ class ApprovalWorkflowService {
       final workflowId = request['workflow_id'] as int;
       final currentLevel = request['current_level'] as int;
 
-      final levels = await database.query(
-        'approval_levels',
-        where: 'workflow_id = ? AND level_order = ?',
-        whereArgs: [workflowId, currentLevel],
-      );
+      final levels = (await database.customSelect(
+        'SELECT * FROM approval_levels WHERE workflow_id = ? AND level_order = ?',
+        variables: [Variable(workflowId), Variable(currentLevel)],
+      ).get()).map((e) => e.data).toList();
 
       for (var level in levels) {
         final roleId = level['role_id'];

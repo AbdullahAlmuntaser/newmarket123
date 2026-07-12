@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:erp_pos_app/presentation/features/quotation/providers/quotation_provider.dart';
+import '../providers/quotation_provider.dart';
 
 class QuotationListScreen extends StatelessWidget {
-  const QuotationListScreen({Key? key}) : super(key: key);
+  const QuotationListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
-import 'package:supermarket/core/constants/account_types.dart';
 import 'package:supermarket/core/utils/name_normalizer.dart';
 import 'package:uuid/uuid.dart';
 
@@ -121,8 +121,7 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
           id: Value(accountId),
           code: '1201-${customerId.substring(0, 5)}',
           name: 'عميل: ${entry.name.value}',
-          type:
-              AccountType.asset, // Corrected to use the static String constant
+          accountType: AccountType.asset,
           parentId: parentAccount?.id != null
               ? Value(parentAccount!.id)
               : const Value.absent(),
@@ -208,7 +207,7 @@ class CustomersDao extends DatabaseAccessor<AppDatabase>
         CustomerTransaction(
           date: inv.invoiceDate,
           description: 'فاتورة AR رقم ${inv.invoiceNumber}',
-          debit: inv.totalAmount,
+          debit: inv.totalAmount.toDouble(),
           credit: 0,
           referenceId: inv.id,
           type: 'AR_INVOICE',

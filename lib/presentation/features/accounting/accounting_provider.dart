@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart';
+import 'package:supermarket/core/constants/app_enums.dart';
+import 'package:supermarket/core/models/accounting/accounting_dashboard_data.dart';
+import 'package:supermarket/core/models/accounting/balance_sheet_data.dart';
+import 'package:supermarket/core/models/accounting/cash_flow_data.dart';
+import 'package:supermarket/core/models/accounting/income_statement_data.dart';
+import 'package:supermarket/core/models/accounting/vat_report_data.dart';
 import 'package:supermarket/core/services/accounting_service.dart';
 import 'package:supermarket/core/services/audit_service.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
@@ -44,7 +50,7 @@ class AccountingProvider with ChangeNotifier {
       GLAccountsCompanion.insert(
         code: code,
         name: name,
-        type: type,
+        accountType: AccountType.values.byName(type.toLowerCase()),
         analyticType: Value(analyticType),
         isHeader: Value(isHeader),
       ),

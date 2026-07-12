@@ -223,13 +223,14 @@ class _AddAPInvoiceDialogState extends State<AddAPInvoiceDialog> {
           onPressed: () async {
             if (_formKey.currentState!.validate() &&
                 _selectedSupplier != null) {
-              final totalAmount = MoneyFormField.tryParse(
+                  final rawAmount = MoneyFormField.tryParse(
                 _totalAmountController.text,
               );
-              if (totalAmount == null || totalAmount <= 0) {
+              if (rawAmount == null || rawAmount <= 0) {
                 AppSnackBar.warning(context, l10n.enterAmountError);
                 return;
               }
+              final totalAmount = Decimal.parse(rawAmount.toStringAsFixed(2));
               await db.suppliersDao.createAPInvoice(
                 APInvoicesCompanion.insert(
                   supplierId: _selectedSupplier!.id,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supermarket/core/services/accounting_service.dart';
+import 'package:supermarket/core/models/accounting/balance_sheet_data.dart';
 import 'package:supermarket/presentation/features/accounting/accounting_provider.dart';
 import 'package:supermarket/l10n/app_localizations.dart';
 

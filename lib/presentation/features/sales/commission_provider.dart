@@ -58,7 +58,7 @@ class CommissionProvider with ChangeNotifier {
   }
 
   Future<void> loadSalespersons() async {
-    _salespersons = await _db.select(_db.users).get();
+    _salespersons = await (_db.select(_db.users)..limit(200)).get();
     notifyListeners();
   }
 

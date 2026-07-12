@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:drift/drift.dart';
 import 'package:supermarket/data/datasources/local/app_database.dart';
 import 'package:supermarket/injection_container.dart';
-import 'package:supermarket/core/services/audit_log_service.dart';
+import 'package:supermarket/core/services/audit_service.dart';
 
 class DashboardData {
   final double totalSalesToday;
@@ -96,10 +96,10 @@ class DashboardProvider with ChangeNotifier {
       }
 
       // 6. عدد العملاء الكلي
-      final allCustomers = await (db.select(db.customers)).get();
+      final allCustomers = await (db.select(db.customers)..limit(1000)).get();
 
       // 7. عدد الموردين الكلي
-      final allSuppliers = await (db.select(db.suppliers)).get();
+      final allSuppliers = await (db.select(db.suppliers)..limit(1000)).get();
 
       // 8. المشتريات اليومية
       final purchases = await (db.select(db.purchases)
@@ -113,7 +113,7 @@ class DashboardProvider with ChangeNotifier {
       double cashboxBalance = 0;
       try {
         final cashTransactions =
-            await (db.select(db.cashboxTransactions)).get();
+            await (db.select(db.cashboxTransactions)..limit(500)).get();
         cashboxBalance = cashTransactions
             .fold<Decimal>(Decimal.zero, (sum, t) => sum + t.amount)
             .toDouble();
@@ -191,7 +191,7 @@ class DashboardProvider with ChangeNotifier {
       );
     } catch (e) {
       _error = e.toString();
-      await sl<AuditLogService>().logAction(
+      await sl<AuditService>().logAction(
         userId: 'system',
         action: 'DASHBOARD_REFRESH_ERROR',
         logTableName: 'Dashboard',

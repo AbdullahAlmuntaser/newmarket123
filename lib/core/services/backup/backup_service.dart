@@ -196,12 +196,13 @@ class BackupService {
             error: e,
           );
         }
-      } catch (_) {
-        // If validation path failed, fail-safe: refuse restore
+      } catch (e) {
+        debugPrint('Backup validation outer error: $e');
         return BackupResult(
           success: false,
-          message: 'فشل التحقق من النسخة الاحتياطية قبل الاستعادة',
+          message: 'فشل التحقق من النسخة الاحتياطية قبل الاستعادة: ${e.toString()}',
           errorCode: 'BACKUP_VALIDATION_ERROR',
+          error: e,
         );
       }
 
@@ -221,7 +222,9 @@ class BackupService {
         // Force WAL checkpoint on current DB before restore
         try {
           await database.customSelect('PRAGMA wal_checkpoint(TRUNCATE)').get();
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('Backup: WAL checkpoint failed: $e');
+        }
 
         // Close current database connections
         await database.close();
@@ -238,7 +241,9 @@ class BackupService {
           if (di.sl.isRegistered<AppDatabase>()) {
             di.sl.unregister<AppDatabase>();
           }
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('Backup: Failed to unregister AppDatabase: $e');
+        }
         di.sl.registerLazySingleton<AppDatabase>(() => database);
 
         return BackupResult(
